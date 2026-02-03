@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KickScale | Validate Before You Scale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-tertiary: #171717;
+            --bg-card: #141414;
+            --border: #262626;
+            --border-light: #333333;
+            --text-primary: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --accent: #3b82f6;
+            --accent-secondary: #8b5cf6;
+            --green: #22c55e;
+            --yellow: #eab308;
+            --red: #ef4444;
+            --cyan: #06b6d4;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 16px 0;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-secondary) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-cta {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .nav-cta:hover {
+            background: var(--accent);
+            color: var(--text-primary);
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 120px 0 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-grid-bg {
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 64px 64px;
+            mask-image: radial-gradient(ellipse at center, black 0%, transparent 70%);
+        }
+
+        .hero-glow {
+            position: absolute;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 600px;
+            background: radial-gradient(ellipse, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .hero-badge .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .hero h1 {
+            font-size: clamp(40px, 6vw, 72px);
+            font-weight: 700;
+            letter-spacing: -2px;
+            line-height: 1.05;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--cyan) 50%, var(--accent-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-description {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.7;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 64px;
+        }
+
+        .btn-primary {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text-secondary);
+            background: var(--bg-tertiary);
+        }
+
+        /* Code Terminal Preview */
+        .terminal-preview {
+            max-width: 700px;
+            margin: 0 auto;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .terminal-dot.red { background: #ff5f57; }
+        .terminal-dot.yellow { background: #febc2e; }
+        .terminal-dot.green { background: #28c840; }
+
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .terminal-body {
+            padding: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        .terminal-line {
+            display: flex;
+            gap: 12px;
+        }
+
+        .terminal-prompt {
+            color: var(--accent);
+        }
+
+        .terminal-command {
+            color: var(--text-primary);
+        }
+
+        .terminal-output {
+            color: var(--text-secondary);
+            padding-left: 24px;
+        }
+
+        .terminal-output.success {
+            color: var(--green);
+        }
+
+        .terminal-output.warning {
+            color: var(--yellow);
+        }
+
+        .terminal-output.error {
+            color: var(--red);
+        }
+
+        .terminal-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: var(--accent);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Section Styles */
+        section {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+        }
+
+        .section-label::before {
+            content: '//';
+            color: var(--text-tertiary);
+        }
+
+        .section-title {
+            font-size: clamp(32px, 4vw, 48px);
+            font-weight: 700;
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+        }
+
+        .section-description {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+        }
+
+        /* Education Section - The Math */
+        .education-section {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .education-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: center;
+        }
+
+        .equation-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+        }
+
+        .equation-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .equation-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+        }
+
+        .equation-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .equation-subtitle {
+            font-size: 12px;
+            color: var(--text-tertiary);
+        }
+
+        .equation-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .equation-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .equation-row:last-child {
+            border-bottom: none;
+            padding-top: 16px;
+            margin-top: 8px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .equation-label {
+            color: var(--text-secondary);
+        }
+
+        .equation-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .equation-value.positive {
+            color: var(--green);
+        }
+
+        .equation-value.negative {
+            color: var(--red);
+        }
+
+        .equation-note {
+            font-size: 13px;
+            color: var(--text-tertiary);
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 8px;
+            border-left: 3px solid var(--red);
+        }
+
+        .equation-note.success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--green);
+        }
+
+        /* Process Section */
+        .process-section {
+            background: var(--bg-primary);
+        }
+
+        .process-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 64px;
+        }
+
+        .process-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.3s;
+        }
+
+        .process-card:hover {
+            border-color: var(--border-light);
+            transform: translateY(-4px);
+        }
+
+        .process-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .process-card h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+        }
+
+        .process-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+        }
+
+        .process-metrics {
+            display: flex;
+            gap: 24px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .process-metric {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .process-metric-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .process-metric-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Featured Process Card */
+        .process-card.featured {
+            grid-column: span 3;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 48px;
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            border-color: var(--border-light);
+        }
+
+        .featured-content h3 {
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+
+        .featured-content p {
+            font-size: 16px;
+            margin-bottom: 24px;
+        }
+
+        .featured-list {
+            list-style: none;
+        }
+
+        .featured-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .featured-list li:last-child {
+            border-bottom: none;
+        }
+
+        .featured-list svg {
+            width: 18px;
+            height: 18px;
+            color: var(--green);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .featured-visual {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .data-preview {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .data-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .data-title {
+            font-weight: 600;
+        }
+
+        .data-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--green);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        .data-body {
+            padding: 20px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .data-row:last-child {
+            border-bottom: none;
+        }
+
+        .data-label {
+            color: var(--text-secondary);
+        }
+
+        .data-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        /* Case Study */
+        .case-study-section {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .case-study-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-top: 48px;
+        }
+
+        .case-study-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .case-study-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .case-study-logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--cyan) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .case-study-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .case-study-type {
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        .case-study-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(234, 179, 8, 0.1);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--yellow);
+        }
+
+        .case-study-status .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--yellow);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .case-study-body {
+            padding: 32px;
+        }
+
+        .case-study-phase {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent);
+            margin-bottom: 12px;
+        }
+
+        .case-study-body h3 {
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+
+        .case-study-body p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            max-width: 600px;
+            margin-bottom: 32px;
+        }
+
+        .case-study-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .case-stat {
+            padding: 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+        }
+
+        .case-stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .case-stat-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Pricing */
+        .pricing-section {
+            background: var(--bg-primary);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-top: 64px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .pricing-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 40px;
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            border-color: var(--border-light);
+        }
+
+        .pricing-card.featured {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border-color: var(--accent);
+            position: relative;
+        }
+
+        .pricing-badge {
+            position: absolute;
+            top: -12px;
+            left: 32px;
+            padding: 6px 12px;
+            background: var(--accent);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pricing-card h3 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .pricing-amount {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .pricing-amount span {
+            font-size: 16px;
+            font-weight: 400;
+            color: var(--text-tertiary);
+        }
+
+        .pricing-description {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            line-height: 1.6;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 32px;
+        }
+
+        .pricing-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .pricing-features svg {
+            width: 18px;
+            height: 18px;
+            color: var(--green);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .pricing-cta {
+            display: block;
+            width: 100%;
+            padding: 14px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .pricing-cta.primary {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        .pricing-cta.primary:hover {
+            background: var(--accent);
+            color: var(--text-primary);
+        }
+
+        .pricing-cta.secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .pricing-cta.secondary:hover {
+            border-color: var(--text-secondary);
+        }
+
+        /* FAQ */
+        .faq-section {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+        }
+
+        .faq-grid {
+            max-width: 800px;
+            margin: 48px auto 0;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .faq-question {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 0;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .faq-question:hover {
+            color: var(--accent);
+        }
+
+        .faq-toggle {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s;
+        }
+
+        .faq-toggle svg {
+            width: 16px;
+            height: 16px;
+            color: var(--text-tertiary);
+        }
+
+        .faq-item.active .faq-toggle {
+            transform: rotate(45deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+        }
+
+        .faq-answer p {
+            padding: 0 0 24px;
+            color: var(--text-secondary);
+            font-size: 15px;
+            line-height: 1.7;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: var(--bg-primary);
+            padding: 120px 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-glow {
+            position: absolute;
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 400px;
+            background: radial-gradient(ellipse, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-content h2 {
+            font-size: clamp(32px, 4vw, 48px);
+            margin-bottom: 16px;
+        }
+
+        .cta-content p {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto 40px;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            padding: 64px 0 32px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 48px;
+            margin-bottom: 48px;
+        }
+
+        .footer-brand p {
+            color: var(--text-tertiary);
+            font-size: 14px;
+            margin-top: 16px;
+            max-width: 280px;
+        }
+
+        .footer-links h4 {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-tertiary);
+            margin-bottom: 20px;
+        }
+
+        .footer-links a {
+            display: block;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 8px 0;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-primary);
+        }
+
+        .footer-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            color: var(--text-tertiary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .education-grid {
+                grid-template-columns: 1fr;
+                gap: 48px;
+            }
+
+            .process-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .process-card.featured {
+                grid-column: span 1;
+                grid-template-columns: 1fr;
+            }
+
+            .case-study-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero-ctas {
+                flex-direction: column;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <div class="logo-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                </div>
+                KickScale
+            </a>
+            <ul class="nav-links">
+                <li><a href="#education">The Math</a></li>
+                <li><a href="#process">Process</a></li>
+                <li><a href="#work">Case Study</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+            <a href="#cta" class="nav-cta">Start Test Phase</a>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-grid-bg"></div>
+        <div class="hero-glow"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <span class="dot"></span>
+                    Crowdfunding Launch Infrastructure
+                </div>
+                <h1>Validate the <span class="gradient">money equation</span><br>before you scale spend.</h1>
+                <p class="hero-description">Most crowdfunding campaigns fail because founders skip the math. We run a controlled test phase with real ad spend to prove your unit economics work before you commit $50K+ to a full launch.</p>
+                <div class="hero-ctas">
+                    <a href="#cta" class="btn-primary">
+                        Start Test Phase
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                    <a href="#education" class="btn-secondary">Learn the Framework</a>
+                </div>
+
+                <!-- Terminal Preview -->
+                <div class="terminal-preview">
+                    <div class="terminal-header">
+                        <div class="terminal-dot red"></div>
+                        <div class="terminal-dot yellow"></div>
+                        <div class="terminal-dot green"></div>
+                        <div class="terminal-title">campaign_economics.sh</div>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="terminal-command">kickscale analyze --campaign "your-product"</span>
+                        </div>
+                        <div class="terminal-output">Analyzing pre-launch metrics...</div>
+                        <div class="terminal-output">VIP signups collected: 127</div>
+                        <div class="terminal-output">Cost per lead: $4.23</div>
+                        <div class="terminal-output">Email open rate: 62%</div>
+                        <div class="terminal-output">Estimated conversion: 34%</div>
+                        <div class="terminal-output success">RESULT: Unit economics validated. Safe to scale.</div>
+                        <div class="terminal-line">
+                            <span class="terminal-prompt">$</span>
+                            <span class="terminal-cursor"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Education Section -->
+    <section class="education-section" id="education">
+        <div class="container">
+            <div class="section-label">The Math</div>
+            <h2 class="section-title">Why most campaigns actually fail</h2>
+            <p class="section-description">It's not the product. It's not the video. It's the unit economics. Here's the formula every builder should understand.</p>
+
+            <div class="education-grid" style="margin-top: 64px;">
+                <div>
+                    <h3 style="font-size: 24px; margin-bottom: 24px;">The Crowdfunding Money Equation</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px; line-height: 1.8;">Every successful campaign comes down to one formula. If the math doesn't work at small scale, it won't work at large scale. Most agencies skip this step and go straight to spending your money.</p>
+
+                    <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 12px; padding: 24px; font-family: 'JetBrains Mono', monospace; font-size: 14px; margin-bottom: 24px;">
+                        <div style="color: var(--text-tertiary); margin-bottom: 16px;">// The formula</div>
+                        <div style="color: var(--accent);">(VIPs x conversion_rate x AOV) > (ad_spend + fees)</div>
+                    </div>
+
+                    <p style="color: var(--text-secondary); line-height: 1.8;">If you can get this equation positive at 100 VIPs, you can get it positive at 10,000. If you can't, no amount of ad spend will save you.</p>
+                </div>
+
+                <div class="equation-card">
+                    <div class="equation-header">
+                        <div class="equation-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20V10M18 20V4M6 20v-4"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="equation-title">Campaign Economics</div>
+                            <div class="equation-subtitle">Test phase simulation</div>
+                        </div>
+                    </div>
+                    <div class="equation-display">
+                        <div class="equation-row">
+                            <span class="equation-label">VIP signups</span>
+                            <span class="equation-value">100</span>
+                        </div>
+                        <div class="equation-row">
+                            <span class="equation-label">Cost per lead</span>
+                            <span class="equation-value">$5.00</span>
+                        </div>
+                        <div class="equation-row">
+                            <span class="equation-label">Ad spend</span>
+                            <span class="equation-value">$500</span>
+                        </div>
+                        <div class="equation-row">
+                            <span class="equation-label">Conversion rate</span>
+                            <span class="equation-value">30%</span>
+                        </div>
+                        <div class="equation-row">
+                            <span class="equation-label">Average order value</span>
+                            <span class="equation-value">$149</span>
+                        </div>
+                        <div class="equation-row">
+                            <span class="equation-label">Projected revenue</span>
+                            <span class="equation-value positive">$4,470</span>
+                        </div>
+                    </div>
+                    <div class="equation-note success">
+                        8.9x ROAS. Economics validated. Safe to scale ad spend to $15K+.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process Section -->
+    <section class="process-section" id="process">
+        <div class="container">
+            <div class="section-label">Process</div>
+            <h2 class="section-title">$4K to validate before you scale</h2>
+            <p class="section-description">We run a controlled test phase. Real ad spend, real data. You'll know if your campaign will work before betting big.</p>
+
+            <div class="process-grid">
+                <div class="process-card">
+                    <div class="process-number">01</div>
+                    <h3>Funnel Build</h3>
+                    <p>We build your pre-launch landing page optimized for conversion. Email capture, reservation system, and all the infrastructure you need.</p>
+                    <div class="process-metrics">
+                        <div class="process-metric">
+                            <div class="process-metric-value">3-5</div>
+                            <div class="process-metric-label">Days</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="process-card">
+                    <div class="process-number">02</div>
+                    <h3>Creative Development</h3>
+                    <p>Ad creatives, copy variations, and targeting strategy. We test multiple angles to find what resonates with your audience.</p>
+                    <div class="process-metrics">
+                        <div class="process-metric">
+                            <div class="process-metric-value">5+</div>
+                            <div class="process-metric-label">Ad Variants</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="process-card">
+                    <div class="process-number">03</div>
+                    <h3>Test Campaign</h3>
+                    <p>We run paid acquisition to collect 100 VIPs. Real spend, real leads, real data on what it costs to acquire interested buyers.</p>
+                    <div class="process-metrics">
+                        <div class="process-metric">
+                            <div class="process-metric-value">100</div>
+                            <div class="process-metric-label">VIP Target</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="process-card featured">
+                    <div class="featured-content">
+                        <div class="process-number">04</div>
+                        <h3>Economics Analysis</h3>
+                        <p>The whole point. We analyze your test data and tell you if the numbers work. No BS, just math.</p>
+                        <ul class="featured-list">
+                            <li>
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Real cost-per-lead data
+                            </li>
+                            <li>
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Conversion rate benchmarks
+                            </li>
+                            <li>
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Projected ROAS calculations
+                            </li>
+                            <li>
+                                <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Go / no-go recommendation
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="featured-visual">
+                        <div class="data-preview">
+                            <div class="data-header">
+                                <span class="data-title">Test Phase Report</span>
+                                <span class="data-status">
+                                    <span class="dot" style="width: 6px; height: 6px; background: var(--green); border-radius: 50%;"></span>
+                                    Complete
+                                </span>
+                            </div>
+                            <div class="data-body">
+                                <div class="data-row">
+                                    <span class="data-label">VIPs Collected</span>
+                                    <span class="data-value">127</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="data-label">Ad Spend</span>
+                                    <span class="data-value">$537.41</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="data-label">Cost Per Lead</span>
+                                    <span class="data-value">$4.23</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="data-label">Email Open Rate</span>
+                                    <span class="data-value">62%</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="data-label">Projected ROAS</span>
+                                    <span class="data-value" style="color: var(--green);">7.2x</span>
+                                </div>
+                                <div class="data-row">
+                                    <span class="data-label">Recommendation</span>
+                                    <span class="data-value" style="color: var(--green);">SCALE</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Case Study -->
+    <section class="case-study-section" id="work">
+        <div class="container">
+            <div class="section-label">Live Project</div>
+            <h2 class="section-title">Currently validating</h2>
+            <p class="section-description">Watch us apply the framework in real-time. We update this as the campaign progresses.</p>
+
+            <div class="case-study-card">
+                <div class="case-study-header">
+                    <div class="case-study-brand">
+                        <div class="case-study-logo">P</div>
+                        <div>
+                            <div class="case-study-name">pawme.ai</div>
+                            <div class="case-study-type">AI-powered pet health collar</div>
+                        </div>
+                    </div>
+                    <div class="case-study-status">
+                        <span class="dot"></span>
+                        Test Phase Active
+                    </div>
+                </div>
+                <div class="case-study-body">
+                    <div class="case-study-phase">// Week 1 - Testing the funnel</div>
+                    <h3>Validating unit economics before scaling</h3>
+                    <p>Smart collar meets AI health tracking. Funnel's built, creatives are ready. Currently running test campaigns to collect 100 VIPs and nail the money equation before we recommend scaling spend.</p>
+                    <div class="case-study-stats">
+                        <div class="case-stat">
+                            <div class="case-stat-value">100</div>
+                            <div class="case-stat-label">VIP Target</div>
+                        </div>
+                        <div class="case-stat">
+                            <div class="case-stat-value">TBD</div>
+                            <div class="case-stat-label">CPL</div>
+                        </div>
+                        <div class="case-stat">
+                            <div class="case-stat-value">TBD</div>
+                            <div class="case-stat-label">Conv. Rate</div>
+                        </div>
+                        <div class="case-stat">
+                            <div class="case-stat-value">2025</div>
+                            <div class="case-stat-label">Launch Year</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing-section" id="pricing">
+        <div class="container">
+            <div class="section-label">Pricing</div>
+            <h2 class="section-title">Start with a test. Scale if it works.</h2>
+            <p class="section-description">$4K to validate your campaign economics. No long-term commitment until you see the data.</p>
+
+            <div class="pricing-grid">
+                <div class="pricing-card featured">
+                    <div class="pricing-badge">Start Here</div>
+                    <h3>Test Phase</h3>
+                    <div class="pricing-amount">$4,000<span> /one-time</span></div>
+                    <p class="pricing-description">We build your funnel, run ads, and get 100 VIPs. You get real data on what it costs to acquire a paying customer.</p>
+                    <ul class="pricing-features">
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Complete pre-launch funnel
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Ad creatives + copy
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            100 VIP signups target
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Real CPL + conversion data
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Economics analysis report
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Go/no-go recommendation
+                        </li>
+                    </ul>
+                    <a href="#cta" class="pricing-cta primary">Start Test Phase</a>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Full Launch</h3>
+                    <div class="pricing-amount" style="color: var(--text-secondary);">Custom<span> /after test</span></div>
+                    <p class="pricing-description">Test phase passed? We scale together. Full campaign management through launch day and beyond.</p>
+                    <ul class="pricing-features">
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Scale ads to full pre-launch
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Email sequences (nurture + launch)
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Campaign page optimization
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            30-day live campaign support
+                        </li>
+                        <li>
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                            Retainer + % of raise
+                        </li>
+                    </ul>
+                    <a href="#cta" class="pricing-cta secondary">Discuss After Test</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-section" id="faq">
+        <div class="container">
+            <div class="section-label">FAQ</div>
+            <h2 class="section-title">Common questions</h2>
+
+            <div class="faq-grid">
+                <div class="faq-item active">
+                    <div class="faq-question">
+                        What's included in the $4K test phase?
+                        <span class="faq-toggle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Everything you need to validate your campaign economics: landing page build, ad creatives, copy, and enough ad spend to get 100 VIP signups. You'll know your real cost-per-lead, engagement rates, and whether the math works before committing to a full launch.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        What if the test phase numbers look bad?
+                        <span class="faq-toggle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>That's the whole point. Better to find out at $4K than at $50K. If the economics don't work, we'll tell you straight - and you'll have real data on why. Sometimes it's fixable (pricing, positioning, creatives). Sometimes the market's telling you something. Either way, you'll know.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How is this different from LaunchBoom or Funded Today?
+                        <span class="faq-toggle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>They charge $15-30K upfront and hope it works. We run a $4K test phase first. You get real conversion data before committing to a full launch budget. If the numbers don't work, you saved yourself a lot of money. If they do, we scale together.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        What types of products do you work with?
+                        <span class="faq-toggle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Physical products only. Tech gadgets, consumer electronics, outdoor gear, home goods. No films, games, comics, or apps - the playbook is different for those categories and we're not the right fit.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        How long does the test phase take?
+                        <span class="faq-toggle">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                        </span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Typically 2-3 weeks. A few days to build the funnel and creatives, then we run ads until we hit 100 VIPs. The timeline depends on your niche and how quickly we can acquire leads at a reasonable cost.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section" id="cta">
+        <div class="cta-glow"></div>
+        <div class="container">
+            <div class="cta-content">
+                <h2>Validate before you scale.</h2>
+                <p>$4K to know if your campaign economics work. Real data. No BS.</p>
+                <div class="cta-buttons">
+                    <a href="mailto:hello@kickscale.com" class="btn-primary">
+                        Start Test Phase
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                    <a href="https://twitter.com/kickscale" class="btn-secondary">Follow on X</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <div class="logo-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                            </svg>
+                        </div>
+                        KickScale
+                    </a>
+                    <p>Crowdfunding launch infrastructure for physical products. We validate your campaign economics before you scale spend.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <a href="#education">The Math</a>
+                    <a href="#process">Process</a>
+                    <a href="#pricing">Pricing</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <a href="#work">Case Studies</a>
+                    <a href="#faq">FAQ</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Connect</h4>
+                    <a href="mailto:hello@kickscale.com">Email</a>
+                    <a href="https://twitter.com/kickscale">X / Twitter</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>&copy; 2025 KickScale. All rights reserved.</span>
+                <span>Built for builders.</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // FAQ Toggle
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                const isActive = item.classList.contains('active');
+
+                // Close all
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+
+                // Open clicked if it wasn't active
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Terminal typing effect
+        const terminalLines = document.querySelectorAll('.terminal-output');
+        terminalLines.forEach((line, index) => {
+            line.style.opacity = '0';
+            setTimeout(() => {
+                line.style.transition = 'opacity 0.3s';
+                line.style.opacity = '1';
+            }, 500 + (index * 400));
+        });
+
+        // Intersection Observer for fade-in animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.process-card, .equation-card, .case-study-card, .pricing-card').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
