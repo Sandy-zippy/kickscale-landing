@@ -1280,7 +1280,18 @@
     <div class="sticky-sub">7-day money-back guarantee</div>
 </div>
 
-<!-- ===== THANK YOU OVERLAY ===== -->
+<!-- ===== LEAD CAPTURED → PAY NOW ===== -->
+<div class="thank-you-overlay" id="leadCaptured">
+    <div class="thank-you-box">
+        <div class="check-circle">&#10003;</div>
+        <h2>Info Saved!</h2>
+        <p>Now complete your payment to get your personalized growth blueprint. We'll reach out within 24 hours to schedule your pitch meet.</p>
+        <a href="https://rzp.io/rzp/6Ckk8osb" class="pay-now-btn" style="display:inline-block;background:#D5EB4B;color:#141418;padding:16px 40px;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;text-decoration:none;margin-top:16px;transition:transform 0.2s,box-shadow 0.2s;">Pay &#8377;999 &amp; Get Blueprint &#8594;</a>
+        <p style="margin-top:12px;font-size:13px;color:#9CA3AF;">Secure Razorpay checkout. 7-day refund if not satisfied.</p>
+    </div>
+</div>
+
+<!-- ===== PAYMENT SUCCESS (for return visits) ===== -->
 <div class="thank-you-overlay" id="thankYou">
     <div class="thank-you-box">
         <div class="check-circle">&#10003;</div>
@@ -1423,7 +1434,7 @@
 
         var nextBtn = document.getElementById('quiz-next-btn');
         if (step === 6) {
-            nextBtn.textContent = 'Get Blueprint \u2192 \u20B9999';
+            nextBtn.textContent = 'Submit & Continue to Payment \u2192';
             nextBtn.style.background = 'var(--lime)';
         } else {
             nextBtn.textContent = 'Next \u2192';
@@ -1440,23 +1451,7 @@
             localStorage.setItem('zippy_lead_' + Date.now(), JSON.stringify(answers));
         } catch(e) {}
 
-        var paymentUrl = 'https://rzp.io/rzp/6Ckk8osb';
-        var redirected = false;
-
-        function goToPayment() {
-            if (redirected) return;
-            redirected = true;
-            btn.textContent = 'Redirecting to payment...';
-            if (typeof fbq !== 'undefined') {
-                fbq('track', 'InitiateCheckout', { value: 999, currency: 'INR' });
-            }
-            window.location.href = paymentUrl;
-        }
-
-        // Safety net: redirect after 3s no matter what
-        setTimeout(goToPayment, 3000);
-
-        // Send lead data to GHL via n8n webhook, then redirect
+        // Send lead data to GHL via n8n webhook
         var payload = JSON.stringify({
             name: answers.name,
             phone: answers.phone,
@@ -1475,21 +1470,26 @@
             utm_term: answers.utm_term || ''
         });
 
-        // Try fetch first (works if CORS allows)
+        // Fire webhook (try fetch, fallback to sendBeacon)
+        try {
+            navigator.sendBeacon(
+                'https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz',
+                new Blob([payload], { type: 'application/json' })
+            );
+        } catch(e) {}
+
+        // Also try fetch as backup
         fetch('https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: payload
-        }).then(goToPayment).catch(function() {
-            // CORS blocked? Try sendBeacon as fallback (fire-and-forget)
-            try {
-                navigator.sendBeacon(
-                    'https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz',
-                    new Blob([payload], { type: 'application/json' })
-                );
-            } catch(e) {}
-            goToPayment();
-        });
+        }).catch(function() {});
+
+        // Show lead captured overlay with payment button
+        if (typeof fbq !== 'undefined') {
+            fbq('track', 'InitiateCheckout', { value: 999, currency: 'INR' });
+        }
+        document.getElementById('leadCaptured').classList.add('visible');
     }
 
 })();
