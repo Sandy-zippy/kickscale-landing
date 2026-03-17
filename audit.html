@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Marketing Audit | ZippyScale</title>
-    <meta name="description" content="Score your marketing system in 2 minutes. Find out where you're leaving money on the table.">
+    <title>Marketing Operations Maturity Assessment | ZippyScale</title>
+    <meta name="description" content="10-question assessment that reveals your marketing maturity level across 5 dimensions. Find your blind spots in under 3 minutes.">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="Free Marketing Audit | ZippyScale">
-    <meta property="og:description" content="Score your marketing system in 2 minutes. Find out where you're leaving money on the table.">
+    <meta property="og:title" content="Marketing Operations Maturity Assessment | ZippyScale">
+    <meta property="og:description" content="10-question assessment that reveals your marketing maturity level across 5 dimensions. Find your blind spots in under 3 minutes.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://zippyscale.in/audit">
     <meta property="og:image" content="https://zippyscale.in/og-image.png">
@@ -20,9 +20,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-
-    <!-- Meta Pixel (replace YOUR_PIXEL_ID before launch) -->
-    <!-- <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','YOUR_PIXEL_ID');fbq('track','PageView');</script> -->
 
     <!-- UTM Tracking -->
     <script>
@@ -57,7 +54,7 @@
             --text-on-light-muted: #9CA3AF;
             --green: #22C55E;
             --red: #EF4444;
-            --orange: #F97316;
+            --orange: #F59E0B;
             --yellow: #EAB308;
         }
 
@@ -87,13 +84,6 @@
             transform: translateY(0);
         }
 
-        /* ===== SECTION DIVIDER ===== */
-        .section-divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--lime), transparent);
-            opacity: 0.2;
-        }
-
         /* ===== NAV ===== */
         .nav {
             position: fixed; top: 0; left: 0; right: 0; z-index: 100;
@@ -108,7 +98,6 @@
             display: flex; align-items: center; gap: 10px;
             text-decoration: none; color: var(--text-on-dark);
         }
-        .nav-logo svg { height: 32px; width: 32px; }
         .nav-logo span { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; }
         .nav-cta {
             background: var(--lime); color: var(--dark-bg); border: none; padding: 10px 24px;
@@ -121,7 +110,7 @@
         /* ===== HERO ===== */
         .hero {
             position: relative;
-            padding: 140px 0 80px;
+            padding: 140px 0 60px;
             background: var(--dark-bg);
             text-align: center;
         }
@@ -142,11 +131,6 @@
             background: radial-gradient(circle, #D5EB4B 0%, transparent 70%);
             animation: orbFloat2 20s ease-in-out infinite;
         }
-        .orb-3 {
-            width: 500px; height: 500px; bottom: -200px; left: 40%;
-            background: radial-gradient(circle, rgba(213,235,75,0.5) 0%, transparent 70%);
-            animation: orbFloat3 18s ease-in-out infinite;
-        }
         @keyframes orbFloat1 {
             0%, 100% { transform: translate(0, 0) scale(1); }
             33% { transform: translate(100px, 50px) scale(1.1); }
@@ -156,10 +140,6 @@
             0%, 100% { transform: translate(0, 0) scale(1); }
             33% { transform: translate(-80px, 60px) scale(1.15); }
             66% { transform: translate(60px, -40px) scale(0.85); }
-        }
-        @keyframes orbFloat3 {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(80px, -60px) scale(1.1); }
         }
         .hero .container { position: relative; z-index: 1; }
         .hero-badge {
@@ -172,9 +152,8 @@
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
         .hero h1 {
-            font-size: clamp(36px, 6vw, 64px); font-weight: 700;
-            max-width: 800px; margin: 0 auto 24px;
-            color: var(--text-on-dark);
+            font-size: clamp(32px, 5vw, 52px); font-weight: 700;
+            max-width: 800px; margin: 0 auto 20px;
             background: linear-gradient(135deg, var(--text-on-dark) 0%, var(--lime) 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -185,10 +164,10 @@
             to { opacity: 1; transform: translateY(0); }
         }
         .hero p {
-            font-size: clamp(16px, 2.5vw, 20px); color: var(--text-on-dark-secondary);
-            max-width: 600px; margin: 0 auto 40px;
+            font-size: clamp(15px, 2vw, 18px); color: var(--text-on-dark-secondary);
+            max-width: 600px; margin: 0 auto 36px;
         }
-        .hero-cta {
+        .hero-cta-btn {
             display: inline-flex; align-items: center; gap: 12px;
             background: var(--lime); color: var(--dark-bg); border: none;
             padding: 18px 40px; font-family: 'Space Grotesk', sans-serif;
@@ -198,330 +177,398 @@
             box-shadow: 0 4px 30px var(--lime-glow);
             animation: ctaPulse 3s ease-in-out infinite;
         }
-        .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(213,235,75,0.3); background: var(--lime-hover); }
+        .hero-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(213,235,75,0.3); background: var(--lime-hover); }
         @keyframes ctaPulse {
             0%, 100% { box-shadow: 0 4px 30px rgba(213,235,75,0.12); }
             50% { box-shadow: 0 4px 40px rgba(213,235,75,0.25); }
         }
-        .hero-sub {
-            margin-top: 16px; font-size: 14px; color: var(--text-on-dark-muted);
+        .hero-meta {
+            display: flex; justify-content: center; gap: 32px; margin-top: 32px; flex-wrap: wrap;
+        }
+        .hero-meta span {
+            font-size: 13px; color: var(--text-on-dark-muted); display: flex; align-items: center; gap: 6px;
+        }
+        .hero-meta .accent { color: var(--lime); font-weight: 600; }
+
+        /* ===== SECTION DIVIDER ===== */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--lime), transparent);
+            opacity: 0.2;
         }
 
-        /* ===== DARK SECTIONS ===== */
-        .dark-section {
+        /* ===== ASSESSMENT CONTAINER ===== */
+        .assessment-section {
+            padding: 60px 0 100px;
             background: var(--dark-bg);
-            color: var(--text-on-dark);
-            padding: 80px 0;
-            position: relative; overflow: hidden;
+            min-height: 80vh;
         }
-        .dark-section::after {
-            content: ''; position: absolute; top: 0; left: -200px;
-            width: 200px; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(213,235,75,0.03), transparent);
-            animation: beamSweep 8s ease-in-out infinite;
-            pointer-events: none;
-        }
-        @keyframes beamSweep {
-            0% { left: -200px; }
-            100% { left: calc(100% + 200px); }
-        }
-
-        /* ===== SECTIONS COMMON ===== */
-        .section-label {
-            font-family: 'JetBrains Mono', monospace; font-weight: 500;
-            font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
-            color: var(--lime); margin-bottom: 16px;
-        }
-        .section-title {
-            font-size: clamp(28px, 4vw, 42px); font-weight: 700;
-            margin-bottom: 20px; max-width: 700px; color: var(--text-on-dark);
-        }
-        .section-subtitle {
-            font-size: 17px; color: var(--text-on-dark-secondary);
-            max-width: 600px; margin-bottom: 48px;
-        }
-        .text-center { text-align: center; }
-        .mx-auto { margin-left: auto; margin-right: auto; }
-
-        /* ===== QUIZ ===== */
-        .quiz-section {
-            background: var(--dark-bg);
-            padding: 100px 0;
-        }
-        .quiz-container {
-            max-width: 640px; margin: 0 auto;
+        .assessment-container {
+            max-width: 720px; margin: 0 auto;
             background: var(--dark-card); border: 2px solid transparent;
             border-radius: 24px; padding: 48px; position: relative; overflow: hidden;
         }
-        .quiz-container::before {
+        .assessment-container::before {
             content: ''; position: absolute; inset: -2px; z-index: 0;
             border-radius: 26px;
             background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.15), var(--lime));
             background-size: 200% 200%;
             animation: gradientBorder 4s ease infinite;
         }
+        .assessment-container::after {
+            content: ''; position: absolute; inset: 0;
+            background: var(--dark-card); border-radius: 22px;
+            z-index: 0;
+        }
+        .assessment-container > * { position: relative; z-index: 1; }
         @keyframes gradientBorder {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
-        .quiz-container::after {
-            content: ''; position: absolute; inset: 0;
-            background: var(--dark-card); border-radius: 22px;
-            z-index: 0;
-        }
-        .quiz-container > * { position: relative; z-index: 1; }
-        .quiz-progress {
-            display: flex; gap: 6px; margin-bottom: 32px;
-        }
-        .quiz-progress-bar {
-            flex: 1; height: 4px; background: var(--dark-border);
-            border-radius: 4px; transition: background 0.3s;
-        }
-        .quiz-progress-bar.active { background: var(--lime); }
 
-        .quiz-step { display: none; }
-        .quiz-step.active { display: block; animation: fadeIn 0.3s ease; }
+        /* ===== PROGRESS BAR ===== */
+        .progress-wrapper { margin-bottom: 36px; }
+        .progress-labels {
+            display: flex; justify-content: space-between; margin-bottom: 10px;
+        }
+        .progress-label {
+            font-size: 11px; font-weight: 600; color: var(--text-on-dark-muted);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            transition: color 0.3s;
+            text-align: center; flex: 1;
+        }
+        .progress-label.active { color: var(--lime); }
+        .progress-label.completed { color: var(--lime-dark); }
+        .progress-track {
+            height: 4px; background: var(--dark-border); border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: var(--lime); border-radius: 4px;
+            transition: width 0.4s ease; width: 0%;
+        }
+
+        /* ===== QUESTION STEP ===== */
+        .question-step { display: none; }
+        .question-step.active { display: block; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .quiz-step h3 {
-            font-size: 22px; font-weight: 600; margin-bottom: 8px; color: var(--text-on-dark);
+        .dimension-tag {
+            font-family: 'JetBrains Mono', monospace; font-weight: 500;
+            font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+            color: var(--lime); margin-bottom: 8px;
         }
-        .quiz-step .quiz-subtitle { font-size: 14px; color: var(--text-on-dark-muted); margin-bottom: 24px; }
+        .question-number {
+            font-size: 13px; color: var(--text-on-dark-muted); margin-bottom: 6px;
+        }
+        .question-text {
+            font-size: 20px; font-weight: 600; margin-bottom: 24px; color: var(--text-on-dark);
+            line-height: 1.4;
+        }
 
-        .quiz-options { display: flex; flex-direction: column; gap: 10px; }
-        .quiz-option {
-            display: flex; align-items: center; gap: 14px;
+        /* ===== OPTIONS ===== */
+        .options-list { display: flex; flex-direction: column; gap: 10px; }
+        .option-btn {
+            display: flex; align-items: flex-start; gap: 14px;
             background: var(--dark-bg); border: 1px solid var(--dark-border);
             border-radius: 12px; padding: 16px 20px; cursor: pointer;
             transition: all 0.2s; font-size: 15px; color: var(--text-on-dark);
-            min-height: 52px;
+            text-align: left; width: 100;
         }
-        .quiz-option:hover { border-color: var(--lime); background: rgba(213,235,75,0.05); }
-        .quiz-option.selected { border-color: var(--lime); background: var(--lime-glow); }
-        .quiz-option .radio {
+        .option-btn:hover { border-color: var(--lime); background: rgba(213,235,75,0.05); }
+        .option-btn.selected { border-color: var(--lime); background: var(--lime-glow); }
+        .option-radio {
             width: 20px; height: 20px; min-width: 20px; border-radius: 50%;
             border: 2px solid var(--dark-border); transition: all 0.2s;
             display: flex; align-items: center; justify-content: center;
+            margin-top: 2px;
         }
-        .quiz-option.selected .radio {
+        .option-btn.selected .option-radio {
             border-color: var(--lime); background: var(--lime);
         }
-        .quiz-option.selected .radio::after {
+        .option-btn.selected .option-radio::after {
             content: '\2713'; color: var(--dark-bg); font-size: 12px; font-weight: 700;
         }
+        .option-content { flex: 1; }
+        .option-label { line-height: 1.4; }
+        .option-points {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            color: var(--text-on-dark-muted); margin-top: 4px;
+        }
 
+        /* ===== EXPERT INSIGHT ===== */
+        .expert-insight {
+            margin-top: 20px; padding: 20px 24px;
+            background: rgba(213,235,75,0.04);
+            border-left: 3px solid var(--lime);
+            border-radius: 0 12px 12px 0;
+            opacity: 0; max-height: 0; overflow: hidden;
+            transition: opacity 0.4s ease, max-height 0.5s ease, margin 0.4s ease, padding 0.4s ease;
+        }
+        .expert-insight.visible {
+            opacity: 1; max-height: 300px;
+        }
+        .expert-insight-header {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+        }
+        .expert-icon {
+            width: 24px; height: 24px; background: var(--lime); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; color: var(--dark-bg); font-weight: 700;
+        }
+        .expert-label {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            color: var(--lime); text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+        }
+        .expert-text {
+            font-size: 14px; color: var(--text-on-dark-secondary); line-height: 1.6;
+            font-style: italic;
+        }
+
+        /* ===== NAVIGATION BUTTONS ===== */
         .quiz-nav {
             display: flex; justify-content: space-between; align-items: center;
             margin-top: 32px; gap: 12px;
         }
-        .quiz-back {
+        .btn-back {
             background: none; border: 1px solid var(--dark-border); color: var(--text-on-dark-secondary);
             padding: 12px 24px; border-radius: 10px; cursor: pointer;
             font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
             transition: border-color 0.2s;
         }
-        .quiz-back:hover { border-color: var(--text-on-dark-secondary); }
-        .quiz-back.hidden { visibility: hidden; }
-        .quiz-next {
+        .btn-back:hover { border-color: var(--text-on-dark-secondary); }
+        .btn-back.hidden { visibility: hidden; }
+        .btn-next {
             background: var(--lime); color: var(--dark-bg); border: none;
             padding: 14px 32px; border-radius: 10px; cursor: pointer;
             font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px;
             transition: transform 0.2s, opacity 0.2s, background 0.2s;
             margin-left: auto;
         }
-        .quiz-next:hover { transform: translateY(-1px); background: var(--lime-hover); }
-        .quiz-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-next:hover { transform: translateY(-1px); background: var(--lime-hover); }
+        .btn-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
-        /* ===== RESULTS ===== */
-        .results-section {
-            display: none;
-            padding: 60px 0 40px;
-        }
-        .results-section.visible { display: block; }
+        /* ===== RESULTS SECTION ===== */
+        .results-section { display: none; }
+        .results-section.active { display: block; animation: fadeIn 0.6s ease; }
 
-        .score-card {
-            max-width: 640px; margin: 0 auto;
-            background: var(--dark-card); border: 2px solid transparent;
-            border-radius: 24px; padding: 48px; position: relative; overflow: hidden;
-            text-align: center;
+        /* Score counter */
+        .score-reveal {
+            text-align: center; padding: 40px 0 32px;
         }
-        .score-card::before {
-            content: ''; position: absolute; inset: -2px; z-index: 0;
-            border-radius: 26px;
-            background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.15), var(--lime));
-            background-size: 200% 200%;
-            animation: gradientBorder 4s ease infinite;
-        }
-        .score-card::after {
-            content: ''; position: absolute; inset: 0;
-            background: var(--dark-card); border-radius: 22px;
-            z-index: 0;
-        }
-        .score-card > * { position: relative; z-index: 1; }
-
-        .score-big {
+        .score-number {
             font-family: 'JetBrains Mono', monospace; font-weight: 700;
-            font-size: 80px; color: var(--lime); line-height: 1;
+            font-size: 80px; line-height: 1;
+            margin-bottom: 4px;
         }
-        .score-big .score-suffix { font-size: 36px; color: var(--text-on-dark-muted); }
-        .grade-badge {
-            display: inline-block; font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700; font-size: 32px; padding: 8px 24px;
-            border-radius: 12px; margin: 16px 0 8px;
+        .score-total {
+            font-family: 'JetBrains Mono', monospace; font-size: 20px;
+            color: var(--text-on-dark-muted);
         }
-        .grade-A { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
-        .grade-B { background: var(--lime-glow); color: var(--lime); border: 1px solid rgba(213,235,75,0.3); }
-        .grade-C { background: rgba(234,179,8,0.15); color: var(--yellow); border: 1px solid rgba(234,179,8,0.3); }
-        .grade-D { background: rgba(249,115,22,0.15); color: var(--orange); border: 1px solid rgba(249,115,22,0.3); }
-        .grade-F { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
-
-        .grade-label {
-            font-size: 15px; color: var(--text-on-dark-secondary); margin-bottom: 24px;
+        .maturity-badge {
+            display: inline-block; padding: 10px 28px; border-radius: 100px;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+            font-size: 18px; margin-top: 16px;
+            border: 2px solid;
         }
-        .benchmark {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: var(--lime-glow); border: 1px solid rgba(213,235,75,0.3);
-            padding: 8px 20px; border-radius: 100px; font-size: 13px;
-            color: var(--lime); font-weight: 600; margin-bottom: 32px;
+        .maturity-desc {
+            font-size: 15px; color: var(--text-on-dark-secondary);
+            margin-top: 12px; max-width: 500px; margin-left: auto; margin-right: auto;
+        }
+        .benchmark-line {
+            font-size: 13px; color: var(--text-on-dark-muted); margin-top: 12px;
         }
 
-        /* Bar chart */
-        .dimension-bars {
-            display: flex; flex-direction: column; gap: 16px;
-            text-align: left; margin-top: 32px;
+        /* Level colors */
+        .level-1 { color: var(--red); border-color: var(--red); background: rgba(239,68,68,0.1); }
+        .level-2 { color: var(--orange); border-color: var(--orange); background: rgba(245,158,11,0.1); }
+        .level-3 { color: var(--yellow); border-color: var(--yellow); background: rgba(234,179,8,0.1); }
+        .level-4 { color: var(--lime); border-color: var(--lime); background: var(--lime-glow); }
+        .level-5 { color: var(--green); border-color: var(--green); background: rgba(34,197,94,0.1); }
+
+        .score-color-1 { color: var(--red); }
+        .score-color-2 { color: var(--orange); }
+        .score-color-3 { color: var(--yellow); }
+        .score-color-4 { color: var(--lime); }
+        .score-color-5 { color: var(--green); }
+
+        /* ===== DIMENSION BAR CHART ===== */
+        .chart-section {
+            margin: 40px 0; padding: 32px;
+            background: var(--dark-bg); border-radius: 16px;
+            border: 1px solid var(--dark-border);
         }
-        .dimension-row { display: flex; flex-direction: column; gap: 6px; }
-        .dimension-label {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 13px; font-weight: 600;
+        .chart-title {
+            font-size: 16px; font-weight: 600; margin-bottom: 24px; color: var(--text-on-dark);
         }
-        .dimension-label .dim-name { color: var(--text-on-dark); }
-        .dimension-label .dim-score { font-family: 'JetBrains Mono', monospace; color: var(--lime); }
-        .dimension-bar-track {
-            height: 8px; background: var(--dark-bg); border-radius: 4px; overflow: hidden;
+        .bar-row {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
         }
-        .dimension-bar-fill {
-            height: 100%; border-radius: 4px; transition: width 1s ease-out;
-            width: 0;
+        .bar-label {
+            width: 130px; min-width: 130px; font-size: 13px; color: var(--text-on-dark-secondary);
+            text-align: right;
         }
-        .bar-high { background: var(--green); }
-        .bar-mid { background: var(--lime); }
-        .bar-low { background: var(--orange); }
-        .bar-critical { background: var(--red); }
-        .dimension-insight {
-            font-size: 12px; color: var(--text-on-dark-muted); font-style: italic;
+        .bar-track {
+            flex: 1; height: 28px; background: var(--dark-border); border-radius: 6px;
+            position: relative; overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%; border-radius: 6px;
+            transition: width 1.2s ease; width: 0%;
+        }
+        .bar-fill.user { background: var(--lime); }
+        .bar-fill.avg {
+            position: absolute; top: 0; height: 100%;
+            background: none; border-right: 2px dashed rgba(255,255,255,0.3);
+        }
+        .bar-score {
+            width: 50px; min-width: 50px; font-family: 'JetBrains Mono', monospace;
+            font-size: 14px; font-weight: 700; color: var(--lime);
+        }
+        .chart-legend {
+            display: flex; gap: 24px; margin-top: 16px; font-size: 12px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-on-dark-muted); }
+        .legend-swatch {
+            width: 16px; height: 4px; border-radius: 2px;
+        }
+        .legend-swatch.lime { background: var(--lime); }
+        .legend-swatch.dashed { border-top: 2px dashed rgba(255,255,255,0.3); height: 0; width: 16px; }
+
+        /* ===== BLIND SPOT ===== */
+        .blind-spot-card {
+            margin: 32px 0; padding: 28px;
+            background: rgba(239,68,68,0.06);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 16px;
+        }
+        .blind-spot-tag {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            color: var(--red); text-transform: uppercase; letter-spacing: 1.5px;
+            font-weight: 600; margin-bottom: 8px;
+        }
+        .blind-spot-title {
+            font-size: 20px; font-weight: 700; color: var(--text-on-dark); margin-bottom: 8px;
+        }
+        .blind-spot-text {
+            font-size: 14px; color: var(--text-on-dark-secondary); line-height: 1.6;
         }
 
         /* ===== GATE FORM ===== */
         .gate-section {
-            display: none;
-            padding: 40px 0 80px;
+            margin: 40px 0; padding: 36px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 16px; text-align: center;
         }
-        .gate-section.visible { display: block; }
-        .gate-container {
-            max-width: 540px; margin: 0 auto;
-            background: var(--dark-card); border: 1px solid var(--dark-border);
-            border-radius: 20px; padding: 40px;
+        .gate-section h3 {
+            font-size: 22px; font-weight: 700; margin-bottom: 8px;
         }
-        .gate-container h3 {
-            font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text-on-dark);
-            text-align: center;
+        .gate-section .gate-sub {
+            font-size: 14px; color: var(--text-on-dark-secondary); margin-bottom: 24px;
         }
-        .gate-container .gate-sub {
-            font-size: 14px; color: var(--text-on-dark-muted); text-align: center;
-            margin-bottom: 28px;
+        .gate-form {
+            display: flex; flex-direction: column; gap: 14px;
+            max-width: 400px; margin: 0 auto; text-align: left;
         }
-        .gate-form { display: flex; flex-direction: column; gap: 16px; }
-        .gate-form label { font-size: 14px; font-weight: 600; color: var(--text-on-dark-secondary); }
+        .gate-form label {
+            font-size: 13px; font-weight: 600; color: var(--text-on-dark-secondary);
+        }
         .gate-form input, .gate-form select {
             width: 100%; padding: 14px 18px;
-            background: var(--dark-bg); border: 1px solid var(--dark-border);
-            border-radius: 10px; color: var(--text-on-dark); font-size: 16px;
+            background: var(--dark-card); border: 1px solid var(--dark-border);
+            border-radius: 10px; color: var(--text-on-dark); font-size: 15px;
             font-family: 'Inter', sans-serif; outline: none;
         }
         .gate-form input:focus, .gate-form select:focus { border-color: var(--lime); }
         .gate-form input::placeholder { color: var(--text-on-dark-muted); }
-        .gate-form select { appearance: none; cursor: pointer; }
-        .gate-form select option { background: var(--dark-bg); color: var(--text-on-dark); }
         .gate-submit {
             background: var(--lime); color: var(--dark-bg); border: none;
-            padding: 16px 32px; border-radius: 10px; cursor: pointer;
-            font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 16px;
-            transition: transform 0.2s, background 0.2s; margin-top: 8px;
-            width: 100%;
+            padding: 16px; border-radius: 10px; cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px;
+            transition: transform 0.2s, background 0.2s;
+            margin-top: 8px;
         }
         .gate-submit:hover { transform: translateY(-1px); background: var(--lime-hover); }
         .gate-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .gate-error {
-            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
-            color: var(--red); padding: 12px 16px; border-radius: 8px;
-            font-size: 13px; display: none; text-align: center;
-        }
-        .gate-error.visible { display: block; }
 
-        /* ===== DETAILED BREAKDOWN ===== */
-        .breakdown-section {
-            display: none;
-            padding: 40px 0 80px;
-        }
-        .breakdown-section.visible { display: block; }
-        .breakdown-container {
-            max-width: 640px; margin: 0 auto;
-        }
-        .breakdown-card {
-            background: var(--dark-card); border: 1px solid var(--dark-border);
+        /* ===== POST-GATE BREAKDOWN ===== */
+        .breakdown-section { display: none; margin-top: 40px; }
+        .breakdown-section.active { display: block; animation: fadeIn 0.6s ease; }
+
+        .dimension-card {
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
             border-radius: 16px; padding: 28px; margin-bottom: 16px;
-            transition: transform 0.3s;
         }
-        .breakdown-card:hover { transform: translateY(-2px); }
-        .breakdown-header {
+        .dimension-card-header {
             display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
-        .breakdown-title { font-size: 16px; font-weight: 700; color: var(--text-on-dark); }
-        .breakdown-score {
+        .dimension-card-name {
+            font-size: 16px; font-weight: 700; color: var(--text-on-dark);
+        }
+        .dimension-card-score {
             font-family: 'JetBrains Mono', monospace; font-weight: 700;
-            font-size: 18px;
+            font-size: 18px; color: var(--lime);
         }
-        .breakdown-answer {
-            font-size: 13px; color: var(--text-on-dark-muted); margin-bottom: 12px;
-            padding: 8px 12px; background: var(--dark-bg); border-radius: 8px;
+        .dimension-detail { margin-bottom: 14px; }
+        .dimension-detail-label {
+            font-size: 11px; font-weight: 600; color: var(--text-on-dark-muted);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
         }
-        .breakdown-answer span { color: var(--text-on-dark-secondary); }
-        .breakdown-recommendation {
-            font-size: 14px; color: var(--text-on-dark-secondary); line-height: 1.6;
+        .dimension-detail-text {
+            font-size: 14px; color: var(--text-on-dark-secondary); line-height: 1.5;
         }
-        .breakdown-recommendation strong { color: var(--lime); font-weight: 600; }
+        .dimension-action {
+            padding: 14px 18px; background: var(--lime-glow); border-radius: 10px;
+            border: 1px solid rgba(213,235,75,0.15);
+        }
+        .dimension-action-label {
+            font-size: 11px; font-weight: 700; color: var(--lime);
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;
+        }
+        .dimension-action-text {
+            font-size: 14px; color: var(--text-on-dark); line-height: 1.5;
+        }
 
-        /* CTA Banner */
-        .cta-banner {
-            max-width: 640px; margin: 40px auto 0;
-            background: var(--dark-card); border: 2px solid var(--lime);
-            border-radius: 20px; padding: 40px; text-align: center;
+        /* ===== CTA CARD ===== */
+        .cta-card {
+            margin-top: 40px; padding: 40px;
+            background: var(--dark-card); border: 2px solid transparent;
+            border-radius: 20px; text-align: center;
             position: relative; overflow: hidden;
         }
-        .cta-banner h3 {
-            font-size: 22px; font-weight: 700; color: var(--text-on-dark); margin-bottom: 12px;
+        .cta-card::before {
+            content: ''; position: absolute; inset: -2px; z-index: 0;
+            border-radius: 22px;
+            background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.2), var(--lime));
+            background-size: 200% 200%;
+            animation: gradientBorder 4s ease infinite;
         }
-        .cta-banner p {
-            font-size: 15px; color: var(--text-on-dark-secondary); margin-bottom: 24px;
+        .cta-card::after {
+            content: ''; position: absolute; inset: 0;
+            background: var(--dark-card); border-radius: 18px;
+            z-index: 0;
         }
-        .cta-banner .cta-btn {
-            display: inline-flex; align-items: center; gap: 10px;
-            background: var(--lime); color: var(--dark-bg); border: none;
-            padding: 16px 36px; font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700; font-size: 17px; border-radius: 12px;
-            cursor: pointer; text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-            box-shadow: 0 4px 30px var(--lime-glow);
+        .cta-card > * { position: relative; z-index: 1; }
+        .cta-card h3 { font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+        .cta-card p {
+            font-size: 14px; color: var(--text-on-dark-secondary);
+            max-width: 480px; margin: 0 auto 24px; line-height: 1.6;
         }
-        .cta-banner .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(213,235,75,0.3); background: var(--lime-hover); }
-        .cta-banner .cta-price {
-            margin-top: 12px; font-size: 13px; color: var(--text-on-dark-muted);
+        .cta-card a {
+            display: inline-block; background: var(--lime); color: var(--dark-bg);
+            padding: 16px 36px; border-radius: 12px;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px;
+            text-decoration: none;
+            transition: transform 0.2s, background 0.2s;
         }
+        .cta-card a:hover { transform: translateY(-2px); background: var(--lime-hover); }
+        .cta-price { font-size: 13px; color: var(--text-on-dark-muted); margin-top: 12px; }
+        .cta-price s { color: var(--text-on-dark-muted); }
+        .cta-price strong { color: var(--lime); }
 
         /* ===== FOOTER ===== */
         .footer {
@@ -531,22 +578,6 @@
         }
         .footer a { color: var(--lime); text-decoration: none; }
 
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            .hero { padding: 120px 0 60px; }
-            .quiz-container, .score-card { padding: 32px 24px; }
-            .gate-container { padding: 28px 20px; }
-            .breakdown-card { padding: 24px 20px; }
-            .cta-banner { padding: 32px 24px; }
-            .nav-cta { padding: 8px 16px; font-size: 13px; }
-            .score-big { font-size: 60px; }
-            .grade-badge { font-size: 24px; }
-        }
-
-        @media (max-width: 480px) {
-            .score-big { font-size: 48px; }
-        }
-
         /* ===== TOAST ===== */
         .toast {
             position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%);
@@ -555,9 +586,31 @@
             z-index: 300; display: none; text-align: center;
             box-shadow: 0 4px 20px rgba(239,68,68,0.3);
         }
-        .toast.visible { display: block; animation: fadeInUp 0.3s ease; max-width: 90vw; }
+        .toast.visible { display: block; animation: toastIn 0.3s ease; max-width: 90vw; }
         .toast.success { background: var(--green); box-shadow: 0 4px 20px rgba(34,197,94,0.3); }
-        @keyframes fadeInUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+        @keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .hero { padding: 120px 0 48px; }
+            .assessment-container { padding: 28px 20px; }
+            .question-text { font-size: 18px; }
+            .progress-label { font-size: 9px; letter-spacing: 0; }
+            .bar-label { width: 90px; min-width: 90px; font-size: 11px; }
+            .score-number { font-size: 56px; }
+            .hero-meta { gap: 16px; }
+            .nav-cta { padding: 8px 16px; font-size: 13px; }
+            .gate-section { padding: 28px 20px; }
+            .cta-card { padding: 28px 20px; }
+            .chart-section { padding: 24px 16px; }
+            .dimension-card { padding: 22px 18px; }
+        }
+        @media (max-width: 480px) {
+            .hero h1 { font-size: 28px; }
+            .hero-meta { flex-direction: column; gap: 8px; }
+            .bar-label { width: 70px; min-width: 70px; font-size: 10px; }
+            .progress-labels { gap: 2px; }
+        }
     </style>
 </head>
 <body>
@@ -573,600 +626,1039 @@
 </nav>
 
 <!-- ===== HERO ===== -->
-<section class="hero" id="hero">
+<section class="hero">
     <div class="hero-bg-effects">
         <div class="gradient-orb orb-1"></div>
         <div class="gradient-orb orb-2"></div>
-        <div class="gradient-orb orb-3"></div>
     </div>
     <div class="container">
         <div class="hero-badge">
             <span class="dot"></span>
-            <span>Free 2-minute audit</span>
+            <span>Free Assessment</span>
         </div>
-        <h1>How Strong Is Your Marketing System?</h1>
-        <p>Score your marketing across 5 critical dimensions. Most Indian businesses score below 50. Where do you stand?</p>
-        <a href="#quiz" class="hero-cta">Take the Free Audit</a>
-        <div class="hero-sub">5 questions. Instant score. No payment required.</div>
+        <h1>How Mature Is Your Marketing Machine?</h1>
+        <p>10 scenario-based questions. 5 dimensions. Discover exactly where your marketing operations break down and what world-class looks like at your scale.</p>
+        <a href="#assessment" class="hero-cta-btn">Start the Assessment</a>
+        <div class="hero-meta">
+            <span><span class="accent">10</span> questions</span>
+            <span><span class="accent">3</span> minutes</span>
+            <span><span class="accent">5</span> dimensions scored</span>
+        </div>
     </div>
 </section>
 
 <div class="section-divider"></div>
 
-<!-- ===== QUIZ SECTION ===== -->
-<section class="quiz-section" id="quiz">
+<!-- ===== ASSESSMENT ===== -->
+<section id="assessment" class="assessment-section">
     <div class="container">
-        <div class="section-label text-center reveal" style="color: var(--lime);">Marketing Audit</div>
-        <h2 class="section-title text-center mx-auto reveal" style="color: var(--text-on-dark);">Rate Your Marketing System</h2>
-        <p class="section-subtitle text-center mx-auto reveal" style="color: var(--text-on-dark-secondary);">5 questions. Be honest. Your score is only useful if it's real.</p>
+        <div class="assessment-container" id="assessmentBox">
 
-        <div class="quiz-container reveal" id="quizBox">
-            <div class="quiz-progress">
-                <div class="quiz-progress-bar active"></div>
-                <div class="quiz-progress-bar"></div>
-                <div class="quiz-progress-bar"></div>
-                <div class="quiz-progress-bar"></div>
-                <div class="quiz-progress-bar"></div>
-            </div>
-
-            <!-- Q1: Attribution -->
-            <div class="quiz-step active" data-step="1">
-                <h3>How do you track which marketing channel drives actual revenue?</h3>
-                <p class="quiz-subtitle">Attribution is the foundation of smart marketing spend.</p>
-                <div class="quiz-options">
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="0">
-                        <span class="radio"></span> We don't track marketing results
-                    </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="5">
-                        <span class="radio"></span> We look at vanity metrics (likes, clicks)
-                    </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="10">
-                        <span class="radio"></span> We track leads per channel but not revenue
-                    </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="15">
-                        <span class="radio"></span> We track leads and revenue per channel
-                    </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="20">
-                        <span class="radio"></span> We have full multi-touch attribution
-                    </div>
+            <!-- Progress Bar -->
+            <div class="progress-wrapper">
+                <div class="progress-labels">
+                    <span class="progress-label active" data-dim="0">Attribution</span>
+                    <span class="progress-label" data-dim="1">Testing</span>
+                    <span class="progress-label" data-dim="2">Creative</span>
+                    <span class="progress-label" data-dim="3">Funnel</span>
+                    <span class="progress-label" data-dim="4">Strategic</span>
+                </div>
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
                 </div>
             </div>
 
-            <!-- Q2: Channel Diversification -->
-            <div class="quiz-step" data-step="2">
-                <h3>How many marketing channels are you actively running?</h3>
-                <p class="quiz-subtitle">Diversification reduces risk and unlocks new audiences.</p>
-                <div class="quiz-options">
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="0">
-                        <span class="radio"></span> None / word of mouth only
+            <!-- Q1: Revenue Traceability -->
+            <div class="question-step active" data-q="0" data-dim="0">
+                <div class="dimension-tag">Dimension 1: Attribution &amp; Revenue Intelligence</div>
+                <div class="question-number">Question 1 of 10</div>
+                <div class="question-text">Your best month last quarter did a record number. Can you break down exactly how much revenue came from each marketing channel, including organic?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">No, I know total revenue but not where it came from</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="5">
-                        <span class="radio"></span> 1 channel
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Roughly, based on which channels were running</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="10">
-                        <span class="radio"></span> 2 channels
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Yes for paid channels, but organic/referral is a black box</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="15">
-                        <span class="radio"></span> 3 to 4 channels
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Yes, I can see paid + organic + referral + direct per month</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="20">
-                        <span class="radio"></span> 5+ channels with budget allocation
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Yes, per channel per campaign per creative, with multi-touch attribution</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
                     </div>
+                </div>
+                <div class="expert-insight" id="insight-0">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">A business doing over 10Cr that can't answer this is making 50L+ in budget decisions based on gut feel. The best operators know revenue per rupee on every channel within 48 hours.</div>
                 </div>
             </div>
 
-            <!-- Q3: CAC Awareness -->
-            <div class="quiz-step" data-step="3">
-                <h3>Do you know your Customer Acquisition Cost?</h3>
-                <p class="quiz-subtitle">If you don't know your CAC, you can't optimize spend.</p>
-                <div class="quiz-options">
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="0">
-                        <span class="radio"></span> What is CAC?
+            <!-- Q2: Speed of Insight -->
+            <div class="question-step" data-q="1" data-dim="0">
+                <div class="dimension-tag">Dimension 1: Attribution &amp; Revenue Intelligence</div>
+                <div class="question-number">Question 2 of 10</div>
+                <div class="question-text">When a campaign starts underperforming, how quickly do you find out?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">When someone mentions it, or at month-end review</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="5">
-                        <span class="radio"></span> I have a rough idea
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Weekly when I check the dashboards</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="10">
-                        <span class="radio"></span> I know overall CAC
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Within 2-3 days from automated reports</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="15">
-                        <span class="radio"></span> I know CAC per channel
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Same day, I have alerts set up</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="20">
-                        <span class="radio"></span> I know CAC per channel and track it monthly
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Real-time. Anomaly detection flags issues within hours with automated adjustments</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
                     </div>
+                </div>
+                <div class="expert-insight" id="insight-1">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">Every day a failing campaign runs undetected, you burn 1/30th of that month's budget. Top operators catch issues in under 4 hours.</div>
                 </div>
             </div>
 
-            <!-- Q4: Creative Testing -->
-            <div class="quiz-step" data-step="4">
-                <h3>How do you test your marketing creatives (ads, content)?</h3>
-                <p class="quiz-subtitle">Systematic testing separates growing brands from stagnant ones.</p>
-                <div class="quiz-options">
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="0">
-                        <span class="radio"></span> We create one ad and run it until it stops working
+            <!-- Q3: Testing Methodology -->
+            <div class="question-step" data-q="2" data-dim="1">
+                <div class="dimension-tag">Dimension 2: Campaign Architecture &amp; Testing</div>
+                <div class="question-number">Question 3 of 10</div>
+                <div class="question-text">When you launch a new campaign, how do you decide what to test?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">We create one ad and see if it works</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="5">
-                        <span class="radio"></span> We occasionally try new creatives
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">We make 2-3 variations and pick the winner</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="10">
-                        <span class="radio"></span> We test 2 to 3 variations per campaign
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">We test headlines and images separately with dedicated budget</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="15">
-                        <span class="radio"></span> We systematically A/B test every campaign
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Structured test: isolate one variable per test with statistical significance targets</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="20">
-                        <span class="radio"></span> We test creatives, copy, audiences, and landing pages continuously
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Continuous testing framework: always-on test cells for hooks, formats, audiences, and LPs with automated budget allocation to winners</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
                     </div>
+                </div>
+                <div class="expert-insight" id="insight-2">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">The difference between "we test things" and "we have a testing framework" is the difference between an 800 rupee CPL and a 350 rupee CPL. Structured testing compounds. Random testing doesn't.</div>
                 </div>
             </div>
 
-            <!-- Q5: Funnel Tracking -->
-            <div class="quiz-step" data-step="5">
-                <h3>Do you track conversion at each stage of your funnel?</h3>
-                <p class="quiz-subtitle">You can't fix what you can't see.</p>
-                <div class="quiz-options">
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="0">
-                        <span class="radio"></span> We don't have a defined funnel
+            <!-- Q4: Budget Allocation -->
+            <div class="question-step" data-q="3" data-dim="1">
+                <div class="dimension-tag">Dimension 2: Campaign Architecture &amp; Testing</div>
+                <div class="question-number">Question 4 of 10</div>
+                <div class="question-text">How do you decide how much to spend on each channel next month?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Same as last month, roughly</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="5">
-                        <span class="radio"></span> We track final sales only
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Based on which channel feels like it's working</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="10">
-                        <span class="radio"></span> We track leads and sales
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Based on last month's channel-level performance data</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="15">
-                        <span class="radio"></span> We track awareness, leads, qualified, and sales
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Dynamic: weekly reallocation based on CPL/ROAS trends with thresholds</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
                     </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="20">
-                        <span class="radio"></span> Full funnel with drop-off analysis and optimization at each stage
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Algorithmic: automated rules shift budget daily, with minimum spend on testing channels</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
                     </div>
+                </div>
+                <div class="expert-insight" id="insight-3">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">Static budgets are the #1 reason mid-size businesses plateau. 5L per month dynamically allocated outperforms 8L per month statically allocated, every time.</div>
+                </div>
+            </div>
+
+            <!-- Q5: Creative Volume -->
+            <div class="question-step" data-q="4" data-dim="2">
+                <div class="dimension-tag">Dimension 3: Creative &amp; Content Machine</div>
+                <div class="question-number">Question 5 of 10</div>
+                <div class="question-text">How many NEW ad creatives (completely new concepts, not resizes) do you produce per month?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">0-1, we run what we have until it stops</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">2-5 new creatives per month</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">6-15, mix of formats</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">16-30, with creative calendar and format rotation</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">30+, with a system: trend monitoring, brief, produce, test, scale, archive, weekly</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="expert-insight" id="insight-4">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">Meta's algorithm needs 3-5 new creatives per ad set per week to avoid fatigue. Running 3 total means your CPMs inflate 15-25% every 2 weeks.</div>
+                </div>
+            </div>
+
+            <!-- Q6: Message-Market Fit -->
+            <div class="question-step" data-q="5" data-dim="2">
+                <div class="dimension-tag">Dimension 3: Creative &amp; Content Machine</div>
+                <div class="question-number">Question 6 of 10</div>
+                <div class="question-text">How do you know if your marketing message resonates?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Our ad gets clicks, so it must be working</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">We check engagement (likes, comments, shares)</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">We track CTR and conversion rate per message angle</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">We test different value propositions (not just words, different ANGLES) and track per-angle conversion + LTV</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Ongoing message testing across audiences, angle performance tracked to revenue, underperformers retired quarterly</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="expert-insight" id="insight-5">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">Most businesses test colours and images. The 10x unlock is testing ANGLES: fear of loss, status, efficiency, or competitive advantage. The right angle can 3x your conversion rate overnight.</div>
+                </div>
+            </div>
+
+            <!-- Q7: Post-Click Experience -->
+            <div class="question-step" data-q="6" data-dim="3">
+                <div class="dimension-tag">Dimension 4: Funnel &amp; Conversion Infrastructure</div>
+                <div class="question-number">Question 7 of 10</div>
+                <div class="question-text">After someone clicks your ad, what happens?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">They land on our homepage</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Dedicated page, but same for all campaigns</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Channel-specific landing pages</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Campaign-specific pages with matching messaging, mobile-optimized, under 3s load</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Dynamic LPs matching ad creative/angle, personalized by segment, A/B tested continuously</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="expert-insight" id="insight-6">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">Sending paid traffic to your homepage is paying 500 rupees for a meeting and not showing up. Every ad rupee is wasted if the landing page doesn't continue the conversation the ad started.</div>
+                </div>
+            </div>
+
+            <!-- Q8: Lead Nurture -->
+            <div class="question-step" data-q="7" data-dim="3">
+                <div class="dimension-tag">Dimension 4: Funnel &amp; Conversion Infrastructure</div>
+                <div class="question-number">Question 8 of 10</div>
+                <div class="question-text">A qualified lead fills your form at 11 PM Saturday. What happens next?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">We see it Monday and call them</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Thank-you email, follow up within 24-48h</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Instant automated email/WhatsApp, team follows up next business day</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Instant multi-channel (email + WhatsApp + SMS), auto-qualification, hot leads flagged for weekend callback</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Instant response under 60 seconds via automation, scored, routed, booked into calendar, nurture sequence by interest</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="expert-insight" id="insight-7">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">Speed-to-lead is the most underrated metric. Responding in 5 minutes vs 30 minutes increases conversion 21x. Most businesses doing 5Cr+ respond in 24-48 hours.</div>
+                </div>
+            </div>
+
+            <!-- Q9: Competitive Intelligence -->
+            <div class="question-step" data-q="8" data-dim="4">
+                <div class="dimension-tag">Dimension 5: Strategic &amp; Competitive Ops</div>
+                <div class="question-number">Question 9 of 10</div>
+                <div class="question-text">What do you know about your competitors' marketing?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">I see their ads sometimes when scrolling</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">I've checked their website and social media</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">I monitor their Meta Ad Library and Google Ads occasionally</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Monthly competitive audit: spend estimates, messaging, campaigns, LPs, content</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Continuous monitoring: automated alerts for competitor launches, spend changes. I know their top ads and testing cadence within days</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="expert-insight" id="insight-8">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">Your competitors' ad library is a free 10L research lab. Every ad running 60+ days is a proven winner. Top operators reverse-engineer competitor wins before competitors know they're being watched.</div>
+                </div>
+            </div>
+
+            <!-- Q10: Scalability -->
+            <div class="question-step" data-q="9" data-dim="4">
+                <div class="dimension-tag">Dimension 5: Strategic &amp; Competitive Ops</div>
+                <div class="question-number">Question 10 of 10</div>
+                <div class="question-text">If you hired a new marketing person tomorrow, how long before they run your marketing independently?</div>
+                <div class="options-list">
+                    <div class="option-btn" data-points="0" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Months. Everything is in my head</div>
+                            <div class="option-points">0 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="3" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">A few weeks, they'd figure it out</div>
+                            <div class="option-points">3 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="5" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">1-2 weeks, some documentation and processes</div>
+                            <div class="option-points">5 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="8" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Under a week. SOPs for every channel, documented strategies, templated reports</div>
+                            <div class="option-points">8 pts</div>
+                        </div>
+                    </div>
+                    <div class="option-btn" data-points="10" onclick="selectOption(this)">
+                        <div class="option-radio"></div>
+                        <div class="option-content">
+                            <div class="option-label">Day one. Playbooks, automated workflows, decision trees, creative brief templates, full ops manual</div>
+                            <div class="option-points">10 pts</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="expert-insight" id="insight-9">
+                    <div class="expert-insight-header">
+                        <div class="expert-icon">Z</div>
+                        <div class="expert-label">Expert Insight</div>
+                    </div>
+                    <div class="expert-text">If your marketing dies when one person leaves, you don't have a marketing system, you have a dependency. Businesses that scale past 50Cr have machines, not people.</div>
                 </div>
             </div>
 
             <!-- Navigation -->
-            <div class="quiz-nav">
-                <button class="quiz-back hidden" onclick="prevStep()">&#8592; Back</button>
-                <button class="quiz-next" id="quiz-next-btn" onclick="nextStep()" disabled>Next &#8594;</button>
+            <div class="quiz-nav" id="quizNav">
+                <button class="btn-back hidden" id="btnBack" onclick="goBack()">Back</button>
+                <button class="btn-next" id="btnNext" onclick="goNext()" disabled>Next</button>
+            </div>
+
+            <!-- ===== RESULTS (initially hidden) ===== -->
+            <div class="results-section" id="resultsSection">
+                <!-- Score Reveal -->
+                <div class="score-reveal">
+                    <div class="score-number" id="scoreNumber">0</div>
+                    <div class="score-total">out of 100</div>
+                    <div class="maturity-badge" id="maturityBadge"></div>
+                    <div class="maturity-desc" id="maturityDesc"></div>
+                    <div class="benchmark-line" id="benchmarkLine"></div>
+                </div>
+
+                <!-- Bar Chart -->
+                <div class="chart-section">
+                    <div class="chart-title">Your Score by Dimension</div>
+                    <div id="barChart"></div>
+                    <div class="chart-legend">
+                        <div class="legend-item"><div class="legend-swatch lime"></div>Your score</div>
+                        <div class="legend-item"><div class="legend-swatch dashed"></div>Industry average</div>
+                    </div>
+                </div>
+
+                <!-- Blind Spot -->
+                <div class="blind-spot-card" id="blindSpotCard">
+                    <div class="blind-spot-tag">Biggest Blind Spot</div>
+                    <div class="blind-spot-title" id="blindSpotTitle"></div>
+                    <div class="blind-spot-text" id="blindSpotText"></div>
+                </div>
+
+                <!-- Gate Form -->
+                <div class="gate-section" id="gateSection">
+                    <h3>Get Your Level-Up Roadmap</h3>
+                    <p class="gate-sub">See exactly what world-class looks like for each dimension, plus the specific actions to get there.</p>
+                    <form class="gate-form" id="gateForm" onsubmit="submitGate(event)">
+                        <div>
+                            <label for="gateName">Name *</label>
+                            <input type="text" id="gateName" placeholder="Your name" required>
+                        </div>
+                        <div>
+                            <label for="gateEmail">Email *</label>
+                            <input type="email" id="gateEmail" placeholder="you@company.com" required>
+                        </div>
+                        <div>
+                            <label for="gatePhone">Phone (optional)</label>
+                            <input type="tel" id="gatePhone" placeholder="+91 98765 43210">
+                        </div>
+                        <div>
+                            <label for="gateIndustry">Industry *</label>
+                            <select id="gateIndustry" required>
+                                <option value="">Select your industry</option>
+                                <option value="Healthcare/Pharma">Healthcare / Pharma</option>
+                                <option value="Real Estate/Construction">Real Estate / Construction</option>
+                                <option value="D2C/E-commerce">D2C / E-commerce</option>
+                                <option value="Education/EdTech">Education / EdTech</option>
+                                <option value="SaaS/Tech">SaaS / Tech</option>
+                                <option value="Manufacturing">Manufacturing</option>
+                                <option value="Hospitality/F&B">Hospitality / F&B</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="gate-submit" id="gateSubmitBtn">Unlock My Roadmap</button>
+                    </form>
+                </div>
+
+                <!-- Post-Gate Breakdown (hidden until form) -->
+                <div class="breakdown-section" id="breakdownSection">
+                    <div id="dimensionCards"></div>
+
+                    <!-- CTA -->
+                    <div class="cta-card">
+                        <h3>This Used Self-Reported Answers</h3>
+                        <p>The &#8377;999 Growth Blueprint audits your actual ad accounts, analytics, and CRM to find the exact numbers, not estimates. It includes channel-level attribution, competitor intelligence, and a 90-day scaling roadmap.</p>
+                        <a href="https://zippyscale.in/#quiz">Get Your Growth Blueprint</a>
+                        <div class="cta-price"><s>&#8377;15,000</s> &nbsp; <strong>&#8377;999 only</strong></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ===== INSTANT RESULTS ===== -->
-<div class="results-section" id="resultsSection">
-    <div class="container">
-        <div class="score-card" id="scoreCard">
-            <div class="section-label" style="margin-bottom: 24px;">Your Marketing Score</div>
-            <div class="score-big"><span id="scoreCounter">0</span><span class="score-suffix">/100</span></div>
-            <div id="gradeBadge" class="grade-badge grade-C">C</div>
-            <div class="grade-label" id="gradeLabel">Average, significant upside</div>
-            <div class="benchmark" id="benchmarkText">
-                <span class="dot" style="width:6px;height:6px;background:var(--lime);border-radius:50;"></span>
-                You scored higher than 50% of businesses
-            </div>
-            <div class="dimension-bars" id="dimensionBars"></div>
-        </div>
-    </div>
-</div>
-
-<!-- ===== GATE FORM ===== -->
-<div class="gate-section" id="gateSection">
-    <div class="container">
-        <div class="gate-container">
-            <h3>Get Your Improvement Roadmap</h3>
-            <p class="gate-sub">See exactly what to fix first, with personalized recommendations for each dimension.</p>
-            <div class="gate-form" id="gateForm">
-                <div>
-                    <label>Name</label>
-                    <input type="text" id="gate-name" placeholder="Full name" required>
-                </div>
-                <div>
-                    <label>Email</label>
-                    <input type="email" id="gate-email" placeholder="you@company.com" required>
-                </div>
-                <div>
-                    <label>Phone (optional)</label>
-                    <input type="tel" id="gate-phone" placeholder="+91 98765 43210">
-                </div>
-                <div>
-                    <label>Industry</label>
-                    <select id="gate-industry">
-                        <option value="" disabled selected>Select your industry</option>
-                        <option value="Healthcare/Pharma">Healthcare / Pharma</option>
-                        <option value="Real Estate/Construction">Real Estate / Construction</option>
-                        <option value="D2C/E-commerce">D2C / E-commerce</option>
-                        <option value="Education/EdTech">Education / EdTech</option>
-                        <option value="SaaS/Tech">SaaS / Tech</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="gate-error" id="gateError">Please fill name, email, and industry.</div>
-                <button class="gate-submit" id="gateSubmit" onclick="submitGateForm()">Unlock My Roadmap</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ===== DETAILED BREAKDOWN (hidden until form) ===== -->
-<div class="breakdown-section" id="breakdownSection">
-    <div class="container">
-        <div class="section-label text-center" style="color: var(--lime); margin-bottom: 16px;">Detailed Breakdown</div>
-        <h2 class="section-title text-center mx-auto" style="color: var(--text-on-dark); margin-bottom: 40px;">Your Personalized Improvement Roadmap</h2>
-        <div class="breakdown-container" id="breakdownCards"></div>
-
-        <!-- CTA Banner -->
-        <div class="cta-banner" id="ctaBanner">
-            <h3 id="ctaTitle">Your score is 45/100. Get a data-backed plan to fix it.</h3>
-            <p>Our growth blueprint identifies your highest-ROI channel and gives you a 90-day plan to scale it.</p>
-            <a href="https://zippyscale.in/#quiz" class="cta-btn">Get Your Growth Blueprint &#8594;</a>
-            <div class="cta-price">&#8377;999 &middot; 7-day money-back guarantee</div>
-        </div>
-    </div>
-</div>
-
-<div class="section-divider"></div>
-
 <!-- ===== FOOTER ===== -->
 <footer class="footer">
     <div class="container">
-        <p>&copy; 2026 ZippyScale &middot; <a href="https://zippyscale.in">zippyscale.in</a> &middot; <a href="mailto:hello@zippyscale.in">hello@zippyscale.in</a></p>
+        &copy; 2026 ZippyScale. All rights reserved. &nbsp;|&nbsp; <a href="https://zippyscale.in">Home</a> &nbsp;|&nbsp; <a href="https://zippyscale.in/calculator.html">Revenue Leak Calculator</a>
     </div>
 </footer>
 
-<!-- ===== TOAST ===== -->
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- ===== QUIZ + RESULTS JS ===== -->
 <script>
 (function() {
-    var currentStep = 1;
-    var totalSteps = 5;
-    var answers = {};
+    'use strict';
 
-    var dimensionNames = {
-        1: 'Attribution Tracking',
-        2: 'Channel Diversification',
-        3: 'CAC Awareness',
-        4: 'Creative Testing',
-        5: 'Funnel Tracking'
-    };
+    // ===== STATE =====
+    const TOTAL_QUESTIONS = 10;
+    const answers = new Array(TOTAL_QUESTIONS).fill(null); // stores {points, label}
+    let currentQ = 0;
 
-    var dimensionKeys = {
-        1: 'score_attribution',
-        2: 'score_diversification',
-        3: 'score_cac',
-        4: 'score_creative',
-        5: 'score_funnel'
-    };
+    const DIMENSIONS = [
+        { name: 'Attribution & Revenue Intelligence', questions: [0, 1], max: 20 },
+        { name: 'Campaign Architecture & Testing', questions: [2, 3], max: 20 },
+        { name: 'Creative & Content Machine', questions: [4, 5], max: 20 },
+        { name: 'Funnel & Conversion Infrastructure', questions: [6, 7], max: 20 },
+        { name: 'Strategic & Competitive Ops', questions: [8, 9], max: 20 }
+    ];
 
-    var insights = {
-        1: {
-            0: 'You have zero attribution. Every rupee you spend is a guess.',
-            5: 'Vanity metrics tell you nothing about revenue. Time to fix this.',
-            10: 'Tracking leads is good, but without revenue mapping you are still guessing.',
-            15: 'Strong foundation. Multi-touch would take you to the next level.',
-            20: 'Your attribution is excellent. You know exactly what drives revenue.'
-        },
-        2: {
-            0: 'No active channels means you are completely dependent on word of mouth.',
-            5: 'One channel is a single point of failure. If it breaks, revenue stops.',
-            10: 'Two channels is a start. Diversifying further will reduce risk.',
-            15: 'Good diversification. Budget allocation across channels is the next step.',
-            20: 'Strong multi-channel setup with proper budget allocation.'
-        },
-        3: {
-            0: 'Not knowing CAC means you cannot optimize spend. Start measuring today.',
-            5: 'A rough idea is not enough. You need hard numbers to make decisions.',
-            10: 'Overall CAC is useful, but channel-level CAC unlocks real optimization.',
-            15: 'Channel-level CAC is powerful. Monthly tracking will reveal trends.',
-            20: 'You have excellent CAC visibility. Use it to double down on winners.'
-        },
-        4: {
-            0: 'Running one ad until it dies guarantees creative fatigue and rising costs.',
-            5: 'Occasional testing is better than nothing, but inconsistency wastes budget.',
-            10: 'Testing 2 to 3 variations is decent. Systematic testing will multiply results.',
-            15: 'A/B testing every campaign is strong discipline. Keep scaling this process.',
-            20: 'Continuous multi-variable testing is elite. You are in the top 5%.'
-        },
-        5: {
-            0: 'Without a defined funnel, you cannot identify where leads drop off.',
-            5: 'Tracking only final sales means you are blind to 90% of the journey.',
-            10: 'Leads and sales tracking is basic but functional. Add stages in between.',
-            15: 'Multi-stage tracking is strong. Add drop-off analysis for full visibility.',
-            20: 'Full funnel optimization is rare and powerful. You are ahead of almost everyone.'
-        }
-    };
+    const DIM_SHORT = ['Attribution', 'Testing', 'Creative', 'Funnel', 'Strategic'];
 
-    var recommendations = {
-        1: {
-            low: '<strong>Quick win:</strong> Set up UTM parameters on every campaign link and connect Google Analytics to your CRM. This alone will show which channels bring real customers.',
-            mid: '<strong>Next step:</strong> Map revenue back to each channel using CRM data. Create a simple spreadsheet tracking channel, leads, conversions, and revenue monthly.',
-            high: '<strong>Keep going:</strong> Consider tools like Segment or a CDP to automate multi-touch attribution across your full customer journey.'
-        },
-        2: {
-            low: '<strong>Quick win:</strong> Pick ONE paid channel (Meta or Google) based on where your customers spend time. Start with a small test budget to learn.',
-            mid: '<strong>Next step:</strong> Add a second channel. If you are on Meta, test Google Search. Allocate 70% to your proven channel, 30% to the new one.',
-            high: '<strong>Keep going:</strong> Optimize budget allocation quarterly based on channel-level CAC and ROAS. Cut underperformers fast.'
-        },
-        3: {
-            low: '<strong>Quick win:</strong> Calculate your CAC right now: total marketing spend last month divided by new customers acquired. That one number changes everything.',
-            mid: '<strong>Next step:</strong> Break CAC down by channel. You will likely find one channel is 3x more efficient than others.',
-            high: '<strong>Keep going:</strong> Build a CAC dashboard that updates monthly. Set alerts when CAC rises above your target threshold.'
-        },
-        4: {
-            low: '<strong>Quick win:</strong> For your next campaign, create 3 variations of your ad (different headline, image, or CTA). Run them simultaneously and kill the losers after 7 days.',
-            mid: '<strong>Next step:</strong> Create a testing calendar. Every 2 weeks, test one variable: headline, image, audience, or landing page.',
-            high: '<strong>Keep going:</strong> Automate creative testing with dynamic creative optimization (DCO) and build a swipe file of winning angles.'
-        },
-        5: {
-            low: '<strong>Quick win:</strong> Define your funnel stages: Awareness, Interest, Lead, Qualified Lead, Sale. Start tracking numbers at each stage.',
-            mid: '<strong>Next step:</strong> Calculate conversion rates between each stage. The biggest drop-off is your biggest opportunity.',
-            high: '<strong>Keep going:</strong> A/B test at each funnel stage. Even a 10% improvement at one stage compounds across the entire funnel.'
-        }
-    };
+    const LEVELS = [
+        { name: 'Spray & Pray', min: 0, max: 20, desc: 'Spending money, hoping it works. Decisions are gut-based and budget allocation is static.', cls: 'level-1', scoreCls: 'score-color-1', pct: 12 },
+        { name: 'Basic Tracking', min: 21, max: 40, desc: 'Some data exists, but decisions are reactive. You know something is off but can\'t pinpoint what.', cls: 'level-2', scoreCls: 'score-color-2', pct: 31 },
+        { name: 'Structured Growth', min: 41, max: 60, desc: 'Systems are in place but there is significant room to optimize. You have process but not precision.', cls: 'level-3', scoreCls: 'score-color-3', pct: 54 },
+        { name: 'Data-Driven', min: 61, max: 80, desc: 'Attribution works and you\'re scaling intelligently. Most decisions are data-backed.', cls: 'level-4', scoreCls: 'score-color-4', pct: 78 },
+        { name: 'Growth Machine', min: 81, max: 100, desc: 'Full-stack marketing ops with predictable revenue. Your marketing runs like a machine.', cls: 'level-5', scoreCls: 'score-color-5', pct: 94 }
+    ];
 
+    // Industry average scores per dimension (out of 20)
+    const INDUSTRY_AVG = [8, 7, 6, 7, 5];
+
+    // World-class descriptions per dimension
+    const WORLD_CLASS = [
+        'Multi-touch attribution across all channels. Revenue per rupee visible within 48 hours. Anomaly detection catches underperformance in under 4 hours with automated alerts.',
+        'Continuous testing framework with always-on test cells. Budget shifts dynamically based on real-time CPL/ROAS data with automated rules and minimum test allocations.',
+        '30+ new creative concepts monthly with a full pipeline: trend monitoring to brief to production to testing to scaling. Message angles tested to revenue, not just clicks.',
+        'Dynamic landing pages matching every ad angle, personalized by segment. Leads get instant multi-channel response under 60 seconds, scored, routed, and nurtured automatically.',
+        'Automated competitive monitoring with alerts. Full marketing ops manual so any new hire is productive on day one. Playbooks, workflows, and decision trees for every scenario.'
+    ];
+
+    // Action recommendations per dimension
+    const ACTIONS = [
+        'Set up UTM tracking across all channels and connect your CRM to a dashboard (Looker Studio or similar). Then implement daily automated performance alerts with thresholds for spend, CPL, and ROAS.',
+        'Start with isolated A/B tests: one variable at a time with a minimum 7-day run and statistical significance check. Reallocate budget weekly based on results, not monthly.',
+        'Create a creative calendar with a minimum of 6 new concepts per month across formats (static, video, carousel). Test message angles, not just visuals. Retire underperformers every 2 weeks.',
+        'Build campaign-specific landing pages that mirror ad messaging. Implement instant automated follow-up (email + WhatsApp) within 60 seconds of form submission. Add lead scoring.',
+        'Run a monthly competitive audit using Meta Ad Library and Google Ads Transparency Center. Document your marketing SOPs so anyone can execute your playbook within a week.'
+    ];
+
+    // Blind spot consequences
+    const BLIND_SPOT_CONSEQUENCES = [
+        'You are making budget decisions worth lakhs based on gut feel. Without attribution, every rupee could be going to waste and you would never know.',
+        'Without structured testing, you are leaving 40-60% of potential performance on the table. Your CPL is likely 2x what it should be.',
+        'Creative fatigue is silently inflating your ad costs by 15-25% every two weeks. Your audience has seen the same ads so many times they scroll right past.',
+        'Every lead that waits more than 5 minutes for a response is 21x less likely to convert. Your funnel is a leaky bucket with no bottom.',
+        'Your competitors are studying your ads while you are ignoring theirs. And if your marketing depends on one person, you are one resignation away from starting over.'
+    ];
+
+    // ===== DOM REFS =====
+    const steps = document.querySelectorAll('.question-step');
+    const progressFill = document.getElementById('progressFill');
+    const progressLabels = document.querySelectorAll('.progress-label');
+    const btnBack = document.getElementById('btnBack');
+    const btnNext = document.getElementById('btnNext');
+    const quizNav = document.getElementById('quizNav');
+    const resultsSection = document.getElementById('resultsSection');
+
+    // ===== OPTION SELECTION =====
     window.selectOption = function(el) {
-        var step = el.closest('.quiz-step');
-        step.querySelectorAll('.quiz-option').forEach(function(opt) { opt.classList.remove('selected'); });
+        const step = el.closest('.question-step');
+        const qIdx = parseInt(step.dataset.q);
+
+        // Deselect siblings
+        step.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
         el.classList.add('selected');
-        answers[currentStep] = parseInt(el.getAttribute('data-value'));
-        document.getElementById('quiz-next-btn').disabled = false;
-    };
 
-    window.nextStep = function() {
-        if (answers[currentStep] === undefined) return;
+        const pts = parseInt(el.dataset.points);
+        const label = el.querySelector('.option-label').textContent;
+        answers[qIdx] = { points: pts, label: label };
 
-        if (currentStep === totalSteps) {
-            showResults();
-            return;
+        // Enable next
+        btnNext.disabled = false;
+
+        // Show expert insight
+        const insight = document.getElementById('insight-' + qIdx);
+        if (insight) {
+            setTimeout(() => insight.classList.add('visible'), 200);
         }
-
-        currentStep++;
-        updateQuizUI();
     };
 
-    window.prevStep = function() {
-        if (currentStep <= 1) return;
-        currentStep--;
-        updateQuizUI();
-    };
+    // ===== NAVIGATION =====
+    function showQuestion(idx) {
+        steps.forEach(s => s.classList.remove('active'));
+        steps[idx].classList.add('active');
+        currentQ = idx;
 
-    function updateQuizUI() {
-        // Update progress bars
-        var bars = document.querySelectorAll('.quiz-progress-bar');
-        bars.forEach(function(bar, i) {
-            bar.classList.toggle('active', i < currentStep);
-        });
+        // Progress
+        const pct = ((idx) / TOTAL_QUESTIONS) * 100;
+        progressFill.style.width = pct + '%';
 
-        // Update steps
-        document.querySelectorAll('.quiz-step').forEach(function(step) {
-            step.classList.remove('active');
+        // Dimension labels
+        const dimIdx = getDimensionForQ(idx);
+        progressLabels.forEach((lbl, i) => {
+            lbl.classList.remove('active', 'completed');
+            if (i < dimIdx) lbl.classList.add('completed');
+            if (i === dimIdx) lbl.classList.add('active');
         });
-        document.querySelector('.quiz-step[data-step="' + currentStep + '"]').classList.add('active');
 
         // Back button
-        var backBtn = document.querySelector('.quiz-back');
-        backBtn.classList.toggle('hidden', currentStep === 1);
+        btnBack.classList.toggle('hidden', idx === 0);
 
-        // Next button
-        var nextBtn = document.getElementById('quiz-next-btn');
-        nextBtn.disabled = answers[currentStep] === undefined;
-        nextBtn.textContent = currentStep === totalSteps ? 'See My Score' : 'Next \u2192';
+        // Next button text
+        btnNext.textContent = idx === TOTAL_QUESTIONS - 1 ? 'See My Results' : 'Next';
+
+        // Enable/disable next based on answer
+        btnNext.disabled = !answers[idx];
     }
 
-    function showResults() {
-        // Hide quiz
-        document.getElementById('quizBox').style.display = 'none';
-        document.querySelector('.quiz-section .section-label').style.display = 'none';
-        document.querySelector('.quiz-section .section-title').style.display = 'none';
-        document.querySelector('.quiz-section .section-subtitle').style.display = 'none';
-
-        var totalScore = 0;
-        for (var k in answers) totalScore += answers[k];
-
-        var grade, gradeClass, gradeLabel, benchPct;
-        if (totalScore >= 90) {
-            grade = 'A'; gradeClass = 'grade-A'; gradeLabel = 'Top 5% of Indian businesses'; benchPct = 95;
-        } else if (totalScore >= 70) {
-            grade = 'B'; gradeClass = 'grade-B'; gradeLabel = 'Ahead of most, room to optimize'; benchPct = 75;
-        } else if (totalScore >= 50) {
-            grade = 'C'; gradeClass = 'grade-C'; gradeLabel = 'Average, significant upside'; benchPct = 50;
-        } else if (totalScore >= 30) {
-            grade = 'D'; gradeClass = 'grade-D'; gradeLabel = 'Below average, leaving money on the table'; benchPct = 25;
-        } else {
-            grade = 'F'; gradeClass = 'grade-F'; gradeLabel = 'Marketing blind spot, urgent fix needed'; benchPct = 10;
+    function getDimensionForQ(qIdx) {
+        for (let i = 0; i < DIMENSIONS.length; i++) {
+            if (DIMENSIONS[i].questions.includes(qIdx)) return i;
         }
+        return 0;
+    }
 
-        // Show results section
-        var resultsEl = document.getElementById('resultsSection');
-        resultsEl.classList.add('visible');
+    window.goNext = function() {
+        if (!answers[currentQ]) return;
+        if (currentQ < TOTAL_QUESTIONS - 1) {
+            showQuestion(currentQ + 1);
+            document.getElementById('assessmentBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            showResults();
+        }
+    };
+
+    window.goBack = function() {
+        if (currentQ > 0) {
+            showQuestion(currentQ - 1);
+        }
+    };
+
+    // ===== SCORING =====
+    function calcScores() {
+        const dimScores = DIMENSIONS.map(dim => {
+            return dim.questions.reduce((sum, qi) => sum + (answers[qi] ? answers[qi].points : 0), 0);
+        });
+        const total = dimScores.reduce((a, b) => a + b, 0);
+        return { dimScores, total };
+    }
+
+    function getLevel(total) {
+        for (let i = LEVELS.length - 1; i >= 0; i--) {
+            if (total >= LEVELS[i].min) return { ...LEVELS[i], idx: i + 1 };
+        }
+        return { ...LEVELS[0], idx: 1 };
+    }
+
+    // ===== RESULTS =====
+    function showResults() {
+        // Hide quiz UI
+        steps.forEach(s => s.classList.remove('active'));
+        quizNav.style.display = 'none';
+        document.querySelector('.progress-wrapper').style.display = 'none';
+
+        // Show results
+        resultsSection.classList.add('active');
+
+        const { dimScores, total } = calcScores();
+        const level = getLevel(total);
 
         // Animate score counter
-        var counterEl = document.getElementById('scoreCounter');
-        animateCounter(counterEl, 0, totalScore, 1200);
+        const scoreEl = document.getElementById('scoreNumber');
+        animateCounter(scoreEl, total, 2000, level.scoreCls);
 
-        // Set grade
-        var badgeEl = document.getElementById('gradeBadge');
-        badgeEl.textContent = grade;
-        badgeEl.className = 'grade-badge ' + gradeClass;
-        document.getElementById('gradeLabel').textContent = gradeLabel;
-        document.getElementById('benchmarkText').innerHTML =
-            '<span style="width:6px;height:6px;background:var(--lime);border-radius:50%;display:inline-block;"></span> You scored higher than ' + benchPct + '% of businesses in your industry';
+        // Maturity badge
+        const badge = document.getElementById('maturityBadge');
+        badge.textContent = 'Level ' + level.idx + ': ' + level.name;
+        badge.className = 'maturity-badge ' + level.cls;
 
-        // Build dimension bars
-        var barsHTML = '';
-        for (var q = 1; q <= 5; q++) {
-            var score = answers[q] || 0;
-            var pct = (score / 20) * 100;
-            var barClass = pct >= 75 ? 'bar-high' : pct >= 50 ? 'bar-mid' : pct >= 25 ? 'bar-low' : 'bar-critical';
-            var insight = insights[q][score] || '';
-            barsHTML += '<div class="dimension-row">' +
-                '<div class="dimension-label"><span class="dim-name">' + dimensionNames[q] + '</span><span class="dim-score">' + score + '/20</span></div>' +
-                '<div class="dimension-bar-track"><div class="dimension-bar-fill ' + barClass + '" data-width="' + pct + '"></div></div>' +
-                '<div class="dimension-insight">' + insight + '</div>' +
-                '</div>';
-        }
-        document.getElementById('dimensionBars').innerHTML = barsHTML;
+        // Description
+        document.getElementById('maturityDesc').textContent = level.desc;
 
-        // Animate bars after a short delay
-        setTimeout(function() {
-            document.querySelectorAll('.dimension-bar-fill').forEach(function(bar) {
-                bar.style.width = bar.getAttribute('data-width') + '%';
-            });
-        }, 300);
+        // Benchmark
+        document.getElementById('benchmarkLine').textContent =
+            'You scored higher than ' + level.pct + '% of businesses assessed.';
 
-        // Show gate section
-        document.getElementById('gateSection').classList.add('visible');
+        // Bar chart
+        buildBarChart(dimScores);
+
+        // Blind spot
+        buildBlindSpot(dimScores);
 
         // Scroll to results
-        setTimeout(function() {
-            resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-
-        // Store scores for form submission
-        window._auditData = {
-            totalScore: totalScore,
-            grade: grade,
-            scores: answers
-        };
+        setTimeout(() => {
+            resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
     }
 
-    function animateCounter(el, start, end, duration) {
-        var startTime = null;
-        function step(timestamp) {
-            if (!startTime) startTime = timestamp;
-            var progress = Math.min((timestamp - startTime) / duration, 1);
-            var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-            var current = Math.round(start + (end - start) * eased);
+    function animateCounter(el, target, duration, colorClass) {
+        const start = performance.now();
+        el.classList.add(colorClass);
+        function tick(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease-out quad
+            const eased = 1 - (1 - progress) * (1 - progress);
+            const current = Math.round(eased * target);
             el.textContent = current;
             if (progress < 1) {
-                requestAnimationFrame(step);
+                requestAnimationFrame(tick);
             }
         }
-        requestAnimationFrame(step);
+        requestAnimationFrame(tick);
     }
 
-    window.submitGateForm = function() {
-        var name = document.getElementById('gate-name').value.trim();
-        var email = document.getElementById('gate-email').value.trim();
-        var phone = document.getElementById('gate-phone').value.trim();
-        var industry = document.getElementById('gate-industry').value;
-        var errorEl = document.getElementById('gateError');
+    function buildBarChart(dimScores) {
+        const container = document.getElementById('barChart');
+        container.innerHTML = '';
+        dimScores.forEach((score, i) => {
+            const pctUser = (score / 20) * 100;
+            const pctAvg = (INDUSTRY_AVG[i] / 20) * 100;
+            const row = document.createElement('div');
+            row.className = 'bar-row';
+            row.innerHTML = `
+                <div class="bar-label">${DIM_SHORT[i]}</div>
+                <div class="bar-track">
+                    <div class="bar-fill user" style="width: 0%"></div>
+                    <div class="bar-fill avg" style="width: ${pctAvg}%"></div>
+                </div>
+                <div class="bar-score">${score}/20</div>
+            `;
+            container.appendChild(row);
+            // Animate bar fill
+            setTimeout(() => {
+                row.querySelector('.bar-fill.user').style.width = pctUser + '%';
+            }, 400 + i * 150);
+        });
+    }
 
-        if (!name || !email || !industry) {
-            errorEl.classList.add('visible');
-            return;
-        }
-        errorEl.classList.remove('visible');
+    function buildBlindSpot(dimScores) {
+        let minIdx = 0;
+        let minScore = dimScores[0];
+        dimScores.forEach((s, i) => {
+            if (s < minScore) { minScore = s; minIdx = i; }
+        });
+        document.getElementById('blindSpotTitle').textContent =
+            DIMENSIONS[minIdx].name + ' (' + minScore + '/20)';
+        document.getElementById('blindSpotText').textContent =
+            BLIND_SPOT_CONSEQUENCES[minIdx];
+    }
 
-        var btn = document.getElementById('gateSubmit');
+    // ===== GATE FORM =====
+    window.submitGate = function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('gateSubmitBtn');
         btn.disabled = true;
         btn.textContent = 'Submitting...';
 
-        var data = window._auditData;
-        var payload = {
-            name: name,
-            email: email,
-            phone: phone || '',
-            industry: industry,
-            source: 'lead-magnet-audit',
-            audit_score: data.totalScore,
-            audit_grade: data.grade,
-            score_attribution: data.scores[1] || 0,
-            score_diversification: data.scores[2] || 0,
-            score_cac: data.scores[3] || 0,
-            score_creative: data.scores[4] || 0,
-            score_funnel: data.scores[5] || 0
-        };
+        const { dimScores, total } = calcScores();
+        const level = getLevel(total);
 
-        // Append UTM params
-        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(key) {
-            var val = sessionStorage.getItem(key);
-            if (val) payload[key] = val;
-        });
+        // Build payload
+        const payload = {
+            source: 'lead-magnet-audit',
+            name: document.getElementById('gateName').value,
+            email: document.getElementById('gateEmail').value,
+            phone: document.getElementById('gatePhone').value || '',
+            industry: document.getElementById('gateIndustry').value,
+            totalScore: total,
+            maturityLevel: level.idx,
+            maturityName: level.name,
+            dimScores: {
+                attribution: dimScores[0],
+                testing: dimScores[1],
+                creative: dimScores[2],
+                funnel: dimScores[3],
+                strategic: dimScores[4]
+            },
+            answers: answers.map((a, i) => ({
+                question: i + 1,
+                points: a ? a.points : 0,
+                answer: a ? a.label : ''
+            })),
+            utm_source: sessionStorage.getItem('utm_source') || '',
+            utm_medium: sessionStorage.getItem('utm_medium') || '',
+            utm_campaign: sessionStorage.getItem('utm_campaign') || '',
+            utm_content: sessionStorage.getItem('utm_content') || '',
+            utm_term: sessionStorage.getItem('utm_term') || ''
+        };
 
         fetch('https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-        .then(function(res) {
-            if (!res.ok) throw new Error('Network error');
-            showBreakdown(data);
-            showToast('Roadmap unlocked! Check your email.', true);
+        .then(r => {
+            if (!r.ok) throw new Error('Network error');
+            showBreakdown(dimScores);
+            showToast('Roadmap unlocked!', 'success');
         })
-        .catch(function() {
-            // Show breakdown anyway (don't block user)
-            showBreakdown(data);
-            showToast('Roadmap unlocked!', true);
+        .catch(err => {
+            console.error(err);
+            // Show breakdown anyway (don't block on webhook failure)
+            showBreakdown(dimScores);
+            // Save to localStorage as fallback
+            try {
+                const saved = JSON.parse(localStorage.getItem('zs_audit_submissions') || '[]');
+                saved.push({ ...payload, timestamp: new Date().toISOString() });
+                localStorage.setItem('zs_audit_submissions', JSON.stringify(saved));
+            } catch(e) {}
+            showToast('Roadmap unlocked! (We\'ll sync your data shortly)', 'success');
         });
     };
 
-    function showBreakdown(data) {
+    function showBreakdown(dimScores) {
         // Hide gate
         document.getElementById('gateSection').style.display = 'none';
 
-        // Build breakdown cards
-        var cardsHTML = '';
-        for (var q = 1; q <= 5; q++) {
-            var score = data.scores[q] || 0;
-            var pct = (score / 20) * 100;
-            var scoreColor = pct >= 75 ? 'var(--green)' : pct >= 50 ? 'var(--lime)' : pct >= 25 ? 'var(--orange)' : 'var(--red)';
-            var recLevel = pct >= 75 ? 'high' : pct >= 25 ? 'mid' : 'low';
-            var insight = insights[q][score] || '';
-
-            // Find selected answer text
-            var stepEl = document.querySelector('.quiz-step[data-step="' + q + '"]');
-            var selectedOpt = stepEl ? stepEl.querySelector('.quiz-option[data-value="' + score + '"]') : null;
-            var answerText = selectedOpt ? selectedOpt.textContent.trim() : '';
-
-            cardsHTML += '<div class="breakdown-card">' +
-                '<div class="breakdown-header">' +
-                '<span class="breakdown-title">' + dimensionNames[q] + '</span>' +
-                '<span class="breakdown-score" style="color:' + scoreColor + '">' + score + '/20</span>' +
-                '</div>' +
-                '<div class="breakdown-answer">Your answer: <span>' + answerText + '</span></div>' +
-                '<div class="breakdown-recommendation">' +
-                '<p style="margin-bottom:8px;color:var(--text-on-dark-muted);font-size:13px;">' + insight + '</p>' +
-                '<p>' + recommendations[q][recLevel] + '</p>' +
-                '</div>' +
-                '</div>';
-        }
-
-        document.getElementById('breakdownCards').innerHTML = cardsHTML;
-        document.getElementById('ctaTitle').textContent = 'Your score is ' + data.totalScore + '/100. Get a data-backed plan to fix it.';
+        // Build dimension cards
+        const container = document.getElementById('dimensionCards');
+        container.innerHTML = '';
+        DIMENSIONS.forEach((dim, i) => {
+            const q1 = answers[dim.questions[0]];
+            const q2 = answers[dim.questions[1]];
+            const card = document.createElement('div');
+            card.className = 'dimension-card';
+            card.innerHTML = `
+                <div class="dimension-card-header">
+                    <div class="dimension-card-name">${dim.name}</div>
+                    <div class="dimension-card-score">${dimScores[i]}/20</div>
+                </div>
+                <div class="dimension-detail">
+                    <div class="dimension-detail-label">Your Answers</div>
+                    <div class="dimension-detail-text">
+                        Q${dim.questions[0]+1}: ${q1 ? q1.label : 'Not answered'} (${q1 ? q1.points : 0} pts)<br>
+                        Q${dim.questions[1]+1}: ${q2 ? q2.label : 'Not answered'} (${q2 ? q2.points : 0} pts)
+                    </div>
+                </div>
+                <div class="dimension-detail">
+                    <div class="dimension-detail-label">What World-Class Looks Like</div>
+                    <div class="dimension-detail-text">${WORLD_CLASS[i]}</div>
+                </div>
+                <div class="dimension-action">
+                    <div class="dimension-action-label">Your Next Move</div>
+                    <div class="dimension-action-text">${ACTIONS[i]}</div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
 
         // Show breakdown
-        var breakdownEl = document.getElementById('breakdownSection');
-        breakdownEl.classList.add('visible');
+        document.getElementById('breakdownSection').classList.add('active');
 
-        setTimeout(function() {
-            breakdownEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        // Scroll to breakdown
+        setTimeout(() => {
+            document.getElementById('breakdownSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
     }
 
-    function showToast(msg, success) {
-        var toast = document.getElementById('toast');
+    // ===== TOAST =====
+    function showToast(msg, type) {
+        const toast = document.getElementById('toast');
         toast.textContent = msg;
-        toast.className = 'toast visible' + (success ? ' success' : '');
-        setTimeout(function() { toast.className = 'toast'; }, 4000);
+        toast.className = 'toast visible' + (type === 'success' ? ' success' : '');
+        setTimeout(() => { toast.className = 'toast'; }, 4000);
     }
 
-    // Scroll reveal
-    var revealObserver = new IntersectionObserver(function(entries) {
-        entries.forEach(function(entry) {
+    // ===== SCROLL REVEAL =====
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('visible');
+                revealObserver.unobserve(entry.target);
             }
         });
     }, { threshold: 0.1 });
 
-    document.querySelectorAll('.reveal').forEach(function(el) {
-        revealObserver.observe(el);
+    document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+    // ===== SMOOTH SCROLL TO ASSESSMENT =====
+    document.querySelector('.hero-cta-btn').addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('assessment').scrollIntoView({ behavior: 'smooth' });
     });
+
 })();
 </script>
-
 </body>
 </html>
