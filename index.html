@@ -123,20 +123,45 @@
             background: var(--dark-bg);
             text-align: center;
         }
-        .hero::before {
-            content: '';
-            position: absolute; inset: 0;
-            background:
-                radial-gradient(ellipse at 20% 50%, rgba(213,235,75,0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(213,235,75,0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(213,235,75,0.02) 0%, transparent 50%);
-            animation: meshShift 12s ease-in-out infinite alternate;
-            pointer-events: none;
+        .hero-bg-effects, .cta-bg-effects {
+            position: absolute; inset: 0; overflow: hidden; pointer-events: none;
         }
-        @keyframes meshShift {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
+        .gradient-orb {
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15;
+            will-change: transform;
+        }
+        .orb-1 {
+            width: 600px; height: 600px; top: -200px; left: -100px;
+            background: radial-gradient(circle, #D5EB4B 0%, transparent 70%);
+            animation: orbFloat1 15s ease-in-out infinite;
+        }
+        .orb-2 {
+            width: 400px; height: 400px; top: 100px; right: -100px;
+            background: radial-gradient(circle, #D5EB4B 0%, transparent 70%);
+            animation: orbFloat2 20s ease-in-out infinite;
+        }
+        .orb-3 {
+            width: 500px; height: 500px; bottom: -200px; left: 40%;
+            background: radial-gradient(circle, rgba(213,235,75,0.5) 0%, transparent 70%);
+            animation: orbFloat3 18s ease-in-out infinite;
+        }
+        .cta-bg-effects .gradient-orb { opacity: 0.08; filter: blur(100px); }
+        .cta-bg-effects .orb-1 { width: 400px; height: 400px; }
+        .cta-bg-effects .orb-2 { width: 300px; height: 300px; }
+        .cta-bg-effects .orb-3 { width: 350px; height: 350px; }
+        @keyframes orbFloat1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, 50px) scale(1.1); }
+            66% { transform: translate(-50px, 100px) scale(0.9); }
+        }
+        @keyframes orbFloat2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-80px, 60px) scale(1.15); }
+            66% { transform: translate(60px, -40px) scale(0.85); }
+        }
+        @keyframes orbFloat3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(80px, -60px) scale(1.1); }
         }
         .hero .container { position: relative; z-index: 1; }
         .hero-badge {
@@ -192,6 +217,18 @@
             background: var(--dark-bg);
             color: var(--text-on-dark);
             padding: 80px 0;
+            position: relative; overflow: hidden;
+        }
+        .dark-section::after {
+            content: ''; position: absolute; top: 0; left: -200px;
+            width: 200px; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(213,235,75,0.03), transparent);
+            animation: beamSweep 8s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes beamSweep {
+            0% { left: -200px; }
+            100% { left: calc(100% + 200px); }
         }
         .dark-section .section-label { color: var(--lime); }
         .dark-section .section-title { color: var(--text-on-dark); }
@@ -535,16 +572,7 @@
             background: var(--dark-bg);
             position: relative;
         }
-        .final-cta::before {
-            content: '';
-            position: absolute; inset: 0;
-            background:
-                radial-gradient(ellipse at 20% 50%, rgba(213,235,75,0.04) 0%, transparent 50%),
-                radial-gradient(ellipse at 80% 20%, rgba(213,235,75,0.03) 0%, transparent 50%),
-                radial-gradient(ellipse at 50% 80%, rgba(213,235,75,0.02) 0%, transparent 50%);
-            animation: meshShift 12s ease-in-out infinite alternate;
-            pointer-events: none;
-        }
+        .final-cta { overflow: hidden; }
         .final-cta .container { position: relative; z-index: 1; }
         .final-cta h2 { font-size: clamp(28px, 4vw, 42px); font-weight: 700; margin-bottom: 16px; color: var(--text-on-dark); }
         .final-cta p { font-size: 17px; color: var(--text-on-dark-secondary); margin-bottom: 32px; max-width: 500px; margin-left: auto; margin-right: auto; }
@@ -570,6 +598,48 @@
             font-weight: 600; font-size: 15px; text-decoration: none;
         }
         .sticky-cta .sticky-sub { font-size: 11px; color: var(--text-on-dark-muted); margin-top: 4px; }
+
+        /* ===== COUNTER BOUNCE ===== */
+        .hero-stat .number.counted {
+            animation: counterBounce 0.4s ease-out;
+        }
+        @keyframes counterBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        /* ===== SHIMMER TEXT ===== */
+        .shimmer-text {
+            background: linear-gradient(
+                90deg,
+                var(--text-on-dark) 0%,
+                var(--lime) 45%,
+                var(--text-on-dark) 55%,
+                var(--text-on-dark) 100%
+            );
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
+        /* ===== SECTION LABEL PARALLAX ===== */
+        .section-label {
+            transition: transform 0.3s ease-out;
+            will-change: transform;
+        }
+
+        /* ===== CARD 3D TILT ===== */
+        .pain-card, .solution-step, .proof-card, .how-step {
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
 
         /* ===== HERO TEXT REVEAL ===== */
         .hero h1 {
@@ -664,6 +734,11 @@
 
 <!-- ===== HERO (dark) ===== -->
 <section class="hero">
+    <div class="hero-bg-effects">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
     <div class="container">
         <div class="hero-badge">
             <span class="dot"></span>
@@ -731,7 +806,7 @@
 <section class="dark-section">
     <div class="container">
         <div class="section-label reveal">The ZippyScale Way</div>
-        <h2 class="section-title reveal">Data Finds Money. AI Multiplies It.</h2>
+        <h2 class="section-title shimmer-text reveal">Data Finds Money. AI Multiplies It.</h2>
         <p class="section-subtitle reveal">We run your business through our data engine to find exactly where your highest ROI lives.</p>
         <div class="solution-steps">
             <div class="solution-step reveal" style="transition-delay: 0s;">
@@ -1177,6 +1252,11 @@
 
 <!-- ===== FINAL CTA (dark) ===== -->
 <section class="final-cta">
+    <div class="cta-bg-effects">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
     <div class="container">
         <h2 class="reveal">Stop Guessing. Start Scaling.</h2>
         <p class="reveal">Join 47+ founders who found their highest ROI channel and never looked back.</p>
@@ -1521,6 +1601,7 @@ document.querySelectorAll('a[href="#quiz"]').forEach(function(a) {
                 } else {
                     el.textContent = prefix + target + suffix;
                 }
+                el.classList.add('counted');
             }
         }
         requestAnimationFrame(step);
@@ -1537,6 +1618,46 @@ document.querySelectorAll('a[href="#quiz"]').forEach(function(a) {
         });
     }, { threshold: 0.3 });
     statsObserver.observe(statsSection);
+})();
+
+// ===== SECTION LABEL PARALLAX =====
+(function(){
+    var labels = document.querySelectorAll('.section-label');
+    var ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(function() {
+                var scrollY = window.pageYOffset;
+                labels.forEach(function(label) {
+                    var rect = label.getBoundingClientRect();
+                    var centerY = rect.top + rect.height / 2;
+                    var viewH = window.innerHeight;
+                    var offset = ((centerY / viewH) - 0.5) * 10;
+                    label.style.transform = 'translateY(' + offset + 'px)';
+                });
+                ticking = false;
+            });
+        }
+    }, { passive: true });
+})();
+
+// ===== 3D CARD TILT =====
+(function(){
+    var cards = document.querySelectorAll('.pain-card, .solution-step, .proof-card, .how-step');
+    cards.forEach(function(card) {
+        card.addEventListener('mousemove', function(e) {
+            var rect = card.getBoundingClientRect();
+            var x = (e.clientX - rect.left) / rect.width - 0.5;
+            var y = (e.clientY - rect.top) / rect.height - 0.5;
+            requestAnimationFrame(function() {
+                card.style.transform = 'perspective(1000px) rotateY(' + (x * 6) + 'deg) rotateX(' + (-y * 6) + 'deg) translateY(-4px)';
+            });
+        });
+        card.addEventListener('mouseleave', function() {
+            card.style.transform = '';
+        });
+    });
 })();
 </script>
 
