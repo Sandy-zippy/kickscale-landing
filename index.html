@@ -485,7 +485,7 @@
             .founder-creds { justify-content: center; }
             .guarantee-section { padding: 32px 24px; }
             .sticky-cta { display: block; }
-            body { padding-bottom: 72px; }
+            body { padding-bottom: 90px; }
         }
 
         @media (max-width: 480px) {
@@ -526,7 +526,7 @@
             z-index: 300; display: none; text-align: center;
             box-shadow: 0 4px 20px rgba(239,68,68,0.3);
         }
-        .toast.visible { display: block; animation: fadeInUp 0.3s ease; }
+        .toast.visible { display: block; animation: fadeInUp 0.3s ease; max-width: 90vw; word-wrap: break-word; }
         @keyframes fadeInUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
     </style>
 </head>
@@ -820,12 +820,6 @@
                 <h3>What's your annual revenue?</h3>
                 <p class="quiz-subtitle">We tailor strategies to your scale.</p>
                 <div class="quiz-options">
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="Under ₹1Cr">
-                        <span class="radio"></span> Under &#8377;1Cr
-                    </div>
-                    <div class="quiz-option" onclick="selectOption(this)" data-value="₹1Cr - ₹5Cr">
-                        <span class="radio"></span> &#8377;1Cr to &#8377;5Cr
-                    </div>
                     <div class="quiz-option" onclick="selectOption(this)" data-value="₹5Cr - ₹15Cr">
                         <span class="radio"></span> &#8377;5Cr to &#8377;15Cr
                     </div>
@@ -834,6 +828,12 @@
                     </div>
                     <div class="quiz-option" onclick="selectOption(this)" data-value="₹50Cr+">
                         <span class="radio"></span> &#8377;50Cr+
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="₹1Cr - ₹5Cr">
+                        <span class="radio"></span> &#8377;1Cr to &#8377;5Cr
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Under ₹1Cr">
+                        <span class="radio"></span> Under &#8377;1Cr (we may not be the right fit yet)
                     </div>
                 </div>
             </div>
@@ -1260,6 +1260,26 @@ document.querySelectorAll('a[href="#quiz"]').forEach(function(a) {
         if (typeof fbq !== 'undefined') fbq('track', 'InitiateCheckout');
     });
 });
+
+// Dynamic headline swap based on UTM content
+(function(){
+    var utmContent = sessionStorage.getItem('utm_content') || new URLSearchParams(window.location.search).get('utm_content');
+    if (!utmContent) return;
+    var headlines = {
+        'healthcare': 'We Find the Highest ROI Channel for Healthcare Brands.',
+        'd2c': 'We Find the Highest ROI Channel for D2C Brands.',
+        'realestate': 'We Find the Highest ROI Channel for Real Estate.',
+        'saas': 'We Find the Highest ROI Channel for SaaS Companies.',
+        'education': 'We Find the Highest ROI Channel for EdTech.',
+        'pain': 'Your Marketing Budget Has a Leak. We Find It.',
+        'controversy': 'Your Agency Can\'t Show You Which Channel Made Money. We Can.',
+        'casestudy': 'How a \u20B912Cr Brand Found Their Best Channel in 48 Hours.'
+    };
+    var h1 = document.querySelector('.hero h1');
+    if (h1 && headlines[utmContent.toLowerCase()]) {
+        h1.textContent = headlines[utmContent.toLowerCase()];
+    }
+})();
 
 // Hide sticky CTA when quiz is in viewport
 (function(){
