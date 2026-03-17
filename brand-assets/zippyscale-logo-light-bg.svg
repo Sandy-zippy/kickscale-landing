@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 48" fill="none">
+  <!-- Arrow Icon -->
+  <g>
+    <path d="M4 40V4h8v28h28v8H4z" fill="#D5EB4B"/>
+    <path d="M24 4h16v16h-8V12H24V4z" fill="#D5EB4B"/>
+    <path d="M20 20l8-8h4v4l-8 8h-4v-4z" fill="#D5EB4B"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="52" y="35" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="32" fill="#141418" letter-spacing="-0.5">ZippyScale</text>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 48" fill="none">
+  <!-- Arrow Icon - recreated from original ZippyScale brand mark -->
+  <g>
+    <!-- L-shaped base -->
+    <path d="M4 40V4h8v28h28v8H4z" fill="#D5EB4B"/>
+    <!-- Arrow head pointing up-right -->
+    <path d="M24 4h16v16h-8V12H24V4z" fill="#D5EB4B"/>
+    <!-- Arrow diagonal connector -->
+    <path d="M20 20l8-8h4v4l-8 8h-4v-4z" fill="#D5EB4B"/>
+  </g>
+  <!-- Wordmark in Space Grotesk style -->
+  <text x="52" y="35" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="32" fill="#FAFAFA" letter-spacing="-0.5">ZippyScale</text>
+</svg>
