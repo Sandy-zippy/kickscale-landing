@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZippyScale Ads — Calculator Funnel (Ads 11-18)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
+.toolbar {
+  position: sticky; top: 0; z-index: 100;
+  background: #141418; border-bottom: 1px solid #2E2E36;
+  padding: 16px 32px; display: flex; align-items: center; gap: 24px;
+}
+.toolbar h1 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #D5EB4B; }
+.toolbar .funnel-label { color: #9CA3AF; font-size: 14px; }
+.toggle-group { display: flex; gap: 0; margin-left: auto; }
+.toggle-btn {
+  padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 1px solid #2E2E36; background: #1E1E24; color: #9CA3AF; transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.toggle-btn:first-child { border-radius: 6px 0 0 6px; }
+.toggle-btn:last-child { border-radius: 0 6px 6px 0; }
+.toggle-btn.active { background: #D5EB4B; color: #141418; border-color: #D5EB4B; }
+.note { color: #6B7280; font-size: 12px; padding: 12px 32px; background: #141418; border-bottom: 1px solid #1E1E24; }
+.gallery { padding: 32px; }
+.grid-feed { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; max-width: 2300px; margin: 0 auto; }
+.grid-story { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; max-width: 3400px; margin: 0 auto; }
+.card-wrap { cursor: pointer; transition: transform 0.2s; }
+.card-wrap:hover { transform: translateY(-4px); }
+.card-label { font-size: 12px; color: #6B7280; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+.overlay {
+  display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.92); z-index: 200; overflow: auto;
+  justify-content: center; align-items: flex-start; padding: 40px;
+}
+.overlay.active { display: flex; }
+.overlay-close {
+  position: fixed; top: 20px; right: 20px; z-index: 300;
+  background: #2E2E36; color: #FAFAFA; border: none; width: 40px; height: 40px;
+  border-radius: 50%; font-size: 20px; cursor: pointer; font-family: 'Inter', sans-serif;
+}
+.creative { position: relative; overflow: hidden; font-family: 'Inter', sans-serif; }
+.creative .ad-num {
+  position: absolute; bottom: 12px; right: 12px;
+  font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.creative .logo { position: absolute; top: 32px; left: 32px; height: 36px; opacity: 0.9; }
+.creative .logo-story { position: absolute; top: 48px; left: 48px; height: 40px; opacity: 0.9; }
+.feed { width: 1080px; height: 1080px; }
+.story { width: 1080px; height: 1920px; }
+.card-wrap .feed { transform: scale(0.48); transform-origin: top left; }
+.card-wrap .story { transform: scale(0.28); transform-origin: top left; }
+.card-wrap.feed-wrap { width: 518px; height: 518px; }
+.card-wrap.story-wrap { width: 302px; height: 538px; }
+.cta-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #D5EB4B; padding: 28px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cta-bar .cta-text { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px; color: #141418; }
+.cta-bar .cta-btn { background: #141418; color: #D5EB4B; padding: 12px 32px; border-radius: 8px; font-weight: 700; font-size: 16px; font-family: 'Space Grotesk', sans-serif; }
+.cta-bar-story {
+  position: absolute; bottom: 120px; left: 0; right: 0;
+  background: #D5EB4B; padding: 36px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cta-bar-story .cta-text { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 28px; color: #141418; }
+.cta-bar-story .cta-btn { background: #141418; color: #D5EB4B; padding: 14px 40px; border-radius: 8px; font-weight: 700; font-size: 18px; font-family: 'Space Grotesk', sans-serif; }
+.dot-pattern { background-image: radial-gradient(rgba(213,235,75,0.06) 1px, transparent 1px); background-size: 24px 24px; }
+.dot-pattern-dense { background-image: radial-gradient(rgba(213,235,75,0.04) 1px, transparent 1px); background-size: 16px 16px; }
+.line-pattern { background-image: repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(213,235,75,0.03) 40px, rgba(213,235,75,0.03) 41px); }
+.grid-pattern { background-image: linear-gradient(rgba(213,235,75,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(213,235,75,0.04) 1px, transparent 1px); background-size: 48px 48px; }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>Calculator Funnel</h1>
+  <span class="funnel-label">Ads 11-18 · zippyscale.in/calculator.html</span>
+  <div class="toggle-group">
+    <button class="toggle-btn active" onclick="setView('feed')">Feed (1080x1080)</button>
+    <button class="toggle-btn" onclick="setView('story')">Story (1080x1920)</button>
+  </div>
+</div>
+<div class="note">Open each creative full-screen (click) and screenshot at exact dimensions (Cmd+Shift+4)</div>
+
+<div class="gallery">
+  <div id="grid" class="grid-feed">
+
+    <!-- AD #11: Question Hook — "How much waste?" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad11')">
+      <div class="card-label">Ad #11 — Pain: Your ad spend has a leak</div>
+      <div id="ad11-feed" class="creative feed" style="background: linear-gradient(160deg, #141418 0%, #181420 50%, #141418 100%);">
+        <div class="dot-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);text-align:center;width:85%;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:48px;color:#FAFAFA;line-height:1.15;">Your Ad Spend<br>Has a Leak</div>
+          <div style="margin-top:40px;position:relative;display:inline-block;">
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:96px;color:#EF4444;line-height:1;">25-40%</div>
+            <div style="font-family:'Inter',sans-serif;font-size:20px;color:rgba(239,68,68,0.7);margin-top:8px;">of ad budgets produce zero revenue</div>
+          </div>
+          <div style="margin-top:48px;display:flex;justify-content:center;gap:8px;align-items:center;">
+            <div style="width:12px;height:12px;background:#D5EB4B;border-radius:50%;"></div>
+            <span style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;">Free calculator. 2 minutes. No email.</span>
+          </div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">Free Ad Spend Leak Calculator</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #11</span>
+      </div>
+    </div>
+
+    <!-- AD #12: Question Hook — "Which Channel?" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad12')">
+      <div class="card-label">Ad #12 — Curiosity: Which channel makes money?</div>
+      <div id="ad12-feed" class="creative feed" style="background: #141418;">
+        <div class="grid-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:85%;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FAFAFA;line-height:1.15;margin-bottom:56px;">Which Channel Is<br>Actually Making<br>You Money?</div>
+          <div style="display:flex;justify-content:center;gap:32px;">
+            <div style="text-align:center;">
+              <div style="width:120px;height:120px;border-radius:20px;background:#1E1E24;border:2px solid #2E2E36;display:flex;align-items:center;justify-content:center;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;color:#9CA3AF;">Meta</span>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:36px;color:#6B7280;margin-top:12px;">?</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="width:120px;height:120px;border-radius:20px;background:rgba(213,235,75,0.08);border:2px solid rgba(213,235,75,0.3);display:flex;align-items:center;justify-content:center;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;color:#D5EB4B;">Google</span>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:36px;color:#D5EB4B;margin-top:12px;">&#10003;</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="width:120px;height:120px;border-radius:20px;background:#1E1E24;border:2px solid #2E2E36;display:flex;align-items:center;justify-content:center;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;color:#9CA3AF;">LinkedIn</span>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:36px;color:#6B7280;margin-top:12px;">?</div>
+            </div>
+          </div>
+          <div style="font-family:'Inter',sans-serif;font-size:18px;color:#6B7280;margin-top:40px;">If you can't answer instantly, you have an attribution problem.</div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">Free Diagnostic. Find Out.</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #12</span>
+      </div>
+    </div>
+
+    <!-- AD #13: List — "4 Leaks" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad13')">
+      <div class="card-label">Ad #13 — Educational: 4 leaks bleeding your budget</div>
+      <div id="ad13-feed" class="creative feed" style="background: #141418;">
+        <div class="line-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:120px;left:60px;right:60px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#FAFAFA;line-height:1.15;margin-bottom:40px;">4 Leaks Bleeding<br>Your <span style="color:#EF4444;">Meta/Google</span> Budget</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+            <div style="background:#1E1E24;border:1px solid #2E2E36;padding:28px;border-radius:14px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:36px;color:#EF4444;">01</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;color:#FAFAFA;margin-top:8px;">Audience Overlap</div>
+              <div style="font-family:'Inter',sans-serif;font-size:14px;color:#6B7280;margin-top:8px;">Bidding against yourself</div>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;padding:28px;border-radius:14px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:36px;color:#EF4444;">02</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;color:#FAFAFA;margin-top:8px;">Dead Creatives</div>
+              <div style="font-family:'Inter',sans-serif;font-size:14px;color:#6B7280;margin-top:8px;">Still eating budget</div>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;padding:28px;border-radius:14px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:36px;color:#EF4444;">03</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;color:#FAFAFA;margin-top:8px;">No Attribution</div>
+              <div style="font-family:'Inter',sans-serif;font-size:14px;color:#6B7280;margin-top:8px;">Funding blindly</div>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;padding:28px;border-radius:14px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:36px;color:#EF4444;">04</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;color:#FAFAFA;margin-top:8px;">Stale Retargeting</div>
+              <div style="font-family:'Inter',sans-serif;font-size:14px;color:#6B7280;margin-top:8px;">Burning on cold users</div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:36px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#EF4444;font-weight:700;">₹50K-2L/mo each leak</span>
+          </div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">Free Diagnostic Tool</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #13</span>
+      </div>
+    </div>
+
+    <!-- AD #14: Big Stat — "CPL Benchmark" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad14')">
+      <div class="card-label">Ad #14 — Comparison: CPL vs industry average</div>
+      <div id="ad14-feed" class="creative feed" style="background: #141418;">
+        <div class="dot-pattern-dense" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:120px;left:60px;right:60px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#FAFAFA;margin-bottom:44px;">Your CPL vs<br>Industry Average</div>
+          <!-- Bar chart -->
+          <div style="display:flex;flex-direction:column;gap:18px;">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:14px;color:#9CA3AF;width:120px;text-align:right;">D2C</span>
+              <div style="flex:1;height:40px;background:#1E1E24;border-radius:8px;position:relative;overflow:hidden;">
+                <div style="width:35%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:8px;"></div>
+                <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:14px;color:#D5EB4B;font-weight:700;">₹80-250</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:14px;color:#9CA3AF;width:120px;text-align:right;">Healthcare</span>
+              <div style="flex:1;height:40px;background:#1E1E24;border-radius:8px;position:relative;overflow:hidden;">
+                <div style="width:55%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:8px;"></div>
+                <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:14px;color:#D5EB4B;font-weight:700;">₹300-500</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:14px;color:#9CA3AF;width:120px;text-align:right;">Real Estate</span>
+              <div style="flex:1;height:40px;background:#1E1E24;border-radius:8px;position:relative;overflow:hidden;">
+                <div style="width:50%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:8px;"></div>
+                <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:14px;color:#D5EB4B;font-weight:700;">₹100-500</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:14px;color:#9CA3AF;width:120px;text-align:right;">EdTech</span>
+              <div style="flex:1;height:40px;background:#1E1E24;border-radius:8px;position:relative;overflow:hidden;">
+                <div style="width:45%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:8px;"></div>
+                <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:14px;color:#D5EB4B;font-weight:700;">₹150-400</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:14px;color:#9CA3AF;width:120px;text-align:right;">SaaS</span>
+              <div style="flex:1;height:40px;background:#1E1E24;border-radius:8px;position:relative;overflow:hidden;">
+                <div style="width:65%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:8px;"></div>
+                <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:14px;color:#D5EB4B;font-weight:700;">₹200-600</span>
+              </div>
+            </div>
+            <!-- Your CPL -->
+            <div style="display:flex;align-items:center;gap:16px;margin-top:8px;">
+              <span style="font-family:'Inter',sans-serif;font-size:14px;color:#D5EB4B;width:120px;text-align:right;font-weight:600;">Your CPL?</span>
+              <div style="flex:1;height:40px;background:rgba(213,235,75,0.08);border:2px dashed rgba(213,235,75,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:16px;color:#D5EB4B;font-weight:700;">Find out free</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">Free Benchmark Check</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #14</span>
+      </div>
+    </div>
+
+    <!-- AD #15: Before/After — "Audit First, Scale Second" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad15')">
+      <div class="card-label">Ad #15 — Identity: Audit first, scale second</div>
+      <div id="ad15-feed" class="creative feed" style="background: linear-gradient(135deg, #141418 0%, #1E1E24 100%);">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:85%;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;color:#9CA3AF;margin-bottom:32px;">Two types of founders:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;">
+            <!-- Left path -->
+            <div style="text-align:center;">
+              <div style="width:100%;height:280px;background:linear-gradient(180deg,rgba(239,68,68,0.06),rgba(239,68,68,0.15));border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;border:1px solid rgba(239,68,68,0.15);">
+                <div style="font-size:56px;margin-bottom:16px;">&#128308;</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;color:#EF4444;">Scale Blind</div>
+                <div style="font-family:'Inter',sans-serif;font-size:15px;color:#9CA3AF;margin-top:12px;line-height:1.5;">More money,<br>same broken system</div>
+              </div>
+            </div>
+            <!-- Right path -->
+            <div style="text-align:center;">
+              <div style="width:100%;height:280px;background:linear-gradient(180deg,rgba(213,235,75,0.06),rgba(213,235,75,0.15));border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;border:1px solid rgba(213,235,75,0.15);">
+                <div style="font-size:56px;margin-bottom:16px;">&#128994;</div>
+                <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:24px;color:#D5EB4B;">Audit First</div>
+                <div style="font-family:'Inter',sans-serif;font-size:15px;color:#FAFAFA;margin-top:12px;line-height:1.5;">Find leaks, fix them,<br>then scale what works</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:32px;color:#FAFAFA;margin-top:40px;">Type 2 founders grow <span style="color:#D5EB4B;">2-3x faster</span></div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">Free Leak Calculator</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #15</span>
+      </div>
+    </div>
+
+    <!-- AD #16: Big Stat — "₹2L/mo Wasted" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad16')">
+      <div class="card-label">Ad #16 — Fear of Loss: ₹2L/mo wasted average</div>
+      <div id="ad16-feed" class="creative feed" style="background: linear-gradient(160deg, #141418 0%, #1a1418 40%, #141418 100%);">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);text-align:center;width:85%;">
+          <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:3px;margin-bottom:16px;">Average Ad Spend Waste</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:100px;color:#EF4444;line-height:1;">₹2,00,000</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:500;font-size:28px;color:rgba(239,68,68,0.6);margin-top:4px;">per month</div>
+          <div style="display:inline-block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);padding:8px 20px;border-radius:6px;margin-top:16px;">
+            <span style="font-family:'Inter',sans-serif;font-size:14px;color:#EF4444;font-weight:600;">= ₹24L/year gone</span>
+          </div>
+          <div style="width:50%;height:2px;background:linear-gradient(90deg,transparent,#2E2E36,transparent);margin:40px auto;"></div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;color:#D5EB4B;line-height:1.1;">What's YOUR<br>waste number?</div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">Free Calculator. Find Out.</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #16</span>
+      </div>
+    </div>
+
+    <!-- AD #17: Big Stat — "500 Accounts Analyzed" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad17')">
+      <div class="card-label">Ad #17 — Data: 500 accounts analyzed</div>
+      <div id="ad17-feed" class="creative feed" style="background: #141418;">
+        <div class="grid-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:120px;left:60px;right:60px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:96px;color:#D5EB4B;line-height:1;">500</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:32px;color:#FAFAFA;margin-top:8px;">Indian Ad Accounts Analyzed</div>
+          <div style="margin-top:40px;display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:32px;color:#D5EB4B;min-width:100px;">73%</div>
+              <div style="font-family:'Inter',sans-serif;font-size:17px;color:#9CA3AF;">have a channel with zero attributable revenue</div>
+            </div>
+            <div style="width:100%;height:1px;background:#1E1E24;"></div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:32px;color:#D5EB4B;min-width:100px;">28%</div>
+              <div style="font-family:'Inter',sans-serif;font-size:17px;color:#9CA3AF;">average ad spend wasted</div>
+            </div>
+            <div style="width:100%;height:1px;background:#1E1E24;"></div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:32px;color:#D5EB4B;min-width:100px;">3x</div>
+              <div style="font-family:'Inter',sans-serif;font-size:17px;color:#9CA3AF;">less waste with proper attribution</div>
+            </div>
+          </div>
+          <div style="font-family:'Inter',sans-serif;font-size:16px;color:#6B7280;margin-top:36px;">We turned this research into a free calculator.</div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">Free Waste Calculator</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #17</span>
+      </div>
+    </div>
+
+    <!-- AD #18: Bold Statement — "2 Min Leak Diagnostic" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad18')">
+      <div class="card-label">Ad #18 — Quick Win: 2-min leak diagnostic</div>
+      <div id="ad18-feed" class="creative feed" style="background: linear-gradient(135deg, #141418 0%, #181E14 50%, #141418 100%);">
+        <div class="dot-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:80%;">
+          <!-- Timer -->
+          <div style="display:inline-flex;width:180px;height:180px;border-radius:50%;border:6px solid #D5EB4B;align-items:center;justify-content:center;margin-bottom:40px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:56px;color:#D5EB4B;">2:00</div>
+          </div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:48px;color:#FAFAFA;line-height:1.1;">2-Minute Leak<br>Diagnostic</div>
+          <div style="margin-top:32px;display:flex;flex-direction:column;gap:12px;text-align:left;max-width:500px;margin-left:auto;margin-right:auto;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:8px;height:8px;background:#D5EB4B;border-radius:50%;flex-shrink:0;"></div>
+              <span style="font-family:'Inter',sans-serif;font-size:17px;color:#9CA3AF;">How much you're wasting per month</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:8px;height:8px;background:#D5EB4B;border-radius:50%;flex-shrink:0;"></div>
+              <span style="font-family:'Inter',sans-serif;font-size:17px;color:#9CA3AF;">Which leak type is most probable</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:8px;height:8px;background:#D5EB4B;border-radius:50%;flex-shrink:0;"></div>
+              <span style="font-family:'Inter',sans-serif;font-size:17px;color:#9CA3AF;">Your waste % vs industry average</span>
+            </div>
+          </div>
+          <div style="display:inline-block;background:#D5EB4B;color:#141418;padding:10px 28px;border-radius:20px;margin-top:28px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:16px;">FREE</div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">No Email. Just Answers.</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #18</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Story versions -->
+<div class="gallery hidden" id="story-gallery">
+  <div class="grid-story">
+
+    <!-- STORY AD #11 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad11s')">
+      <div class="card-label">Ad #11 — Your ad spend has a leak</div>
+      <div id="ad11s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #181420 50%, #141418 100%);">
+        <div class="dot-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:340px;left:64px;right:64px;text-align:center;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:56px;color:#FAFAFA;line-height:1.15;">Your Ad Spend<br>Has a Leak</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:120px;color:#EF4444;line-height:1;margin-top:56px;">25-40%</div>
+          <div style="font-family:'Inter',sans-serif;font-size:24px;color:rgba(239,68,68,0.7);margin-top:12px;">of ad budgets produce zero revenue</div>
+          <div style="margin-top:64px;display:flex;justify-content:center;gap:8px;align-items:center;">
+            <div style="width:12px;height:12px;background:#D5EB4B;border-radius:50%;"></div>
+            <span style="font-family:'Inter',sans-serif;font-size:20px;color:#9CA3AF;">Free calculator. 2 minutes. No email.</span>
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">Free Leak Calculator</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #11</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #12 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad12s')">
+      <div class="card-label">Ad #12 — Which channel makes money?</div>
+      <div id="ad12s-feed" class="creative story" style="background: #141418;">
+        <div class="grid-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:280px;left:64px;right:64px;text-align:center;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:52px;color:#FAFAFA;line-height:1.15;margin-bottom:72px;">Which Channel<br>Is Actually Making<br>You Money?</div>
+          <div style="display:flex;justify-content:center;gap:36px;">
+            <div style="text-align:center;">
+              <div style="width:140px;height:140px;border-radius:24px;background:#1E1E24;border:2px solid #2E2E36;display:flex;align-items:center;justify-content:center;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;color:#9CA3AF;">Meta</span>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:44px;color:#6B7280;margin-top:16px;">?</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="width:140px;height:140px;border-radius:24px;background:rgba(213,235,75,0.08);border:2px solid rgba(213,235,75,0.3);display:flex;align-items:center;justify-content:center;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;color:#D5EB4B;">Google</span>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:44px;color:#D5EB4B;margin-top:16px;">&#10003;</div>
+            </div>
+            <div style="text-align:center;">
+              <div style="width:140px;height:140px;border-radius:24px;background:#1E1E24;border:2px solid #2E2E36;display:flex;align-items:center;justify-content:center;">
+                <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;color:#9CA3AF;">LinkedIn</span>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:44px;color:#6B7280;margin-top:16px;">?</div>
+            </div>
+          </div>
+          <div style="font-family:'Inter',sans-serif;font-size:22px;color:#6B7280;margin-top:56px;">If you can't answer instantly,<br>you have an attribution problem.</div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">Free Diagnostic</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #12</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #13 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad13s')">
+      <div class="card-label">Ad #13 — 4 leaks bleeding your budget</div>
+      <div id="ad13s-feed" class="creative story" style="background: #141418;">
+        <div class="line-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:200px;left:64px;right:64px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FAFAFA;line-height:1.15;margin-bottom:52px;">4 Leaks Bleeding<br>Your <span style="color:#EF4444;">Budget</span></div>
+          <div style="display:flex;flex-direction:column;gap:24px;">
+            <div style="background:#1E1E24;border:1px solid #2E2E36;padding:32px;border-radius:16px;border-left:5px solid #EF4444;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:28px;color:#EF4444;display:inline;">01</div>
+              <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px;color:#FAFAFA;margin-left:16px;">Audience Overlap</span>
+              <div style="font-family:'Inter',sans-serif;font-size:16px;color:#6B7280;margin-top:8px;">Bidding against yourself across platforms</div>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;padding:32px;border-radius:16px;border-left:5px solid #EF4444;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:28px;color:#EF4444;display:inline;">02</div>
+              <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px;color:#FAFAFA;margin-left:16px;">Dead Creatives</span>
+              <div style="font-family:'Inter',sans-serif;font-size:16px;color:#6B7280;margin-top:8px;">Zero conversions, still eating budget</div>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;padding:32px;border-radius:16px;border-left:5px solid #EF4444;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:28px;color:#EF4444;display:inline;">03</div>
+              <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px;color:#FAFAFA;margin-left:16px;">No Attribution</span>
+              <div style="font-family:'Inter',sans-serif;font-size:16px;color:#6B7280;margin-top:8px;">Funding channels blindly</div>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;padding:32px;border-radius:16px;border-left:5px solid #EF4444;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:28px;color:#EF4444;display:inline;">04</div>
+              <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px;color:#FAFAFA;margin-left:16px;">Stale Retargeting</span>
+              <div style="font-family:'Inter',sans-serif;font-size:16px;color:#6B7280;margin-top:8px;">Burning budget on cold users</div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:40px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:22px;color:#EF4444;font-weight:700;">₹50K-2L/mo per leak</span>
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">Free Diagnostic Tool</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #13</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #14 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad14s')">
+      <div class="card-label">Ad #14 — CPL vs industry average</div>
+      <div id="ad14s-feed" class="creative story" style="background: #141418;">
+        <div class="dot-pattern-dense" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:220px;left:64px;right:64px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FAFAFA;margin-bottom:52px;">Your CPL vs<br>Industry Average</div>
+          <div style="display:flex;flex-direction:column;gap:22px;">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;width:130px;text-align:right;">D2C</span>
+              <div style="flex:1;height:48px;background:#1E1E24;border-radius:10px;position:relative;overflow:hidden;">
+                <div style="width:35%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:10px;"></div>
+                <span style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:16px;color:#D5EB4B;font-weight:700;">₹80-250</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;width:130px;text-align:right;">Healthcare</span>
+              <div style="flex:1;height:48px;background:#1E1E24;border-radius:10px;position:relative;overflow:hidden;">
+                <div style="width:55%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:10px;"></div>
+                <span style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:16px;color:#D5EB4B;font-weight:700;">₹300-500</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;width:130px;text-align:right;">Real Estate</span>
+              <div style="flex:1;height:48px;background:#1E1E24;border-radius:10px;position:relative;overflow:hidden;">
+                <div style="width:50%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:10px;"></div>
+                <span style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:16px;color:#D5EB4B;font-weight:700;">₹100-500</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;width:130px;text-align:right;">EdTech</span>
+              <div style="flex:1;height:48px;background:#1E1E24;border-radius:10px;position:relative;overflow:hidden;">
+                <div style="width:45%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:10px;"></div>
+                <span style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:16px;color:#D5EB4B;font-weight:700;">₹150-400</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;width:130px;text-align:right;">SaaS</span>
+              <div style="flex:1;height:48px;background:#1E1E24;border-radius:10px;position:relative;overflow:hidden;">
+                <div style="width:65%;height:100%;background:linear-gradient(90deg,#D5EB4B,#B8CF2E);border-radius:10px;"></div>
+                <span style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-family:'JetBrains Mono',monospace;font-size:16px;color:#D5EB4B;font-weight:700;">₹200-600</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:12px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#D5EB4B;width:130px;text-align:right;font-weight:600;">Your CPL?</span>
+              <div style="flex:1;height:48px;background:rgba(213,235,75,0.08);border:2px dashed rgba(213,235,75,0.3);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:18px;color:#D5EB4B;font-weight:700;">Find out free</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">Free Benchmark Check</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #14</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #15 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad15s')">
+      <div class="card-label">Ad #15 — Audit first, scale second</div>
+      <div id="ad15s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #1E1E24 50%, #141418 100%);">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:280px;left:64px;right:64px;text-align:center;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#9CA3AF;margin-bottom:48px;">Two types of founders:</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:56px;">
+            <div style="background:linear-gradient(180deg,rgba(239,68,68,0.06),rgba(239,68,68,0.15));border-radius:20px;padding:40px 24px;text-align:center;border:1px solid rgba(239,68,68,0.15);">
+              <div style="font-size:64px;margin-bottom:20px;">&#128308;</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;color:#EF4444;">Scale Blind</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;margin-top:12px;line-height:1.5;">More money,<br>same broken system</div>
+            </div>
+            <div style="background:linear-gradient(180deg,rgba(213,235,75,0.06),rgba(213,235,75,0.15));border-radius:20px;padding:40px 24px;text-align:center;border:1px solid rgba(213,235,75,0.15);">
+              <div style="font-size:64px;margin-bottom:20px;">&#128994;</div>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;color:#D5EB4B;">Audit First</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#FAFAFA;margin-top:12px;line-height:1.5;">Find leaks, fix them,<br>then scale what works</div>
+            </div>
+          </div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:40px;color:#FAFAFA;">Type 2 founders<br>grow <span style="color:#D5EB4B;">2-3x faster</span></div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">Free Leak Calculator</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #15</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #16 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad16s')">
+      <div class="card-label">Ad #16 — ₹2L/mo wasted average</div>
+      <div id="ad16s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #1a1418 50%, #141418 100%);">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:380px;left:64px;right:64px;text-align:center;">
+          <div style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:3px;margin-bottom:24px;">Average Ad Spend Waste</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:110px;color:#EF4444;line-height:1;">₹2L</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:500;font-size:32px;color:rgba(239,68,68,0.6);margin-top:4px;">per month</div>
+          <div style="display:inline-block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);padding:10px 24px;border-radius:8px;margin-top:20px;">
+            <span style="font-family:'Inter',sans-serif;font-size:18px;color:#EF4444;font-weight:600;">= ₹24L/year gone</span>
+          </div>
+          <div style="width:40%;height:2px;background:linear-gradient(90deg,transparent,#2E2E36,transparent);margin:56px auto;"></div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:48px;color:#D5EB4B;line-height:1.1;">What's YOUR<br>waste number?</div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">Free Calculator</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #16</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #17 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad17s')">
+      <div class="card-label">Ad #17 — 500 accounts analyzed</div>
+      <div id="ad17s-feed" class="creative story" style="background: #141418;">
+        <div class="grid-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:240px;left:64px;right:64px;">
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:120px;color:#D5EB4B;line-height:1;">500</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:38px;color:#FAFAFA;margin-top:12px;">Indian Ad Accounts<br>Analyzed</div>
+          <div style="margin-top:56px;display:flex;flex-direction:column;gap:24px;">
+            <div style="display:flex;align-items:center;gap:20px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:40px;color:#D5EB4B;min-width:110px;">73%</div>
+              <div style="font-family:'Inter',sans-serif;font-size:20px;color:#9CA3AF;line-height:1.4;">have a channel with zero<br>attributable revenue</div>
+            </div>
+            <div style="width:100%;height:1px;background:#1E1E24;"></div>
+            <div style="display:flex;align-items:center;gap:20px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:40px;color:#D5EB4B;min-width:110px;">28%</div>
+              <div style="font-family:'Inter',sans-serif;font-size:20px;color:#9CA3AF;">average ad spend wasted</div>
+            </div>
+            <div style="width:100%;height:1px;background:#1E1E24;"></div>
+            <div style="display:flex;align-items:center;gap:20px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:40px;color:#D5EB4B;min-width:110px;">3x</div>
+              <div style="font-family:'Inter',sans-serif;font-size:20px;color:#9CA3AF;">less waste with attribution</div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">Free Waste Calculator</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #17</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #18 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad18s')">
+      <div class="card-label">Ad #18 — 2-min leak diagnostic</div>
+      <div id="ad18s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #181E14 40%, #141418 100%);">
+        <div class="dot-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:320px;left:64px;right:64px;text-align:center;">
+          <div style="display:inline-flex;width:200px;height:200px;border-radius:50%;border:7px solid #D5EB4B;align-items:center;justify-content:center;margin-bottom:56px;">
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:64px;color:#D5EB4B;">2:00</div>
+          </div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:56px;color:#FAFAFA;line-height:1.1;">2-Minute<br>Leak Diagnostic</div>
+          <div style="margin-top:48px;display:flex;flex-direction:column;gap:16px;text-align:left;max-width:600px;margin-left:auto;margin-right:auto;">
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div style="width:10px;height:10px;background:#D5EB4B;border-radius:50%;flex-shrink:0;"></div>
+              <span style="font-family:'Inter',sans-serif;font-size:20px;color:#9CA3AF;">How much you're wasting per month</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div style="width:10px;height:10px;background:#D5EB4B;border-radius:50%;flex-shrink:0;"></div>
+              <span style="font-family:'Inter',sans-serif;font-size:20px;color:#9CA3AF;">Which leak type is most probable</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:14px;">
+              <div style="width:10px;height:10px;background:#D5EB4B;border-radius:50%;flex-shrink:0;"></div>
+              <span style="font-family:'Inter',sans-serif;font-size:20px;color:#9CA3AF;">Your waste % vs industry average</span>
+            </div>
+          </div>
+          <div style="display:inline-block;background:#D5EB4B;color:#141418;padding:14px 36px;border-radius:24px;margin-top:40px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;">FREE</div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">No Email. Just Answers.</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #18</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <button class="overlay-close" onclick="closeFull()">&#10005;</button>
+  <div id="overlay-content"></div>
+</div>
+
+<script>
+const feedGallery = document.querySelector('.gallery:not(#story-gallery)');
+const storyGallery = document.getElementById('story-gallery');
+let currentView = 'feed';
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  if (view === 'feed') {
+    document.querySelectorAll('.toggle-btn')[0].classList.add('active');
+    feedGallery.classList.remove('hidden');
+    storyGallery.classList.add('hidden');
+  } else {
+    document.querySelectorAll('.toggle-btn')[1].classList.add('active');
+    feedGallery.classList.add('hidden');
+    storyGallery.classList.remove('hidden');
+  }
+}
+
+function openFull(id) {
+  const el = document.getElementById(id + '-feed');
+  if (!el) return;
+  const clone = el.cloneNode(true);
+  clone.style.transform = 'none';
+  clone.style.flexShrink = '0';
+  const overlay = document.getElementById('overlay');
+  const content = document.getElementById('overlay-content');
+  content.innerHTML = '';
+  content.appendChild(clone);
+  overlay.classList.add('active');
+}
+
+function closeFull() {
+  document.getElementById('overlay').classList.remove('active');
+}
+
+document.getElementById('overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeFull();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeFull();
+});
+</script>
+</body>
+</html>
