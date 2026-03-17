@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ad Spend Leak Calculator | ZippyScale</title>
+    <meta name="description" content="Find out how much of your ad budget is going to waste. Free calculator for Indian businesses spending ₹10K to ₹50L+ per month.">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Ad Spend Leak Calculator | ZippyScale">
+    <meta property="og:description" content="Find out how much of your ad budget is going to waste. Free instant analysis.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://zippyscale.in/calculator.html">
+    <meta property="og:image" content="https://zippyscale.in/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- Favicon -->
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Meta Pixel (replace YOUR_PIXEL_ID before launch) -->
+    <!-- <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','YOUR_PIXEL_ID');fbq('track','PageView');</script> -->
+
+    <!-- UTM Tracking -->
+    <script>
+    (function(){
+        var params = new URLSearchParams(window.location.search);
+        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(key){
+            var val = params.get(key);
+            if(val) sessionStorage.setItem(key, val);
+        });
+    })();
+    </script>
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --dark-bg: #141418;
+            --dark-card: #1E1E24;
+            --dark-border: #2E2E36;
+            --light-bg: #F8F9FA;
+            --light-card: #FFFFFF;
+            --light-border: #E5E7EB;
+            --lime: #D5EB4B;
+            --lime-hover: #E4F57A;
+            --lime-dark: #B8CF2E;
+            --lime-glow: rgba(213,235,75,0.12);
+            --text-on-dark: #FAFAFA;
+            --text-on-dark-secondary: #9CA3AF;
+            --text-on-dark-muted: #6B7280;
+            --text-on-light: #111827;
+            --text-on-light-secondary: #4B5563;
+            --text-on-light-muted: #9CA3AF;
+            --green: #22C55E;
+            --red: #EF4444;
+            --orange: #F59E0B;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-on-dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+        /* ===== SCROLL REVEAL ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== SECTION DIVIDER ===== */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--lime), transparent);
+            opacity: 0.2;
+        }
+
+        /* ===== NAV ===== */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(20,20,24,0.92); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--dark-border);
+            padding: 16px 0;
+        }
+        .nav .container {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: var(--text-on-dark);
+        }
+        .nav-logo span { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; }
+        .nav-cta {
+            background: var(--lime); color: var(--dark-bg); border: none; padding: 10px 24px;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px;
+            border-radius: 8px; cursor: pointer; text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--lime-glow); background: var(--lime-hover); }
+
+        /* ===== HERO ===== */
+        .hero {
+            position: relative;
+            padding: 140px 0 80px;
+            background: var(--dark-bg);
+            text-align: center;
+        }
+        .hero-bg-effects {
+            position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+        }
+        .gradient-orb {
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15;
+            will-change: transform;
+        }
+        .orb-1 {
+            width: 600px; height: 600px; top: -200px; left: -100px;
+            background: radial-gradient(circle, #D5EB4B 0%, transparent 70%);
+            animation: orbFloat1 15s ease-in-out infinite;
+        }
+        .orb-2 {
+            width: 400px; height: 400px; top: 100px; right: -100px;
+            background: radial-gradient(circle, #D5EB4B 0%, transparent 70%);
+            animation: orbFloat2 20s ease-in-out infinite;
+        }
+        .orb-3 {
+            width: 500px; height: 500px; bottom: -200px; left: 40%;
+            background: radial-gradient(circle, rgba(213,235,75,0.5) 0%, transparent 70%);
+            animation: orbFloat3 18s ease-in-out infinite;
+        }
+        @keyframes orbFloat1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, 50px) scale(1.1); }
+            66% { transform: translate(-50px, 100px) scale(0.9); }
+        }
+        @keyframes orbFloat2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-80px, 60px) scale(1.15); }
+            66% { transform: translate(60px, -40px) scale(0.85); }
+        }
+        @keyframes orbFloat3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(80px, -60px) scale(1.1); }
+        }
+        .hero .container { position: relative; z-index: 1; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--lime-glow); border: 1px solid rgba(213,235,75,0.3);
+            padding: 8px 20px; border-radius: 100px; font-size: 13px;
+            color: var(--lime); font-weight: 600; margin-bottom: 32px;
+        }
+        .hero-badge .dot { width: 8px; height: 8px; background: var(--lime); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .hero h1 {
+            font-size: clamp(32px, 5vw, 56px); font-weight: 700;
+            max-width: 800px; margin: 0 auto 24px;
+            color: var(--text-on-dark);
+            background: linear-gradient(135deg, var(--text-on-dark) 0%, var(--lime) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: heroReveal 0.8s ease-out;
+        }
+        @keyframes heroReveal {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hero p {
+            font-size: clamp(16px, 2.5vw, 20px); color: var(--text-on-dark-secondary);
+            max-width: 600px; margin: 0 auto 40px;
+        }
+        .hero-stat-row {
+            display: flex; justify-content: center; gap: 48px;
+            margin-top: 40px; flex-wrap: wrap;
+        }
+        .hero-stat { text-align: center; }
+        .hero-stat .number {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 32px; color: var(--lime);
+        }
+        .hero-stat .label { font-size: 13px; color: var(--text-on-dark-muted); margin-top: 4px; font-weight: 500; }
+
+        /* ===== CALCULATOR SECTION ===== */
+        .calc-section {
+            padding: 80px 0;
+            background: var(--dark-bg);
+        }
+        .calc-wrapper {
+            max-width: 720px; margin: 0 auto;
+        }
+        .section-label {
+            font-family: 'JetBrains Mono', monospace; font-weight: 500;
+            font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--lime); margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: clamp(28px, 4vw, 42px); font-weight: 700;
+            margin-bottom: 20px; max-width: 700px;
+        }
+        .section-subtitle {
+            font-size: 17px; color: var(--text-on-dark-secondary);
+            max-width: 600px; margin-bottom: 48px;
+        }
+        .text-center { text-align: center; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+
+        /* Calculator Card */
+        .calc-card {
+            background: var(--dark-card); border: 2px solid transparent;
+            border-radius: 24px; padding: 48px; position: relative; overflow: hidden;
+        }
+        .calc-card::before {
+            content: ''; position: absolute; inset: -2px; z-index: 0;
+            border-radius: 26px;
+            background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.15), var(--lime));
+            background-size: 200% 200%;
+            animation: gradientBorder 4s ease infinite;
+        }
+        .calc-card::after {
+            content: ''; position: absolute; inset: 0;
+            background: var(--dark-card); border-radius: 22px;
+            z-index: 0;
+        }
+        .calc-card > * { position: relative; z-index: 1; }
+        @keyframes gradientBorder {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Progress Steps */
+        .calc-progress {
+            display: flex; gap: 6px; margin-bottom: 40px;
+        }
+        .calc-progress-bar {
+            flex: 1; height: 4px; background: var(--dark-border);
+            border-radius: 4px; transition: background 0.4s;
+        }
+        .calc-progress-bar.active { background: var(--lime); }
+
+        /* Step Container */
+        .calc-step { display: none; animation: fadeIn 0.4s ease; }
+        .calc-step.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .calc-step h3 {
+            font-size: 22px; font-weight: 600; margin-bottom: 8px; color: var(--text-on-dark);
+        }
+        .calc-step .step-subtitle {
+            font-size: 14px; color: var(--text-on-dark-muted); margin-bottom: 28px;
+        }
+
+        /* Input Styles */
+        .input-group {
+            margin-bottom: 24px;
+        }
+        .input-group label {
+            display: block; font-size: 14px; font-weight: 600;
+            color: var(--text-on-dark-secondary); margin-bottom: 8px;
+        }
+        .currency-input {
+            position: relative;
+        }
+        .currency-input .prefix {
+            position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+            font-size: 18px; color: var(--lime); font-weight: 600;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .currency-input input {
+            width: 100%; padding: 16px 18px 16px 36px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 12px; color: var(--text-on-dark); font-size: 18px;
+            font-family: 'JetBrains Mono', monospace; font-weight: 600;
+            outline: none; transition: border-color 0.2s;
+        }
+        .currency-input input:focus { border-color: var(--lime); }
+        .currency-input input::placeholder { color: var(--text-on-dark-muted); font-weight: 400; font-size: 15px; }
+
+        .input-hint {
+            font-size: 12px; color: var(--text-on-dark-muted); margin-top: 8px;
+        }
+
+        /* Range Slider */
+        .range-display {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 28px; color: var(--lime); text-align: center;
+            margin-bottom: 16px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 6px;
+            background: var(--dark-border); border-radius: 6px; outline: none;
+            transition: background 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 24px; height: 24px;
+            background: var(--lime); border-radius: 50%; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(213,235,75,0.4);
+            transition: transform 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px; height: 24px;
+            background: var(--lime); border-radius: 50%; cursor: pointer;
+            border: none; box-shadow: 0 2px 8px rgba(213,235,75,0.4);
+        }
+        .range-labels {
+            display: flex; justify-content: space-between;
+            font-size: 12px; color: var(--text-on-dark-muted); margin-top: 8px;
+        }
+
+        /* Channel Selector */
+        .channel-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+        }
+        .channel-option {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 12px; padding: 16px 8px; cursor: pointer;
+            transition: all 0.2s; font-size: 14px; color: var(--text-on-dark);
+            text-align: center;
+        }
+        .channel-option:hover { border-color: var(--lime); background: rgba(213,235,75,0.05); }
+        .channel-option.selected { border-color: var(--lime); background: var(--lime-glow); }
+        .channel-option .ch-num {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 20px; color: var(--lime);
+        }
+
+        /* Yes/No/Partial Options */
+        .tracking-options { display: flex; flex-direction: column; gap: 10px; }
+        .tracking-option {
+            display: flex; align-items: center; gap: 14px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 12px; padding: 16px 20px; cursor: pointer;
+            transition: all 0.2s; font-size: 15px; color: var(--text-on-dark);
+        }
+        .tracking-option:hover { border-color: var(--lime); background: rgba(213,235,75,0.05); }
+        .tracking-option.selected { border-color: var(--lime); background: var(--lime-glow); }
+        .tracking-option .radio {
+            width: 20px; height: 20px; min-width: 20px; border-radius: 50%;
+            border: 2px solid var(--dark-border); transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tracking-option.selected .radio {
+            border-color: var(--lime); background: var(--lime);
+        }
+        .tracking-option.selected .radio::after {
+            content: '\2713'; color: var(--dark-bg); font-size: 12px; font-weight: 700;
+        }
+        .tracking-desc {
+            font-size: 12px; color: var(--text-on-dark-muted); margin-top: 2px;
+        }
+
+        /* Navigation */
+        .calc-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 32px; gap: 12px;
+        }
+        .calc-back {
+            background: none; border: 1px solid var(--dark-border); color: var(--text-on-dark-secondary);
+            padding: 12px 24px; border-radius: 10px; cursor: pointer;
+            font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+            transition: border-color 0.2s;
+        }
+        .calc-back:hover { border-color: var(--text-on-dark-secondary); }
+        .calc-back.hidden { visibility: hidden; }
+        .calc-next {
+            background: var(--lime); color: var(--dark-bg); border: none;
+            padding: 14px 32px; border-radius: 10px; cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px;
+            transition: transform 0.2s, opacity 0.2s, background 0.2s;
+            margin-left: auto;
+        }
+        .calc-next:hover { transform: translateY(-1px); background: var(--lime-hover); }
+        .calc-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* ===== RESULTS SECTION ===== */
+        .results-section {
+            display: none;
+            padding: 80px 0;
+            background: var(--dark-bg);
+        }
+        .results-section.visible { display: block; }
+
+        .results-card {
+            background: var(--dark-card); border: 1px solid var(--dark-border);
+            border-radius: 20px; padding: 40px; margin-bottom: 24px;
+        }
+
+        /* Big Number Result */
+        .result-hero {
+            text-align: center; margin-bottom: 40px;
+        }
+        .result-hero .waste-label {
+            font-size: 14px; color: var(--text-on-dark-muted); text-transform: uppercase;
+            letter-spacing: 2px; font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 8px;
+        }
+        .result-hero .waste-percent {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: clamp(48px, 10vw, 80px); line-height: 1;
+            margin-bottom: 8px;
+        }
+        .waste-red { color: var(--red); }
+        .waste-orange { color: var(--orange); }
+        .waste-yellow { color: var(--lime); }
+        .waste-green { color: var(--green); }
+
+        .result-hero .waste-text {
+            font-size: 16px; color: var(--text-on-dark-secondary); max-width: 500px; margin: 0 auto;
+        }
+
+        /* Metric Cards */
+        .metrics-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px; margin-bottom: 32px;
+        }
+        .metric-card {
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 16px; padding: 24px; text-align: center;
+        }
+        .metric-card .metric-icon { font-size: 28px; margin-bottom: 8px; }
+        .metric-card .metric-value {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 24px; margin-bottom: 4px;
+        }
+        .metric-card .metric-label {
+            font-size: 13px; color: var(--text-on-dark-muted);
+        }
+
+        /* Waste Bar */
+        .waste-bar-container {
+            margin: 32px 0;
+        }
+        .waste-bar-label {
+            display: flex; justify-content: space-between; margin-bottom: 8px;
+            font-size: 13px; color: var(--text-on-dark-muted);
+        }
+        .waste-bar-track {
+            height: 12px; background: var(--dark-bg); border-radius: 12px;
+            overflow: hidden; position: relative;
+        }
+        .waste-bar-fill {
+            height: 100%; border-radius: 12px;
+            transition: width 1.5s ease-out;
+            width: 0;
+        }
+
+        /* ROAS Grade */
+        .roas-section {
+            display: flex; align-items: center; gap: 20px;
+            padding: 24px; background: var(--dark-bg); border-radius: 16px;
+            border: 1px solid var(--dark-border);
+        }
+        .roas-grade {
+            width: 64px; height: 64px; min-width: 64px;
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px;
+            color: var(--dark-bg);
+        }
+        .grade-a { background: var(--green); }
+        .grade-b { background: var(--lime); }
+        .grade-c { background: var(--orange); }
+        .grade-d { background: var(--red); }
+        .roas-info h4 { font-size: 16px; margin-bottom: 4px; }
+        .roas-info p { font-size: 13px; color: var(--text-on-dark-muted); }
+
+        /* Comparison Callout */
+        .comparison-callout {
+            background: var(--lime-glow); border: 1px solid rgba(213,235,75,0.3);
+            border-radius: 16px; padding: 24px; margin-top: 24px;
+            text-align: center;
+        }
+        .comparison-callout p {
+            font-size: 15px; color: var(--text-on-dark-secondary);
+        }
+        .comparison-callout strong { color: var(--lime); }
+
+        /* ===== GATE SECTION ===== */
+        .gate-section {
+            display: none;
+            padding: 0 0 80px;
+            background: var(--dark-bg);
+        }
+        .gate-section.visible { display: block; }
+
+        .gate-card {
+            max-width: 640px; margin: 0 auto;
+            background: var(--dark-card); border: 2px solid transparent;
+            border-radius: 24px; padding: 48px; position: relative; overflow: hidden;
+        }
+        .gate-card::before {
+            content: ''; position: absolute; inset: -2px; z-index: 0;
+            border-radius: 26px;
+            background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.15), var(--lime));
+            background-size: 200% 200%;
+            animation: gradientBorder 4s ease infinite;
+        }
+        .gate-card::after {
+            content: ''; position: absolute; inset: 0;
+            background: var(--dark-card); border-radius: 22px;
+            z-index: 0;
+        }
+        .gate-card > * { position: relative; z-index: 1; }
+
+        .gate-card h3 {
+            font-size: 24px; font-weight: 700; margin-bottom: 8px;
+            text-align: center; color: var(--text-on-dark);
+        }
+        .gate-card .gate-subtitle {
+            font-size: 15px; color: var(--text-on-dark-secondary);
+            text-align: center; margin-bottom: 32px;
+        }
+
+        .gate-preview {
+            display: flex; flex-direction: column; gap: 10px;
+            margin-bottom: 32px; padding: 20px;
+            background: var(--dark-bg); border-radius: 12px;
+            border: 1px solid var(--dark-border);
+        }
+        .gate-preview-item {
+            display: flex; align-items: center; gap: 12px;
+            font-size: 14px; color: var(--text-on-dark-secondary);
+        }
+        .gate-preview-item .lock {
+            font-size: 16px; min-width: 20px; text-align: center;
+        }
+        .gate-preview-item.locked { opacity: 0.5; }
+
+        .gate-form { display: flex; flex-direction: column; gap: 16px; }
+        .gate-form label {
+            font-size: 14px; font-weight: 600; color: var(--text-on-dark-secondary);
+        }
+        .gate-form input, .gate-form select {
+            width: 100%; padding: 14px 18px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 10px; color: var(--text-on-dark); font-size: 16px;
+            font-family: 'Inter', sans-serif; outline: none;
+        }
+        .gate-form input:focus, .gate-form select:focus { border-color: var(--lime); }
+        .gate-form input::placeholder { color: var(--text-on-dark-muted); }
+        .gate-form select { cursor: pointer; }
+        .gate-form select option { background: var(--dark-card); color: var(--text-on-dark); }
+
+        .gate-submit {
+            width: 100%; background: var(--lime); color: var(--dark-bg); border: none;
+            padding: 16px; border-radius: 10px; cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 4px 30px var(--lime-glow);
+        }
+        .gate-submit:hover { transform: translateY(-1px); background: var(--lime-hover); }
+        .gate-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .gate-privacy {
+            font-size: 12px; color: var(--text-on-dark-muted); text-align: center; margin-top: 8px;
+        }
+
+        /* ===== FULL BREAKDOWN (after form) ===== */
+        .breakdown-section {
+            display: none;
+            padding: 0 0 80px;
+            background: var(--dark-bg);
+        }
+        .breakdown-section.visible { display: block; }
+
+        .breakdown-card {
+            background: var(--dark-card); border: 1px solid var(--dark-border);
+            border-radius: 20px; padding: 40px; margin-bottom: 24px;
+        }
+        .breakdown-card h3 {
+            font-size: 20px; font-weight: 700; margin-bottom: 24px;
+            color: var(--text-on-dark);
+        }
+
+        .fix-list { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+        .fix-item {
+            display: flex; align-items: flex-start; gap: 16px;
+            padding: 20px; background: var(--dark-bg); border-radius: 12px;
+            border: 1px solid var(--dark-border);
+        }
+        .fix-icon {
+            width: 40px; height: 40px; min-width: 40px;
+            background: rgba(213,235,75,0.15); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .fix-content h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; color: var(--text-on-dark); }
+        .fix-content p { font-size: 13px; color: var(--text-on-dark-muted); }
+
+        /* Final CTA */
+        .final-cta-card {
+            background: var(--dark-card); border: 2px solid transparent;
+            border-radius: 24px; padding: 48px; position: relative;
+            overflow: hidden; text-align: center;
+        }
+        .final-cta-card::before {
+            content: ''; position: absolute; inset: -2px; z-index: 0;
+            border-radius: 26px;
+            background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.15), var(--lime));
+            background-size: 200% 200%;
+            animation: gradientBorder 4s ease infinite;
+        }
+        .final-cta-card::after {
+            content: ''; position: absolute; inset: 0;
+            background: var(--dark-card); border-radius: 22px; z-index: 0;
+        }
+        .final-cta-card > * { position: relative; z-index: 1; }
+        .final-cta-card h3 {
+            font-size: 24px; font-weight: 700; margin-bottom: 12px;
+        }
+        .final-cta-card p {
+            font-size: 15px; color: var(--text-on-dark-secondary); margin-bottom: 24px;
+            max-width: 500px; margin-left: auto; margin-right: auto;
+        }
+        .final-cta-btn {
+            display: inline-flex; align-items: center; gap: 12px;
+            background: var(--lime); color: var(--dark-bg); border: none;
+            padding: 18px 40px; font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700; font-size: 18px; border-radius: 12px;
+            cursor: pointer; text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            box-shadow: 0 4px 30px var(--lime-glow);
+            animation: ctaPulse 3s ease-in-out infinite;
+        }
+        .final-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(213,235,75,0.3); background: var(--lime-hover); }
+        @keyframes ctaPulse {
+            0%, 100% { box-shadow: 0 4px 30px rgba(213,235,75,0.12); }
+            50% { box-shadow: 0 4px 40px rgba(213,235,75,0.25); }
+        }
+        .final-cta-price {
+            margin-top: 12px; font-size: 14px; color: var(--text-on-dark-muted);
+        }
+        .final-cta-price s { color: var(--text-on-dark-muted); }
+        .final-cta-price strong { color: var(--lime); }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--dark-bg);
+            padding: 40px 0; border-top: 1px solid var(--dark-border);
+            text-align: center; font-size: 13px; color: var(--text-on-dark-muted);
+        }
+        .footer a { color: var(--lime); text-decoration: none; }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: var(--red); color: #fff; padding: 14px 28px;
+            border-radius: 10px; font-size: 14px; font-weight: 600;
+            z-index: 300; display: none; text-align: center;
+            box-shadow: 0 4px 20px rgba(239,68,68,0.3);
+        }
+        .toast.visible { display: block; animation: fadeInUp 0.3s ease; max-width: 90vw; }
+        @keyframes fadeInUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+        /* Beam sweep on dark sections */
+        .calc-section::after, .results-section::after {
+            content: ''; position: absolute; top: 0; left: -200px;
+            width: 200px; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(213,235,75,0.03), transparent);
+            animation: beamSweep 8s ease-in-out infinite;
+            pointer-events: none;
+        }
+        .calc-section, .results-section { position: relative; overflow: hidden; }
+        @keyframes beamSweep {
+            0% { left: -200px; }
+            100% { left: calc(100% + 200px); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .hero { padding: 120px 0 60px; }
+            .hero-stat-row { gap: 24px; }
+            .hero-stat .number { font-size: 24px; }
+            .calc-card, .gate-card, .breakdown-card, .final-cta-card { padding: 32px 24px; }
+            .channel-grid { grid-template-columns: repeat(4, 1fr); }
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .roas-section { flex-direction: column; text-align: center; }
+            .nav-cta { padding: 8px 16px; font-size: 13px; }
+        }
+
+        @media (max-width: 480px) {
+            .channel-grid { grid-template-columns: repeat(2, 1fr); }
+            .metrics-grid { grid-template-columns: 1fr; }
+            .result-hero .waste-percent { font-size: 56px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+    <div class="container">
+        <a href="https://zippyscale.in" class="nav-logo">
+            <img src="logo-dark.png" alt="ZippyScale" style="height:36px;width:auto;">
+        </a>
+        <a href="https://zippyscale.in/#quiz" class="nav-cta">Get Your Blueprint</a>
+    </div>
+</nav>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+    <div class="hero-bg-effects">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+    <div class="container">
+        <div class="hero-badge">
+            <span class="dot"></span>
+            <span>Free Instant Analysis</span>
+        </div>
+        <h1>How Much of Your Ad Spend Is Going to Waste?</h1>
+        <p>Indian businesses waste 25-40% of their ad budget on average. Find out your number in 60 seconds.</p>
+        <a href="#calculator" style="display:inline-flex;align-items:center;gap:12px;background:var(--lime);color:var(--dark-bg);border:none;padding:18px 40px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;border-radius:12px;cursor:pointer;text-decoration:none;transition:transform 0.2s,box-shadow 0.2s,background 0.2s;box-shadow:0 4px 30px var(--lime-glow);">Calculate Your Leak <span>&darr;</span></a>
+        <div class="hero-stat-row" style="margin-top:48px;">
+            <div class="hero-stat">
+                <div class="number" style="color:var(--red);">25-40%</div>
+                <div class="label">Average Waste Rate</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number">&#8377;18L+</div>
+                <div class="label">Avg. Annual Leak</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number">3 in 4</div>
+                <div class="label">Businesses Don't Track Channel ROI</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== CALCULATOR ===== -->
+<section id="calculator" class="calc-section">
+    <div class="container">
+        <div class="calc-wrapper">
+            <div class="section-label text-center reveal">Ad Spend Leak Calculator</div>
+            <h2 class="section-title text-center mx-auto reveal">Find Your Exact Waste Number</h2>
+            <p class="section-subtitle text-center mx-auto reveal">Answer 4 quick questions. Get instant results.</p>
+
+            <div class="calc-card reveal">
+                <!-- Progress -->
+                <div class="calc-progress">
+                    <div class="calc-progress-bar active" data-step="1"></div>
+                    <div class="calc-progress-bar" data-step="2"></div>
+                    <div class="calc-progress-bar" data-step="3"></div>
+                    <div class="calc-progress-bar" data-step="4"></div>
+                </div>
+
+                <!-- Step 1: Monthly Ad Spend -->
+                <div class="calc-step active" data-step="1">
+                    <h3>What's your monthly ad spend?</h3>
+                    <p class="step-subtitle">Include all paid channels: Meta, Google, YouTube, LinkedIn, etc.</p>
+                    <div class="range-display" id="spend-display">&#8377;2,50,000</div>
+                    <input type="range" id="spend-slider" min="10000" max="5000000" step="10000" value="250000">
+                    <div class="range-labels">
+                        <span>&#8377;10K</span>
+                        <span>&#8377;50L+</span>
+                    </div>
+                    <div class="calc-nav">
+                        <button class="calc-back hidden">&larr; Back</button>
+                        <button class="calc-next" onclick="nextStep(2)">Next &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Number of Channels -->
+                <div class="calc-step" data-step="2">
+                    <h3>How many ad channels do you use?</h3>
+                    <p class="step-subtitle">Count every platform where you run paid ads.</p>
+                    <div class="channel-grid">
+                        <div class="channel-option" data-value="1" onclick="selectChannel(this)">
+                            <span class="ch-num">1</span>
+                            <span>channel</span>
+                        </div>
+                        <div class="channel-option" data-value="2" onclick="selectChannel(this)">
+                            <span class="ch-num">2</span>
+                            <span>channels</span>
+                        </div>
+                        <div class="channel-option" data-value="3" onclick="selectChannel(this)">
+                            <span class="ch-num">3</span>
+                            <span>channels</span>
+                        </div>
+                        <div class="channel-option" data-value="4" onclick="selectChannel(this)">
+                            <span class="ch-num">4</span>
+                            <span>channels</span>
+                        </div>
+                        <div class="channel-option" data-value="5" onclick="selectChannel(this)">
+                            <span class="ch-num">5</span>
+                            <span>channels</span>
+                        </div>
+                        <div class="channel-option" data-value="6" onclick="selectChannel(this)">
+                            <span class="ch-num">6</span>
+                            <span>channels</span>
+                        </div>
+                        <div class="channel-option" data-value="7" onclick="selectChannel(this)">
+                            <span class="ch-num">7</span>
+                            <span>channels</span>
+                        </div>
+                        <div class="channel-option" data-value="8" onclick="selectChannel(this)">
+                            <span class="ch-num">8+</span>
+                            <span>channels</span>
+                        </div>
+                    </div>
+                    <div class="calc-nav">
+                        <button class="calc-back" onclick="prevStep(1)">&larr; Back</button>
+                        <button class="calc-next" id="step2-next" disabled onclick="nextStep(3)">Next &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Monthly Revenue from Ads -->
+                <div class="calc-step" data-step="3">
+                    <h3>How much revenue do your ads generate monthly?</h3>
+                    <p class="step-subtitle">Your best estimate of revenue directly from paid ads.</p>
+                    <div class="input-group">
+                        <div class="currency-input">
+                            <span class="prefix">&#8377;</span>
+                            <input type="text" id="revenue-input" placeholder="e.g. 10,00,000" inputmode="numeric">
+                        </div>
+                        <div class="input-hint">Enter the amount in rupees. Use commas for readability.</div>
+                    </div>
+                    <div class="calc-nav">
+                        <button class="calc-back" onclick="prevStep(2)">&larr; Back</button>
+                        <button class="calc-next" id="step3-next" disabled onclick="nextStep(4)">Next &rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Step 4: ROI Tracking -->
+                <div class="calc-step" data-step="4">
+                    <h3>Do you track ROI per channel?</h3>
+                    <p class="step-subtitle">Can you tell exactly which channel brings the best returns?</p>
+                    <div class="tracking-options">
+                        <div class="tracking-option" data-value="yes" onclick="selectTracking(this)">
+                            <span class="radio"></span>
+                            <div>
+                                <div>Yes, we track per-channel ROI</div>
+                                <div class="tracking-desc">We know exactly which channel generates what revenue.</div>
+                            </div>
+                        </div>
+                        <div class="tracking-option" data-value="partial" onclick="selectTracking(this)">
+                            <span class="radio"></span>
+                            <div>
+                                <div>Partially</div>
+                                <div class="tracking-desc">We track some metrics but can't attribute revenue to each channel.</div>
+                            </div>
+                        </div>
+                        <div class="tracking-option" data-value="no" onclick="selectTracking(this)">
+                            <span class="radio"></span>
+                            <div>
+                                <div>No, not really</div>
+                                <div class="tracking-desc">We rely on platform dashboards and gut feel.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="calc-nav">
+                        <button class="calc-back" onclick="prevStep(3)">&larr; Back</button>
+                        <button class="calc-next" id="step4-next" disabled onclick="calculateResults()">See My Results &rarr;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== INSTANT RESULTS ===== -->
+<section id="results" class="results-section">
+    <div class="container">
+        <div class="calc-wrapper">
+            <div class="results-card">
+                <div class="result-hero">
+                    <div class="waste-label">Estimated Waste</div>
+                    <div class="waste-percent" id="waste-percent-display">0%</div>
+                    <p class="waste-text" id="waste-text"></p>
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-icon">&#x1F4B8;</div>
+                        <div class="metric-value waste-red" id="leaked-amount">&#8377;0</div>
+                        <div class="metric-label">Leaked Annually</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">&#x1F4C8;</div>
+                        <div class="metric-value" id="roas-value" style="color:var(--lime);">0x</div>
+                        <div class="metric-label">Your ROAS</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-icon">&#x1F3AF;</div>
+                        <div class="metric-value" id="monthly-waste" style="color:var(--orange);">&#8377;0</div>
+                        <div class="metric-label">Wasted Per Month</div>
+                    </div>
+                </div>
+
+                <div class="waste-bar-container">
+                    <div class="waste-bar-label">
+                        <span>Effective Spend</span>
+                        <span>Wasted Spend</span>
+                    </div>
+                    <div class="waste-bar-track">
+                        <div class="waste-bar-fill" id="waste-bar" style="background:linear-gradient(90deg, var(--green), var(--red));"></div>
+                    </div>
+                </div>
+
+                <div class="roas-section" id="roas-section">
+                    <div class="roas-grade" id="roas-grade">B</div>
+                    <div class="roas-info">
+                        <h4 id="roas-grade-title">Above Average</h4>
+                        <p id="roas-grade-desc">Your ROAS is performing above the industry average of 2.5x.</p>
+                    </div>
+                </div>
+
+                <div class="comparison-callout" id="comparison-callout">
+                    <p id="comparison-text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider" id="gate-divider" style="display:none;"></div>
+
+<!-- ===== GATED FORM ===== -->
+<section id="gate" class="gate-section">
+    <div class="container">
+        <div class="gate-card">
+            <h3>Get the Full Fix Playbook</h3>
+            <p class="gate-subtitle">Your summary is above. Unlock channel-specific recommendations and a personalized action plan.</p>
+
+            <div class="gate-preview">
+                <div class="gate-preview-item">
+                    <span class="lock">&#9989;</span>
+                    <span>Waste percentage and leaked amount</span>
+                </div>
+                <div class="gate-preview-item">
+                    <span class="lock">&#9989;</span>
+                    <span>ROAS grade vs industry average</span>
+                </div>
+                <div class="gate-preview-item locked">
+                    <span class="lock">&#x1F512;</span>
+                    <span>Channel-specific fix recommendations</span>
+                </div>
+                <div class="gate-preview-item locked">
+                    <span class="lock">&#x1F512;</span>
+                    <span>Attribution setup checklist</span>
+                </div>
+                <div class="gate-preview-item locked">
+                    <span class="lock">&#x1F512;</span>
+                    <span>Budget reallocation suggestions</span>
+                </div>
+                <div class="gate-preview-item locked">
+                    <span class="lock">&#x1F512;</span>
+                    <span>Quick wins to reduce waste in 30 days</span>
+                </div>
+            </div>
+
+            <form class="gate-form" id="gate-form" onsubmit="submitGateForm(event)">
+                <div>
+                    <label for="gate-name">Your Name *</label>
+                    <input type="text" id="gate-name" placeholder="Full name" required>
+                </div>
+                <div>
+                    <label for="gate-email">Email *</label>
+                    <input type="email" id="gate-email" placeholder="you@company.com" required>
+                </div>
+                <div>
+                    <label for="gate-phone">Phone (optional)</label>
+                    <input type="tel" id="gate-phone" placeholder="+91 98765 43210">
+                </div>
+                <div>
+                    <label for="gate-industry">Industry *</label>
+                    <select id="gate-industry" required>
+                        <option value="" disabled selected>Select your industry</option>
+                        <option value="healthcare">Healthcare / Pharma</option>
+                        <option value="ecommerce">D2C / E-commerce</option>
+                        <option value="real-estate">Real Estate</option>
+                        <option value="education">Education / EdTech</option>
+                        <option value="saas">SaaS / Tech</option>
+                        <option value="construction">Construction / Infrastructure</option>
+                        <option value="professional-services">Professional Services</option>
+                        <option value="manufacturing">Manufacturing</option>
+                        <option value="hospitality">Hospitality / F&B</option>
+                        <option value="finance">Finance / Insurance</option>
+                        <option value="automotive">Automotive</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <button type="submit" class="gate-submit" id="gate-submit">Unlock Full Breakdown</button>
+            </form>
+            <p class="gate-privacy">No spam. We'll only reach out with your personalized recommendations.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ===== FULL BREAKDOWN (after form) ===== -->
+<section id="breakdown" class="breakdown-section">
+    <div class="container">
+        <div class="calc-wrapper">
+            <div class="breakdown-card">
+                <h3>Your Personalized Fix Playbook</h3>
+                <ul class="fix-list" id="fix-list">
+                    <!-- Populated by JS -->
+                </ul>
+            </div>
+
+            <div class="breakdown-card">
+                <h3>Quick Wins (Next 30 Days)</h3>
+                <ul class="fix-list" id="quick-wins">
+                    <!-- Populated by JS -->
+                </ul>
+            </div>
+
+            <div class="final-cta-card">
+                <h3>Want Us to Find Your EXACT Leaks with Real Data?</h3>
+                <p>Our team will analyze your actual ad accounts, attribution setup, and channel performance. You'll get a data-backed blueprint showing exactly where to cut waste and where to double down.</p>
+                <a href="https://zippyscale.in/#quiz" class="final-cta-btn">Get Your &#8377;999 Growth Blueprint <span>&rarr;</span></a>
+                <div class="final-cta-price">
+                    <s>&#8377;15,000</s> &nbsp; <strong>&#8377;999 only</strong> &nbsp; &middot; &nbsp; 7-day money-back guarantee
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2026 ZippyScale. Attribution-first growth marketing. &nbsp;|&nbsp; <a href="https://zippyscale.in">zippyscale.in</a></p>
+    </div>
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+    // ===== STATE =====
+    var state = {
+        monthlySpend: 250000,
+        numChannels: null,
+        adRevenue: null,
+        tracksROI: null
+    };
+
+    // ===== HELPERS =====
+    function formatINR(n) {
+        if (n >= 10000000) return '₹' + (n / 10000000).toFixed(1).replace(/\.0$/, '') + 'Cr';
+        if (n >= 100000) return '₹' + (n / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+        if (n >= 1000) return '₹' + (n / 1000).toFixed(0) + 'K';
+        return '₹' + n;
+    }
+
+    function formatINRFull(n) {
+        return '₹' + n.toLocaleString('en-IN');
+    }
+
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('visible');
+        setTimeout(function(){ t.classList.remove('visible'); }, 3000);
+    }
+
+    // ===== SLIDER =====
+    var slider = document.getElementById('spend-slider');
+    var display = document.getElementById('spend-display');
+
+    function updateSliderDisplay() {
+        var val = parseInt(slider.value);
+        state.monthlySpend = val;
+        display.textContent = formatINRFull(val);
+        // Update slider fill
+        var pct = ((val - 10000) / (5000000 - 10000)) * 100;
+        slider.style.background = 'linear-gradient(90deg, var(--lime) 0%, var(--lime) ' + pct + '%, var(--dark-border) ' + pct + '%, var(--dark-border) 100%)';
+    }
+
+    slider.addEventListener('input', updateSliderDisplay);
+    updateSliderDisplay();
+
+    // ===== CHANNEL SELECTION =====
+    window.selectChannel = function(el) {
+        document.querySelectorAll('.channel-option').forEach(function(o){ o.classList.remove('selected'); });
+        el.classList.add('selected');
+        state.numChannels = parseInt(el.getAttribute('data-value'));
+        document.getElementById('step2-next').disabled = false;
+    };
+
+    // ===== REVENUE INPUT =====
+    var revInput = document.getElementById('revenue-input');
+    revInput.addEventListener('input', function() {
+        var raw = this.value.replace(/[^0-9]/g, '');
+        if (raw) {
+            var num = parseInt(raw);
+            this.value = num.toLocaleString('en-IN');
+            state.adRevenue = num;
+            document.getElementById('step3-next').disabled = false;
+        } else {
+            state.adRevenue = null;
+            document.getElementById('step3-next').disabled = true;
+        }
+    });
+
+    // ===== TRACKING SELECTION =====
+    window.selectTracking = function(el) {
+        document.querySelectorAll('.tracking-option').forEach(function(o){ o.classList.remove('selected'); });
+        el.classList.add('selected');
+        state.tracksROI = el.getAttribute('data-value');
+        document.getElementById('step4-next').disabled = false;
+    };
+
+    // ===== STEP NAVIGATION =====
+    window.nextStep = function(step) {
+        document.querySelectorAll('.calc-step').forEach(function(s){ s.classList.remove('active'); });
+        document.querySelector('.calc-step[data-step="' + step + '"]').classList.add('active');
+        // Update progress
+        document.querySelectorAll('.calc-progress-bar').forEach(function(bar){
+            var barStep = parseInt(bar.getAttribute('data-step'));
+            bar.classList.toggle('active', barStep <= step);
+        });
+    };
+
+    window.prevStep = function(step) {
+        document.querySelectorAll('.calc-step').forEach(function(s){ s.classList.remove('active'); });
+        document.querySelector('.calc-step[data-step="' + step + '"]').classList.add('active');
+        document.querySelectorAll('.calc-progress-bar').forEach(function(bar){
+            var barStep = parseInt(bar.getAttribute('data-step'));
+            bar.classList.toggle('active', barStep <= step);
+        });
+    };
+
+    // ===== CALCULATE =====
+    window.calculateResults = function() {
+        var spend = state.monthlySpend;
+        var channels = state.numChannels;
+        var revenue = state.adRevenue;
+        var tracking = state.tracksROI;
+
+        // Calculate waste %
+        var wasteMin, wasteMax;
+        if (tracking === 'no') {
+            wasteMin = 35; wasteMax = 45;
+        } else if (tracking === 'partial') {
+            wasteMin = 20; wasteMax = 30;
+        } else { // yes
+            if (channels <= 2) {
+                wasteMin = 15; wasteMax = 20;
+            } else {
+                wasteMin = 8; wasteMax = 15;
+            }
+        }
+
+        // Pick a specific % based on channels (more channels = higher end of range)
+        var channelFactor = Math.min(channels / 8, 1);
+        var wastePct = wasteMin + (wasteMax - wasteMin) * channelFactor;
+        wastePct = Math.round(wastePct);
+
+        // Leaked amount (annual)
+        var monthlyWaste = Math.round(spend * wastePct / 100);
+        var annualLeak = monthlyWaste * 12;
+
+        // ROAS
+        var roas = revenue / spend;
+        roas = Math.round(roas * 10) / 10;
+
+        // Grade ROAS vs industry avg (2.5x)
+        var grade, gradeClass, gradeTitle, gradeDesc;
+        if (roas >= 4) {
+            grade = 'A'; gradeClass = 'grade-a';
+            gradeTitle = 'Excellent ROAS';
+            gradeDesc = 'Your ' + roas + 'x ROAS is well above the industry average of 2.5x. But there may still be hidden waste across underperforming channels.';
+        } else if (roas >= 2.5) {
+            grade = 'B'; gradeClass = 'grade-b';
+            gradeTitle = 'Above Average';
+            gradeDesc = 'Your ' + roas + 'x ROAS meets the industry average of 2.5x. With proper attribution, you could push this to 4x+.';
+        } else if (roas >= 1.5) {
+            grade = 'C'; gradeClass = 'grade-c';
+            gradeTitle = 'Below Average';
+            gradeDesc = 'Your ' + roas + 'x ROAS is below the 2.5x industry average. Significant optimization opportunity here.';
+        } else {
+            grade = 'D'; gradeClass = 'grade-d';
+            gradeTitle = 'Needs Attention';
+            gradeDesc = 'Your ' + roas + 'x ROAS is critically below the 2.5x average. You may be spending more on ads than they generate.';
+        }
+
+        // Waste color class
+        var wasteColorClass;
+        if (wastePct >= 35) wasteColorClass = 'waste-red';
+        else if (wastePct >= 20) wasteColorClass = 'waste-orange';
+        else if (wastePct >= 15) wasteColorClass = 'waste-yellow';
+        else wasteColorClass = 'waste-green';
+
+        // Comparison text
+        var spendBracket;
+        if (spend <= 100000) spendBracket = '₹50K-1L/mo';
+        else if (spend <= 500000) spendBracket = '₹1-5L/mo';
+        else if (spend <= 1500000) spendBracket = '₹5-15L/mo';
+        else spendBracket = '₹15L+/mo';
+
+        var compText = 'Businesses spending <strong>' + spendBracket + '</strong> typically waste <strong>' + wasteMin + '-' + wasteMax + '%</strong> without proper attribution. That\'s <strong>' + formatINR(annualLeak) + '</strong> down the drain every year.';
+
+        // Render results
+        var wasteDisplay = document.getElementById('waste-percent-display');
+        wasteDisplay.textContent = '0%';
+        wasteDisplay.className = 'waste-percent ' + wasteColorClass;
+
+        document.getElementById('waste-text').textContent = 'Based on your inputs, an estimated ' + wastePct + '% of your ₹' + spend.toLocaleString('en-IN') + '/mo ad spend is not generating returns.';
+
+        document.getElementById('roas-value').textContent = roas + 'x';
+
+        var roasGradeEl = document.getElementById('roas-grade');
+        roasGradeEl.textContent = grade;
+        roasGradeEl.className = 'roas-grade ' + gradeClass;
+        document.getElementById('roas-grade-title').textContent = gradeTitle;
+        document.getElementById('roas-grade-desc').textContent = gradeDesc;
+
+        document.getElementById('comparison-text').innerHTML = compText;
+
+        // Show results section
+        document.getElementById('results').classList.add('visible');
+        document.getElementById('gate').classList.add('visible');
+        document.getElementById('gate-divider').style.display = 'block';
+
+        // Scroll to results
+        setTimeout(function(){
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
+
+        // Animate numbers
+        animateCounter(wasteDisplay, 0, wastePct, 1200, '%');
+        animateCounter(document.getElementById('leaked-amount'), 0, annualLeak, 1500, '', true);
+        animateCounter(document.getElementById('monthly-waste'), 0, monthlyWaste, 1200, '', true);
+
+        // Animate waste bar
+        setTimeout(function(){
+            document.getElementById('waste-bar').style.width = wastePct + '%';
+        }, 400);
+
+        // Store for form submission
+        state.wastePct = wastePct;
+        state.annualLeak = annualLeak;
+        state.roas = roas;
+        state.grade = grade;
+    };
+
+    function animateCounter(el, from, to, duration, suffix, isCurrency) {
+        var start = performance.now();
+        function frame(now) {
+            var progress = Math.min((now - start) / duration, 1);
+            var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+            var current = Math.round(from + (to - from) * eased);
+            if (isCurrency) {
+                el.textContent = formatINRFull(current);
+            } else {
+                el.textContent = current + (suffix || '');
+            }
+            if (progress < 1) requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+    }
+
+    // ===== FORM SUBMISSION =====
+    window.submitGateForm = function(e) {
+        e.preventDefault();
+
+        var name = document.getElementById('gate-name').value.trim();
+        var email = document.getElementById('gate-email').value.trim();
+        var phone = document.getElementById('gate-phone').value.trim();
+        var industry = document.getElementById('gate-industry').value;
+
+        if (!name || !email || !industry) {
+            showToast('Please fill in all required fields.');
+            return;
+        }
+
+        var btn = document.getElementById('gate-submit');
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        var payload = {
+            name: name,
+            email: email,
+            phone: phone || '',
+            industry: industry,
+            source: 'lead-magnet-calculator',
+            ad_spend: state.monthlySpend,
+            channels: state.numChannels,
+            ad_revenue: state.adRevenue,
+            tracks_roi: state.tracksROI
+        };
+
+        // Append UTM params
+        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(key){
+            var val = sessionStorage.getItem(key);
+            if (val) payload[key] = val;
+        });
+
+        fetch('https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(function(res) {
+            if (!res.ok) throw new Error('Network error');
+            showBreakdown();
+        })
+        .catch(function() {
+            // Show breakdown anyway (don't block user)
+            showBreakdown();
+        });
+    };
+
+    function showBreakdown() {
+        // Hide gate section
+        document.getElementById('gate').style.display = 'none';
+        document.getElementById('gate-divider').style.display = 'none';
+
+        // Build fix recommendations based on inputs
+        var fixes = [];
+        var quickWins = [];
+
+        if (state.tracksROI === 'no') {
+            fixes.push({
+                icon: '&#x1F4CA;',
+                title: 'Set Up Attribution Tracking',
+                desc: 'You\'re flying blind. Install UTM tracking, conversion pixels, and CRM integration across all channels. This alone can reduce waste by 15-20%.'
+            });
+            fixes.push({
+                icon: '&#x1F517;',
+                title: 'Implement Cross-Channel Tracking',
+                desc: 'Connect your ad platforms to your CRM so you can trace every rupee from click to revenue. Tools: Google Analytics 4 + CRM webhooks.'
+            });
+            quickWins.push({
+                icon: '&#x26A1;',
+                title: 'Add UTM Parameters to Every Ad',
+                desc: 'Tag all your ad URLs with UTM parameters today. This is free and takes 30 minutes to set up across all campaigns.'
+            });
+        } else if (state.tracksROI === 'partial') {
+            fixes.push({
+                icon: '&#x1F50D;',
+                title: 'Close Attribution Gaps',
+                desc: 'You have some tracking, but revenue can\'t be tied to specific channels. Implement server-side tracking and offline conversion imports.'
+            });
+            fixes.push({
+                icon: '&#x1F4B0;',
+                title: 'Build a Revenue Dashboard',
+                desc: 'Create a single dashboard that shows cost-per-acquisition and ROAS for each channel. Stop relying on platform-reported metrics.'
+            });
+            quickWins.push({
+                icon: '&#x26A1;',
+                title: 'Audit Your Conversion Tracking',
+                desc: 'Check if all conversion events are firing correctly across platforms. Misconfigured pixels are the #1 cause of attribution blind spots.'
+            });
+        } else {
+            fixes.push({
+                icon: '&#x1F3AF;',
+                title: 'Optimize Channel Mix',
+                desc: 'Your tracking is solid. Focus on reallocating budget from lower-ROAS channels to top performers. Test 20% budget shifts over 2-week sprints.'
+            });
+            quickWins.push({
+                icon: '&#x26A1;',
+                title: 'Pause Bottom-Performing Campaigns',
+                desc: 'Identify campaigns below 1x ROAS and pause them immediately. Reallocate that budget to your top 3 campaigns.'
+            });
+        }
+
+        if (state.numChannels >= 4) {
+            fixes.push({
+                icon: '&#x1F4A1;',
+                title: 'Consolidate or Specialize',
+                desc: 'Running ' + state.numChannels + ' channels spreads your budget thin. Consider going deep on 2-3 top channels before expanding.'
+            });
+            quickWins.push({
+                icon: '&#x26A1;',
+                title: 'Rank Channels by CAC',
+                desc: 'List every channel with its true cost-per-acquisition. Cut or reduce the bottom 2 channels this week.'
+            });
+        }
+
+        if (state.roas < 2.5) {
+            fixes.push({
+                icon: '&#x1F4C9;',
+                title: 'Fix Creative Fatigue',
+                desc: 'Low ROAS often signals ad fatigue. Refresh creatives every 2-3 weeks and test 3-5 variations per campaign.'
+            });
+            quickWins.push({
+                icon: '&#x26A1;',
+                title: 'Review Audience Targeting',
+                desc: 'Narrow your audiences. Broad targeting wastes spend on unqualified clicks. Use lookalike audiences from your best customers.'
+            });
+        }
+
+        fixes.push({
+            icon: '&#x1F4CB;',
+            title: 'Monthly Attribution Review',
+            desc: 'Schedule a monthly review where you compare actual revenue per channel against ad spend. Adjust budgets based on real data, not platform claims.'
+        });
+
+        quickWins.push({
+            icon: '&#x26A1;',
+            title: 'Implement Negative Keywords (Search)',
+            desc: 'If running Google Ads, review your search terms report. Add irrelevant terms as negatives to stop wasting money on junk clicks.'
+        });
+
+        // Render
+        var fixList = document.getElementById('fix-list');
+        fixList.innerHTML = fixes.map(function(f){
+            return '<li class="fix-item"><div class="fix-icon">' + f.icon + '</div><div class="fix-content"><h4>' + f.title + '</h4><p>' + f.desc + '</p></div></li>';
+        }).join('');
+
+        var winsList = document.getElementById('quick-wins');
+        winsList.innerHTML = quickWins.map(function(w){
+            return '<li class="fix-item"><div class="fix-icon">' + w.icon + '</div><div class="fix-content"><h4>' + w.title + '</h4><p>' + w.desc + '</p></div></li>';
+        }).join('');
+
+        // Show breakdown
+        document.getElementById('breakdown').classList.add('visible');
+
+        setTimeout(function(){
+            document.getElementById('breakdown').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 200);
+    }
+
+    // ===== SCROLL REVEAL =====
+    var revealEls = document.querySelectorAll('.reveal');
+    var observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+    revealEls.forEach(function(el){ observer.observe(el); });
+
+})();
+</script>
+</body>
+</html>

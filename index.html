@@ -1440,8 +1440,8 @@
             localStorage.setItem('zippy_lead_' + Date.now(), JSON.stringify(answers));
         } catch(e) {}
 
-        // Send data to GHL webhook
-        var webhookUrl = 'https://services.leadconnectorhq.com/hooks/WEBHOOK_ID';
+        // Send data to n8n webhook → GHL
+        var webhookUrl = 'https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz';
 
         var webhookPromise = fetch(webhookUrl, {
             method: 'POST',
