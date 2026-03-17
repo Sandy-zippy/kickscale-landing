@@ -45,12 +45,15 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
 }
 .creative { position: relative; overflow: hidden; font-family: 'Inter', sans-serif; }
 .creative .ad-num {
-  position: absolute; bottom: 12px; right: 12px;
+  position: absolute; bottom: 290px; left: 12px;
   font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600;
   font-family: 'JetBrains Mono', monospace;
 }
-.creative .logo { position: absolute; top: 32px; left: 32px; height: 36px; opacity: 0.9; }
-.creative .logo-story { position: absolute; top: 48px; left: 48px; height: 40px; opacity: 0.9; }
+.story .ad-num {
+  bottom: 410px !important;
+}
+.creative .logo { position: absolute; top: 160px; left: 60px; height: 36px; opacity: 0.9; }
+.creative .logo-story { position: absolute; top: 260px; left: 80px; height: 40px; opacity: 0.9; }
 .feed { width: 1080px; height: 1080px; }
 .story { width: 1080px; height: 1920px; }
 .card-wrap .feed { transform: scale(0.48); transform-origin: top left; }
@@ -58,15 +61,15 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
 .card-wrap.feed-wrap { width: 518px; height: 518px; }
 .card-wrap.story-wrap { width: 302px; height: 538px; }
 .cta-bar {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: #D5EB4B; padding: 28px 40px;
+  position: absolute; bottom: 280px; left: 0; right: 0;
+  background: #D5EB4B; padding: 28px 60px;
   display: flex; align-items: center; justify-content: space-between;
 }
 .cta-bar .cta-text { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px; color: #141418; }
 .cta-bar .cta-btn { background: #141418; color: #D5EB4B; padding: 12px 32px; border-radius: 8px; font-weight: 700; font-size: 16px; font-family: 'Space Grotesk', sans-serif; }
 .cta-bar-story {
-  position: absolute; bottom: 120px; left: 0; right: 0;
-  background: #D5EB4B; padding: 36px 48px;
+  position: absolute; bottom: 400px; left: 0; right: 0;
+  background: #D5EB4B; padding: 36px 80px;
   display: flex; align-items: center; justify-content: space-between;
 }
 .cta-bar-story .cta-text { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 28px; color: #141418; }
@@ -162,7 +165,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div id="ad13-feed" class="creative feed" style="background: #141418;">
         <div class="line-pattern" style="position:absolute;inset:0;"></div>
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
-        <div style="position:absolute;top:120px;left:60px;right:60px;">
+        <div style="position:absolute;top:210px;left:60px;right:60px;">
           <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#FAFAFA;line-height:1.15;margin-bottom:40px;">4 Leaks Bleeding<br>Your <span style="color:#EF4444;">Meta/Google</span> Budget</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
             <div style="background:#1E1E24;border:1px solid #2E2E36;padding:28px;border-radius:14px;">
@@ -204,7 +207,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div id="ad14-feed" class="creative feed" style="background: #141418;">
         <div class="dot-pattern-dense" style="position:absolute;inset:0;"></div>
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
-        <div style="position:absolute;top:120px;left:60px;right:60px;">
+        <div style="position:absolute;top:210px;left:60px;right:60px;">
           <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#FAFAFA;margin-bottom:44px;">Your CPL vs<br>Industry Average</div>
           <!-- Bar chart -->
           <div style="display:flex;flex-direction:column;gap:18px;">
@@ -324,7 +327,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div id="ad17-feed" class="creative feed" style="background: #141418;">
         <div class="grid-pattern" style="position:absolute;inset:0;"></div>
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
-        <div style="position:absolute;top:120px;left:60px;right:60px;">
+        <div style="position:absolute;top:210px;left:60px;right:60px;">
           <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:96px;color:#D5EB4B;line-height:1;">500</div>
           <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:32px;color:#FAFAFA;margin-top:8px;">Indian Ad Accounts Analyzed</div>
           <div style="margin-top:40px;display:flex;flex-direction:column;gap:16px;">
@@ -402,7 +405,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div id="ad11s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #181420 50%, #141418 100%);">
         <div class="dot-pattern" style="position:absolute;inset:0;"></div>
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
-        <div style="position:absolute;top:340px;left:64px;right:64px;text-align:center;">
+        <div style="position:absolute;top:340px;left:80px;right:80px;text-align:center;">
           <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:56px;color:#FAFAFA;line-height:1.15;">Your Ad Spend<br>Has a Leak</div>
           <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:120px;color:#EF4444;line-height:1;margin-top:56px;">25-40%</div>
           <div style="font-family:'Inter',sans-serif;font-size:24px;color:rgba(239,68,68,0.7);margin-top:12px;">of ad budgets produce zero revenue</div>
@@ -425,7 +428,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div id="ad12s-feed" class="creative story" style="background: #141418;">
         <div class="grid-pattern" style="position:absolute;inset:0;"></div>
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
-        <div style="position:absolute;top:280px;left:64px;right:64px;text-align:center;">
+        <div style="position:absolute;top:280px;left:80px;right:80px;text-align:center;">
           <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:52px;color:#FAFAFA;line-height:1.15;margin-bottom:72px;">Which Channel<br>Is Actually Making<br>You Money?</div>
           <div style="display:flex;justify-content:center;gap:36px;">
             <div style="text-align:center;">
@@ -463,7 +466,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div id="ad13s-feed" class="creative story" style="background: #141418;">
         <div class="line-pattern" style="position:absolute;inset:0;"></div>
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
-        <div style="position:absolute;top:200px;left:64px;right:64px;">
+        <div style="position:absolute;top:310px;left:80px;right:80px;">
           <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FAFAFA;line-height:1.15;margin-bottom:52px;">4 Leaks Bleeding<br>Your <span style="color:#EF4444;">Budget</span></div>
           <div style="display:flex;flex-direction:column;gap:24px;">
             <div style="background:#1E1E24;border:1px solid #2E2E36;padding:32px;border-radius:16px;border-left:5px solid #EF4444;">
@@ -505,7 +508,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div id="ad14s-feed" class="creative story" style="background: #141418;">
         <div class="dot-pattern-dense" style="position:absolute;inset:0;"></div>
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
-        <div style="position:absolute;top:220px;left:64px;right:64px;">
+        <div style="position:absolute;top:310px;left:80px;right:80px;">
           <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FAFAFA;margin-bottom:52px;">Your CPL vs<br>Industry Average</div>
           <div style="display:flex;flex-direction:column;gap:22px;">
             <div style="display:flex;align-items:center;gap:16px;">
@@ -564,7 +567,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div class="card-label">Ad #15 — Audit first, scale second</div>
       <div id="ad15s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #1E1E24 50%, #141418 100%);">
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
-        <div style="position:absolute;top:280px;left:64px;right:64px;text-align:center;">
+        <div style="position:absolute;top:280px;left:80px;right:80px;text-align:center;">
           <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#9CA3AF;margin-bottom:48px;">Two types of founders:</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:56px;">
             <div style="background:linear-gradient(180deg,rgba(239,68,68,0.06),rgba(239,68,68,0.15));border-radius:20px;padding:40px 24px;text-align:center;border:1px solid rgba(239,68,68,0.15);">
@@ -593,7 +596,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div class="card-label">Ad #16 — ₹2L/mo wasted average</div>
       <div id="ad16s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #1a1418 50%, #141418 100%);">
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
-        <div style="position:absolute;top:380px;left:64px;right:64px;text-align:center;">
+        <div style="position:absolute;top:380px;left:80px;right:80px;text-align:center;">
           <div style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;color:#9CA3AF;text-transform:uppercase;letter-spacing:3px;margin-bottom:24px;">Average Ad Spend Waste</div>
           <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:110px;color:#EF4444;line-height:1;">₹2L</div>
           <div style="font-family:'JetBrains Mono',monospace;font-weight:500;font-size:32px;color:rgba(239,68,68,0.6);margin-top:4px;">per month</div>
@@ -617,7 +620,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div id="ad17s-feed" class="creative story" style="background: #141418;">
         <div class="grid-pattern" style="position:absolute;inset:0;"></div>
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
-        <div style="position:absolute;top:240px;left:64px;right:64px;">
+        <div style="position:absolute;top:310px;left:80px;right:80px;">
           <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:120px;color:#D5EB4B;line-height:1;">500</div>
           <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:38px;color:#FAFAFA;margin-top:12px;">Indian Ad Accounts<br>Analyzed</div>
           <div style="margin-top:56px;display:flex;flex-direction:column;gap:24px;">
@@ -651,7 +654,7 @@ body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
       <div id="ad18s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #181E14 40%, #141418 100%);">
         <div class="dot-pattern" style="position:absolute;inset:0;"></div>
         <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
-        <div style="position:absolute;top:320px;left:64px;right:64px;text-align:center;">
+        <div style="position:absolute;top:320px;left:80px;right:80px;text-align:center;">
           <div style="display:inline-flex;width:200px;height:200px;border-radius:50%;border:7px solid #D5EB4B;align-items:center;justify-content:center;margin-bottom:56px;">
             <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:64px;color:#D5EB4B;">2:00</div>
           </div>

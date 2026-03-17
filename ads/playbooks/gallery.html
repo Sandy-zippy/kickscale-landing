@@ -50,20 +50,21 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
 
 /* Ad number badge */
 .ad-badge {
-  position: absolute; top: 24px; right: 24px; z-index: 10;
-  font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;
+  position: absolute; bottom: 290px; left: 24px; z-index: 10;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
   color: #6B7280; background: rgba(20,20,24,.7); padding: 4px 10px; border-radius: 6px;
   border: 1px solid #2E2E36;
 }
+.story .ad-badge { bottom: 410px; }
 
 /* Logo */
-.logo { position: absolute; top: 32px; left: 40px; z-index: 10; height: 40px; }
-.story .logo { top: 60px; left: 50px; }
+.logo { position: absolute; top: 160px; left: 60px; z-index: 10; height: 40px; }
+.story .logo { top: 260px; left: 80px; }
 
 /* CTA bar */
 .cta-bar {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  background: #D5EB4B; padding: 28px 48px;
+  position: absolute; bottom: 280px; left: 0; right: 0;
+  background: #D5EB4B; padding: 28px 60px;
   display: flex; align-items: center; justify-content: space-between;
 }
 .cta-bar .cta-text {
@@ -73,7 +74,7 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
   font-family: 'Inter', sans-serif; font-weight: 600; font-size: 18px;
   color: #D5EB4B; background: #141418; padding: 14px 36px; border-radius: 8px;
 }
-.story .cta-bar { padding: 36px 56px; }
+.story .cta-bar { bottom: 400px; padding: 36px 80px; }
 .story .cta-bar .cta-text { font-size: 32px; }
 
 /* ===== AD 27: Healthcare Big Stat ===== */
@@ -92,7 +93,7 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
 .ad27.story .cross { font-size: 400px; transform: translate(-50%,-45%); }
 .ad27 .content {
   position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; text-align: center; padding: 60px;
+  align-items: center; justify-content: center; text-align: center; padding: 160px 60px 380px;
 }
 .ad27 .label {
   font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700;
@@ -132,9 +133,9 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
 }
 .ad28 .content {
   position: absolute; inset: 0; display: flex; flex-direction: column;
-  justify-content: center; padding: 80px 100px; padding-bottom: 140px;
+  justify-content: center; padding: 210px 100px 380px;
 }
-.ad28.story .content { padding: 200px 80px; padding-bottom: 200px; }
+.ad28.story .content { padding: 310px 80px; padding-bottom: 500px; }
 .ad28 .brand-label {
   font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700;
   color: #F97316; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 40px;
@@ -190,7 +191,7 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
 .ad29 .split-left .split-desc { color: #9CA3AF; }
 .ad29 .split-right .split-desc { color: #FAFAFA; }
 .ad29 .skyline {
-  position: absolute; bottom: 100px; left: 0; right: 0;
+  position: absolute; bottom: 380px; left: 0; right: 0;
   height: 60px; opacity: .08;
   background: repeating-linear-gradient(
     90deg, transparent, transparent 40px, #1E3A5F 40px, #1E3A5F 44px,
@@ -203,11 +204,11 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
   background: linear-gradient(90deg, #1E3A5F, #D5EB4B);
 }
 .ad29 .headline-overlay {
-  position: absolute; top: 32px; left: 50%; transform: translateX(-50%);
+  position: absolute; top: 165px; left: 50%; transform: translateX(-50%);
   font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700;
   color: #FAFAFA; white-space: nowrap; z-index: 5;
 }
-.ad29.story .headline-overlay { top: 48px; font-size: 36px; }
+.ad29.story .headline-overlay { top: 265px; font-size: 36px; }
 
 /* ===== AD 30: Education List ===== */
 .ad30 { background: #141418; }
@@ -218,9 +219,9 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
 }
 .ad30 .content {
   position: absolute; inset: 0; display: flex; flex-direction: column;
-  padding: 120px 80px; padding-bottom: 140px;
+  padding: 210px 80px 380px;
 }
-.ad30.story .content { padding: 200px 80px; padding-bottom: 200px; }
+.ad30.story .content { padding: 310px 80px; padding-bottom: 500px; }
 .ad30 .top-label {
   font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700;
   letter-spacing: 3px; text-transform: uppercase; color: #A855F7; margin-bottom: 32px;
@@ -258,9 +259,9 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
 .ad31 .content {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; text-align: center;
-  padding: 120px 60px; padding-bottom: 140px;
+  padding: 210px 60px 380px;
 }
-.ad31.story .content { padding: 200px 60px; padding-bottom: 200px; }
+.ad31.story .content { padding: 310px 80px; padding-bottom: 500px; }
 .ad31 .badge {
   font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700;
   color: #141418; background: #D5EB4B; padding: 8px 24px; border-radius: 40px;
@@ -305,9 +306,9 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
 }
 .ad32 .content {
   position: absolute; inset: 0; display: flex; flex-direction: column;
-  padding: 120px 60px; padding-bottom: 140px;
+  padding: 210px 60px 380px;
 }
-.ad32.story .content { padding: 180px 60px; padding-bottom: 200px; }
+.ad32.story .content { padding: 310px 80px; padding-bottom: 500px; }
 .ad32 .header-row {
   display: flex; align-items: center; gap: 16px; margin-bottom: 40px;
 }
@@ -378,19 +379,19 @@ body { background: #0A0A0D; color: #FAFAFA; font-family: 'Inter', sans-serif; }
   font-size: 18px; color: #9CA3AF; text-align: center; margin-top: 16px; line-height: 1.4;
 }
 .ad33 .outer-headline {
-  position: absolute; bottom: 140px; left: 0; right: 0; text-align: center;
+  position: absolute; bottom: 380px; left: 0; right: 0; text-align: center;
   font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 600; color: #9CA3AF;
 }
-.ad33.story .outer-headline { bottom: 260px; font-size: 32px; }
+.ad33.story .outer-headline { bottom: 500px; font-size: 32px; }
 
 /* ===== AD 34: Identity Pie Chart ===== */
 .ad34 { background: #141418; }
 .ad34 .content {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; text-align: center;
-  padding: 80px; padding-bottom: 140px;
+  padding: 160px 80px 380px;
 }
-.ad34.story .content { padding: 180px 80px; padding-bottom: 200px; }
+.ad34.story .content { padding: 310px 80px; padding-bottom: 500px; }
 .ad34 .pie-container { position: relative; width: 360px; height: 360px; margin-bottom: 40px; }
 .ad34.story .pie-container { width: 420px; height: 420px; }
 .ad34 .pie {
