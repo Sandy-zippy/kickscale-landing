@@ -1440,39 +1440,55 @@
             localStorage.setItem('zippy_lead_' + Date.now(), JSON.stringify(answers));
         } catch(e) {}
 
-        // STEP 1: Send lead data to GHL via n8n webhook FIRST
-        fetch('https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                name: answers.name,
-                phone: answers.phone,
-                email: answers.email,
-                business_name: answers.business,
-                industry: answers.step1,
-                annual_revenue: answers.step2,
-                marketing_budget: answers.step3,
-                biggest_challenge: answers.step4,
-                goal_90_days: answers.step5,
-                source: 'zippyscale-quiz',
-                utm_source: answers.utm_source || '',
-                utm_medium: answers.utm_medium || '',
-                utm_campaign: answers.utm_campaign || '',
-                utm_content: answers.utm_content || '',
-                utm_term: answers.utm_term || ''
-            })
-        }).then(function() {
-            // STEP 2: Lead captured in GHL. Now redirect to Razorpay Payment Link.
+        var paymentUrl = 'https://rzp.io/rzp/6Ckk8osb';
+        var redirected = false;
+
+        function goToPayment() {
+            if (redirected) return;
+            redirected = true;
             btn.textContent = 'Redirecting to payment...';
             if (typeof fbq !== 'undefined') {
                 fbq('track', 'InitiateCheckout', { value: 999, currency: 'INR' });
             }
-            window.location.href = 'https://rzp.io/rzp/6Ckk8osb';
-        }).catch(function(err) {
-            console.warn('Webhook failed, lead saved to localStorage', err);
-            // Still redirect to payment. Don't block the sale.
-            btn.textContent = 'Redirecting to payment...';
-            window.location.href = 'https://rzp.io/rzp/6Ckk8osb';
+            window.location.href = paymentUrl;
+        }
+
+        // Safety net: redirect after 3s no matter what
+        setTimeout(goToPayment, 3000);
+
+        // Send lead data to GHL via n8n webhook, then redirect
+        var payload = JSON.stringify({
+            name: answers.name,
+            phone: answers.phone,
+            email: answers.email,
+            business_name: answers.business,
+            industry: answers.step1,
+            annual_revenue: answers.step2,
+            marketing_budget: answers.step3,
+            biggest_challenge: answers.step4,
+            goal_90_days: answers.step5,
+            source: 'zippyscale-quiz',
+            utm_source: answers.utm_source || '',
+            utm_medium: answers.utm_medium || '',
+            utm_campaign: answers.utm_campaign || '',
+            utm_content: answers.utm_content || '',
+            utm_term: answers.utm_term || ''
+        });
+
+        // Try fetch first (works if CORS allows)
+        fetch('https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload
+        }).then(goToPayment).catch(function() {
+            // CORS blocked? Try sendBeacon as fallback (fire-and-forget)
+            try {
+                navigator.sendBeacon(
+                    'https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz',
+                    new Blob([payload], { type: 'application/json' })
+                );
+            } catch(e) {}
+            goToPayment();
         });
     }
 
