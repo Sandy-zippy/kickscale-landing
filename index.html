@@ -1423,7 +1423,7 @@
 
         var nextBtn = document.getElementById('quiz-next-btn');
         if (step === 6) {
-            nextBtn.textContent = 'Pay \u20B9999 & Get Blueprint \u2192';
+            nextBtn.textContent = 'Get Blueprint \u2192 \u20B9999';
             nextBtn.style.background = 'var(--lime)';
         } else {
             nextBtn.textContent = 'Next \u2192';
@@ -1432,7 +1432,7 @@
 
     function submitQuiz() {
         var btn = document.getElementById('quiz-next-btn');
-        btn.textContent = 'Processing...';
+        btn.textContent = 'Saving your info...';
         btn.disabled = true;
 
         // Save to localStorage as fallback
@@ -1440,10 +1440,8 @@
             localStorage.setItem('zippy_lead_' + Date.now(), JSON.stringify(answers));
         } catch(e) {}
 
-        // Send data to n8n webhook → GHL
-        var webhookUrl = 'https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz';
-
-        var webhookPromise = fetch(webhookUrl, {
+        // STEP 1: Send lead data to GHL via n8n webhook FIRST
+        fetch('https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1463,44 +1461,19 @@
                 utm_content: answers.utm_content || '',
                 utm_term: answers.utm_term || ''
             })
+        }).then(function() {
+            // STEP 2: Lead captured in GHL. Now redirect to Razorpay Payment Link.
+            btn.textContent = 'Redirecting to payment...';
+            if (typeof fbq !== 'undefined') {
+                fbq('track', 'InitiateCheckout', { value: 999, currency: 'INR' });
+            }
+            window.location.href = 'https://rzp.io/rzp/6Ckk8osb';
         }).catch(function(err) {
             console.warn('Webhook failed, lead saved to localStorage', err);
+            // Still redirect to payment. Don't block the sale.
+            btn.textContent = 'Redirecting to payment...';
+            window.location.href = 'https://rzp.io/rzp/6Ckk8osb';
         });
-
-        // Trigger Razorpay
-        if (typeof Razorpay !== 'undefined') {
-            var rzp = new Razorpay({
-                key: 'rzp_live_XXXXXXXXXX',
-                amount: 99900,
-                currency: 'INR',
-                name: 'ZippyScale',
-                description: 'Growth Blueprint - Pitch Meet',
-                prefill: {
-                    name: answers.name,
-                    email: answers.email,
-                    contact: answers.phone
-                },
-                theme: { color: '#D5EB4B' },
-                handler: function(response) {
-                    if (typeof fbq !== 'undefined') {
-                        fbq('track', 'Purchase', { value: 999, currency: 'INR' });
-                    }
-                    document.getElementById('thankYou').classList.add('visible');
-                },
-                modal: {
-                    ondismiss: function() {
-                        btn.textContent = 'Pay \u20B9999 & Get Blueprint \u2192';
-                        btn.disabled = false;
-                    }
-                }
-            });
-            rzp.open();
-        } else {
-            // Razorpay not loaded - show error, not success
-            showToast('Payment system loading. Please refresh and try again.');
-            btn.textContent = 'Pay \u20B9999 & Get Blueprint \u2192';
-            btn.disabled = false;
-        }
     }
 
 })();
@@ -1661,7 +1634,6 @@ document.querySelectorAll('a[href="#quiz"]').forEach(function(a) {
 })();
 </script>
 
-<!-- Razorpay SDK (uncomment before launch) -->
-<!-- <script src="https://checkout.razorpay.com/v1/checkout.js"></script> -->
+<!-- Razorpay Payment Link: https://rzp.io/rzp/6Ckk8osb (no SDK needed) -->
 </body>
 </html>
