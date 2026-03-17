@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Free Industry Marketing Playbook | ZippyScale</title>
-    <meta name="description" content="Download your free industry-specific marketing playbook. Rs 10,000+ of research, yours for free. Healthcare, D2C, Real Estate, or Education.">
+    <meta name="description" content="Download your free industry-specific marketing playbook. Rs 10,000+ of research, yours for free. 8 industries: Healthcare, D2C, Real Estate, Education, SaaS, Manufacturing, Hospitality, Fintech.">
     <link rel="icon" href="assets/favicon.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -392,6 +392,42 @@
                     <p>Schools, coaching institutes, online courses, test prep, and upskilling platforms</p>
                     <span class="tag">$12B Market</span>
                 </div>
+
+                <div class="industry-card" data-industry="SaaS & Tech" data-slug="saas" onclick="selectIndustry(this)">
+                    <div class="industry-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D5EB4B" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    </div>
+                    <h3>SaaS & Tech</h3>
+                    <p>B2B SaaS, developer tools, cloud platforms, AI/ML products, and enterprise software</p>
+                    <span class="tag">$13B Market</span>
+                </div>
+
+                <div class="industry-card" data-industry="Manufacturing & Industrial" data-slug="manufacturing" onclick="selectIndustry(this)">
+                    <div class="industry-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D5EB4B" stroke-width="2" stroke-linecap="round"><path d="M2 20h20"/><path d="M5 20V8l5 4V8l5 4V4l5 4v12"/></svg>
+                    </div>
+                    <h3>Manufacturing & Industrial</h3>
+                    <p>Auto, chemicals, electronics, machinery, OEM, and export-focused manufacturers</p>
+                    <span class="tag">$330B Market</span>
+                </div>
+
+                <div class="industry-card" data-industry="Hospitality, F&B & QSR" data-slug="hospitality" onclick="selectIndustry(this)">
+                    <div class="industry-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D5EB4B" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+                    </div>
+                    <h3>Hospitality, F&B & QSR</h3>
+                    <p>Hotels, restaurants, cafes, cloud kitchens, QSR chains, catering, and food delivery</p>
+                    <span class="tag">$282B Market</span>
+                </div>
+
+                <div class="industry-card" data-industry="Fintech & BFSI" data-slug="fintech" onclick="selectIndustry(this)">
+                    <div class="industry-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D5EB4B" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <h3>Fintech & BFSI</h3>
+                    <p>Digital payments, lending, insurance, investments, neobanking, and B2B fintech</p>
+                    <span class="tag">$51B Market</span>
+                </div>
             </div>
         </div>
     </section>
@@ -492,7 +528,11 @@
         'healthcare': 'playbooks/healthcare.html',
         'd2c': 'playbooks/d2c.html',
         'realestate': 'playbooks/realestate.html',
-        'education': 'playbooks/education.html'
+        'education': 'playbooks/education.html',
+        'saas': 'playbooks/saas.html',
+        'manufacturing': 'playbooks/manufacturing.html',
+        'hospitality': 'playbooks/hospitality.html',
+        'fintech': 'playbooks/fintech.html'
     };
 
     function selectIndustry(el) {
