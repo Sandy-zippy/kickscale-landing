@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZippyScale | AI Automations That Run Your Business While You Scale</title>
+    <meta name="description" content="Cut 40 hours/week of manual work. We build AI automations for Indian businesses using n8n, Make, and custom scripts. Same team, 10x output.">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="ZippyScale | AI Automations for Indian Businesses">
+    <meta property="og:description" content="Cut 40 hours/week of manual work. Same team, 10x output. Setup from ₹50,000.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://zippyscale.in/automate">
+    <meta property="og:image" content="https://zippyscale.in/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- Favicon -->
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Meta Pixel (replace YOUR_PIXEL_ID before launch) -->
+    <!-- <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','YOUR_PIXEL_ID');fbq('track','PageView');</script> -->
+
+    <!-- UTM Tracking -->
+    <script>
+    (function(){
+        var params = new URLSearchParams(window.location.search);
+        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(key){
+            var val = params.get(key);
+            if(val) sessionStorage.setItem(key, val);
+        });
+    })();
+    </script>
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --dark-bg: #141418;
+            --dark-card: #1E1E24;
+            --dark-border: #2E2E36;
+            --light-bg: #F8F9FA;
+            --light-card: #FFFFFF;
+            --light-border: #E5E7EB;
+            --lime: #D5EB4B;
+            --lime-hover: #E4F57A;
+            --lime-dark: #B8CF2E;
+            --lime-glow: rgba(213,235,75,0.12);
+            --text-on-dark: #FAFAFA;
+            --text-on-dark-secondary: #9CA3AF;
+            --text-on-dark-muted: #6B7280;
+            --text-on-light: #111827;
+            --text-on-light-secondary: #4B5563;
+            --text-on-light-muted: #9CA3AF;
+            --green: #22C55E;
+            --red: #EF4444;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-on-dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+        /* ===== SCROLL REVEAL ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== SECTION DIVIDER ===== */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--lime), transparent);
+            opacity: 0.2;
+        }
+
+        /* ===== NAV ===== */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(20,20,24,0.92); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--dark-border);
+            padding: 16px 0;
+        }
+        .nav .container {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: var(--text-on-dark);
+        }
+        .nav-logo span { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; }
+        .nav-cta {
+            background: var(--lime); color: var(--dark-bg); border: none; padding: 10px 24px;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px;
+            border-radius: 8px; cursor: pointer; text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--lime-glow); background: var(--lime-hover); }
+
+        /* ===== HERO ===== */
+        .hero {
+            position: relative;
+            padding: 140px 0 80px;
+            background: var(--dark-bg);
+            text-align: center;
+        }
+        .hero-bg-effects, .cta-bg-effects {
+            position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+        }
+        .gradient-orb {
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15;
+            will-change: transform;
+        }
+        .orb-1 {
+            width: 600px; height: 600px; top: -200px; left: -100px;
+            background: radial-gradient(circle, #D5EB4B 0%, transparent 70%);
+            animation: orbFloat1 15s ease-in-out infinite;
+        }
+        .orb-2 {
+            width: 400px; height: 400px; top: 100px; right: -100px;
+            background: radial-gradient(circle, #D5EB4B 0%, transparent 70%);
+            animation: orbFloat2 20s ease-in-out infinite;
+        }
+        .orb-3 {
+            width: 500px; height: 500px; bottom: -200px; left: 40%;
+            background: radial-gradient(circle, rgba(213,235,75,0.5) 0%, transparent 70%);
+            animation: orbFloat3 18s ease-in-out infinite;
+        }
+        .cta-bg-effects .gradient-orb { opacity: 0.08; filter: blur(100px); }
+        .cta-bg-effects .orb-1 { width: 400px; height: 400px; }
+        .cta-bg-effects .orb-2 { width: 300px; height: 300px; }
+        .cta-bg-effects .orb-3 { width: 350px; height: 350px; }
+        @keyframes orbFloat1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, 50px) scale(1.1); }
+            66% { transform: translate(-50px, 100px) scale(0.9); }
+        }
+        @keyframes orbFloat2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-80px, 60px) scale(1.15); }
+            66% { transform: translate(60px, -40px) scale(0.85); }
+        }
+        @keyframes orbFloat3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(80px, -60px) scale(1.1); }
+        }
+        .hero .container { position: relative; z-index: 1; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--lime-glow); border: 1px solid rgba(213,235,75,0.3);
+            padding: 8px 20px; border-radius: 100px; font-size: 13px;
+            color: var(--lime); font-weight: 600; margin-bottom: 32px;
+        }
+        .hero-badge .dot { width: 8px; height: 8px; background: var(--lime); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .hero h1 {
+            font-size: clamp(36px, 6vw, 64px); font-weight: 700;
+            max-width: 850px; margin: 0 auto 24px;
+            color: var(--text-on-dark);
+            background: linear-gradient(135deg, var(--text-on-dark) 0%, var(--lime) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: heroReveal 0.8s ease-out;
+        }
+        @keyframes heroReveal {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hero p {
+            font-size: clamp(16px, 2.5vw, 20px); color: var(--text-on-dark-secondary);
+            max-width: 600px; margin: 0 auto 40px;
+        }
+        .hero-cta {
+            display: inline-flex; align-items: center; gap: 12px;
+            background: var(--lime); color: var(--dark-bg); border: none;
+            padding: 18px 40px; font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700; font-size: 18px; border-radius: 12px;
+            cursor: pointer; text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            box-shadow: 0 4px 30px var(--lime-glow);
+            animation: ctaPulse 3s ease-in-out infinite;
+        }
+        .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(213,235,75,0.3); background: var(--lime-hover); }
+        @keyframes ctaPulse {
+            0%, 100% { box-shadow: 0 4px 30px rgba(213,235,75,0.12); }
+            50% { box-shadow: 0 4px 40px rgba(213,235,75,0.25); }
+        }
+
+        /* ===== DARK SECTIONS ===== */
+        .dark-section {
+            background: var(--dark-bg);
+            color: var(--text-on-dark);
+            padding: 80px 0;
+            position: relative; overflow: hidden;
+        }
+        .dark-section::after {
+            content: ''; position: absolute; top: 0; left: -200px;
+            width: 200px; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(213,235,75,0.03), transparent);
+            animation: beamSweep 8s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes beamSweep {
+            0% { left: -200px; }
+            100% { left: calc(100% + 200px); }
+        }
+        .dark-section .section-label { color: var(--lime); }
+        .dark-section .section-title { color: var(--text-on-dark); }
+        .dark-section .section-subtitle { color: var(--text-on-dark-secondary); }
+
+        /* ===== LIGHT SECTIONS ===== */
+        .light-section {
+            background: var(--light-bg);
+            color: var(--text-on-light);
+            padding: 80px 0;
+        }
+        .light-section .section-label { color: var(--lime-dark); }
+        .light-section .section-title { color: var(--text-on-light); }
+        .light-section .section-subtitle { color: var(--text-on-light-secondary); }
+
+        /* ===== SECTIONS COMMON ===== */
+        section { padding: 80px 0; }
+        .section-label {
+            font-family: 'JetBrains Mono', monospace; font-weight: 500;
+            font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--lime); margin-bottom: 16px;
+            transition: transform 0.3s ease-out;
+            will-change: transform;
+        }
+        .section-title {
+            font-size: clamp(28px, 4vw, 42px); font-weight: 700;
+            margin-bottom: 20px; max-width: 700px;
+        }
+        .section-subtitle {
+            font-size: 17px;
+            max-width: 600px; margin-bottom: 48px;
+        }
+        .text-center { text-align: center; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+
+        /* ===== PAIN SECTION (LIGHT) ===== */
+        .pain-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .pain-card {
+            background: var(--light-card); border: 1px solid var(--light-border);
+            border-radius: 16px; padding: 32px;
+            transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+            transform-style: preserve-3d; will-change: transform;
+        }
+        .pain-card:hover { border-color: var(--red); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(184,207,46,0.2); }
+        .pain-icon { font-size: 32px; margin-bottom: 16px; }
+        .pain-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-on-light); }
+        .pain-card p { font-size: 14px; color: var(--text-on-light-secondary); }
+        .pain-stat {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 28px; color: var(--red); margin-bottom: 8px;
+        }
+
+        /* ===== AUTOMATE GRID (DARK) ===== */
+        .automate-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+        .automate-card {
+            background: var(--dark-card); border: 1px solid var(--dark-border);
+            border-radius: 16px; padding: 28px; position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+            transform-style: preserve-3d; will-change: transform;
+        }
+        .automate-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(213,235,75,0.1); }
+        .automate-card .card-icon { font-size: 28px; margin-bottom: 12px; }
+        .automate-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--lime); }
+        .automate-card p { font-size: 13px; color: var(--text-on-dark-secondary); line-height: 1.5; }
+
+        /* ===== HOW IT WORKS (LIGHT) ===== */
+        .how-steps {
+            display: grid; grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        .how-step {
+            text-align: center; padding: 32px 20px;
+            background: var(--light-card); border: 1px solid var(--light-border);
+            border-radius: 16px; position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+            transform-style: preserve-3d; will-change: transform;
+        }
+        .how-step:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(184,207,46,0.2); }
+        .how-step .num {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 24px; color: var(--lime-dark); margin-bottom: 12px;
+        }
+        .how-step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-on-light); }
+        .how-step p { font-size: 13px; color: var(--text-on-light-secondary); }
+        .how-arrow {
+            display: none; position: absolute; right: -20px; top: 50%;
+            color: var(--lime-dark); font-size: 20px;
+        }
+        @media(min-width:900px) { .how-arrow { display: block; } }
+
+        /* ===== ROI TABLE (DARK) ===== */
+        .roi-table-wrap {
+            overflow-x: auto; border-radius: 16px;
+            border: 1px solid var(--dark-border);
+        }
+        .roi-table {
+            width: 100%; border-collapse: collapse;
+            font-size: 14px;
+        }
+        .roi-table th {
+            background: var(--dark-card); padding: 16px 20px;
+            text-align: left; font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600; font-size: 13px; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text-on-dark-muted);
+            border-bottom: 1px solid var(--dark-border);
+        }
+        .roi-table th:first-child { border-right: 1px solid var(--dark-border); }
+        .roi-table th.manual { color: var(--red); }
+        .roi-table th.automated { color: var(--lime); }
+        .roi-table td {
+            padding: 14px 20px; border-bottom: 1px solid var(--dark-border);
+            color: var(--text-on-dark-secondary);
+        }
+        .roi-table td:first-child {
+            font-weight: 600; color: var(--text-on-dark);
+            border-right: 1px solid var(--dark-border);
+            white-space: nowrap;
+        }
+        .roi-table td.manual-val { color: var(--text-on-dark-muted); }
+        .roi-table td.auto-val { color: var(--lime); font-weight: 600; }
+        .roi-table tr:last-child td { border-bottom: none; }
+        .roi-table tr:hover td { background: rgba(213,235,75,0.03); }
+
+        /* ===== WHO THIS IS FOR (LIGHT) ===== */
+        .who-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        .who-card {
+            background: var(--light-card); border: 1px solid var(--light-border);
+            border-radius: 12px; padding: 24px;
+            display: flex; align-items: flex-start; gap: 14px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .who-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+        .who-card .who-icon {
+            width: 40px; height: 40px; min-width: 40px;
+            background: rgba(184,207,46,0.12); border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .who-card p { font-size: 15px; color: var(--text-on-light); font-weight: 500; }
+
+        /* ===== PRICING (DARK) ===== */
+        .offer-box {
+            background: var(--dark-card); border: 2px solid transparent;
+            border-radius: 24px; padding: 48px; position: relative; overflow: hidden;
+            max-width: 700px; margin: 0 auto;
+        }
+        .offer-box::before {
+            content: ''; position: absolute; inset: -2px; z-index: -1;
+            border-radius: 26px;
+            background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.2), var(--lime));
+            background-size: 200% 200%;
+            animation: gradientBorder 4s ease infinite;
+        }
+        .offer-box::after {
+            content: ''; position: absolute; inset: 0;
+            background: var(--dark-card); border-radius: 22px;
+            z-index: -1;
+        }
+        @keyframes gradientBorder {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .pricing-row {
+            display: flex; gap: 32px; margin-bottom: 32px; flex-wrap: wrap;
+        }
+        .pricing-item { flex: 1; min-width: 200px; }
+        .pricing-label {
+            font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px;
+            color: var(--text-on-dark-muted); font-weight: 600; margin-bottom: 8px;
+        }
+        .pricing-value {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 36px; color: var(--lime);
+        }
+        .pricing-note { font-size: 13px; color: var(--text-on-dark-muted); margin-top: 4px; }
+        .offer-guarantee {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3);
+            padding: 8px 16px; border-radius: 8px;
+            font-size: 13px; color: var(--green); font-weight: 600;
+            margin-top: 16px;
+        }
+        .offer-roi {
+            font-size: 15px; color: var(--text-on-dark-secondary);
+            margin-top: 16px; font-style: italic;
+        }
+
+        /* ===== QUIZ (DARK) ===== */
+        .quiz-section {
+            background: var(--dark-bg);
+            padding: 100px 0;
+        }
+        .quiz-container {
+            max-width: 640px; margin: 0 auto;
+            background: var(--dark-card); border: 2px solid transparent;
+            border-radius: 24px; padding: 48px; position: relative; overflow: hidden;
+        }
+        .quiz-container::before {
+            content: ''; position: absolute; inset: -2px; z-index: 0;
+            border-radius: 26px;
+            background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.15), var(--lime));
+            background-size: 200% 200%;
+            animation: gradientBorder 4s ease infinite;
+        }
+        .quiz-container::after {
+            content: ''; position: absolute; inset: 0;
+            background: var(--dark-card); border-radius: 22px;
+            z-index: 0;
+        }
+        .quiz-container > * { position: relative; z-index: 1; }
+        .quiz-progress {
+            display: flex; gap: 6px; margin-bottom: 32px;
+        }
+        .quiz-progress-bar {
+            flex: 1; height: 4px; background: var(--dark-border);
+            border-radius: 4px; transition: background 0.3s;
+        }
+        .quiz-progress-bar.active { background: var(--lime); }
+
+        .quiz-step { display: none; }
+        .quiz-step.active { display: block; }
+        .quiz-step h3 {
+            font-size: 22px; font-weight: 600; margin-bottom: 8px; color: var(--text-on-dark);
+        }
+        .quiz-step .quiz-subtitle { font-size: 14px; color: var(--text-on-dark-muted); margin-bottom: 24px; }
+
+        .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+        .quiz-option {
+            display: flex; align-items: center; gap: 14px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 12px; padding: 16px 20px; cursor: pointer;
+            transition: all 0.2s; font-size: 15px; color: var(--text-on-dark);
+            min-height: 52px;
+        }
+        .quiz-option:hover { border-color: var(--lime); background: rgba(213,235,75,0.05); }
+        .quiz-option.selected { border-color: var(--lime); background: var(--lime-glow); }
+        .quiz-option .radio {
+            width: 20px; height: 20px; min-width: 20px; border-radius: 50%;
+            border: 2px solid var(--dark-border); transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .quiz-option.selected .radio {
+            border-color: var(--lime); background: var(--lime);
+        }
+        .quiz-option.selected .radio::after {
+            content: '\2713'; color: var(--dark-bg); font-size: 12px; font-weight: 700;
+        }
+        /* Multi-select checkbox style */
+        .quiz-option .checkbox {
+            width: 20px; height: 20px; min-width: 20px; border-radius: 4px;
+            border: 2px solid var(--dark-border); transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .quiz-option.selected .checkbox {
+            border-color: var(--lime); background: var(--lime);
+        }
+        .quiz-option.selected .checkbox::after {
+            content: '\2713'; color: var(--dark-bg); font-size: 12px; font-weight: 700;
+        }
+
+        .quiz-form { display: flex; flex-direction: column; gap: 16px; }
+        .quiz-form label { font-size: 14px; font-weight: 600; color: var(--text-on-dark-secondary); }
+        .quiz-form input {
+            width: 100%; padding: 14px 18px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 10px; color: var(--text-on-dark); font-size: 16px;
+            font-family: 'Inter', sans-serif; outline: none;
+        }
+        .quiz-form input:focus { border-color: var(--lime); }
+        .quiz-form input::placeholder { color: var(--text-on-dark-muted); }
+
+        .quiz-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 32px; gap: 12px;
+        }
+        .quiz-back {
+            background: none; border: 1px solid var(--dark-border); color: var(--text-on-dark-secondary);
+            padding: 12px 24px; border-radius: 10px; cursor: pointer;
+            font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+            transition: border-color 0.2s;
+        }
+        .quiz-back:hover { border-color: var(--text-on-dark-secondary); }
+        .quiz-back.hidden { visibility: hidden; }
+        .quiz-next {
+            background: var(--lime); color: var(--dark-bg); border: none;
+            padding: 14px 32px; border-radius: 10px; cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px;
+            transition: transform 0.2s, opacity 0.2s, background 0.2s;
+            margin-left: auto;
+        }
+        .quiz-next:hover { transform: translateY(-1px); background: var(--lime-hover); }
+        .quiz-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .quiz-error {
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+            color: var(--red); padding: 12px 16px; border-radius: 8px;
+            font-size: 13px; margin-top: 12px; display: none;
+        }
+        .quiz-error.visible { display: block; }
+
+        /* ===== FAQ (LIGHT) ===== */
+        .faq-list { max-width: 700px; margin: 0 auto; }
+        .faq-item {
+            border-bottom: 1px solid var(--light-border); padding: 24px 0;
+        }
+        .faq-question {
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; font-weight: 600; font-size: 16px;
+            color: var(--text-on-light); gap: 16px;
+        }
+        .faq-question .faq-icon {
+            font-size: 20px; color: var(--lime-dark); transition: transform 0.3s;
+            min-width: 24px; text-align: center;
+        }
+        .faq-answer {
+            max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+            font-size: 14px; color: var(--text-on-light-secondary); line-height: 1.7;
+        }
+        .faq-item.open .faq-answer { max-height: 300px; padding-top: 16px; }
+        .faq-item.open .faq-icon { transform: rotate(45deg); }
+
+        /* ===== FINAL CTA (DARK) ===== */
+        .final-cta {
+            text-align: center; padding: 100px 0;
+            background: var(--dark-bg);
+            position: relative; overflow: hidden;
+        }
+        .final-cta .container { position: relative; z-index: 1; }
+        .final-cta h2 { font-size: clamp(28px, 4vw, 42px); font-weight: 700; margin-bottom: 16px; color: var(--text-on-dark); }
+        .final-cta p { font-size: 17px; color: var(--text-on-dark-secondary); margin-bottom: 32px; max-width: 500px; margin-left: auto; margin-right: auto; }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--dark-bg);
+            padding: 40px 0; border-top: 1px solid var(--dark-border);
+            text-align: center; font-size: 13px; color: var(--text-on-dark-muted);
+        }
+        .footer a { color: var(--lime); text-decoration: none; }
+
+        /* ===== STICKY MOBILE CTA ===== */
+        .sticky-cta {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            z-index: 99; background: rgba(20,20,24,0.95); backdrop-filter: blur(10px);
+            border-top: 1px solid var(--dark-border); padding: 12px 16px;
+            text-align: center;
+        }
+        .sticky-cta a {
+            display: block; background: var(--lime); color: var(--dark-bg);
+            padding: 14px; border-radius: 10px; font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600; font-size: 15px; text-decoration: none;
+        }
+        .sticky-cta .sticky-sub { font-size: 11px; color: var(--text-on-dark-muted); margin-top: 4px; }
+
+        /* ===== SHIMMER TEXT ===== */
+        .shimmer-text {
+            background: linear-gradient(90deg, var(--text-on-dark) 0%, var(--lime) 45%, var(--text-on-dark) 55%, var(--text-on-dark) 100%);
+            background-size: 200% 100%;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
+        /* ===== THANK YOU OVERLAY ===== */
+        .thank-you-overlay {
+            display: none; position: fixed; inset: 0; z-index: 200;
+            background: rgba(20,20,24,0.95); backdrop-filter: blur(20px);
+            align-items: center; justify-content: center;
+        }
+        .thank-you-overlay.visible { display: flex; }
+        .thank-you-box {
+            text-align: center; max-width: 500px; padding: 48px;
+        }
+        .thank-you-box .check-circle {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: var(--lime); display: flex; align-items: center;
+            justify-content: center; margin: 0 auto 24px;
+            font-size: 36px; color: var(--dark-bg);
+        }
+        .thank-you-box h2 { font-size: 28px; font-weight: 700; margin-bottom: 12px; color: var(--text-on-dark); }
+        .thank-you-box p { color: var(--text-on-dark-secondary); margin-bottom: 24px; }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: var(--red); color: #fff; padding: 14px 28px;
+            border-radius: 10px; font-size: 14px; font-weight: 600;
+            z-index: 300; display: none; text-align: center;
+            box-shadow: 0 4px 20px rgba(239,68,68,0.3);
+        }
+        .toast.visible { display: block; animation: fadeInUp 0.3s ease; max-width: 90vw; word-wrap: break-word; }
+        @keyframes fadeInUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .hero { padding: 120px 0 60px; }
+            .quiz-container { padding: 32px 24px; }
+            .offer-box { padding: 32px 24px; }
+            .nav-cta { padding: 8px 16px; font-size: 13px; }
+            .pain-grid { grid-template-columns: 1fr; }
+            .automate-grid { grid-template-columns: repeat(2, 1fr); }
+            .how-steps { grid-template-columns: repeat(2, 1fr); }
+            .who-grid { grid-template-columns: 1fr; }
+            .pricing-row { flex-direction: column; gap: 20px; }
+            .pricing-value { font-size: 28px; }
+            .sticky-cta { display: block; }
+            body { padding-bottom: 90px; }
+            .roi-table { font-size: 13px; }
+            .roi-table th, .roi-table td { padding: 10px 14px; }
+        }
+
+        @media (max-width: 480px) {
+            .automate-grid { grid-template-columns: 1fr; }
+            .how-steps { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== NAV (dark) ===== -->
+<nav class="nav">
+    <div class="container">
+        <a href="/" class="nav-logo">
+            <img src="logo-dark.png" alt="ZippyScale" style="height:36px;width:auto;">
+        </a>
+        <a href="#quiz" class="nav-cta">Get Your Automation Audit</a>
+    </div>
+</nav>
+
+<!-- ===== HERO (dark) ===== -->
+<section class="hero">
+    <div class="hero-bg-effects">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+    <div class="container">
+        <div class="hero-badge">
+            <span class="dot"></span>
+            <span>AI Automation for Indian Businesses</span>
+        </div>
+        <h1>We Build AI Automations That Run Your Business While You Scale</h1>
+        <p>Cut 40 hours/week of manual work. Same team, 10x output.</p>
+        <a href="#quiz" class="hero-cta">Get Your Automation Audit</a>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== PAIN (light) ===== -->
+<section class="light-section">
+    <div class="container">
+        <div class="section-label reveal">What Manual Work Costs You</div>
+        <h2 class="section-title reveal" style="color: var(--text-on-light);">Your Team Is Busy. But Not Productive.</h2>
+        <p class="section-subtitle reveal">Most &#8377;5Cr+ businesses bleed time and money on tasks AI handles in seconds.</p>
+        <div class="pain-grid">
+            <div class="pain-card reveal" style="transition-delay: 0s;">
+                <div class="pain-stat">40+ hrs/week</div>
+                <h3>Lost to Manual Tasks</h3>
+                <p>Copy-pasting data between apps, updating spreadsheets, sending follow-ups one by one. Your team is a human API.</p>
+            </div>
+            <div class="pain-card reveal" style="transition-delay: 0.1s;">
+                <div class="pain-stat">&#8377;3-5L/month</div>
+                <h3>Spent on Work AI Does for &#8377;50K</h3>
+                <p>You're paying full-time salaries for tasks that take an automation 30 seconds. The math doesn't add up.</p>
+            </div>
+            <div class="pain-card reveal" style="transition-delay: 0.2s;">
+                <div class="pain-stat">23%</div>
+                <h3>Employee Time Wasted on Data Entry</h3>
+                <p>Nearly a quarter of your team's day goes to typing information that already exists somewhere else.</p>
+            </div>
+            <div class="pain-card reveal" style="transition-delay: 0.3s;">
+                <div class="pain-stat">3-5 days</div>
+                <h3>Delayed Reporting vs Real-Time</h3>
+                <p>By the time you see last week's numbers, the opportunity is already gone. Decisions need live data.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== WHAT WE AUTOMATE (dark) ===== -->
+<section class="dark-section">
+    <div class="container">
+        <div class="section-label reveal">What We Automate</div>
+        <h2 class="section-title shimmer-text reveal">8 Areas Where AI Replaces Busywork</h2>
+        <p class="section-subtitle reveal">Every automation is custom-built for your tools, your workflow, your business.</p>
+        <div class="automate-grid">
+            <div class="automate-card reveal" style="transition-delay: 0s;">
+                <div class="card-icon">&#x1F4E5;</div>
+                <h3>Lead Capture & CRM Updates</h3>
+                <p>Auto-sync leads from ads, forms, and WhatsApp directly into your CRM. Zero manual entry.</p>
+            </div>
+            <div class="automate-card reveal" style="transition-delay: 0.05s;">
+                <div class="card-icon">&#x1F9FE;</div>
+                <h3>Invoice & Payment Processing</h3>
+                <p>Auto-generate invoices, send them, track payments, and reconcile. End-to-end, hands-free.</p>
+            </div>
+            <div class="automate-card reveal" style="transition-delay: 0.1s;">
+                <div class="card-icon">&#x1F4CA;</div>
+                <h3>Report Generation</h3>
+                <p>Daily and weekly reports built and delivered automatically. No more spreadsheet wrangling.</p>
+            </div>
+            <div class="automate-card reveal" style="transition-delay: 0.15s;">
+                <div class="card-icon">&#x1F4AC;</div>
+                <h3>Email & WhatsApp Follow-ups</h3>
+                <p>Triggered sequences based on customer actions. The right message, at the right time, every time.</p>
+            </div>
+            <div class="automate-card reveal" style="transition-delay: 0.2s;">
+                <div class="card-icon">&#x1F504;</div>
+                <h3>Data Entry & Migration</h3>
+                <p>Auto-transfer data between systems. No copy-pasting, no errors, no wasted hours.</p>
+            </div>
+            <div class="automate-card reveal" style="transition-delay: 0.25s;">
+                <div class="card-icon">&#x1F4C5;</div>
+                <h3>Appointment Scheduling</h3>
+                <p>Auto-book, send reminders, and follow up on no-shows. Your calendar runs itself.</p>
+            </div>
+            <div class="automate-card reveal" style="transition-delay: 0.3s;">
+                <div class="card-icon">&#x1F4E6;</div>
+                <h3>Inventory & Order Management</h3>
+                <p>Stock alerts, order routing, and supplier communications. Automated from order to delivery.</p>
+            </div>
+            <div class="automate-card reveal" style="transition-delay: 0.35s;">
+                <div class="card-icon">&#x1F465;</div>
+                <h3>HR & Payroll Processing</h3>
+                <p>Leave tracking, payslip generation, and compliance. HR tasks on autopilot.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== HOW IT WORKS (light) ===== -->
+<section class="light-section">
+    <div class="container">
+        <div class="section-label text-center reveal">How It Works</div>
+        <h2 class="section-title text-center mx-auto reveal" style="color: var(--text-on-light);">Three Steps to Automated Operations</h2>
+        <p class="section-subtitle text-center mx-auto reveal">From audit to live automation in as little as 2 weeks.</p>
+        <div class="how-steps">
+            <div class="how-step reveal" style="transition-delay: 0s;">
+                <div class="num">01</div>
+                <h3>Audit</h3>
+                <p>We map every manual process in your business. Free. No commitment.</p>
+                <span class="how-arrow">&rarr;</span>
+            </div>
+            <div class="how-step reveal" style="transition-delay: 0.1s;">
+                <div class="num">02</div>
+                <h3>Build</h3>
+                <p>We design and deploy your automations in 2 to 4 weeks. Tested and live.</p>
+                <span class="how-arrow">&rarr;</span>
+            </div>
+            <div class="how-step reveal" style="transition-delay: 0.2s;">
+                <div class="num">03</div>
+                <h3>Monitor</h3>
+                <p>We maintain, optimize, and scale your automations monthly. You focus on growth.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== ROI COMPARISON (dark) ===== -->
+<section class="dark-section">
+    <div class="container">
+        <div class="section-label text-center reveal">The ROI</div>
+        <h2 class="section-title text-center mx-auto shimmer-text reveal">Manual vs. AI Automation</h2>
+        <p class="section-subtitle text-center mx-auto reveal">Side by side. The numbers speak for themselves.</p>
+        <div class="roi-table-wrap reveal">
+            <table class="roi-table">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th class="manual">Manual</th>
+                        <th class="automated">With AI Automation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Lead follow-up</td>
+                        <td class="manual-val">2-4 hours/day</td>
+                        <td class="auto-val">Instant, 24/7</td>
+                    </tr>
+                    <tr>
+                        <td>Monthly reports</td>
+                        <td class="manual-val">3 days to compile</td>
+                        <td class="auto-val">Auto-generated daily</td>
+                    </tr>
+                    <tr>
+                        <td>Invoice processing</td>
+                        <td class="manual-val">45 min per invoice</td>
+                        <td class="auto-val">30 seconds</td>
+                    </tr>
+                    <tr>
+                        <td>Data entry</td>
+                        <td class="manual-val">8 hours/week</td>
+                        <td class="auto-val">Zero</td>
+                    </tr>
+                    <tr>
+                        <td>CRM updates</td>
+                        <td class="manual-val">Manual after calls</td>
+                        <td class="auto-val">Auto-synced real-time</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== WHO THIS IS FOR (light) ===== -->
+<section class="light-section">
+    <div class="container">
+        <div class="section-label text-center reveal">Is This For You?</div>
+        <h2 class="section-title text-center mx-auto reveal" style="color: var(--text-on-light);">Built for Businesses Ready to Scale</h2>
+        <p class="section-subtitle text-center mx-auto reveal">If any of these sound familiar, we should talk.</p>
+        <div class="who-grid">
+            <div class="who-card reveal" style="transition-delay: 0s;">
+                <div class="who-icon">&#x1F3E2;</div>
+                <p>&#8377;5Cr+ businesses with 10+ employees</p>
+            </div>
+            <div class="who-card reveal" style="transition-delay: 0.1s;">
+                <div class="who-icon">&#x1F4F1;</div>
+                <p>Teams drowning in WhatsApp and Excel coordination</p>
+            </div>
+            <div class="who-card reveal" style="transition-delay: 0.2s;">
+                <div class="who-icon">&#x1F680;</div>
+                <p>Founders who want to scale without hiring 5 more people</p>
+            </div>
+            <div class="who-card reveal" style="transition-delay: 0.3s;">
+                <div class="who-icon">&#x23F0;</div>
+                <p>Businesses spending more on people-hours than on tools</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== PRICING (dark) ===== -->
+<section class="dark-section">
+    <div class="container">
+        <div class="section-label text-center reveal">Pricing</div>
+        <h2 class="section-title text-center mx-auto reveal">Simple Pricing. Clear ROI.</h2>
+        <p class="section-subtitle text-center mx-auto reveal">No hidden fees. No long-term lock-ins.</p>
+        <div class="offer-box reveal">
+            <div class="pricing-row">
+                <div class="pricing-item">
+                    <div class="pricing-label">Setup (one-time)</div>
+                    <div class="pricing-value">&#8377;50,000</div>
+                    <div class="pricing-note">Starting price. Depends on complexity.</div>
+                </div>
+                <div class="pricing-item">
+                    <div class="pricing-label">Monthly Management</div>
+                    <div class="pricing-value">&#8377;15,000</div>
+                    <div class="pricing-note">Monitoring, optimization, and support.</div>
+                </div>
+            </div>
+            <div class="offer-roi">"Most clients see ROI within the first month."</div>
+            <div class="offer-guarantee">&#x1F6E1;&#xFE0F; 30-day money-back guarantee</div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== QUIZ SECTION (dark) ===== -->
+<section class="quiz-section" id="quiz">
+    <div class="container">
+        <div class="section-label text-center reveal" style="color: var(--lime);">Start Here</div>
+        <h2 class="section-title text-center mx-auto reveal" style="color: var(--text-on-dark);">Get Your Free Automation Audit</h2>
+        <p class="section-subtitle text-center mx-auto reveal" style="color: var(--text-on-dark-secondary);">Tell us what you want to automate. We'll show you how.</p>
+
+        <div class="quiz-container reveal">
+            <div class="quiz-progress">
+                <div class="quiz-progress-bar active"></div>
+                <div class="quiz-progress-bar"></div>
+                <div class="quiz-progress-bar"></div>
+            </div>
+
+            <!-- Step 1: What to automate (multi-select) -->
+            <div class="quiz-step active" data-step="1">
+                <h3>What do you want to automate?</h3>
+                <p class="quiz-subtitle">Select all that apply.</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="toggleMulti(this)" data-value="Lead Capture & CRM Updates">
+                        <span class="checkbox"></span> Lead Capture & CRM Updates
+                    </div>
+                    <div class="quiz-option" onclick="toggleMulti(this)" data-value="Invoice & Payment Processing">
+                        <span class="checkbox"></span> Invoice & Payment Processing
+                    </div>
+                    <div class="quiz-option" onclick="toggleMulti(this)" data-value="Report Generation">
+                        <span class="checkbox"></span> Report Generation
+                    </div>
+                    <div class="quiz-option" onclick="toggleMulti(this)" data-value="Email & WhatsApp Follow-ups">
+                        <span class="checkbox"></span> Email & WhatsApp Follow-ups
+                    </div>
+                    <div class="quiz-option" onclick="toggleMulti(this)" data-value="Data Entry & Migration">
+                        <span class="checkbox"></span> Data Entry & Migration
+                    </div>
+                    <div class="quiz-option" onclick="toggleMulti(this)" data-value="Appointment Scheduling">
+                        <span class="checkbox"></span> Appointment Scheduling
+                    </div>
+                    <div class="quiz-option" onclick="toggleMulti(this)" data-value="Inventory & Order Management">
+                        <span class="checkbox"></span> Inventory & Order Management
+                    </div>
+                    <div class="quiz-option" onclick="toggleMulti(this)" data-value="HR & Payroll Processing">
+                        <span class="checkbox"></span> HR & Payroll Processing
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Team size -->
+            <div class="quiz-step" data-step="2">
+                <h3>How many people handle these tasks today?</h3>
+                <p class="quiz-subtitle">This helps us estimate the time and cost savings.</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="1-3 people">
+                        <span class="radio"></span> 1 to 3 people
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="4-10 people">
+                        <span class="radio"></span> 4 to 10 people
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="10+ people">
+                        <span class="radio"></span> 10+ people
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Contact Info -->
+            <div class="quiz-step" data-step="3">
+                <h3>Where do we send your automation audit?</h3>
+                <p class="quiz-subtitle">We'll review your answers and reach out within 24 hours.</p>
+                <div class="quiz-form">
+                    <div>
+                        <label>Your name</label>
+                        <input type="text" id="quiz-name" placeholder="Full name" required>
+                    </div>
+                    <div>
+                        <label>Email</label>
+                        <input type="email" id="quiz-email" placeholder="you@company.com" required>
+                    </div>
+                    <div>
+                        <label>Phone number</label>
+                        <input type="tel" id="quiz-phone" placeholder="+91 98765 43210" required>
+                    </div>
+                    <div>
+                        <label>Business name</label>
+                        <input type="text" id="quiz-business" placeholder="Your company" required>
+                    </div>
+                </div>
+                <div class="quiz-error" id="quiz-error">Please fill all fields to continue.</div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="quiz-nav">
+                <button class="quiz-back hidden" onclick="prevStep()">&#8592; Back</button>
+                <button class="quiz-next" id="quiz-next-btn" onclick="nextStep()">Next &#8594;</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== FAQ (light) ===== -->
+<section class="light-section">
+    <div class="container">
+        <div class="section-label text-center reveal">Common Questions</div>
+        <h2 class="section-title text-center mx-auto reveal" style="color: var(--text-on-light);">You're Probably Wondering...</h2>
+        <div style="height: 40px;"></div>
+        <div class="faq-list">
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What tools do you use?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    n8n, Make, Zapier, custom Python and Node.js scripts, AI models (Claude, GPT), and WhatsApp Business API. We pick the right tool for each job, not the other way around.
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How long does setup take?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    2 to 4 weeks for most businesses. Simple automations (like lead capture to CRM) can be live in under a week. Complex workflows with multiple systems take closer to 4 weeks.
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Will this replace my team?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    No. It frees them to do high-value work instead of data entry and manual follow-ups. Your team becomes more productive, not redundant. Most clients redeploy saved hours into growth activities.
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What if something breaks?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    We monitor 24/7 and fix issues within 4 hours. Every automation has error handling and fallback logic built in. You'll know about problems before your team does.
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Can I try one automation first?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    Yes. Start with one process, see the ROI, then scale. Most clients begin with lead capture or report generation, prove the value internally, and expand from there.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== FINAL CTA (dark) ===== -->
+<section class="final-cta">
+    <div class="cta-bg-effects">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+    <div class="container">
+        <h2 class="reveal">Stop Paying People to Do What AI Can Do in Seconds</h2>
+        <p class="reveal">Get a free automation audit. See exactly where you're losing time and money.</p>
+        <a href="#quiz" class="hero-cta reveal">Get Your Free Automation Audit</a>
+    </div>
+</section>
+
+<!-- ===== FOOTER (dark) ===== -->
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2026 ZippyScale &middot; <a href="mailto:hello@zippyscale.in">hello@zippyscale.in</a> &middot; Data Finds Money. AI Multiplies It.</p>
+    </div>
+</footer>
+
+<!-- ===== STICKY MOBILE CTA ===== -->
+<div class="sticky-cta">
+    <a href="#quiz">Get Your Free Automation Audit</a>
+    <div class="sticky-sub">No commitment. We map your processes for free.</div>
+</div>
+
+<!-- ===== THANK YOU OVERLAY ===== -->
+<div class="thank-you-overlay" id="thankYou">
+    <div class="thank-you-box">
+        <div class="check-circle">&#10003;</div>
+        <h2>Audit Request Received!</h2>
+        <p>We'll review your answers and reach out within 24 hours to schedule your free automation audit.</p>
+        <a href="/" style="display:inline-block;background:var(--lime);color:var(--dark-bg);padding:14px 32px;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:600;text-decoration:none;">Back to ZippyScale</a>
+    </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== QUIZ JS ===== -->
+<script>
+(function() {
+    var currentStep = 1;
+    var totalSteps = 3;
+    var answers = {};
+    var multiSelections = [];
+    var quizStartTracked = false;
+
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('visible');
+        setTimeout(function(){ t.classList.remove('visible'); }, 4000);
+    }
+
+    // Multi-select for step 1
+    window.toggleMulti = function(el) {
+        el.classList.toggle('selected');
+        var value = el.dataset.value;
+        var idx = multiSelections.indexOf(value);
+        if (idx > -1) {
+            multiSelections.splice(idx, 1);
+        } else {
+            multiSelections.push(value);
+        }
+        answers.step1 = multiSelections.join(', ');
+
+        if (!quizStartTracked) {
+            quizStartTracked = true;
+            if (typeof fbq !== 'undefined') fbq('track', 'Lead');
+        }
+    };
+
+    // Single select for step 2
+    window.selectOption = function(el) {
+        var step = el.closest('.quiz-step');
+        step.querySelectorAll('.quiz-option').forEach(function(o){ o.classList.remove('selected'); });
+        el.classList.add('selected');
+
+        var value = el.dataset.value;
+        var stepNum = parseInt(step.dataset.step);
+        answers['step' + stepNum] = value;
+
+        if (!quizStartTracked) {
+            quizStartTracked = true;
+            if (typeof fbq !== 'undefined') fbq('track', 'Lead');
+        }
+
+        // Auto-advance after short delay
+        if (stepNum < totalSteps) {
+            setTimeout(function(){ nextStep(); }, 400);
+        }
+    };
+
+    window.nextStep = function() {
+        // Validate current step
+        if (currentStep === 1) {
+            if (multiSelections.length === 0) {
+                showToast('Please select at least one area to automate.');
+                return;
+            }
+        }
+
+        if (currentStep === 2) {
+            if (!answers.step2) return;
+        }
+
+        if (currentStep === 3) {
+            var name = document.getElementById('quiz-name').value.trim();
+            var email = document.getElementById('quiz-email').value.trim();
+            var phone = document.getElementById('quiz-phone').value.trim();
+            var business = document.getElementById('quiz-business').value.trim();
+            var errorEl = document.getElementById('quiz-error');
+
+            if (!name || !email || !phone || !business) {
+                errorEl.textContent = 'Please fill all fields to continue.';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            var phoneClean = phone.replace(/[\s\-\+]/g, '').replace(/^91/, '');
+            if (!/^[6-9]\d{9}$/.test(phoneClean)) {
+                errorEl.textContent = 'Please enter a valid 10-digit Indian mobile number.';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errorEl.textContent = 'Please enter a valid email address.';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            errorEl.classList.remove('visible');
+
+            answers.name = name;
+            answers.phone = phoneClean.length === 10 ? '91' + phoneClean : phone;
+            answers.email = email;
+            answers.business = business;
+
+            ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(key){
+                var val = sessionStorage.getItem(key);
+                if(val) answers[key] = val;
+            });
+
+            submitQuiz();
+            return;
+        }
+
+        currentStep++;
+        showStep(currentStep);
+    };
+
+    window.prevStep = function() {
+        if (currentStep > 1) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    };
+
+    function showStep(step) {
+        document.querySelectorAll('.quiz-step').forEach(function(s){ s.classList.remove('active'); });
+        document.querySelector('.quiz-step[data-step="' + step + '"]').classList.add('active');
+
+        document.querySelectorAll('.quiz-progress-bar').forEach(function(bar, i) {
+            bar.classList.toggle('active', i < step);
+        });
+
+        var backBtn = document.querySelector('.quiz-back');
+        backBtn.classList.toggle('hidden', step === 1);
+
+        var nextBtn = document.getElementById('quiz-next-btn');
+        if (step === 3) {
+            nextBtn.textContent = 'Get My Free Audit \u2192';
+            nextBtn.style.background = 'var(--lime)';
+        } else {
+            nextBtn.textContent = 'Next \u2192';
+        }
+    }
+
+    function submitQuiz() {
+        var btn = document.getElementById('quiz-next-btn');
+        btn.textContent = 'Submitting...';
+        btn.disabled = true;
+
+        try {
+            localStorage.setItem('zippy_automation_lead_' + Date.now(), JSON.stringify(answers));
+        } catch(e) {}
+
+        var payload = JSON.stringify({
+            name: answers.name,
+            phone: answers.phone,
+            email: answers.email,
+            business_name: answers.business,
+            automate_areas: answers.step1,
+            team_size: answers.step2,
+            source: 'automation-lp',
+            utm_source: answers.utm_source || '',
+            utm_medium: answers.utm_medium || '',
+            utm_campaign: answers.utm_campaign || '',
+            utm_content: answers.utm_content || '',
+            utm_term: answers.utm_term || ''
+        });
+
+        try {
+            navigator.sendBeacon(
+                'https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz',
+                new Blob([payload], { type: 'application/json' })
+            );
+        } catch(e) {}
+
+        fetch('https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload
+        }).catch(function() {});
+
+        if (typeof fbq !== 'undefined') {
+            fbq('track', 'SubmitApplication');
+        }
+        document.getElementById('thankYou').classList.add('visible');
+    }
+
+})();
+
+// FAQ toggle
+function toggleFaq(el) {
+    el.closest('.faq-item').classList.toggle('open');
+}
+
+// Smooth scroll for CTA buttons
+document.querySelectorAll('a[href="#quiz"]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('quiz').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (typeof fbq !== 'undefined') fbq('track', 'InitiateCheckout');
+    });
+});
+
+// Hide sticky CTA when quiz is in viewport
+(function(){
+    var sticky = document.querySelector('.sticky-cta');
+    if (!sticky) return;
+    var quizEl = document.getElementById('quiz');
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            sticky.style.display = entry.isIntersecting ? 'none' : '';
+        });
+    }, { threshold: 0.1 });
+    observer.observe(quizEl);
+})();
+
+// ===== SCROLL REVEAL =====
+(function(){
+    var reveals = document.querySelectorAll('.reveal');
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(function(el) { observer.observe(el); });
+})();
+
+// ===== SECTION LABEL PARALLAX =====
+(function(){
+    var labels = document.querySelectorAll('.section-label');
+    var ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(function() {
+                labels.forEach(function(label) {
+                    var rect = label.getBoundingClientRect();
+                    var centerY = rect.top + rect.height / 2;
+                    var viewH = window.innerHeight;
+                    var offset = ((centerY / viewH) - 0.5) * 10;
+                    label.style.transform = 'translateY(' + offset + 'px)';
+                });
+                ticking = false;
+            });
+        }
+    }, { passive: true });
+})();
+
+// ===== 3D CARD TILT =====
+(function(){
+    var cards = document.querySelectorAll('.pain-card, .automate-card, .how-step, .who-card');
+    cards.forEach(function(card) {
+        card.addEventListener('mousemove', function(e) {
+            var rect = card.getBoundingClientRect();
+            var x = (e.clientX - rect.left) / rect.width - 0.5;
+            var y = (e.clientY - rect.top) / rect.height - 0.5;
+            requestAnimationFrame(function() {
+                card.style.transform = 'perspective(1000px) rotateY(' + (x * 6) + 'deg) rotateX(' + (-y * 6) + 'deg) translateY(-4px)';
+            });
+        });
+        card.addEventListener('mouseleave', function() {
+            card.style.transform = '';
+        });
+    });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZippyScale Ads — Main LP (Ads 1-10)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #0A0A0C; color: #FAFAFA; font-family: 'Inter', sans-serif; }
+
+/* Toolbar */
+.toolbar {
+  position: sticky; top: 0; z-index: 100;
+  background: #141418; border-bottom: 1px solid #2E2E36;
+  padding: 16px 32px; display: flex; align-items: center; gap: 24px;
+}
+.toolbar h1 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; color: #D5EB4B; }
+.toolbar .funnel-label { color: #9CA3AF; font-size: 14px; }
+.toggle-group { display: flex; gap: 0; margin-left: auto; }
+.toggle-btn {
+  padding: 8px 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 1px solid #2E2E36; background: #1E1E24; color: #9CA3AF; transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+.toggle-btn:first-child { border-radius: 6px 0 0 6px; }
+.toggle-btn:last-child { border-radius: 0 6px 6px 0; }
+.toggle-btn.active { background: #D5EB4B; color: #141418; border-color: #D5EB4B; }
+.note { color: #6B7280; font-size: 12px; padding: 12px 32px; background: #141418; border-bottom: 1px solid #1E1E24; }
+
+/* Grid */
+.gallery { padding: 32px; }
+.grid-feed { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; max-width: 2300px; margin: 0 auto; }
+.grid-story { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; max-width: 3400px; margin: 0 auto; }
+.card-wrap { cursor: pointer; transition: transform 0.2s; }
+.card-wrap:hover { transform: translateY(-4px); }
+.card-label { font-size: 12px; color: #6B7280; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+/* Fullscreen overlay */
+.overlay {
+  display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.92); z-index: 200; overflow: auto;
+  justify-content: center; align-items: flex-start; padding: 40px;
+}
+.overlay.active { display: flex; }
+.overlay-close {
+  position: fixed; top: 20px; right: 20px; z-index: 300;
+  background: #2E2E36; color: #FAFAFA; border: none; width: 40px; height: 40px;
+  border-radius: 50%; font-size: 20px; cursor: pointer; font-family: 'Inter', sans-serif;
+}
+
+/* Creative base */
+.creative {
+  position: relative; overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+.creative .ad-num {
+  position: absolute; bottom: 12px; right: 12px;
+  font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+.creative .logo {
+  position: absolute; top: 32px; left: 32px; height: 36px; opacity: 0.9;
+}
+.creative .logo-story {
+  position: absolute; top: 48px; left: 48px; height: 40px; opacity: 0.9;
+}
+
+/* Feed dimensions */
+.feed { width: 1080px; height: 1080px; }
+.story { width: 1080px; height: 1920px; }
+
+/* Scale for gallery view */
+.card-wrap .feed { transform: scale(0.48); transform-origin: top left; }
+.card-wrap .story { transform: scale(0.28); transform-origin: top left; }
+.card-wrap.feed-wrap { width: 518px; height: 518px; }
+.card-wrap.story-wrap { width: 302px; height: 538px; }
+
+/* CTA bar */
+.cta-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #D5EB4B; padding: 28px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cta-bar .cta-text {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-size: 24px; color: #141418;
+}
+.cta-bar .cta-btn {
+  background: #141418; color: #D5EB4B; padding: 12px 32px;
+  border-radius: 8px; font-weight: 700; font-size: 16px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.cta-bar-story {
+  position: absolute; bottom: 120px; left: 0; right: 0;
+  background: #D5EB4B; padding: 36px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cta-bar-story .cta-text {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+  font-size: 28px; color: #141418;
+}
+.cta-bar-story .cta-btn {
+  background: #141418; color: #D5EB4B; padding: 14px 40px;
+  border-radius: 8px; font-weight: 700; font-size: 18px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Dot pattern */
+.dot-pattern {
+  background-image: radial-gradient(rgba(213,235,75,0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.dot-pattern-dense {
+  background-image: radial-gradient(rgba(213,235,75,0.04) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Line pattern */
+.line-pattern {
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 40px,
+    rgba(213,235,75,0.03) 40px, rgba(213,235,75,0.03) 41px
+  );
+}
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>Main LP Funnel</h1>
+  <span class="funnel-label">Ads 1-10 · zippyscale.in</span>
+  <div class="toggle-group">
+    <button class="toggle-btn active" onclick="setView('feed')">Feed (1080x1080)</button>
+    <button class="toggle-btn" onclick="setView('story')">Story (1080x1920)</button>
+  </div>
+</div>
+<div class="note">Open each creative full-screen (click) and screenshot at exact dimensions (Cmd+Shift+4)</div>
+
+<div class="gallery">
+  <div id="grid" class="grid-feed">
+
+    <!-- AD #1: Big Stat — "₹50,00,000" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad1')">
+      <div class="card-label">Ad #1 — Pain: Where did ₹50L go?</div>
+      <div id="ad1-feed" class="creative feed" style="background: linear-gradient(160deg, #141418 0%, #1a1a22 50%, #141418 100%);">
+        <div class="dot-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);text-align:center;width:90%;">
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:96px;color:#D5EB4B;line-height:1;letter-spacing:-2px;">₹50,00,000</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:96px;color:rgba(213,235,75,0.15);line-height:1;margin-top:8px;">?</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;color:#FAFAFA;line-height:1.15;margin-top:40px;">Where Did Your<br>₹50L Go?</div>
+          <div style="font-family:'Inter',sans-serif;font-size:20px;color:#9CA3AF;margin-top:20px;">You spent it on marketing. Can you trace it to revenue?</div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">₹999 Growth Blueprint</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #1</span>
+      </div>
+    </div>
+
+    <!-- AD #2: List — "3 Numbers" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad2')">
+      <div class="card-label">Ad #2 — Curiosity: 3 numbers that predict 3x</div>
+      <div id="ad2-feed" class="creative feed" style="background: #141418;">
+        <div class="line-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:140px;left:60px;right:60px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:38px;color:#FAFAFA;line-height:1.15;margin-bottom:48px;">3 Numbers That Predict<br>If Your Ad Spend Will <span style="color:#D5EB4B;">3x</span> or Burn</div>
+          <div style="display:flex;flex-direction:column;gap:20px;">
+            <div style="background:#1E1E24;border:1px solid #2E2E36;border-left:4px solid #D5EB4B;padding:24px 28px;border-radius:0 12px 12px 0;">
+              <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:32px;color:#D5EB4B;">01</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px;color:#FAFAFA;margin-left:16px;">Channel-level CAC</span>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;border-left:4px solid #D5EB4B;padding:24px 28px;border-radius:0 12px 12px 0;">
+              <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:32px;color:#D5EB4B;">02</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px;color:#FAFAFA;margin-left:16px;">First-touch Attribution</span>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;border-left:4px solid #D5EB4B;padding:24px 28px;border-radius:0 12px 12px 0;">
+              <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:32px;color:#D5EB4B;">03</span>
+              <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px;color:#FAFAFA;margin-left:16px;">Revenue-per-Creative Ratio</span>
+            </div>
+          </div>
+          <div style="font-family:'Inter',sans-serif;font-size:18px;color:#6B7280;margin-top:36px;">90% of ₹5Cr+ businesses track none of these.</div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">₹999 Growth Blueprint</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #2</span>
+      </div>
+    </div>
+
+    <!-- AD #3: Before/After — "₹2.3L waste found" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad3')">
+      <div class="card-label">Ad #3 — Case Study: ₹2.3L/mo waste in 48 hrs</div>
+      <div id="ad3-feed" class="creative feed" style="background: #141418;">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <!-- Left half -->
+        <div style="position:absolute;top:0;left:0;width:50%;height:100%;background:linear-gradient(180deg,rgba(239,68,68,0.08) 0%,rgba(239,68,68,0.15) 100%);">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+            <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:#EF4444;text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;">Without Attribution</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:56px;color:#EF4444;line-height:1;">₹2.3L</div>
+            <div style="font-family:'Inter',sans-serif;font-size:18px;color:#EF4444;margin-top:8px;">wasted per month</div>
+            <div style="font-size:48px;margin-top:24px;color:rgba(239,68,68,0.5);">&#x2193;</div>
+          </div>
+        </div>
+        <!-- Right half -->
+        <div style="position:absolute;top:0;right:0;width:50%;height:100%;background:linear-gradient(180deg,rgba(213,235,75,0.05) 0%,rgba(213,235,75,0.12) 100%);">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+            <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:#D5EB4B;text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;">With ZippyScale</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:56px;color:#D5EB4B;line-height:1;">2.4x</div>
+            <div style="font-family:'Inter',sans-serif;font-size:18px;color:#D5EB4B;margin-top:8px;">revenue in 90 days</div>
+            <div style="font-size:48px;margin-top:24px;color:rgba(213,235,75,0.5);">&#x2191;</div>
+          </div>
+        </div>
+        <!-- Divider -->
+        <div style="position:absolute;top:100px;bottom:100px;left:50%;width:1px;background:linear-gradient(180deg,transparent,#2E2E36,transparent);"></div>
+        <!-- 48hrs badge -->
+        <div style="position:absolute;top:32px;right:32px;background:#D5EB4B;color:#141418;padding:8px 16px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;">48 HRS</div>
+        <div class="cta-bar">
+          <span class="cta-text">₹999 Growth Blueprint</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #3</span>
+      </div>
+    </div>
+
+    <!-- AD #4: Before/After Comparison — Agency vs ZippyScale -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad4')">
+      <div class="card-label">Ad #4 — Controversy: Impressions vs Revenue</div>
+      <div id="ad4-feed" class="creative feed" style="background: #141418;">
+        <div class="dot-pattern-dense" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:120px;left:60px;right:60px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;">
+            <!-- Left: Agency -->
+            <div>
+              <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#EF4444;text-transform:uppercase;letter-spacing:2px;margin-bottom:24px;">What Your Agency Shows</div>
+              <div style="display:flex;flex-direction:column;gap:16px;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:28px;color:rgba(239,68,68,0.35);font-weight:700;">2.4M impressions</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:28px;color:rgba(239,68,68,0.35);font-weight:700;">3.2% CTR</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:28px;color:rgba(239,68,68,0.35);font-weight:700;">12K "engaged"</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:28px;color:rgba(239,68,68,0.35);font-weight:700;">₹0 revenue proof</div>
+              </div>
+            </div>
+            <!-- Right: ZippyScale -->
+            <div>
+              <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#D5EB4B;text-transform:uppercase;letter-spacing:2px;margin-bottom:24px;">What We Show</div>
+              <div style="display:flex;flex-direction:column;gap:16px;">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:28px;color:#D5EB4B;font-weight:700;">₹47L revenue</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:28px;color:#D5EB4B;font-weight:700;">₹820 real CAC</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:28px;color:#D5EB4B;font-weight:700;">4.2x channel ROAS</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:28px;color:#D5EB4B;font-weight:700;">₹2.1L waste found</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#FAFAFA;margin-top:56px;text-align:center;">Impressions Don't Pay Salaries</div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">See Real ROI. ₹999.</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #4</span>
+      </div>
+    </div>
+
+    <!-- AD #5: Bold Statement — "Blended ROAS Is Lying" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad5')">
+      <div class="card-label">Ad #5 — Educational: Blended ROAS is lying</div>
+      <div id="ad5-feed" class="creative feed" style="background: linear-gradient(135deg, #141418 0%, #1E1E24 100%);">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);text-align:center;width:85%;">
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:120px;color:#FAFAFA;line-height:1;position:relative;">
+            4x ROAS
+            <!-- Crack effect -->
+            <div style="position:absolute;top:40%;left:20%;right:20%;height:4px;background:linear-gradient(90deg,#EF4444,transparent,#EF4444);transform:rotate(-5deg);"></div>
+            <div style="position:absolute;top:55%;left:25%;right:15%;height:3px;background:linear-gradient(90deg,transparent,#EF4444,transparent);transform:rotate(3deg);"></div>
+          </div>
+          <div style="margin-top:40px;display:flex;justify-content:center;gap:24px;">
+            <div style="background:rgba(239,68,68,0.15);padding:16px 24px;border-radius:8px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#EF4444;font-weight:700;">0.8x</div>
+              <div style="font-family:'Inter',sans-serif;font-size:12px;color:#EF4444;margin-top:4px;">Meta</div>
+            </div>
+            <div style="background:rgba(213,235,75,0.1);padding:16px 24px;border-radius:8px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#D5EB4B;font-weight:700;">7.2x</div>
+              <div style="font-family:'Inter',sans-serif;font-size:12px;color:#D5EB4B;margin-top:4px;">Google</div>
+            </div>
+            <div style="background:rgba(239,68,68,0.15);padding:16px 24px;border-radius:8px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:24px;color:#EF4444;font-weight:700;">1.1x</div>
+              <div style="font-family:'Inter',sans-serif;font-size:12px;color:#EF4444;margin-top:4px;">LinkedIn</div>
+            </div>
+          </div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:32px;color:#FAFAFA;margin-top:48px;">Blended ROAS Is Lying to You</div>
+          <div style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;margin-top:12px;">Break the blend. See channel-level truth.</div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">₹999 to See the Truth</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #5</span>
+      </div>
+    </div>
+
+    <!-- AD #6: Big Stat — "10 Spots" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad6')">
+      <div class="card-label">Ad #6 — Scarcity: 10 spots this month</div>
+      <div id="ad6-feed" class="creative feed" style="background: #141418;">
+        <div class="line-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);text-align:center;width:85%;">
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:180px;color:#D5EB4B;line-height:0.9;">10</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#FAFAFA;margin-top:16px;">Spots Left This Month</div>
+          <div style="margin-top:40px;display:flex;justify-content:center;gap:10px;">
+            <div style="width:40px;height:40px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:rgba(213,235,75,0.15);border:2px dashed rgba(213,235,75,0.4);"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:rgba(213,235,75,0.15);border:2px dashed rgba(213,235,75,0.4);"></div>
+            <div style="width:40px;height:40px;border-radius:50%;background:rgba(213,235,75,0.15);border:2px dashed rgba(213,235,75,0.4);"></div>
+          </div>
+          <div style="font-family:'Inter',sans-serif;font-size:16px;color:#6B7280;margin-top:16px;">7 of 10 filled</div>
+          <div style="display:inline-block;background:#1E1E24;border:1px solid #2E2E36;padding:10px 24px;border-radius:20px;margin-top:24px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#D5EB4B;font-weight:700;">MARCH 2026</span>
+          </div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">Data-First Founders Only</span>
+          <span class="cta-btn">Sign Up</span>
+        </div>
+        <span class="ad-num">Ad #6</span>
+      </div>
+    </div>
+
+    <!-- AD #7: List Comparison — Agency vs ZippyScale -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad7')">
+      <div class="card-label">Ad #7 — Comparison: Agency vs ZippyScale</div>
+      <div id="ad7-feed" class="creative feed" style="background: #141418;">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:110px;left:60px;right:60px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#FAFAFA;text-align:center;margin-bottom:40px;">Agency vs. ZippyScale</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+            <!-- Agency column -->
+            <div style="background:#1E1E24;border-radius:16px;padding:28px;border:1px solid #2E2E36;">
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#EF4444;margin-bottom:20px;">TYPICAL AGENCY</div>
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;text-decoration:line-through;">Monthly PDF reports</div>
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;text-decoration:line-through;">Impressions & CTR</div>
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;text-decoration:line-through;">"Brand awareness" metrics</div>
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;text-decoration:line-through;">12-month lock-in</div>
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;text-decoration:line-through;">₹1-3L/mo retainer</div>
+              </div>
+            </div>
+            <!-- ZippyScale column -->
+            <div style="background:rgba(213,235,75,0.06);border-radius:16px;padding:28px;border:1px solid rgba(213,235,75,0.2);">
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#D5EB4B;margin-bottom:20px;">ZIPPYSCALE</div>
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#FAFAFA;">&#10003; Revenue attribution</div>
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#FAFAFA;">&#10003; CAC per channel</div>
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#FAFAFA;">&#10003; Full revenue map</div>
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#FAFAFA;">&#10003; 90-day sprints</div>
+                <div style="font-family:'Inter',sans-serif;font-size:16px;color:#FAFAFA;">&#10003; Starts at ₹999</div>
+              </div>
+            </div>
+          </div>
+          <div style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;text-align:center;margin-top:36px;">They tell you what happened. We tell you what to do.</div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">See the Real Difference</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #7</span>
+      </div>
+    </div>
+
+    <!-- AD #8: Bold Statement — "No More Marketing Theater" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad8')">
+      <div class="card-label">Ad #8 — Identity: Marketing theater</div>
+      <div id="ad8-feed" class="creative feed" style="background: linear-gradient(180deg, #1a1020 0%, #141418 40%, #141418 100%);">
+        <div class="dot-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;width:80%;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:72px;color:#FAFAFA;line-height:1.1;">
+            No More<br><span style="color:#D5EB4B;">Marketing<br>Theater</span>
+          </div>
+          <div style="width:80px;height:4px;background:#D5EB4B;margin:32px auto;border-radius:2px;"></div>
+          <div style="font-family:'Inter',sans-serif;font-size:22px;color:#9CA3AF;line-height:1.5;">
+            You didn't build a ₹5Cr+ business by guessing.<br>Your marketing should work the same way.
+          </div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">Revenue-Mapped. ₹999.</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #8</span>
+      </div>
+    </div>
+
+    <!-- AD #9: Big Stat — "₹18L-36L/year lost" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad9')">
+      <div class="card-label">Ad #9 — Fear of Loss: Every month without attribution</div>
+      <div id="ad9-feed" class="creative feed" style="background: linear-gradient(160deg, #141418 0%, #1a1418 50%, #141418 100%);">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-55%);text-align:center;width:85%;">
+          <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:#EF4444;text-transform:uppercase;letter-spacing:3px;margin-bottom:24px;">Every Year Without Attribution</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:88px;color:#EF4444;line-height:1;">₹18L+</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:36px;color:rgba(239,68,68,0.6);margin-top:4px;">lost per year</div>
+          <div style="width:60%;height:2px;background:linear-gradient(90deg,transparent,#2E2E36,transparent);margin:40px auto;"></div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:#FAFAFA;">One ₹999 session stops the bleeding</div>
+          <div style="display:inline-block;margin-top:24px;background:rgba(213,235,75,0.1);border:1px solid rgba(213,235,75,0.2);padding:12px 28px;border-radius:8px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:20px;color:#D5EB4B;font-weight:700;">Same budget. Different results.</span>
+          </div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">₹999 Stops the Bleeding</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #9</span>
+      </div>
+    </div>
+
+    <!-- AD #10: Before/After — "Guessing to Knowing" -->
+    <div class="card-wrap feed-wrap" onclick="openFull('ad10')">
+      <div class="card-label">Ad #10 — Transformation: Guessing to knowing</div>
+      <div id="ad10-feed" class="creative feed" style="background: #141418;">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo" alt="ZippyScale">
+        <!-- Before side -->
+        <div style="position:absolute;top:90px;left:40px;width:480px;">
+          <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#EF4444;text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;">Before Blueprint</div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);padding:18px 20px;border-radius:10px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;">"I think Meta is working but I'm not sure"</span>
+            </div>
+            <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);padding:18px 20px;border-radius:10px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;">"Agency says ROAS is good but revenue hasn't grown"</span>
+            </div>
+            <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);padding:18px 20px;border-radius:10px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#9CA3AF;">"Don't know which channel to cut or scale"</span>
+            </div>
+          </div>
+        </div>
+        <!-- Arrow -->
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;">
+          <div style="width:64px;height:64px;background:#D5EB4B;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+            <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#141418;">48h</span>
+          </div>
+        </div>
+        <!-- After side -->
+        <div style="position:absolute;bottom:120px;right:40px;width:480px;">
+          <div style="font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:#D5EB4B;text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;">After Blueprint</div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="background:rgba(213,235,75,0.06);border:1px solid rgba(213,235,75,0.15);padding:18px 20px;border-radius:10px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#FAFAFA;">"62% of revenue comes from Google"</span>
+            </div>
+            <div style="background:rgba(213,235,75,0.06);border:1px solid rgba(213,235,75,0.15);padding:18px 20px;border-radius:10px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#FAFAFA;">"Real CAC is ₹1,200, not ₹400"</span>
+            </div>
+            <div style="background:rgba(213,235,75,0.06);border:1px solid rgba(213,235,75,0.15);padding:18px 20px;border-radius:10px;">
+              <span style="font-family:'Inter',sans-serif;font-size:16px;color:#FAFAFA;">"Move budget A→C = +₹3.2L/mo"</span>
+            </div>
+          </div>
+        </div>
+        <div class="cta-bar">
+          <span class="cta-text">₹999 Growth Blueprint</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #10</span>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+</div><!-- /gallery -->
+
+<!-- Story versions (hidden by default) -->
+<div class="gallery hidden" id="story-gallery">
+  <div class="grid-story">
+
+    <!-- STORY AD #1 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad1s')">
+      <div class="card-label">Ad #1 — Pain: Where did ₹50L go?</div>
+      <div id="ad1s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #1a1a22 50%, #141418 100%);">
+        <div class="dot-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:280px;left:64px;right:64px;text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:110px;color:#D5EB4B;line-height:1;">₹50,00,000</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:140px;color:rgba(213,235,75,0.1);line-height:1;margin-top:20px;">?</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:52px;color:#FAFAFA;line-height:1.15;margin-top:60px;">Where Did Your<br>₹50L Go?</div>
+          <div style="font-family:'Inter',sans-serif;font-size:24px;color:#9CA3AF;margin-top:32px;line-height:1.5;">You spent it on marketing.<br>Can you trace it to revenue?</div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">₹999 Growth Blueprint</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #1</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #2 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad2s')">
+      <div class="card-label">Ad #2 — 3 Numbers That Predict 3x</div>
+      <div id="ad2s-feed" class="creative story" style="background: #141418;">
+        <div class="line-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:200px;left:64px;right:64px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:48px;color:#FAFAFA;line-height:1.15;margin-bottom:64px;">3 Numbers That<br>Predict If Your Ad<br>Spend Will <span style="color:#D5EB4B;">3x</span> or Burn</div>
+          <div style="display:flex;flex-direction:column;gap:28px;">
+            <div style="background:#1E1E24;border:1px solid #2E2E36;border-left:4px solid #D5EB4B;padding:32px 36px;border-radius:0 16px 16px 0;">
+              <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:40px;color:#D5EB4B;">01</span>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;color:#FAFAFA;margin-top:8px;">Channel-level CAC</div>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;border-left:4px solid #D5EB4B;padding:32px 36px;border-radius:0 16px 16px 0;">
+              <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:40px;color:#D5EB4B;">02</span>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;color:#FAFAFA;margin-top:8px;">First-touch Attribution</div>
+            </div>
+            <div style="background:#1E1E24;border:1px solid #2E2E36;border-left:4px solid #D5EB4B;padding:32px 36px;border-radius:0 16px 16px 0;">
+              <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:40px;color:#D5EB4B;">03</span>
+              <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;color:#FAFAFA;margin-top:8px;">Revenue-per-Creative</div>
+            </div>
+          </div>
+          <div style="font-family:'Inter',sans-serif;font-size:22px;color:#6B7280;margin-top:48px;">90% of ₹5Cr+ businesses track none of these.</div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">₹999 Growth Blueprint</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #2</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #3 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad3s')">
+      <div class="card-label">Ad #3 — Case Study: ₹2.3L waste</div>
+      <div id="ad3s-feed" class="creative story" style="background: #141418;">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:0;left:0;width:100%;height:50%;background:linear-gradient(180deg,rgba(239,68,68,0.06) 0%,rgba(239,68,68,0.12) 100%);">
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-40%);text-align:center;">
+            <div style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;color:#EF4444;text-transform:uppercase;letter-spacing:3px;margin-bottom:28px;">Without Attribution</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:80px;color:#EF4444;line-height:1;">₹2.3L</div>
+            <div style="font-family:'Inter',sans-serif;font-size:22px;color:#EF4444;margin-top:12px;">wasted per month</div>
+            <div style="font-size:56px;margin-top:32px;color:rgba(239,68,68,0.4);">&#x2193;</div>
+          </div>
+        </div>
+        <div style="position:absolute;top:50%;left:0;width:100%;height:50%;background:linear-gradient(180deg,rgba(213,235,75,0.04) 0%,rgba(213,235,75,0.1) 100%);">
+          <div style="position:absolute;top:35%;left:50%;transform:translate(-50%,-30%);text-align:center;">
+            <div style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;color:#D5EB4B;text-transform:uppercase;letter-spacing:3px;margin-bottom:28px;">With ZippyScale</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:80px;color:#D5EB4B;line-height:1;">2.4x</div>
+            <div style="font-family:'Inter',sans-serif;font-size:22px;color:#D5EB4B;margin-top:12px;">revenue in 90 days</div>
+          </div>
+        </div>
+        <div style="position:absolute;top:48%;left:50%;transform:translate(-50%,-50%);z-index:5;background:#D5EB4B;color:#141418;padding:12px 24px;border-radius:24px;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:18px;">48 HOURS</div>
+        <div class="cta-bar-story">
+          <span class="cta-text">₹999 Growth Blueprint</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #3</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #4 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad4s')">
+      <div class="card-label">Ad #4 — Impressions vs Revenue</div>
+      <div id="ad4s-feed" class="creative story" style="background: #141418;">
+        <div class="dot-pattern-dense" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:200px;left:64px;right:64px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;color:#FAFAFA;margin-bottom:48px;text-align:center;">Impressions Don't<br>Pay Salaries</div>
+          <!-- Agency -->
+          <div style="margin-bottom:40px;">
+            <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:#EF4444;text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;">Your Agency Shows</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:26px;color:rgba(239,68,68,0.3);font-weight:700;">2.4M impressions</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:26px;color:rgba(239,68,68,0.3);font-weight:700;">3.2% CTR</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:26px;color:rgba(239,68,68,0.3);font-weight:700;">₹0 revenue proof</div>
+            </div>
+          </div>
+          <div style="width:100%;height:1px;background:#2E2E36;margin:20px 0;"></div>
+          <!-- ZippyScale -->
+          <div style="margin-top:40px;">
+            <div style="font-family:'Inter',sans-serif;font-size:14px;font-weight:600;color:#D5EB4B;text-transform:uppercase;letter-spacing:2px;margin-bottom:20px;">We Show</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:26px;color:#D5EB4B;font-weight:700;">₹47L revenue</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:26px;color:#D5EB4B;font-weight:700;">₹820 real CAC</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:26px;color:#D5EB4B;font-weight:700;">₹2.1L waste found</div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">See Real ROI. ₹999.</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #4</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #5 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad5s')">
+      <div class="card-label">Ad #5 — Blended ROAS is lying</div>
+      <div id="ad5s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #1E1E24 50%, #141418 100%);">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:300px;left:64px;right:64px;text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:140px;color:#FAFAFA;line-height:1;position:relative;">
+            4x
+            <div style="position:absolute;top:50%;left:10%;right:10%;height:5px;background:linear-gradient(90deg,#EF4444,transparent,#EF4444);transform:rotate(-3deg);"></div>
+          </div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:48px;color:rgba(255,255,255,0.4);margin-top:8px;">ROAS</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FAFAFA;margin-top:64px;">Blended ROAS<br>Is Lying to You</div>
+          <div style="margin-top:56px;display:flex;justify-content:center;gap:28px;">
+            <div style="background:rgba(239,68,68,0.12);padding:24px;border-radius:12px;min-width:120px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:32px;color:#EF4444;font-weight:700;">0.8x</div>
+              <div style="font-family:'Inter',sans-serif;font-size:14px;color:#EF4444;margin-top:6px;">Meta</div>
+            </div>
+            <div style="background:rgba(213,235,75,0.08);padding:24px;border-radius:12px;min-width:120px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:32px;color:#D5EB4B;font-weight:700;">7.2x</div>
+              <div style="font-family:'Inter',sans-serif;font-size:14px;color:#D5EB4B;margin-top:6px;">Google</div>
+            </div>
+            <div style="background:rgba(239,68,68,0.12);padding:24px;border-radius:12px;min-width:120px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:32px;color:#EF4444;font-weight:700;">1.1x</div>
+              <div style="font-family:'Inter',sans-serif;font-size:14px;color:#EF4444;margin-top:6px;">LinkedIn</div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">₹999 to See the Truth</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #5</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #6 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad6s')">
+      <div class="card-label">Ad #6 — Scarcity: 10 spots</div>
+      <div id="ad6s-feed" class="creative story" style="background: #141418;">
+        <div class="line-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:320px;left:64px;right:64px;text-align:center;">
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:220px;color:#D5EB4B;line-height:0.85;">10</div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FAFAFA;margin-top:32px;">Spots Left<br>This Month</div>
+          <div style="margin-top:56px;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;max-width:500px;margin-left:auto;margin-right:auto;">
+            <div style="width:48px;height:48px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:48px;height:48px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:48px;height:48px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:48px;height:48px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:48px;height:48px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:48px;height:48px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:48px;height:48px;border-radius:50%;background:#D5EB4B;"></div>
+            <div style="width:48px;height:48px;border-radius:50%;background:rgba(213,235,75,0.15);border:2px dashed rgba(213,235,75,0.4);"></div>
+            <div style="width:48px;height:48px;border-radius:50%;background:rgba(213,235,75,0.15);border:2px dashed rgba(213,235,75,0.4);"></div>
+            <div style="width:48px;height:48px;border-radius:50%;background:rgba(213,235,75,0.15);border:2px dashed rgba(213,235,75,0.4);"></div>
+          </div>
+          <div style="display:inline-block;background:#1E1E24;border:1px solid #2E2E36;padding:14px 32px;border-radius:24px;margin-top:40px;">
+            <span style="font-family:'JetBrains Mono',monospace;font-size:18px;color:#D5EB4B;font-weight:700;">MARCH 2026</span>
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">Data-First Founders Only</span>
+          <span class="cta-btn">Sign Up</span>
+        </div>
+        <span class="ad-num">Ad #6</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #7 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad7s')">
+      <div class="card-label">Ad #7 — Agency vs ZippyScale</div>
+      <div id="ad7s-feed" class="creative story" style="background: #141418;">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:180px;left:64px;right:64px;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FAFAFA;text-align:center;margin-bottom:48px;">Agency vs.<br>ZippyScale</div>
+          <!-- Agency -->
+          <div style="background:#1E1E24;border-radius:16px;padding:32px;border:1px solid #2E2E36;margin-bottom:24px;">
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#EF4444;margin-bottom:20px;">TYPICAL AGENCY</div>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;text-decoration:line-through;">Monthly PDF reports</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;text-decoration:line-through;">Impressions & CTR</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;text-decoration:line-through;">"Brand awareness" metrics</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;text-decoration:line-through;">12-month lock-in</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;text-decoration:line-through;">₹1-3L/mo retainer</div>
+            </div>
+          </div>
+          <!-- ZippyScale -->
+          <div style="background:rgba(213,235,75,0.06);border-radius:16px;padding:32px;border:1px solid rgba(213,235,75,0.2);">
+            <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#D5EB4B;margin-bottom:20px;">ZIPPYSCALE</div>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#FAFAFA;">&#10003; Revenue attribution</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#FAFAFA;">&#10003; CAC per channel</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#FAFAFA;">&#10003; Full revenue map</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#FAFAFA;">&#10003; 90-day sprints</div>
+              <div style="font-family:'Inter',sans-serif;font-size:18px;color:#FAFAFA;">&#10003; Starts at ₹999</div>
+            </div>
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">See the Real Difference</span>
+          <span class="cta-btn">Learn More</span>
+        </div>
+        <span class="ad-num">Ad #7</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #8 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad8s')">
+      <div class="card-label">Ad #8 — No More Marketing Theater</div>
+      <div id="ad8s-feed" class="creative story" style="background: linear-gradient(180deg, #1a1020 0%, #141418 30%, #141418 100%);">
+        <div class="dot-pattern" style="position:absolute;inset:0;"></div>
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:50%;left:64px;right:64px;transform:translateY(-55%);text-align:center;">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:84px;color:#FAFAFA;line-height:1.05;">
+            No More<br><span style="color:#D5EB4B;">Marketing<br>Theater</span>
+          </div>
+          <div style="width:100px;height:5px;background:#D5EB4B;margin:48px auto;border-radius:3px;"></div>
+          <div style="font-family:'Inter',sans-serif;font-size:26px;color:#9CA3AF;line-height:1.5;">
+            You didn't build a ₹5Cr+ business<br>by guessing. Your marketing should<br>work the same way.
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">Revenue-Mapped. ₹999.</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #8</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #9 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad9s')">
+      <div class="card-label">Ad #9 — ₹18L+ lost per year</div>
+      <div id="ad9s-feed" class="creative story" style="background: linear-gradient(180deg, #141418 0%, #1a1418 50%, #141418 100%);">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:340px;left:64px;right:64px;text-align:center;">
+          <div style="font-family:'Inter',sans-serif;font-size:16px;font-weight:600;color:#EF4444;text-transform:uppercase;letter-spacing:3px;margin-bottom:32px;">Every Year Without Attribution</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:110px;color:#EF4444;line-height:1;">₹18L+</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:40px;color:rgba(239,68,68,0.5);margin-top:8px;">lost per year</div>
+          <div style="width:50%;height:2px;background:linear-gradient(90deg,transparent,#2E2E36,transparent);margin:56px auto;"></div>
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;color:#FAFAFA;">One ₹999 session<br>stops the bleeding</div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">₹999 Stops the Bleeding</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #9</span>
+      </div>
+    </div>
+
+    <!-- STORY AD #10 -->
+    <div class="card-wrap story-wrap" onclick="openFull('ad10s')">
+      <div class="card-label">Ad #10 — Guessing to Knowing</div>
+      <div id="ad10s-feed" class="creative story" style="background: #141418;">
+        <img src="../../brand-assets/zippyscale-logo-for-dark-bg.png" class="logo-story" alt="ZippyScale">
+        <div style="position:absolute;top:180px;left:64px;right:64px;">
+          <!-- Before -->
+          <div style="font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:#EF4444;text-transform:uppercase;letter-spacing:2px;margin-bottom:24px;">Before Blueprint</div>
+          <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:48px;">
+            <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);padding:22px 24px;border-radius:12px;">
+              <span style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;">"I think Meta is working but I'm not sure"</span>
+            </div>
+            <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);padding:22px 24px;border-radius:12px;">
+              <span style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;">"Agency says ROAS is good but revenue flat"</span>
+            </div>
+            <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);padding:22px 24px;border-radius:12px;">
+              <span style="font-family:'Inter',sans-serif;font-size:18px;color:#9CA3AF;">"Don't know which channel to cut"</span>
+            </div>
+          </div>
+          <!-- Arrow -->
+          <div style="text-align:center;margin:24px 0;">
+            <div style="display:inline-flex;width:72px;height:72px;background:#D5EB4B;border-radius:50%;align-items:center;justify-content:center;">
+              <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#141418;">48h</span>
+            </div>
+          </div>
+          <!-- After -->
+          <div style="font-family:'Inter',sans-serif;font-size:15px;font-weight:600;color:#D5EB4B;text-transform:uppercase;letter-spacing:2px;margin-top:24px;margin-bottom:24px;">After Blueprint</div>
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="background:rgba(213,235,75,0.06);border:1px solid rgba(213,235,75,0.15);padding:22px 24px;border-radius:12px;">
+              <span style="font-family:'Inter',sans-serif;font-size:18px;color:#FAFAFA;">"62% of revenue from Google"</span>
+            </div>
+            <div style="background:rgba(213,235,75,0.06);border:1px solid rgba(213,235,75,0.15);padding:22px 24px;border-radius:12px;">
+              <span style="font-family:'Inter',sans-serif;font-size:18px;color:#FAFAFA;">"Real CAC is ₹1,200, not ₹400"</span>
+            </div>
+            <div style="background:rgba(213,235,75,0.06);border:1px solid rgba(213,235,75,0.15);padding:22px 24px;border-radius:12px;">
+              <span style="font-family:'Inter',sans-serif;font-size:18px;color:#FAFAFA;">"Move budget = +₹3.2L/mo"</span>
+            </div>
+          </div>
+        </div>
+        <div class="cta-bar-story">
+          <span class="cta-text">₹999 Growth Blueprint</span>
+          <span class="cta-btn">Book Now</span>
+        </div>
+        <span class="ad-num">Ad #10</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Fullscreen overlay -->
+<div class="overlay" id="overlay">
+  <button class="overlay-close" onclick="closeFull()">&#10005;</button>
+  <div id="overlay-content"></div>
+</div>
+
+<script>
+const feedGallery = document.querySelector('.gallery:not(#story-gallery)');
+const storyGallery = document.getElementById('story-gallery');
+let currentView = 'feed';
+
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  if (view === 'feed') {
+    document.querySelectorAll('.toggle-btn')[0].classList.add('active');
+    feedGallery.classList.remove('hidden');
+    storyGallery.classList.add('hidden');
+  } else {
+    document.querySelectorAll('.toggle-btn')[1].classList.add('active');
+    feedGallery.classList.add('hidden');
+    storyGallery.classList.remove('hidden');
+  }
+}
+
+function openFull(id) {
+  const el = document.getElementById(id + '-feed');
+  if (!el) return;
+  const clone = el.cloneNode(true);
+  clone.style.transform = 'none';
+  clone.style.flexShrink = '0';
+  const overlay = document.getElementById('overlay');
+  const content = document.getElementById('overlay-content');
+  content.innerHTML = '';
+  content.appendChild(clone);
+  overlay.classList.add('active');
+}
+
+function closeFull() {
+  document.getElementById('overlay').classList.remove('active');
+}
+
+document.getElementById('overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeFull();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeFull();
+});
+</script>
+</body>
+</html>
