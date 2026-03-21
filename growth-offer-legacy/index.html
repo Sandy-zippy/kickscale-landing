@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<!-- v2.1 -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZippyScale | We Find Your Highest ROI Channel in 48 Hours</title>
+    <meta name="description" content="Data finds money. AI multiplies it. Get a data-backed growth blueprint for your business for just ₹999.">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="ZippyScale | Your Highest ROI Channel, Found in 48 Hours">
+    <meta property="og:description" content="Stop guessing where to spend your marketing budget. Get a data-backed growth blueprint for ₹999.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://zippyscale.in">
+    <meta property="og:image" content="https://zippyscale.in/og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- Favicon - exact match from zippyscale.com -->
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <!-- Meta Pixel (replace YOUR_PIXEL_ID before launch) -->
+    <!-- <script>!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','YOUR_PIXEL_ID');fbq('track','PageView');</script> -->
+
+    <!-- UTM Tracking -->
+    <script>
+    (function(){
+        var params = new URLSearchParams(window.location.search);
+        ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(key){
+            var val = params.get(key);
+            if(val) sessionStorage.setItem(key, val);
+        });
+    })();
+    </script>
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --dark-bg: #141418;
+            --dark-card: #1E1E24;
+            --dark-border: #2E2E36;
+            --light-bg: #F8F9FA;
+            --light-card: #FFFFFF;
+            --light-border: #E5E7EB;
+            --lime: #D5EB4B;
+            --lime-hover: #E4F57A;
+            --lime-dark: #B8CF2E;
+            --lime-glow: rgba(213,235,75,0.12);
+            --text-on-dark: #FAFAFA;
+            --text-on-dark-secondary: #9CA3AF;
+            --text-on-dark-muted: #6B7280;
+            --text-on-light: #111827;
+            --text-on-light-secondary: #4B5563;
+            --text-on-light-muted: #9CA3AF;
+            --green: #22C55E;
+            --red: #EF4444;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-on-dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+        /* ===== SCROLL REVEAL ===== */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== SECTION DIVIDER ===== */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--lime), transparent);
+            opacity: 0.2;
+        }
+
+        /* ===== NAV ===== */
+        .nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(20,20,24,0.92); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--dark-border);
+            padding: 16px 0;
+        }
+        .nav .container {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: var(--text-on-dark);
+        }
+        .nav-logo svg { height: 32px; width: 32px; }
+        .nav-logo span { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; }
+        .nav-cta {
+            background: var(--lime); color: var(--dark-bg); border: none; padding: 10px 24px;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 14px;
+            border-radius: 8px; cursor: pointer; text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--lime-glow); background: var(--lime-hover); }
+
+        /* ===== HERO ===== */
+        .hero {
+            position: relative;
+            padding: 140px 0 80px;
+            background: var(--dark-bg);
+            text-align: center;
+        }
+        .hero-bg-effects, .cta-bg-effects {
+            position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+        }
+        .gradient-orb {
+            position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.15;
+            will-change: transform;
+        }
+        .orb-1 {
+            width: 600px; height: 600px; top: -200px; left: -100px;
+            background: radial-gradient(circle, #D5EB4B 0%, transparent 70%);
+            animation: orbFloat1 15s ease-in-out infinite;
+        }
+        .orb-2 {
+            width: 400px; height: 400px; top: 100px; right: -100px;
+            background: radial-gradient(circle, #D5EB4B 0%, transparent 70%);
+            animation: orbFloat2 20s ease-in-out infinite;
+        }
+        .orb-3 {
+            width: 500px; height: 500px; bottom: -200px; left: 40%;
+            background: radial-gradient(circle, rgba(213,235,75,0.5) 0%, transparent 70%);
+            animation: orbFloat3 18s ease-in-out infinite;
+        }
+        .cta-bg-effects .gradient-orb { opacity: 0.08; filter: blur(100px); }
+        .cta-bg-effects .orb-1 { width: 400px; height: 400px; }
+        .cta-bg-effects .orb-2 { width: 300px; height: 300px; }
+        .cta-bg-effects .orb-3 { width: 350px; height: 350px; }
+        @keyframes orbFloat1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, 50px) scale(1.1); }
+            66% { transform: translate(-50px, 100px) scale(0.9); }
+        }
+        @keyframes orbFloat2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-80px, 60px) scale(1.15); }
+            66% { transform: translate(60px, -40px) scale(0.85); }
+        }
+        @keyframes orbFloat3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(80px, -60px) scale(1.1); }
+        }
+        .hero .container { position: relative; z-index: 1; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--lime-glow); border: 1px solid rgba(213,235,75,0.3);
+            padding: 8px 20px; border-radius: 100px; font-size: 13px;
+            color: var(--lime); font-weight: 600; margin-bottom: 32px;
+        }
+        .hero-badge .dot { width: 8px; height: 8px; background: var(--lime); border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .hero h1 {
+            font-size: clamp(36px, 6vw, 64px); font-weight: 700;
+            max-width: 800px; margin: 0 auto 24px;
+            color: var(--text-on-dark);
+            background: linear-gradient(135deg, var(--text-on-dark) 0%, var(--lime) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: clamp(16px, 2.5vw, 20px); color: var(--text-on-dark-secondary);
+            max-width: 600px; margin: 0 auto 40px;
+        }
+        .hero-cta {
+            display: inline-flex; align-items: center; gap: 12px;
+            background: var(--lime); color: var(--dark-bg); border: none;
+            padding: 18px 40px; font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700; font-size: 18px; border-radius: 12px;
+            cursor: pointer; text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            box-shadow: 0 4px 30px var(--lime-glow);
+        }
+        .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(213,235,75,0.3); background: var(--lime-hover); }
+        .hero-price {
+            margin-top: 16px; font-size: 14px; color: var(--text-on-dark-muted);
+        }
+        .hero-price s { color: var(--text-on-dark-muted); }
+        .hero-price strong { color: var(--lime); font-size: 16px; }
+
+        .hero-stats {
+            display: flex; justify-content: center; gap: 48px;
+            margin-top: 60px; flex-wrap: wrap;
+        }
+        .hero-stat { text-align: center; }
+        .hero-stat .number {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 36px; color: var(--lime);
+        }
+        .hero-stat .label { font-size: 13px; color: var(--text-on-dark-muted); margin-top: 4px; font-weight: 500; }
+
+        /* ===== DARK SECTIONS ===== */
+        .dark-section {
+            background: var(--dark-bg);
+            color: var(--text-on-dark);
+            padding: 80px 0;
+            position: relative; overflow: hidden;
+        }
+        .dark-section::after {
+            content: ''; position: absolute; top: 0; left: -200px;
+            width: 200px; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(213,235,75,0.03), transparent);
+            animation: beamSweep 8s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes beamSweep {
+            0% { left: -200px; }
+            100% { left: calc(100% + 200px); }
+        }
+        .dark-section .section-label { color: var(--lime); }
+        .dark-section .section-title { color: var(--text-on-dark); }
+        .dark-section .section-subtitle { color: var(--text-on-dark-secondary); }
+
+        /* ===== LIGHT SECTIONS ===== */
+        .light-section {
+            background: var(--light-bg);
+            color: var(--text-on-light);
+            padding: 80px 0;
+        }
+        .light-section .section-label { color: var(--lime-dark); }
+        .light-section .section-title { color: var(--text-on-light); }
+        .light-section .section-subtitle { color: var(--text-on-light-secondary); }
+
+        /* ===== SECTIONS COMMON ===== */
+        section { padding: 80px 0; }
+        .section-label {
+            font-family: 'JetBrains Mono', monospace; font-weight: 500;
+            font-size: 12px; letter-spacing: 2px; text-transform: uppercase;
+            color: var(--lime); margin-bottom: 16px;
+        }
+        .section-title {
+            font-size: clamp(28px, 4vw, 42px); font-weight: 700;
+            margin-bottom: 20px; max-width: 700px;
+        }
+        .section-subtitle {
+            font-size: 17px;
+            max-width: 600px; margin-bottom: 48px;
+        }
+        .text-center { text-align: center; }
+        .mx-auto { margin-left: auto; margin-right: auto; }
+
+        /* ===== PAIN SECTION (LIGHT) ===== */
+        .pain-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .pain-card {
+            background: var(--light-card); border: 1px solid var(--light-border);
+            border-radius: 16px; padding: 32px;
+            transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+        }
+        .pain-card:hover { border-color: var(--red); transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(184,207,46,0.2); }
+        .pain-icon { font-size: 32px; margin-bottom: 16px; }
+        .pain-card h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text-on-light); }
+        .pain-card p { font-size: 14px; color: var(--text-on-light-secondary); }
+
+        /* ===== SOLUTION SECTION (DARK) ===== */
+        .solution-steps {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+        }
+        .solution-step {
+            background: var(--dark-card); border: 1px solid var(--dark-border);
+            border-radius: 16px; padding: 32px; position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .solution-step:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(213,235,75,0.1); }
+        .step-number {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 48px; color: rgba(213,235,75,0.1);
+            position: absolute; top: 16px; right: 24px;
+        }
+        .solution-step h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: var(--lime); }
+        .solution-step p { font-size: 14px; color: var(--text-on-dark-secondary); }
+
+        /* ===== HOW IT WORKS (LIGHT) ===== */
+        .how-steps {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .how-step {
+            text-align: center; padding: 32px 20px;
+            background: var(--light-card); border: 1px solid var(--light-border);
+            border-radius: 16px; position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .how-step:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.08), 0 0 0 1px rgba(184,207,46,0.2); }
+        .how-step .num {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 24px; color: var(--lime-dark); margin-bottom: 12px;
+        }
+        .how-step h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text-on-light); }
+        .how-step p { font-size: 13px; color: var(--text-on-light-secondary); }
+        .how-arrow {
+            display: none; position: absolute; right: -20px; top: 50%;
+            color: var(--lime-dark); font-size: 20px;
+        }
+        @media(min-width:900px) { .how-arrow { display: block; } }
+
+        /* ===== SOCIAL PROOF (DARK) ===== */
+        .proof-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+        .proof-card {
+            background: var(--dark-card); border: 1px solid var(--dark-border);
+            border-radius: 16px; padding: 32px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .proof-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(213,235,75,0.1); }
+        .proof-card .result {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 28px; color: var(--lime); margin-bottom: 4px;
+        }
+        .proof-card .result-label { font-size: 13px; color: var(--text-on-dark-muted); margin-bottom: 16px; }
+        .proof-card .quote { font-size: 15px; color: var(--text-on-dark-secondary); font-style: italic; margin-bottom: 16px; }
+        .proof-card .author { font-size: 13px; color: var(--text-on-dark-muted); }
+        .proof-card .author strong { color: var(--text-on-dark); font-style: normal; }
+        .proof-industries {
+            display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;
+            margin-top: 40px;
+        }
+        .proof-industry {
+            background: var(--dark-card); border: 1px solid var(--dark-border);
+            padding: 10px 20px; border-radius: 100px;
+            font-size: 13px; color: var(--text-on-dark-secondary); font-weight: 500;
+        }
+
+        /* ===== TEAM SECTION (LIGHT) ===== */
+        .team-section {
+            max-width: 800px; margin: 0 auto;
+            background: var(--light-card); border: 1px solid var(--light-border);
+            border-radius: 20px; padding: 40px;
+            text-align: center;
+        }
+        .team-avatar {
+            width: 100px; height: 100px;
+            border-radius: 50%; background: linear-gradient(135deg, var(--lime), var(--lime-dark));
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px;
+        }
+        .team-avatar svg { width: 48px; height: 48px; }
+        .team-section h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; color: var(--text-on-light); }
+        .team-section .team-tagline { color: var(--lime-dark); font-size: 15px; font-weight: 600; margin-bottom: 16px; }
+        .team-section p { font-size: 14px; color: var(--text-on-light-secondary); max-width: 560px; margin: 0 auto 20px; }
+        .team-creds {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+        }
+        .team-cred {
+            background: rgba(184,207,46,0.1); border: 1px solid rgba(184,207,46,0.25);
+            padding: 6px 14px; border-radius: 6px;
+            font-size: 13px; color: var(--lime-dark); font-weight: 600;
+        }
+
+        /* ===== WHAT YOU GET (DARK) ===== */
+        .offer-box {
+            background: var(--dark-card); border: 2px solid transparent;
+            border-radius: 24px; padding: 48px; position: relative; overflow: hidden;
+        }
+        .offer-box::before {
+            content: ''; position: absolute; inset: -2px; z-index: -1;
+            border-radius: 26px;
+            background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.2), var(--lime));
+            background-size: 200% 200%;
+            animation: gradientBorder 4s ease infinite;
+        }
+        .offer-box::after {
+            content: ''; position: absolute; inset: 0;
+            background: var(--dark-card); border-radius: 22px;
+            z-index: -1;
+        }
+        @keyframes gradientBorder {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .offer-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 32px 0; }
+        .offer-list li {
+            display: flex; align-items: flex-start; gap: 12px;
+            font-size: 15px; color: var(--text-on-dark-secondary);
+        }
+        .offer-list li .check {
+            width: 24px; height: 24px; min-width: 24px;
+            background: rgba(213,235,75,0.15); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--lime); font-size: 14px; font-weight: 700;
+        }
+        .offer-price-row {
+            display: flex; align-items: center; gap: 16px;
+            margin-top: 32px; flex-wrap: wrap;
+        }
+        .offer-price {
+            font-family: 'JetBrains Mono', monospace; font-weight: 700;
+            font-size: 48px; color: var(--lime);
+        }
+        .offer-price-note { font-size: 14px; color: var(--text-on-dark-muted); }
+        .offer-guarantee {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3);
+            padding: 8px 16px; border-radius: 8px;
+            font-size: 13px; color: var(--green); font-weight: 600;
+        }
+
+        /* ===== GUARANTEE (LIGHT) ===== */
+        .guarantee-section {
+            max-width: 700px; margin: 0 auto;
+            background: var(--light-card); border: 2px solid rgba(34,197,94,0.2);
+            border-radius: 20px; padding: 40px; text-align: center;
+        }
+        .guarantee-section .shield { font-size: 48px; margin-bottom: 16px; }
+        .guarantee-section h3 { font-size: 22px; font-weight: 700; color: var(--green); margin-bottom: 12px; }
+        .guarantee-section p { font-size: 15px; color: var(--text-on-light-secondary); max-width: 500px; margin: 0 auto; }
+
+        /* ===== QUIZ (DARK) ===== */
+        .quiz-section {
+            background: var(--dark-bg);
+            padding: 100px 0;
+        }
+        .quiz-container {
+            max-width: 640px; margin: 0 auto;
+            background: var(--dark-card); border: 2px solid transparent;
+            border-radius: 24px; padding: 48px; position: relative; overflow: hidden;
+        }
+        .quiz-container::before {
+            content: ''; position: absolute; inset: -2px; z-index: 0;
+            border-radius: 26px;
+            background: linear-gradient(135deg, var(--lime), rgba(213,235,75,0.15), var(--lime));
+            background-size: 200% 200%;
+            animation: gradientBorder 4s ease infinite;
+        }
+        .quiz-container::after {
+            content: ''; position: absolute; inset: 0;
+            background: var(--dark-card); border-radius: 22px;
+            z-index: 0;
+        }
+        .quiz-container > * { position: relative; z-index: 1; }
+        .quiz-progress {
+            display: flex; gap: 6px; margin-bottom: 32px;
+        }
+        .quiz-progress-bar {
+            flex: 1; height: 4px; background: var(--dark-border);
+            border-radius: 4px; transition: background 0.3s;
+        }
+        .quiz-progress-bar.active { background: var(--lime); }
+
+        .quiz-step { display: none; }
+        .quiz-step.active { display: block; }
+        .quiz-step h3 {
+            font-size: 22px; font-weight: 600; margin-bottom: 8px; color: var(--text-on-dark);
+        }
+        .quiz-step .quiz-subtitle { font-size: 14px; color: var(--text-on-dark-muted); margin-bottom: 24px; }
+
+        .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+        .quiz-option {
+            display: flex; align-items: center; gap: 14px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 12px; padding: 16px 20px; cursor: pointer;
+            transition: all 0.2s; font-size: 15px; color: var(--text-on-dark);
+            min-height: 52px;
+        }
+        .quiz-option:hover { border-color: var(--lime); background: rgba(213,235,75,0.05); }
+        .quiz-option.selected { border-color: var(--lime); background: var(--lime-glow); }
+        .quiz-option .radio {
+            width: 20px; height: 20px; min-width: 20px; border-radius: 50%;
+            border: 2px solid var(--dark-border); transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .quiz-option.selected .radio {
+            border-color: var(--lime); background: var(--lime);
+        }
+        .quiz-option.selected .radio::after {
+            content: '\2713'; color: var(--dark-bg); font-size: 12px; font-weight: 700;
+        }
+
+        .quiz-other-input {
+            width: 100%; margin-top: 10px; padding: 14px 18px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 10px; color: var(--text-on-dark); font-size: 16px;
+            font-family: 'Inter', sans-serif; outline: none;
+            display: none;
+        }
+        .quiz-other-input:focus { border-color: var(--lime); }
+        .quiz-other-input.visible { display: block; }
+
+        .quiz-form { display: flex; flex-direction: column; gap: 16px; }
+        .quiz-form label { font-size: 14px; font-weight: 600; color: var(--text-on-dark-secondary); }
+        .quiz-form input, .quiz-form select {
+            width: 100%; padding: 14px 18px;
+            background: var(--dark-bg); border: 1px solid var(--dark-border);
+            border-radius: 10px; color: var(--text-on-dark); font-size: 16px;
+            font-family: 'Inter', sans-serif; outline: none;
+        }
+        .quiz-form input:focus, .quiz-form select:focus { border-color: var(--lime); }
+        .quiz-form input::placeholder { color: var(--text-on-dark-muted); }
+
+        .quiz-nav {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 32px; gap: 12px;
+        }
+        .quiz-back {
+            background: none; border: 1px solid var(--dark-border); color: var(--text-on-dark-secondary);
+            padding: 12px 24px; border-radius: 10px; cursor: pointer;
+            font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+            transition: border-color 0.2s;
+        }
+        .quiz-back:hover { border-color: var(--text-on-dark-secondary); }
+        .quiz-back.hidden { visibility: hidden; }
+        .quiz-next {
+            background: var(--lime); color: var(--dark-bg); border: none;
+            padding: 14px 32px; border-radius: 10px; cursor: pointer;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px;
+            transition: transform 0.2s, opacity 0.2s, background 0.2s;
+            margin-left: auto;
+        }
+        .quiz-next:hover { transform: translateY(-1px); background: var(--lime-hover); }
+        .quiz-next:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .quiz-error {
+            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+            color: var(--red); padding: 12px 16px; border-radius: 8px;
+            font-size: 13px; margin-top: 12px; display: none;
+        }
+        .quiz-error.visible { display: block; }
+
+        /* ===== FAQ (LIGHT) ===== */
+        .faq-list { max-width: 700px; margin: 0 auto; }
+        .faq-item {
+            border-bottom: 1px solid var(--light-border); padding: 24px 0;
+        }
+        .faq-question {
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; font-weight: 600; font-size: 16px;
+            color: var(--text-on-light); gap: 16px;
+        }
+        .faq-question .faq-icon {
+            font-size: 20px; color: var(--lime-dark); transition: transform 0.3s;
+            min-width: 24px; text-align: center;
+        }
+        .faq-answer {
+            max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+            font-size: 14px; color: var(--text-on-light-secondary); line-height: 1.7;
+        }
+        .faq-item.open .faq-answer { max-height: 300px; padding-top: 16px; }
+        .faq-item.open .faq-icon { transform: rotate(45deg); }
+
+        /* ===== FINAL CTA (DARK) ===== */
+        .final-cta {
+            text-align: center; padding: 100px 0;
+            background: var(--dark-bg);
+            position: relative;
+        }
+        .final-cta { overflow: hidden; }
+        .final-cta .container { position: relative; z-index: 1; }
+        .final-cta h2 { font-size: clamp(28px, 4vw, 42px); font-weight: 700; margin-bottom: 16px; color: var(--text-on-dark); }
+        .final-cta p { font-size: 17px; color: var(--text-on-dark-secondary); margin-bottom: 32px; max-width: 500px; margin-left: auto; margin-right: auto; }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--dark-bg);
+            padding: 40px 0; border-top: 1px solid var(--dark-border);
+            text-align: center; font-size: 13px; color: var(--text-on-dark-muted);
+        }
+        .footer a { color: var(--lime); text-decoration: none; }
+
+        /* ===== STICKY MOBILE CTA ===== */
+        .sticky-cta {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            z-index: 99; background: rgba(20,20,24,0.95); backdrop-filter: blur(10px);
+            border-top: 1px solid var(--dark-border); padding: 12px 16px;
+            text-align: center;
+        }
+        .sticky-cta a {
+            display: block; background: var(--lime); color: var(--dark-bg);
+            padding: 14px; border-radius: 10px; font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600; font-size: 15px; text-decoration: none;
+        }
+        .sticky-cta .sticky-sub { font-size: 11px; color: var(--text-on-dark-muted); margin-top: 4px; }
+
+        /* ===== COUNTER BOUNCE ===== */
+        .hero-stat .number.counted {
+            animation: counterBounce 0.4s ease-out;
+        }
+        @keyframes counterBounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+
+        /* ===== SHIMMER TEXT ===== */
+        .shimmer-text {
+            background: linear-gradient(
+                90deg,
+                var(--text-on-dark) 0%,
+                var(--lime) 45%,
+                var(--text-on-dark) 55%,
+                var(--text-on-dark) 100%
+            );
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
+        /* ===== SECTION LABEL PARALLAX ===== */
+        .section-label {
+            transition: transform 0.3s ease-out;
+            will-change: transform;
+        }
+
+        /* ===== CARD 3D TILT ===== */
+        .pain-card, .solution-step, .proof-card, .how-step {
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        /* ===== HERO TEXT REVEAL ===== */
+        .hero h1 {
+            animation: heroReveal 0.8s ease-out;
+        }
+        @keyframes heroReveal {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== CTA PULSE ===== */
+        .hero-cta {
+            animation: ctaPulse 3s ease-in-out infinite;
+        }
+        @keyframes ctaPulse {
+            0%, 100% { box-shadow: 0 4px 30px rgba(213,235,75,0.12); }
+            50% { box-shadow: 0 4px 40px rgba(213,235,75,0.25); }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .hero { padding: 120px 0 60px; }
+            .hero-stats { gap: 24px; }
+            .hero-stat .number { font-size: 28px; }
+            .quiz-container { padding: 32px 24px; }
+            .offer-box { padding: 32px 24px; }
+            .nav-cta { padding: 8px 16px; font-size: 13px; }
+            .proof-grid { grid-template-columns: 1fr; }
+            .pain-grid { grid-template-columns: 1fr; }
+            .solution-steps { grid-template-columns: 1fr; }
+            .how-steps { grid-template-columns: repeat(2, 1fr); }
+            .team-section { padding: 32px 24px; }
+            .team-creds { justify-content: center; }
+            .guarantee-section { padding: 32px 24px; }
+            .sticky-cta { display: block; }
+            body { padding-bottom: 90px; }
+        }
+
+        @media (max-width: 480px) {
+            .how-steps { grid-template-columns: 1fr; }
+            .offer-list { grid-template-columns: 1fr; }
+        }
+
+        /* ===== THANK YOU OVERLAY ===== */
+        .thank-you-overlay {
+            display: none; position: fixed; inset: 0; z-index: 200;
+            background: rgba(20,20,24,0.95); backdrop-filter: blur(20px);
+            align-items: center; justify-content: center;
+        }
+        .thank-you-overlay.visible { display: flex; }
+        .thank-you-box {
+            text-align: center; max-width: 500px; padding: 48px;
+        }
+        .thank-you-box .check-circle {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: var(--lime); display: flex; align-items: center;
+            justify-content: center; margin: 0 auto 24px;
+            font-size: 36px; color: var(--dark-bg);
+        }
+        .thank-you-box h2 { font-size: 28px; font-weight: 700; margin-bottom: 12px; color: var(--text-on-dark); }
+        .thank-you-box p { color: var(--text-on-dark-secondary); margin-bottom: 24px; }
+        .thank-you-box a {
+            display: inline-block; background: var(--lime); color: var(--dark-bg);
+            padding: 14px 32px; border-radius: 10px;
+            font-family: 'Space Grotesk', sans-serif; font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* ===== TOAST ===== */
+        .toast {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: var(--red); color: #fff; padding: 14px 28px;
+            border-radius: 10px; font-size: 14px; font-weight: 600;
+            z-index: 300; display: none; text-align: center;
+            box-shadow: 0 4px 20px rgba(239,68,68,0.3);
+        }
+        .toast.visible { display: block; animation: fadeInUp 0.3s ease; max-width: 90vw; word-wrap: break-word; }
+        @keyframes fadeInUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+    </style>
+</head>
+<body>
+
+<!-- ===== NAV (dark) ===== -->
+<nav class="nav">
+    <div class="container">
+        <a href="#" class="nav-logo">
+            <img src="logo-dark.png" alt="ZippyScale" style="height:36px;width:auto;">
+        </a>
+        <a href="#quiz" class="nav-cta">Get Your Blueprint</a>
+    </div>
+</nav>
+
+<!-- ===== HERO (dark) ===== -->
+<section class="hero">
+    <div class="hero-bg-effects">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+    <div class="container">
+        <div class="hero-badge">
+            <span class="dot"></span>
+            <span id="spots-count">Only 10 spots this month</span>
+        </div>
+        <h1>We Find Your Highest ROI Channel. You Scale It.</h1>
+        <p>Stop guessing where to spend. Get a data-backed growth blueprint that shows exactly which channels will 3x your revenue.</p>
+        <a href="#quiz" class="hero-cta">Get Your Growth Blueprint</a>
+        <div class="hero-price">
+            <s>&#8377;15,000</s> &nbsp; <strong>&#8377;999 only</strong> &nbsp; · &nbsp; 7-day money-back guarantee
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <div class="number" data-target="5" data-prefix="₹" data-suffix="Cr+">&#8377;0Cr+</div>
+                <div class="label">Ad Spend Managed</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number" data-target="47" data-suffix="+">0+</div>
+                <div class="label">Brands Scaled</div>
+            </div>
+            <div class="hero-stat">
+                <div class="number" data-target="3.2" data-suffix="x" data-decimal="true">0x</div>
+                <div class="label">Average ROAS</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== PAIN (light) ===== -->
+<section id="pain" class="light-section">
+    <div class="container">
+        <div class="section-label reveal">The Problem</div>
+        <h2 class="section-title reveal" style="color: var(--text-on-light);">You're Spending on Marketing. But Where's the Money Going?</h2>
+        <p class="section-subtitle reveal">Most &#8377;5Cr to &#8377;50Cr businesses face the same invisible leak.</p>
+        <div class="pain-grid">
+            <div class="pain-card reveal" style="transition-delay: 0s;">
+                <div class="pain-icon">&#x1F573;&#xFE0F;</div>
+                <h3>Budget Black Hole</h3>
+                <p>You're spending &#8377;2L+ per month on ads, agencies, and content. But you can't tell which rupee made money and which was wasted.</p>
+            </div>
+            <div class="pain-card reveal" style="transition-delay: 0.1s;">
+                <div class="pain-icon">&#x1F3AF;</div>
+                <h3>Wrong Channel, Wrong Audience</h3>
+                <p>Your competitor is killing it on YouTube while you burn cash on Instagram. Nobody told you because nobody measured.</p>
+            </div>
+            <div class="pain-card reveal" style="transition-delay: 0.2s;">
+                <div class="pain-icon">&#x1F4CA;</div>
+                <h3>Reports Without Answers</h3>
+                <p>Your agency sends "reach" and "impressions" reports. Pretty dashboards. Zero connection to actual revenue.</p>
+            </div>
+            <div class="pain-card reveal" style="transition-delay: 0.3s;">
+                <div class="pain-icon">&#x1F504;</div>
+                <h3>Scaling Fear</h3>
+                <p>You want to 3x your spend but can't tell if it'll double revenue or double waste.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== SOLUTION (dark) ===== -->
+<section class="dark-section">
+    <div class="container">
+        <div class="section-label reveal">The ZippyScale Way</div>
+        <h2 class="section-title shimmer-text reveal">Data Finds Money. AI Multiplies It.</h2>
+        <p class="section-subtitle reveal">We run your business through our data engine to find exactly where your highest ROI lives.</p>
+        <div class="solution-steps">
+            <div class="solution-step reveal" style="transition-delay: 0s;">
+                <span class="step-number">01</span>
+                <h3>Deep Market Scan</h3>
+                <p>AI-powered analysis of your industry, competitors, and market gaps. TAM, SAM, SOM mapped to real opportunity.</p>
+            </div>
+            <div class="solution-step reveal" style="transition-delay: 0.1s;">
+                <span class="step-number">02</span>
+                <h3>Channel Scoring</h3>
+                <p>Every channel (Meta, Google, LinkedIn, YouTube, email, organic) scored against your specific ICP and budget. No guesswork.</p>
+            </div>
+            <div class="solution-step reveal" style="transition-delay: 0.15s;">
+                <span class="step-number">03</span>
+                <h3>ROI Projections</h3>
+                <p>Projected CAC, LTV, and ROAS for each channel with real data from similar businesses. You'll know exactly what to expect.</p>
+            </div>
+            <div class="solution-step reveal" style="transition-delay: 0.2s;">
+                <span class="step-number">04</span>
+                <h3>90-Day Sprint Plan</h3>
+                <p>Concrete execution roadmap. Which channel first, what budget, what creative, what metrics to track. Ready to run.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== HOW IT WORKS (light) ===== -->
+<section class="light-section">
+    <div class="container">
+        <div class="section-label text-center reveal">How It Works</div>
+        <h2 class="section-title text-center mx-auto reveal" style="color: var(--text-on-light);">From Quiz to Blueprint in 48 Hours</h2>
+        <p class="section-subtitle text-center mx-auto reveal">Simple. Fast. No fluff.</p>
+        <div class="how-steps">
+            <div class="how-step reveal" style="transition-delay: 0s;">
+                <div class="num">01</div>
+                <h3>Take the Quiz</h3>
+                <p>Tell us about your business, revenue, and goals. Takes 2 minutes.</p>
+                <span class="how-arrow">&rarr;</span>
+            </div>
+            <div class="how-step reveal" style="transition-delay: 0.1s;">
+                <div class="num">02</div>
+                <h3>Pay &#8377;999</h3>
+                <p>Secure Razorpay checkout. 7-day refund if not satisfied.</p>
+                <span class="how-arrow">&rarr;</span>
+            </div>
+            <div class="how-step reveal" style="transition-delay: 0.2s;">
+                <div class="num">03</div>
+                <h3>We Research</h3>
+                <p>Our AI + human team analyzes your market, competitors, and channels.</p>
+                <span class="how-arrow">&rarr;</span>
+            </div>
+            <div class="how-step reveal" style="transition-delay: 0.3s;">
+                <div class="num">04</div>
+                <h3>Pitch Meet</h3>
+                <p>45-min call. We present your personalized growth blueprint with data.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== SOCIAL PROOF (dark) ===== -->
+<section class="dark-section">
+    <div class="container">
+        <div class="section-label text-center reveal">Results That Speak</div>
+        <h2 class="section-title text-center mx-auto reveal">Founders Who Stopped Guessing</h2>
+        <p class="section-subtitle text-center mx-auto reveal">Real businesses. Real data. Real growth.</p>
+        <div class="proof-grid">
+            <div class="proof-card reveal" style="transition-delay: 0s;">
+                <div class="result">3.8x ROAS</div>
+                <div class="result-label">in 60 days</div>
+                <div class="quote">"We were spending &#8377;3L/month on Meta with zero tracking. ZippyScale showed us Google was our real channel. Shifted budget, tripled returns."</div>
+                <div class="author"><strong>Rahul M.</strong> · Healthcare, Hyderabad · &#8377;12Cr revenue</div>
+            </div>
+            <div class="proof-card reveal" style="transition-delay: 0.1s;">
+                <div class="result">62% lower CAC</div>
+                <div class="result-label">in 90 days</div>
+                <div class="quote">"The pitch meet alone was worth 10x the &#8377;999. They showed me competitor data I'd never seen. We cut acquisition cost by more than half."</div>
+                <div class="author"><strong>Priya S.</strong> · D2C brand, Mumbai · &#8377;8Cr revenue</div>
+            </div>
+            <div class="proof-card reveal" style="transition-delay: 0.2s;">
+                <div class="result">&#8377;45L pipeline</div>
+                <div class="result-label">in first quarter</div>
+                <div class="quote">"They identified LinkedIn as our goldmine. We'd never tried it. Three months later, &#8377;45L in qualified pipeline from one channel."</div>
+                <div class="author"><strong>Vikram K.</strong> · B2B SaaS, Bangalore · &#8377;22Cr revenue</div>
+            </div>
+        </div>
+        <div class="proof-industries reveal">
+            <span class="proof-industry">Healthcare</span>
+            <span class="proof-industry">D2C / E-commerce</span>
+            <span class="proof-industry">Real Estate</span>
+            <span class="proof-industry">Education / EdTech</span>
+            <span class="proof-industry">SaaS / Tech</span>
+            <span class="proof-industry">Construction</span>
+            <span class="proof-industry">Professional Services</span>
+        </div>
+        <div style="text-align: center; margin-top: 48px;" class="reveal">
+            <p style="font-size: 14px; color: var(--text-on-dark-secondary); margin-bottom: 16px;">Follow our journey</p>
+            <a href="https://www.instagram.com/zippy.scale/" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; color: var(--lime); font-weight: 600; text-decoration: none; font-size: 15px;">
+                @zippy.scale on Instagram &rarr;
+            </a>
+        </div>
+        <!-- Instagram content grid -->
+        <div style="margin-top: 60px;" class="reveal">
+            <h3 style="text-align:center; font-size: 20px; font-weight: 600; color: var(--text-on-dark); margin-bottom: 24px;">See Us in Action</h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 800px; margin: 0 auto;">
+                <a href="https://www.instagram.com/reel/DVGqmdRDyag/" target="_blank" rel="noopener" style="display:block; border-radius: 12px; overflow: hidden; aspect-ratio: 4/5; position: relative;">
+                    <img src="assets/post-3.jpg" alt="Visionary Achievers Event" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
+                    <div style="position:absolute; bottom:0; left:0; right:0; padding: 12px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); font-size: 12px; color: #fff;">109 likes</div>
+                </a>
+                <a href="https://www.instagram.com/reel/DTVEO4VDz93/" target="_blank" rel="noopener" style="display:block; border-radius: 12px; overflow: hidden; aspect-ratio: 4/5; position: relative;">
+                    <img src="assets/post-4.jpg" alt="Team ZippyScale" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
+                    <div style="position:absolute; bottom:0; left:0; right:0; padding: 12px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); font-size: 12px; color: #fff;">80 likes</div>
+                </a>
+                <a href="https://www.instagram.com/reel/DTHX_UKjxeO/" target="_blank" rel="noopener" style="display:block; border-radius: 12px; overflow: hidden; aspect-ratio: 4/5; position: relative;">
+                    <img src="assets/post-5.jpg" alt="True Credibility" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
+                    <div style="position:absolute; bottom:0; left:0; right:0; padding: 12px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); font-size: 12px; color: #fff;">65 likes</div>
+                </a>
+                <a href="https://www.instagram.com/reel/DTCaUHziDaa/" target="_blank" rel="noopener" style="display:block; border-radius: 12px; overflow: hidden; aspect-ratio: 4/5; position: relative;">
+                    <img src="assets/post-6.jpg" alt="PR Never Sleeps" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
+                    <div style="position:absolute; bottom:0; left:0; right:0; padding: 12px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); font-size: 12px; color: #fff;">74 likes</div>
+                </a>
+                <a href="https://www.instagram.com/reel/DVdrUa_Eooc/" target="_blank" rel="noopener" style="display:block; border-radius: 12px; overflow: hidden; aspect-ratio: 4/5; position: relative;">
+                    <img src="assets/post-2.jpg" alt="PawMe AI Robot" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
+                    <div style="position:absolute; bottom:0; left:0; right:0; padding: 12px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); font-size: 12px; color: #fff;">56 likes</div>
+                </a>
+                <a href="https://www.instagram.com/reel/DTAgyxOD2S0/" target="_blank" rel="noopener" style="display:block; border-radius: 12px; overflow: hidden; aspect-ratio: 4/5; position: relative;">
+                    <img src="assets/post-1.jpg" alt="Content Behind The Scenes" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
+                    <div style="position:absolute; bottom:0; left:0; right:0; padding: 12px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); font-size: 12px; color: #fff;">16 likes</div>
+                </a>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="https://www.instagram.com/zippy.scale/" target="_blank" rel="noopener" style="display: inline-flex; align-items: center; gap: 8px; color: var(--lime); font-weight: 600; text-decoration: none; font-size: 14px;">
+                    Follow @zippy.scale &rarr;
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== TEAM (light) ===== -->
+<section class="light-section">
+    <div class="container">
+        <div class="section-label text-center reveal">Your Strategy Team</div>
+        <h2 class="section-title text-center mx-auto reveal" style="margin-bottom: 40px; color: var(--text-on-light);">Who's Building Your Blueprint?</h2>
+        <div class="team-section reveal">
+            <div class="team-avatar" style="overflow:hidden;">
+                <img src="assets/profile-pic.jpg" alt="ZippyScale" style="width:100%; height:100%; object-fit:cover;">
+            </div>
+            <h3>ZippyScale Team</h3>
+            <div class="team-tagline">Attribution-first growth marketing</div>
+            <p>A hybrid team of strategists, data analysts, and AI systems. Every blueprint is built with deep market research, competitor intelligence, and channel-level ROI projections. Powered by proprietary AI tools.</p>
+            <div class="team-creds">
+                <span class="team-cred">12 Industries Covered</span>
+                <span class="team-cred">48-Hour Turnaround</span>
+                <span class="team-cred">Attribution-First Approach</span>
+                <span class="team-cred">AI + Human Hybrid</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== WHAT YOU GET (dark) ===== -->
+<section class="dark-section">
+    <div class="container">
+        <div class="section-label text-center reveal">The &#8377;999 Growth Blueprint</div>
+        <h2 class="section-title text-center mx-auto reveal">Everything You Get in the Pitch Meet</h2>
+        <p class="section-subtitle text-center mx-auto reveal">Not a sales call. A strategy session backed by real data about your business.</p>
+        <div class="offer-box reveal">
+            <ul class="offer-list">
+                <li><span class="check">&#10003;</span> Complete market analysis (TAM, SAM, SOM)</li>
+                <li><span class="check">&#10003;</span> Competitor ad spend and channel breakdown</li>
+                <li><span class="check">&#10003;</span> Top 3 highest-ROI channels for YOUR business</li>
+                <li><span class="check">&#10003;</span> Projected CAC, LTV, and ROAS per channel</li>
+                <li><span class="check">&#10003;</span> 90-day execution roadmap with budget allocation</li>
+                <li><span class="check">&#10003;</span> Creative strategy and messaging angles</li>
+                <li><span class="check">&#10003;</span> 45-minute 1-on-1 strategy call</li>
+                <li><span class="check">&#10003;</span> Full research deck (yours to keep)</li>
+            </ul>
+            <div class="offer-price-row">
+                <div class="offer-price">&#8377;999</div>
+                <div>
+                    <div class="offer-price-note"><s>Valued at &#8377;15,000</s></div>
+                    <div class="offer-price-note">One-time payment. No subscription.</div>
+                </div>
+                <div class="offer-guarantee">&#x1F6E1;&#xFE0F; 7-day money-back guarantee</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== GUARANTEE (light) ===== -->
+<section class="light-section">
+    <div class="container">
+        <div class="guarantee-section reveal">
+            <div class="shield">&#x1F6E1;&#xFE0F;</div>
+            <h3>Zero-Risk Guarantee</h3>
+            <p>If the pitch meet doesn't deliver clear, actionable insights for your business, you get a full &#8377;999 refund within 7 days. No questions. No hoops. Less than 2% of founders have ever asked for one.</p>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== QUIZ SECTION (dark) ===== -->
+<section class="quiz-section" id="quiz">
+    <div class="container">
+        <div class="section-label text-center reveal" style="color: var(--lime);">Start Here</div>
+        <h2 class="section-title text-center mx-auto reveal" style="color: var(--text-on-dark);">Get Your Growth Blueprint</h2>
+        <p class="section-subtitle text-center mx-auto reveal" style="color: var(--text-on-dark-secondary);">Answer 5 quick questions. We'll build your personalized channel strategy.</p>
+
+        <div class="quiz-container reveal">
+            <div class="quiz-progress">
+                <div class="quiz-progress-bar active"></div>
+                <div class="quiz-progress-bar"></div>
+                <div class="quiz-progress-bar"></div>
+                <div class="quiz-progress-bar"></div>
+                <div class="quiz-progress-bar"></div>
+                <div class="quiz-progress-bar"></div>
+            </div>
+
+            <!-- Step 1: Industry -->
+            <div class="quiz-step active" data-step="1">
+                <h3>What type of business do you run?</h3>
+                <p class="quiz-subtitle">This helps us pull the right industry benchmarks.</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Healthcare / Pharma">
+                        <span class="radio"></span> Healthcare / Pharma
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Real Estate / Construction">
+                        <span class="radio"></span> Real Estate / Construction
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="D2C / E-commerce">
+                        <span class="radio"></span> D2C / E-commerce
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Education / EdTech">
+                        <span class="radio"></span> Education / EdTech
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="SaaS / Tech">
+                        <span class="radio"></span> SaaS / Tech
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Other">
+                        <span class="radio"></span> Other
+                    </div>
+                </div>
+                <input type="text" class="quiz-other-input" placeholder="Tell us your industry..." id="other-industry">
+            </div>
+
+            <!-- Step 2: Revenue -->
+            <div class="quiz-step" data-step="2">
+                <h3>What's your annual revenue?</h3>
+                <p class="quiz-subtitle">We tailor strategies to your scale.</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="₹50Cr+">
+                        <span class="radio"></span> &#8377;50Cr+
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="₹15Cr - ₹50Cr">
+                        <span class="radio"></span> &#8377;15Cr to &#8377;50Cr
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="₹5Cr - ₹15Cr">
+                        <span class="radio"></span> &#8377;5Cr to &#8377;15Cr
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="₹1Cr - ₹5Cr">
+                        <span class="radio"></span> &#8377;1Cr to &#8377;5Cr
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Under ₹1Cr">
+                        <span class="radio"></span> Under &#8377;1Cr (we may not be the right fit yet)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Marketing Spend -->
+            <div class="quiz-step" data-step="3">
+                <h3>Monthly marketing budget?</h3>
+                <p class="quiz-subtitle">Including ads, agency fees, and content.</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Not spending yet">
+                        <span class="radio"></span> Not spending yet
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Under ₹50K">
+                        <span class="radio"></span> Under &#8377;50K
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="₹50K - ₹2L">
+                        <span class="radio"></span> &#8377;50K to &#8377;2L
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="₹2L - ₹5L">
+                        <span class="radio"></span> &#8377;2L to &#8377;5L
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="₹5L+">
+                        <span class="radio"></span> &#8377;5L+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Biggest Challenge -->
+            <div class="quiz-step" data-step="4">
+                <h3>What's your biggest growth blocker?</h3>
+                <p class="quiz-subtitle">Pick the one that keeps you up at night.</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Low lead quality">
+                        <span class="radio"></span> Getting leads, but they don't convert
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="High CAC">
+                        <span class="radio"></span> Acquisition cost is too high
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="No attribution">
+                        <span class="radio"></span> Don't know what's working
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Can't scale">
+                        <span class="radio"></span> Stuck at current revenue, can't break through
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="No marketing system">
+                        <span class="radio"></span> No structured marketing at all
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Goal -->
+            <div class="quiz-step" data-step="5">
+                <h3>What do you want to achieve in 90 days?</h3>
+                <p class="quiz-subtitle">This shapes your blueprint.</p>
+                <div class="quiz-options">
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="2x-3x leads">
+                        <span class="radio"></span> 2x to 3x my qualified leads
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Lower CAC 40%">
+                        <span class="radio"></span> Cut acquisition cost by 40%+
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Find new channel">
+                        <span class="radio"></span> Find a new profitable channel
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Full attribution">
+                        <span class="radio"></span> Know exactly what's working
+                    </div>
+                    <div class="quiz-option" onclick="selectOption(this)" data-value="Scale ad spend">
+                        <span class="radio"></span> Scale my ad spend confidently
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Contact Info -->
+            <div class="quiz-step" data-step="6">
+                <h3>Almost there! Where do we send your blueprint?</h3>
+                <p class="quiz-subtitle">We'll reach out within 24 hours to schedule your pitch meet.</p>
+                <div class="quiz-form">
+                    <div>
+                        <label>Your name</label>
+                        <input type="text" id="quiz-name" placeholder="Full name" required>
+                    </div>
+                    <div>
+                        <label>Phone number</label>
+                        <input type="tel" id="quiz-phone" placeholder="+91 98765 43210" required>
+                    </div>
+                    <div>
+                        <label>Email</label>
+                        <input type="email" id="quiz-email" placeholder="you@company.com" required>
+                    </div>
+                    <div>
+                        <label>Business / Company name</label>
+                        <input type="text" id="quiz-business" placeholder="Your company" required>
+                    </div>
+                </div>
+                <div class="quiz-error" id="quiz-error">Please fill all fields to continue.</div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="quiz-nav">
+                <button class="quiz-back hidden" onclick="prevStep()">&#8592; Back</button>
+                <button class="quiz-next" id="quiz-next-btn" onclick="nextStep()">Next &#8594;</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== FAQ (light) ===== -->
+<section class="light-section">
+    <div class="container">
+        <div class="section-label text-center reveal">Common Questions</div>
+        <h2 class="section-title text-center mx-auto reveal" style="color: var(--text-on-light);">You're Probably Wondering...</h2>
+        <div style="height: 40px;"></div>
+        <div class="faq-list">
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What exactly do I get for &#8377;999?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    A 45-minute strategy call where we present your complete growth blueprint:
+                    market analysis, competitor intelligence, channel scoring, ROI projections, and a 90-day execution plan. You keep the full research deck whether or not you work with us.
+                </div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Is this just a sales pitch disguised as a strategy call?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">No. You get a real, data-backed research deck that you can execute on your own. We share findings and recommendations regardless. If you want us to execute the plan, we offer 90-day sprints. But the blueprint is yours either way.</div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What if I'm not satisfied?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">Full refund within 7 days, no questions asked. If the pitch meet doesn't deliver value, you get your &#8377;999 back. Less than 2% refund rate because the research speaks for itself.</div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What industries do you work with?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">Healthcare, D2C, real estate, education, SaaS, construction, and professional services. If your business does &#8377;5Cr to &#8377;50Cr in annual revenue and spends on marketing, we can help.</div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What happens after the pitch meet?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">Two paths. Execute the blueprint yourself with your team. Or partner with us for a 90-day growth sprint where we run the strategy for you. First month upfront, second month after 30 days. No long-term lock-in.</div>
+            </div>
+            <div class="faq-item reveal">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Why only 10 spots per month?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">Each blueprint requires deep research. We analyze your market, competitors, and business data. Doing this well takes time. We'd rather do 10 incredible blueprints than 100 mediocre ones.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ===== FINAL CTA (dark) ===== -->
+<section class="final-cta">
+    <div class="cta-bg-effects">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+    <div class="container">
+        <h2 class="reveal">Stop Guessing. Start Scaling.</h2>
+        <p class="reveal">Join 47+ founders who found their highest ROI channel and never looked back.</p>
+        <a href="#quiz" class="hero-cta reveal">Get Your Growth Blueprint</a>
+        <div class="hero-price reveal" style="margin-top: 16px;">
+            &#8377;999 · 7-day money-back guarantee · No subscription
+        </div>
+    </div>
+</section>
+
+<!-- ===== FOOTER (dark) ===== -->
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2026 ZippyScale &middot; <a href="mailto:hello@zippyscale.in">hello@zippyscale.in</a> &middot; Data Finds Money. AI Multiplies It.</p>
+    </div>
+</footer>
+
+<!-- ===== STICKY MOBILE CTA ===== -->
+<div class="sticky-cta">
+    <a href="#quiz">Get Your Growth Blueprint &middot; &#8377;999</a>
+    <div class="sticky-sub">7-day money-back guarantee</div>
+</div>
+
+<!-- ===== LEAD CAPTURED → PAY NOW ===== -->
+<div class="thank-you-overlay" id="leadCaptured">
+    <div class="thank-you-box">
+        <div class="check-circle">&#10003;</div>
+        <h2>Info Saved!</h2>
+        <p>Now complete your payment to get your personalized growth blueprint. We'll reach out within 24 hours to schedule your pitch meet.</p>
+        <a href="https://rzp.io/rzp/6Ckk8osb" class="pay-now-btn" style="display:inline-block;background:#D5EB4B;color:#141418;padding:16px 40px;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;text-decoration:none;margin-top:16px;transition:transform 0.2s,box-shadow 0.2s;">Pay &#8377;999 &amp; Get Blueprint &#8594;</a>
+        <p style="margin-top:12px;font-size:13px;color:#9CA3AF;">Secure Razorpay checkout. 7-day refund if not satisfied.</p>
+    </div>
+</div>
+
+<!-- ===== PAYMENT SUCCESS (for return visits) ===== -->
+<div class="thank-you-overlay" id="thankYou">
+    <div class="thank-you-box">
+        <div class="check-circle">&#10003;</div>
+        <h2>You're In!</h2>
+        <p>Payment successful. We're building your growth blueprint right now. You'll hear from us within 24 hours to schedule your pitch meet.</p>
+        <a href="#">Check WhatsApp for confirmation</a>
+    </div>
+</div>
+
+<!-- ===== TOAST ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ===== QUIZ JS ===== -->
+<script>
+(function() {
+    var currentStep = 1;
+    var totalSteps = 6;
+    var answers = {};
+    var quizStartTracked = false;
+
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('visible');
+        setTimeout(function(){ t.classList.remove('visible'); }, 4000);
+    }
+
+    window.selectOption = function(el) {
+        var step = el.closest('.quiz-step');
+        step.querySelectorAll('.quiz-option').forEach(function(o){ o.classList.remove('selected'); });
+        el.classList.add('selected');
+
+        var value = el.dataset.value;
+        var stepNum = parseInt(step.dataset.step);
+        answers['step' + stepNum] = value;
+
+        // Track quiz start on first interaction
+        if (!quizStartTracked) {
+            quizStartTracked = true;
+            if (typeof fbq !== 'undefined') fbq('track', 'Lead');
+        }
+
+        // Handle "Other" option
+        var otherInput = step.querySelector('.quiz-other-input');
+        if (otherInput) {
+            if (value === 'Other') {
+                otherInput.classList.add('visible');
+                otherInput.focus();
+            } else {
+                otherInput.classList.remove('visible');
+            }
+        }
+
+        // Auto-advance after short delay (except on "Other")
+        if (value !== 'Other' && stepNum < totalSteps) {
+            setTimeout(function(){ nextStep(); }, 400);
+        }
+    };
+
+    window.nextStep = function() {
+        // Validate current step
+        if (currentStep < 6) {
+            if (!answers['step' + currentStep]) return;
+            if (answers['step' + currentStep] === 'Other') {
+                var otherInput = document.querySelector('.quiz-step[data-step="' + currentStep + '"] .quiz-other-input');
+                if (otherInput && otherInput.value.trim()) {
+                    answers['step' + currentStep] = otherInput.value.trim();
+                } else {
+                    return;
+                }
+            }
+        }
+
+        if (currentStep === 6) {
+            var name = document.getElementById('quiz-name').value.trim();
+            var phone = document.getElementById('quiz-phone').value.trim();
+            var email = document.getElementById('quiz-email').value.trim();
+            var business = document.getElementById('quiz-business').value.trim();
+            var errorEl = document.getElementById('quiz-error');
+
+            if (!name || !phone || !email || !business) {
+                errorEl.textContent = 'Please fill all fields to continue.';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            // Phone validation (Indian mobile)
+            var phoneClean = phone.replace(/[\s\-\+]/g, '').replace(/^91/, '');
+            if (!/^[6-9]\d{9}$/.test(phoneClean)) {
+                errorEl.textContent = 'Please enter a valid 10-digit Indian mobile number.';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            // Email validation
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                errorEl.textContent = 'Please enter a valid email address.';
+                errorEl.classList.add('visible');
+                return;
+            }
+
+            errorEl.classList.remove('visible');
+
+            answers.name = name;
+            answers.phone = phoneClean.length === 10 ? '91' + phoneClean : phone;
+            answers.email = email;
+            answers.business = business;
+
+            // Collect UTM params
+            ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(key){
+                var val = sessionStorage.getItem(key);
+                if(val) answers[key] = val;
+            });
+
+            submitQuiz();
+            return;
+        }
+
+        currentStep++;
+        showStep(currentStep);
+    };
+
+    window.prevStep = function() {
+        if (currentStep > 1) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    };
+
+    function showStep(step) {
+        document.querySelectorAll('.quiz-step').forEach(function(s){ s.classList.remove('active'); });
+        document.querySelector('.quiz-step[data-step="' + step + '"]').classList.add('active');
+
+        document.querySelectorAll('.quiz-progress-bar').forEach(function(bar, i) {
+            bar.classList.toggle('active', i < step);
+        });
+
+        var backBtn = document.querySelector('.quiz-back');
+        backBtn.classList.toggle('hidden', step === 1);
+
+        var nextBtn = document.getElementById('quiz-next-btn');
+        if (step === 6) {
+            nextBtn.textContent = 'Submit & Continue to Payment \u2192';
+            nextBtn.style.background = 'var(--lime)';
+        } else {
+            nextBtn.textContent = 'Next \u2192';
+        }
+    }
+
+    function submitQuiz() {
+        var btn = document.getElementById('quiz-next-btn');
+        btn.textContent = 'Saving your info...';
+        btn.disabled = true;
+
+        // Save to localStorage as fallback
+        try {
+            localStorage.setItem('zippy_lead_' + Date.now(), JSON.stringify(answers));
+        } catch(e) {}
+
+        // Send lead data to GHL via n8n webhook
+        var payload = JSON.stringify({
+            name: answers.name,
+            phone: answers.phone,
+            email: answers.email,
+            business_name: answers.business,
+            industry: answers.step1,
+            annual_revenue: answers.step2,
+            marketing_budget: answers.step3,
+            biggest_challenge: answers.step4,
+            goal_90_days: answers.step5,
+            source: 'zippyscale-quiz',
+            utm_source: answers.utm_source || '',
+            utm_medium: answers.utm_medium || '',
+            utm_campaign: answers.utm_campaign || '',
+            utm_content: answers.utm_content || '',
+            utm_term: answers.utm_term || ''
+        });
+
+        // Fire webhook (try fetch, fallback to sendBeacon)
+        try {
+            navigator.sendBeacon(
+                'https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz',
+                new Blob([payload], { type: 'application/json' })
+            );
+        } catch(e) {}
+
+        // Also try fetch as backup
+        fetch('https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: payload
+        }).catch(function() {});
+
+        // Show lead captured overlay with payment button
+        if (typeof fbq !== 'undefined') {
+            fbq('track', 'InitiateCheckout', { value: 999, currency: 'INR' });
+        }
+        document.getElementById('leadCaptured').classList.add('visible');
+    }
+
+})();
+
+// FAQ toggle
+function toggleFaq(el) {
+    el.closest('.faq-item').classList.toggle('open');
+}
+
+// Smooth scroll for CTA buttons
+document.querySelectorAll('a[href="#quiz"]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('quiz').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (typeof fbq !== 'undefined') fbq('track', 'InitiateCheckout');
+    });
+});
+
+// Dynamic headline swap based on UTM content
+(function(){
+    var utmContent = sessionStorage.getItem('utm_content') || new URLSearchParams(window.location.search).get('utm_content');
+    if (!utmContent) return;
+    var headlines = {
+        'healthcare': 'We Find the Highest ROI Channel for Healthcare Brands.',
+        'd2c': 'We Find the Highest ROI Channel for D2C Brands.',
+        'realestate': 'We Find the Highest ROI Channel for Real Estate.',
+        'saas': 'We Find the Highest ROI Channel for SaaS Companies.',
+        'education': 'We Find the Highest ROI Channel for EdTech.',
+        'pain': 'Your Marketing Budget Has a Leak. We Find It.',
+        'controversy': 'Your Agency Can\'t Show You Which Channel Made Money. We Can.',
+        'casestudy': 'How a \u20B912Cr Brand Found Their Best Channel in 48 Hours.'
+    };
+    var h1 = document.querySelector('.hero h1');
+    if (h1 && headlines[utmContent.toLowerCase()]) {
+        h1.textContent = headlines[utmContent.toLowerCase()];
+    }
+})();
+
+// Hide sticky CTA when quiz is in viewport
+(function(){
+    var sticky = document.querySelector('.sticky-cta');
+    if (!sticky) return;
+    var quizEl = document.getElementById('quiz');
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            sticky.style.display = entry.isIntersecting ? 'none' : '';
+        });
+    }, { threshold: 0.1 });
+    observer.observe(quizEl);
+})();
+
+// ===== SCROLL REVEAL =====
+(function(){
+    var reveals = document.querySelectorAll('.reveal');
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(function(el) { observer.observe(el); });
+})();
+
+// ===== ANIMATED STAT COUNTERS =====
+(function(){
+    var statsObserved = false;
+    var statNumbers = document.querySelectorAll('.hero-stat .number[data-target]');
+    if (!statNumbers.length) return;
+
+    function animateCounter(el) {
+        var target = parseFloat(el.dataset.target);
+        var prefix = el.dataset.prefix || '';
+        var suffix = el.dataset.suffix || '';
+        var isDecimal = el.dataset.decimal === 'true';
+        var duration = 1500;
+        var startTime = null;
+
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var progress = Math.min((timestamp - startTime) / duration, 1);
+            // Ease out cubic
+            var eased = 1 - Math.pow(1 - progress, 3);
+            var current = target * eased;
+
+            if (isDecimal) {
+                el.textContent = prefix + current.toFixed(1) + suffix;
+            } else {
+                el.textContent = prefix + Math.floor(current) + suffix;
+            }
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                if (isDecimal) {
+                    el.textContent = prefix + target.toFixed(1) + suffix;
+                } else {
+                    el.textContent = prefix + target + suffix;
+                }
+                el.classList.add('counted');
+            }
+        }
+        requestAnimationFrame(step);
+    }
+
+    var statsSection = document.querySelector('.hero-stats');
+    var statsObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting && !statsObserved) {
+                statsObserved = true;
+                statNumbers.forEach(function(el) { animateCounter(el); });
+                statsObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.3 });
+    statsObserver.observe(statsSection);
+})();
+
+// ===== SECTION LABEL PARALLAX =====
+(function(){
+    var labels = document.querySelectorAll('.section-label');
+    var ticking = false;
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(function() {
+                var scrollY = window.pageYOffset;
+                labels.forEach(function(label) {
+                    var rect = label.getBoundingClientRect();
+                    var centerY = rect.top + rect.height / 2;
+                    var viewH = window.innerHeight;
+                    var offset = ((centerY / viewH) - 0.5) * 10;
+                    label.style.transform = 'translateY(' + offset + 'px)';
+                });
+                ticking = false;
+            });
+        }
+    }, { passive: true });
+})();
+
+// ===== 3D CARD TILT =====
+(function(){
+    var cards = document.querySelectorAll('.pain-card, .solution-step, .proof-card, .how-step');
+    cards.forEach(function(card) {
+        card.addEventListener('mousemove', function(e) {
+            var rect = card.getBoundingClientRect();
+            var x = (e.clientX - rect.left) / rect.width - 0.5;
+            var y = (e.clientY - rect.top) / rect.height - 0.5;
+            requestAnimationFrame(function() {
+                card.style.transform = 'perspective(1000px) rotateY(' + (x * 6) + 'deg) rotateX(' + (-y * 6) + 'deg) translateY(-4px)';
+            });
+        });
+        card.addEventListener('mouseleave', function() {
+            card.style.transform = '';
+        });
+    });
+})();
+</script>
+
+<!-- Razorpay Payment Link: https://rzp.io/rzp/6Ckk8osb (no SDK needed) -->
+</body>
+</html>

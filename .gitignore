@@ -1,2 +1,5 @@
 .superpowers/
 .DS_Store
+node_modules/
+dist/
+claude-talk-to-figma-mcp/
