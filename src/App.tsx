@@ -6,6 +6,8 @@ import StickyCTA from './components/layout/StickyCTA'
 import Hero from './components/sections/Hero'
 import ProofOfWork from './components/sections/ProofOfWork'
 import PainSection from './components/sections/PainSection'
+import AutomationGrid from './components/sections/AutomationGrid'
+import HowItWorks from './components/sections/HowItWorks'
 
 function AutomationHome() {
   return (
@@ -16,6 +18,8 @@ function AutomationHome() {
         <Hero />
         <ProofOfWork />
         <PainSection />
+        <AutomationGrid />
+        <HowItWorks />
       </main>
       <Footer />
       <StickyCTA isQuizVisible={false} />
