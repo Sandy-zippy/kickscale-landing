@@ -10,6 +10,7 @@ export default function ScarcityBanner() {
   const dismiss = () => {
     sessionStorage.setItem('scarcity_dismissed', 'true')
     setVisible(false)
+    window.dispatchEvent(new Event('scarcity-dismissed'))
   }
 
   return (

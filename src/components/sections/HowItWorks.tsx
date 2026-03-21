@@ -26,7 +26,7 @@ export default function HowItWorks() {
           <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#D5EB4B]">
             THE PROCESS
           </p>
-          <h2 className="mx-auto mb-14 max-w-xl text-center font-heading text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="mx-auto mb-14 max-w-xl text-center text-3xl font-bold text-white sm:text-4xl">
             Three Steps to 10x Output
           </h2>
         </ScrollReveal>
@@ -46,7 +46,7 @@ export default function HowItWorks() {
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#D5EB4B] text-xl font-bold text-[#0c0c10]">
                   {step.num}
                 </div>
-                <h3 className="mb-2 font-heading text-lg font-semibold text-white">
+                <h3 className="mb-2 text-lg font-semibold text-white">
                   {step.title}
                 </h3>
                 <p className="text-sm leading-relaxed text-[#9CA3AF]">

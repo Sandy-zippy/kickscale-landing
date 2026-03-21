@@ -16,7 +16,7 @@ export default function ProofOfWork() {
           <p className="font-mono text-xs uppercase tracking-widest text-[#D5EB4B] mb-4">
             Proof of Work
           </p>
-          <h2 className="font-heading font-bold text-3xl md:text-4xl text-white mb-12">
+          <h2 className="font-bold text-3xl md:text-4xl text-white mb-12">
             What Our Automations Have Delivered
           </h2>
         </ScrollReveal>

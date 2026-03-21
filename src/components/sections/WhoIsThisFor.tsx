@@ -12,10 +12,10 @@ export default function WhoIsThisFor() {
     <section className="bg-[#F8F9FA] py-20">
       <div className="mx-auto max-w-4xl px-4 sm:px-6">
         <ScrollReveal>
-          <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#D5EB4B]">
+          <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#B8CF2E]">
             IS THIS FOR YOU?
           </p>
-          <h2 className="mx-auto mb-3 max-w-xl text-center font-heading text-3xl font-bold text-[#111827] sm:text-4xl">
+          <h2 className="mx-auto mb-3 max-w-xl text-center text-3xl font-bold text-[#111827] sm:text-4xl">
             Built for Businesses Ready to Scale
           </h2>
           <p className="mx-auto mb-12 max-w-md text-center text-sm text-[#6B7280]">

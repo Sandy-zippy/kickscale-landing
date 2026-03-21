@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { captureUTM } from './lib/analytics'
 import ScarcityBanner from './components/layout/ScarcityBanner'
 import Nav from './components/layout/Nav'
 import Footer from './components/layout/Footer'
@@ -53,6 +54,8 @@ function AutomationHome() {
 }
 
 export default function App() {
+  useEffect(() => { captureUTM() }, [])
+
   return (
     <BrowserRouter>
       <Routes>

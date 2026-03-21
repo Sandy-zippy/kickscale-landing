@@ -16,7 +16,7 @@ export default function ROIComparison() {
           <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#D5EB4B]">
             THE ROI
           </p>
-          <h2 className="mx-auto mb-3 max-w-xl text-center font-heading text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="mx-auto mb-3 max-w-xl text-center text-3xl font-bold text-white sm:text-4xl">
             Manual vs. AI Automation
           </h2>
           <p className="mx-auto mb-12 max-w-md text-center text-sm text-[#9CA3AF]">

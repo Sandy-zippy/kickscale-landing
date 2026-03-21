@@ -36,10 +36,10 @@ export default function FAQ() {
     <section className="bg-[#F8F9FA] py-20">
       <div className="mx-auto max-w-4xl px-4 sm:px-6">
         <ScrollReveal>
-          <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#D5EB4B]">
+          <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#B8CF2E]">
             COMMON QUESTIONS
           </p>
-          <h2 className="mx-auto mb-12 max-w-xl text-center font-heading text-3xl font-bold text-[#111827] sm:text-4xl">
+          <h2 className="mx-auto mb-12 max-w-xl text-center text-3xl font-bold text-[#111827] sm:text-4xl">
             You're Probably Wondering...
           </h2>
         </ScrollReveal>

@@ -67,7 +67,7 @@ export default function PainSection() {
             <p className="font-mono text-xs uppercase tracking-widest text-[#B8CF2E] mb-4">
               The Real Cost
             </p>
-            <h2 className="font-heading font-bold text-3xl md:text-4xl text-[#111827] mb-3">
+            <h2 className="font-bold text-3xl md:text-4xl text-[#111827] mb-3">
               Your Team Is Busy. But Not Productive.
             </h2>
             <p className="font-sans text-base text-[#4B5563] max-w-xl mx-auto">
@@ -81,7 +81,7 @@ export default function PainSection() {
             <ScrollReveal key={pain.stat} delay={i * 0.1}>
               <TiltCard className="bg-white border border-[#E5E7EB] rounded-2xl p-8 transition-all duration-300 hover:border-[#EF4444]/30 hover:shadow-lg hover:-translate-y-1 cursor-default">
                 <p className="font-mono font-bold text-3xl text-[#EF4444] mb-2">{pain.stat}</p>
-                <h3 className="font-heading font-semibold text-lg text-[#111827] mb-1">{pain.title}</h3>
+                <h3 className="font-semibold text-lg text-[#111827] mb-1">{pain.title}</h3>
                 <p className="font-sans text-sm text-[#4B5563]">{pain.description}</p>
               </TiltCard>
             </ScrollReveal>

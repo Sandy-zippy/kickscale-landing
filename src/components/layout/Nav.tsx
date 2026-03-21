@@ -1,15 +1,28 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [bannerVisible, setBannerVisible] = useState(
+    () => sessionStorage.getItem('scarcity_dismissed') !== 'true'
+  )
+
+  useEffect(() => {
+    const check = () => setBannerVisible(sessionStorage.getItem('scarcity_dismissed') !== 'true')
+    window.addEventListener('storage', check)
+    window.addEventListener('scarcity-dismissed', check)
+    return () => {
+      window.removeEventListener('storage', check)
+      window.removeEventListener('scarcity-dismissed', check)
+    }
+  }, [])
 
   return (
     <motion.nav
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="fixed top-14 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-3xl"
+      className={`fixed ${bannerVisible ? 'top-14' : 'top-4'} left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-3xl transition-all duration-300`}
     >
       <div className="flex items-center justify-between rounded-full border border-[#2E2E36] bg-[rgba(20,20,24,0.85)] backdrop-blur-xl px-4 py-2.5 shadow-lg shadow-black/30">
         {/* Logo */}

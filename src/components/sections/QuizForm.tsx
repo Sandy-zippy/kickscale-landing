@@ -154,7 +154,7 @@ export default function QuizForm() {
       phone: cleanPhone(phone),
       email: email.trim(),
       business_name: businessName.trim(),
-      automate_areas: areas,
+      automate_areas: areas.join(', '),
       team_size: teamSize,
       source: 'automation-lp-v2',
       ...getUtm(),

@@ -51,7 +51,7 @@ export default function AutomationGrid() {
           <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#D5EB4B]">
             WHAT WE AUTOMATE
           </p>
-          <h2 className="mx-auto mb-12 max-w-2xl text-center font-heading text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="mx-auto mb-12 max-w-2xl text-center text-3xl font-bold text-white sm:text-4xl">
             8 Areas Where AI Replaces Busywork
           </h2>
         </ScrollReveal>
