@@ -25,7 +25,7 @@ export default function AnimatedCounter({ target, prefix = '', suffix = '', clas
       const controls = animate(count, target, { duration })
       return controls.stop
     }
-  }, [isInView, target])
+  }, [isInView, target, count, duration])
 
   useEffect(() => {
     const unsubscribe = rounded.on('change', (v) => setDisplay(v))

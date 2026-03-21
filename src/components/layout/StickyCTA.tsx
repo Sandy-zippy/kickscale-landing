@@ -11,7 +11,7 @@ export default function StickyCTA({ isQuizVisible }: StickyCTAProps) {
         href="#quiz"
         className="block w-full text-center rounded-lg bg-[#D5EB4B] py-3 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
       >
-        Join the Waitlist
+        Get Your Free Audit
       </a>
       <p className="text-center text-[#6B7280] text-xs mt-2">
         No commitment. We map your processes for free.

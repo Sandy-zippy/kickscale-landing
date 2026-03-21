@@ -36,7 +36,7 @@ export default function Nav() {
         <a href="/" className="flex items-center gap-2 shrink-0">
           <img src="/logos/icon-64.png" alt="ZippyScale" className="w-7 h-7" />
           <span className="font-['Space_Grotesk'] font-bold text-lg text-[#FAFAFA]">
-            Zippyscale
+            ZippyScale
           </span>
         </a>
 
