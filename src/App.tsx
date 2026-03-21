@@ -11,6 +11,7 @@ import HowItWorks from './components/sections/HowItWorks'
 import ROIComparison from './components/sections/ROIComparison'
 import WhoIsThisFor from './components/sections/WhoIsThisFor'
 import FAQ from './components/sections/FAQ'
+import QuizForm from './components/sections/QuizForm'
 
 function AutomationHome() {
   return (
@@ -26,6 +27,7 @@ function AutomationHome() {
         <ROIComparison />
         <WhoIsThisFor />
         <FAQ />
+        <QuizForm />
       </main>
       <Footer />
       <StickyCTA isQuizVisible={false} />
