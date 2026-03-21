@@ -4,6 +4,8 @@ import Nav from './components/layout/Nav'
 import Footer from './components/layout/Footer'
 import StickyCTA from './components/layout/StickyCTA'
 import Hero from './components/sections/Hero'
+import ProofOfWork from './components/sections/ProofOfWork'
+import PainSection from './components/sections/PainSection'
 
 function AutomationHome() {
   return (
@@ -12,7 +14,8 @@ function AutomationHome() {
       <Nav />
       <main>
         <Hero />
-        {/* more sections coming */}
+        <ProofOfWork />
+        <PainSection />
       </main>
       <Footer />
       <StickyCTA isQuizVisible={false} />

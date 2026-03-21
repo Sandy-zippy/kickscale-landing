@@ -10,14 +10,15 @@ interface AnimatedCounterProps {
   className?: string
   style?: CSSProperties
   duration?: number
+  decimals?: number
 }
 
-export default function AnimatedCounter({ target, prefix = '', suffix = '', className = '', style, duration = 2 }: AnimatedCounterProps) {
+export default function AnimatedCounter({ target, prefix = '', suffix = '', className = '', style, duration = 2, decimals = 0 }: AnimatedCounterProps) {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true })
   const count = useMotionValue(0)
-  const rounded = useTransform(count, (v) => Math.round(v))
-  const [display, setDisplay] = useState(0)
+  const rounded = useTransform(count, (v) => decimals > 0 ? parseFloat(v.toFixed(decimals)) : Math.round(v))
+  const [display, setDisplay] = useState<number | string>(0)
 
   useEffect(() => {
     if (isInView) {
