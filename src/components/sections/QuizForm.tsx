@@ -184,6 +184,7 @@ export default function QuizForm() {
     } catch { /* silent */ }
 
     setWaitlistNum(getWaitlistNumber())
+    window.dispatchEvent(new Event('waitlist-updated'))
     setSubmitting(false)
     setDone(true)
   }

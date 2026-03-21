@@ -1,9 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+function getCounter(): number {
+  try {
+    return parseInt(localStorage.getItem('zippy_waitlist_counter') || '47', 10)
+  } catch {
+    return 47
+  }
+}
 
 export default function ScarcityBanner() {
   const [visible, setVisible] = useState(
     () => sessionStorage.getItem('scarcity_dismissed') !== 'true'
   )
+  const [counter, setCounter] = useState(getCounter)
+
+  useEffect(() => {
+    const onUpdate = () => setCounter(getCounter())
+    window.addEventListener('waitlist-updated', onUpdate)
+    return () => window.removeEventListener('waitlist-updated', onUpdate)
+  }, [])
 
   if (!visible) return null
 
@@ -16,7 +31,7 @@ export default function ScarcityBanner() {
   return (
     <div className="sticky top-0 z-[60] flex items-center justify-center h-12 bg-[#D5EB4B] px-4">
       <p className="font-['Space_Grotesk'] font-semibold text-sm text-[#0c0c10] text-center">
-        Only 10 spots &middot; Execution starts April 1st &middot; Join the waitlist
+        Only 10 spots &middot; <span className="font-bold text-base">{counter}</span> people on the waitlist &middot; Execution starts April 1st
       </p>
       <button
         onClick={dismiss}

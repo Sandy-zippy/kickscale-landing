@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const [bannerVisible, setBannerVisible] = useState(
     () => sessionStorage.getItem('scarcity_dismissed') !== 'true'
   )
@@ -17,18 +18,24 @@ export default function Nav() {
     }
   }, [])
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
     <motion.nav
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className={`fixed ${bannerVisible ? 'top-14' : 'top-4'} left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-3xl transition-all duration-300`}
+      className={`fixed ${bannerVisible ? 'top-12' : 'top-0'} left-0 right-0 z-50 bg-[rgba(12,12,16,0.9)] backdrop-blur-xl border-b border-[#2E2E36] transition-all duration-300 ${scrolled ? 'shadow-lg shadow-black/40' : ''}`}
     >
-      <div className="flex items-center justify-between rounded-full border border-[#2E2E36] bg-[rgba(20,20,24,0.85)] backdrop-blur-xl px-4 py-2.5 shadow-lg shadow-black/30">
+      <div className="max-w-6xl mx-auto flex items-center justify-between px-5 py-3">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 shrink-0">
           <img src="/logos/icon-64.png" alt="ZippyScale" className="w-7 h-7" />
-          <span className="font-['Space_Grotesk'] font-bold text-lg text-[#FAFAFA] hidden sm:inline">
+          <span className="font-['Space_Grotesk'] font-bold text-lg text-[#FAFAFA]">
             Zippyscale
           </span>
         </a>
@@ -36,9 +43,9 @@ export default function Nav() {
         {/* Desktop CTA */}
         <a
           href="#quiz"
-          className="hidden md:inline-flex items-center rounded-full bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
+          className="hidden md:inline-flex items-center rounded-lg bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
         >
-          Book Your Free Automation Audit
+          Book Your Free Audit
         </a>
 
         {/* Mobile hamburger */}
@@ -53,23 +60,25 @@ export default function Nav() {
         </button>
       </div>
 
-      {/* Mobile dropdown */}
+      {/* Mobile slide-down sheet */}
       <AnimatePresence>
         {menuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="md:hidden mt-2 rounded-2xl border border-[#2E2E36] bg-[rgba(20,20,24,0.95)] backdrop-blur-xl p-4"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="md:hidden overflow-hidden border-t border-[#2E2E36] bg-[rgba(12,12,16,0.95)]"
           >
-            <a
-              href="#quiz"
-              className="block w-full text-center rounded-full bg-[#D5EB4B] px-5 py-3 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
-              onClick={() => setMenuOpen(false)}
-            >
-              Book Your Free Automation Audit
-            </a>
+            <div className="max-w-6xl mx-auto px-5 py-4">
+              <a
+                href="#quiz"
+                className="block w-full text-center rounded-lg bg-[#D5EB4B] px-5 py-3 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                Book Your Free Audit
+              </a>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
