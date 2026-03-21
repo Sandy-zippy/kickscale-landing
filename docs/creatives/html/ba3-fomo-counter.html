@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="margin:0;padding:0;background: #2A2A35;">
+<div style="width:1080px;height:1080px;background:#2A2A35;position:relative;overflow:hidden;font-family:'Inter',sans-serif;">
+
+  <!-- Glow -->
+  <div style="position:absolute;top:200px;left:50%;transform:translateX(-50%);width:500px;height:500px;background:radial-gradient(circle,rgba(213,235,75,0.06),transparent 65%);z-index:1;"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position:absolute;top:170px;left:70px;height:32px;z-index:10;">
+
+  <!-- Large text -->
+  <div style="position:absolute;top:250px;left:0;right:0;text-align:center;z-index:10;">
+    <div style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:200px;color:#D5EB4B;line-height:1;">3</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FFFFFF;margin-top:-10px;">spots left</div>
+  </div>
+
+  <!-- Headline -->
+  <div style="position:absolute;top:540px;left:70px;right:70px;text-align:center;z-index:10;">
+    <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:28px;color:rgba(255,255,255,0.8);line-height:1.4;">
+      This quarter's free audit slots are almost full.
+    </p>
+  </div>
+
+  <!-- Body -->
+  <div style="position:absolute;top:620px;left:70px;right:70px;text-align:center;z-index:10;">
+    <p style="font-size:20px;color:rgba(255,255,255,0.5);line-height:1.6;">
+      10 businesses. Free audit. Custom automation roadmap.<br>Zero cost. We're at 7/10. Don't miss out.
+    </p>
+  </div>
+
+  <!-- Progress bar -->
+  <div style="position:absolute;top:710px;left:70px;right:70px;z-index:10;">
+    <div style="background:#33333F;border-radius:8px;height:12px;overflow:hidden;">
+      <div style="width:70%;height:100%;background:linear-gradient(90deg,#D5EB4B,#a8c42e);border-radius:8px;"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;">
+      <span style="font-size:14px;color:rgba(255,255,255,0.4);">0</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:14px;color:#D5EB4B;font-weight:700;">7/10 claimed</span>
+      <span style="font-size:14px;color:rgba(255,255,255,0.4);">10</span>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position:absolute;top:800px;left:50%;transform:translateX(-50%);z-index:10;">
+    <div style="display:inline-block;background:#D5EB4B;border-radius:12px;padding:20px 48px;">
+      <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#2A2A35;">Apply Now →</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

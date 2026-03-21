@@ -707,6 +707,11 @@ export default function QuizForm() {
       tried_before: triedBefore.join(', '),
       urgency,
       source: 'automation-lp-v3',
+      event_id: `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      client_user_agent: navigator.userAgent,
+      page_url: window.location.href,
+      fbp: document.cookie.match(/_fbp=([^;]+)/)?.[1] || '',
+      fbc: document.cookie.match(/_fbc=([^;]+)/)?.[1] || '',
       ...getUTMParams(),
     }
 
@@ -719,7 +724,7 @@ export default function QuizForm() {
     } catch { /* silent */ }
 
     // webhook (fetch first, sendBeacon as fallback)
-    const url = 'https://sandyautomations.app.n8n.cloud/webhook/zippyscale-quiz'
+    const url = 'https://zippyscale-api.vercel.app/api/quiz'
     try {
       await fetch(url, {
         method: 'POST',
