@@ -13,6 +13,7 @@ import HowItWorks from './components/sections/HowItWorks'
 import ROIComparison from './components/sections/ROIComparison'
 import WhoIsThisFor from './components/sections/WhoIsThisFor'
 import FAQ from './components/sections/FAQ'
+import InstagramFeed from './components/sections/InstagramFeed'
 import QuizForm from './components/sections/QuizForm'
 import FinalCTA from './components/sections/FinalCTA'
 import GrowthOffer from './pages/GrowthOffer'
@@ -43,6 +44,7 @@ function AutomationHome() {
         <HowItWorks />
         <ROIComparison />
         <WhoIsThisFor />
+        <InstagramFeed />
         <QuizForm />
         <FAQ />
         <FinalCTA />
