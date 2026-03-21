@@ -3,16 +3,16 @@ import ScarcityBanner from './components/layout/ScarcityBanner'
 import Nav from './components/layout/Nav'
 import Footer from './components/layout/Footer'
 import StickyCTA from './components/layout/StickyCTA'
+import Hero from './components/sections/Hero'
 
 function AutomationHome() {
   return (
     <>
       <ScarcityBanner />
       <Nav />
-      <main className="pt-32">
-        <div className="text-center py-40">
-          <h1 className="text-4xl font-bold">Automation Home — Building...</h1>
-        </div>
+      <main>
+        <Hero />
+        {/* more sections coming */}
       </main>
       <Footer />
       <StickyCTA isQuizVisible={false} />
