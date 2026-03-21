@@ -8,6 +8,9 @@ import ProofOfWork from './components/sections/ProofOfWork'
 import PainSection from './components/sections/PainSection'
 import AutomationGrid from './components/sections/AutomationGrid'
 import HowItWorks from './components/sections/HowItWorks'
+import ROIComparison from './components/sections/ROIComparison'
+import WhoIsThisFor from './components/sections/WhoIsThisFor'
+import FAQ from './components/sections/FAQ'
 
 function AutomationHome() {
   return (
@@ -20,6 +23,9 @@ function AutomationHome() {
         <PainSection />
         <AutomationGrid />
         <HowItWorks />
+        <ROIComparison />
+        <WhoIsThisFor />
+        <FAQ />
       </main>
       <Footer />
       <StickyCTA isQuizVisible={false} />
