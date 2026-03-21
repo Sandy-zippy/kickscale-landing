@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal'
 import Toast from '../ui/Toast'
 import { getUTMParams } from '../../lib/analytics'
-import { trackEvent, trackQuizProgress } from '../../lib/tracking'
+import { trackQuizProgress, trackQuizStart, trackQuizSubmit } from '../../lib/tracking'
 
 /* ── data ─────────────────────────────────────────── */
 
@@ -602,7 +602,7 @@ export default function QuizForm() {
   useEffect(() => {
     if (!quizStarted.current) {
       quizStarted.current = true
-      trackEvent('quiz_start')
+      trackQuizStart()
     }
   }, [])
 
@@ -732,7 +732,7 @@ export default function QuizForm() {
       } catch { /* silent */ }
     }
 
-    trackEvent('quiz_submit', { lead_source: 'automation-lp-v3' })
+    trackQuizSubmit({ lead_source: 'automation-lp-v3' })
     setWaitlistNum(getWaitlistNumber())
     window.dispatchEvent(new Event('waitlist-updated'))
     setSubmitting(false)

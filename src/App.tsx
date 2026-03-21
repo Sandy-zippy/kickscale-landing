@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { captureUTM } from './lib/analytics'
-import { trackSectionView } from './lib/tracking'
+import { trackSectionView, trackSectionScroll } from './lib/tracking'
 import ScarcityBanner from './components/layout/ScarcityBanner'
 import Nav from './components/layout/Nav'
 import Footer from './components/layout/Footer'
@@ -37,7 +37,10 @@ function AutomationHome() {
   }, [])
 
   useEffect(() => {
-    ['pain', 'automation-grid', 'roi', 'how-it-works', 'quiz'].forEach(trackSectionView)
+    ['pain', 'automation-grid', 'roi', 'how-it-works', 'quiz'].forEach((id) => {
+      trackSectionView(id)
+      trackSectionScroll(id)
+    })
   }, [])
 
   return (
