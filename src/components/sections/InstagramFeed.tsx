@@ -107,13 +107,13 @@ export default function InstagramFeed() {
     <section className="bg-[#0c0c10] py-20 px-4">
       <div className="max-w-6xl mx-auto">
         <ScrollReveal>
-          <p className="font-[JetBrains_Mono] text-xs uppercase tracking-widest text-[#D5EB4B] mb-3">
+          <p className="text-center font-mono text-xs uppercase tracking-widest text-[#D5EB4B] mb-4">
             Follow the Journey
           </p>
-          <h2 className="font-[Space_Grotesk] text-3xl md:text-4xl font-bold text-white mb-3">
+          <h2 className="font-[Space_Grotesk] text-3xl md:text-4xl font-bold text-white mb-4 text-center">
             Real Work. Real Team. Real Results.
           </h2>
-          <p className="text-gray-400 mb-10 text-base">
+          <p className="text-gray-400 mb-12 text-sm text-center">
             See what we're building on Instagram{' '}
             <a
               href="https://instagram.com/zippy.scale"
@@ -128,7 +128,7 @@ export default function InstagramFeed() {
 
         {/* Desktop grid */}
         <ScrollReveal delay={0.15}>
-          <div className="hidden md:grid grid-cols-3 gap-4 auto-rows-[200px]">
+          <div className="hidden md:grid grid-cols-3 gap-5 md:gap-6 auto-rows-[200px]">
             <PostCard
               post={featured}
               className="row-span-2"
@@ -142,7 +142,7 @@ export default function InstagramFeed() {
         {/* Extra row for 6th post on desktop */}
         {extra.length > 0 && (
           <ScrollReveal delay={0.25}>
-            <div className="hidden md:grid grid-cols-3 gap-4 mt-4 auto-rows-[200px]">
+            <div className="hidden md:grid grid-cols-3 gap-5 md:gap-6 mt-4 auto-rows-[200px]">
               {extra.map((post) => (
                 <PostCard key={post.link} post={post} />
               ))}

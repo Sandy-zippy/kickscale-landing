@@ -20,18 +20,18 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section className="bg-[#0c0c10] py-20">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+    <section className="bg-[#0c0c10] py-20 px-4">
+      <div className="mx-auto max-w-5xl">
         <ScrollReveal>
-          <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#D5EB4B]">
+          <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#D5EB4B]">
             THE PROCESS
           </p>
-          <h2 className="mx-auto mb-14 max-w-xl text-center text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="mx-auto mb-12 max-w-xl text-center text-3xl font-bold text-white sm:text-4xl">
             Live in 2 Weeks, Not 2 Quarters
           </h2>
         </ScrollReveal>
 
-        <div className="relative grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="relative grid grid-cols-1 gap-5 md:gap-6 md:grid-cols-3">
           {/* Connection lines (desktop only) */}
           <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true">
             {/* Line between step 1 and 2 */}

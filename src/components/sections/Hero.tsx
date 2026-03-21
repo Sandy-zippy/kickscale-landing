@@ -43,7 +43,7 @@ export default function Hero() {
 
       {/* Content */}
       <motion.div
-        className="relative z-10 text-center px-6 py-20 max-w-5xl mx-auto"
+        className="relative z-10 text-center px-4 py-20 max-w-5xl mx-auto"
         variants={stagger}
         initial="hidden"
         animate="visible"

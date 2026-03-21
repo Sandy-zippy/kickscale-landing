@@ -387,9 +387,9 @@ export default function QuizForm() {
   /* ── main render ────────────────────────────────── */
   return (
     <section id="quiz" className="bg-[#141418] py-20 px-4">
-      <div className="max-w-2xl mx-auto text-center mb-10">
+      <div className="max-w-2xl mx-auto text-center mb-12">
         <ScrollReveal>
-          <span className="inline-block text-xs font-semibold tracking-widest text-[#D5EB4B] uppercase mb-3">
+          <span className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#D5EB4B] inline-block">
             Start Here
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">

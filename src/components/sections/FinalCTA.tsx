@@ -6,14 +6,14 @@ export default function FinalCTA() {
   }
 
   return (
-    <section className="relative py-24 overflow-hidden" style={{ background: '#0c0c10' }}>
+    <section className="relative py-20 px-4 overflow-hidden" style={{ background: '#0c0c10' }}>
       {/* Animated gradient orbs */}
       <div className="cta-orb cta-orb-1" />
       <div className="cta-orb cta-orb-2" />
       <div className="cta-orb cta-orb-3" />
 
       <ScrollReveal>
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+        <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h2
             className="text-4xl md:text-5xl font-bold text-white leading-tight"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}

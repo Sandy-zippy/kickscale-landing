@@ -10,13 +10,13 @@ const rows = [
 
 export default function ROIComparison() {
   return (
-    <section className="bg-[#141418] py-20">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+    <section className="bg-[#141418] py-20 px-4">
+      <div className="mx-auto max-w-5xl">
         <ScrollReveal>
-          <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#D5EB4B]">
+          <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#D5EB4B]">
             THE ROI
           </p>
-          <h2 className="mx-auto mb-3 max-w-xl text-center text-3xl font-bold text-white sm:text-4xl">
+          <h2 className="mx-auto mb-4 max-w-xl text-center text-3xl font-bold text-white sm:text-4xl">
             Your Team Today vs. With AI
           </h2>
           <p className="mx-auto mb-12 max-w-md text-center text-sm text-[#9CA3AF]">

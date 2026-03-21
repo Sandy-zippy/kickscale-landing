@@ -67,7 +67,7 @@ export default function PainSection() {
             <p className="font-mono text-xs uppercase tracking-widest text-[#B8CF2E] mb-4">
               The Real Cost
             </p>
-            <h2 className="font-bold text-3xl md:text-4xl text-[#111827] mb-3">
+            <h2 className="font-bold text-3xl md:text-4xl text-[#111827] mb-4">
               You're Bleeding Money on Busywork
             </h2>
             <p className="font-sans text-base text-[#4B5563] max-w-xl mx-auto">
@@ -76,7 +76,7 @@ export default function PainSection() {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
           {pains.map((pain, i) => (
             <ScrollReveal key={pain.stat} delay={i * 0.1}>
               <TiltCard className="bg-white border border-[#E5E7EB] rounded-2xl p-8 transition-all duration-300 hover:border-[#EF4444]/30 hover:shadow-lg hover:-translate-y-1 cursor-default">

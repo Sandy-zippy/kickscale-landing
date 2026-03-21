@@ -9,13 +9,13 @@ const cards = [
 
 export default function WhoIsThisFor() {
   return (
-    <section className="bg-[#F8F9FA] py-20">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+    <section className="bg-[#F8F9FA] py-20 px-4">
+      <div className="mx-auto max-w-5xl">
         <ScrollReveal>
-          <p className="mb-3 text-center font-mono text-xs uppercase tracking-widest text-[#B8CF2E]">
+          <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#B8CF2E]">
             IS THIS FOR YOU?
           </p>
-          <h2 className="mx-auto mb-3 max-w-xl text-center text-3xl font-bold text-[#111827] sm:text-4xl">
+          <h2 className="mx-auto mb-4 max-w-xl text-center text-3xl font-bold text-[#111827] sm:text-4xl">
             This Is Built for You If...
           </h2>
           <p className="mx-auto mb-12 max-w-md text-center text-sm text-[#6B7280]">
@@ -23,7 +23,7 @@ export default function WhoIsThisFor() {
           </p>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 md:gap-6 sm:grid-cols-2">
           {cards.map((card, i) => (
             <ScrollReveal key={card.text} delay={i * 0.1}>
               <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 transition-all duration-300 hover:-translate-y-1 hover:border-[#B8CF2E]">

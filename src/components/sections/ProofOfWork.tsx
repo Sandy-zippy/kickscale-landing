@@ -11,7 +11,7 @@ const stats = [
 export default function ProofOfWork() {
   return (
     <section className="bg-[#0c0c10] py-20 px-4">
-      <div className="max-w-6xl mx-auto text-center">
+      <div className="max-w-5xl mx-auto text-center">
         <ScrollReveal>
           <p className="font-mono text-xs uppercase tracking-widest text-[#D5EB4B] mb-4">
             Proof of Work
@@ -21,7 +21,7 @@ export default function ProofOfWork() {
           </h2>
         </ScrollReveal>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
           {stats.map((stat, i) => (
             <ScrollReveal key={stat.label} delay={i * 0.1}>
               <div className="bg-[#1E1E24] border border-[#2E2E36] rounded-2xl p-6 md:p-8 text-center transition-all duration-300 hover:border-[#D5EB4B]/30 hover:-translate-y-1">

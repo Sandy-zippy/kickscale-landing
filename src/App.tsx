@@ -5,6 +5,7 @@ import ScarcityBanner from './components/layout/ScarcityBanner'
 import Nav from './components/layout/Nav'
 import Footer from './components/layout/Footer'
 import StickyCTA from './components/layout/StickyCTA'
+import Divider from './components/ui/Divider'
 import Hero from './components/sections/Hero'
 import ProofOfWork from './components/sections/ProofOfWork'
 import PainSection from './components/sections/PainSection'
@@ -38,15 +39,24 @@ function AutomationHome() {
       <Nav />
       <main>
         <Hero />
-        <ProofOfWork />
-        <PainSection />
-        <AutomationGrid />
-        <HowItWorks />
-        <ROIComparison />
-        <WhoIsThisFor />
         <InstagramFeed />
-        <QuizForm />
+        <Divider />
+        <ProofOfWork />
+        <Divider />
+        <PainSection />
+        <Divider />
+        <AutomationGrid />
+        <Divider />
+        <HowItWorks />
+        <Divider />
+        <ROIComparison />
+        <Divider />
+        <WhoIsThisFor />
+        <Divider />
         <FAQ />
+        <Divider />
+        <QuizForm />
+        <Divider />
         <FinalCTA />
       </main>
       <Footer />
