@@ -29,13 +29,13 @@ export default function Nav() {
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className={`fixed ${bannerVisible ? 'top-12' : 'top-0'} left-0 right-0 z-50 bg-[rgba(12,12,16,0.9)] backdrop-blur-xl border-b border-[#2E2E36] transition-all duration-300 ${scrolled ? 'shadow-lg shadow-black/40' : ''}`}
+      className={`fixed ${bannerVisible ? 'top-12' : 'top-0'} left-0 right-0 z-50 bg-[rgba(255,253,247,0.95)] backdrop-blur-xl border-b border-[#E5E7EB] transition-all duration-300 ${scrolled ? 'shadow-sm' : ''}`}
     >
       <div className="max-w-6xl mx-auto flex items-center justify-between px-5 py-3">
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 shrink-0">
           <img src="/logos/icon-64.png" alt="ZippyScale" className="w-7 h-7" />
-          <span className="font-['Space_Grotesk'] font-bold text-lg text-[#FAFAFA]">
+          <span className="font-['Space_Grotesk'] font-bold text-lg text-[#1A1A2E]">
             ZippyScale
           </span>
         </a>
@@ -54,9 +54,9 @@ export default function Nav() {
           className="md:hidden flex flex-col gap-1.5 p-2"
           aria-label="Toggle menu"
         >
-          <span className={`block w-5 h-0.5 bg-[#FAFAFA] transition-transform ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
-          <span className={`block w-5 h-0.5 bg-[#FAFAFA] transition-opacity ${menuOpen ? 'opacity-0' : ''}`} />
-          <span className={`block w-5 h-0.5 bg-[#FAFAFA] transition-transform ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+          <span className={`block w-5 h-0.5 bg-[#1A1A2E] transition-transform ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
+          <span className={`block w-5 h-0.5 bg-[#1A1A2E] transition-opacity ${menuOpen ? 'opacity-0' : ''}`} />
+          <span className={`block w-5 h-0.5 bg-[#1A1A2E] transition-transform ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
         </button>
       </div>
 
@@ -68,7 +68,7 @@ export default function Nav() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="md:hidden overflow-hidden border-t border-[#2E2E36] bg-[rgba(12,12,16,0.95)]"
+            className="md:hidden overflow-hidden border-t border-[#E5E7EB] bg-[rgba(255,253,247,0.98)]"
           >
             <div className="max-w-6xl mx-auto px-5 py-4">
               <a

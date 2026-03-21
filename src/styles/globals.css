@@ -1,13 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --dark-bg: #141418;
-  --dark-card: #1E1E24;
-  --dark-border: #2E2E36;
+  --dark-bg: #2A2A35;
+  --dark-card: #33333F;
+  --dark-border: #3E3E48;
+  --cream-bg: #FFFDF7;
   --lime: #D5EB4B;
   --lime-hover: #E4F57A;
   --lime-dark: #B8CF2E;
   --lime-glow: rgba(213,235,75,0.12);
+  --text-dark: #1A1A2E;
+  --text-body: #4A5568;
   --text-primary: #FAFAFA;
   --text-secondary: #9CA3AF;
   --text-muted: #6B7280;
@@ -19,8 +22,8 @@ html { scroll-behavior: smooth; }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: var(--dark-bg);
-  color: var(--text-primary);
+  background: #FFFDF7;
+  color: var(--text-dark);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -32,34 +35,26 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Orb animations (Hero + FinalCTA) ────────────── */
+/* ── Visit tracker fade-out ────────────── */
+@keyframes fadeOut {
+  0% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
 
-.hero-orb, .cta-orb {
+.visit-tracker-dismiss {
+  animation: fadeOut 8s ease-in-out forwards;
+}
+
+/* ── Orb animations (FinalCTA only) ────────────── */
+
+.cta-orb {
   position: absolute;
   border-radius: 50%;
   filter: blur(120px);
   opacity: 0.3;
   pointer-events: none;
   will-change: transform;
-}
-
-.hero-orb-1 {
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(213,235,75,0.25), transparent 70%);
-  top: -10%; left: -5%;
-  animation: float1 8s ease-in-out infinite;
-}
-.hero-orb-2 {
-  width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(213,235,75,0.18), transparent 70%);
-  bottom: -5%; right: -5%;
-  animation: float2 10s ease-in-out infinite;
-}
-.hero-orb-3 {
-  width: 300px; height: 300px;
-  background: radial-gradient(circle, rgba(213,235,75,0.15), transparent 70%);
-  top: 40%; left: 50%;
-  animation: float3 12s ease-in-out infinite;
 }
 
 .cta-orb-1 {
@@ -81,20 +76,6 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
   animation: ctaFloat3 12s ease-in-out infinite;
 }
 
-@keyframes float1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(40px, 30px) scale(1.05); }
-  66% { transform: translate(-20px, -15px) scale(0.95); }
-}
-@keyframes float2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-30px, -20px) scale(1.08); }
-  66% { transform: translate(25px, 15px) scale(0.92); }
-}
-@keyframes float3 {
-  0%, 100% { transform: translate(-50%, 0) scale(1); }
-  50% { transform: translate(-50%, -30px) scale(1.1); }
-}
 @keyframes ctaFloat1 {
   0%, 100% { transform: translate(0, 0) scale(1); }
   33% { transform: translate(-40px, 30px) scale(1.05); }

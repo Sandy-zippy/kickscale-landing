@@ -10,7 +10,7 @@ const rows = [
 
 export default function ROIComparison() {
   return (
-    <section className="bg-[#141418] py-20 px-4">
+    <section className="bg-[#2A2A35] py-20 px-4">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#D5EB4B]">
@@ -26,9 +26,9 @@ export default function ROIComparison() {
 
         <ScrollReveal delay={0.15}>
           <div className="overflow-x-auto">
-            <table className="w-full overflow-hidden rounded-2xl border border-[#2E2E36] bg-[#1E1E24]">
+            <table className="w-full overflow-hidden rounded-2xl border border-[#3E3E48] bg-[#33333F]">
               <thead>
-                <tr className="bg-[#2E2E36]">
+                <tr className="bg-[#3E3E48]">
                   <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-[#9CA3AF]">
                     Task
                   </th>
@@ -44,7 +44,7 @@ export default function ROIComparison() {
                 {rows.map((row, i) => (
                   <tr
                     key={row.task}
-                    className={i < rows.length - 1 ? 'border-b border-[#2E2E36]' : ''}
+                    className={i < rows.length - 1 ? 'border-b border-[#3E3E48]' : ''}
                   >
                     <td className="px-6 py-5 text-sm font-medium text-white">
                       {row.task}

@@ -75,7 +75,7 @@ function PostCard({
       <img
         src={post.image}
         alt={post.caption}
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover object-center"
         loading="lazy"
       />
 
@@ -85,7 +85,7 @@ function PostCard({
         </span>
       )}
 
-      <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 text-center">
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 text-center">
         <InstagramIcon />
         <p className="text-white text-sm mt-3 mb-2 font-[Space_Grotesk] leading-snug max-w-[220px]">
           {post.caption}
@@ -99,56 +99,41 @@ function PostCard({
 }
 
 export default function InstagramFeed() {
-  const featured = posts[0]
-  const grid = posts.slice(1, 5)
-  const extra = posts.slice(5)
-
   return (
-    <section className="bg-[#0c0c10] py-20 px-4">
+    <section className="bg-[#FFFDF7] py-20 px-4">
       <div className="max-w-6xl mx-auto">
         <ScrollReveal>
-          <p className="text-center font-mono text-xs uppercase tracking-widest text-[#D5EB4B] mb-4">
+          <p className="text-center font-mono text-xs uppercase tracking-widest text-[#B8CF2E] mb-4">
             Follow the Journey
           </p>
-          <h2 className="font-[Space_Grotesk] text-3xl md:text-4xl font-bold text-white mb-4 text-center">
+          <h2 className="font-[Space_Grotesk] text-3xl md:text-4xl font-bold text-[#1A1A2E] mb-4 text-center">
             Real Work. Real Team. Real Results.
           </h2>
-          <p className="text-gray-400 mb-12 text-sm text-center">
+          <p className="text-[#4A5568] mb-12 text-sm text-center">
             See what we're building on Instagram{' '}
             <a
               href="https://instagram.com/zippy.scale"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#D5EB4B] hover:underline"
+              className="text-[#B8CF2E] hover:underline"
             >
               @zippy.scale
             </a>
           </p>
         </ScrollReveal>
 
-        {/* Desktop grid */}
+        {/* Desktop grid — uniform 3-col with aspect-square */}
         <ScrollReveal delay={0.15}>
-          <div className="hidden md:grid grid-cols-3 gap-5 md:gap-6 auto-rows-[200px]">
-            <PostCard
-              post={featured}
-              className="row-span-2"
-            />
-            {grid.map((post) => (
-              <PostCard key={post.link} post={post} />
+          <div className="hidden md:grid grid-cols-3 gap-4">
+            {posts.map((post) => (
+              <PostCard
+                key={post.link}
+                post={post}
+                className="aspect-square"
+              />
             ))}
           </div>
         </ScrollReveal>
-
-        {/* Extra row for 6th post on desktop */}
-        {extra.length > 0 && (
-          <ScrollReveal delay={0.25}>
-            <div className="hidden md:grid grid-cols-3 gap-5 md:gap-6 mt-4 auto-rows-[200px]">
-              {extra.map((post) => (
-                <PostCard key={post.link} post={post} />
-              ))}
-            </div>
-          </ScrollReveal>
-        )}
 
         {/* Mobile carousel */}
         <ScrollReveal delay={0.15}>
@@ -170,7 +155,7 @@ export default function InstagramFeed() {
               href="https://instagram.com/zippy.scale"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 border border-[#D5EB4B] text-[#D5EB4B] rounded-full px-6 py-3 font-[Space_Grotesk] font-medium text-sm hover:bg-[#D5EB4B] hover:text-[#0c0c10] transition-colors duration-300"
+              className="inline-flex items-center gap-2 border border-[#B8CF2E] text-[#B8CF2E] rounded-full px-6 py-3 font-[Space_Grotesk] font-medium text-sm hover:bg-[#D5EB4B] hover:text-[#0c0c10] transition-colors duration-300"
             >
               <InstagramIcon />
               Follow @zippy.scale

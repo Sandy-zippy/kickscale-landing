@@ -10,13 +10,13 @@ const stats = [
 
 export default function ProofOfWork() {
   return (
-    <section className="bg-[#0c0c10] py-20 px-4">
+    <section className="bg-[#FFFDF7] py-20 px-4">
       <div className="max-w-5xl mx-auto text-center">
         <ScrollReveal>
-          <p className="font-mono text-xs uppercase tracking-widest text-[#D5EB4B] mb-4">
+          <p className="font-mono text-xs uppercase tracking-widest text-[#B8CF2E] mb-4">
             Proof of Work
           </p>
-          <h2 className="font-bold text-3xl md:text-4xl text-white mb-12">
+          <h2 className="font-bold text-3xl md:text-4xl text-[#1A1A2E] mb-12">
             Results From the Last 6 Months
           </h2>
         </ScrollReveal>
@@ -24,16 +24,16 @@ export default function ProofOfWork() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-6">
           {stats.map((stat, i) => (
             <ScrollReveal key={stat.label} delay={i * 0.1}>
-              <div className="bg-[#1E1E24] border border-[#2E2E36] rounded-2xl p-6 md:p-8 text-center transition-all duration-300 hover:border-[#D5EB4B]/30 hover:-translate-y-1">
+              <div className="h-full bg-white border border-[#E5E7EB] rounded-2xl p-6 md:p-8 text-center shadow-sm transition-all duration-300 hover:border-[#B8CF2E]/40 hover:-translate-y-1 flex flex-col items-center justify-center min-h-[140px]">
                 <AnimatedCounter
                   target={stat.target}
                   prefix={stat.prefix}
                   suffix={stat.suffix}
                   decimals={stat.decimals}
-                  className="font-mono font-bold text-4xl md:text-5xl text-[#D5EB4B]"
+                  className="font-mono font-bold text-3xl md:text-4xl text-[#B8CF2E]"
                   duration={2}
                 />
-                <p className="font-sans text-sm text-[#9CA3AF] mt-2">{stat.label}</p>
+                <p className="font-sans text-sm text-[#4A5568] mt-3">{stat.label}</p>
               </div>
             </ScrollReveal>
           ))}

@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal'
 import Toast from '../ui/Toast'
 import { getUTMParams } from '../../lib/analytics'
+import { trackEvent, trackQuizProgress } from '../../lib/tracking'
 
 /* ── data ─────────────────────────────────────────── */
 
@@ -20,6 +21,52 @@ const automationOptions = [
 ]
 
 const teamSizeOptions = ['1 to 3 people', '4 to 10 people', '10+ people']
+
+const industryOptions = [
+  'Manufacturing',
+  'IT/Software',
+  'Healthcare',
+  'Education',
+  'Real Estate',
+  'Retail/E-commerce',
+  'Professional Services',
+  'Construction',
+  'Hospitality',
+  'Other',
+]
+
+const revenueOptions = [
+  '₹50L - 1Cr',
+  '₹1Cr - 3Cr',
+  '₹3Cr - 5Cr',
+  '₹5Cr - 10Cr',
+  '₹10Cr+',
+]
+
+const marketingSpendOptions = [
+  '₹0 (No marketing spend)',
+  'Under ₹50K',
+  '₹50K - 2L',
+  '₹2L - 5L',
+  '₹5L+',
+]
+
+const toolOptions = [
+  'Excel/Google Sheets',
+  'Tally/Zoho',
+  'WhatsApp Groups',
+  'CRM (HubSpot/Salesforce/etc)',
+  'ERP System',
+  'None of these',
+]
+
+const triedOptions = [
+  'Hired more people',
+  'Tried a freelancer/consultant',
+  'Tried an agency',
+  'Tried building in-house tools',
+  'Nothing yet',
+]
 
 /* ── helpers ──────────────────────────────────────── */
 
@@ -61,11 +108,11 @@ const slideVariants = {
 function ProgressBar({ step }: { step: number }) {
   return (
     <div className="flex gap-2 mb-8">
-      {[1, 2, 3].map((s) => (
+      {[1, 2, 3, 4, 5].map((s) => (
         <div
           key={s}
           className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
-            s <= step ? 'bg-[#D5EB4B]' : 'bg-[#2E2E36]'
+            s <= step ? 'bg-[#D5EB4B]' : 'bg-[#3E3E48]'
           }`}
         />
       ))}
@@ -101,7 +148,7 @@ function Step1({
               className={`flex items-start gap-3 text-left rounded-xl p-4 border cursor-pointer transition-all duration-200 ${
                 active
                   ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
-                  : 'border-[#2E2E36] bg-[#1E1E24] hover:border-[#3E3E46]'
+                  : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
               }`}
             >
               <span
@@ -131,7 +178,7 @@ function Step1({
             value={othersText}
             onChange={(e) => onOthersChange(e.target.value)}
             placeholder="Describe what you want to automate..."
-            className="w-full bg-[#1E1E24] border border-[#2E2E36] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
           />
         </motion.div>
       )}
@@ -163,7 +210,7 @@ function Step2({
               className={`flex items-center gap-3 text-left rounded-xl p-4 border cursor-pointer transition-all duration-200 ${
                 active
                   ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
-                  : 'border-[#2E2E36] bg-[#1E1E24] hover:border-[#3E3E46]'
+                  : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
               }`}
             >
               <span
@@ -182,7 +229,222 @@ function Step2({
   )
 }
 
-interface Step3Props {
+/* ── Radio button helper (reused in Step 3) ────── */
+function RadioGroup({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string
+  options: string[]
+  value: string
+  onChange: (val: string) => void
+}) {
+  return (
+    <div>
+      <label className="block text-sm text-[#9CA3AF] mb-2">{label}</label>
+      <div className="flex flex-col gap-2">
+        {options.map((opt) => {
+          const active = value === opt
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(opt)}
+              className={`flex items-center gap-3 text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 ${
+                active
+                  ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
+                  : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
+              }`}
+            >
+              <span
+                className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  active ? 'border-[#D5EB4B]' : 'border-[#4E4E56]'
+                }`}
+              >
+                {active && <span className="w-2 h-2 rounded-full bg-[#D5EB4B]" />}
+              </span>
+              <span className="text-sm text-white">{opt}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ── Checkbox group helper (reused in Step 4) ──── */
+function CheckboxGroup({
+  label,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string
+  options: string[]
+  selected: string[]
+  onToggle: (opt: string) => void
+}) {
+  return (
+    <div>
+      <label className="block text-sm text-[#9CA3AF] mb-2">{label}</label>
+      <div className="flex flex-col gap-2">
+        {options.map((opt) => {
+          const active = selected.includes(opt)
+          return (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onToggle(opt)}
+              className={`flex items-center gap-3 text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 ${
+                active
+                  ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
+                  : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
+              }`}
+            >
+              <span
+                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                  active ? 'border-[#D5EB4B] bg-[#D5EB4B]' : 'border-[#4E4E56]'
+                }`}
+              >
+                {active && (
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#0c0c10" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+              <span className="text-sm text-white">{opt}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function Step3Business({
+  industry,
+  revenueRange,
+  marketingSpend,
+  onIndustryChange,
+  onRevenueChange,
+  onSpendChange,
+}: {
+  industry: string
+  revenueRange: string
+  marketingSpend: string
+  onIndustryChange: (val: string) => void
+  onRevenueChange: (val: string) => void
+  onSpendChange: (val: string) => void
+}) {
+  return (
+    <div>
+      <h3 className="text-lg font-semibold text-white mb-1">
+        Tell us about your business
+      </h3>
+      <p className="text-sm text-[#9CA3AF] mb-6">Helps us tailor your audit.</p>
+
+      <div className="flex flex-col gap-5">
+        {/* Industry dropdown */}
+        <div>
+          <label className="block text-sm text-[#9CA3AF] mb-2">Industry</label>
+          <select
+            value={industry}
+            onChange={(e) => onIndustryChange(e.target.value)}
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors appearance-none cursor-pointer"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 16px center' }}
+          >
+            <option value="" disabled className="bg-[#33333F] text-[#6B7280]">Select your industry</option>
+            {industryOptions.map((opt) => (
+              <option key={opt} value={opt} className="bg-[#33333F] text-white">{opt}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Revenue Range */}
+        <RadioGroup
+          label="Monthly Revenue Range"
+          options={revenueOptions}
+          value={revenueRange}
+          onChange={onRevenueChange}
+        />
+
+        {/* Marketing Spend */}
+        <RadioGroup
+          label="Current Marketing Spend/Month"
+          options={marketingSpendOptions}
+          value={marketingSpend}
+          onChange={onSpendChange}
+        />
+      </div>
+    </div>
+  )
+}
+
+function Step4Tools({
+  toolsUsed,
+  triedBefore,
+  urgency,
+  onToggleTool,
+  onToggleTried,
+  onUrgencyChange,
+}: {
+  toolsUsed: string[]
+  triedBefore: string[]
+  urgency: number
+  onToggleTool: (opt: string) => void
+  onToggleTried: (opt: string) => void
+  onUrgencyChange: (val: number) => void
+}) {
+  return (
+    <div>
+      <h3 className="text-lg font-semibold text-white mb-1">
+        What have you tried so far?
+      </h3>
+      <p className="text-sm text-[#9CA3AF] mb-6">No judgement. We just need context.</p>
+
+      <div className="flex flex-col gap-5">
+        <CheckboxGroup
+          label="Current Tools"
+          options={toolOptions}
+          selected={toolsUsed}
+          onToggle={onToggleTool}
+        />
+
+        <CheckboxGroup
+          label="Previous Attempts"
+          options={triedOptions}
+          selected={triedBefore}
+          onToggle={onToggleTried}
+        />
+
+        {/* Urgency slider */}
+        <div>
+          <label className="block text-sm text-[#9CA3AF] mb-2">
+            How urgent is fixing this?
+          </label>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-[#6B7280] whitespace-nowrap">Not urgent</span>
+            <input
+              type="range"
+              min={1}
+              max={10}
+              step={1}
+              value={urgency}
+              onChange={(e) => onUrgencyChange(Number(e.target.value))}
+              className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer accent-[#D5EB4B] bg-[#3E3E48]"
+            />
+            <span className="text-xs text-[#6B7280] whitespace-nowrap">Critical</span>
+            <span className="text-lg font-bold text-[#D5EB4B] min-w-[2ch] text-center">{urgency}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface Step5Props {
   name: string
   email: string
   phone: string
@@ -194,7 +456,7 @@ interface Step3Props {
   onBusinessNameChange: (val: string) => void
 }
 
-function Step3({
+function Step5Contact({
   name,
   email,
   phone,
@@ -204,7 +466,7 @@ function Step3({
   onEmailChange,
   onPhoneChange,
   onBusinessNameChange,
-}: Step3Props) {
+}: Step5Props) {
   const fields = [
     { label: 'Name', value: name, set: onNameChange, type: 'text', placeholder: 'Your full name' },
     { label: 'Email', value: email, set: onEmailChange, type: 'email', placeholder: 'you@company.com' },
@@ -215,7 +477,7 @@ function Step3({
   return (
     <div>
       <h3 className="text-lg font-semibold text-white mb-6">
-        Last step. Where should we send your roadmap?
+        Last step. Where should we send your audit?
       </h3>
       <div className="flex flex-col gap-4">
         {fields.map((f) => (
@@ -226,7 +488,7 @@ function Step3({
               value={f.value}
               onChange={(e) => f.set(e.target.value)}
               placeholder={f.placeholder}
-              className="w-full bg-[#1E1E24] border border-[#2E2E36] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+              className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
             />
           </div>
         ))}
@@ -237,7 +499,7 @@ function Step3({
       )}
 
       <p className="mt-6 text-xs text-[#9CA3AF] text-center">
-        7 of 10 spots taken this quarter. No payment needed to apply.
+        10 spots this quarter. No payment needed. Free audit.
       </p>
     </div>
   )
@@ -251,7 +513,6 @@ function ThankYou({ waitlistNum }: { waitlistNum: number }) {
       transition={{ duration: 0.5 }}
       className="text-center"
     >
-      {/* Block A: Waitlist Confirmation */}
       <div className="flex justify-center mb-6">
         <div className="w-16 h-16 rounded-full bg-[#D5EB4B] flex items-center justify-center">
           <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -261,28 +522,36 @@ function ThankYou({ waitlistNum }: { waitlistNum: number }) {
       </div>
       <h3 className="text-2xl font-bold text-white mb-2">You're on the Waitlist!</h3>
       <p className="text-4xl font-bold text-[#D5EB4B] mb-3">#{waitlistNum}</p>
-      <p className="text-sm text-[#9CA3AF] mb-10">
-        We review every submission. If there's a fit, we'll reach out within 48 hours.
+      <p className="text-sm text-[#9CA3AF] mb-6">
+        We'll review your submission and WhatsApp you within 24 hours.
       </p>
 
-      {/* Block B: Priority Audit Upsell */}
-      <div className="bg-[rgba(213,235,75,0.05)] border border-[#D5EB4B] rounded-2xl p-8 text-left">
-        <h4 className="text-lg font-bold text-white mb-3">
-          Skip the Wait. Get a Priority Audit in 48 Hours.
-        </h4>
-        <p className="text-sm text-[#9CA3AF] mb-6">
-          We manually review your business, map every automation opportunity, and deliver a custom audit report within 48 hours.
-        </p>
-        <div className="mb-6">
-          <span className="text-sm text-[#9CA3AF] line-through mr-2">&#8377;9,999</span>
-          <span className="text-3xl font-bold text-white">&#8377;4,999</span>
+      {/* What happens next */}
+      <div className="bg-[rgba(213,235,75,0.05)] border border-[#3E3E48] rounded-2xl p-6 text-left">
+        <h4 className="text-lg font-bold text-white mb-4">What happens next?</h4>
+        <div className="space-y-4">
+          <div className="flex gap-3">
+            <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#D5EB4B] text-[#0c0c10] font-bold flex items-center justify-center text-sm">1</span>
+            <div>
+              <p className="text-sm font-medium text-white">WhatsApp confirmation</p>
+              <p className="text-xs text-[#9CA3AF]">You'll receive a message within minutes</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#D5EB4B] text-[#0c0c10] font-bold flex items-center justify-center text-sm">2</span>
+            <div>
+              <p className="text-sm font-medium text-white">We review your business</p>
+              <p className="text-xs text-[#9CA3AF]">Our team manually audits your operations within 24 hours</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#D5EB4B] text-[#0c0c10] font-bold flex items-center justify-center text-sm">3</span>
+            <div>
+              <p className="text-sm font-medium text-white">You get your audit report</p>
+              <p className="text-xs text-[#9CA3AF]">Custom automation roadmap delivered to your WhatsApp</p>
+            </div>
+          </div>
         </div>
-        <span
-          className="block w-full text-center bg-[#D5EB4B] text-[#0c0c10] font-bold py-4 rounded-xl opacity-60 cursor-not-allowed"
-        >
-          Coming Soon
-        </span>
-        <p className="text-xs text-[#9CA3AF] text-center mt-2">(Payment link coming soon)</p>
       </div>
     </motion.div>
   )
@@ -302,6 +571,16 @@ export default function QuizForm() {
   const [teamSize, setTeamSize] = useState('')
 
   // step 3
+  const [industry, setIndustry] = useState('')
+  const [revenueRange, setRevenueRange] = useState('')
+  const [marketingSpend, setMarketingSpend] = useState('')
+
+  // step 4
+  const [toolsUsed, setToolsUsed] = useState<string[]>([])
+  const [triedBefore, setTriedBefore] = useState<string[]>([])
+  const [urgency, setUrgency] = useState(5)
+
+  // step 5
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -318,6 +597,15 @@ export default function QuizForm() {
   const showToast = useCallback((msg: string) => setToast({ visible: true, message: msg }), [])
   const hideToast = useCallback(() => setToast({ visible: false, message: '' }), [])
 
+  // track quiz start (once)
+  const quizStarted = useRef(false)
+  useEffect(() => {
+    if (!quizStarted.current) {
+      quizStarted.current = true
+      trackEvent('quiz_start')
+    }
+  }, [])
+
   /* step 2 auto-advance */
   useEffect(() => {
     if (step === 2 && teamSize) {
@@ -329,9 +617,21 @@ export default function QuizForm() {
     }
   }, [step, teamSize])
 
-  /* toggle automation option */
+  /* toggle helpers */
   function toggleOption(opt: string) {
     setSelected((prev) =>
+      prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt],
+    )
+  }
+
+  function toggleTool(opt: string) {
+    setToolsUsed((prev) =>
+      prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt],
+    )
+  }
+
+  function toggleTried(opt: string) {
+    setTriedBefore((prev) =>
       prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt],
     )
   }
@@ -348,6 +648,31 @@ export default function QuizForm() {
         return
       }
     }
+    if (step === 3) {
+      if (!industry) {
+        showToast('Please select your industry')
+        return
+      }
+      if (!revenueRange) {
+        showToast('Please select your revenue range')
+        return
+      }
+      if (!marketingSpend) {
+        showToast('Please select your marketing spend')
+        return
+      }
+    }
+    if (step === 4) {
+      if (toolsUsed.length === 0) {
+        showToast('Select at least one tool (or "None of these")')
+        return
+      }
+      if (triedBefore.length === 0) {
+        showToast('Select at least one previous attempt')
+        return
+      }
+    }
+    trackQuizProgress(step, { selected_count: step === 1 ? selected.length : undefined })
     setDirection(1)
     setStep((s) => s + 1)
   }
@@ -375,7 +700,13 @@ export default function QuizForm() {
       business_name: businessName.trim(),
       automate_areas: areas.join(', '),
       team_size: teamSize,
-      source: 'automation-lp-v2',
+      industry,
+      revenue_range: revenueRange,
+      marketing_spend: marketingSpend,
+      tools_used: toolsUsed.join(', '),
+      tried_before: triedBefore.join(', '),
+      urgency,
+      source: 'automation-lp-v3',
       ...getUTMParams(),
     }
 
@@ -401,6 +732,7 @@ export default function QuizForm() {
       } catch { /* silent */ }
     }
 
+    trackEvent('quiz_submit', { lead_source: 'automation-lp-v3' })
     setWaitlistNum(getWaitlistNumber())
     window.dispatchEvent(new Event('waitlist-updated'))
     setSubmitting(false)
@@ -409,23 +741,23 @@ export default function QuizForm() {
 
   /* ── main render ────────────────────────────────── */
   return (
-    <section id="quiz" className="bg-[#141418] py-20 px-4">
+    <section id="quiz" className="bg-[#2A2A35] py-20 px-4">
       <div className="max-w-2xl mx-auto text-center mb-12">
         <ScrollReveal>
           <span className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#D5EB4B] inline-block">
             Start Here
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Find Out What You Can Automate (2 Min)
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 whitespace-nowrap">
+            Find Out What You Can Automate&nbsp;(2&nbsp;Min)
           </h2>
           <p className="text-[#9CA3AF]">
-            Answer 3 quick questions. Get a custom automation roadmap for your business.
+            Answer 5 quick questions. Get a custom automation audit for your business.
           </p>
         </ScrollReveal>
       </div>
 
       <ScrollReveal>
-        <div className="max-w-2xl mx-auto bg-[#1E1E24] border border-[#2E2E36] rounded-2xl p-6 sm:p-8">
+        <div className="max-w-2xl mx-auto bg-[#33333F] border border-[#3E3E48] rounded-2xl p-6 sm:p-8">
           {done ? (
             <ThankYou waitlistNum={waitlistNum} />
           ) : (
@@ -457,7 +789,27 @@ export default function QuizForm() {
                     />
                   )}
                   {step === 3 && (
-                    <Step3
+                    <Step3Business
+                      industry={industry}
+                      revenueRange={revenueRange}
+                      marketingSpend={marketingSpend}
+                      onIndustryChange={setIndustry}
+                      onRevenueChange={setRevenueRange}
+                      onSpendChange={setMarketingSpend}
+                    />
+                  )}
+                  {step === 4 && (
+                    <Step4Tools
+                      toolsUsed={toolsUsed}
+                      triedBefore={triedBefore}
+                      urgency={urgency}
+                      onToggleTool={toggleTool}
+                      onToggleTried={toggleTried}
+                      onUrgencyChange={setUrgency}
+                    />
+                  )}
+                  {step === 5 && (
+                    <Step5Contact
                       name={name}
                       email={email}
                       phone={phone}
@@ -486,7 +838,7 @@ export default function QuizForm() {
                   <span />
                 )}
 
-                {step < 3 ? (
+                {step < 5 ? (
                   <button
                     type="button"
                     onClick={goNext}
@@ -501,7 +853,7 @@ export default function QuizForm() {
                     disabled={submitting}
                     className="flex-1 ml-4 bg-[#D5EB4B] text-[#0c0c10] font-bold py-4 rounded-xl hover:brightness-110 transition-all disabled:opacity-60 cursor-pointer"
                   >
-                    {submitting ? 'Submitting...' : 'Get My Automation Roadmap'}
+                    {submitting ? 'Submitting...' : 'Get My Free Audit'}
                   </button>
                 )}
               </div>

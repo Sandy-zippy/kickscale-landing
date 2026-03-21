@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { captureUTM } from './lib/analytics'
+import { trackSectionView } from './lib/tracking'
 import ScarcityBanner from './components/layout/ScarcityBanner'
 import Nav from './components/layout/Nav'
 import Footer from './components/layout/Footer'
 import StickyCTA from './components/layout/StickyCTA'
 import Divider from './components/ui/Divider'
+import VisitTracker from './components/ui/VisitTracker'
 import Hero from './components/sections/Hero'
+import AwarenessBlocks from './components/sections/AwarenessBlocks'
 import ProofOfWork from './components/sections/ProofOfWork'
 import PainSection from './components/sections/PainSection'
 import AutomationGrid from './components/sections/AutomationGrid'
 import HowItWorks from './components/sections/HowItWorks'
-import ROIComparison from './components/sections/ROIComparison'
+import ROICalculator from './components/sections/ROICalculator'
 import WhoIsThisFor from './components/sections/WhoIsThisFor'
 import FAQ from './components/sections/FAQ'
 import InstagramFeed from './components/sections/InstagramFeed'
@@ -33,25 +36,32 @@ function AutomationHome() {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    ['pain', 'automation-grid', 'roi', 'how-it-works', 'quiz'].forEach(trackSectionView)
+  }, [])
+
   return (
     <>
       <ScarcityBanner />
       <Nav />
       <main>
         <Hero />
-        <InstagramFeed />
-        <Divider />
-        <ProofOfWork />
+        <VisitTracker />
+        <AwarenessBlocks />
         <Divider />
         <PainSection />
         <Divider />
+        <ProofOfWork />
+        <Divider />
         <AutomationGrid />
+        <Divider />
+        <ROICalculator />
         <Divider />
         <HowItWorks />
         <Divider />
-        <ROIComparison />
-        <Divider />
         <WhoIsThisFor />
+        <Divider />
+        <InstagramFeed />
         <Divider />
         <FAQ />
         <Divider />

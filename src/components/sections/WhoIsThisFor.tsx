@@ -9,7 +9,7 @@ const cards = [
 
 export default function WhoIsThisFor() {
   return (
-    <section className="bg-[#F8F9FA] py-20 px-4">
+    <section className="bg-[#FFFDF7] py-20 px-4">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#B8CF2E]">
