@@ -3,9 +3,9 @@ import AnimatedCounter from '../ui/AnimatedCounter'
 
 const stats = [
   { target: 1.6, prefix: '₹', suffix: ' Cr+', label: 'Saved across clients', decimals: 1 },
-  { target: 8000, prefix: '', suffix: '+', label: 'Hours of manual work eliminated', decimals: 0 },
-  { target: 20, prefix: '', suffix: '+', label: 'Businesses automated', decimals: 0 },
-  { target: 10, prefix: '', suffix: 'x', label: 'Output, same team, zero new hires', decimals: 0 },
+  { target: 8000, prefix: '', suffix: '+', label: 'Manual hours eliminated', decimals: 0 },
+  { target: 20, prefix: '', suffix: '+', label: 'Indian businesses automated', decimals: 0 },
+  { target: 10, prefix: '', suffix: 'x', label: 'Output without new hires', decimals: 0 },
 ]
 
 export default function ProofOfWork() {
@@ -17,7 +17,7 @@ export default function ProofOfWork() {
             Proof of Work
           </p>
           <h2 className="font-bold text-3xl md:text-4xl text-white mb-12">
-            What Our Automations Have Delivered
+            Results From the Last 6 Months
           </h2>
         </ScrollReveal>
 

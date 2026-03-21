@@ -13,9 +13,9 @@ const stagger = {
 }
 
 const stats = [
-  { target: 18, prefix: '₹', suffix: ' Lakhs/Year', label: 'Save' },
-  { target: 40, suffix: ' Hours/Week', label: 'Cut' },
-  { target: 10, suffix: 'x Output', label: '' },
+  { target: 18, prefix: '₹', suffix: ' Lakhs/Year', label: 'Saved' },
+  { target: 40, suffix: ' Hrs/Week', label: 'Freed' },
+  { target: 10, suffix: 'x Output', label: 'Same Team' },
 ]
 
 export default function Hero() {
@@ -61,7 +61,7 @@ export default function Hero() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
             </span>
-            AI-Powered Automation
+            For ₹5Cr+ Indian Businesses
           </span>
         </motion.div>
 
@@ -78,7 +78,7 @@ export default function Hero() {
             backgroundClip: 'text',
           }}
         >
-          We Build AI Automations That Run Your Business While You Scale
+          Your Team Is Doing ₹18 Lakh Worth of Work That AI Can Handle
         </motion.h1>
 
         {/* Stats row */}
@@ -124,7 +124,7 @@ export default function Hero() {
               (e.currentTarget as HTMLElement).style.boxShadow = '0 0 30px rgba(213,235,75,0.2)'
             }}
           >
-            Book Your Free Automation Audit
+            See What You Can Automate (Free Audit)
           </motion.a>
         </motion.div>
 
@@ -134,7 +134,7 @@ export default function Hero() {
             onClick={scrollToQuiz}
             className="text-sm text-[#9CA3AF] hover:underline hover:text-[#D5EB4B] transition-colors cursor-pointer bg-transparent border-none"
           >
-            Join the Waitlist
+            Only 10 spots left. Check availability.
           </button>
         </motion.div>
       </motion.div>

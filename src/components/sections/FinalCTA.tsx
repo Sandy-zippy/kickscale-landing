@@ -18,11 +18,11 @@ export default function FinalCTA() {
             className="text-4xl md:text-5xl font-bold text-white leading-tight"
             style={{ fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            Stop Paying People to Do What AI Can Do in Seconds
+            Every Week You Wait, You Burn Another ₹35,000 on Busywork
           </h2>
 
           <p className="mt-4 text-lg text-[#9CA3AF]">
-            Only 10 clients. 3-month engagement. Execution starts April 1st.
+            3 spots left for April. First automations live in 2 weeks.
           </p>
 
           <div className="mt-10">
@@ -41,7 +41,7 @@ export default function FinalCTA() {
                 (e.currentTarget as HTMLElement).style.boxShadow = '0 0 30px rgba(213,235,75,0.2)'
               }}
             >
-              Book Your Free Automation Audit
+              Get Your Free Automation Roadmap
             </a>
           </div>
 
@@ -50,12 +50,12 @@ export default function FinalCTA() {
               onClick={scrollToQuiz}
               className="text-sm text-[#9CA3AF] hover:underline hover:text-[#D5EB4B] transition-colors cursor-pointer bg-transparent border-none"
             >
-              Join the Waitlist
+              Takes 2 minutes. No commitment.
             </button>
           </div>
 
           <p className="mt-6 text-sm text-[#6B7280]">
-            No commitment. We map your processes for free.
+            Free audit. Custom roadmap. Zero obligation.
           </p>
         </div>
       </ScrollReveal>

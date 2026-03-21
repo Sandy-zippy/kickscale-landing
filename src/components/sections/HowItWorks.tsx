@@ -4,17 +4,17 @@ const steps = [
   {
     num: 1,
     title: 'Tell Us What to Automate',
-    desc: 'Take the 2-minute quiz. Select the processes eating your team\u2019s time.',
+    desc: 'Take the 2-minute quiz below. Pick the processes eating your team\'s time.',
   },
   {
     num: 2,
     title: 'We Build Your Automations',
-    desc: 'Our team designs, builds, and tests custom workflows in 2\u20134 weeks.',
+    desc: 'Custom workflows designed, built, and tested. Live in 2 to 4 weeks.',
   },
   {
     num: 3,
     title: 'You Scale Without Hiring',
-    desc: 'Same team, 10x output. We monitor and optimize 24/7.',
+    desc: 'Your team does 10x the work. We monitor and optimize everything, 24/7.',
   },
 ]
 
@@ -27,7 +27,7 @@ export default function HowItWorks() {
             THE PROCESS
           </p>
           <h2 className="mx-auto mb-14 max-w-xl text-center text-3xl font-bold text-white sm:text-4xl">
-            Three Steps to 10x Output
+            Live in 2 Weeks, Not 2 Quarters
           </h2>
         </ScrollReveal>
 

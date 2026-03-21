@@ -4,7 +4,7 @@ const cards = [
   {
     icon: '🔄',
     title: 'Complete Lead Flow',
-    desc: 'End-to-end lead capture, qualification, assignment, and CRM sync. From ad click to sales-ready lead, fully automated.',
+    desc: 'Ad click to sales-ready lead. Capture, qualify, assign, and CRM sync without anyone lifting a finger.',
   },
   {
     icon: '💳',
@@ -13,8 +13,8 @@ const cards = [
   },
   {
     icon: '📊',
-    title: 'Daily, Weekly & Monthly Report Generation',
-    desc: 'Automated reports delivered on schedule. No spreadsheet wrangling. Real-time data, zero manual effort.',
+    title: 'Auto-Generated Reports',
+    desc: 'Daily, weekly, monthly. Delivered on schedule. No spreadsheet wrangling, no waiting 3 days.',
   },
   {
     icon: '💬',
@@ -23,13 +23,13 @@ const cards = [
   },
   {
     icon: '🤝',
-    title: 'Customer Engagement & Retention Automation',
-    desc: 'Automated re-engagement flows, loyalty triggers, churn prevention, and win-back campaigns. Keep customers active without manual outreach.',
+    title: 'Customer Retention & Win-Back',
+    desc: 'Re-engagement flows, loyalty triggers, churn prevention. Your customers stay active without manual outreach.',
   },
   {
     icon: '🤖',
-    title: 'AI Voice Agent + AI Messaging Agent + Appointment Scheduling',
-    desc: 'AI handles calls, responds to messages, and books appointments. 24/7 availability without a human on the line.',
+    title: 'AI Voice + Messaging + Scheduling',
+    desc: 'AI handles calls, responds on WhatsApp, and books appointments. 24/7, no human required.',
   },
   {
     icon: '📦',
@@ -52,7 +52,7 @@ export default function AutomationGrid() {
             WHAT WE AUTOMATE
           </p>
           <h2 className="mx-auto mb-12 max-w-2xl text-center text-3xl font-bold text-white sm:text-4xl">
-            8 Areas Where AI Replaces Busywork
+            8 Things Your Team Should Stop Doing Manually
           </h2>
         </ScrollReveal>
 

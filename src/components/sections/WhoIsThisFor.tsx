@@ -1,10 +1,10 @@
 import ScrollReveal from '../ui/ScrollReveal'
 
 const cards = [
-  { icon: '🏢', text: '₹5Cr+ businesses with 10+ employees' },
-  { icon: '📱', text: 'Teams drowning in WhatsApp and Excel coordination' },
-  { icon: '🚀', text: 'Founders who want to scale without hiring 5 more people' },
-  { icon: '⏰', text: 'Businesses spending more on people-hours than on tools' },
+  { icon: '🏢', text: 'You do ₹5Cr+ revenue with 10+ employees' },
+  { icon: '📱', text: 'Your team runs on WhatsApp groups and shared Excel sheets' },
+  { icon: '🚀', text: 'You want to 3x output without hiring 5 more people' },
+  { icon: '⏰', text: 'Your salary bill keeps climbing but output stays flat' },
 ]
 
 export default function WhoIsThisFor() {
@@ -16,10 +16,10 @@ export default function WhoIsThisFor() {
             IS THIS FOR YOU?
           </p>
           <h2 className="mx-auto mb-3 max-w-xl text-center text-3xl font-bold text-[#111827] sm:text-4xl">
-            Built for Businesses Ready to Scale
+            This Is Built for You If...
           </h2>
           <p className="mx-auto mb-12 max-w-md text-center text-sm text-[#6B7280]">
-            If any of these sound familiar, we should talk.
+            If you recognise yourself here, take the quiz below.
           </p>
         </ScrollReveal>
 

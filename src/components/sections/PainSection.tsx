@@ -5,23 +5,23 @@ import ScrollReveal from '../ui/ScrollReveal'
 const pains = [
   {
     stat: '₹18L/yr',
-    title: 'Average cost of manual tasks that AI can handle',
-    description: 'Your team is doing work that software should be doing. That salary spend adds up fast.',
+    title: 'Burned on work AI can do for free',
+    description: 'You are paying salaries for data entry, follow-ups, and report generation. That money should fund growth.',
   },
   {
     stat: '40 hrs/wk',
-    title: 'Time your team spends on repeatable work',
-    description: 'Data entry, follow-ups, report generation. Repetitive tasks that drain your best people.',
+    title: 'Lost to copy-paste and spreadsheet juggling',
+    description: 'Your best people are stuck in Excel, WhatsApp, and manual CRM updates instead of closing deals.',
   },
   {
     stat: '3-5 days',
-    title: 'Delay in reports and updates due to manual processing',
-    description: 'By the time you see the numbers, the opportunity has already passed.',
+    title: 'Before you see your own numbers',
+    description: 'By the time your team compiles last week\'s report, the opportunity is already gone.',
   },
   {
     stat: '23%',
-    title: 'Revenue lost from slow follow-ups and missed leads',
-    description: 'Every hour of delay in responding to a lead drops conversion rates dramatically.',
+    title: 'Revenue leaking from slow follow-ups',
+    description: 'Every hour your team delays a lead response, your competitor closes that deal instead.',
   },
 ]
 
@@ -68,10 +68,10 @@ export default function PainSection() {
               The Real Cost
             </p>
             <h2 className="font-bold text-3xl md:text-4xl text-[#111827] mb-3">
-              Your Team Is Busy. But Not Productive.
+              You're Bleeding Money on Busywork
             </h2>
             <p className="font-sans text-base text-[#4B5563] max-w-xl mx-auto">
-              Here's what manual work actually costs your business.
+              Every day you delay, these numbers get worse.
             </p>
           </div>
         </ScrollReveal>

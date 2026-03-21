@@ -210,9 +210,9 @@ export default function QuizForm() {
     return (
       <div>
         <h3 className="text-lg font-semibold text-white mb-1">
-          What do you want to automate?
+          Which tasks eat the most time?
         </h3>
-        <p className="text-sm text-[#9CA3AF] mb-6">Select all that apply</p>
+        <p className="text-sm text-[#9CA3AF] mb-6">Pick all that apply. No wrong answers.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {automationOptions.map((opt) => {
             const active = selected.includes(opt)
@@ -267,9 +267,9 @@ export default function QuizForm() {
     return (
       <div>
         <h3 className="text-lg font-semibold text-white mb-1">
-          How many people handle these tasks today?
+          How big is the team doing this work?
         </h3>
-        <p className="text-sm text-[#9CA3AF] mb-6">Select one</p>
+        <p className="text-sm text-[#9CA3AF] mb-6">Tap one to continue</p>
         <div className="flex flex-col gap-3">
           {teamSizeOptions.map((opt) => {
             const active = teamSize === opt
@@ -305,7 +305,7 @@ export default function QuizForm() {
     return (
       <div>
         <h3 className="text-lg font-semibold text-white mb-6">
-          Almost there. How do we reach you?
+          Last step. Where should we send your roadmap?
         </h3>
         <div className="flex flex-col gap-4">
           {([
@@ -332,7 +332,7 @@ export default function QuizForm() {
         )}
 
         <p className="mt-6 text-xs text-[#9CA3AF] text-center">
-          Only 10 client slots for the next 3 months. Execution starts April 1st.
+          7 of 10 slots taken for April. No payment needed to apply.
         </p>
       </div>
     )
@@ -393,10 +393,10 @@ export default function QuizForm() {
             Start Here
           </span>
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Book Your Free Automation Audit
+            Find Out What You Can Automate (2 Min)
           </h2>
           <p className="text-[#9CA3AF]">
-            Tell us what you want to automate. We'll show you how.
+            Answer 3 quick questions. Get a custom automation roadmap for your business.
           </p>
         </ScrollReveal>
       </div>
@@ -454,7 +454,7 @@ export default function QuizForm() {
                     disabled={submitting}
                     className="flex-1 ml-4 bg-[#D5EB4B] text-[#0c0c10] font-bold py-4 rounded-xl hover:brightness-110 transition-all disabled:opacity-60 cursor-pointer"
                   >
-                    {submitting ? 'Submitting...' : 'Join the Waitlist'}
+                    {submitting ? 'Submitting...' : 'Get My Automation Roadmap'}
                   </button>
                 )}
               </div>

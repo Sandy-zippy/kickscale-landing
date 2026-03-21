@@ -17,10 +17,10 @@ export default function ROIComparison() {
             THE ROI
           </p>
           <h2 className="mx-auto mb-3 max-w-xl text-center text-3xl font-bold text-white sm:text-4xl">
-            Manual vs. AI Automation
+            Your Team Today vs. With AI
           </h2>
           <p className="mx-auto mb-12 max-w-md text-center text-sm text-[#9CA3AF]">
-            Side by side. The numbers speak for themselves.
+            Same tasks. Fraction of the time. Zero errors.
           </p>
         </ScrollReveal>
 

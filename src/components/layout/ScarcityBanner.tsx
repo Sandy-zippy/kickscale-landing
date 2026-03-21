@@ -31,7 +31,7 @@ export default function ScarcityBanner() {
   return (
     <div className="sticky top-0 z-[60] flex items-center justify-center h-12 bg-[#D5EB4B] px-4">
       <p className="font-['Space_Grotesk'] font-semibold text-sm text-[#0c0c10] text-center">
-        Only 10 spots &middot; <span className="font-bold text-base">{counter}</span> people on the waitlist &middot; Execution starts April 1st
+        3 spots left for April &middot; <span className="font-bold text-base">{counter}</span> businesses already applied &middot; Free audit included
       </p>
       <button
         onClick={dismiss}

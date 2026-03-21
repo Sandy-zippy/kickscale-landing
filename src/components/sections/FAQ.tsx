@@ -5,23 +5,27 @@ import ScrollReveal from '../ui/ScrollReveal'
 const faqs = [
   {
     q: 'What tools do you use?',
-    a: 'n8n, Make, Zapier, custom Python and Node.js scripts, AI models (Claude, GPT), and WhatsApp Business API. We pick the right tool for each job.',
+    a: 'n8n, Make, custom scripts, AI models (Claude, GPT), and WhatsApp Business API. We pick what fits your stack, not what is trendy.',
   },
   {
-    q: 'How long does setup take?',
-    a: '2 to 4 weeks for most businesses. Simple automations can be live in under a week.',
+    q: 'How long until I see results?',
+    a: 'First automations go live in 1 to 2 weeks. Full rollout in 4 weeks. You will see time savings from week one.',
   },
   {
     q: 'Will this replace my team?',
-    a: 'No. It frees them to do high-value work. Your team becomes more productive, not redundant.',
+    a: 'No. It makes them 10x more productive. They stop doing data entry and start doing the work you actually hired them for.',
   },
   {
     q: 'What if something breaks?',
-    a: 'We monitor 24/7 and fix issues within 4 hours. Every automation has error handling built in.',
+    a: '24/7 monitoring. 4-hour fix SLA. Every workflow has built-in error handling and fallback logic.',
   },
   {
-    q: 'Can I try one automation first?',
-    a: 'Yes. Start with one process, see the ROI, then scale.',
+    q: 'Can I start with just one process?',
+    a: 'Absolutely. Most clients start with lead flow or invoicing, see the ROI, then expand.',
+  },
+  {
+    q: 'What does it cost?',
+    a: 'Depends on scope. The free audit gives you exact pricing. Most clients save 5 to 8x what they invest within 90 days.',
   },
 ]
 
@@ -40,7 +44,7 @@ export default function FAQ() {
             COMMON QUESTIONS
           </p>
           <h2 className="mx-auto mb-12 max-w-xl text-center text-3xl font-bold text-[#111827] sm:text-4xl">
-            You're Probably Wondering...
+            Before You Decide
           </h2>
         </ScrollReveal>
 

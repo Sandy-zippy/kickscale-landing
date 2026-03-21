@@ -45,7 +45,7 @@ export default function Nav() {
           href="#quiz"
           className="hidden md:inline-flex items-center rounded-lg bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
         >
-          Book Your Free Audit
+          Get Your Free Audit
         </a>
 
         {/* Mobile hamburger */}
@@ -76,7 +76,7 @@ export default function Nav() {
                 className="block w-full text-center rounded-lg bg-[#D5EB4B] px-5 py-3 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
                 onClick={() => setMenuOpen(false)}
               >
-                Book Your Free Audit
+                Get Your Free Audit
               </a>
             </div>
           </motion.div>
