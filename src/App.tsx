@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import ScarcityBanner from './components/layout/ScarcityBanner'
 import Nav from './components/layout/Nav'
@@ -12,8 +13,23 @@ import ROIComparison from './components/sections/ROIComparison'
 import WhoIsThisFor from './components/sections/WhoIsThisFor'
 import FAQ from './components/sections/FAQ'
 import QuizForm from './components/sections/QuizForm'
+import FinalCTA from './components/sections/FinalCTA'
+import GrowthOffer from './pages/GrowthOffer'
 
 function AutomationHome() {
+  const [isQuizVisible, setIsQuizVisible] = useState(false)
+
+  useEffect(() => {
+    const quizEl = document.getElementById('quiz')
+    if (!quizEl) return
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach(e => setIsQuizVisible(e.isIntersecting)),
+      { threshold: 0.1 }
+    )
+    observer.observe(quizEl)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <>
       <ScarcityBanner />
@@ -26,17 +42,14 @@ function AutomationHome() {
         <HowItWorks />
         <ROIComparison />
         <WhoIsThisFor />
-        <FAQ />
         <QuizForm />
+        <FAQ />
+        <FinalCTA />
       </main>
       <Footer />
-      <StickyCTA isQuizVisible={false} />
+      <StickyCTA isQuizVisible={isQuizVisible} />
     </>
   )
-}
-
-function GrowthOffer() {
-  return <div className="p-8 text-center text-xl">Growth Offer — Coming Soon</div>
 }
 
 export default function App() {
