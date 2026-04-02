@@ -2,10 +2,6 @@ import ScrollReveal from '../ui/ScrollReveal'
 import { trackCTAClick } from '../../lib/tracking'
 
 export default function FinalCTA() {
-  const scrollToQuiz = () => {
-    document.getElementById('quiz')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   return (
     <section className="relative py-20 px-4 overflow-hidden" style={{ background: '#2A2A35' }}>
       {/* Animated gradient orbs */}

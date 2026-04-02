@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal'
 import Toast from '../ui/Toast'
-import { getUTMParams } from '../../lib/analytics'
+import { getUTMParams, getFbcParam, getFbpParam } from '../../lib/analytics'
 import { trackQuizProgress, trackQuizStart, trackQuizSubmit } from '../../lib/tracking'
 
 /* ── data ─────────────────────────────────────────── */
@@ -710,8 +710,11 @@ export default function QuizForm() {
       event_id: `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       client_user_agent: navigator.userAgent,
       page_url: window.location.href,
-      fbp: document.cookie.match(/_fbp=([^;]+)/)?.[1] || '',
-      fbc: document.cookie.match(/_fbc=([^;]+)/)?.[1] || '',
+      fbp: getFbpParam(),
+      fbc: getFbcParam(),
+      // Behavioral data for GHL sync
+      visit_count: parseInt(localStorage.getItem('zippy_visit_count') || '1', 10),
+      time_on_page: Math.round((Date.now() - ((window as any).__pageLoadTime || Date.now())) / 1000),
       ...getUTMParams(),
     }
 
@@ -737,7 +740,7 @@ export default function QuizForm() {
       } catch { /* silent */ }
     }
 
-    trackQuizSubmit({ lead_source: 'automation-lp-v3' })
+    trackQuizSubmit({ lead_source: 'automation-lp-v3', event_id: payload.event_id })
     setWaitlistNum(getWaitlistNumber())
     window.dispatchEvent(new Event('waitlist-updated'))
     setSubmitting(false)
