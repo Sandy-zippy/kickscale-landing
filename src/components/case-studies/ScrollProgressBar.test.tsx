@@ -11,9 +11,9 @@ describe('ScrollProgressBar', () => {
     render(<ScrollProgressBar />)
     expect(screen.getByRole('progressbar')).toHaveClass('bg-[#D5EB4B]')
   })
-  it('positions at top of viewport with z-50', () => {
+  it('positions at top of viewport above nav (z-60)', () => {
     render(<ScrollProgressBar />)
     const wrapper = screen.getByTestId('scroll-progress-wrapper')
-    expect(wrapper).toHaveClass('fixed', 'top-0', 'left-0', 'right-0', 'z-50')
+    expect(wrapper).toHaveClass('fixed', 'top-0', 'left-0', 'right-0', 'z-[60]')
   })
 })

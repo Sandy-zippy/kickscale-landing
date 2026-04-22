@@ -19,7 +19,7 @@ describe('RelatedCaseStudiesCarousel', () => {
         <RelatedCaseStudiesCarousel slugs={['homeopathic-clinic-patient-flow']} />
       </BrowserRouter>
     )
-    expect(screen.getByText(/Homeopathic Clinic/)).toBeInTheDocument()
+    expect(screen.getByText(/Homeopathic clinic/i)).toBeInTheDocument()
   })
   it('links each card to the correct case study route', () => {
     render(

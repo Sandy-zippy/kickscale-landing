@@ -1,7 +1,7 @@
 interface Props { title: string; url: string }
 
 export default function ShareButtons({ title, url }: Props) {
-  const text = encodeURIComponent(`${title} — ${url}`)
+  const text = encodeURIComponent(`${title}\n\n${url}`)
   const wa = `https://wa.me/?text=${text}`
   const li = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
   const copyUrl = `${url}?utm_source=share-copy`

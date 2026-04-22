@@ -19,11 +19,11 @@ export const content: CaseStudyContent = {
       'Occasional Practo or ClinicMaster trial',
     ],
   },
-  painNarrative: `The founder-doctor opens WhatsApp at 9 PM and sees 47 unread threads. Three are from new patients asking "doctor available tomorrow?" Two are refill requests with medicine photos. One is a parent whose child's eczema flared after the last consultation. Sent 6 hours ago. Unread. Seven are asking about fees. The rest are forwarded home remedies, good-morning images, and follow-ups the front desk was supposed to make last Tuesday.
+  painNarrative: `9:14 PM. The founder-doctor opens WhatsApp and sees 47 unread threads. Three are new parents asking "doctor available tomorrow?" Two are refill requests for Bryonia and Arsenicum, with medicine photos. One is from a parent whose child's eczema flared after Tuesday's consult. Sent six hours ago. Unread. Seven are asking the consult fee. The rest are forwarded home remedies, good-morning images, and follow-up calls the front desk was supposed to make last Tuesday but didn't.
 
-She is a clinician, not an operations manager. She trained 12 years to read constitutions and prescribe, and now she is triaging an inbox at midnight because her 19-year-old receptionist goes offline at 7 PM. No-shows are running around 30% because nobody sends reminders consistently. Refill reminders happen only when the patient remembers. The gap between "patient came for one consult" and "patient returned for the follow-up three weeks later" is where 40% of her revenue leaks.
+She trained 12 years to read constitutions and prescribe. She did not train to triage WhatsApp at midnight because Vidya, her 19-year-old receptionist, goes offline at 7 PM. The Sunday Tally reconciliation alone eats three hours of her one day off. No-shows are running around 30% because nobody sends a day-before reminder consistently. Refill nudges happen only if the patient remembers. The 40% of her revenue that should come from the second and third consult cycle is leaking somewhere between "first visit" and "patient returns three weeks later."
 
-She doesn't want a bot that sounds cold. She wants a system that handles the predictable 80% (the FAQs, the booking, the reminders, the refills) so she and the front desk can focus on the 20% that actually needs a human.`,
+She does not want a bot that sounds cold. Her patients trust her voice. She wants a system that handles the predictable 80% (the fee questions, the appointment booking, the day-before reminder, the refill nudge, the IMA-style record keeping) so she and Vidya can focus on the 20% that actually needs a human.`,
   painQuotes: [
     { quote: "I'm a clinician, not an operations manager.", attribution: 'Specialty clinic founder-doctor' },
     { quote: 'My receptionist goes offline at 7 PM.', attribution: 'Clinic owner on the WhatsApp gap' },

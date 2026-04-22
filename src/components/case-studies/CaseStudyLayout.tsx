@@ -73,9 +73,9 @@ export default function CaseStudyLayout({
   return (
     <>
       <ScrollProgressBar />
-      <Nav />
+      <Nav noBanner ctaHref="/#quiz" />
       <StickyTOC sections={SECTION_IDS} />
-      <main className="bg-[#FFFDF7] text-[#1A1A2E]">
+      <main className="bg-[#FFFDF7] text-[#1A1A2E] pt-[60px]">
         {children}
       </main>
       <Footer />

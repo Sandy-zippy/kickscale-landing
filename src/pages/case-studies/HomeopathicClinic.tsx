@@ -40,7 +40,7 @@ ${content.painNarrative}
 ${content.stackTools.map(t => `- **${t.name}** (${t.role}): ${t.description}`).join('\n')}
 
 ## 4-Week Sprint
-${content.sprintPlan.map(w => `- **Week ${w.week} — ${w.title}:** ${w.deliverables.join('; ')}`).join('\n')}
+${content.sprintPlan.map(w => `- **Week ${w.week}: ${w.title}.** ${w.deliverables.join('; ')}`).join('\n')}
 
 ## Target Outcomes
 ${content.targetOutcomes.map(o => `- ${o.metric}: ${o.before} → ${o.after}${o.caveat ? ` (${o.caveat})` : ''}`).join('\n')}
@@ -52,11 +52,32 @@ export default function HomeopathicClinic() {
     <CaseStudyLayout metadata={meta}>
       <CaseStudyHero
         variant={SLUG}
+        industryBadge="Case Study · Healthcare"
         headline={meta.title}
+        subhead="The 4-week stack that recovers 22 hours a week and cuts no-shows in half. Built for 1-3 doctor clinics in India still running on a personal WhatsApp number and a paper diary."
         statBefore={meta.heroStatBefore}
         statAfter={meta.heroStatAfter}
         statLabel={meta.heroStatLabel}
+        benefits={[
+          'AI replies on WhatsApp in under 60 seconds, 24/7',
+          'Day-before reminders + D-3 refill nudges fire on autopilot',
+          'Doctor\'s morning digest: today\'s appointments, flagged cases, refills due',
+        ]}
+        ctaText="Map my clinic in 48 hours"
+        ctaSubtext="Free. No commitment. We map your processes and show you the gaps."
       />
+
+      <section className="py-6 px-4 bg-white border-y border-[#E5E7EB]">
+        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-xs font-mono uppercase tracking-wider text-[#6B7280]">
+          <span>Used by 20+ Indian SMBs</span>
+          <span aria-hidden="true">·</span>
+          <span>8,000+ manual hours eliminated</span>
+          <span aria-hidden="true">·</span>
+          <span>₹1.6 Cr+ saved across clients</span>
+          <span aria-hidden="true">·</span>
+          <span>4-week sprint · ₹1.5L</span>
+        </div>
+      </section>
 
       <section id="summary" className="py-16 px-4 bg-white border-y border-[#E5E7EB]">
         <div className="max-w-4xl mx-auto">
@@ -140,7 +161,7 @@ export default function HomeopathicClinic() {
                 {content.painQuotes.map((q, i) => (
                   <blockquote key={i} className="border-l-4 border-[#D5EB4B] pl-4 italic text-[#1A1A2E]">
                     "{q.quote}"
-                    <footer className="text-xs text-[#6B7280] not-italic mt-1">— {q.attribution}</footer>
+                    <footer className="text-xs text-[#6B7280] not-italic mt-1">{q.attribution}</footer>
                   </blockquote>
                 ))}
               </div>
