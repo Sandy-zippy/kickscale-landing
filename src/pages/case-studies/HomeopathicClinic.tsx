@@ -277,14 +277,16 @@ export default function HomeopathicClinic() {
         <FinalCTA />
       </section>
 
-      <section className="py-16 px-4">
-        <div className="max-w-6xl mx-auto">
-          <ScrollReveal>
-            <h2 className="text-3xl font-bold text-[#1A1A2E] mb-6">Related case studies</h2>
-          </ScrollReveal>
-          <RelatedCaseStudiesCarousel slugs={meta.related} />
-        </div>
-      </section>
+      {meta.related.some(slug => registry[slug]?.title) && (
+        <section className="py-16 px-4">
+          <div className="max-w-6xl mx-auto">
+            <ScrollReveal>
+              <h2 className="text-3xl font-bold text-[#1A1A2E] mb-6">Related case studies</h2>
+            </ScrollReveal>
+            <RelatedCaseStudiesCarousel slugs={meta.related} />
+          </div>
+        </section>
+      )}
 
       <section className="py-8 px-4 bg-white border-t border-[#E5E7EB]">
         <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
