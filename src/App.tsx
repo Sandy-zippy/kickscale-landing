@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { captureUTM } from './lib/analytics'
 import { trackSectionView, trackSectionScroll } from './lib/tracking'
@@ -22,10 +22,15 @@ import QuizForm from './components/sections/QuizForm'
 import FinalCTA from './components/sections/FinalCTA'
 import MidPageCTA from './components/sections/MidPageCTA'
 import CaseStudiesPreview from './components/sections/CaseStudiesPreview'
-import GrowthOffer from './pages/GrowthOffer'
-import CaseStudyIndex from './pages/CaseStudyIndex'
-import CaseStudyRouter from './pages/case-studies/CaseStudyRouter'
 import PrivacyPolicy from './pages/PrivacyPolicy'
+import { ExportModeProvider } from './contexts/ExportModeContext'
+import DeckLoader from './components/discovery/DeckLoader'
+
+const GrowthOffer = lazy(() => import('./pages/GrowthOffer'))
+const CaseStudyIndex = lazy(() => import('./pages/CaseStudyIndex'))
+const CaseStudyRouter = lazy(() => import('./pages/case-studies/CaseStudyRouter'))
+const Discovery = lazy(() => import('./pages/Discovery'))
+const DiscoverySetup = lazy(() => import('./pages/DiscoverySetup'))
 
 function AutomationHome() {
   const [isQuizVisible, setIsQuizVisible] = useState(false)
@@ -92,13 +97,19 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<AutomationHome />} />
-        <Route path="/growth-offer" element={<GrowthOffer />} />
-        <Route path="/case-studies" element={<CaseStudyIndex />} />
-        <Route path="/case-studies/:slug" element={<CaseStudyRouter />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-      </Routes>
+      <ExportModeProvider>
+        <Suspense fallback={<DeckLoader />}>
+          <Routes>
+            <Route path="/" element={<AutomationHome />} />
+            <Route path="/growth-offer" element={<GrowthOffer />} />
+            <Route path="/case-studies" element={<CaseStudyIndex />} />
+            <Route path="/case-studies/:slug" element={<CaseStudyRouter />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/discovery/setup" element={<DiscoverySetup />} />
+            <Route path="/discovery" element={<Discovery />} />
+          </Routes>
+        </Suspense>
+      </ExportModeProvider>
     </BrowserRouter>
   )
 }
