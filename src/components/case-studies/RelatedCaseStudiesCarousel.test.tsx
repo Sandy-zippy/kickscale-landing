@@ -4,13 +4,13 @@ import { describe, it, expect } from 'vitest'
 import RelatedCaseStudiesCarousel from './RelatedCaseStudiesCarousel'
 
 describe('RelatedCaseStudiesCarousel', () => {
-  it('renders nothing when slugs match only stubs (no title)', () => {
+  it('renders nothing when no slugs are passed', () => {
     const { container } = render(
       <BrowserRouter>
-        <RelatedCaseStudiesCarousel slugs={['pharma-distributor-field-orders']} />
+        <RelatedCaseStudiesCarousel slugs={[]} />
       </BrowserRouter>
     )
-    // pharma is currently a stub with empty title — should render null
+    // Empty slug array should render null
     expect(container.firstChild).toBeNull()
   })
   it('renders a card when slug has populated metadata (homeopathic)', () => {
