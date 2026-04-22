@@ -40,19 +40,19 @@ export default function HomeopathicClinic() {
     <CaseStudyLayout metadata={meta}>
       <CaseStudyHero
         variant={SLUG}
-        industryBadge="Case Study · Healthcare · 1-3 doctor clinics"
+        industryBadge="Case Study · Healthcare"
         headline={meta.title}
-        subhead="The 4-week WhatsApp + AI stack we deploy for 1-3 doctor specialty clinics in India. Patient booking, reminders, refill nudges, and follow-ups on autopilot. Your front desk handles the 20% that needs a human. You stop checking WhatsApp at midnight."
+        subhead="The 4-week WhatsApp + AI stack for 1-3 doctor clinics. Booking, reminders, refills, follow-ups on autopilot."
         statBefore={meta.heroStatBefore}
         statAfter={meta.heroStatAfter}
         statLabel={meta.heroStatLabel}
         benefits={[
-          'Patient WhatsApp answered in 60 seconds, 24/7. You stop being on-call after 7 PM.',
-          'Day-before + day-of reminders cut no-shows from 30% to under 15%. Empty slots stop happening.',
-          'Daily 8am digest on your phone: today\'s appointments, refills due, flagged cases. One screen, three minutes.',
+          'Patient replies in 60 seconds, 24/7',
+          'No-shows: 30% → under 15% (auto-reminders)',
+          'Daily 8am digest. One screen. Three minutes.',
         ]}
-        ctaText="Book your free 48h clinic audit"
-        ctaSubtext="30 minutes on Zoom. No deck. We map your stack and flag the 3 biggest leaks."
+        ctaText="Book free 48h audit"
+        ctaSubtext="30-min Zoom. No deck. We flag the 3 biggest leaks."
       />
 
       <section className="py-5 px-4 bg-white border-y border-[#E5E7EB]">
@@ -141,10 +141,26 @@ export default function HomeopathicClinic() {
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.2fr_1fr] gap-12 items-center">
           <div>
             <ScrollReveal>
-              <h2 className="text-3xl font-bold text-[#1A1A2E] mb-6">The Pain</h2>
-              {content.painNarrative.split('\n\n').map((p, i) => (
-                <p key={i} className="text-[#4B5563] leading-relaxed mb-4">{p}</p>
-              ))}
+              <h2 className="text-3xl font-bold text-[#1A1A2E] mb-3">A day in the life. Friday to Sunday.</h2>
+              <p className="text-[#4B5563] leading-relaxed mb-6">She trained 12 years to read constitutions. She did not train to triage WhatsApp at midnight. Here is where her week leaks.</p>
+              <ul className="space-y-3 mb-6">
+                {[
+                  { time: '9:14 PM', label: '47 unread WhatsApps. Vidya offline since 7.' },
+                  { time: 'Tuesday', label: 'A child\'s eczema flare goes unread for 6 hours.' },
+                  { time: 'Wed-Fri', label: 'Day-before reminders skipped. Three no-shows.' },
+                  { time: 'Sunday', label: 'Tally reconciliation eats 3 hours of her day off.' },
+                  { time: '~30%', label: 'of booked patients never show up.' },
+                  { time: '~40%', label: 'of revenue leaks between consult #1 and consult #2.' },
+                ].map((row, i) => (
+                  <li key={i} className="flex items-baseline gap-3">
+                    <span className="font-mono text-xs uppercase tracking-wider text-red-600 font-bold w-20 shrink-0 text-right">{row.time}</span>
+                    <span className="text-[#1A1A2E]">{row.label}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[#1A1A2E] font-semibold leading-snug border-l-4 border-[#D5EB4B] pl-4">
+                She does not want a cold bot. She wants the predictable 80% (fees, booking, reminders, refills) handled. So she and Vidya can focus on the 20% that needs a human.
+              </p>
             </ScrollReveal>
           </div>
           <div>
