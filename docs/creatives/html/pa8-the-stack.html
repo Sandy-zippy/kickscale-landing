@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #FFFDF7; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: linear-gradient(135deg, #FFFDF7 0%, #F8F4EC 50%, #FFFDF7 100%); position: relative; overflow: hidden;">
+
+  <!-- Pattern: small crosses -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(42,42,53,0.06) 1.5px, transparent 1.5px); background-size: 30px 30px;"></div>
+
+  <!-- Diagonal accent bars -->
+  <div style="position: absolute; top: -150px; right: -100px; width: 800px; height: 400px; background: rgba(229,62,62,0.03); transform: rotate(-15deg); border-radius: 40px;"></div>
+  <div style="position: absolute; bottom: -100px; left: -100px; width: 600px; height: 300px; background: rgba(213,235,75,0.04); transform: rotate(-15deg); border-radius: 40px;"></div>
+
+  <!-- Circle accents -->
+  <div style="position: absolute; top: -80px; left: -80px; width: 250px; height: 250px; border: 2px solid rgba(42,42,53,0.04); border-radius: 50%;"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-transparent.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 44px; line-height: 1.15; color: #2A2A35;">
+      Your "tech stack" is<br>actually a <span style="color: #E53E3E;">mess stack.</span>
+    </h1>
+  </div>
+
+  <!-- Tool icons in a messy arrangement -->
+  <div style="position: absolute; top: 350px; left: 80px; right: 80px; z-index: 5;">
+    <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; position: relative;">
+      <!-- Tool 1: WhatsApp -->
+      <div style="width: 150px; height: 120px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(42,42,53,0.06); transform: rotate(-3deg);">
+        <div style="font-size: 36px;">💬</div>
+        <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #2A2A35;">WhatsApp</div>
+      </div>
+      <!-- Tool 2: Excel -->
+      <div style="width: 150px; height: 120px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(42,42,53,0.06); transform: rotate(2deg);">
+        <div style="font-size: 36px;">📊</div>
+        <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #2A2A35;">Excel</div>
+      </div>
+      <!-- Tool 3: Tally -->
+      <div style="width: 150px; height: 120px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(42,42,53,0.06); transform: rotate(-1deg);">
+        <div style="font-size: 36px;">🧾</div>
+        <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #2A2A35;">Tally</div>
+      </div>
+      <!-- Tool 4: Manual CRM -->
+      <div style="width: 150px; height: 120px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(42,42,53,0.06); transform: rotate(3deg);">
+        <div style="font-size: 36px;">📇</div>
+        <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #2A2A35;">Manual CRM</div>
+      </div>
+      <!-- Tool 5: Email -->
+      <div style="width: 150px; height: 120px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(42,42,53,0.06); transform: rotate(-2deg);">
+        <div style="font-size: 36px;">📧</div>
+        <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #2A2A35;">Email</div>
+      </div>
+    </div>
+
+    <!-- Broken connection lines (red dashed) -->
+    <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 200px; pointer-events: none;" viewBox="0 0 920 200">
+      <line x1="120" y1="60" x2="280" y2="40" stroke="#E53E3E" stroke-width="2" stroke-dasharray="8,6" opacity="0.4"/>
+      <line x1="350" y1="50" x2="500" y2="70" stroke="#E53E3E" stroke-width="2" stroke-dasharray="8,6" opacity="0.4"/>
+      <line x1="580" y1="40" x2="730" y2="55" stroke="#E53E3E" stroke-width="2" stroke-dasharray="8,6" opacity="0.4"/>
+      <!-- X marks on lines -->
+      <text x="200" y="45" font-family="Space Grotesk" font-size="18" fill="#E53E3E" opacity="0.6">✕</text>
+      <text x="425" y="55" font-family="Space Grotesk" font-size="18" fill="#E53E3E" opacity="0.6">✕</text>
+      <text x="655" y="42" font-family="Space Grotesk" font-size="18" fill="#E53E3E" opacity="0.6">✕</text>
+    </svg>
+  </div>
+
+  <!-- Equals chaos -->
+  <div style="position: absolute; top: 640px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <div style="display: inline-block; background: rgba(229,62,62,0.06); border: 1px solid rgba(229,62,62,0.12); border-radius: 12px; padding: 20px 50px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; color: rgba(42,42,53,0.4);">WhatsApp + Excel + Tally + Manual CRM</div>
+      <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 40px; color: #E53E3E; margin-top: 8px;">= Chaos</div>
+    </div>
+  </div>
+
+  <!-- Body text -->
+  <div style="position: absolute; top: 770px; left: 120px; right: 120px; text-align: center; z-index: 5;">
+    <p style="font-family: 'Inter', sans-serif; font-size: 20px; line-height: 1.6; color: rgba(42,42,53,0.6);">
+      Disconnected tools mean dropped leads, duplicate work, and zero visibility.
+    </p>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 4px 15px rgba(213,235,75,0.3);">Connect Everything →</div>
+  </div>
+
+</div>
+</body>
+</html>

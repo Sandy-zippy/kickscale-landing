@@ -7,42 +7,95 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 </style>
 </head>
-<body style="margin:0;padding:0;background: #FFFDF7;">
-<div style="width:1080px;height:1080px;background:#FFFDF7;position:relative;overflow:hidden;font-family:'Inter',sans-serif;">
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 30% 70%, rgba(213,235,75,0.06) 0%, transparent 40%), radial-gradient(circle at 80% 30%, rgba(213,235,75,0.08) 0%, transparent 40%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Subtle grid -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+  <!-- Decorative large quote mark -->
+  <div style="position: absolute; top: 80px; right: 80px; z-index: 5;">
+    <span style="font-family: 'Space Grotesk', sans-serif; font-size: 280px; color: rgba(213,235,75,0.06); line-height: 1; font-weight: 700;">&rdquo;</span>
+  </div>
 
   <!-- Logo -->
-  <img src="../../../brand-assets/zippyscale-logo-transparent.png" style="position:absolute;top:170px;left:70px;width:140px;height:auto;z-index:10;">
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
 
-  <!-- Giant quote mark -->
-  <div style="position:absolute;top:210px;left:60px;z-index:5;">
-    <span style="font-family:'Space Grotesk',sans-serif;font-size:200px;color:rgba(213,235,75,0.2);line-height:1;font-weight:700;">"</span>
+  <!-- Star rating -->
+  <div style="position: absolute; top: 140px; left: 60px; z-index: 10;">
+    <div style="display: flex; gap: 6px;">
+      <div style="width: 32px; height: 32px; background: #D5EB4B; border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 18px; color: #2A2A35;">&#9733;</span></div>
+      <div style="width: 32px; height: 32px; background: #D5EB4B; border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 18px; color: #2A2A35;">&#9733;</span></div>
+      <div style="width: 32px; height: 32px; background: #D5EB4B; border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 18px; color: #2A2A35;">&#9733;</span></div>
+      <div style="width: 32px; height: 32px; background: #D5EB4B; border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 18px; color: #2A2A35;">&#9733;</span></div>
+      <div style="width: 32px; height: 32px; background: #D5EB4B; border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 18px; color: #2A2A35;">&#9733;</span></div>
+    </div>
   </div>
 
-  <!-- Quote -->
-  <div style="position:absolute;top:310px;left:70px;right:70px;z-index:10;">
-    <p style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:38px;color:#2A2A35;line-height:1.35;">
-      We were spending ₹18L/year on work that now runs automatically. ZippyScale found it in their audit.
-    </p>
+  <!-- Testimonial Card -->
+  <div style="position: absolute; top: 210px; left: 60px; right: 60px; z-index: 10;">
+    <div style="background: rgba(255,255,255,0.04); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 40px;">
+      <p style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 36px; color: #FFFFFF; line-height: 1.35;">
+        &ldquo;We were spending ₹18L/year on work that now runs automatically. ZippyScale found it in their audit.&rdquo;
+      </p>
+    </div>
   </div>
 
-  <!-- Attribution -->
-  <div style="position:absolute;top:580px;left:70px;right:70px;z-index:10;">
-    <div style="width:60px;height:3px;background:#D5EB4B;margin-bottom:16px;"></div>
-    <p style="font-size:20px;color:rgba(42,42,53,0.6);line-height:1.5;">
-      Manufacturing Company, Pune<br>
-      <span style="font-family:'JetBrains Mono',monospace;font-weight:700;color:#2A2A35;">₹8Cr revenue</span>
-    </p>
+  <!-- Company badge -->
+  <div style="position: absolute; top: 510px; left: 60px; z-index: 10;">
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <!-- Avatar placeholder -->
+      <div style="width: 56px; height: 56px; background: rgba(213,235,75,0.15); border: 2px solid rgba(213,235,75,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #D5EB4B;">MC</span>
+      </div>
+      <div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #fff;">Manufacturing Company</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(255,255,255,0.4);">Pune &middot; <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #D5EB4B;">₹8Cr revenue</span></div>
+      </div>
+    </div>
   </div>
 
-  <!-- Projected note -->
-  <div style="position:absolute;top:690px;left:70px;z-index:10;">
-    <span style="font-size:13px;color:rgba(42,42,53,0.35);font-style:italic;">*Projected results based on audit findings</span>
+  <!-- Results bar chart -->
+  <div style="position: absolute; top: 620px; left: 60px; right: 60px; z-index: 10;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;">Results After Audit</div>
+
+    <div style="display: flex; gap: 16px;">
+      <!-- Savings bar -->
+      <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 20px; text-align: center;">
+        <div style="width: 100%; height: 120px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 12px;">
+          <div style="width: 60px; height: 100%; background: linear-gradient(180deg, #D5EB4B, rgba(213,235,75,0.4)); border-radius: 8px 8px 0 0; box-shadow: 0 0 20px rgba(213,235,75,0.15);"></div>
+        </div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 28px; color: #D5EB4B;">₹18L</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px;">saved per year</div>
+      </div>
+      <!-- Hours bar -->
+      <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 20px; text-align: center;">
+        <div style="width: 100%; height: 120px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 12px;">
+          <div style="width: 60px; height: 75%; background: linear-gradient(180deg, rgba(213,235,75,0.8), rgba(213,235,75,0.3)); border-radius: 8px 8px 0 0;"></div>
+        </div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 28px; color: #D5EB4B;">80hrs</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px;">saved monthly</div>
+      </div>
+      <!-- Processes bar -->
+      <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 20px; text-align: center;">
+        <div style="width: 100%; height: 120px; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 12px;">
+          <div style="width: 60px; height: 55%; background: linear-gradient(180deg, rgba(213,235,75,0.6), rgba(213,235,75,0.2)); border-radius: 8px 8px 0 0;"></div>
+        </div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 28px; color: #D5EB4B;">12</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px;">processes automated</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div style="position: absolute; bottom: 105px; left: 60px; z-index: 10;">
+    <span style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.25); font-style: italic;">*Projected results based on audit findings</span>
   </div>
 
   <!-- CTA -->
-  <div style="position:absolute;top:770px;left:70px;z-index:10;">
-    <div style="display:inline-block;background: #D5EB4B; border-radius: 12px; padding: 20px 48px;">
-      <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#1A1A2E;">Get Your Free Audit →</span>
+  <div style="position: absolute; bottom: 45px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; padding: 20px 48px; border-radius: 12px; box-shadow: 0 0 30px rgba(213,235,75,0.2);">
+      <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #2A2A35;">Get Your Free Audit &rarr;</span>
     </div>
   </div>
 

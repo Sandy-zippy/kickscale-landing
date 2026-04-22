@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #FFFDF7; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: linear-gradient(135deg, #FFFDF7 0%, #F5F0E8 50%, #FFFDF7 100%); position: relative; overflow: hidden;">
+
+  <!-- Gradient mesh -->
+  <div style="position: absolute; top: -200px; left: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(213,235,75,0.08) 0%, transparent 70%);"></div>
+  <div style="position: absolute; bottom: -100px; right: -100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(213,235,75,0.06) 0%, transparent 70%);"></div>
+
+  <!-- Pattern -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(42,42,53,0.04) 1px, transparent 1px); background-size: 35px 35px;"></div>
+
+  <!-- Decorative shapes -->
+  <div style="position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; border: 2px solid rgba(213,235,75,0.1); border-radius: 50%;"></div>
+  <div style="position: absolute; bottom: 300px; left: -40px; width: 120px; height: 120px; border: 2px solid rgba(42,42,53,0.04); transform: rotate(45deg);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-transparent.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 48px; line-height: 1.15; color: #2A2A35;">
+      Zero risk.<br><span style="color: #B8CF2E;">Maximum clarity.</span>
+    </h1>
+  </div>
+
+  <!-- Trust badges grid -->
+  <div style="position: absolute; top: 360px; left: 80px; right: 80px; z-index: 5;">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <!-- Badge 1 -->
+      <div style="background: white; border-radius: 20px; padding: 36px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid rgba(42,42,53,0.06); display: flex; align-items: flex-start; gap: 20px;">
+        <div style="width: 56px; height: 56px; background: rgba(213,235,75,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span style="font-size: 28px; color: #B8CF2E;">✓</span>
+        </div>
+        <div>
+          <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #2A2A35;">Free Audit</div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(42,42,53,0.5); margin-top: 6px; line-height: 1.4;">Complete operations analysis at zero cost</div>
+        </div>
+      </div>
+      <!-- Badge 2 -->
+      <div style="background: white; border-radius: 20px; padding: 36px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid rgba(42,42,53,0.06); display: flex; align-items: flex-start; gap: 20px;">
+        <div style="width: 56px; height: 56px; background: rgba(213,235,75,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span style="font-size: 28px; color: #B8CF2E;">✓</span>
+        </div>
+        <div>
+          <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #2A2A35;">No Commitment</div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(42,42,53,0.5); margin-top: 6px; line-height: 1.4;">Walk away anytime. Keep the audit forever.</div>
+        </div>
+      </div>
+      <!-- Badge 3 -->
+      <div style="background: white; border-radius: 20px; padding: 36px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid rgba(42,42,53,0.06); display: flex; align-items: flex-start; gap: 20px;">
+        <div style="width: 56px; height: 56px; background: rgba(213,235,75,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span style="font-size: 28px; color: #B8CF2E;">✓</span>
+        </div>
+        <div>
+          <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #2A2A35;">Results in 48hrs</div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(42,42,53,0.5); margin-top: 6px; line-height: 1.4;">From quiz to full report in 2 business days</div>
+        </div>
+      </div>
+      <!-- Badge 4 -->
+      <div style="background: rgba(213,235,75,0.08); border-radius: 20px; padding: 36px; box-shadow: 0 4px 20px rgba(213,235,75,0.08); border: 2px solid rgba(213,235,75,0.2); display: flex; align-items: flex-start; gap: 20px;">
+        <div style="width: 56px; height: 56px; background: #D5EB4B; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span style="font-size: 28px; color: #1A1A2E;">🔒</span>
+        </div>
+        <div>
+          <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #2A2A35;">Only 10 Spots</div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(42,42,53,0.5); margin-top: 6px; line-height: 1.4;">Limited capacity per quarter. Apply now.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 4px 15px rgba(213,235,75,0.3);">Claim Your Free Audit →</div>
+  </div>
+
+</div>
+</body>
+</html>

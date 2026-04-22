@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #FFFDF7; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: linear-gradient(180deg, #FFFDF7 0%, #F8F4EC 60%, #FFFDF7 100%); position: relative; overflow: hidden;">
+
+  <!-- Subtle grid -->
+  <div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(42,42,53,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(42,42,53,0.03) 1px, transparent 1px); background-size: 60px 60px;"></div>
+
+  <!-- Decorative circles -->
+  <div style="position: absolute; top: -100px; right: -80px; width: 300px; height: 300px; border: 2px solid rgba(229,62,62,0.06); border-radius: 50%;"></div>
+  <div style="position: absolute; bottom: -60px; left: -40px; width: 200px; height: 200px; border: 2px solid rgba(229,62,62,0.04); border-radius: 50%;"></div>
+  <div style="position: absolute; top: 300px; left: -100px; width: 250px; height: 250px; background: radial-gradient(circle, rgba(229,62,62,0.04) 0%, transparent 70%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-transparent.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 400px; z-index: 10;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 50px; line-height: 1.15; color: #2A2A35;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 64px; color: #E53E3E;">237</span><br>
+      follow-ups<br>missed <span style="color: #B8CF2E;">today.</span>
+    </h1>
+  </div>
+
+  <!-- Floating notification cards (overlapping) -->
+  <div style="position: absolute; top: 180px; right: 40px; z-index: 5;">
+    <!-- Card 1 -->
+    <div style="width: 320px; background: white; border-radius: 12px; padding: 16px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-left: 4px solid #E53E3E; margin-bottom: -30px; transform: rotate(-2deg); position: relative; z-index: 3;">
+      <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #2A2A35;">Lead: Rajesh Patel</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(42,42,53,0.5); margin-top: 4px;">Inquiry 3 days ago. No response.</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #E53E3E; margin-top: 6px;">⚠ LEAD COLD</div>
+    </div>
+    <!-- Card 2 -->
+    <div style="width: 320px; background: white; border-radius: 12px; padding: 16px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-left: 4px solid #E53E3E; margin-bottom: -30px; transform: rotate(1deg); position: relative; z-index: 2; margin-left: 20px;">
+      <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #2A2A35;">Lead: Priya Sharma</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(42,42,53,0.5); margin-top: 4px;">Quoted ₹8L deal. No follow-up.</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #E53E3E; margin-top: 6px;">⚠ LEAD LOST</div>
+    </div>
+    <!-- Card 3 -->
+    <div style="width: 320px; background: white; border-radius: 12px; padding: 16px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-left: 4px solid #E53E3E; margin-bottom: -30px; transform: rotate(-1.5deg); position: relative; z-index: 1; margin-left: 10px;">
+      <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #2A2A35;">Lead: Amit Verma</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(42,42,53,0.5); margin-top: 4px;">Called twice. Went to competitor.</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #E53E3E; margin-top: 6px;">⚠ GONE TO COMPETITOR</div>
+    </div>
+  </div>
+
+  <!-- Revenue lost stat -->
+  <div style="position: absolute; top: 550px; left: 60px; right: 60px; z-index: 5;">
+    <div style="background: rgba(229,62,62,0.06); border: 1px solid rgba(229,62,62,0.12); border-radius: 16px; padding: 30px 40px; display: flex; align-items: center; gap: 40px;">
+      <div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(42,42,53,0.5); text-transform: uppercase; letter-spacing: 2px;">Estimated Revenue Lost Today</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 52px; color: #E53E3E;">₹4.7L</div>
+      </div>
+      <div style="flex: 1; height: 8px; background: rgba(229,62,62,0.1); border-radius: 4px; position: relative;">
+        <div style="position: absolute; top: 0; left: 0; width: 78%; height: 100%; background: linear-gradient(90deg, #E53E3E, rgba(229,62,62,0.5)); border-radius: 4px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body text -->
+  <div style="position: absolute; top: 690px; left: 60px; right: 60px; z-index: 5;">
+    <p style="font-family: 'Inter', sans-serif; font-size: 20px; line-height: 1.6; color: rgba(42,42,53,0.7);">
+      Every missed follow-up is revenue walking to your competitor. AI doesn't forget. AI doesn't sleep.
+    </p>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; display: flex; align-items: center; gap: 24px; z-index: 10;">
+    <div style="background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 4px 15px rgba(213,235,75,0.3);">Stop the Leak →</div>
+    <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(42,42,53,0.4);">Free AI Operations Audit</div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 50% 50%, rgba(213,235,75,0.08) 0%, transparent 60%), radial-gradient(circle at 20% 20%, rgba(213,235,75,0.05) 0%, transparent 40%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Circuit board pattern -->
+  <div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(213,235,75,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(213,235,75,0.03) 1px, transparent 1px); background-size: 60px 60px;"></div>
+
+  <!-- Connection lines (decorative) -->
+  <div style="position: absolute; top: 200px; left: 100px; width: 880px; height: 600px;">
+    <svg width="880" height="600" viewBox="0 0 880 600" style="position: absolute; top: 0; left: 0;">
+      <!-- Curved connection lines -->
+      <path d="M140 100 Q440 50 440 250" stroke="rgba(213,235,75,0.15)" stroke-width="2" fill="none" stroke-dasharray="6,4"/>
+      <path d="M740 100 Q440 50 440 250" stroke="rgba(213,235,75,0.15)" stroke-width="2" fill="none" stroke-dasharray="6,4"/>
+      <path d="M140 400 Q440 450 440 250" stroke="rgba(213,235,75,0.15)" stroke-width="2" fill="none" stroke-dasharray="6,4"/>
+      <path d="M740 400 Q440 450 440 250" stroke="rgba(213,235,75,0.15)" stroke-width="2" fill="none" stroke-dasharray="6,4"/>
+      <path d="M440 250 Q440 250 140 250" stroke="rgba(213,235,75,0.12)" stroke-width="2" fill="none" stroke-dasharray="6,4"/>
+      <path d="M440 250 Q440 250 740 250" stroke="rgba(213,235,75,0.12)" stroke-width="2" fill="none" stroke-dasharray="6,4"/>
+    </svg>
+  </div>
+
+  <!-- Accent bar -->
+  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #D5EB4B 0%, rgba(213,235,75,0.1) 100%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 44px; line-height: 1.15; color: #FFFFFF;">
+      We connect <span style="color: #D5EB4B;">everything.</span><br>You focus on growth.
+    </h1>
+  </div>
+
+  <!-- Tech stack icons in a hub-and-spoke layout -->
+  <div style="position: absolute; top: 350px; left: 50%; transform: translateX(-50%); z-index: 5;">
+    <!-- Center hub -->
+    <div style="width: 120px; height: 120px; margin: 0 auto; background: rgba(213,235,75,0.15); border: 2px solid #D5EB4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px rgba(213,235,75,0.2); position: relative; z-index: 3;">
+      <div style="text-align: center;">
+        <div style="font-size: 28px;">⚡</div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 11px; color: #D5EB4B; margin-top: 2px;">ZIPPY<br>SCALE</div>
+      </div>
+    </div>
+
+    <!-- Surrounding tech nodes -->
+    <div style="position: absolute; top: -100px; left: 50%; transform: translateX(-50%); display: flex; gap: 120px;">
+      <!-- n8n -->
+      <div style="width: 90px; height: 90px; background: rgba(255,255,255,0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+        <div style="font-size: 28px;">🔄</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6);">n8n</div>
+      </div>
+      <!-- AI -->
+      <div style="width: 90px; height: 90px; background: rgba(255,255,255,0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+        <div style="font-size: 28px;">🤖</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6);">AI</div>
+      </div>
+    </div>
+
+    <div style="position: absolute; top: 15px; left: -180px; display: flex; flex-direction: column; gap: 80px;">
+      <!-- WhatsApp -->
+      <div style="width: 90px; height: 90px; background: rgba(255,255,255,0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+        <div style="font-size: 28px;">💬</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6);">WhatsApp</div>
+      </div>
+      <!-- Analytics -->
+      <div style="width: 90px; height: 90px; background: rgba(255,255,255,0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+        <div style="font-size: 28px;">📊</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6);">Analytics</div>
+      </div>
+    </div>
+
+    <div style="position: absolute; top: 15px; right: -180px; display: flex; flex-direction: column; gap: 80px;">
+      <!-- CRM -->
+      <div style="width: 90px; height: 90px; background: rgba(255,255,255,0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+        <div style="font-size: 28px;">📇</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6);">CRM</div>
+      </div>
+      <!-- Email -->
+      <div style="width: 90px; height: 90px; background: rgba(255,255,255,0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+        <div style="font-size: 28px;">📧</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6);">Email</div>
+      </div>
+    </div>
+
+    <!-- Bottom node -->
+    <div style="position: absolute; bottom: -100px; left: 50%; transform: translateX(-50%);">
+      <div style="width: 90px; height: 90px; background: rgba(255,255,255,0.05); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+        <div style="font-size: 28px;">📱</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.6);">Social</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tagline -->
+  <div style="position: absolute; bottom: 180px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <p style="font-family: 'Inter', sans-serif; font-size: 18px; color: rgba(255,255,255,0.5);">One unified system. Zero manual work. Total visibility.</p>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 0 25px rgba(213,235,75,0.3);">Connect Your Stack →</div>
+  </div>
+
+</div>
+</body>
+</html>

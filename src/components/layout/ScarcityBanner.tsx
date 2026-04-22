@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 
-function getCounter(): number {
+function getLocalCounter(): number {
   try {
-    return parseInt(localStorage.getItem('zippy_waitlist_counter') || '47', 10)
+    return parseInt(localStorage.getItem('zippy_waitlist_counter') || '11', 10)
   } catch {
-    return 47
+    return 11
   }
 }
 
@@ -12,10 +12,10 @@ export default function ScarcityBanner() {
   const [visible, setVisible] = useState(
     () => sessionStorage.getItem('scarcity_dismissed') !== 'true'
   )
-  const [counter, setCounter] = useState(getCounter)
+  const [counter, setCounter] = useState(getLocalCounter)
 
   useEffect(() => {
-    const onUpdate = () => setCounter(getCounter())
+    const onUpdate = () => setCounter(getLocalCounter())
     window.addEventListener('waitlist-updated', onUpdate)
     return () => window.removeEventListener('waitlist-updated', onUpdate)
   }, [])

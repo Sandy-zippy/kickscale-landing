@@ -20,7 +20,11 @@ const automationOptions = [
   'Others',
 ]
 
-const teamSizeOptions = ['1 to 3 people', '4 to 10 people', '10+ people']
+const teamSizeOptions = [
+  { label: '1 to 3 people', sub: 'Small team, big ambitions' },
+  { label: '4 to 10 people', sub: 'Growing fast, need systems' },
+  { label: '10+ people', sub: 'Scale without more headcount' },
+]
 
 const industryOptions = [
   'Manufacturing',
@@ -36,36 +40,11 @@ const industryOptions = [
 ]
 
 const revenueOptions = [
-  '₹50L - 1Cr',
-  '₹1Cr - 3Cr',
-  '₹3Cr - 5Cr',
-  '₹5Cr - 10Cr',
-  '₹10Cr+',
-]
-
-const marketingSpendOptions = [
-  '₹0 (No marketing spend)',
-  'Under ₹50K',
-  '₹50K - 2L',
-  '₹2L - 5L',
-  '₹5L+',
-]
-
-const toolOptions = [
-  'Excel/Google Sheets',
-  'Tally/Zoho',
-  'WhatsApp Groups',
-  'CRM (HubSpot/Salesforce/etc)',
-  'ERP System',
-  'None of these',
-]
-
-const triedOptions = [
-  'Hired more people',
-  'Tried a freelancer/consultant',
-  'Tried an agency',
-  'Tried building in-house tools',
-  'Nothing yet',
+  { label: '₹50L - 1Cr', sub: 'Early stage' },
+  { label: '₹1Cr - 3Cr', sub: 'Building momentum' },
+  { label: '₹3Cr - 5Cr', sub: 'Ready to scale' },
+  { label: '₹5Cr - 10Cr', sub: 'Growth mode' },
+  { label: '₹10Cr+', sub: 'Enterprise scale' },
 ]
 
 /* ── helpers ──────────────────────────────────────── */
@@ -75,23 +54,19 @@ function validatePhone(raw: string): boolean {
   return /^[6-9]\d{9}$/.test(cleaned)
 }
 
-function validateEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-}
-
 function cleanPhone(raw: string): string {
   return raw.replace(/[\s\-+]/g, '').replace(/^91/, '')
 }
 
-function getWaitlistNumber(): number {
+async function getWaitlistNumber(): Promise<number> {
   try {
     const key = 'zippy_waitlist_counter'
-    const current = parseInt(localStorage.getItem(key) || '47', 10)
+    const current = parseInt(localStorage.getItem(key) || '11', 10)
     const next = current + 1
     localStorage.setItem(key, String(next))
     return next
   } catch {
-    return 48
+    return 12
   }
 }
 
@@ -103,12 +78,12 @@ const slideVariants = {
   exit: (dir: number) => ({ x: dir > 0 ? -120 : 120, opacity: 0 }),
 }
 
-/* ── extracted sub-components ────────────────────── */
+/* ── sub-components ───────────────────────────────── */
 
 function ProgressBar({ step }: { step: number }) {
   return (
     <div className="flex gap-2 mb-8">
-      {[1, 2, 3, 4, 5].map((s) => (
+      {[1, 2, 3, 4].map((s) => (
         <div
           key={s}
           className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
@@ -120,7 +95,8 @@ function ProgressBar({ step }: { step: number }) {
   )
 }
 
-function Step1({
+/* Step 1: What to automate — multi-select tappable cards */
+function Step1Tasks({
   selected,
   othersText,
   onToggle,
@@ -186,7 +162,8 @@ function Step1({
   )
 }
 
-function Step2({
+/* Step 2: Team size — single select, auto-advance */
+function Step2Team({
   teamSize,
   onSelect,
 }: {
@@ -201,13 +178,13 @@ function Step2({
       <p className="text-sm text-[#9CA3AF] mb-6">Tap one to continue</p>
       <div className="flex flex-col gap-3">
         {teamSizeOptions.map((opt) => {
-          const active = teamSize === opt
+          const active = teamSize === opt.label
           return (
             <button
-              key={opt}
+              key={opt.label}
               type="button"
-              onClick={() => onSelect(opt)}
-              className={`flex items-center gap-3 text-left rounded-xl p-4 border cursor-pointer transition-all duration-200 ${
+              onClick={() => onSelect(opt.label)}
+              className={`flex items-center gap-4 text-left rounded-xl p-5 border cursor-pointer transition-all duration-200 ${
                 active
                   ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
                   : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
@@ -220,7 +197,10 @@ function Step2({
               >
                 {active && <span className="w-2.5 h-2.5 rounded-full bg-[#D5EB4B]" />}
               </span>
-              <span className="text-sm text-white">{opt}</span>
+              <div>
+                <span className="text-sm font-medium text-white">{opt.label}</span>
+                <span className="block text-xs text-[#6B7280] mt-0.5">{opt.sub}</span>
+              </div>
             </button>
           )
         })}
@@ -229,114 +209,17 @@ function Step2({
   )
 }
 
-/* ── Radio button helper (reused in Step 3) ────── */
-function RadioGroup({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string
-  options: string[]
-  value: string
-  onChange: (val: string) => void
-}) {
-  return (
-    <div>
-      <label className="block text-sm text-[#9CA3AF] mb-2">{label}</label>
-      <div className="flex flex-col gap-2">
-        {options.map((opt) => {
-          const active = value === opt
-          return (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => onChange(opt)}
-              className={`flex items-center gap-3 text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 ${
-                active
-                  ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
-                  : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
-              }`}
-            >
-              <span
-                className={`flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  active ? 'border-[#D5EB4B]' : 'border-[#4E4E56]'
-                }`}
-              >
-                {active && <span className="w-2 h-2 rounded-full bg-[#D5EB4B]" />}
-              </span>
-              <span className="text-sm text-white">{opt}</span>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/* ── Checkbox group helper (reused in Step 4) ──── */
-function CheckboxGroup({
-  label,
-  options,
-  selected,
-  onToggle,
-}: {
-  label: string
-  options: string[]
-  selected: string[]
-  onToggle: (opt: string) => void
-}) {
-  return (
-    <div>
-      <label className="block text-sm text-[#9CA3AF] mb-2">{label}</label>
-      <div className="flex flex-col gap-2">
-        {options.map((opt) => {
-          const active = selected.includes(opt)
-          return (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => onToggle(opt)}
-              className={`flex items-center gap-3 text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 ${
-                active
-                  ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
-                  : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
-              }`}
-            >
-              <span
-                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                  active ? 'border-[#D5EB4B] bg-[#D5EB4B]' : 'border-[#4E4E56]'
-                }`}
-              >
-                {active && (
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#0c0c10" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
-              <span className="text-sm text-white">{opt}</span>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
+/* Step 3: Industry + Revenue — tappable cards, no dropdowns */
 function Step3Business({
   industry,
   revenueRange,
-  marketingSpend,
   onIndustryChange,
   onRevenueChange,
-  onSpendChange,
 }: {
   industry: string
   revenueRange: string
-  marketingSpend: string
   onIndustryChange: (val: string) => void
   onRevenueChange: (val: string) => void
-  onSpendChange: (val: string) => void
 }) {
   return (
     <div>
@@ -345,98 +228,53 @@ function Step3Business({
       </h3>
       <p className="text-sm text-[#9CA3AF] mb-6">Helps us tailor your audit.</p>
 
-      <div className="flex flex-col gap-5">
-        {/* Industry dropdown */}
+      <div className="flex flex-col gap-6">
+        {/* Industry — tappable card grid */}
         <div>
-          <label className="block text-sm text-[#9CA3AF] mb-2">Industry</label>
-          <select
-            value={industry}
-            onChange={(e) => onIndustryChange(e.target.value)}
-            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors appearance-none cursor-pointer"
-            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%239CA3AF' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 16px center' }}
-          >
-            <option value="" disabled className="bg-[#33333F] text-[#6B7280]">Select your industry</option>
-            {industryOptions.map((opt) => (
-              <option key={opt} value={opt} className="bg-[#33333F] text-white">{opt}</option>
-            ))}
-          </select>
+          <label className="block text-sm text-[#9CA3AF] mb-3">What's your industry?</label>
+          <div className="grid grid-cols-2 gap-2">
+            {industryOptions.map((opt) => {
+              const active = industry === opt
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => onIndustryChange(opt)}
+                  className={`text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 ${
+                    active
+                      ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
+                      : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
+                  }`}
+                >
+                  <span className="text-sm text-white">{opt}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        {/* Revenue Range */}
-        <RadioGroup
-          label="Monthly Revenue Range"
-          options={revenueOptions}
-          value={revenueRange}
-          onChange={onRevenueChange}
-        />
-
-        {/* Marketing Spend */}
-        <RadioGroup
-          label="Current Marketing Spend/Month"
-          options={marketingSpendOptions}
-          value={marketingSpend}
-          onChange={onSpendChange}
-        />
-      </div>
-    </div>
-  )
-}
-
-function Step4Tools({
-  toolsUsed,
-  triedBefore,
-  urgency,
-  onToggleTool,
-  onToggleTried,
-  onUrgencyChange,
-}: {
-  toolsUsed: string[]
-  triedBefore: string[]
-  urgency: number
-  onToggleTool: (opt: string) => void
-  onToggleTried: (opt: string) => void
-  onUrgencyChange: (val: number) => void
-}) {
-  return (
-    <div>
-      <h3 className="text-lg font-semibold text-white mb-1">
-        What have you tried so far?
-      </h3>
-      <p className="text-sm text-[#9CA3AF] mb-6">No judgement. We just need context.</p>
-
-      <div className="flex flex-col gap-5">
-        <CheckboxGroup
-          label="Current Tools"
-          options={toolOptions}
-          selected={toolsUsed}
-          onToggle={onToggleTool}
-        />
-
-        <CheckboxGroup
-          label="Previous Attempts"
-          options={triedOptions}
-          selected={triedBefore}
-          onToggle={onToggleTried}
-        />
-
-        {/* Urgency slider */}
+        {/* Revenue — tappable cards */}
         <div>
-          <label className="block text-sm text-[#9CA3AF] mb-2">
-            How urgent is fixing this?
-          </label>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-[#6B7280] whitespace-nowrap">Not urgent</span>
-            <input
-              type="range"
-              min={1}
-              max={10}
-              step={1}
-              value={urgency}
-              onChange={(e) => onUrgencyChange(Number(e.target.value))}
-              className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer accent-[#D5EB4B] bg-[#3E3E48]"
-            />
-            <span className="text-xs text-[#6B7280] whitespace-nowrap">Critical</span>
-            <span className="text-lg font-bold text-[#D5EB4B] min-w-[2ch] text-center">{urgency}</span>
+          <label className="block text-sm text-[#9CA3AF] mb-3">Monthly revenue range</label>
+          <div className="flex flex-col gap-2">
+            {revenueOptions.map((opt) => {
+              const active = revenueRange === opt.label
+              return (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => onRevenueChange(opt.label)}
+                  className={`flex items-center justify-between text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 ${
+                    active
+                      ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
+                      : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
+                  }`}
+                >
+                  <span className="text-sm font-medium text-white">{opt.label}</span>
+                  <span className="text-xs text-[#6B7280]">{opt.sub}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
@@ -444,54 +282,102 @@ function Step4Tools({
   )
 }
 
-interface Step5Props {
-  name: string
-  email: string
-  phone: string
-  businessName: string
-  formError: string
-  onNameChange: (val: string) => void
-  onEmailChange: (val: string) => void
-  onPhoneChange: (val: string) => void
-  onBusinessNameChange: (val: string) => void
-}
-
-function Step5Contact({
+/* Step 4: Contact — name, email, WhatsApp, business name, consent */
+function Step4Contact({
   name,
   email,
   phone,
   businessName,
+  whatsappConsent,
   formError,
   onNameChange,
   onEmailChange,
   onPhoneChange,
   onBusinessNameChange,
-}: Step5Props) {
-  const fields = [
-    { label: 'Name', value: name, set: onNameChange, type: 'text', placeholder: 'Your full name' },
-    { label: 'Email', value: email, set: onEmailChange, type: 'email', placeholder: 'you@company.com' },
-    { label: 'Phone', value: phone, set: onPhoneChange, type: 'tel', placeholder: '98765 43210' },
-    { label: 'Business Name', value: businessName, set: onBusinessNameChange, type: 'text', placeholder: 'Your company name' },
-  ] as const
-
+  onConsentChange,
+}: {
+  name: string
+  email: string
+  phone: string
+  businessName: string
+  whatsappConsent: boolean
+  formError: string
+  onNameChange: (val: string) => void
+  onEmailChange: (val: string) => void
+  onPhoneChange: (val: string) => void
+  onBusinessNameChange: (val: string) => void
+  onConsentChange: (val: boolean) => void
+}) {
   return (
     <div>
-      <h3 className="text-lg font-semibold text-white mb-6">
-        Last step. Where should we send your audit?
+      <h3 className="text-lg font-semibold text-white mb-1">
+        Almost done. Where should we send your audit?
       </h3>
+      <p className="text-sm text-[#9CA3AF] mb-6">We'll WhatsApp your custom automation roadmap.</p>
       <div className="flex flex-col gap-4">
-        {fields.map((f) => (
-          <div key={f.label}>
-            <label className="block text-sm text-[#9CA3AF] mb-1">{f.label}</label>
-            <input
-              type={f.type}
-              value={f.value}
-              onChange={(e) => f.set(e.target.value)}
-              placeholder={f.placeholder}
-              className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
-            />
-          </div>
-        ))}
+        <div>
+          <label className="block text-sm text-[#9CA3AF] mb-1">Your Name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            placeholder="Full name"
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-[#9CA3AF] mb-1">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            placeholder="you@company.com"
+            required
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-[#9CA3AF] mb-1">WhatsApp Number</label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => onPhoneChange(e.target.value)}
+            placeholder="98765 43210"
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+          />
+        </div>
+        <div>
+          <label className="block text-sm text-[#9CA3AF] mb-1">Business Name</label>
+          <input
+            type="text"
+            value={businessName}
+            onChange={(e) => onBusinessNameChange(e.target.value)}
+            placeholder="Your company name"
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+          />
+        </div>
+
+        {/* WhatsApp consent */}
+        <button
+          type="button"
+          onClick={() => onConsentChange(!whatsappConsent)}
+          className="flex items-start gap-3 text-left mt-1 cursor-pointer bg-transparent border-none p-0"
+        >
+          <span
+            className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+              whatsappConsent ? 'border-[#D5EB4B] bg-[#D5EB4B]' : 'border-[#4E4E56]'
+            }`}
+          >
+            {whatsappConsent && (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2.5 6L5 8.5L9.5 3.5" stroke="#0c0c10" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
+          <span className="text-sm text-[#9CA3AF]">
+            Send me my automation roadmap on WhatsApp
+          </span>
+        </button>
       </div>
 
       {formError && (
@@ -520,13 +406,12 @@ function ThankYou({ waitlistNum }: { waitlistNum: number }) {
           </svg>
         </div>
       </div>
-      <h3 className="text-2xl font-bold text-white mb-2">You're on the Waitlist!</h3>
+      <h3 className="text-2xl font-bold text-white mb-2">You're In!</h3>
       <p className="text-4xl font-bold text-[#D5EB4B] mb-3">#{waitlistNum}</p>
       <p className="text-sm text-[#9CA3AF] mb-6">
-        We'll review your submission and WhatsApp you within 24 hours.
+        Check your WhatsApp. Your automation roadmap is on its way.
       </p>
 
-      {/* What happens next */}
       <div className="bg-[rgba(213,235,75,0.05)] border border-[#3E3E48] rounded-2xl p-6 text-left">
         <h4 className="text-lg font-bold text-white mb-4">What happens next?</h4>
         <div className="space-y-4">
@@ -534,21 +419,21 @@ function ThankYou({ waitlistNum }: { waitlistNum: number }) {
             <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#D5EB4B] text-[#0c0c10] font-bold flex items-center justify-center text-sm">1</span>
             <div>
               <p className="text-sm font-medium text-white">WhatsApp confirmation</p>
-              <p className="text-xs text-[#9CA3AF]">You'll receive a message within minutes</p>
+              <p className="text-xs text-[#9CA3AF]">You'll get a message within minutes</p>
             </div>
           </div>
           <div className="flex gap-3">
             <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#D5EB4B] text-[#0c0c10] font-bold flex items-center justify-center text-sm">2</span>
             <div>
-              <p className="text-sm font-medium text-white">We review your business</p>
-              <p className="text-xs text-[#9CA3AF]">Our team manually audits your operations within 24 hours</p>
+              <p className="text-sm font-medium text-white">We audit your operations</p>
+              <p className="text-xs text-[#9CA3AF]">Manual review by our team within 24 hours</p>
             </div>
           </div>
           <div className="flex gap-3">
             <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[#D5EB4B] text-[#0c0c10] font-bold flex items-center justify-center text-sm">3</span>
             <div>
-              <p className="text-sm font-medium text-white">You get your audit report</p>
-              <p className="text-xs text-[#9CA3AF]">Custom automation roadmap delivered to your WhatsApp</p>
+              <p className="text-sm font-medium text-white">Custom roadmap on WhatsApp</p>
+              <p className="text-xs text-[#9CA3AF]">Exactly what to automate, how much it saves, and how fast</p>
             </div>
           </div>
         </div>
@@ -573,18 +458,13 @@ export default function QuizForm() {
   // step 3
   const [industry, setIndustry] = useState('')
   const [revenueRange, setRevenueRange] = useState('')
-  const [marketingSpend, setMarketingSpend] = useState('')
 
   // step 4
-  const [toolsUsed, setToolsUsed] = useState<string[]>([])
-  const [triedBefore, setTriedBefore] = useState<string[]>([])
-  const [urgency, setUrgency] = useState(5)
-
-  // step 5
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [businessName, setBusinessName] = useState('')
+  const [whatsappConsent, setWhatsappConsent] = useState(true)
   const [formError, setFormError] = useState('')
 
   // states
@@ -606,7 +486,7 @@ export default function QuizForm() {
     }
   }, [])
 
-  /* step 2 auto-advance */
+  /* step 2 auto-advance on tap */
   useEffect(() => {
     if (step === 2 && teamSize) {
       const t = setTimeout(() => {
@@ -620,18 +500,6 @@ export default function QuizForm() {
   /* toggle helpers */
   function toggleOption(opt: string) {
     setSelected((prev) =>
-      prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt],
-    )
-  }
-
-  function toggleTool(opt: string) {
-    setToolsUsed((prev) =>
-      prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt],
-    )
-  }
-
-  function toggleTried(opt: string) {
-    setTriedBefore((prev) =>
       prev.includes(opt) ? prev.filter((o) => o !== opt) : [...prev, opt],
     )
   }
@@ -650,25 +518,11 @@ export default function QuizForm() {
     }
     if (step === 3) {
       if (!industry) {
-        showToast('Please select your industry')
+        showToast('Pick your industry')
         return
       }
       if (!revenueRange) {
-        showToast('Please select your revenue range')
-        return
-      }
-      if (!marketingSpend) {
-        showToast('Please select your marketing spend')
-        return
-      }
-    }
-    if (step === 4) {
-      if (toolsUsed.length === 0) {
-        showToast('Select at least one tool (or "None of these")')
-        return
-      }
-      if (triedBefore.length === 0) {
-        showToast('Select at least one previous attempt')
+        showToast('Pick your revenue range')
         return
       }
     }
@@ -686,7 +540,9 @@ export default function QuizForm() {
   async function handleSubmit() {
     setFormError('')
     if (!name.trim()) { setFormError('Name is required'); return }
-    if (!email.trim() || !validateEmail(email)) { setFormError('Enter a valid email address'); return }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setFormError('Enter a valid email address'); return
+    }
     if (!phone.trim() || !validatePhone(phone)) { setFormError('Enter a valid 10-digit Indian mobile number'); return }
     if (!businessName.trim()) { setFormError('Business name is required'); return }
 
@@ -695,24 +551,20 @@ export default function QuizForm() {
     const areas = selected.map((s) => (s === 'Others' ? `Others: ${othersText}` : s))
     const payload = {
       name: name.trim(),
-      phone: cleanPhone(phone),
       email: email.trim(),
+      phone: cleanPhone(phone),
       business_name: businessName.trim(),
       automate_areas: areas.join(', '),
       team_size: teamSize,
       industry,
       revenue_range: revenueRange,
-      marketing_spend: marketingSpend,
-      tools_used: toolsUsed.join(', '),
-      tried_before: triedBefore.join(', '),
-      urgency,
-      source: 'automation-lp-v3',
+      whatsapp_consent: whatsappConsent,
+      source: 'automation-lp-v6',
       event_id: `lead_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       client_user_agent: navigator.userAgent,
       page_url: window.location.href,
       fbp: getFbpParam(),
       fbc: getFbcParam(),
-      // Behavioral data for GHL sync
       visit_count: parseInt(localStorage.getItem('zippy_visit_count') || '1', 10),
       time_on_page: Math.round((Date.now() - ((window as any).__pageLoadTime || Date.now())) / 1000),
       ...getUTMParams(),
@@ -726,22 +578,29 @@ export default function QuizForm() {
       )
     } catch { /* silent */ }
 
-    // webhook (fetch first, sendBeacon as fallback)
-    const url = 'https://zippyscale-api.vercel.app/api/quiz'
+    // webhook — Apps Script doesn't answer CORS preflight, so use text/plain
+    // (no preflight) + no-cors mode. sendBeacon is also text/plain by default.
+    const url = 'https://script.google.com/macros/s/AKfycbzzacqtwW_Wfk3EB-4WmCQrNFK92yeT2ziRNJvV4Ujy_468HHwCRHiGN0OkxTMLZyKJKQ/exec'
+    const body = JSON.stringify(payload)
+    let delivered = false
     try {
-      await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-    } catch {
+      delivered = navigator.sendBeacon(url, new Blob([body], { type: 'text/plain;charset=UTF-8' }))
+    } catch { /* fall through */ }
+    if (!delivered) {
       try {
-        navigator.sendBeacon(url, new Blob([JSON.stringify(payload)], { type: 'application/json' }))
+        await fetch(url, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body,
+          keepalive: true,
+        })
       } catch { /* silent */ }
     }
 
-    trackQuizSubmit({ lead_source: 'automation-lp-v3', event_id: payload.event_id })
-    setWaitlistNum(getWaitlistNumber())
+    trackQuizSubmit({ lead_source: 'automation-lp-v6', event_id: payload.event_id })
+    const num = await getWaitlistNumber()
+    setWaitlistNum(num)
     window.dispatchEvent(new Event('waitlist-updated'))
     setSubmitting(false)
     setDone(true)
@@ -755,11 +614,11 @@ export default function QuizForm() {
           <span className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#D5EB4B] inline-block">
             Start Here
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 whitespace-nowrap">
-            Find Out What You Can Automate&nbsp;(2&nbsp;Min)
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Find Out What You Can Automate
           </h2>
           <p className="text-[#9CA3AF]">
-            Answer 5 quick questions. Get a custom automation audit for your business.
+            4 quick taps. Get a custom automation audit for your business.
           </p>
         </ScrollReveal>
       </div>
@@ -783,7 +642,7 @@ export default function QuizForm() {
                   transition={{ duration: 0.3, ease: 'easeInOut' }}
                 >
                   {step === 1 && (
-                    <Step1
+                    <Step1Tasks
                       selected={selected}
                       othersText={othersText}
                       onToggle={toggleOption}
@@ -791,7 +650,7 @@ export default function QuizForm() {
                     />
                   )}
                   {step === 2 && (
-                    <Step2
+                    <Step2Team
                       teamSize={teamSize}
                       onSelect={setTeamSize}
                     />
@@ -800,33 +659,23 @@ export default function QuizForm() {
                     <Step3Business
                       industry={industry}
                       revenueRange={revenueRange}
-                      marketingSpend={marketingSpend}
                       onIndustryChange={setIndustry}
                       onRevenueChange={setRevenueRange}
-                      onSpendChange={setMarketingSpend}
                     />
                   )}
                   {step === 4 && (
-                    <Step4Tools
-                      toolsUsed={toolsUsed}
-                      triedBefore={triedBefore}
-                      urgency={urgency}
-                      onToggleTool={toggleTool}
-                      onToggleTried={toggleTried}
-                      onUrgencyChange={setUrgency}
-                    />
-                  )}
-                  {step === 5 && (
-                    <Step5Contact
+                    <Step4Contact
                       name={name}
                       email={email}
                       phone={phone}
                       businessName={businessName}
+                      whatsappConsent={whatsappConsent}
                       formError={formError}
                       onNameChange={setName}
                       onEmailChange={setEmail}
                       onPhoneChange={setPhone}
                       onBusinessNameChange={setBusinessName}
+                      onConsentChange={setWhatsappConsent}
                     />
                   )}
                 </motion.div>
@@ -846,7 +695,7 @@ export default function QuizForm() {
                   <span />
                 )}
 
-                {step < 5 ? (
+                {step < 4 && step !== 2 ? (
                   <button
                     type="button"
                     onClick={goNext}
@@ -854,7 +703,7 @@ export default function QuizForm() {
                   >
                     Next &rarr;
                   </button>
-                ) : (
+                ) : step === 4 ? (
                   <button
                     type="button"
                     onClick={handleSubmit}
@@ -863,7 +712,7 @@ export default function QuizForm() {
                   >
                     {submitting ? 'Submitting...' : 'Get My Free Audit'}
                   </button>
-                )}
+                ) : null}
               </div>
             </>
           )}

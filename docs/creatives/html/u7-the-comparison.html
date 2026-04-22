@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; position: relative; overflow: hidden;">
+
+  <!-- Split background -->
+  <div style="position: absolute; top: 0; left: 0; width: 540px; height: 100%; background: radial-gradient(circle at 80% 30%, rgba(229,62,62,0.08) 0%, transparent 50%), #2A2A35;"></div>
+  <div style="position: absolute; top: 0; right: 0; width: 540px; height: 100%; background: radial-gradient(circle at 20% 30%, rgba(213,235,75,0.1) 0%, transparent 50%), #FFFDF7;"></div>
+
+  <!-- Diagonal divider -->
+  <div style="position: absolute; top: 0; left: 520px; width: 40px; height: 100%; background: linear-gradient(90deg, #2A2A35, #FFFDF7); z-index: 2;"></div>
+
+  <!-- Grid overlay on dark side -->
+  <div style="position: absolute; top: 0; left: 0; width: 540px; height: 100%; background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 30px 30px;"></div>
+
+  <!-- Grid overlay on light side -->
+  <div style="position: absolute; top: 0; right: 0; width: 540px; height: 100%; background-image: radial-gradient(rgba(42,42,53,0.04) 1px, transparent 1px); background-size: 30px 30px;"></div>
+
+  <!-- Geometric accents -->
+  <div style="position: absolute; top: -60px; left: -60px; width: 200px; height: 200px; border: 2px solid rgba(229,62,62,0.1); border-radius: 50%;"></div>
+  <div style="position: absolute; bottom: -60px; right: -60px; width: 200px; height: 200px; border: 2px solid rgba(213,235,75,0.15); border-radius: 50%;"></div>
+
+  <!-- Logo (center top) -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 110px; height: auto; z-index: 5;">
+
+  <!-- VS badge -->
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 70px; height: 70px; background: #D5EB4B; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 10; box-shadow: 0 0 30px rgba(213,235,75,0.4);">
+    <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #1A1A2E;">VS</span>
+  </div>
+
+  <!-- Left side: Your business -->
+  <div style="position: absolute; top: 160px; left: 40px; width: 460px; z-index: 5;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 12px;">Your ₹10Cr Business</div>
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 32px; color: #fff; margin-bottom: 40px;">Manual<br>Operations</h2>
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; background: rgba(229,62,62,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📋</div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(255,255,255,0.7);">Excel tracking</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(229,62,62,0.7);">Error-prone</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; background: rgba(229,62,62,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📞</div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(255,255,255,0.7);">Manual follow-ups</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(229,62,62,0.7);">60% missed</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; background: rgba(229,62,62,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📊</div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(255,255,255,0.7);">Reports take 3 days</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(229,62,62,0.7);">Always outdated</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; background: rgba(229,62,62,0.15); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">👥</div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(255,255,255,0.7);">15 employees</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(229,62,62,0.7);">50% on busywork</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right side: Their business -->
+  <div style="position: absolute; top: 160px; right: 40px; width: 440px; z-index: 5;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: rgba(42,42,53,0.4); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 12px;">Their ₹10Cr Business</div>
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 32px; color: #2A2A35; margin-bottom: 40px;">AI-Powered<br>Operations</h2>
+
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; background: rgba(213,235,75,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">⚡</div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: #2A2A35;">Auto CRM updates</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #B8CF2E;">Zero errors</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; background: rgba(213,235,75,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🤖</div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: #2A2A35;">AI follow-ups</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #B8CF2E;">100% covered</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; background: rgba(213,235,75,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">📈</div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: #2A2A35;">Real-time dashboards</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #B8CF2E;">Always live</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="width: 44px; height: 44px; background: rgba(213,235,75,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🚀</div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: #2A2A35;">8 employees</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #B8CF2E;">100% on growth</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA bar -->
+  <div style="position: absolute; bottom: 80px; left: 0; right: 0; display: flex; justify-content: center; z-index: 10;">
+    <div style="background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 4px 20px rgba(213,235,75,0.3);">Which side are you on? Take the Quiz →</div>
+  </div>
+
+</div>
+</body>
+</html>

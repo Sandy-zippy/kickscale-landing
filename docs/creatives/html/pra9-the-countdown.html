@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 50% 40%, rgba(229,62,62,0.08) 0%, transparent 50%), radial-gradient(circle at 50% 70%, rgba(213,235,75,0.06) 0%, transparent 40%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Pulsing concentric circles -->
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 1000px; height: 1000px; border: 1px solid rgba(229,62,62,0.04); border-radius: 50%;"></div>
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 800px; height: 800px; border: 1px solid rgba(229,62,62,0.06); border-radius: 50%;"></div>
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 600px; height: 600px; border: 1px solid rgba(229,62,62,0.08); border-radius: 50%;"></div>
+
+  <!-- Dot grid -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+  <!-- Accent bar -->
+  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #E53E3E 0%, #D5EB4B 100%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Label -->
+  <div style="position: absolute; top: 180px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #E53E3E; text-transform: uppercase; letter-spacing: 4px;">Limited Availability</div>
+  </div>
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 220px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 44px; line-height: 1.15; color: #FFFFFF;">
+      Only <span style="color: #E53E3E;">3 spots</span> remaining<br>this quarter.
+    </h1>
+  </div>
+
+  <!-- Digital countdown timer -->
+  <div style="position: absolute; top: 400px; left: 50%; transform: translateX(-50%); z-index: 5;">
+    <div style="display: flex; gap: 20px;">
+      <!-- Days -->
+      <div style="text-align: center;">
+        <div style="background: rgba(0,0,0,0.4); border: 2px solid rgba(229,62,62,0.3); border-radius: 16px; padding: 24px 32px; min-width: 120px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 72px; color: #E53E3E; line-height: 1;">07</div>
+        </div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 12px; text-transform: uppercase; letter-spacing: 2px;">Days</div>
+      </div>
+      <!-- Separator -->
+      <div style="display: flex; align-items: center; padding-bottom: 30px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 48px; color: rgba(229,62,62,0.5);">:</div>
+      </div>
+      <!-- Hours -->
+      <div style="text-align: center;">
+        <div style="background: rgba(0,0,0,0.4); border: 2px solid rgba(229,62,62,0.3); border-radius: 16px; padding: 24px 32px; min-width: 120px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 72px; color: #E53E3E; line-height: 1;">14</div>
+        </div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 12px; text-transform: uppercase; letter-spacing: 2px;">Hours</div>
+      </div>
+      <!-- Separator -->
+      <div style="display: flex; align-items: center; padding-bottom: 30px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 48px; color: rgba(229,62,62,0.5);">:</div>
+      </div>
+      <!-- Minutes -->
+      <div style="text-align: center;">
+        <div style="background: rgba(0,0,0,0.4); border: 2px solid rgba(229,62,62,0.3); border-radius: 16px; padding: 24px 32px; min-width: 120px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 72px; color: #E53E3E; line-height: 1;">32</div>
+        </div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 12px; text-transform: uppercase; letter-spacing: 2px;">Minutes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spots indicator -->
+  <div style="position: absolute; top: 700px; left: 120px; right: 120px; z-index: 5;">
+    <div style="display: flex; gap: 16px; justify-content: center;">
+      <div style="width: 80px; height: 80px; background: rgba(229,62,62,0.15); border: 2px solid rgba(229,62,62,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(229,62,62,0.5); text-decoration: line-through;">Taken</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(229,62,62,0.15); border: 2px solid rgba(229,62,62,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(229,62,62,0.5); text-decoration: line-through;">Taken</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(229,62,62,0.15); border: 2px solid rgba(229,62,62,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(229,62,62,0.5); text-decoration: line-through;">Taken</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(229,62,62,0.15); border: 2px solid rgba(229,62,62,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(229,62,62,0.5); text-decoration: line-through;">Taken</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(229,62,62,0.15); border: 2px solid rgba(229,62,62,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(229,62,62,0.5); text-decoration: line-through;">Taken</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(229,62,62,0.15); border: 2px solid rgba(229,62,62,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(229,62,62,0.5); text-decoration: line-through;">Taken</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(229,62,62,0.15); border: 2px solid rgba(229,62,62,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(229,62,62,0.5); text-decoration: line-through;">Taken</span>
+      </div>
+      <!-- Open spots -->
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.1); border: 2px solid #D5EB4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.2);">
+        <span style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: #D5EB4B;">Open</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.1); border: 2px solid #D5EB4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.2);">
+        <span style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: #D5EB4B;">Open</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.1); border: 2px solid #D5EB4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.2);">
+        <span style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: #D5EB4B;">Open</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 0 25px rgba(213,235,75,0.3);">Claim Your Spot →</div>
+  </div>
+
+</div>
+</body>
+</html>

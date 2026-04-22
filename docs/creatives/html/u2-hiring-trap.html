@@ -3,48 +3,156 @@
 <head>
 <meta charset="UTF-8">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@700&display=swap');
 * { margin: 0; padding: 0; box-sizing: border-box; }
 </style>
 </head>
-<body style="background: #FFFDF7; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
-<div style="width: 1080px; height: 1080px; background: #FFFDF7; position: relative; overflow: hidden;">
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; position: relative; overflow: hidden;">
 
-  <!-- Geometric accents -->
-  <div style="position: absolute; bottom: 350px; right: -40px; width: 200px; height: 200px; border: 2px solid rgba(42,42,53,0.06); border-radius: 50%;"></div>
-  <div style="position: absolute; top: 200px; left: -60px; width: 160px; height: 140px; border: 2px solid rgba(42,42,53,0.04); transform: rotate(45deg);"></div>
-  <div style="position: absolute; top: 350px; right: 80px; width: 8px; height: 8px; background: #D5EB4B; border-radius: 50%;"></div>
+  <!-- Left half: red-tinted "Before" -->
+  <div style="position: absolute; top: 0; left: 0; width: 540px; height: 100%; background: radial-gradient(circle at 80% 30%, rgba(229,62,62,0.12) 0%, transparent 50%), #2A2A35;"></div>
+  <!-- Right half: lime-tinted "After" -->
+  <div style="position: absolute; top: 0; right: 0; width: 540px; height: 100%; background: radial-gradient(circle at 20% 30%, rgba(213,235,75,0.12) 0%, transparent 50%), #2A2A35;"></div>
 
-  <!-- Accent bar -->
-  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #D5EB4B 0%, rgba(213,235,75,0.2) 100%);"></div>
+  <!-- Grid overlay -->
+  <div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 60px 60px;"></div>
+
+  <!-- Center divider line -->
+  <div style="position: absolute; top: 140px; left: 50%; width: 2px; height: 800px; background: linear-gradient(180deg, transparent, rgba(255,255,255,0.1), transparent); z-index: 5;"></div>
 
   <!-- Logo -->
-  <img src="../../../brand-assets/zippyscale-logo-transparent.png" style="position: absolute; top: 50px; left: 60px; width: 160px; height: auto;">
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
 
-  <!-- Main headline -->
-  <div style="position: absolute; top: 170px; left: 60px; right: 60px;">
-    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 50px; line-height: 1.15; color: #1A1A2E; letter-spacing: -1px;">
-      You hired 5 people<br>last year. Output<br>didn't change.
+  <!-- Main headline centered -->
+  <div style="position: absolute; top: 50px; right: 60px; z-index: 10; text-align: right;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 36px; color: #FFFFFF; line-height: 1.2;">
+      You hired 5 people.<br>Output didn't change.
     </h1>
   </div>
 
-  <!-- Stat -->
-  <div style="position: absolute; top: 460px; left: 60px;">
-    <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 88px; color: #E53E3E; line-height: 1;">0%</div>
-    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 28px; color: #E53E3E; margin-top: 4px;">growth</div>
+  <!-- BEFORE label -->
+  <div style="position: absolute; top: 160px; left: 60px; z-index: 10;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px; color: #E53E3E; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 8px;">Before: More People</div>
+    <div style="width: 60px; height: 3px; background: #E53E3E; border-radius: 2px;"></div>
   </div>
 
-  <!-- Body text -->
-  <div style="position: absolute; top: 630px; left: 60px; right: 60px;">
-    <p style="font-family: 'Inter', sans-serif; font-weight: 400; font-size: 26px; line-height: 1.5; color: rgba(42,42,53,0.7);">
-      More people ≠ more output. Your team is stuck in Excel, WhatsApp, and manual follow-ups. The problem isn't people.
-    </p>
+  <!-- Before: Headcount icons growing -->
+  <div style="position: absolute; top: 220px; left: 60px; width: 440px; z-index: 10;">
+    <!-- Year 1 -->
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: rgba(229,62,62,0.6); width: 60px;">2023</div>
+      <div style="display: flex; gap: 8px;">
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(255,255,255,0.3);">3 people</div>
+    </div>
+    <!-- Year 2 -->
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: rgba(229,62,62,0.7); width: 60px;">2024</div>
+      <div style="display: flex; gap: 8px;">
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(255,255,255,0.3);">5 people</div>
+    </div>
+    <!-- Year 3 -->
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 20px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #E53E3E; width: 60px;">2025</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; width: 360px;">
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+        <div style="width: 36px; height: 36px; background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;"><span style="font-size: 16px; color: #E53E3E;">&#9673;</span></div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(255,255,255,0.3);">8 people</div>
+    </div>
+
+    <!-- Cost bar growing (red) -->
+    <div style="margin-top: 12px; margin-bottom: 8px;">
+      <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.3); margin-bottom: 6px;">SALARY COST</div>
+      <div style="width: 100%; height: 28px; background: rgba(229,62,62,0.08); border-radius: 4px; overflow: hidden;">
+        <div style="width: 90%; height: 100%; background: linear-gradient(90deg, rgba(229,62,62,0.4), #E53E3E); border-radius: 4px;"></div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #E53E3E; margin-top: 8px;">₹96L/yr &uarr;</div>
+    </div>
+    <!-- Output bar flat (red) -->
+    <div style="margin-top: 12px;">
+      <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.3); margin-bottom: 6px;">OUTPUT</div>
+      <div style="width: 100%; height: 28px; background: rgba(229,62,62,0.08); border-radius: 4px; overflow: hidden;">
+        <div style="width: 30%; height: 100%; background: rgba(229,62,62,0.3); border-radius: 4px;"></div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: rgba(229,62,62,0.6); margin-top: 8px;">0% growth</div>
+    </div>
   </div>
 
-  <!-- CTA Button -->
-  <div style="position: absolute; bottom: 260px; left: 60px;">
-    <div style="display: inline-block; background: #D5EB4B; border-radius: 12px; padding: 20px 48px; border-radius: 8px;">
-      <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #1A1A2E;">See What's Really Wrong</span>
+  <!-- AFTER label -->
+  <div style="position: absolute; top: 160px; right: 60px; z-index: 10; text-align: right;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px; color: #D5EB4B; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 8px;">After: Better Systems</div>
+    <div style="width: 60px; height: 3px; background: #D5EB4B; border-radius: 2px; margin-left: auto;"></div>
+  </div>
+
+  <!-- After: Same headcount, massive output -->
+  <div style="position: absolute; top: 220px; right: 60px; width: 440px; z-index: 10;">
+    <!-- Same 3 people -->
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; justify-content: flex-end;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(255,255,255,0.4);">Same 3 people</div>
+      <div style="display: flex; gap: 8px;">
+        <div style="width: 44px; height: 44px; background: rgba(213,235,75,0.15); border: 2px solid rgba(213,235,75,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.15);"><span style="font-size: 18px; color: #D5EB4B;">&#9673;</span></div>
+        <div style="width: 44px; height: 44px; background: rgba(213,235,75,0.15); border: 2px solid rgba(213,235,75,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.15);"><span style="font-size: 18px; color: #D5EB4B;">&#9673;</span></div>
+        <div style="width: 44px; height: 44px; background: rgba(213,235,75,0.15); border: 2px solid rgba(213,235,75,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.15);"><span style="font-size: 18px; color: #D5EB4B;">&#9673;</span></div>
+      </div>
+    </div>
+
+    <!-- AI assistants -->
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 28px; justify-content: flex-end;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(213,235,75,0.5);">+ AI systems</div>
+      <div style="display: flex; gap: 6px;">
+        <div style="width: 28px; height: 28px; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: #D5EB4B;">&#9881;</span></div>
+        <div style="width: 28px; height: 28px; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: #D5EB4B;">&#9881;</span></div>
+        <div style="width: 28px; height: 28px; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: #D5EB4B;">&#9881;</span></div>
+        <div style="width: 28px; height: 28px; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: #D5EB4B;">&#9881;</span></div>
+        <div style="width: 28px; height: 28px; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center;"><span style="font-size: 12px; color: #D5EB4B;">&#9881;</span></div>
+      </div>
+    </div>
+
+    <!-- Cost bar (flat, low) -->
+    <div style="margin-top: 12px; margin-bottom: 8px;">
+      <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.3); margin-bottom: 6px;">SALARY COST</div>
+      <div style="width: 100%; height: 28px; background: rgba(213,235,75,0.06); border-radius: 4px; overflow: hidden;">
+        <div style="width: 35%; height: 100%; background: linear-gradient(90deg, rgba(213,235,75,0.3), rgba(213,235,75,0.5)); border-radius: 4px;"></div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #D5EB4B; margin-top: 8px;">₹36L/yr (flat)</div>
+    </div>
+    <!-- Output bar (massive) -->
+    <div style="margin-top: 12px;">
+      <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.3); margin-bottom: 6px;">OUTPUT</div>
+      <div style="width: 100%; height: 28px; background: rgba(213,235,75,0.06); border-radius: 4px; overflow: hidden;">
+        <div style="width: 95%; height: 100%; background: linear-gradient(90deg, #B8CF2E, #D5EB4B); border-radius: 4px; box-shadow: 0 0 20px rgba(213,235,75,0.3);"></div>
+      </div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 32px; color: #D5EB4B; margin-top: 8px;">10x growth &uarr;</div>
+    </div>
+
+    <!-- Glassmorphism result card -->
+    <div style="margin-top: 28px; background: rgba(213,235,75,0.06); backdrop-filter: blur(10px); border: 1px solid rgba(213,235,75,0.2); border-radius: 14px; padding: 20px 24px; text-align: center;">
+      <div style="font-family: 'Inter', sans-serif; font-size: 15px; color: rgba(255,255,255,0.5); margin-bottom: 6px;">Net savings</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 36px; color: #D5EB4B;">₹60L/yr</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 55px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; padding: 20px 48px; border-radius: 12px; box-shadow: 0 0 30px rgba(213,235,75,0.2);">
+      <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #2A2A35;">See What's Really Wrong &rarr;</span>
     </div>
   </div>
 

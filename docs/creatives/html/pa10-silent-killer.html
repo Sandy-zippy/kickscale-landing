@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 50% 40%, rgba(229,62,62,0.12) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(213,235,75,0.06) 0%, transparent 40%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Dramatic gradient overlay -->
+  <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(42,42,53,0.3) 0%, transparent 30%, transparent 70%, rgba(42,42,53,0.5) 100%);"></div>
+
+  <!-- Subtle line pattern -->
+  <div style="position: absolute; inset: 0; background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 60px); background-size: 100% 60px;"></div>
+
+  <!-- Geometric accents -->
+  <div style="position: absolute; top: -100px; left: -100px; width: 400px; height: 400px; border: 1px solid rgba(229,62,62,0.06); border-radius: 50%;"></div>
+  <div style="position: absolute; bottom: -80px; right: -80px; width: 300px; height: 300px; border: 1px solid rgba(229,62,62,0.04); border-radius: 50%;"></div>
+
+  <!-- Red accent bar -->
+  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #E53E3E 0%, rgba(229,62,62,0.1) 100%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Small label -->
+  <div style="position: absolute; top: 180px; left: 60px; z-index: 5;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: #E53E3E; text-transform: uppercase; letter-spacing: 3px;">The Silent Killer</div>
+  </div>
+
+  <!-- Giant percentage -->
+  <div style="position: absolute; top: 240px; left: 60px; right: 60px; z-index: 5;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 200px; color: #E53E3E; line-height: 1; opacity: 0.9;">23%</div>
+  </div>
+
+  <!-- Downward arrow visualization -->
+  <div style="position: absolute; top: 460px; right: 120px; z-index: 5;">
+    <svg width="120" height="160" viewBox="0 0 120 160">
+      <defs>
+        <linearGradient id="arrowGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#E53E3E" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#E53E3E" stop-opacity="0.2"/>
+        </linearGradient>
+      </defs>
+      <path d="M60 0 L60 120 L30 120 L60 155 L90 120 L60 120" fill="url(#arrowGrad)"/>
+    </svg>
+  </div>
+
+  <!-- Subheadline -->
+  <div style="position: absolute; top: 520px; left: 60px; right: 300px; z-index: 5;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 40px; line-height: 1.2; color: #FFFFFF;">
+      of your revenue<br>is walking out<br>the door.
+    </h1>
+    <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 28px; color: rgba(255,255,255,0.3); margin-top: 16px;">
+      Every. Single. Month.
+    </div>
+  </div>
+
+  <!-- Stat breakdown -->
+  <div style="position: absolute; bottom: 200px; left: 60px; right: 60px; display: flex; gap: 30px; z-index: 5;">
+    <div style="flex: 1; background: rgba(229,62,62,0.08); border: 1px solid rgba(229,62,62,0.15); border-radius: 12px; padding: 20px; text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #E53E3E;">₹23L</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px;">Lost per ₹1Cr revenue</div>
+    </div>
+    <div style="flex: 1; background: rgba(229,62,62,0.08); border: 1px solid rgba(229,62,62,0.15); border-radius: 12px; padding: 20px; text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #E53E3E;">Missed leads</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px;">No follow-up system</div>
+    </div>
+    <div style="flex: 1; background: rgba(229,62,62,0.08); border: 1px solid rgba(229,62,62,0.15); border-radius: 12px; padding: 20px; text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #E53E3E;">Invisible</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px;">Until you audit it</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; display: flex; align-items: center; gap: 24px; z-index: 10;">
+    <div style="background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px;">Stop the Bleed →</div>
+    <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4);">Free AI Operations Audit</div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -7,65 +7,112 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 </style>
 </head>
-<body style="margin:0;padding:0;background: #FFFDF7;">
-<div style="width:1080px;height:1080px;background:#FFFDF7;position:relative;overflow:hidden;font-family:'Inter',sans-serif;">
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 60% 50%, rgba(213,235,75,0.1) 0%, transparent 50%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Dot grid -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(213,235,75,0.04) 1px, transparent 1px); background-size: 40px 40px;"></div>
 
   <!-- Logo -->
-  <img src="../../../brand-assets/zippyscale-logo-transparent.png" style="position:absolute;top:170px;left:70px;width:140px;height:auto;z-index:10;">
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
 
   <!-- Headline -->
-  <div style="position:absolute;top:230px;left:70px;right:70px;z-index:10;">
-    <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:42px;color: #1A1A2E;line-height:1.2;">
-      Here's what 10 businesses get this quarter. <span style="color:#6B8A00;">For free.</span>
+  <div style="position: absolute; top: 130px; left: 60px; right: 400px; z-index: 10;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 42px; color: #FFFFFF; line-height: 1.15;">
+      Here's what 10 businesses get this quarter. <span style="color: #D5EB4B;">For free.</span>
     </h1>
   </div>
 
-  <!-- Checklist -->
-  <div style="position:absolute;top:380px;left:70px;right:70px;z-index:10;">
-    <div style="display:flex;flex-direction:column;gap:22px;">
+  <!-- 5 Deliverable cards fanned out -->
+  <div style="position: absolute; top: 120px; right: 30px; width: 420px; height: 800px; z-index: 10;">
 
-      <div style="display:flex;align-items:center;gap:16px;background:#FFFFFF;border:1px solid rgba(42,42,53,0.08);border-radius:12px;padding:20px 24px;">
-        <div style="width:36px;height:36px;background:#D5EB4B;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <span style="font-size:18px;color:#2A2A35;font-weight:700;">✓</span>
+    <!-- Card 5 (bottom of stack) -->
+    <div style="position: absolute; top: 280px; left: 40px; width: 340px; transform: rotate(8deg); z-index: 1;">
+      <div style="background: rgba(255,255,255,0.04); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 48px; height: 48px; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <span style="font-size: 22px; color: #D5EB4B;">&#9201;</span>
+          </div>
+          <div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #fff;">Implementation Timeline</div>
+            <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 2px;">Week-by-week deployment plan</div>
+          </div>
         </div>
-        <span style="font-size:21px;color:#2A2A35;font-weight:500;">Full operations audit</span>
       </div>
+    </div>
 
-      <div style="display:flex;align-items:center;gap:16px;background:#FFFFFF;border:1px solid rgba(42,42,53,0.08);border-radius:12px;padding:20px 24px;">
-        <div style="width:36px;height:36px;background:#D5EB4B;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <span style="font-size:18px;color:#2A2A35;font-weight:700;">✓</span>
+    <!-- Card 4 -->
+    <div style="position: absolute; top: 210px; left: 30px; width: 340px; transform: rotate(4deg); z-index: 2;">
+      <div style="background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 48px; height: 48px; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <span style="font-size: 22px; color: #D5EB4B;">&#9881;</span>
+          </div>
+          <div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #fff;">Tool Recommendations</div>
+            <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 2px;">Best-fit tools for your stack</div>
+          </div>
         </div>
-        <span style="font-size:21px;color:#2A2A35;font-weight:500;">Custom automation roadmap</span>
       </div>
+    </div>
 
-      <div style="display:flex;align-items:center;gap:16px;background:#FFFFFF;border:1px solid rgba(42,42,53,0.08);border-radius:12px;padding:20px 24px;">
-        <div style="width:36px;height:36px;background:#D5EB4B;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <span style="font-size:18px;color:#2A2A35;font-weight:700;">✓</span>
+    <!-- Card 3 -->
+    <div style="position: absolute; top: 140px; left: 20px; width: 340px; transform: rotate(0deg); z-index: 3;">
+      <div style="background: rgba(255,255,255,0.06); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 48px; height: 48px; background: rgba(213,235,75,0.12); border: 1px solid rgba(213,235,75,0.25); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <span style="font-size: 22px; color: #D5EB4B;">&#8377;</span>
+          </div>
+          <div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #fff;">Exact ROI Projections</div>
+            <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 2px;">Savings calculated in rupees</div>
+          </div>
         </div>
-        <span style="font-size:21px;color:#2A2A35;font-weight:500;">Exact ROI projections (in ₹)</span>
       </div>
+    </div>
 
-      <div style="display:flex;align-items:center;gap:16px;background:#FFFFFF;border:1px solid rgba(42,42,53,0.08);border-radius:12px;padding:20px 24px;">
-        <div style="width:36px;height:36px;background:#D5EB4B;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <span style="font-size:18px;color:#2A2A35;font-weight:700;">✓</span>
+    <!-- Card 2 -->
+    <div style="position: absolute; top: 70px; left: 10px; width: 340px; transform: rotate(-4deg); z-index: 4;">
+      <div style="background: rgba(255,255,255,0.07); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 48px; height: 48px; background: rgba(213,235,75,0.12); border: 1px solid rgba(213,235,75,0.25); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <span style="font-size: 22px; color: #D5EB4B;">&#9776;</span>
+          </div>
+          <div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #fff;">Custom Automation Roadmap</div>
+            <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 2px;">Step-by-step automation plan</div>
+          </div>
         </div>
-        <span style="font-size:21px;color:#2A2A35;font-weight:500;">Tool recommendations</span>
       </div>
+    </div>
 
-      <div style="display:flex;align-items:center;gap:16px;background:#FFFFFF;border:1px solid rgba(42,42,53,0.08);border-radius:12px;padding:20px 24px;">
-        <div style="width:36px;height:36px;background:#D5EB4B;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <span style="font-size:18px;color:#2A2A35;font-weight:700;">✓</span>
+    <!-- Card 1 (top of stack) -->
+    <div style="position: absolute; top: 0; left: 0; width: 340px; transform: rotate(-8deg); z-index: 5;">
+      <div style="background: rgba(213,235,75,0.08); backdrop-filter: blur(10px); border: 2px solid rgba(213,235,75,0.25); border-radius: 16px; padding: 24px; box-shadow: 0 15px 50px rgba(0,0,0,0.4), 0 0 30px rgba(213,235,75,0.08);">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div style="width: 48px; height: 48px; background: rgba(213,235,75,0.15); border: 1px solid rgba(213,235,75,0.3); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <span style="font-size: 22px; color: #D5EB4B;">&#9745;</span>
+          </div>
+          <div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #D5EB4B;">Full Operations Audit</div>
+            <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 2px;">Complete workflow analysis</div>
+          </div>
         </div>
-        <span style="font-size:21px;color:#2A2A35;font-weight:500;">Implementation timeline</span>
       </div>
+    </div>
+  </div>
 
+  <!-- Bottom info -->
+  <div style="position: absolute; bottom: 130px; left: 60px; z-index: 10;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; color: rgba(255,255,255,0.5);">
+      2-minute quiz &middot; 48-hour delivery &middot; Zero payment
     </div>
   </div>
 
   <!-- CTA -->
-  <div style="position:absolute;top:790px;left:70px;z-index:10;">
-    <div style="display:inline-block;background: #D5EB4B; border-radius: 12px; padding: 20px 48px;">
-      <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#1A1A2E;">Apply Now — 10 Spots Only →</span>
+  <div style="position: absolute; bottom: 55px; left: 60px; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; padding: 22px 52px; border-radius: 12px; box-shadow: 0 0 30px rgba(213,235,75,0.25);">
+      <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #2A2A35;">Apply Now &rarr; 10 Spots Only</span>
     </div>
   </div>
 

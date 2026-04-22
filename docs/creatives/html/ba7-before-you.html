@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; position: relative; overflow: hidden;">
+
+  <!-- Split diagonal background -->
+  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(229,62,62,0.08) 0%, rgba(229,62,62,0.03) 45%, rgba(213,235,75,0.03) 55%, rgba(213,235,75,0.08) 100%), #2A2A35;"></div>
+
+  <!-- Grid pattern -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+  <!-- Diagonal divider line -->
+  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+    <svg width="1080" height="1080" viewBox="0 0 1080 1080" style="position: absolute;">
+      <line x1="540" y1="180" x2="540" y2="750" stroke="rgba(255,255,255,0.1)" stroke-width="2" stroke-dasharray="8,8"/>
+    </svg>
+  </div>
+
+  <!-- Geometric accents -->
+  <div style="position: absolute; top: -60px; left: -60px; width: 200px; height: 200px; border: 1.5px solid rgba(229,62,62,0.08); border-radius: 50%;"></div>
+  <div style="position: absolute; bottom: -60px; right: -60px; width: 200px; height: 200px; border: 1.5px solid rgba(213,235,75,0.08); border-radius: 50%;"></div>
+
+  <!-- Accent bar -->
+  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #E53E3E 0%, #D5EB4B 100%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- BEFORE side -->
+  <div style="position: absolute; top: 170px; left: 60px; width: 440px; z-index: 5;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: #E53E3E; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px;">Without Automation</div>
+
+    <!-- Abstract person silhouette - stressed -->
+    <div style="position: relative; width: 200px; height: 200px; margin: 0 auto 30px;">
+      <div style="width: 60px; height: 60px; background: rgba(229,62,62,0.15); border-radius: 50%; position: absolute; top: 0; left: 70px; border: 2px solid rgba(229,62,62,0.3);"></div>
+      <div style="width: 80px; height: 100px; background: rgba(229,62,62,0.1); border-radius: 20px 20px 0 0; position: absolute; top: 55px; left: 60px; border: 2px solid rgba(229,62,62,0.2); border-bottom: none;"></div>
+      <!-- Floating task bubbles around -->
+      <div style="position: absolute; top: -10px; left: 0; padding: 6px 10px; background: rgba(229,62,62,0.15); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 10px; color: rgba(229,62,62,0.7);">📧 237 emails</div>
+      <div style="position: absolute; top: 30px; right: 0; padding: 6px 10px; background: rgba(229,62,62,0.15); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 10px; color: rgba(229,62,62,0.7);">📊 Reports due</div>
+      <div style="position: absolute; bottom: 40px; left: -10px; padding: 6px 10px; background: rgba(229,62,62,0.15); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 10px; color: rgba(229,62,62,0.7);">📞 Missed calls</div>
+      <div style="position: absolute; bottom: 20px; right: -10px; padding: 6px 10px; background: rgba(229,62,62,0.15); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 10px; color: rgba(229,62,62,0.7);">🔥 Urgent</div>
+    </div>
+
+    <div style="text-align: center;">
+      <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px; color: #E53E3E;">Drowning in tasks</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 8px;">12-hour days. Still behind.</div>
+    </div>
+  </div>
+
+  <!-- AFTER side -->
+  <div style="position: absolute; top: 170px; right: 60px; width: 440px; z-index: 5;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: #D5EB4B; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px; text-align: right;">With AI Operations</div>
+
+    <!-- Abstract person silhouette - calm -->
+    <div style="position: relative; width: 200px; height: 200px; margin: 0 auto 30px;">
+      <div style="width: 60px; height: 60px; background: rgba(213,235,75,0.15); border-radius: 50%; position: absolute; top: 0; left: 70px; border: 2px solid rgba(213,235,75,0.3);"></div>
+      <div style="width: 80px; height: 100px; background: rgba(213,235,75,0.1); border-radius: 20px 20px 0 0; position: absolute; top: 55px; left: 60px; border: 2px solid rgba(213,235,75,0.2); border-bottom: none;"></div>
+      <!-- Status badges - all green -->
+      <div style="position: absolute; top: -10px; left: -20px; padding: 6px 10px; background: rgba(213,235,75,0.1); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 10px; color: rgba(213,235,75,0.7);">✓ Auto-replied</div>
+      <div style="position: absolute; top: 30px; right: -20px; padding: 6px 10px; background: rgba(213,235,75,0.1); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 10px; color: rgba(213,235,75,0.7);">✓ Live dashboards</div>
+      <div style="position: absolute; bottom: 40px; left: -20px; padding: 6px 10px; background: rgba(213,235,75,0.1); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 10px; color: rgba(213,235,75,0.7);">✓ AI follow-ups</div>
+      <div style="position: absolute; bottom: 20px; right: -20px; padding: 6px 10px; background: rgba(213,235,75,0.1); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 10px; color: rgba(213,235,75,0.7);">✓ All handled</div>
+    </div>
+
+    <div style="text-align: center;">
+      <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 24px; color: #D5EB4B;">Focused on growth</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 8px;">8-hour days. Ahead of schedule.</div>
+    </div>
+  </div>
+
+  <!-- Bottom message -->
+  <div style="position: absolute; bottom: 200px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <h2 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 36px; color: #fff;">
+      Which version of you<br>shows up tomorrow?
+    </h2>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 0 25px rgba(213,235,75,0.3);">Choose Growth →</div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #FFFDF7; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: linear-gradient(135deg, #FFFDF7 0%, #F5F0E8 50%, #FFFDF7 100%); position: relative; overflow: hidden;">
+
+  <!-- Subtle diagonal accent -->
+  <div style="position: absolute; top: -300px; right: -200px; width: 800px; height: 1600px; background: linear-gradient(135deg, transparent 45%, rgba(213,235,75,0.04) 50%, transparent 55%);"></div>
+
+  <!-- Dot pattern -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(42,42,53,0.04) 1px, transparent 1px); background-size: 35px 35px;"></div>
+
+  <!-- Geometric accents -->
+  <div style="position: absolute; top: -80px; left: -80px; width: 250px; height: 250px; border: 2px solid rgba(42,42,53,0.04); border-radius: 50%;"></div>
+  <div style="position: absolute; bottom: -40px; right: -40px; width: 180px; height: 180px; border: 2px solid rgba(213,235,75,0.1); border-radius: 50%;"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-transparent.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Label -->
+  <div style="position: absolute; top: 55px; right: 60px; z-index: 10;">
+    <div style="background: rgba(213,235,75,0.15); border: 1px solid rgba(213,235,75,0.3); border-radius: 8px; padding: 8px 16px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: #B8CF2E; text-transform: uppercase; letter-spacing: 2px;">Case Study</div>
+  </div>
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 60px; z-index: 5;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 42px; line-height: 1.15; color: #2A2A35;">
+      Manufacturing Co.<br>saved <span style="color: #B8CF2E;">₹38L/year.</span>
+    </h1>
+    <p style="font-family: 'Inter', sans-serif; font-size: 18px; color: rgba(42,42,53,0.5); margin-top: 16px;">12 processes automated. Same team size. 10x output.</p>
+  </div>
+
+  <!-- Case study results card -->
+  <div style="position: absolute; top: 380px; left: 60px; right: 60px; z-index: 5;">
+    <div style="background: white; border-radius: 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.06); border: 1px solid rgba(42,42,53,0.06); overflow: hidden;">
+      <!-- Header -->
+      <div style="background: #2A2A35; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 16px; color: #fff;">Before vs After Automation</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #D5EB4B;">Results after 90 days</span>
+      </div>
+
+      <!-- Table -->
+      <div style="padding: 0;">
+        <!-- Row 1 -->
+        <div style="display: flex; border-bottom: 1px solid rgba(42,42,53,0.06);">
+          <div style="flex: 2; padding: 20px 30px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #2A2A35;">Lead Response Time</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(229,62,62,0.04); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #E53E3E;">36 hrs</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(213,235,75,0.06); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #B8CF2E;">3 min</div>
+        </div>
+        <!-- Row 2 -->
+        <div style="display: flex; border-bottom: 1px solid rgba(42,42,53,0.06);">
+          <div style="flex: 2; padding: 20px 30px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #2A2A35;">Follow-up Rate</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(229,62,62,0.04); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #E53E3E;">35%</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(213,235,75,0.06); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #B8CF2E;">100%</div>
+        </div>
+        <!-- Row 3 -->
+        <div style="display: flex; border-bottom: 1px solid rgba(42,42,53,0.06);">
+          <div style="flex: 2; padding: 20px 30px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #2A2A35;">Report Generation</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(229,62,62,0.04); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #E53E3E;">3 days</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(213,235,75,0.06); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #B8CF2E;">Real-time</div>
+        </div>
+        <!-- Row 4 -->
+        <div style="display: flex; border-bottom: 1px solid rgba(42,42,53,0.06);">
+          <div style="flex: 2; padding: 20px 30px; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #2A2A35;">Processes Automated</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(229,62,62,0.04); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #E53E3E;">0</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(213,235,75,0.06); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 16px; color: #B8CF2E;">12</div>
+        </div>
+        <!-- Row 5 - highlight -->
+        <div style="display: flex;">
+          <div style="flex: 2; padding: 20px 30px; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #2A2A35;">Annual Savings</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(229,62,62,0.04); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; color: #E53E3E;">₹0</div>
+          <div style="flex: 1; padding: 20px; text-align: center; background: rgba(213,235,75,0.12); font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; color: #B8CF2E;">₹38L</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 4px 15px rgba(213,235,75,0.3);">Get Results Like These →</div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -3,48 +3,116 @@
 <head>
 <meta charset="UTF-8">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@700&display=swap');
 * { margin: 0; padding: 0; box-sizing: border-box; }
 </style>
 </head>
-<body style="background: #FFFDF7; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
-<div style="width: 1080px; height: 1080px; background: #FFFDF7; position: relative; overflow: hidden;">
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 30% 20%, rgba(229,62,62,0.06) 0%, transparent 40%), radial-gradient(circle at 70% 20%, rgba(213,235,75,0.08) 0%, transparent 40%), #2A2A35; position: relative; overflow: hidden;">
 
-  <!-- Geometric accents -->
-  <div style="position: absolute; bottom: 300px; right: -50px; width: 240px; height: 240px; border: 2px solid rgba(42,42,53,0.05); border-radius: 50%;"></div>
-  <div style="position: absolute; top: 180px; right: -30px; width: 100px; height: 100px; border: 2px solid rgba(42,42,53,0.04); transform: rotate(45deg);"></div>
-  <div style="position: absolute; top: 550px; left: 80px; width: 5px; height: 5px; background: #B8CF2E; border-radius: 50%; opacity: 0.35;"></div>
-
-  <!-- Accent bar -->
-  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #B8CF2E 0%, rgba(184,207,46,0.15) 100%);"></div>
+  <!-- Dot grid -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 40px 40px;"></div>
 
   <!-- Logo -->
-  <img src="../../../brand-assets/zippyscale-logo-transparent.png" style="position: absolute; top: 50px; left: 60px; width: 160px; height: auto;">
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
 
-  <!-- Main headline -->
-  <div style="position: absolute; top: 170px; left: 60px; right: 60px;">
-    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 48px; line-height: 1.15; color: #1A1A2E; letter-spacing: -1px;">
-      Your competitor<br>automated last quarter.<br><span style="color: #D97706;">You didn't.</span>
+  <!-- Headline -->
+  <div style="position: absolute; top: 130px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 44px; color: #FFFFFF; line-height: 1.15;">
+      Your competitor automated<br>last quarter. <span style="color: #D5EB4B;">You didn't.</span>
     </h1>
   </div>
 
-  <!-- Stat -->
-  <div style="position: absolute; top: 460px; left: 60px;">
-    <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 80px; color: #D97706; line-height: 1;">23%</div>
-    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 28px; color: #D97706; margin-top: 4px;">revenue lost</div>
+  <!-- Scoreboard -->
+  <div style="position: absolute; top: 290px; left: 60px; right: 60px; z-index: 10;">
+    <!-- Scoreboard header -->
+    <div style="display: flex; margin-bottom: 4px; padding: 0 20px;">
+      <div style="flex: 2;"></div>
+      <div style="flex: 1; text-align: center;">
+        <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: #E53E3E; text-transform: uppercase; letter-spacing: 2px;">Your Business</div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <div style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; color: #D5EB4B; text-transform: uppercase; letter-spacing: 2px;">Competitor</div>
+      </div>
+    </div>
+
+    <!-- Row 1: Speed to Lead -->
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 22px 20px; margin-bottom: 10px; display: flex; align-items: center;">
+      <div style="flex: 2;">
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #fff;">Speed to Lead</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 2px;">First response time</div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <div style="display: inline-block; background: rgba(229,62,62,0.12); border: 1px solid rgba(229,62,62,0.25); border-radius: 10px; padding: 10px 20px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #E53E3E;">48 hrs</div>
+        </div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <div style="display: inline-block; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.25); border-radius: 10px; padding: 10px 20px; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #D5EB4B;">2 min</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Follow-up Rate -->
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 22px 20px; margin-bottom: 10px; display: flex; align-items: center;">
+      <div style="flex: 2;">
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #fff;">Follow-up Rate</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 2px;">Leads followed up</div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <div style="display: inline-block; background: rgba(229,62,62,0.12); border: 1px solid rgba(229,62,62,0.25); border-radius: 10px; padding: 10px 20px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #E53E3E;">34%</div>
+        </div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <div style="display: inline-block; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.25); border-radius: 10px; padding: 10px 20px; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #D5EB4B;">100%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Report Time -->
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 22px 20px; margin-bottom: 10px; display: flex; align-items: center;">
+      <div style="flex: 2;">
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #fff;">Report Time</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 2px;">Weekly data compile</div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <div style="display: inline-block; background: rgba(229,62,62,0.12); border: 1px solid rgba(229,62,62,0.25); border-radius: 10px; padding: 10px 20px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #E53E3E;">3 days</div>
+        </div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <div style="display: inline-block; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.25); border-radius: 10px; padding: 10px 20px; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #D5EB4B;">Real-time</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 4: Revenue Impact -->
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 22px 20px; display: flex; align-items: center;">
+      <div style="flex: 2;">
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; color: #fff;">Revenue Impact</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.35); margin-top: 2px;">Annual loss from inefficiency</div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <div style="display: inline-block; background: rgba(229,62,62,0.12); border: 1px solid rgba(229,62,62,0.25); border-radius: 10px; padding: 10px 20px;">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #E53E3E;">-23%</div>
+        </div>
+      </div>
+      <div style="flex: 1; text-align: center;">
+        <div style="display: inline-block; background: rgba(213,235,75,0.1); border: 1px solid rgba(213,235,75,0.25); border-radius: 10px; padding: 10px 20px; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 24px; color: #D5EB4B;">+40L saved</div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Body text -->
-  <div style="position: absolute; top: 630px; left: 60px; right: 60px;">
-    <p style="font-family: 'Inter', sans-serif; font-weight: 400; font-size: 26px; line-height: 1.5; color: rgba(42,42,53,0.7);">
-      They respond to leads in 30 seconds. Their reports are auto-generated. Their team does 3x your output. Same headcount.
-    </p>
-  </div>
-
-  <!-- CTA Button -->
-  <div style="position: absolute; bottom: 260px; left: 60px;">
-    <div style="display: inline-block; background: #D5EB4B; border-radius: 12px; padding: 20px 48px; border-radius: 8px;">
-      <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #1A1A2E;">Close the Gap</span>
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 55px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; padding: 20px 48px; border-radius: 12px; box-shadow: 0 0 30px rgba(213,235,75,0.2);">
+      <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #2A2A35;">Close the Gap &rarr;</span>
     </div>
   </div>
 

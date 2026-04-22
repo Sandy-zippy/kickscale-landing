@@ -7,40 +7,102 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 </style>
 </head>
-<body style="margin:0;padding:0;background: #2A2A35;">
-<div style="width:1080px;height:1080px;background:#2A2A35;position:relative;overflow:hidden;font-family:'Inter',sans-serif;">
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 50% 35%, rgba(213,235,75,0.08) 0%, transparent 50%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Dot grid -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 36px 36px;"></div>
 
   <!-- Logo -->
-  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position:absolute;top:170px;left:70px;height:32px;z-index:10;">
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
 
   <!-- Headline -->
-  <div style="position:absolute;top:240px;left:70px;right:70px;z-index:10;">
-    <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:46px;color:#FFFFFF;line-height:1.2;">
-      You visited.<br>You scrolled.<br><span style="color:rgba(255,255,255,0.4);">You didn't finish.</span>
+  <div style="position: absolute; top: 130px; left: 60px; right: 60px; z-index: 10;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 44px; color: #FFFFFF; line-height: 1.2;">
+      You visited.<br>You scrolled.<br><span style="color: rgba(255,255,255,0.3);">You didn't finish.</span>
     </h1>
   </div>
 
-  <!-- Visit badge -->
-  <div style="position:absolute;top:470px;left:70px;z-index:10;">
-    <div style="display:inline-block;background:rgba(213,235,75,0.1);border:2px solid #D5EB4B;border-radius:12px;padding:14px 28px;">
-      <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:32px;color:#D5EB4B;">Visit #2</span>
+  <!-- Browser tab mockup -->
+  <div style="position: absolute; top: 360px; left: 80px; right: 80px; z-index: 10;">
+    <!-- Tab bar -->
+    <div style="display: flex; align-items: flex-end; gap: 0;">
+      <div style="background: rgba(255,255,255,0.08); border-radius: 10px 10px 0 0; padding: 10px 20px; display: flex; align-items: center; gap: 8px;">
+        <div style="width: 10px; height: 10px; background: #D5EB4B; border-radius: 50%;"></div>
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.6);">zippyscale.in</span>
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.3); margin-left: 8px;">&#10005;</span>
+      </div>
+    </div>
+    <!-- Address bar -->
+    <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); padding: 12px 20px; display: flex; align-items: center; gap: 10px;">
+      <div style="width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-radius: 50%;"></div>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: rgba(255,255,255,0.4);">https://zippyscale.in/quiz</span>
+    </div>
+    <!-- Page content area -->
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-top: none; padding: 30px; min-height: 160px; position: relative;">
+      <!-- Blurred content -->
+      <div style="filter: blur(3px); opacity: 0.4;">
+        <div style="height: 14px; width: 60%; background: rgba(255,255,255,0.08); border-radius: 4px; margin-bottom: 10px;"></div>
+        <div style="height: 14px; width: 80%; background: rgba(255,255,255,0.06); border-radius: 4px; margin-bottom: 10px;"></div>
+        <div style="height: 40px; width: 40%; background: rgba(213,235,75,0.15); border-radius: 8px; margin-bottom: 10px;"></div>
+        <div style="height: 14px; width: 50%; background: rgba(255,255,255,0.05); border-radius: 4px;"></div>
+      </div>
+      <!-- "You were here" pin -->
+      <div style="position: absolute; top: 20px; right: 40px;">
+        <div style="background: #D5EB4B; border-radius: 12px 12px 12px 0; padding: 10px 16px; box-shadow: 0 4px 20px rgba(213,235,75,0.3);">
+          <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #2A2A35;">You were here &#9660;</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Body -->
-  <div style="position:absolute;top:560px;left:70px;right:70px;z-index:10;">
-    <p style="font-size:22px;color:rgba(255,255,255,0.65);line-height:1.7;">
-      The quiz takes <span style="color:#D5EB4B;font-weight:600;">2 minutes</span>.<br>
-      The audit takes <span style="color:#D5EB4B;font-weight:600;">48 hours</span>.<br>
-      The savings last <span style="color:#D5EB4B;font-weight:600;">forever</span>.<br><br>
-      <span style="color:rgba(255,255,255,0.45);">Come back and finish.</span>
+  <!-- Timeline: Visit journey -->
+  <div style="position: absolute; top: 720px; left: 80px; right: 80px; z-index: 10;">
+    <!-- Timeline line -->
+    <div style="height: 4px; background: linear-gradient(90deg, #D5EB4B 0%, #D5EB4B 30%, rgba(255,255,255,0.1) 30%, rgba(255,255,255,0.1) 55%, rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.05) 100%); border-radius: 2px; margin-bottom: 20px;"></div>
+    <div style="display: flex; justify-content: space-between;">
+      <div style="text-align: center; width: 20%;">
+        <div style="width: 36px; height: 36px; background: rgba(213,235,75,0.15); border: 2px solid #D5EB4B; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #D5EB4B;">1</span>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #D5EB4B;">Visit 1</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.3);">Landed</div>
+      </div>
+      <div style="text-align: center; width: 20%;">
+        <div style="width: 36px; height: 36px; background: rgba(213,235,75,0.15); border: 2px solid #D5EB4B; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #D5EB4B;">2</span>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #D5EB4B;">Visit 2</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.3);">Scrolled</div>
+      </div>
+      <div style="text-align: center; width: 20%;">
+        <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.04); border: 2px dashed rgba(255,255,255,0.15); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px; color: rgba(255,255,255,0.2);">?</span>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.3);">???</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.2);">You're here</div>
+      </div>
+      <div style="text-align: center; width: 20%;">
+        <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.04); border: 2px dashed rgba(255,255,255,0.1); border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.15);">&#10003;</span>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.2);">Quiz</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.15);">2 minutes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Motivation text -->
+  <div style="position: absolute; bottom: 120px; left: 80px; right: 80px; z-index: 10;">
+    <p style="font-family: 'Inter', sans-serif; font-size: 20px; color: rgba(255,255,255,0.5); text-align: center;">
+      The quiz takes <span style="color: #D5EB4B; font-weight: 600;">2 minutes</span>. The savings last <span style="color: #D5EB4B; font-weight: 600;">forever</span>.
     </p>
   </div>
 
   <!-- CTA -->
-  <div style="position:absolute;top:790px;left:70px;z-index:10;">
-    <div style="display:inline-block;background:#D5EB4B;border-radius:12px;padding:20px 48px;">
-      <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#2A2A35;">Complete Your Audit →</span>
+  <div style="position: absolute; bottom: 45px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; padding: 20px 48px; border-radius: 12px; box-shadow: 0 0 30px rgba(213,235,75,0.2);">
+      <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #2A2A35;">Complete Your Audit &rarr;</span>
     </div>
   </div>
 

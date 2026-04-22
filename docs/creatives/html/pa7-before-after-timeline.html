@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; position: relative; overflow: hidden;">
+
+  <!-- Left half: red-tinted -->
+  <div style="position: absolute; top: 0; left: 0; width: 540px; height: 100%; background: radial-gradient(circle at 70% 40%, rgba(229,62,62,0.1) 0%, transparent 50%), #2A2A35;"></div>
+  <!-- Right half: lime-tinted -->
+  <div style="position: absolute; top: 0; right: 0; width: 540px; height: 100%; background: radial-gradient(circle at 30% 40%, rgba(213,235,75,0.1) 0%, transparent 50%), #2A2A35;"></div>
+
+  <!-- Dot grid -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+  <!-- Diagonal accent lines -->
+  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+    <div style="position: absolute; top: -200px; left: 200px; width: 2px; height: 1500px; background: rgba(229,62,62,0.06); transform: rotate(20deg);"></div>
+    <div style="position: absolute; top: -200px; right: 200px; width: 2px; height: 1500px; background: rgba(213,235,75,0.06); transform: rotate(-20deg);"></div>
+  </div>
+
+  <!-- Accent bar -->
+  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #E53E3E 0%, #D5EB4B 100%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 48px; line-height: 1.15; color: #FFFFFF;">
+      Same team.<br><span style="color: #D5EB4B;">Different systems.</span>
+    </h1>
+  </div>
+
+  <!-- Timeline line -->
+  <div style="position: absolute; top: 370px; left: 60px; right: 60px; height: 4px; background: linear-gradient(90deg, #E53E3E, rgba(255,255,255,0.2) 48%, rgba(255,255,255,0.2) 52%, #D5EB4B); border-radius: 2px; z-index: 5;"></div>
+  <!-- Center divider marker -->
+  <div style="position: absolute; top: 358px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; background: #2A2A35; border: 3px solid rgba(255,255,255,0.2); border-radius: 50%; z-index: 6; display: flex; align-items: center; justify-content: center;">
+    <div style="font-family: 'Space Grotesk', sans-serif; font-size: 12px; color: rgba(255,255,255,0.5);">→</div>
+  </div>
+
+  <!-- BEFORE side -->
+  <div style="position: absolute; top: 320px; left: 60px; z-index: 5;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: #E53E3E; text-transform: uppercase; letter-spacing: 3px;">Before</div>
+  </div>
+
+  <!-- Before items -->
+  <div style="position: absolute; top: 420px; left: 60px; width: 420px; z-index: 5;">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="background: rgba(229,62,62,0.08); border: 1px solid rgba(229,62,62,0.15); border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 8px; height: 8px; background: #E53E3E; border-radius: 50%; flex-shrink: 0;"></div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #fff;">Lead response: 48 hours</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(229,62,62,0.7); margin-top: 4px;">60% already gone</div>
+        </div>
+      </div>
+      <div style="background: rgba(229,62,62,0.08); border: 1px solid rgba(229,62,62,0.15); border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 8px; height: 8px; background: #E53E3E; border-radius: 50%; flex-shrink: 0;"></div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #fff;">Reports: 3 days to compile</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(229,62,62,0.7); margin-top: 4px;">Always outdated</div>
+        </div>
+      </div>
+      <div style="background: rgba(229,62,62,0.08); border: 1px solid rgba(229,62,62,0.15); border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 8px; height: 8px; background: #E53E3E; border-radius: 50%; flex-shrink: 0;"></div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #fff;">Follow-ups: Manual, missed</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(229,62,62,0.7); margin-top: 4px;">Revenue lost daily</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AFTER side -->
+  <div style="position: absolute; top: 320px; right: 60px; z-index: 5; text-align: right;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: #D5EB4B; text-transform: uppercase; letter-spacing: 3px;">After</div>
+  </div>
+
+  <!-- After items -->
+  <div style="position: absolute; top: 420px; right: 60px; width: 420px; z-index: 5;">
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="background: rgba(213,235,75,0.08); border: 1px solid rgba(213,235,75,0.15); border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 8px; height: 8px; background: #D5EB4B; border-radius: 50%; flex-shrink: 0;"></div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #fff;">Lead response: 2 minutes</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(213,235,75,0.7); margin-top: 4px;">100% captured</div>
+        </div>
+      </div>
+      <div style="background: rgba(213,235,75,0.08); border: 1px solid rgba(213,235,75,0.15); border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 8px; height: 8px; background: #D5EB4B; border-radius: 50%; flex-shrink: 0;"></div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #fff;">Reports: Real-time dashboards</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(213,235,75,0.7); margin-top: 4px;">Always current</div>
+        </div>
+      </div>
+      <div style="background: rgba(213,235,75,0.08); border: 1px solid rgba(213,235,75,0.15); border-radius: 12px; padding: 20px 24px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 8px; height: 8px; background: #D5EB4B; border-radius: 50%; flex-shrink: 0;"></div>
+        <div>
+          <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #fff;">Follow-ups: AI-powered, 100%</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(213,235,75,0.7); margin-top: 4px;">Zero leads lost</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 4px 15px rgba(213,235,75,0.3);">Switch Your System →</div>
+  </div>
+
+</div>
+</body>
+</html>

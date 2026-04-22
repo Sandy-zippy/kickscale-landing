@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 70% 30%, rgba(213,235,75,0.12) 0%, transparent 50%), radial-gradient(circle at 30% 80%, rgba(213,235,75,0.06) 0%, transparent 40%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Grid pattern -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(213,235,75,0.04) 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+  <!-- Diagonal stripe accents -->
+  <div style="position: absolute; top: -200px; right: -100px; width: 300px; height: 1500px; background: rgba(213,235,75,0.02); transform: rotate(20deg);"></div>
+  <div style="position: absolute; top: -200px; right: 50px; width: 100px; height: 1500px; background: rgba(213,235,75,0.015); transform: rotate(20deg);"></div>
+
+  <!-- Circle accent -->
+  <div style="position: absolute; top: -80px; right: -80px; width: 300px; height: 300px; border: 1.5px solid rgba(213,235,75,0.06); border-radius: 50%;"></div>
+
+  <!-- Accent bar -->
+  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #D5EB4B 0%, rgba(213,235,75,0.1) 100%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 60px; z-index: 5;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px;">What You Get — Free</div>
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 46px; line-height: 1.15; color: #FFFFFF;">
+      Your audit<br>includes <span style="color: #D5EB4B;">all of this.</span>
+    </h1>
+  </div>
+
+  <!-- Checklist items -->
+  <div style="position: absolute; top: 380px; left: 80px; right: 80px; z-index: 5; display: flex; flex-direction: column; gap: 20px;">
+    <!-- Item 1 -->
+    <div style="background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px 30px; display: flex; align-items: center; gap: 20px;">
+      <div style="width: 48px; height: 48px; background: #D5EB4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 15px rgba(213,235,75,0.3);">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #1A1A2E;">✓</span>
+      </div>
+      <div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #fff;">Full Process Map</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 4px;">Every workflow documented and analyzed</div>
+      </div>
+    </div>
+    <!-- Item 2 -->
+    <div style="background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px 30px; display: flex; align-items: center; gap: 20px;">
+      <div style="width: 48px; height: 48px; background: #D5EB4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 15px rgba(213,235,75,0.3);">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #1A1A2E;">✓</span>
+      </div>
+      <div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #fff;">Waste Identification</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 4px;">Exact rupee amount you're losing to manual ops</div>
+      </div>
+    </div>
+    <!-- Item 3 -->
+    <div style="background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px 30px; display: flex; align-items: center; gap: 20px;">
+      <div style="width: 48px; height: 48px; background: #D5EB4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 15px rgba(213,235,75,0.3);">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #1A1A2E;">✓</span>
+      </div>
+      <div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #fff;">Automation Roadmap</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 4px;">Prioritized list of what to automate first</div>
+      </div>
+    </div>
+    <!-- Item 4 -->
+    <div style="background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px 30px; display: flex; align-items: center; gap: 20px;">
+      <div style="width: 48px; height: 48px; background: #D5EB4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 15px rgba(213,235,75,0.3);">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #1A1A2E;">✓</span>
+      </div>
+      <div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #fff;">ROI Projection</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 4px;">Expected savings over 12 months</div>
+      </div>
+    </div>
+    <!-- Item 5 -->
+    <div style="background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px 30px; display: flex; align-items: center; gap: 20px;">
+      <div style="width: 48px; height: 48px; background: #D5EB4B; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 0 15px rgba(213,235,75,0.3);">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #1A1A2E;">✓</span>
+      </div>
+      <div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #fff;">Tech Stack Recommendation</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 4px;">Exact tools and integrations for your business</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; display: flex; align-items: center; gap: 24px; z-index: 10;">
+    <div style="background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 0 25px rgba(213,235,75,0.3);">Get All This Free →</div>
+    <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4);">2-min quiz. 48hr delivery.</div>
+  </div>
+
+</div>
+</body>
+</html>

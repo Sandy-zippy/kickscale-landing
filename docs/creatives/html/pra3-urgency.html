@@ -7,45 +7,97 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 </style>
 </head>
-<body style="margin:0;padding:0;background: #2A2A35;">
-<div style="width:1080px;height:1080px;background:#2A2A35;position:relative;overflow:hidden;font-family:'Inter',sans-serif;">
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 50% 55%, rgba(213,235,75,0.08) 0%, transparent 50%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Subtle grid -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(213,235,75,0.03) 1px, transparent 1px); background-size: 44px 44px;"></div>
 
   <!-- Logo -->
-  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position:absolute;top:170px;left:70px;height:32px;z-index:10;">
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
 
   <!-- Headline -->
-  <div style="position:absolute;top:230px;left:70px;right:70px;z-index:10;">
-    <h1 style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:44px;color:#FFFFFF;line-height:1.2;">
+  <div style="position: absolute; top: 130px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 48px; color: #FFFFFF; line-height: 1.15;">
       7 of 10 spots are taken.
     </h1>
   </div>
 
-  <!-- Giant number -->
-  <div style="position:absolute;top:320px;left:70px;z-index:10;">
-    <span style="font-family:'JetBrains Mono',monospace;font-weight:700;font-size:280px;color:#D5EB4B;line-height:1;opacity:0.95;">3</span>
+  <!-- Progress bar showing 7/10 -->
+  <div style="position: absolute; top: 260px; left: 80px; right: 80px; z-index: 10;">
+    <div style="display: flex; gap: 12px;">
+      <!-- 7 filled spots -->
+      <div style="flex: 1; height: 16px; background: #D5EB4B; border-radius: 8px; box-shadow: 0 0 10px rgba(213,235,75,0.3);"></div>
+      <div style="flex: 1; height: 16px; background: #D5EB4B; border-radius: 8px; box-shadow: 0 0 10px rgba(213,235,75,0.3);"></div>
+      <div style="flex: 1; height: 16px; background: #D5EB4B; border-radius: 8px; box-shadow: 0 0 10px rgba(213,235,75,0.3);"></div>
+      <div style="flex: 1; height: 16px; background: #D5EB4B; border-radius: 8px; box-shadow: 0 0 10px rgba(213,235,75,0.3);"></div>
+      <div style="flex: 1; height: 16px; background: #D5EB4B; border-radius: 8px; box-shadow: 0 0 10px rgba(213,235,75,0.3);"></div>
+      <div style="flex: 1; height: 16px; background: #D5EB4B; border-radius: 8px; box-shadow: 0 0 10px rgba(213,235,75,0.3);"></div>
+      <div style="flex: 1; height: 16px; background: #D5EB4B; border-radius: 8px; box-shadow: 0 0 10px rgba(213,235,75,0.3);"></div>
+      <!-- 3 empty spots -->
+      <div style="flex: 1; height: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;"></div>
+      <div style="flex: 1; height: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;"></div>
+      <div style="flex: 1; height: 16px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;"></div>
+    </div>
   </div>
 
-  <!-- "spots left" label -->
-  <div style="position:absolute;top:530px;left:360px;z-index:10;">
-    <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:36px;color:rgba(255,255,255,0.6);">spots left</span>
+  <!-- Spot circles visual -->
+  <div style="position: absolute; top: 340px; left: 80px; right: 80px; z-index: 10;">
+    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+      <!-- 7 filled circles -->
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.12); border: 2px solid rgba(213,235,75,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #D5EB4B;">TAKEN</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.12); border: 2px solid rgba(213,235,75,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #D5EB4B;">TAKEN</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.12); border: 2px solid rgba(213,235,75,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #D5EB4B;">TAKEN</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.12); border: 2px solid rgba(213,235,75,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #D5EB4B;">TAKEN</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.12); border: 2px solid rgba(213,235,75,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #D5EB4B;">TAKEN</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.12); border: 2px solid rgba(213,235,75,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #D5EB4B;">TAKEN</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(213,235,75,0.12); border: 2px solid rgba(213,235,75,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(213,235,75,0.1);">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: #D5EB4B;">TAKEN</span>
+      </div>
+      <!-- 3 empty circles with pulsing border -->
+      <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.3);">OPEN</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.3);">OPEN</span>
+      </div>
+      <div style="width: 80px; height: 80px; background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px; color: rgba(255,255,255,0.3);">OPEN</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Giant "3 LEFT" -->
+  <div style="position: absolute; top: 590px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 140px; color: #D5EB4B; line-height: 1; text-shadow: 0 0 60px rgba(213,235,75,0.2);">3</div>
+    <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 48px; color: rgba(255,255,255,0.6); margin-top: -10px;">SPOTS LEFT</div>
   </div>
 
   <!-- Body -->
-  <div style="position:absolute;top:620px;left:70px;right:70px;z-index:10;">
-    <p style="font-size:22px;color:rgba(255,255,255,0.65);line-height:1.6;">
-      Free AI Automation Audit. We manually review your business and deliver a custom roadmap. Only 3 spots left this quarter.
+  <div style="position: absolute; bottom: 140px; left: 80px; right: 80px; text-align: center; z-index: 10;">
+    <p style="font-family: 'Inter', sans-serif; font-size: 20px; color: rgba(255,255,255,0.5); line-height: 1.5;">
+      Free AI Automation Audit. Custom roadmap. Only 3 spots left this quarter.
     </p>
   </div>
 
   <!-- CTA -->
-  <div style="position:absolute;top:770px;left:70px;z-index:10;">
-    <div style="display:inline-block;background:#D5EB4B;border-radius:12px;padding:20px 48px;">
-      <span style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:20px;color:#2A2A35;">Claim Your Spot →</span>
+  <div style="position: absolute; bottom: 55px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; padding: 22px 52px; border-radius: 12px; box-shadow: 0 0 30px rgba(213,235,75,0.25);">
+      <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 22px; color: #2A2A35;">Claim Your Spot &rarr;</span>
     </div>
   </div>
-
-  <!-- Subtle glow behind number -->
-  <div style="position:absolute;top:300px;left:0;width:400px;height:400px;background:radial-gradient(circle,rgba(213,235,75,0.08),transparent 60%);z-index:5;"></div>
 
 </div>
 </body>

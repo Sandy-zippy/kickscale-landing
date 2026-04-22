@@ -20,17 +20,29 @@ const stats = [
   { target: 10, suffix: 'x Output', label: 'Same Team' },
 ]
 
-function getHeadline(): string {
+function getHeadline(): { main: string; sub: string } {
   const utmContent = new URLSearchParams(window.location.search).get('utm_content')
   switch (utmContent) {
     case 'unaware':
-      return 'Your Business Is Leaking ₹40 Lakh/Year. You Just Don\u2019t Know Where Yet.'
+      return {
+        main: 'Your Leads Are Dying in WhatsApp Groups and Excel Sheets.',
+        sub: 'We find every rupee your manual processes are wasting.',
+      }
     case 'problem-aware':
-      return 'Hiring More People Won\u2019t Fix Your Operations. Systems Will.'
+      return {
+        main: 'Freelancers Didn\u2019t Fix It. In-House Tools Didn\u2019t Fix It. Systems Will.',
+        sub: 'Same team. 10x output. No new headcount.',
+      }
     case 'solution-aware':
-      return 'AI Automation Audit: Find Every Rupee Your Business Is Wasting'
+      return {
+        main: 'Free AI Automation Audit. We Map Your Entire Lead Flow in 24 Hours.',
+        sub: 'Custom roadmap. Zero cost. Zero obligation.',
+      }
     default:
-      return 'Get Your Free AI Automation Audit. Only 10 Spots This Quarter.'
+      return {
+        main: 'Still Running Your Business on WhatsApp Groups and Excel?',
+        sub: 'We build AI automations that handle leads, follow-ups, reports, and ops. Same team, 10x output.',
+      }
   }
 }
 
@@ -44,7 +56,7 @@ export default function Hero() {
     document.getElementById('quiz')?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const headline = getHeadline()
+  const { main, sub } = getHeadline()
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[#FFFDF7]">
@@ -82,8 +94,18 @@ export default function Hero() {
           className="mt-8 text-5xl md:text-7xl font-bold max-w-4xl mx-auto leading-[1.1] text-[#1A1A2E]"
           style={{ fontFamily: "'Space Grotesk', sans-serif" }}
         >
-          {headline}
+          {main}
         </motion.h1>
+
+        {/* Subheadline */}
+        <motion.p
+          variants={fadeUp}
+          transition={{ duration: 0.5 }}
+          className="mt-6 text-lg md:text-xl text-[#4A5568] max-w-2xl mx-auto"
+          style={{ fontFamily: "'Inter', sans-serif" }}
+        >
+          {sub}
+        </motion.p>
 
         {/* Stats row */}
         <motion.div

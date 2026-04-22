@@ -1,77 +1,111 @@
-import { useRef } from 'react'
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal'
+import { trackCTAClick } from '../../lib/tracking'
 
-const savePains = [
+const pains = [
   {
-    stat: '₹40L+/yr',
-    title: 'Burned on work AI can handle',
-    description: 'You\'re paying 3 FTEs ₹12-15L each to do data entry, follow-ups, and report generation. That money should fund growth.',
+    id: 'leads',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+      </svg>
+    ),
+    title: 'Leads die in WhatsApp groups',
+    cost: 8,
+    costLabel: '₹8L/yr lost revenue',
+    detail: '60% of leads go cold without 5-minute follow-up. Your team takes hours.',
   },
   {
-    stat: '40 hrs/wk',
-    title: 'Lost to copy-paste and spreadsheet juggling',
-    description: 'Your best people are stuck in Excel, WhatsApp groups, and manual CRM updates instead of closing deals.',
+    id: 'reports',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10" />
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" />
+      </svg>
+    ),
+    title: 'Reports take 3 days to compile',
+    cost: 5,
+    costLabel: '₹5L/yr in wasted salary',
+    detail: 'Your best people spend Monday to Wednesday in Excel instead of selling.',
   },
   {
-    stat: '3-5 days',
-    title: 'Before you see your own numbers',
-    description: 'By the time your team compiles last week\'s report, the opportunity is already gone.',
+    id: 'followups',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+    title: 'Follow-ups are manual and forgotten',
+    cost: 12,
+    costLabel: '₹12L/yr in lost deals',
+    detail: '23% revenue lost from slow follow-ups. Your competitor closes while you forget.',
+  },
+  {
+    id: 'data',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="2" width="20" height="8" rx="2" ry="2" />
+        <rect x="2" y="14" width="20" height="8" rx="2" ry="2" />
+        <line x1="6" y1="6" x2="6.01" y2="6" />
+        <line x1="6" y1="18" x2="6.01" y2="18" />
+      </svg>
+    ),
+    title: 'CRM updates are copy-paste chaos',
+    cost: 6,
+    costLabel: '₹6L/yr in data entry salary',
+    detail: '8+ hours/week of manual data entry that AI handles in real-time.',
+  },
+  {
+    id: 'invoices',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+        <line x1="1" y1="10" x2="23" y2="10" />
+      </svg>
+    ),
+    title: 'Invoices sit in someone\'s inbox',
+    cost: 4,
+    costLabel: '₹4L/yr in delayed payments',
+    detail: '45 min per invoice manually. Auto-generate and send in 30 seconds.',
+  },
+  {
+    id: 'hiring',
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+        <circle cx="8.5" cy="7" r="4" />
+        <line x1="20" y1="8" x2="20" y2="14" />
+        <line x1="23" y1="11" x2="17" y2="11" />
+      </svg>
+    ),
+    title: 'You hire to scale instead of systemise',
+    cost: 15,
+    costLabel: '₹15L/yr per unnecessary hire',
+    detail: 'Every person you hire for automatable work is ₹12-15L/yr burned.',
   },
 ]
-
-const makePains = [
-  {
-    stat: '23%',
-    title: 'Revenue lost from slow follow-ups',
-    description: 'Every hour your team delays a lead response, your competitor closes that deal instead.',
-  },
-  {
-    stat: '₹0',
-    title: 'From channels your competitors dominate',
-    description: 'Meta, Google, WhatsApp marketing. Your competitors are winning customers there. You\'re not even playing.',
-  },
-  {
-    stat: '60%',
-    title: 'Leads die without 5-minute follow-up',
-    description: 'If nobody calls back within 5 minutes, 6 out of 10 leads go to your competitor. AI responds in seconds.',
-  },
-]
-
-function TiltCard({ children, className }: { children: React.ReactNode; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const x = useMotionValue(0.5)
-  const y = useMotionValue(0.5)
-
-  const rotateX = useSpring(useTransform(y, [0, 1], [6, -6]), { stiffness: 300, damping: 30 })
-  const rotateY = useSpring(useTransform(x, [0, 1], [-6, 6]), { stiffness: 300, damping: 30 })
-
-  function handleMouse(e: React.MouseEvent) {
-    const rect = ref.current?.getBoundingClientRect()
-    if (!rect) return
-    x.set((e.clientX - rect.left) / rect.width)
-    y.set((e.clientY - rect.top) / rect.height)
-  }
-
-  function handleLeave() {
-    x.set(0.5)
-    y.set(0.5)
-  }
-
-  return (
-    <motion.div
-      ref={ref}
-      onMouseMove={handleMouse}
-      onMouseLeave={handleLeave}
-      style={{ rotateX, rotateY, transformPerspective: 800 }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  )
-}
 
 export default function PainSection() {
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+
+  function toggle(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const totalCost = pains
+    .filter(p => selected.has(p.id))
+    .reduce((sum, p) => sum + p.cost, 0)
+
   return (
     <section id="pain" className="bg-[#FFFDF7] py-20 px-4">
       <div className="max-w-5xl mx-auto">
@@ -81,60 +115,88 @@ export default function PainSection() {
               The Real Cost
             </p>
             <h2 className="font-bold text-3xl md:text-4xl text-[#111827] mb-4">
-              The Real Cost of Manual Operations
+              Tap Every Problem You Recognise
             </h2>
             <p className="font-sans text-base text-[#4B5563] max-w-xl mx-auto">
-              Every day you delay, both sides of this equation get worse.
+              We'll show you what it's actually costing you.
             </p>
           </div>
         </ScrollReveal>
 
-        {/* Save Money */}
-        <ScrollReveal>
-          <h3 className="font-semibold text-xl text-[#111827] mb-5 flex items-center gap-2">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
-              <polyline points="17 18 23 18 23 12" />
-            </svg>
-            You're Bleeding Money
-          </h3>
-        </ScrollReveal>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6 mb-12">
-          {savePains.map((pain, i) => (
-            <ScrollReveal key={pain.stat} delay={i * 0.1}>
-              <TiltCard className="h-full bg-white border border-[#E5E7EB] rounded-2xl p-8 transition-all duration-300 hover:border-[#EF4444]/30 hover:shadow-lg hover:-translate-y-1 cursor-default">
-                <p className="font-mono font-bold text-3xl text-[#EF4444] mb-2">{pain.stat}</p>
-                <h3 className="font-semibold text-lg text-[#111827] mb-1">{pain.title}</h3>
-                <p className="font-sans text-sm text-[#4B5563]">{pain.description}</p>
-              </TiltCard>
-            </ScrollReveal>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {pains.map((pain, i) => {
+            const active = selected.has(pain.id)
+            return (
+              <ScrollReveal key={pain.id} delay={i * 0.05}>
+                <button
+                  type="button"
+                  onClick={() => toggle(pain.id)}
+                  className={`w-full text-left rounded-2xl p-6 border-2 transition-all duration-300 cursor-pointer ${
+                    active
+                      ? 'border-[#EF4444] bg-[#FEF2F2] shadow-lg -translate-y-1'
+                      : 'border-[#E5E7EB] bg-white hover:border-[#EF4444]/30 hover:shadow-md hover:-translate-y-0.5'
+                  }`}
+                >
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className={`flex-shrink-0 transition-colors ${active ? 'text-[#EF4444]' : 'text-[#9CA3AF]'}`}>
+                      {pain.icon}
+                    </span>
+                    <span className={`font-semibold text-base ${active ? 'text-[#991B1B]' : 'text-[#111827]'}`}>
+                      {pain.title}
+                    </span>
+                  </div>
+                  <AnimatePresence>
+                    {active && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <p className="text-sm text-[#4B5563] mb-2">{pain.detail}</p>
+                        <p className="font-mono font-bold text-[#EF4444] text-lg">{pain.costLabel}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  {!active && (
+                    <p className="text-xs text-[#9CA3AF] mt-1">Tap to reveal the cost</p>
+                  )}
+                </button>
+              </ScrollReveal>
+            )
+          })}
         </div>
 
-        {/* Make Money */}
-        <ScrollReveal>
-          <h3 className="font-semibold text-xl text-[#111827] mb-5 flex items-center gap-2">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 6 10.5 15.5 15.5 10.5 23 18" />
-              <line x1="17" y1="6" x2="23" y2="6" />
-              <line x1="23" y1="6" x2="23" y2="12" />
-              <line x1="16" y1="16" x2="20" y2="20" stroke="#F59E0B" strokeWidth="2.5" />
-              <line x1="20" y1="16" x2="16" y2="20" stroke="#F59E0B" strokeWidth="2.5" />
-            </svg>
-            You're Leaving Money on the Table
-          </h3>
-        </ScrollReveal>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 md:gap-6">
-          {makePains.map((pain, i) => (
-            <ScrollReveal key={pain.stat} delay={i * 0.1}>
-              <TiltCard className="h-full bg-white border border-[#E5E7EB] rounded-2xl p-8 transition-all duration-300 hover:border-[#F59E0B]/30 hover:shadow-lg hover:-translate-y-1 cursor-default">
-                <p className="font-mono font-bold text-3xl text-[#F59E0B] mb-2">{pain.stat}</p>
-                <h3 className="font-semibold text-lg text-[#111827] mb-1">{pain.title}</h3>
-                <p className="font-sans text-sm text-[#4B5563]">{pain.description}</p>
-              </TiltCard>
-            </ScrollReveal>
-          ))}
-        </div>
+        {/* Running total */}
+        <AnimatePresence>
+          {selected.size > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="text-center"
+            >
+              <div className="inline-block bg-[#991B1B] rounded-2xl px-8 py-6 text-center">
+                <p className="text-sm text-white/80 mb-1">
+                  You selected {selected.size} problem{selected.size > 1 ? 's' : ''}. Estimated annual cost:
+                </p>
+                <p className="font-mono font-bold text-4xl text-white">
+                  ₹{totalCost}L/year
+                </p>
+                <p className="text-sm text-white/70 mt-2 mb-4">
+                  That's ₹{Math.round(totalCost / 12)}L every month walking out the door.
+                </p>
+                <a
+                  href="#quiz"
+                  onClick={() => trackCTAClick('pain-calculator', 'Get Your Free Audit')}
+                  className="inline-block font-bold rounded-xl px-8 py-3 text-sm bg-[#D5EB4B] text-[#0c0c10] hover:brightness-110 transition-all"
+                >
+                  Get Your Free Audit
+                </a>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   )

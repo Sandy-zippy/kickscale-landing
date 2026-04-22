@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 50% 30%, rgba(213,235,75,0.1) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(213,235,75,0.05) 0%, transparent 40%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Grid overlay -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(213,235,75,0.04) 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+  <!-- Geometric shapes -->
+  <div style="position: absolute; top: -80px; right: -80px; width: 300px; height: 300px; border: 1.5px solid rgba(213,235,75,0.05); border-radius: 50%;"></div>
+  <div style="position: absolute; bottom: -60px; left: -60px; width: 200px; height: 200px; border: 1.5px solid rgba(213,235,75,0.04); transform: rotate(45deg);"></div>
+
+  <!-- Accent bar -->
+  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #D5EB4B 0%, rgba(213,235,75,0.1) 100%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Browser tab mockup -->
+  <div style="position: absolute; top: 180px; left: 80px; right: 80px; z-index: 5;">
+    <!-- Tab bar -->
+    <div style="background: rgba(0,0,0,0.4); border-radius: 12px 12px 0 0; padding: 0; display: flex; align-items: flex-end;">
+      <!-- Active tab -->
+      <div style="background: rgba(255,255,255,0.08); border-radius: 8px 8px 0 0; padding: 12px 24px; display: flex; align-items: center; gap: 10px; margin-left: 8px; margin-top: 8px;">
+        <div style="width: 16px; height: 16px; background: #D5EB4B; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 8px; color: #1A1A2E;">Z</span>
+        </div>
+        <span style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.7);">zippyscale.in</span>
+        <span style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.3);">×</span>
+      </div>
+    </div>
+    <!-- URL bar -->
+    <div style="background: rgba(0,0,0,0.3); padding: 12px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+      <div style="font-size: 12px; color: rgba(255,255,255,0.3);">🔒</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(255,255,255,0.5);">https://zippyscale.in/audit</div>
+    </div>
+    <!-- Visit counter badge -->
+    <div style="background: rgba(255,255,255,0.04); padding: 40px; display: flex; align-items: center; justify-content: center; border-radius: 0 0 12px 12px;">
+      <div style="text-align: center;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 100px; color: #D5EB4B; line-height: 1;">3rd</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 20px; color: rgba(255,255,255,0.5); margin-top: 8px;">time visiting this page</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main message -->
+  <div style="position: absolute; top: 600px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 44px; line-height: 1.2; color: #FFFFFF;">
+      We noticed you<br>came back. Here's what<br>you <span style="color: #D5EB4B;">missed.</span>
+    </h1>
+  </div>
+
+  <!-- Quick stats -->
+  <div style="position: absolute; bottom: 180px; left: 120px; right: 120px; display: flex; gap: 24px; z-index: 5;">
+    <div style="flex: 1; background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 22px; color: #D5EB4B;">₹40L+</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.4);">Avg savings found</div>
+    </div>
+    <div style="flex: 1; background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 22px; color: #D5EB4B;">48hrs</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.4);">Full audit delivery</div>
+    </div>
+    <div style="flex: 1; background: rgba(255,255,255,0.04); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 22px; color: #D5EB4B;">Free</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 12px; color: rgba(255,255,255,0.4);">No commitment</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 0 25px rgba(213,235,75,0.3);">This Time, Take the Quiz →</div>
+  </div>
+
+</div>
+</body>
+</html>

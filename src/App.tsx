@@ -20,6 +20,7 @@ import FAQ from './components/sections/FAQ'
 import InstagramFeed from './components/sections/InstagramFeed'
 import QuizForm from './components/sections/QuizForm'
 import FinalCTA from './components/sections/FinalCTA'
+import MidPageCTA from './components/sections/MidPageCTA'
 import GrowthOffer from './pages/GrowthOffer'
 
 function AutomationHome() {
@@ -54,21 +55,23 @@ function AutomationHome() {
         <Divider />
         <PainSection />
         <Divider />
+        <QuizForm />
+        <Divider />
         <ProofOfWork />
         <Divider />
         <AutomationGrid />
+        <MidPageCTA />
         <Divider />
         <ROICalculator />
         <Divider />
         <HowItWorks />
+        <MidPageCTA />
         <Divider />
         <WhoIsThisFor />
         <Divider />
         <InstagramFeed />
         <Divider />
         <FAQ />
-        <Divider />
-        <QuizForm />
         <Divider />
         <FinalCTA />
       </main>

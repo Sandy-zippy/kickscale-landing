@@ -81,7 +81,7 @@ export function trackQuizStart() {
  * Track quiz submission — GA4 + Meta Pixel Lead
  */
 export function trackQuizSubmit(data?: Record<string, unknown>) {
-  trackEvent('quiz_submit', { lead_source: 'automation-lp-v3', ...data })
+  trackEvent('quiz_submit', { lead_source: 'automation-lp-v6', ...data })
   window.fbq?.('track', 'Lead', {
     content_name: 'AI Automation Audit',
     content_category: 'quiz_submission',

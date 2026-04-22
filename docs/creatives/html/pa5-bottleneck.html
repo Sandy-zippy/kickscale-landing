@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 50% 30%, rgba(213,235,75,0.1) 0%, transparent 50%), radial-gradient(circle at 20% 80%, rgba(213,235,75,0.05) 0%, transparent 40%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Topographic contour lines -->
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 900px; height: 900px; border: 1px solid rgba(213,235,75,0.03); border-radius: 50%;"></div>
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 700px; height: 700px; border: 1px solid rgba(213,235,75,0.04); border-radius: 50%;"></div>
+  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 500px; height: 500px; border: 1px solid rgba(213,235,75,0.05); border-radius: 50%;"></div>
+
+  <!-- Grid dots -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(213,235,75,0.05) 1px, transparent 1px); background-size: 40px 40px;"></div>
+
+  <!-- Accent bar -->
+  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #D5EB4B 0%, rgba(213,235,75,0.1) 100%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 60px; text-align: center; z-index: 5;">
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 46px; line-height: 1.15; color: #FFFFFF;">
+      Your funnel has a<br><span style="color: #D5EB4B;">human bottleneck.</span>
+    </h1>
+  </div>
+
+  <!-- Funnel visualization -->
+  <div style="position: absolute; top: 340px; left: 50%; transform: translateX(-50%); z-index: 5;">
+    <!-- Wide top -->
+    <div style="width: 700px; height: 70px; background: linear-gradient(90deg, rgba(213,235,75,0.2), rgba(213,235,75,0.4), rgba(213,235,75,0.2)); border-radius: 12px 12px 0 0; display: flex; align-items: center; justify-content: center; position: relative;">
+      <span style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 16px; color: #fff;">500 Leads / Month Coming In</span>
+      <!-- Flow arrows -->
+      <div style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 20px; color: rgba(213,235,75,0.5);">→</div>
+      <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 20px; color: rgba(213,235,75,0.5);">←</div>
+    </div>
+
+    <!-- Narrowing -->
+    <div style="width: 700px; display: flex; justify-content: center;">
+      <div style="width: 0; height: 0; border-left: 150px solid transparent; border-right: 150px solid transparent; border-top: 60px solid rgba(213,235,75,0.15);"></div>
+    </div>
+
+    <!-- Bottleneck (narrow, red-tinted) -->
+    <div style="width: 200px; margin: 0 auto; position: relative;">
+      <div style="height: 100px; background: linear-gradient(180deg, rgba(229,62,62,0.3), rgba(229,62,62,0.15)); border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(229,62,62,0.3);">
+        <div style="text-align: center;">
+          <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; color: rgba(255,255,255,0.7);">MANUAL PROCESSING</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 20px; color: #E53E3E; margin-top: 4px;">⚠ BOTTLENECK</div>
+        </div>
+      </div>
+      <!-- Pulsing glow -->
+      <div style="position: absolute; inset: -10px; border: 2px solid rgba(229,62,62,0.2); border-radius: 12px;"></div>
+    </div>
+
+    <!-- Narrowing down -->
+    <div style="width: 200px; margin: 0 auto; display: flex; justify-content: center;">
+      <div style="width: 0; height: 0; border-left: 50px solid transparent; border-right: 50px solid transparent; border-top: 40px solid rgba(229,62,62,0.1);"></div>
+    </div>
+
+    <!-- Tiny output -->
+    <div style="width: 120px; height: 60px; background: rgba(229,62,62,0.1); border-radius: 8px; margin: 0 auto; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(229,62,62,0.15);">
+      <div style="text-align: center;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 20px; color: #E53E3E;">23</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.4);">conversions</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats row -->
+  <div style="position: absolute; bottom: 180px; left: 60px; right: 60px; display: flex; justify-content: center; gap: 60px; z-index: 5;">
+    <div style="text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 36px; color: #D5EB4B;">500</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4);">Leads In</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 36px; color: #E53E3E;">23</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4);">Converted</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 36px; color: #E53E3E;">95.4%</div>
+      <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4);">Wasted</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px;">Find Your Bottleneck →</div>
+  </div>
+
+</div>
+</body>
+</html>

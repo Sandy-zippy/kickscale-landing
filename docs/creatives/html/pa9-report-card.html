@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 30% 70%, rgba(213,235,75,0.08) 0%, transparent 50%), radial-gradient(circle at 70% 20%, rgba(229,62,62,0.06) 0%, transparent 40%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Dot grid -->
+  <div style="position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 35px 35px;"></div>
+
+  <!-- Geometric accents -->
+  <div style="position: absolute; top: -60px; right: -60px; width: 300px; height: 300px; border: 1.5px solid rgba(213,235,75,0.05); border-radius: 50%;"></div>
+  <div style="position: absolute; bottom: -40px; left: -40px; width: 200px; height: 200px; border: 1.5px solid rgba(213,235,75,0.04); transform: rotate(45deg);"></div>
+
+  <!-- Accent bar -->
+  <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, #E53E3E 0%, #D5EB4B 100%);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 50px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 60px; z-index: 5;">
+    <div style="font-family: 'Inter', sans-serif; font-weight: 500; font-size: 14px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 16px;">Operations Report Card</div>
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 46px; line-height: 1.15; color: #FFFFFF;">
+      How does your<br>business <span style="color: #D5EB4B;">actually</span> score?
+    </h1>
+  </div>
+
+  <!-- Glassmorphism Report Card -->
+  <div style="position: absolute; top: 380px; left: 80px; right: 80px; background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 40px; z-index: 5;">
+    <!-- Grade rows -->
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      <!-- Speed to Lead -->
+      <div style="display: flex; align-items: center; gap: 24px;">
+        <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(229,62,62,0.15); border: 3px solid #E53E3E; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 32px; color: #E53E3E;">F</span>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #fff;">Speed to Lead</div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 4px;">Average response time: 47 hours</div>
+        </div>
+        <div style="width: 200px; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px;">
+          <div style="width: 12%; height: 100%; background: #E53E3E; border-radius: 3px;"></div>
+        </div>
+      </div>
+
+      <div style="height: 1px; background: rgba(255,255,255,0.06);"></div>
+
+      <!-- Follow-up Rate -->
+      <div style="display: flex; align-items: center; gap: 24px;">
+        <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(229,62,62,0.1); border: 3px solid #E5953E; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 32px; color: #E5953E;">D</span>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #fff;">Follow-up Rate</div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 4px;">Only 40% of leads get a 2nd touchpoint</div>
+        </div>
+        <div style="width: 200px; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px;">
+          <div style="width: 28%; height: 100%; background: #E5953E; border-radius: 3px;"></div>
+        </div>
+      </div>
+
+      <div style="height: 1px; background: rgba(255,255,255,0.06);"></div>
+
+      <!-- Report Accuracy -->
+      <div style="display: flex; align-items: center; gap: 24px;">
+        <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(255,165,0,0.1); border: 3px solid #E5C03E; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 32px; color: #E5C03E;">C</span>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 20px; color: #fff;">Report Accuracy</div>
+          <div style="font-family: 'Inter', sans-serif; font-size: 14px; color: rgba(255,255,255,0.4); margin-top: 4px;">Manual data entry = 15% error rate</div>
+        </div>
+        <div style="width: 200px; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px;">
+          <div style="width: 55%; height: 100%; background: #E5C03E; border-radius: 3px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body text -->
+  <div style="position: absolute; bottom: 170px; left: 80px; right: 80px; z-index: 5;">
+    <p style="font-family: 'Inter', sans-serif; font-size: 18px; color: rgba(255,255,255,0.5); text-align: center;">
+      These aren't grades you'd accept from your team. Why accept them from your systems?
+    </p>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px;">Get Your Real Score →</div>
+  </div>
+
+</div>
+</body>
+</html>

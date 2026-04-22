@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@700&display=swap');
+* { margin: 0; padding: 0; box-sizing: border-box; }
+</style>
+</head>
+<body style="background: #2A2A35; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+<div style="width: 1080px; height: 1080px; background: radial-gradient(circle at 50% 50%, rgba(213,235,75,0.06) 0%, transparent 60%), #2A2A35; position: relative; overflow: hidden;">
+
+  <!-- Blueprint grid pattern -->
+  <div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(213,235,75,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(213,235,75,0.04) 1px, transparent 1px); background-size: 40px 40px;"></div>
+  <!-- Larger grid overlay -->
+  <div style="position: absolute; inset: 0; background-image: linear-gradient(rgba(213,235,75,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(213,235,75,0.06) 1px, transparent 1px); background-size: 200px 200px;"></div>
+
+  <!-- Blueprint corner markers -->
+  <div style="position: absolute; top: 30px; left: 30px; width: 40px; height: 40px; border-top: 2px solid rgba(213,235,75,0.2); border-left: 2px solid rgba(213,235,75,0.2);"></div>
+  <div style="position: absolute; top: 30px; right: 30px; width: 40px; height: 40px; border-top: 2px solid rgba(213,235,75,0.2); border-right: 2px solid rgba(213,235,75,0.2);"></div>
+  <div style="position: absolute; bottom: 30px; left: 30px; width: 40px; height: 40px; border-bottom: 2px solid rgba(213,235,75,0.2); border-left: 2px solid rgba(213,235,75,0.2);"></div>
+  <div style="position: absolute; bottom: 30px; right: 30px; width: 40px; height: 40px; border-bottom: 2px solid rgba(213,235,75,0.2); border-right: 2px solid rgba(213,235,75,0.2);"></div>
+
+  <!-- Logo -->
+  <img src="../../../brand-assets/zippyscale-logo-for-dark-bg.png" style="position: absolute; top: 55px; left: 60px; width: 120px; height: auto; z-index: 10;">
+
+  <!-- Headline -->
+  <div style="position: absolute; top: 160px; left: 60px; right: 60px; z-index: 5;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(213,235,75,0.5); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;">BLUEPRINT // AUTOMATION MAP</div>
+    <h1 style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 44px; line-height: 1.15; color: #FFFFFF;">
+      We map your<br>entire operations.<br><span style="color: #D5EB4B;">Free.</span>
+    </h1>
+  </div>
+
+  <!-- Flow diagram -->
+  <div style="position: absolute; top: 430px; left: 80px; right: 80px; z-index: 5;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <!-- Node 1 -->
+      <div style="width: 140px; text-align: center;">
+        <div style="width: 80px; height: 80px; margin: 0 auto; background: rgba(213,235,75,0.1); border: 2px solid rgba(213,235,75,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 32px;">📥</span>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #D5EB4B; margin-top: 12px;">LEAD IN</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px;">Auto-capture</div>
+      </div>
+      <!-- Arrow -->
+      <div style="flex: 1; height: 2px; background: repeating-linear-gradient(90deg, #D5EB4B 0px, #D5EB4B 8px, transparent 8px, transparent 14px); margin: 0 -10px; opacity: 0.4;"></div>
+      <!-- Node 2 -->
+      <div style="width: 140px; text-align: center;">
+        <div style="width: 80px; height: 80px; margin: 0 auto; background: rgba(213,235,75,0.1); border: 2px solid rgba(213,235,75,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 32px;">🔍</span>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #D5EB4B; margin-top: 12px;">QUALIFY</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px;">AI scoring</div>
+      </div>
+      <!-- Arrow -->
+      <div style="flex: 1; height: 2px; background: repeating-linear-gradient(90deg, #D5EB4B 0px, #D5EB4B 8px, transparent 8px, transparent 14px); margin: 0 -10px; opacity: 0.4;"></div>
+      <!-- Node 3 -->
+      <div style="width: 140px; text-align: center;">
+        <div style="width: 80px; height: 80px; margin: 0 auto; background: rgba(213,235,75,0.1); border: 2px solid rgba(213,235,75,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 32px;">👤</span>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #D5EB4B; margin-top: 12px;">ASSIGN</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px;">Smart routing</div>
+      </div>
+      <!-- Arrow -->
+      <div style="flex: 1; height: 2px; background: repeating-linear-gradient(90deg, #D5EB4B 0px, #D5EB4B 8px, transparent 8px, transparent 14px); margin: 0 -10px; opacity: 0.4;"></div>
+      <!-- Node 4 -->
+      <div style="width: 140px; text-align: center;">
+        <div style="width: 80px; height: 80px; margin: 0 auto; background: rgba(213,235,75,0.1); border: 2px solid rgba(213,235,75,0.3); border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 32px;">🔄</span>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #D5EB4B; margin-top: 12px;">FOLLOW UP</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px;">Auto sequences</div>
+      </div>
+      <!-- Arrow -->
+      <div style="flex: 1; height: 2px; background: repeating-linear-gradient(90deg, #D5EB4B 0px, #D5EB4B 8px, transparent 8px, transparent 14px); margin: 0 -10px; opacity: 0.4;"></div>
+      <!-- Node 5 -->
+      <div style="width: 140px; text-align: center;">
+        <div style="width: 80px; height: 80px; margin: 0 auto; background: rgba(213,235,75,0.2); border: 2px solid #D5EB4B; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(213,235,75,0.2);">
+          <span style="font-size: 32px;">💰</span>
+        </div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 14px; color: #D5EB4B; margin-top: 12px;">CLOSE</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 4px;">Revenue</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What you get -->
+  <div style="position: absolute; top: 680px; left: 80px; right: 80px; z-index: 5;">
+    <div style="display: flex; gap: 20px;">
+      <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 20px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 28px; color: #D5EB4B;">12+</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px;">Processes Mapped</div>
+      </div>
+      <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 20px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 28px; color: #D5EB4B;">₹40L+</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px;">Savings Identified</div>
+      </div>
+      <div style="flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 20px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 28px; color: #D5EB4B;">48hrs</div>
+        <div style="font-family: 'Inter', sans-serif; font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px;">Delivery Time</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div style="position: absolute; bottom: 80px; left: 60px; right: 60px; text-align: center; z-index: 10;">
+    <div style="display: inline-block; background: #D5EB4B; color: #1A1A2E; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; padding: 16px 36px; border-radius: 8px; box-shadow: 0 0 30px rgba(213,235,75,0.3);">Get Your Blueprint →</div>
+  </div>
+
+</div>
+</body>
+</html>
