@@ -1,0 +1,37 @@
+:root {
+  /* Backgrounds */
+  --zs-cream-bg: #FFFDF7;
+  --zs-card-bg: #FFFFFF;
+  --zs-card-border: #E5E7EB;
+
+  /* Text */
+  --zs-charcoal: #1A1A2E;
+  --zs-charcoal-soft: #111827;
+  --zs-text-secondary: #4B5563;
+  --zs-text-muted: #6B7280;
+
+  /* Dark sections */
+  --zs-dark-bg: #2A2A35;
+  --zs-dark-border: #3E3E48;
+  --zs-dark-text: #FAFAFA;
+
+  /* Lime accents */
+  --zs-lime: #D5EB4B;
+  --zs-lime-dark: #B8CF2E;
+  --zs-lime-hover: #E4F57A;
+  --zs-lime-glow: rgba(213, 235, 75, 0.12);
+
+  /* Status */
+  --zs-green: #22C55E;
+  --zs-red: #EF4444;
+
+  /* Typography stacks */
+  --zs-font-heading: "Space Grotesk", system-ui, sans-serif;
+  --zs-font-body: "Inter", system-ui, sans-serif;
+  --zs-font-mono: "JetBrains Mono", "Courier New", monospace;
+
+  /* Deck-specific sizing (Meet legibility) */
+  --zs-deck-body: clamp(22px, 2.2vw, 28px);
+  --zs-deck-sub: clamp(28px, 3vw, 40px);
+  --zs-deck-heading: clamp(42px, 5vw, 72px);
+}
