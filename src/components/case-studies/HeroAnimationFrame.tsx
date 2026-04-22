@@ -123,14 +123,19 @@ export default function HeroAnimationFrame({
 
       {/* CHAOS ZONE — bubbles in mid card.
          Left-column bubbles (x < 50) anchor from the left edge and grow right;
-         right-column bubbles anchor from the right edge and grow left. That way
-         long pain copy never overflows the frame regardless of industry. */}
+         right-column bubbles anchor from the right edge and grow left. The
+         floating counter lives in the top-right corner, so any right-anchored
+         bubble in the top quarter is shifted further inward to clear it. */}
       <div className="absolute inset-x-3 top-20 bottom-24 overflow-hidden">
         {bubbles.map((b, i) => {
           const isVisible = phase === 'chaos'
           const rightAnchored = b.x >= 50
+          const inCounterRow = rightAnchored && b.y < 18
+          const rightOffset = inCounterRow
+            ? Math.max(28, 100 - b.x - 38)
+            : Math.max(0, 100 - b.x - 38)
           const position = rightAnchored
-            ? { right: `${Math.max(0, 100 - b.x - 38)}%` }
+            ? { right: `${rightOffset}%` }
             : { left: `${b.x}%` }
           return (
             <motion.div
@@ -161,8 +166,12 @@ export default function HeroAnimationFrame({
         {/* Resolved checks — same anchor rule so the check tracks the bubble */}
         {phase === 'resolve' && bubbles.map((b, i) => {
           const rightAnchored = b.x >= 50
+          const inCounterRow = rightAnchored && b.y < 18
+          const rightOffset = inCounterRow
+            ? Math.max(28, 100 - b.x - 34)
+            : Math.max(0, 100 - b.x - 34)
           const position = rightAnchored
-            ? { right: `${Math.max(0, 100 - b.x - 34)}%` }
+            ? { right: `${rightOffset}%` }
             : { left: `${b.x + 4}%` }
           return (
             <motion.div
