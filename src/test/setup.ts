@@ -2,6 +2,10 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 
+// Allow @testing-library/react's asyncWrapper to detect vitest fake timers
+// (it checks `typeof jest !== 'undefined'` to know whether to drain faked timers)
+;(globalThis as unknown as { jest: typeof vi }).jest = vi
+
 // Provide a spec-compliant localStorage implementation for Storage-dependent tests
 function createLocalStorageMock() {
   let store: Record<string, string> = {}
