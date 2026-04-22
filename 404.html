@@ -1,65 +1,21 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="facebook-domain-verification" content="mqi5dgm9bbfxkwdflfflhdrc8znim7" />
-    <link rel="icon" href="/favicon.png" type="image/png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ZippyScale | AI Automations That Run Your Business While You Scale</title>
-    <meta name="description" content="Save 18 Lakhs/Year. Cut 40 Hours/Week. We build AI automations for Indian businesses. Same team, 10x output.">
-    <meta property="og:title" content="ZippyScale | AI Automations for Indian Businesses">
-    <meta property="og:description" content="Save 18 Lakhs/Year. Cut 40 Hours/Week. We build AI automations for Indian businesses. Same team, 10x output.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://zippyscale.in">
-    <meta property="og:image" content="https://zippyscale.in/og-image.png">
-    <meta name="twitter:card" content="summary_large_image">
-    <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-700.woff2" crossorigin />
-    <link rel="preload" as="font" type="font/woff2" href="/fonts/inter-400.woff2" crossorigin />
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-MB6HQHJL');</script>
-    <!-- End Google Tag Manager -->
-    <!-- Google Analytics 4 (GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-38CLGNL7TJ"></script>
+    <meta charset="utf-8" />
+    <title>ZippyScale</title>
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-38CLGNL7TJ');
+      // SPA fallback for GitHub Pages.
+      // Capture the intended path + query + hash into sessionStorage,
+      // redirect to root, and let main.tsx rehydrate history.
+      (function () {
+        var l = window.location;
+        var spaPath = l.pathname + l.search + l.hash;
+        try {
+          sessionStorage.setItem("zippy_spa_path", spaPath);
+        } catch (e) {}
+        l.replace(l.origin + "/");
+      })();
     </script>
-    <!-- End GA4 -->
-    <!-- Meta Pixel Code -->
-    <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '961643772929674');
-    fbq('track', 'PageView');
-    </script>
-    <noscript><img height="1" width="1" style="display:none"
-    src="https://www.facebook.com/tr?id=961643772929674&ev=PageView&noscript=1"
-    /></noscript>
-    <!-- End Meta Pixel Code -->
-    <script type="module" crossorigin src="/assets/index-nCL8IybY.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/jsx-runtime-9YgKe2Eq.js">
-    <link rel="modulepreload" crossorigin href="/assets/react-CM_0bdEm.js">
-    <link rel="modulepreload" crossorigin href="/assets/chunk-LFPYN7LY-BwpMvokq.js">
-    <link rel="modulepreload" crossorigin href="/assets/use-in-view-UH3JNXLM.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-KALJ3p-F.css">
   </head>
-  <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MB6HQHJL"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
-    <div id="root"></div>
-  </body>
+  <body></body>
 </html>
