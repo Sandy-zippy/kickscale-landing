@@ -9,7 +9,10 @@ import TabbedStack from '../../components/case-studies/TabbedStack'
 import RelatedCaseStudiesCarousel from '../../components/case-studies/RelatedCaseStudiesCarousel'
 import FeaturedQuote from '../../components/case-studies/FeaturedQuote'
 import FaqAccordion from '../../components/case-studies/FaqAccordion'
-import ROICalculator from '../../components/sections/ROICalculator'
+import ClinicROICalculator from '../../components/case-studies/ClinicROICalculator'
+import WhatYouGetTable from '../../components/case-studies/WhatYouGetTable'
+import ComparisonTable from '../../components/case-studies/ComparisonTable'
+import AuditTimeline from '../../components/case-studies/AuditTimeline'
 import FinalCTA from '../../components/sections/FinalCTA'
 import AnimatedCounter from '../../components/ui/AnimatedCounter'
 import ScrollReveal from '../../components/ui/ScrollReveal'
@@ -267,8 +270,135 @@ export default function HomeopathicClinic() {
         </div>
       </section>
 
-      <section id="roi" className="bg-white border-y border-[#E5E7EB]">
-        <ROICalculator />
+      <section id="roi" className="py-16 px-4 bg-white border-y border-[#E5E7EB]">
+        <div className="max-w-5xl mx-auto">
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">Do the math for your clinic</h2>
+            <p className="text-[#6B7280] mb-6">Move three sliders. We will not store your inputs. The math is conservative on purpose.</p>
+          </ScrollReveal>
+          <ClinicROICalculator />
+        </div>
+      </section>
+
+      <section id="pricing" className="py-16 px-4">
+        <div className="max-w-5xl mx-auto">
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">What ₹1.5L actually buys you</h2>
+            <p className="text-[#6B7280] mb-8">No hidden setup fees. No "professional services" upsells. Everything below ships in 28 days.</p>
+          </ScrollReveal>
+          <WhatYouGetTable
+            oneTime={{
+              price: '₹1.5L',
+              subtitle: '4-week sprint, paid 50% on Week 0 and 50% on Week 4',
+              items: [
+                { included: true, label: 'Half-day clinic shadow + workflow audit', detail: 'We sit at your front desk for half a day. Map every WhatsApp, every call, every Tally entry.' },
+                { included: true, label: 'GHL sub-account fully configured', detail: 'Pipeline, custom fields, tags, automations, conversation inbox.' },
+                { included: true, label: 'WhatsApp Business API on your number', detail: 'Port your existing patient WhatsApp number to WABA. Patients see no change.' },
+                { included: true, label: '8 Meta-approved WhatsApp templates', detail: 'Inquiry ack, booking confirm, T-24h, T-2h, refill nudge, post-consult review, lapsed reactivation, payment receipt.' },
+                { included: true, label: 'AI triage agent trained on your top 40 FAQs', detail: 'Replies in <60s, hands off to your team on clinical or emotional triggers.' },
+                { included: true, label: 'n8n automation workflows', detail: 'Booking, dual reminders, refill scheduler, follow-up scheduler, daily 8am digest.' },
+                { included: true, label: 'Razorpay pre-consult fee link integration', detail: 'Auto-marks paid in GHL. Reduces no-shows via the commitment effect.' },
+                { included: true, label: 'Documented SOPs + 90-min team training', detail: 'Hand-over docs your front desk can actually follow.' },
+                { included: true, label: '30 days of hypercare after handover', detail: 'We monitor, fix, and tweak. You message us. We respond same-day.' },
+              ],
+            }}
+            recurring={{
+              price: '₹16K',
+              subtitle: 'Per month, billed monthly. Cancel anytime with 30 days notice.',
+              items: [
+                { included: true, label: 'WhatsApp Business API hosting', detail: 'BSP costs, message conversations, template approvals.' },
+                { included: true, label: 'GHL CRM seat + storage', detail: 'Full sub-account, unlimited contacts, unlimited team logins.' },
+                { included: true, label: 'AI agent inference + tuning', detail: 'Monthly retraining as your FAQ patterns evolve.' },
+                { included: true, label: 'n8n workflow hosting + monitoring', detail: 'We watch the queue. We get paged when something breaks.' },
+                { included: true, label: 'Email infrastructure', detail: 'Patient receipts, monthly reports, escalations.' },
+                { included: true, label: 'Quarterly review + performance tuning', detail: 'We pull numbers, propose tweaks, you approve.' },
+                { included: false, label: 'Major customizations', detail: 'New programmes, new branches, deep integrations are quoted separately as mini-sprints.' },
+              ],
+            }}
+          />
+        </div>
+      </section>
+
+      <section id="vs" className="py-16 px-4 bg-white border-y border-[#E5E7EB]">
+        <div className="max-w-5xl mx-auto">
+          <ScrollReveal>
+            <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">Why this beats the alternatives</h2>
+            <p className="text-[#6B7280] mb-8">An honest comparison. We are not the cheapest. We are the only one that ships a working system in 4 weeks.</p>
+          </ScrollReveal>
+          <ComparisonTable
+            columns={[
+              { name: 'Practo / ClinicMaster', badge: 'PMS' },
+              { name: 'Bitespeed / Interakt', badge: 'WABA SaaS' },
+              { name: 'Hire a full-time exec', badge: '1 hire' },
+              { name: 'ZippyScale', badge: 'Done-for-you', isUs: true },
+            ]}
+            rows={[
+              {
+                feature: 'WhatsApp triage on autopilot',
+                values: [
+                  { check: 'no', text: 'Not the focus' },
+                  { check: 'partial', text: 'Templates only, you set up' },
+                  { check: 'partial', text: 'Manual, depends on the person' },
+                  { check: 'yes', text: 'AI agent + human handoff' },
+                ],
+              },
+              {
+                feature: 'Day-before + day-of reminders',
+                values: [
+                  { check: 'partial', text: 'Some plans' },
+                  { check: 'yes', text: 'Yes, you build flows' },
+                  { check: 'no', text: 'They forget' },
+                  { check: 'yes', text: 'Wired in Week 2' },
+                ],
+              },
+              {
+                feature: 'Tally / accounting reconciliation',
+                values: [
+                  { check: 'no', text: 'Out of scope' },
+                  { check: 'no', text: 'Out of scope' },
+                  { check: 'partial', text: 'They learn over months' },
+                  { check: 'yes', text: 'n8n bridge included' },
+                ],
+              },
+              {
+                feature: 'Refill + D+14 follow-up cycles',
+                values: [
+                  { check: 'no', text: 'Manual' },
+                  { check: 'partial', text: 'You design + maintain' },
+                  { check: 'partial', text: 'On their best days' },
+                  { check: 'yes', text: 'Auto-scheduled per Rx' },
+                ],
+              },
+              {
+                feature: 'Live in 4 weeks',
+                values: [
+                  '6-12 weeks onboarding',
+                  '2-3 months DIY',
+                  '6-month ramp',
+                  { check: 'yes', text: '28 days, fixed' },
+                ],
+              },
+              {
+                feature: 'Total monthly cost',
+                values: [
+                  '₹3K-8K + your time',
+                  '₹5K-15K + your time',
+                  '₹40K-80K salary',
+                  '₹16K, fully managed',
+                ],
+              },
+              {
+                feature: 'Knowledge persists if person leaves',
+                values: [
+                  { check: 'partial', text: 'Software stays' },
+                  { check: 'partial', text: 'Software stays' },
+                  { check: 'no', text: 'Walks out the door' },
+                  { check: 'yes', text: 'System + SOPs + us' },
+                ],
+              },
+            ]}
+          />
+        </div>
       </section>
 
       <section id="objections" className="py-16 px-4">
@@ -339,6 +469,43 @@ export default function HomeopathicClinic() {
           </div>
         </section>
       )}
+
+      <section id="audit-timeline" className="py-16 px-4 bg-[#1A1A2E] text-white">
+        <div className="max-w-3xl mx-auto">
+          <ScrollReveal>
+            <span className="inline-block text-xs font-mono uppercase tracking-widest text-[#D5EB4B] mb-3">
+              What happens after you book
+            </span>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-2">Your free audit is 48 hours, end-to-end.</h2>
+            <p className="text-white/70 mb-10">No deck. No sales theatre. We map your stack, find the 3 biggest leaks, and price the sprint scope. Then you decide.</p>
+          </ScrollReveal>
+          <AuditTimeline
+            steps={[
+              {
+                hour: '0',
+                title: 'You book a 30-minute Zoom',
+                description: 'Pick any slot on the calendar. We confirm in 60 seconds. No deck, no presales call to "qualify" you.',
+              },
+              {
+                hour: '24',
+                title: 'We map your current process',
+                description: 'Half-day shadow at the clinic if you are in Hyderabad, or a remote walkthrough if not. We screenshot your WhatsApp, your Tally exports, your appointment diary.',
+              },
+              {
+                hour: '48',
+                title: 'You get the audit deliverable',
+                description: 'A short PDF: the 3 biggest leaks we found, target outcomes per leak, and the exact 4-week sprint scope priced at ₹1.5L. No fluff, no upsell.',
+              },
+              {
+                hour: '∞',
+                title: 'You decide. No pressure.',
+                description: 'About half the audits we run never become sprints. That is fine. The audit is genuinely useful even if you do nothing with it.',
+              },
+            ]}
+            ctaText="Book my free 48h audit"
+          />
+        </div>
+      </section>
 
       <section id="cta">
         <FinalCTA />

@@ -16,9 +16,12 @@ const SECTION_IDS = [
   { id: 'sprint', label: '4-Week Plan' },
   { id: 'outcomes', label: 'Target Outcomes' },
   { id: 'roi', label: 'ROI Calculator' },
+  { id: 'pricing', label: 'What ₹1.5L Buys' },
+  { id: 'vs', label: 'Vs Alternatives' },
   { id: 'objections', label: 'Objections' },
   { id: 'proof', label: 'Proof' },
   { id: 'faq', label: 'FAQ' },
+  { id: 'audit-timeline', label: '48h Audit' },
   { id: 'cta', label: 'Book Audit' },
 ]
 
