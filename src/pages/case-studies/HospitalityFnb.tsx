@@ -9,6 +9,7 @@ import TabbedStack from '../../components/case-studies/TabbedStack'
 import RelatedCaseStudiesCarousel from '../../components/case-studies/RelatedCaseStudiesCarousel'
 import FeaturedQuote from '../../components/case-studies/FeaturedQuote'
 import FaqAccordion from '../../components/case-studies/FaqAccordion'
+import TechStackBadges from '../../components/case-studies/TechStackBadges'
 import WhatYouGetTable from '../../components/case-studies/WhatYouGetTable'
 import ComparisonTable from '../../components/case-studies/ComparisonTable'
 import AuditTimeline from '../../components/case-studies/AuditTimeline'
@@ -248,6 +249,19 @@ export default function HospitalityFnb() {
               ),
             }))}
           />
+        </div>
+      </section>
+
+      <section id="tech" className="py-16 px-4 bg-[#FFFDF7]">
+        <div className="max-w-6xl mx-auto">
+          <ScrollReveal>
+            <span className="inline-block text-xs font-mono uppercase tracking-widest text-[#B8CF2E] mb-3">
+              Built with
+            </span>
+            <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">The engineering stack behind every sprint</h2>
+            <p className="text-[#6B7280] mb-8 max-w-2xl">No magic. Production-grade tools. We pick no-code where it makes sense and write code where it does not. India-hosted by default.</p>
+          </ScrollReveal>
+          <TechStackBadges />
         </div>
       </section>
 

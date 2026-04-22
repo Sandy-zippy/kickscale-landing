@@ -13,6 +13,7 @@ const SECTION_IDS = [
   { id: 'pain', label: 'The Pain' },
   { id: 'before', label: 'Before State' },
   { id: 'stack', label: 'The Stack' },
+  { id: 'tech', label: 'Built With' },
   { id: 'sprint', label: '4-Week Plan' },
   { id: 'outcomes', label: 'Target Outcomes' },
   { id: 'roi', label: 'ROI Calculator' },
