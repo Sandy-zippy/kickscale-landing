@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import Nav from '../layout/Nav'
 import Footer from '../layout/Footer'
 import StickyCTA from '../layout/StickyCTA'
