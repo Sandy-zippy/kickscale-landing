@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-9YgKe2Eq.js";var t=e();function n(){return(0,t.jsx)(`div`,{style:{width:`100%`,height:`100vh`},children:(0,t.jsx)(`iframe`,{src:`/growth-offer-legacy/index.html`,style:{width:`100%`,height:`100%`,border:`none`},title:`ZippyScale Growth Offer`})})}export{n as default};
