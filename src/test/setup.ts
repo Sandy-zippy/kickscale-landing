@@ -15,7 +15,7 @@ class MockIntersectionObserver {
   rootMargin = ''
   thresholds = []
 }
-;(global as any).IntersectionObserver = MockIntersectionObserver
+;(globalThis as unknown as { IntersectionObserver: unknown }).IntersectionObserver = MockIntersectionObserver
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
