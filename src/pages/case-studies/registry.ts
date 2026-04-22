@@ -20,7 +20,7 @@ const empty = (slug: CaseStudySlug): CaseStudyMetadata => ({
 export const registry: Record<CaseStudySlug, CaseStudyMetadata> = {
   'homeopathic-clinic-patient-flow': {
     slug: 'homeopathic-clinic-patient-flow',
-    title: 'Your specialty clinic shouldn\'t run on WhatsApp at midnight.',
+    title: 'Stop being your clinic\'s receptionist. Recover 25 hours a week in 28 days.',
     shortTitle: 'Homeopathic clinic: patient flow on autopilot',
     industry: 'Healthcare',
     primaryPain: 'Patient WhatsApp backlog',

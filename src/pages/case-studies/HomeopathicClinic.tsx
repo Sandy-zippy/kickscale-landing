@@ -6,8 +6,6 @@ import WhatsAppChaosMockup from '../../components/case-studies/WhatsAppChaosMock
 import WeekTimeline from '../../components/case-studies/WeekTimeline'
 import ObjectionAccordion from '../../components/case-studies/ObjectionAccordion'
 import TabbedStack from '../../components/case-studies/TabbedStack'
-import ShareButtons from '../../components/case-studies/ShareButtons'
-import CopyAsMarkdownButton from '../../components/case-studies/CopyAsMarkdownButton'
 import RelatedCaseStudiesCarousel from '../../components/case-studies/RelatedCaseStudiesCarousel'
 import ROICalculator from '../../components/sections/ROICalculator'
 import FinalCTA from '../../components/sections/FinalCTA'
@@ -32,50 +30,35 @@ const afterMessages = [
   { sender: 'AI', body: '⚠ Routed to doctor: severity flag detected.', time: 'Just now' },
 ]
 
-const markdownExport = `# ${meta.title}
-
-${content.painNarrative}
-
-## Stack
-${content.stackTools.map(t => `- **${t.name}** (${t.role}): ${t.description}`).join('\n')}
-
-## 4-Week Sprint
-${content.sprintPlan.map(w => `- **Week ${w.week}: ${w.title}.** ${w.deliverables.join('; ')}`).join('\n')}
-
-## Target Outcomes
-${content.targetOutcomes.map(o => `- ${o.metric}: ${o.before} → ${o.after}${o.caveat ? ` (${o.caveat})` : ''}`).join('\n')}
-
-**4-week sprint, ₹1.5L + ₹15-16K/month recurring.** Book your audit: https://zippyscale.in/#quiz`
-
 export default function HomeopathicClinic() {
   return (
     <CaseStudyLayout metadata={meta}>
       <CaseStudyHero
         variant={SLUG}
-        industryBadge="Case Study · Healthcare"
+        industryBadge="Case Study · Healthcare · 1-3 doctor clinics"
         headline={meta.title}
-        subhead="The 4-week stack that recovers 22 hours a week and cuts no-shows in half. Built for 1-3 doctor clinics in India still running on a personal WhatsApp number and a paper diary."
+        subhead="The 4-week WhatsApp + AI stack we deploy for 1-3 doctor specialty clinics in India. Patient booking, reminders, refill nudges, and follow-ups on autopilot. Your front desk handles the 20% that needs a human. You stop checking WhatsApp at midnight."
         statBefore={meta.heroStatBefore}
         statAfter={meta.heroStatAfter}
         statLabel={meta.heroStatLabel}
         benefits={[
-          'AI replies on WhatsApp in under 60 seconds, 24/7',
-          'Day-before reminders + D-3 refill nudges fire on autopilot',
-          'Doctor\'s morning digest: today\'s appointments, flagged cases, refills due',
+          'Patient WhatsApp answered in 60 seconds, 24/7. You stop being on-call after 7 PM.',
+          'Day-before + day-of reminders cut no-shows from 30% to under 15%. Empty slots stop happening.',
+          'Daily 8am digest on your phone: today\'s appointments, refills due, flagged cases. One screen, three minutes.',
         ]}
-        ctaText="Map my clinic in 48 hours"
-        ctaSubtext="Free. No commitment. We map your processes and show you the gaps."
+        ctaText="Book your free 48h clinic audit"
+        ctaSubtext="30 minutes on Zoom. No deck. We map your stack and flag the 3 biggest leaks."
       />
 
-      <section className="py-6 px-4 bg-white border-y border-[#E5E7EB]">
-        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-xs font-mono uppercase tracking-wider text-[#6B7280]">
-          <span>Used by 20+ Indian SMBs</span>
-          <span aria-hidden="true">·</span>
-          <span>8,000+ manual hours eliminated</span>
-          <span aria-hidden="true">·</span>
-          <span>₹1.6 Cr+ saved across clients</span>
-          <span aria-hidden="true">·</span>
-          <span>4-week sprint · ₹1.5L</span>
+      <section className="py-5 px-4 bg-white border-y border-[#E5E7EB]">
+        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-mono uppercase tracking-wider text-[#6B7280]">
+          <span>20+ Indian SMBs</span>
+          <span aria-hidden="true" className="text-[#D5EB4B]">●</span>
+          <span>8,000+ hours back</span>
+          <span aria-hidden="true" className="text-[#D5EB4B]">●</span>
+          <span>₹1.6 Cr+ saved</span>
+          <span aria-hidden="true" className="text-[#D5EB4B]">●</span>
+          <span>4-week sprint from ₹1.5L</span>
         </div>
       </section>
 
@@ -358,12 +341,6 @@ export default function HomeopathicClinic() {
         </section>
       )}
 
-      <section className="py-8 px-4 bg-white border-t border-[#E5E7EB]">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <ShareButtons title={meta.title} url={`https://zippyscale.in/case-studies/${SLUG}`} />
-          <CopyAsMarkdownButton markdown={markdownExport} />
-        </div>
-      </section>
     </CaseStudyLayout>
   )
 }
