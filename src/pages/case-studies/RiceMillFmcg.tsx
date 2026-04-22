@@ -10,6 +10,7 @@ import RelatedCaseStudiesCarousel from '../../components/case-studies/RelatedCas
 import FeaturedQuote from '../../components/case-studies/FeaturedQuote'
 import FaqAccordion from '../../components/case-studies/FaqAccordion'
 import TechStackBadges from '../../components/case-studies/TechStackBadges'
+import IndustryROICalculator from '../../components/case-studies/IndustryROICalculator'
 import WhatYouGetTable from '../../components/case-studies/WhatYouGetTable'
 import ComparisonTable from '../../components/case-studies/ComparisonTable'
 import AuditTimeline from '../../components/case-studies/AuditTimeline'
@@ -296,6 +297,12 @@ export default function RiceMillFmcg() {
               </ScrollReveal>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="roi" className="py-16 px-4 bg-white border-y border-[#E5E7EB]">
+        <div className="max-w-5xl mx-auto">
+          <IndustryROICalculator slug={SLUG} />
         </div>
       </section>
 

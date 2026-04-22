@@ -10,7 +10,7 @@ import RelatedCaseStudiesCarousel from '../../components/case-studies/RelatedCas
 import FeaturedQuote from '../../components/case-studies/FeaturedQuote'
 import FaqAccordion from '../../components/case-studies/FaqAccordion'
 import TechStackBadges from '../../components/case-studies/TechStackBadges'
-import ClinicROICalculator from '../../components/case-studies/ClinicROICalculator'
+import IndustryROICalculator from '../../components/case-studies/IndustryROICalculator'
 import WhatYouGetTable from '../../components/case-studies/WhatYouGetTable'
 import ComparisonTable from '../../components/case-studies/ComparisonTable'
 import AuditTimeline from '../../components/case-studies/AuditTimeline'
@@ -302,11 +302,7 @@ export default function HomeopathicClinic() {
 
       <section id="roi" className="py-16 px-4 bg-white border-y border-[#E5E7EB]">
         <div className="max-w-5xl mx-auto">
-          <ScrollReveal>
-            <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">Do the math for your clinic</h2>
-            <p className="text-[#6B7280] mb-6">Move three sliders. We will not store your inputs. The math is conservative on purpose.</p>
-          </ScrollReveal>
-          <ClinicROICalculator />
+          <IndustryROICalculator slug={SLUG} />
         </div>
       </section>
 
