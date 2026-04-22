@@ -121,10 +121,17 @@ export default function HeroAnimationFrame({
         </span>
       </motion.div>
 
-      {/* CHAOS ZONE — bubbles in mid card */}
-      <div className="absolute inset-x-0 top-20 bottom-24 overflow-hidden">
+      {/* CHAOS ZONE — bubbles in mid card.
+         Left-column bubbles (x < 50) anchor from the left edge and grow right;
+         right-column bubbles anchor from the right edge and grow left. That way
+         long pain copy never overflows the frame regardless of industry. */}
+      <div className="absolute inset-x-3 top-20 bottom-24 overflow-hidden">
         {bubbles.map((b, i) => {
           const isVisible = phase === 'chaos'
+          const rightAnchored = b.x >= 50
+          const position = rightAnchored
+            ? { right: `${Math.max(0, 100 - b.x - 38)}%` }
+            : { left: `${b.x}%` }
           return (
             <motion.div
               key={i}
@@ -143,28 +150,34 @@ export default function HeroAnimationFrame({
                     ? { duration: 0.4, delay: i * 0.1, ease: [0.34, 1.56, 0.64, 1] }
                     : { duration: 0.3, delay: i * 0.04, ease: 'easeIn' }
               }
-              className="absolute bg-white rounded-xl px-2.5 py-1.5 text-[11px] shadow-md max-w-[150px] font-mono font-semibold text-[#1A1A2E] border whitespace-nowrap"
-              style={{ left: `${b.x}%`, top: `${b.y}%`, borderColor: motif.accentTint + '30' }}
+              className="absolute bg-white rounded-xl px-2.5 py-1.5 text-[11px] leading-tight shadow-md max-w-[145px] font-mono font-semibold text-[#1A1A2E] border"
+              style={{ ...position, top: `${b.y}%`, borderColor: motif.accentTint + '30' }}
             >
               {b.text}
             </motion.div>
           )
         })}
 
-        {/* Resolved checks */}
-        {phase === 'resolve' && bubbles.map((b, i) => (
-          <motion.div
-            key={`check-${i}`}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: [0, 1, 1, 0], scale: [0, 1.2, 1, 0.5] }}
-            transition={reduce ? { duration: 0 } : { duration: 1.5, delay: 0.2 + i * 0.06 }}
-            className="absolute w-7 h-7 rounded-full bg-[#22C55E] text-white flex items-center justify-center text-sm font-bold shadow-lg"
-            style={{ left: `${b.x + 4}%`, top: `${b.y - 1}%` }}
-            aria-hidden="true"
-          >
-            ✓
-          </motion.div>
-        ))}
+        {/* Resolved checks — same anchor rule so the check tracks the bubble */}
+        {phase === 'resolve' && bubbles.map((b, i) => {
+          const rightAnchored = b.x >= 50
+          const position = rightAnchored
+            ? { right: `${Math.max(0, 100 - b.x - 34)}%` }
+            : { left: `${b.x + 4}%` }
+          return (
+            <motion.div
+              key={`check-${i}`}
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0, 1.2, 1, 0.5] }}
+              transition={reduce ? { duration: 0 } : { duration: 1.5, delay: 0.2 + i * 0.06 }}
+              className="absolute w-7 h-7 rounded-full bg-[#22C55E] text-white flex items-center justify-center text-sm font-bold shadow-lg"
+              style={{ ...position, top: `${b.y - 1}%` }}
+              aria-hidden="true"
+            >
+              ✓
+            </motion.div>
+          )
+        })}
       </div>
 
       {/* COUNTER — top-right, dominant during chaos, hides during resolve */}
