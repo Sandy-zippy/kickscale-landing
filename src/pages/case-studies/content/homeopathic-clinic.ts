@@ -149,6 +149,36 @@ She does not want a bot that sounds cold. Her patients trust her voice. She want
       rebuttal: 'Most clinics abandon practice management software because it demands clinical data entry. We do not. We automate the demand side (WhatsApp, reminders, collections) and leave your clinical workflow untouched.',
     },
   ],
+  faqs: [
+    {
+      question: 'How fast can my clinic be live on this stack?',
+      answer: 'Week 1 is discovery + WABA provisioning. By the end of Week 2, your AI triage is replying to inbound WhatsApp inquiries and the calendar booking link is live. The full stack (refills, follow-ups, daily digest) is operational by Day 28. We include 30 days of hypercare after handover.',
+    },
+    {
+      question: 'What if my clinic uses Practo, ClinicMaster or Cliniify already?',
+      answer: 'We do not replace your practice management software. Our stack handles the patient demand side (WhatsApp, booking, reminders, refill nudges, payments). A thin n8n connector syncs patient master one-way so you avoid double entry. Your clinical workflow stays untouched.',
+    },
+    {
+      question: 'Will my patients feel they are talking to a bot?',
+      answer: 'The AI handles the predictable 80% (clinic hours, fee, directions, booking, reminders, refills) and hands off to your front desk on any clinical or emotional trigger word (severe, worse, emergency, pain). Most patients prefer self-service booking at 11 PM over waiting until morning. Your voice still shows up where it matters.',
+    },
+    {
+      question: 'Is patient data safe? What about NABH / data residency?',
+      answer: 'WhatsApp Business API is Meta-encrypted end-to-end. GHL stores patient contact + complaint tags only, not clinical notes or Rx details (those stay in your practice management software). Paid tier is India-hosted. We sign an NDA + DPA before onboarding and walk through a data-flow diagram for your auditor.',
+    },
+    {
+      question: 'What does ₹1.5L include and what is recurring?',
+      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA template approvals, AI agent training, n8n workflows, integrations, team training, and 30-day hypercare. Recurring is ₹15-16K/month for WhatsApp API hosting, GHL CRM, AI agent inference, and email infra. No setup fees inside the recurring.',
+    },
+    {
+      question: 'What happens after the 4 weeks if something breaks?',
+      answer: '30 days of hypercare is included in the sprint price. After that, the recurring covers monitoring, maintenance, template updates, and quarterly reviews. Major customizations (new programmes, new branches, new integrations) are quoted separately as mini-sprints.',
+    },
+    {
+      question: 'Have you actually done this for a homeopathic / specialty clinic before?',
+      answer: 'We have deployed the same stack pattern across 20+ Indian SMBs in healthcare, manufacturing, retail, and services. The healthcare-specific pieces (NABH-friendly data flows, refill cycle nudges, multi-doctor calendars) are proven. We run a 48-hour audit before any sprint so you see exactly what we will build for YOUR clinic before paying anything.',
+    },
+  ],
   proofElements: [
     'Before/after of chaotic personal WhatsApp thread vs clean GHL conversation inbox with tags',
     'Visual of the 7-stage patient lifecycle pipeline',

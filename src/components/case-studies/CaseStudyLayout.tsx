@@ -18,6 +18,7 @@ const SECTION_IDS = [
   { id: 'roi', label: 'ROI Calculator' },
   { id: 'objections', label: 'Objections' },
   { id: 'proof', label: 'Proof' },
+  { id: 'faq', label: 'FAQ' },
   { id: 'cta', label: 'Book Audit' },
 ]
 

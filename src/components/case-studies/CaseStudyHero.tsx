@@ -46,25 +46,25 @@ export default function CaseStudyHero({
           {subhead && (
             <p className="text-base lg:text-lg text-[#4B5563] mb-6 leading-relaxed">{subhead}</p>
           )}
-          <div className="flex items-baseline gap-3 mb-6 flex-wrap">
+          <div className="flex items-baseline gap-4 mb-6 flex-wrap">
             <motion.span
               initial={reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={reduce ? { duration: 0 } : { duration: 0.5, ease: 'easeOut' }}
-              className="text-3xl lg:text-4xl font-mono font-bold text-red-600"
+              className="text-5xl lg:text-6xl font-mono font-bold text-red-600 leading-none"
             >
               {statBefore}
             </motion.span>
-            <span className="text-[#6B7280]" aria-hidden="true">→</span>
+            <span className="text-2xl text-[#6B7280]" aria-hidden="true">→</span>
             <motion.span
               initial={reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={reduce ? { duration: 0 } : { duration: 0.5, delay: 0.3, ease: 'easeOut' }}
-              className="text-3xl lg:text-4xl font-mono font-bold text-[#B8CF2E]"
+              className="text-5xl lg:text-6xl font-mono font-bold text-[#B8CF2E] leading-none"
             >
               {statAfter}
             </motion.span>
-            <span className="text-sm text-[#6B7280] ml-1">{statLabel}</span>
+            <span className="text-sm font-mono uppercase tracking-wider text-[#6B7280] basis-full md:basis-auto md:ml-2">{statLabel}</span>
           </div>
           {benefits && benefits.length > 0 && (
             <ul className="space-y-2 mb-8">

@@ -7,6 +7,8 @@ import WeekTimeline from '../../components/case-studies/WeekTimeline'
 import ObjectionAccordion from '../../components/case-studies/ObjectionAccordion'
 import TabbedStack from '../../components/case-studies/TabbedStack'
 import RelatedCaseStudiesCarousel from '../../components/case-studies/RelatedCaseStudiesCarousel'
+import FeaturedQuote from '../../components/case-studies/FeaturedQuote'
+import FaqAccordion from '../../components/case-studies/FaqAccordion'
 import ROICalculator from '../../components/sections/ROICalculator'
 import FinalCTA from '../../components/sections/FinalCTA'
 import AnimatedCounter from '../../components/ui/AnimatedCounter'
@@ -133,27 +135,27 @@ export default function HomeopathicClinic() {
       </section>
 
       <section id="pain" className="py-16 px-4 bg-white border-y border-[#E5E7EB]">
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-12 items-start">
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-[1.2fr_1fr] gap-12 items-center">
           <div>
             <ScrollReveal>
               <h2 className="text-3xl font-bold text-[#1A1A2E] mb-6">The Pain</h2>
               {content.painNarrative.split('\n\n').map((p, i) => (
                 <p key={i} className="text-[#4B5563] leading-relaxed mb-4">{p}</p>
               ))}
-              <div className="mt-8 space-y-4">
-                {content.painQuotes.map((q, i) => (
-                  <blockquote key={i} className="border-l-4 border-[#D5EB4B] pl-4 italic text-[#1A1A2E]">
-                    "{q.quote}"
-                    <footer className="text-xs text-[#6B7280] not-italic mt-1">{q.attribution}</footer>
-                  </blockquote>
-                ))}
-              </div>
             </ScrollReveal>
           </div>
-          <div className="lg:sticky lg:top-24">
+          <div>
             <WhatsAppChaosMockup beforeMessages={beforeMessages} afterMessages={afterMessages} />
           </div>
         </div>
+      </section>
+
+      <section className="py-20 px-4 bg-[#FFFDF7]">
+        <FeaturedQuote
+          quote={content.painQuotes[0].quote}
+          attribution={content.painQuotes[0].attribution}
+          context="From a discovery call with a Hyderabad clinic founder, March 2026"
+        />
       </section>
 
       <section id="before" className="py-16 px-4">
@@ -325,6 +327,18 @@ export default function HomeopathicClinic() {
           </div>
         </div>
       </section>
+
+      {content.faqs && content.faqs.length > 0 && (
+        <section id="faq" className="py-16 px-4">
+          <div className="max-w-3xl mx-auto">
+            <ScrollReveal>
+              <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">Frequently asked, honestly answered</h2>
+              <p className="text-[#6B7280] mb-8">The questions every clinic owner asks before signing the audit. No fluff.</p>
+            </ScrollReveal>
+            <FaqAccordion items={content.faqs} />
+          </div>
+        </section>
+      )}
 
       <section id="cta">
         <FinalCTA />

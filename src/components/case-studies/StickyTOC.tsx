@@ -23,7 +23,7 @@ export default function StickyTOC({ sections }: { sections: Section[] }) {
   return (
     <nav
       data-testid="sticky-toc"
-      className="hidden lg:block fixed left-8 top-1/2 -translate-y-1/2 w-56 z-40"
+      className="hidden 2xl:block fixed left-6 top-1/2 -translate-y-1/2 w-44 z-40"
       aria-label="Case study sections"
     >
       <ul className="space-y-2 text-sm">

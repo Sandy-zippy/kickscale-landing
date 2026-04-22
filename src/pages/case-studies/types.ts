@@ -46,6 +46,7 @@ export interface CaseStudyContent {
   sprintPlan: Array<{ week: 1 | 2 | 3 | 4; title: string; deliverables: string[] }>
   targetOutcomes: Array<{ metric: string; before: string; after: string; caveat?: string }>
   objections: Array<{ objection: string; rebuttal: string }>
+  faqs?: Array<{ question: string; answer: string }>
   proofElements: string[]
   downloads: Array<{ label: string; href: string; filetype: 'json' | 'csv' | 'pdf' }>
 }

@@ -15,10 +15,10 @@ describe('StickyTOC', () => {
       expect(screen.getByRole('link', { name: s.label })).toHaveAttribute('href', `#${s.id}`)
     })
   })
-  it('is hidden on mobile, visible on desktop', () => {
+  it('is hidden until 2xl viewport (avoids overlap with content at lg/xl widths)', () => {
     render(<StickyTOC sections={sections} />)
     const toc = screen.getByTestId('sticky-toc')
-    expect(toc).toHaveClass('hidden', 'lg:block')
+    expect(toc).toHaveClass('hidden', '2xl:block')
   })
   it('exposes nav landmark with aria-label', () => {
     render(<StickyTOC sections={sections} />)
