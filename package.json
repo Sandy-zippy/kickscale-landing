@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "export:discovery": "node scripts/export-discovery-deck-pdf.mjs"
   },
   "dependencies": {
     "@microsoft/clarity": "^1.0.2",
@@ -37,6 +38,7 @@
     "globals": "^17.4.0",
     "jsdom": "^29.0.2",
     "playwright": "^1.59.1",
+    "puppeteer": "^24.42.0",
     "tailwindcss": "^4.2.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.0",
