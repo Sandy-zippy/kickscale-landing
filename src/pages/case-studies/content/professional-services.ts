@@ -50,7 +50,7 @@ Pipeline: invisible until the Friday partner sync. By then, Monday\'s urgent ask
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with Professional Services tag. Custom fields: service_line, scoping_status, proposal_value, retainer_or_project, partner_owner, billing_cadence, client_health_score. Pipeline: New Lead → Qualifying → Scoping → Proposal Sent → Negotiation → Won → Active Engagement → Invoiced → Paid → Closed.',
+      description: 'Services-tagged sub-account. Each engagement carries service line, scoping status, proposal value, retainer-or-project flag, partner owner, billing cadence, and client health score. Pipeline: New Lead → Qualifying → Scoping → Proposal Sent → Negotiation → Won → Active Engagement → Invoiced → Paid → Closed.',
     },
     {
       name: 'Unified inbox',

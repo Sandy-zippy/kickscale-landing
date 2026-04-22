@@ -2,7 +2,8 @@ import { motion, useInView, useReducedMotion, AnimatePresence } from 'framer-mot
 import { useRef, useState, useEffect } from 'react'
 
 interface Msg { sender: string; body: string; time: string }
-interface Props { beforeMessages: Msg[]; afterMessages: Msg[] }
+interface Profile { name: string; initials: string; chaosLabel?: string }
+interface Props { beforeMessages: Msg[]; afterMessages: Msg[]; profile?: Profile }
 
 type Phase = 'chaos' | 'ai-takeover' | 'calm'
 
@@ -11,7 +12,9 @@ const CHAOS_END = 6000       // 0-6s: messages stream in fast, counter ticks 0�
 const TAKEOVER_END = 8000    // 6-8s: AI activation visual + messages get green check
 // 8-12s: calm/resolved, then loop
 
-export default function WhatsAppChaosMockup({ beforeMessages, afterMessages }: Props) {
+const DEFAULT_PROFILE: Profile = { name: 'Dr Clinic', initials: 'Dr' }
+
+export default function WhatsAppChaosMockup({ beforeMessages, afterMessages, profile = DEFAULT_PROFILE }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const inView = useInView(ref, { amount: 0.2 })
   const reduce = useReducedMotion()
@@ -35,10 +38,11 @@ export default function WhatsAppChaosMockup({ beforeMessages, afterMessages }: P
       const elapsed = (Date.now() - start) % CYCLE_MS
 
       if (elapsed < CHAOS_END) {
-        // CHAOS: messages stream in one by one, counter ramps to 47
+        // CHAOS: messages stream in one every 200ms (full set visible by ~1.5s),
+        // then unread counter keeps ticking 0→47 over the 6-second chaos window.
         setPhase('chaos')
         const progress = elapsed / CHAOS_END
-        setVisibleCount(Math.min(beforeMessages.length, Math.ceil(progress * beforeMessages.length * 1.4)))
+        setVisibleCount(Math.min(beforeMessages.length, Math.floor(elapsed / 200) + 1))
         setUnread(Math.round(progress * 47))
         setResolvedIdx(-1)
       } else if (elapsed < TAKEOVER_END) {
@@ -59,7 +63,7 @@ export default function WhatsAppChaosMockup({ beforeMessages, afterMessages }: P
     return () => clearInterval(id)
   }, [inView, reduce, beforeMessages.length])
 
-  const headerName = phase === 'calm' ? 'ZippyScale AI · auto-reply' : 'Dr Clinic'
+  const headerName = phase === 'calm' ? 'ZippyScale AI · auto-reply' : profile.name
   const headerSub = phase === 'calm'
     ? 'online · 0 unread'
     : phase === 'ai-takeover'
@@ -102,7 +106,7 @@ export default function WhatsAppChaosMockup({ beforeMessages, afterMessages }: P
               phase === 'calm' ? 'bg-[#D5EB4B] text-[#1A1A2E]' : 'bg-white/15'
             }`}
           >
-            {phase === 'calm' ? 'ZS' : 'Dr'}
+            {phase === 'calm' ? 'ZS' : profile.initials}
           </motion.div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm truncate">{headerName}</p>

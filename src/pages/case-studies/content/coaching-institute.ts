@@ -49,7 +49,7 @@ Across the funnel: 30 to 50% of paid-ad inquiries die between the first WhatsApp
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with Education tag. Custom fields: programme_interest, target_exam, batch_preference, fee_quoted, parent_phone, dropout_risk_score. Pipeline: New Inquiry → Counselled → Demo Booked → Demo Done → Fee Quoted → Enrolled → Active → At Risk → Dropped.',
+      description: 'Education-tagged sub-account. Each lead carries programme of interest, target exam, batch preference, fee quoted, parent phone, and a dropout-risk score. Pipeline: New Inquiry → Counselled → Demo Booked → Demo Done → Fee Quoted → Enrolled → Active → At Risk → Dropped.',
     },
     {
       name: 'WhatsApp Business API',

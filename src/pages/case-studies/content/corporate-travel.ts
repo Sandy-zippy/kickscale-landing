@@ -49,7 +49,7 @@ The founder does not need a Travelopro CRM. He tried, the team rebelled. He need
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with Travel tag. Custom fields: corporate_account, contract_type, RFQ_value, margin_%, vendor_partner, GDS_PNR, ticket_number. Pipeline: New RFQ → Quoted → Negotiation → Confirmed → Ticketed → Travelled → Invoiced → Paid → Closed.',
+      description: 'Travel-tagged sub-account. Each RFQ carries corporate account, contract type, RFQ value, margin %, vendor partner, GDS PNR, and ticket number. Pipeline: New RFQ → Quoted → Negotiation → Confirmed → Ticketed → Travelled → Invoiced → Paid → Closed.',
     },
     {
       name: 'WhatsApp Business API + Email parser',

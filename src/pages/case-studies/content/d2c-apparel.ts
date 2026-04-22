@@ -49,7 +49,7 @@ iOS 14 broke Meta attribution 18 months ago. She is flying blind on which audien
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with D2C tag. Native Shopify integration syncs orders, customers, LTV, products. Custom fields: AOV, last_order_date, replenishment_due, VIP_tier, channel_first_touch. Pipeline: Lead → First-Touch → Cart Active → Cart Abandoned → Recovered → Customer → Repeat → VIP → At-Risk.',
+      description: 'D2C-tagged sub-account. Native Shopify integration syncs orders, customers, LTV, and products. Each customer record carries AOV, last-order date, next replenishment date, VIP tier, and first-touch channel. Pipeline: Lead → First-Touch → Cart Active → Cart Abandoned → Recovered → Customer → Repeat → VIP → At-Risk.',
     },
     {
       name: 'WhatsApp Business API',

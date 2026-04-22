@@ -47,7 +47,7 @@ The owner does not need a new ERP. Marg, Vyapar, Tally with extensions all exist
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with Distribution tag. Custom fields: dealer_code, credit_limit, outstanding_balance, last_order_date, sku_preference. Pipeline: New Order → Confirmed → Picked → Dispatched → Invoiced → Paid → Closed.',
+      description: 'Distribution-tagged sub-account. Each dealer record carries dealer code, credit limit, outstanding balance, last-order date, and SKU preference. Pipeline: New Order → Confirmed → Picked → Dispatched → Invoiced → Paid → Closed.',
     },
     {
       name: 'WhatsApp Business API',

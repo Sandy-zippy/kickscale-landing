@@ -51,7 +51,7 @@ He does not want to throw out the whiteboard. The foreman uses it for 8-hour shi
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with FMCG / Distribution tag. Custom fields: distributor_code, beat, credit_limit, outstanding_balance, sku_preference, last_order_date. Pipeline: New Order → Confirmed → Dispatched → Invoiced → Paid → Statement Sent.',
+      description: 'FMCG/Distribution-tagged sub-account. Each distributor record carries distributor code, beat, credit limit, outstanding balance, SKU preference, and last-order date. Pipeline: New Order → Confirmed → Dispatched → Invoiced → Paid → Statement Sent.',
     },
     {
       name: 'WhatsApp Business API',

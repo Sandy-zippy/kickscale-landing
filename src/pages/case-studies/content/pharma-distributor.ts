@@ -47,7 +47,7 @@ The accountant handles all of this and quits every two years. The founder, a sec
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with Pharma tag. Custom fields: retailer_drug_licence, credit_limit, outstanding_balance, payment_terms, MR_assigned, near_expiry_value. Pipeline: MR Field Order → Admin Confirmed → Credit Approved → Dispatched → Delivered → Invoiced → Paid → Statement Sent.',
+      description: 'Pharma-tagged sub-account. Each retailer record carries drug-licence number, credit limit, outstanding balance, payment terms, assigned MR, and near-expiry stock value. Pipeline: MR Field Order → Admin Confirmed → Credit Approved → Dispatched → Delivered → Invoiced → Paid → Statement Sent.',
     },
     {
       name: 'WhatsApp Business API',

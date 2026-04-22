@@ -31,7 +31,7 @@ const variantColors: Record<NonNullable<Node['variant']>, { bg: string; border: 
 
 export default function StackArchitectureDiagram({ nodes, edges, ariaLabel }: Props) {
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { amount: 0.3 })
+  const inView = useInView(ref, { amount: 0.15, once: true })
   const reduce = useReducedMotion()
   const nodeMap = new Map(nodes.map(n => [n.id, n]))
 
@@ -67,18 +67,16 @@ export default function StackArchitectureDiagram({ nodes, edges, ariaLabel }: Pr
 
           return (
             <g key={`${edge.from}-${edge.to}-${i}`}>
-              {/* Static edge */}
-              <motion.line
+              {/* Static dashed edge — always visible so the architecture reads as a graph even before animations finish */}
+              <line
                 x1={`${x1}%`}
                 y1={`${y1}%`}
                 x2={`${x2}%`}
                 y2={`${y2}%`}
-                stroke="#D1D5DB"
-                strokeWidth="2"
-                strokeDasharray="4 4"
-                initial={reduce ? { pathLength: 1 } : { pathLength: 0 }}
-                animate={inView ? { pathLength: 1 } : {}}
-                transition={reduce ? { duration: 0 } : { duration: 0.8, delay, ease: 'easeOut' }}
+                stroke="#94A3B8"
+                strokeWidth="1.5"
+                strokeDasharray="5 4"
+                opacity="0.7"
               />
               {/* Traveling packet (dot) */}
               {!reduce && inView && (
@@ -94,7 +92,7 @@ export default function StackArchitectureDiagram({ nodes, edges, ariaLabel }: Pr
                   }}
                   transition={{
                     duration: 1.6,
-                    delay: delay + 0.6,
+                    delay: delay + 0.4,
                     repeat: Infinity,
                     repeatDelay: 2.5,
                     ease: 'easeInOut',
@@ -113,9 +111,9 @@ export default function StackArchitectureDiagram({ nodes, edges, ariaLabel }: Pr
         return (
           <motion.div
             key={n.id}
-            initial={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
+            initial={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.85 }}
             animate={inView ? { opacity: 1, scale: 1 } : {}}
-            transition={reduce ? { duration: 0 } : { duration: 0.4, delay: i * 0.08, ease: [0.34, 1.56, 0.64, 1] }}
+            transition={reduce ? { duration: 0 } : { duration: 0.35, delay: Math.min(i * 0.05, 0.3), ease: [0.34, 1.56, 0.64, 1] }}
             className="absolute -translate-x-1/2 -translate-y-1/2 px-3 py-2 rounded-lg text-center shadow-md"
             style={{
               left: `${n.x}%`,

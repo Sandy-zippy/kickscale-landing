@@ -47,7 +47,7 @@ The owner spent ₹8L on Siemens NX two years ago. NX touches design and BOM bea
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with Manufacturing tag. Custom fields: enquiry_source, project_value, BOM_reference, quote_version, PO_number, NX_workorder_id, dispatch_eta. Pipeline: Enquiry → Quoted → Negotiation → PO Received → In Production → Dispatched → Invoiced → Paid.',
+      description: 'Manufacturing-tagged sub-account. Each enquiry carries source, project value, BOM reference, quote version, PO number, NX work-order ID, and dispatch ETA. Pipeline: Enquiry → Quoted → Negotiation → PO Received → In Production → Dispatched → Invoiced → Paid.',
     },
     {
       name: 'WhatsApp Business API',

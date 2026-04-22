@@ -165,7 +165,7 @@ export default function D2cApparelBeauty() {
             </ScrollReveal>
           </div>
           <div>
-            <WhatsAppChaosMockup beforeMessages={beforeMessages} afterMessages={afterMessages} />
+            <WhatsAppChaosMockup beforeMessages={beforeMessages} afterMessages={afterMessages} profile={{ name: 'Customer Care', initials: 'CC' }} />
           </div>
         </div>
       </section>
@@ -451,21 +451,17 @@ export default function D2cApparelBeauty() {
               </li>
             ))}
           </ul>
-          <div className="mb-12">
-            <p className="text-xs font-mono uppercase tracking-wider text-[#6B7280] mb-3">Downloadable templates · coming soon</p>
-            <div className="flex flex-wrap gap-3">
-              {content.downloads.map((d, i) => (
-                <span
-                  key={i}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 border border-dashed border-[#E5E7EB] text-sm opacity-60 cursor-not-allowed"
-                  aria-disabled="true"
-                  title="Available in next release"
-                >
-                  <span className="font-mono text-xs text-[#6B7280] uppercase">.{d.filetype}</span>
-                  <span className="text-[#6B7280] font-semibold">{d.label}</span>
-                </span>
-              ))}
+          <div className="mb-12 rounded-xl border border-[#E5E7EB] bg-[#FFFDF7] p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+            <div>
+              <p className="text-xs font-mono uppercase tracking-wider text-[#B8CF2E] mb-1">Want the templates?</p>
+              <p className="text-sm text-[#1A1A2E]">{content.downloads.length}+ workflow blueprints, sanitized screenshots and the GHL field map land in your inbox after the free 48-hour audit.</p>
             </div>
+            <a
+              href="#audit-timeline"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-2.5 bg-[#1A1A2E] text-white rounded-lg text-sm font-semibold hover:bg-[#2A2A3E] transition-colors whitespace-nowrap"
+            >
+              See what the audit covers →
+            </a>
           </div>
           <div className="pt-8 border-t border-[#E5E7EB] grid md:grid-cols-3 gap-4 text-center">
             <div>

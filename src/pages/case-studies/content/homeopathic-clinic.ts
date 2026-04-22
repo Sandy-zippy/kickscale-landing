@@ -45,7 +45,7 @@ She does not want a bot that sounds cold. Her patients trust her voice. She want
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with Healthcare tag. Custom fields: patient_complaint, case_opened_date, next_followup_due, rx_refill_due, last_visit_revenue. Pipeline: New Inquiry → Booked → Consulted → On Treatment → Due Refill → Due Review → Inactive.',
+      description: 'Healthcare-tagged sub-account. Each patient record carries presenting complaint, case open date, next follow-up date, refill due date, and lifetime visit value. Pipeline: New Inquiry → Booked → Consulted → On Treatment → Due Refill → Due Review → Inactive.',
     },
     {
       name: 'WhatsApp Business API',

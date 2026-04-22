@@ -52,7 +52,7 @@ The owner does not need a Dineout-style aggregator. She tried, the platform shut
     {
       name: 'GHL',
       role: 'CRM',
-      description: 'Sub-account with Hospitality tag. Custom fields: party_size, occasion, dietary_pref, last_visit_date, total_visits, CLV, birthday, anniversary, preferred_table. Pipeline: Inquiry → Reservation Confirmed → Seated → Visited → Repeat → VIP → Lapsed.',
+      description: 'Hospitality-tagged sub-account. Each guest record carries party size, occasion, dietary preference, last-visit date, total visits, lifetime value, birthday, anniversary, and preferred table. Pipeline: Inquiry → Reservation Confirmed → Seated → Visited → Repeat → VIP → Lapsed.',
     },
     {
       name: 'WhatsApp Business API + IG inbox',
