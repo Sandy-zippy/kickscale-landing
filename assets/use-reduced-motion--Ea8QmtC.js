@@ -1,0 +1,1 @@
+import{Y as e,Z as t,d as n,l as r,u as i}from"./use-in-view-BG2kbgAI.js";var a=t(e(),1);function o(){!i.current&&r();let[e]=(0,a.useState)(n.current);return e}export{o as t};
