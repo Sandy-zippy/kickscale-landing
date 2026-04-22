@@ -19,6 +19,18 @@ try {
   localStorage.setItem('zippy_visit_count', String(vc + 1))
 } catch { /* silent */ }
 
+// SPA fallback hydration: if we were redirected here by 404.html,
+// restore the intended path so React Router picks it up.
+try {
+  const spaPath = sessionStorage.getItem("zippy_spa_path");
+  if (spaPath && spaPath !== "/") {
+    sessionStorage.removeItem("zippy_spa_path");
+    window.history.replaceState(null, "", spaPath);
+  }
+} catch (e) {
+  // sessionStorage may be blocked; silently skip
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
