@@ -5,3 +5,4 @@ dist/
 claude-talk-to-figma-mcp/
 .vite/
 tmp-creatives/
+test-results/
