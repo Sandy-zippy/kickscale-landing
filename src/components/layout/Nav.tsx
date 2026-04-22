@@ -48,13 +48,21 @@ export default function Nav({ noBanner = false, ctaHref = '/#quiz' }: NavProps) 
           </span>
         </a>
 
-        {/* Desktop CTA */}
-        <a
-          href={ctaHref}
-          className="hidden md:inline-flex items-center rounded-lg bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
-        >
-          Get Your Free Audit
-        </a>
+        {/* Desktop nav links */}
+        <div className="hidden md:flex items-center gap-6">
+          <a
+            href="/case-studies"
+            className="text-sm font-medium text-[#1A1A2E] hover:text-[#B8CF2E] transition-colors"
+          >
+            Case Studies
+          </a>
+          <a
+            href={ctaHref}
+            className="inline-flex items-center rounded-lg bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
+          >
+            Get Your Free Audit
+          </a>
+        </div>
 
         {/* Mobile hamburger */}
         <button
@@ -78,7 +86,14 @@ export default function Nav({ noBanner = false, ctaHref = '/#quiz' }: NavProps) 
             transition={{ duration: 0.25 }}
             className="md:hidden overflow-hidden border-t border-[#E5E7EB] bg-[rgba(255,253,247,0.98)]"
           >
-            <div className="max-w-6xl mx-auto px-5 py-4">
+            <div className="max-w-6xl mx-auto px-5 py-4 space-y-3">
+              <a
+                href="/case-studies"
+                className="block w-full text-center rounded-lg border border-[#E5E7EB] bg-white px-5 py-3 text-sm font-semibold text-[#1A1A2E] hover:border-[#D5EB4B] transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                Case Studies
+              </a>
               <a
                 href={ctaHref}
                 className="block w-full text-center rounded-lg bg-[#D5EB4B] px-5 py-3 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"

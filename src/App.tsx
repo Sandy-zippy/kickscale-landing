@@ -21,6 +21,7 @@ import InstagramFeed from './components/sections/InstagramFeed'
 import QuizForm from './components/sections/QuizForm'
 import FinalCTA from './components/sections/FinalCTA'
 import MidPageCTA from './components/sections/MidPageCTA'
+import CaseStudiesPreview from './components/sections/CaseStudiesPreview'
 import GrowthOffer from './pages/GrowthOffer'
 import CaseStudyIndex from './pages/CaseStudyIndex'
 import CaseStudyRouter from './pages/case-studies/CaseStudyRouter'
@@ -61,6 +62,8 @@ function AutomationHome() {
         <QuizForm />
         <Divider />
         <ProofOfWork />
+        <Divider />
+        <CaseStudiesPreview />
         <Divider />
         <AutomationGrid />
         <MidPageCTA />
