@@ -1,14 +1,22 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export default function Nav() {
+interface NavProps {
+  /** Set to true on pages that don't render the ScarcityBanner. Avoids the 48px top-12 gap. */
+  noBanner?: boolean
+  /** Override the CTA href. Defaults to "/#quiz" so it works from both LP and sub-routes. */
+  ctaHref?: string
+}
+
+export default function Nav({ noBanner = false, ctaHref = '/#quiz' }: NavProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [bannerVisible, setBannerVisible] = useState(
-    () => sessionStorage.getItem('scarcity_dismissed') !== 'true'
+    () => !noBanner && sessionStorage.getItem('scarcity_dismissed') !== 'true'
   )
 
   useEffect(() => {
+    if (noBanner) return
     const check = () => setBannerVisible(sessionStorage.getItem('scarcity_dismissed') !== 'true')
     window.addEventListener('storage', check)
     window.addEventListener('scarcity-dismissed', check)
@@ -16,7 +24,7 @@ export default function Nav() {
       window.removeEventListener('storage', check)
       window.removeEventListener('scarcity-dismissed', check)
     }
-  }, [])
+  }, [noBanner])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
@@ -42,7 +50,7 @@ export default function Nav() {
 
         {/* Desktop CTA */}
         <a
-          href="#quiz"
+          href={ctaHref}
           className="hidden md:inline-flex items-center rounded-lg bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
         >
           Get Your Free Audit
@@ -72,7 +80,7 @@ export default function Nav() {
           >
             <div className="max-w-6xl mx-auto px-5 py-4">
               <a
-                href="#quiz"
+                href={ctaHref}
                 className="block w-full text-center rounded-lg bg-[#D5EB4B] px-5 py-3 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
                 onClick={() => setMenuOpen(false)}
               >

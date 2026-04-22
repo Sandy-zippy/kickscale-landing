@@ -22,6 +22,9 @@ import QuizForm from './components/sections/QuizForm'
 import FinalCTA from './components/sections/FinalCTA'
 import MidPageCTA from './components/sections/MidPageCTA'
 import GrowthOffer from './pages/GrowthOffer'
+import CaseStudyIndex from './pages/CaseStudyIndex'
+import CaseStudyRouter from './pages/case-studies/CaseStudyRouter'
+import PrivacyPolicy from './pages/PrivacyPolicy'
 
 function AutomationHome() {
   const [isQuizVisible, setIsQuizVisible] = useState(false)
@@ -89,6 +92,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<AutomationHome />} />
         <Route path="/growth-offer" element={<GrowthOffer />} />
+        <Route path="/case-studies" element={<CaseStudyIndex />} />
+        <Route path="/case-studies/:slug" element={<CaseStudyRouter />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
       </Routes>
     </BrowserRouter>
   )
