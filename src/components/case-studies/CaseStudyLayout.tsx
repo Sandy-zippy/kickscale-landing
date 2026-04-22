@@ -79,7 +79,7 @@ export default function CaseStudyLayout({
         {children}
       </main>
       <Footer />
-      <StickyCTA isQuizVisible={false} />
+      <StickyCTA isQuizVisible={false} ctaHref="/#quiz" ctaSource={`case-study-${metadata.slug}-sticky`} />
     </>
   )
 }

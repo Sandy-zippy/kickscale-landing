@@ -12,22 +12,36 @@ export default function WhatsAppChaosMockup({ beforeMessages, afterMessages }: P
   const [unread, setUnread] = useState(0)
 
   useEffect(() => {
-    if (!inView || reduce || phase !== 'idle') return
+    if (!inView || reduce) return
+    if (phase !== 'idle') return
+
     setPhase('chaos')
     let count = 0
     const target = Math.max(beforeMessages.length, 7) + 40
+    let calmTimer: ReturnType<typeof setTimeout> | null = null
+    let loopTimer: ReturnType<typeof setTimeout> | null = null
+
     const interval = setInterval(() => {
       count++
       setUnread(count)
       if (count >= target) {
         clearInterval(interval)
-        setTimeout(() => {
+        calmTimer = setTimeout(() => {
           setPhase('calm')
           setUnread(0)
+          // Loop back to idle so the cycle replays
+          loopTimer = setTimeout(() => {
+            setPhase('idle')
+          }, 4500)
         }, 1500)
       }
     }, 180)
-    return () => clearInterval(interval)
+
+    return () => {
+      clearInterval(interval)
+      if (calmTimer) clearTimeout(calmTimer)
+      if (loopTimer) clearTimeout(loopTimer)
+    }
   }, [inView, reduce, phase, beforeMessages.length])
 
   const visible = phase === 'calm' ? afterMessages : beforeMessages

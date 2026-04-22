@@ -1,6 +1,7 @@
 import CaseStudyLayout from '../../components/case-studies/CaseStudyLayout'
 import CaseStudyHero from '../../components/case-studies/CaseStudyHero'
 import BeforeStateMap from '../../components/case-studies/BeforeStateMap'
+import StackArchitectureDiagram from '../../components/case-studies/StackArchitectureDiagram'
 import WhatsAppChaosMockup from '../../components/case-studies/WhatsAppChaosMockup'
 import WeekTimeline from '../../components/case-studies/WeekTimeline'
 import ObjectionAccordion from '../../components/case-studies/ObjectionAccordion'
@@ -64,18 +65,32 @@ export default function HomeopathicClinic() {
           </ScrollReveal>
           <div className="grid md:grid-cols-2 gap-4">
             {[
-              { label: 'Who', value: content.sixtySecondSummary.who },
-              { label: 'What broke', value: content.sixtySecondSummary.whatBroke },
-              { label: 'What we built', value: content.sixtySecondSummary.whatWeBuilt },
-              { label: 'What changed', value: content.sixtySecondSummary.whatChanged },
-            ].map((card, i) => (
-              <ScrollReveal key={i} delay={i * 0.1}>
-                <div className="bg-[#FFFDF7] border border-[#E5E7EB] rounded-xl p-5 h-full">
-                  <p className="text-xs font-mono uppercase tracking-wider text-[#B8CF2E] mb-2">{card.label}</p>
-                  <p className="text-[#1A1A2E] leading-relaxed">{card.value}</p>
-                </div>
-              </ScrollReveal>
-            ))}
+              { label: 'Who', value: content.sixtySecondSummary.who, accent: 'neutral' as const },
+              { label: 'What broke', value: content.sixtySecondSummary.whatBroke, accent: 'red' as const },
+              { label: 'What we built', value: content.sixtySecondSummary.whatWeBuilt, accent: 'neutral' as const },
+              { label: 'What changed', value: content.sixtySecondSummary.whatChanged, accent: 'lime' as const },
+            ].map((card, i) => {
+              const accentClass =
+                card.accent === 'red'
+                  ? 'border-l-4 border-l-red-500'
+                  : card.accent === 'lime'
+                    ? 'border-l-4 border-l-[#D5EB4B]'
+                    : ''
+              const labelColor =
+                card.accent === 'red'
+                  ? 'text-red-600'
+                  : card.accent === 'lime'
+                    ? 'text-[#B8CF2E]'
+                    : 'text-[#6B7280]'
+              return (
+                <ScrollReveal key={i} delay={i * 0.1}>
+                  <div className={`bg-[#FFFDF7] border border-[#E5E7EB] rounded-xl p-5 h-full ${accentClass}`}>
+                    <p className={`text-xs font-mono uppercase tracking-wider mb-2 ${labelColor}`}>{card.label}</p>
+                    <p className="text-[#1A1A2E] leading-relaxed">{card.value}</p>
+                  </div>
+                </ScrollReveal>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -143,7 +158,10 @@ export default function HomeopathicClinic() {
             <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">Here's what the day looks like today</h2>
             <p className="text-[#6B7280] mb-6">The 10 manual steps a clinic owner does (or skips) every single day.</p>
           </ScrollReveal>
-          <BeforeStateMap steps={content.beforeStateSteps} />
+          <BeforeStateMap
+            steps={content.beforeStateSteps}
+            totalSummary={{ value: '~25 hrs/week', label: 'lost to manual triage, reminders, follow-ups, and reconciliation. Per clinic. Every week.' }}
+          />
         </div>
       </section>
 
@@ -163,7 +181,34 @@ export default function HomeopathicClinic() {
         <div className="max-w-5xl mx-auto">
           <ScrollReveal>
             <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">The stack we deploy</h2>
-            <p className="text-[#6B7280] mb-6">Click any tool to see exactly how it fits.</p>
+            <p className="text-[#6B7280] mb-6">Six tools, one workflow. Watch the data move.</p>
+          </ScrollReveal>
+          <ScrollReveal delay={0.1}>
+            <div className="mb-10">
+              <StackArchitectureDiagram
+                ariaLabel="Patient WhatsApp inquiry flows through AI triage to GHL CRM, which routes appointments to the calendar, payments to Razorpay, and surfaces the doctor's daily 8am digest. n8n orchestrates D-3 refill reminders and D+14 follow-ups."
+                nodes={[
+                  { id: 'patient', label: 'Patient', sublabel: 'WhatsApp', x: 8, y: 50, variant: 'source' },
+                  { id: 'ai', label: 'AI Triage', sublabel: '<60 sec', x: 28, y: 50, variant: 'middle' },
+                  { id: 'ghl', label: 'GHL CRM', sublabel: 'pipeline + tags', x: 50, y: 50, variant: 'middle' },
+                  { id: 'razorpay', label: 'Razorpay', sublabel: 'pre-consult fee', x: 72, y: 22, variant: 'middle' },
+                  { id: 'calendar', label: 'Calendar', sublabel: 'auto-confirm', x: 72, y: 50, variant: 'middle' },
+                  { id: 'n8n', label: 'n8n', sublabel: 'reminders + follow-ups', x: 72, y: 78, variant: 'middle' },
+                  { id: 'doctor', label: 'Doctor', sublabel: '8am digest', x: 92, y: 30, variant: 'human' },
+                  { id: 'outcome', label: 'Patient seen', sublabel: 'fee paid · refill · review', x: 92, y: 70, variant: 'sink' },
+                ]}
+                edges={[
+                  { from: 'patient', to: 'ai', delay: 0 },
+                  { from: 'ai', to: 'ghl', delay: 0.15 },
+                  { from: 'ghl', to: 'razorpay', delay: 0.3 },
+                  { from: 'ghl', to: 'calendar', delay: 0.4 },
+                  { from: 'ghl', to: 'n8n', delay: 0.5 },
+                  { from: 'calendar', to: 'doctor', delay: 0.65 },
+                  { from: 'n8n', to: 'outcome', delay: 0.75 },
+                  { from: 'razorpay', to: 'outcome', delay: 0.85 },
+                ]}
+              />
+            </div>
           </ScrollReveal>
           <TabbedStack
             tabs={content.stackTools.map(t => ({
@@ -244,17 +289,21 @@ export default function HomeopathicClinic() {
               </li>
             ))}
           </ul>
-          <div className="flex flex-wrap gap-3 mb-12">
-            {content.downloads.map((d, i) => (
-              <a
-                key={i}
-                href={d.href}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-[#E5E7EB] hover:border-[#D5EB4B] transition-colors text-sm"
-              >
-                <span className="font-mono text-xs text-[#B8CF2E] uppercase">.{d.filetype}</span>
-                <span className="text-[#1A1A2E] font-semibold">{d.label}</span>
-              </a>
-            ))}
+          <div className="mb-12">
+            <p className="text-xs font-mono uppercase tracking-wider text-[#6B7280] mb-3">Downloadable templates · coming soon</p>
+            <div className="flex flex-wrap gap-3">
+              {content.downloads.map((d, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-50 border border-dashed border-[#E5E7EB] text-sm opacity-60 cursor-not-allowed"
+                  aria-disabled="true"
+                  title="Available in next release"
+                >
+                  <span className="font-mono text-xs text-[#6B7280] uppercase">.{d.filetype}</span>
+                  <span className="text-[#6B7280] font-semibold">{d.label}</span>
+                </span>
+              ))}
+            </div>
           </div>
           <div className="pt-8 border-t border-[#E5E7EB] grid md:grid-cols-3 gap-4 text-center">
             <div>

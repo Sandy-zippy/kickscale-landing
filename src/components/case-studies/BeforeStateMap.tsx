@@ -3,13 +3,33 @@ import { useRef } from 'react'
 
 interface Step { step: string; timeCost: string }
 
-export default function BeforeStateMap({ steps }: { steps: Step[] }) {
+interface Props {
+  steps: Step[]
+  totalSummary?: { value: string; label: string }
+}
+
+export default function BeforeStateMap({ steps, totalSummary }: Props) {
   const ref = useRef<HTMLOListElement>(null)
   const inView = useInView(ref, { once: true, amount: 0.2 })
   const reduce = useReducedMotion()
 
   return (
-    <ol ref={ref} className="space-y-3">
+    <div>
+      {totalSummary && (
+        <motion.div
+          initial={reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={reduce ? { duration: 0 } : { duration: 0.5, ease: 'easeOut' }}
+          className="mb-6 bg-red-50 border-l-4 border-red-500 rounded-r-xl p-5 flex items-baseline gap-4 flex-wrap"
+        >
+          <span className="text-4xl md:text-5xl font-mono font-bold text-red-600 leading-none">
+            {totalSummary.value}
+          </span>
+          <span className="text-[#1A1A2E] font-semibold">{totalSummary.label}</span>
+        </motion.div>
+      )}
+      <ol ref={ref} className="space-y-3">
       {steps.map((s, i) => (
         <motion.li
           key={i}
@@ -27,6 +47,7 @@ export default function BeforeStateMap({ steps }: { steps: Step[] }) {
           </div>
         </motion.li>
       ))}
-    </ol>
+      </ol>
+    </div>
   )
 }
