@@ -147,7 +147,7 @@ The owner spent ₹8L on Siemens NX two years ago. NX touches design and BOM bea
       rebuttal: 'It does not finalise the price. It produces a draft quote in 30 minutes from your historical BOM library and current fee matrix. Your sales engineer reviews and adjusts in another 30 minutes. Net: 1 hour instead of 2 days, with the engineer still owning the final number.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: 'A 2-day quote becomes 4 hours. If you currently lose 1 in 5 deals to a faster competitor, on a ₹15L average project value with 18% margin that is ₹54K of recovered margin per won deal. Sprint payback usually inside 2-3 won deals. We split 50/50 (Week 0 / Week 4) if cash is tight.',
     },
   ],
@@ -169,8 +169,8 @@ The owner spent ₹8L on Siemens NX two years ago. NX touches design and BOM bea
       answer: 'No. He keeps using AutoCAD. The drawings get attached to the GHL opportunity automatically when he saves to the shared folder. Sales engineers and customers always have the latest drawing without anyone forwarding files.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA template approvals, AI quote drafter training on your BOM library, n8n NX bridge, production WhatsApp bot, document automation, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all WABA template approvals, AI quote drafter training on your BOM library, n8n NX bridge, production WhatsApp bot, document automation, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
     },
     {
       question: 'Have you done this for an HVAC or industrial manufacturer before?',

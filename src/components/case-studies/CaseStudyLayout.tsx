@@ -4,6 +4,7 @@ import Footer from '../layout/Footer'
 import StickyCTA from '../layout/StickyCTA'
 import ScrollProgressBar from './ScrollProgressBar'
 import StickyTOC from './StickyTOC'
+import AuditFormSection from './AuditFormSection'
 import type { CaseStudyMetadata } from '../../pages/case-studies/types'
 
 const SECTION_IDS = [
@@ -17,13 +18,13 @@ const SECTION_IDS = [
   { id: 'sprint', label: '4-Week Plan' },
   { id: 'outcomes', label: 'Target Outcomes' },
   { id: 'roi', label: 'ROI Calculator' },
-  { id: 'pricing', label: 'What ₹1.5L Buys' },
+  { id: 'pricing', label: 'What ₹2L Buys' },
   { id: 'vs', label: 'Vs Alternatives' },
   { id: 'objections', label: 'Objections' },
   { id: 'proof', label: 'Proof' },
   { id: 'faq', label: 'FAQ' },
   { id: 'audit-timeline', label: '48h Audit' },
-  { id: 'cta', label: 'Book Audit' },
+  { id: 'audit-form', label: 'Book Audit' },
 ]
 
 function setMeta(name: string, value: string, prop = false) {
@@ -78,13 +79,19 @@ export default function CaseStudyLayout({
   return (
     <>
       <ScrollProgressBar />
-      <Nav noBanner ctaHref="/#quiz" />
+      <Nav noBanner ctaHref="#audit-form" />
       <StickyTOC sections={SECTION_IDS} />
-      <main className="bg-[#FFFDF7] text-[#1A1A2E] pt-[60px]">
+      <main className="bg-[#FFFDF7] text-[#1A1A2E] pt-[60px] pb-28 md:pb-0">
         {children}
+        <AuditFormSection
+          source={`case-study-${metadata.slug}`}
+          industryHint={metadata.industry}
+          primaryPainHint={metadata.primaryPain}
+          headline={`Book your free 48h audit for ${metadata.industry.toLowerCase() === 'd2c' ? 'D2C' : metadata.industry.toLowerCase()}`}
+        />
       </main>
       <Footer />
-      <StickyCTA isQuizVisible={false} ctaHref="/#quiz" ctaSource={`case-study-${metadata.slug}-sticky`} />
+      <StickyCTA isQuizVisible={false} ctaHref="#audit-form" ctaSource={`case-study-${metadata.slug}-sticky`} />
     </>
   )
 }

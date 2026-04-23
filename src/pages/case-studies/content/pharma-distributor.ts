@@ -152,7 +152,7 @@ The accountant handles all of this and quits every two years. The founder, a sec
       rebuttal: 'Modern voice agents are indistinguishable from junior collection executives. They speak in the retailer\'s preferred language, escalate to a human on dispute, and only handle the polite D+1 first reminder. Retailers pay sooner because UPI is one tap from the call. We pilot on 5 retailers in Week 4 before scaling.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: 'You shave 4 days off month-end, cut SKU errors, recover ₹60K/quarter of near-expiry write-offs, accelerate collections by 8 days. On a ₹5Cr revenue base that is ₹1.5L+ of net annual benefit before counting accountant retention. Sprint payback inside 4-6 months. We split 50/50 (Week 0 / Week 4) if cash is tight.',
     },
   ],
@@ -174,8 +174,8 @@ The accountant handles all of this and quits every two years. The founder, a sec
       answer: 'Auto-calculated daily from confirmed orders, factoring in retailer-wise margin and any spiff structures. Founder sees the running tally in the daily 8 AM digest. Replaces the Sunday session.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA template approvals, AI photo parser training, MR interactive-list interface, Tally or Zoho bridge, GSTR reconciliation, AI voice agent, UPI collect, near-expiry alerts, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, voice agent minutes, and email infra.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all WABA template approvals, AI photo parser training, MR interactive-list interface, Tally or Zoho bridge, GSTR reconciliation, AI voice agent, UPI collect, near-expiry alerts, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, voice agent minutes, and email infra.',
     },
     {
       question: 'Have you done this for a pharma distributor before?',

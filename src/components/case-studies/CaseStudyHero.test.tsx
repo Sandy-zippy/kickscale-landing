@@ -29,7 +29,7 @@ describe('CaseStudyHero', () => {
     expect(screen.getByText('<15%')).toBeInTheDocument()
     expect(screen.getByText('no-show rate')).toBeInTheDocument()
   })
-  it('CTA points to /#quiz by default with default copy', () => {
+  it('CTA points to #audit-form by default with default copy', () => {
     render(
       <CaseStudyHero
         variant="homeopathic-clinic-patient-flow"
@@ -39,7 +39,7 @@ describe('CaseStudyHero', () => {
         headline="Test"
       />
     )
-    expect(screen.getByRole('link', { name: /Book my clinic audit/ })).toHaveAttribute('href', '/#quiz')
+    expect(screen.getByRole('link', { name: /Book my clinic audit/ })).toHaveAttribute('href', '#audit-form')
   })
   it('renders custom CTA text + subhead + benefits when provided', () => {
     render(

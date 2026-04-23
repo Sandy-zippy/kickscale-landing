@@ -15,7 +15,7 @@ interface Props {
 
 export default function AuditTimeline({
   steps,
-  ctaHref = '/#quiz',
+  ctaHref = '#audit-form',
   ctaText = 'Book my free audit',
 }: Props) {
   const ref = useRef<HTMLDivElement>(null)

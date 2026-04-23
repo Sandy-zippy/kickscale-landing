@@ -163,7 +163,7 @@ The owner does not need a Dineout-style aggregator. She tried, the platform shut
       rebuttal: 'Petpooja CRM gives you a customer database, not workflows. It does not unify IG DMs, it does not auto-reconcile Zomato + Swiggy, it does not run birthday touches. We sit on top of Petpooja via webhook. You keep Petpooja for billing and inventory, you gain the marketing + reservation + reconciliation layer Petpooja does not solve.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: 'Save 2 days/month of accountant + owner time on aggregator reconciliation = ₹20-30K. Capture ₹15-30K/month of birthday and lapsed reactivation revenue. Cut 2 double-bookings/month at ₹3-5K each. Sprint payback inside 3-4 months on most cafes. We split 50/50 (Week 0 / Week 4) if cash is tight.',
     },
   ],
@@ -185,8 +185,8 @@ The owner does not need a Dineout-style aggregator. She tried, the platform shut
       answer: 'n8n logs into both partner portals nightly via Playwright (your credentials, your session), downloads sales + payout reports, matches each line against the POS order log. Variances over ₹500/day get flagged. Most months you go from 2-day reconciliation to 90 minutes of reviewing flagged items.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA + IG template approvals, AI reservation agent, POS webhook integration, stock-group classifier, Zomato + Swiggy nightly ingest, GBP auto-reply, Meta + IG attribution, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all WABA + IG template approvals, AI reservation agent, POS webhook integration, stock-group classifier, Zomato + Swiggy nightly ingest, GBP auto-reply, Meta + IG attribution, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
     },
     {
       question: 'Have you done this for a cafe or restaurant before?',

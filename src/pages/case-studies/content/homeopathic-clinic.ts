@@ -141,7 +141,7 @@ She does not want a bot that sounds cold. Her patients trust her voice. She want
       rebuttal: 'This removes the 60 minutes a day of message-sorting she hates, not her job. She now has time to actually call the high-value follow-up patients, keep the waiting room warm, and upsell the pharmacy. We position it to the team in Week 1 onboarding.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: 'The sprint pays back inside 4 months typically. 10% fewer no-shows at ₹1,000 average consult × 300 patients/month = ₹30,000/month direct recovery, before refill adherence or reactivation revenue is counted. We can split 50/50 (Week 0 / Week 4).',
     },
     {
@@ -167,8 +167,8 @@ She does not want a bot that sounds cold. Her patients trust her voice. She want
       answer: 'WhatsApp Business API is Meta-encrypted end-to-end. GHL stores patient contact + complaint tags only, not clinical notes or Rx details (those stay in your practice management software). Paid tier is India-hosted. We sign an NDA + DPA before onboarding and walk through a data-flow diagram for your auditor.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA template approvals, AI agent training, n8n workflows, integrations, team training, and 30-day hypercare. Recurring is ₹15-16K/month for WhatsApp API hosting, GHL CRM, AI agent inference, and email infra. No setup fees inside the recurring.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all WABA template approvals, AI agent training, n8n workflows, integrations, team training, and 30-day hypercare. Recurring is ₹15-16K/month for WhatsApp API hosting, GHL CRM, AI agent inference, and email infra. No setup fees inside the recurring.',
     },
     {
       question: 'What happens after the 4 weeks if something breaks?',

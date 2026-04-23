@@ -148,7 +148,7 @@ The owner does not need a new ERP. Marg, Vyapar, Tally with extensions all exist
       rebuttal: 'Those are mobile billing apps. They ask the dealer to install something, or they ask your team to enter data twice. Our stack adds zero apps for the dealer (still WhatsApp) and zero new tool for accounts (Tally stays). Adoption is automatic because nothing changes for the user.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: 'You replace 12 hrs/week of one sales exec\'s time and 4 hrs/week of accounts time. At ₹500/hr blended cost that is ₹32K/month of recovered capacity. Sprint payback inside 5 months. We split 50/50 (Week 0 / Week 4) if cash is tight.',
     },
     {
@@ -174,8 +174,8 @@ The owner does not need a new ERP. Marg, Vyapar, Tally with extensions all exist
       answer: 'Yes. Voice notes are transcribed (works well in Hindi, Telugu, Tamil, Marathi, English). Photos of old invoices or part numbers are OCR-read. If the parser is uncertain, it sends a single confirmation WhatsApp to the dealer before order acceptance.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA template approvals, AI parser training, Tally bridge, credit-control automation, UPI collect, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all WABA template approvals, AI parser training, Tally bridge, credit-control automation, UPI collect, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
     },
     {
       question: 'Have you done this for an auto-parts or tyre distributor before?',

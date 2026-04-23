@@ -9,12 +9,12 @@ import TabbedStack from '../../components/case-studies/TabbedStack'
 import RelatedCaseStudiesCarousel from '../../components/case-studies/RelatedCaseStudiesCarousel'
 import FeaturedQuote from '../../components/case-studies/FeaturedQuote'
 import FaqAccordion from '../../components/case-studies/FaqAccordion'
+import TargetOutcomes from '../../components/case-studies/TargetOutcomes'
 import TechStackBadges from '../../components/case-studies/TechStackBadges'
 import IndustryROICalculator from '../../components/case-studies/IndustryROICalculator'
 import WhatYouGetTable from '../../components/case-studies/WhatYouGetTable'
 import ComparisonTable from '../../components/case-studies/ComparisonTable'
 import AuditTimeline from '../../components/case-studies/AuditTimeline'
-import FinalCTA from '../../components/sections/FinalCTA'
 import AnimatedCounter from '../../components/ui/AnimatedCounter'
 import ScrollReveal from '../../components/ui/ScrollReveal'
 import { registry } from './registry'
@@ -56,15 +56,15 @@ export default function CoachingInstitute() {
         ctaSubtext="30-min Zoom. No deck. We flag the 3 biggest leaks."
       />
 
-      <section className="py-5 px-4 bg-white border-y border-[#E5E7EB]">
-        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-mono uppercase tracking-wider text-[#6B7280]">
+      <section className="py-4 px-4 bg-[#0c0c10] border-t border-white/[0.05]">
+        <div className="max-w-5xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-mono uppercase tracking-[0.18em] text-white/55">
           <span>20+ Indian SMBs</span>
           <span aria-hidden="true" className="text-[#D5EB4B]">●</span>
           <span>8,000+ hours back</span>
           <span aria-hidden="true" className="text-[#D5EB4B]">●</span>
           <span>₹1.6 Cr+ saved</span>
           <span aria-hidden="true" className="text-[#D5EB4B]">●</span>
-          <span>4-week sprint from ₹1.5L</span>
+          <span>4-week sprint from ₹2L</span>
         </div>
       </section>
 
@@ -195,7 +195,7 @@ export default function CoachingInstitute() {
         <div className="max-w-4xl mx-auto bg-[#FFFDF7] border-l-4 border-[#D5EB4B] rounded-xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <p className="font-semibold text-[#1A1A2E]">Want this stack for your institute? Book your audit.</p>
           <a
-            href="/#quiz"
+            href="#audit-form"
             className="bg-[#D5EB4B] text-[#0c0c10] font-bold px-6 py-3 rounded-xl hover:bg-[#E4F57A] transition-colors text-center whitespace-nowrap"
           >
             Book audit →
@@ -276,29 +276,7 @@ export default function CoachingInstitute() {
         </div>
       </section>
 
-      <section id="outcomes" className="py-16 px-4">
-        <div className="max-w-5xl mx-auto">
-          <ScrollReveal>
-            <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">Target outcomes</h2>
-            <p className="text-[#6B7280] mb-6">Honest target ranges, not invented client numbers.</p>
-          </ScrollReveal>
-          <div className="grid md:grid-cols-3 gap-4">
-            {content.targetOutcomes.map((o, i) => (
-              <ScrollReveal key={i} delay={i * 0.06}>
-                <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 h-full">
-                  <p className="text-xs font-mono text-[#6B7280] uppercase tracking-wider mb-3">{o.metric}</p>
-                  <div className="flex items-baseline gap-2 font-mono mb-2 flex-wrap">
-                    <span className="text-sm text-red-600">{o.before}</span>
-                    <span className="text-[#6B7280]" aria-hidden="true">→</span>
-                    <span className="text-lg font-bold text-[#B8CF2E]">{o.after}</span>
-                  </div>
-                  {o.caveat && <p className="text-xs text-[#6B7280] italic">{o.caveat}</p>}
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TargetOutcomes outcomes={content.targetOutcomes} />
 
       <section id="roi" className="py-16 px-4 bg-white border-y border-[#E5E7EB]">
         <div className="max-w-5xl mx-auto">
@@ -309,12 +287,12 @@ export default function CoachingInstitute() {
       <section id="pricing" className="py-16 px-4">
         <div className="max-w-5xl mx-auto">
           <ScrollReveal>
-            <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">What ₹1.5L actually buys you</h2>
+            <h2 className="text-3xl font-bold text-[#1A1A2E] mb-2">What ₹2L actually buys you</h2>
             <p className="text-[#6B7280] mb-8">No hidden setup fees. No "professional services" upsells. Everything below ships in 28 days.</p>
           </ScrollReveal>
           <WhatYouGetTable
             oneTime={{
-              price: '₹1.5L',
+              price: '₹2L',
               subtitle: '4-week sprint, paid 50% on Week 0 and 50% on Week 4',
               items: [
                 { included: true, label: 'Half-day institute shadow + counsellor ride-along', detail: 'We sit at your admission desk for half a day. Map every WhatsApp, every demo booking, every fee chase.' },
@@ -516,7 +494,7 @@ export default function CoachingInstitute() {
               {
                 hour: '48',
                 title: 'You get the audit deliverable',
-                description: 'A short PDF: the 3 biggest funnel leaks we found, target outcomes per leak, and the exact 4-week sprint scope priced at ₹1.5L. No fluff, no upsell.',
+                description: 'A short PDF: the 3 biggest funnel leaks we found, target outcomes per leak, and the exact 4-week sprint scope priced at ₹2L. No fluff, no upsell.',
               },
               {
                 hour: '∞',
@@ -527,10 +505,6 @@ export default function CoachingInstitute() {
             ctaText="Book my free 48h audit"
           />
         </div>
-      </section>
-
-      <section id="cta">
-        <FinalCTA />
       </section>
 
       {meta.related.some(slug => registry[slug]?.title) && (

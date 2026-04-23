@@ -160,7 +160,7 @@ The founder does not need a Travelopro CRM. He tried, the team rebelled. He need
       rebuttal: 'Playwright scrapers in n8n are easy to repair. We monitor scraper health daily, auto-page on failure, fix within 24 hours. 30-day hypercare in the sprint covers initial portal-update bumps. Recurring covers ongoing maintenance.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: '6.5 hrs/month accountant time saved + 12 hrs/month P&L time + ₹40K/quarter recovered rebates = ₹1.5L+/year on the operations side alone. Cut quote turnaround from 36 to 4 hours, win 1 extra deal/month at ₹50K margin = ₹6L/year. Sprint payback inside 2-3 months. We split 50/50 (Week 0 / Week 4) if cash is tight.',
     },
   ],
@@ -182,8 +182,8 @@ The founder does not need a Travelopro CRM. He tried, the team rebelled. He need
       answer: 'Yes. Puppeteer renders the PDF from a HTML template that uses your logo, colours, fonts, and full T&C. We design the template in Week 1 of the sprint based on your existing Word quote format.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA template approvals, AI quote drafter with GDS + hotel integration, branded PDF generator, Tally bridge, vendor portal scrapers for 4 portals, per-account P&L, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting (including scrapers), and email infra.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all WABA template approvals, AI quote drafter with GDS + hotel integration, branded PDF generator, Tally bridge, vendor portal scrapers for 4 portals, per-account P&L, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting (including scrapers), and email infra.',
     },
     {
       question: 'Have you done this for a corporate travel agency before?',

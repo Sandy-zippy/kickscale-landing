@@ -149,7 +149,7 @@ Across the funnel: 30 to 50% of paid-ad inquiries die between the first WhatsApp
       rebuttal: 'Most institutes abandon LMS software because counsellors refuse to enter data. Our stack is WhatsApp-first. Counsellors do not log into anything. The data captures itself from the conversation. The system works around the counsellor, not the other way round.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: 'A 30% conversion lift on 100 inquiries/month at ₹50K average fee is ₹15L of incremental revenue per cohort. The sprint pays back inside 4-6 weeks typically. We split 50/50 (Week 0 / Week 4) if cash is tight.',
     },
     {
@@ -175,8 +175,8 @@ Across the funnel: 30 to 50% of paid-ad inquiries die between the first WhatsApp
       answer: 'Yes. The AI counsellor responds in the language the parent messages in. Hindi, Telugu, Tamil, Marathi, Bengali, Gujarati, Kannada are tested. English is the default fallback.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA template approvals, AI counsellor training, batch matcher, fee dunning, attendance alerts, parent digest, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL CRM, AI inference, and email infra.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all WABA template approvals, AI counsellor training, batch matcher, fee dunning, attendance alerts, parent digest, owner dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL CRM, AI inference, and email infra.',
     },
     {
       question: 'Have you done this for a coaching institute before?',

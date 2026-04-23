@@ -160,7 +160,7 @@ He does not want to throw out the whiteboard. The foreman uses it for 8-hour shi
       rebuttal: 'That is exactly what the parser is built for. We test on your actual messy data in Week 1. If a message is ambiguous, the parser sends a single confirmation WhatsApp before order acceptance. Accuracy hits 90%+ within 2 weeks of training on your data.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: 'You replace 8 hrs/week of accounts typing and shave 2-4 days off month-end. At ₹500/hr blended cost that is ₹16-20K/month of recovered capacity, plus the accountant retention benefit. Sprint payback inside 6-8 months. We split 50/50 (Week 0 / Week 4) if cash is tight.',
     },
   ],
@@ -182,8 +182,8 @@ He does not want to throw out the whiteboard. The foreman uses it for 8-hour shi
       answer: 'Yes. Voice notes are transcribed (Hindi, Telugu, Tamil, Marathi, Bengali tested). Mixed-language Hinglish is the parser\'s default mode. Photos of paper orders are OCR-read. If uncertain, the parser confirms once before order acceptance.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA template approvals, AI parser training, whiteboard OCR workflow, Tally bridge, weighbridge import, AI reconciliation assistant, distributor self-serve bot, owner digest, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all WABA template approvals, AI parser training, whiteboard OCR workflow, Tally bridge, weighbridge import, AI reconciliation assistant, distributor self-serve bot, owner digest, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
     },
     {
       question: 'Have you done this for a rice mill or FMCG plant before?',

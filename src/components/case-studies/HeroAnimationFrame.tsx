@@ -77,7 +77,7 @@ export default function HeroAnimationFrame({
       aria-label={ariaLabel}
     >
       {/* Industry icon as huge subtle watermark */}
-      <motif.Icon className="absolute -bottom-8 -right-8 w-72 h-72 text-[#1A1A2E] opacity-[0.04] pointer-events-none" />
+      <motif.Icon className="absolute -bottom-8 -right-8 w-48 h-48 sm:w-72 sm:h-72 text-[#1A1A2E] opacity-[0.04] pointer-events-none" />
 
       {/* Subtle dot grid */}
       <div
@@ -125,15 +125,18 @@ export default function HeroAnimationFrame({
          Left-column bubbles (x < 50) anchor from the left edge and grow right;
          right-column bubbles anchor from the right edge and grow left. The
          floating counter lives in the top-right corner, so any right-anchored
-         bubble in the top quarter is shifted further inward to clear it. */}
-      <div className="absolute inset-x-3 top-20 bottom-24 overflow-hidden">
+         bubble in the top quarter is shifted further inward to clear it.
+         Mobile: tighter bounds + smaller bubble width so 7-8 bubbles still fit
+         inside a ~358px square card without clipping. */}
+      <div className="absolute inset-x-2 sm:inset-x-3 top-16 sm:top-20 bottom-[78px] sm:bottom-24 overflow-hidden">
         {bubbles.map((b, i) => {
           const isVisible = phase === 'chaos'
           const rightAnchored = b.x >= 50
           const inCounterRow = rightAnchored && b.y < 18
+          // Mobile bubble ~30% of card width, desktop ~38%. Force counter clearance accordingly.
           const rightOffset = inCounterRow
-            ? Math.max(28, 100 - b.x - 38)
-            : Math.max(0, 100 - b.x - 38)
+            ? Math.max(26, 100 - b.x - 32)
+            : Math.max(0, 100 - b.x - 32)
           const position = rightAnchored
             ? { right: `${rightOffset}%` }
             : { left: `${b.x}%` }
@@ -155,7 +158,7 @@ export default function HeroAnimationFrame({
                     ? { duration: 0.4, delay: i * 0.1, ease: [0.34, 1.56, 0.64, 1] }
                     : { duration: 0.3, delay: i * 0.04, ease: 'easeIn' }
               }
-              className="absolute bg-white rounded-xl px-2.5 py-1.5 text-[11px] leading-tight shadow-md max-w-[145px] font-mono font-semibold text-[#1A1A2E] border"
+              className="absolute bg-white rounded-lg sm:rounded-xl px-2 py-1 sm:px-2.5 sm:py-1.5 text-[10px] sm:text-[11px] leading-tight shadow-md max-w-[108px] sm:max-w-[145px] font-mono font-semibold text-[#1A1A2E] border"
               style={{ ...position, top: `${b.y}%`, borderColor: motif.accentTint + '30' }}
             >
               {b.text}
@@ -168,8 +171,8 @@ export default function HeroAnimationFrame({
           const rightAnchored = b.x >= 50
           const inCounterRow = rightAnchored && b.y < 18
           const rightOffset = inCounterRow
-            ? Math.max(28, 100 - b.x - 34)
-            : Math.max(0, 100 - b.x - 34)
+            ? Math.max(26, 100 - b.x - 30)
+            : Math.max(0, 100 - b.x - 30)
           const position = rightAnchored
             ? { right: `${rightOffset}%` }
             : { left: `${b.x + 4}%` }
@@ -179,7 +182,7 @@ export default function HeroAnimationFrame({
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: [0, 1, 1, 0], scale: [0, 1.2, 1, 0.5] }}
               transition={reduce ? { duration: 0 } : { duration: 1.5, delay: 0.2 + i * 0.06 }}
-              className="absolute w-7 h-7 rounded-full bg-[#22C55E] text-white flex items-center justify-center text-sm font-bold shadow-lg"
+              className="absolute w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-[#22C55E] text-white flex items-center justify-center text-xs sm:text-sm font-bold shadow-lg"
               style={{ ...position, top: `${b.y - 1}%` }}
               aria-hidden="true"
             >
@@ -199,11 +202,11 @@ export default function HeroAnimationFrame({
               : { scale: 0, opacity: 0 }
         }
         transition={reduce ? {} : phase === 'chaos' ? { duration: 1.2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.5, ease: 'easeOut' }}
-        className="absolute top-10 right-4 w-20 h-20 rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white flex flex-col items-center justify-center font-mono shadow-2xl z-30"
+        className="absolute top-8 right-3 w-16 h-16 sm:top-10 sm:right-4 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-red-500 to-red-600 text-white flex flex-col items-center justify-center font-mono shadow-2xl z-30"
         aria-hidden="true"
       >
-        <span className="text-[8px] uppercase tracking-widest opacity-80 leading-none mb-0.5">{counterUnit}</span>
-        <span className="text-3xl font-bold leading-none tabular-nums">{counter}</span>
+        <span className="text-[7px] sm:text-[8px] uppercase tracking-widest opacity-80 leading-none mb-0.5">{counterUnit}</span>
+        <span className="text-2xl sm:text-3xl font-bold leading-none tabular-nums">{counter}</span>
       </motion.div>
 
       {/* AI activation sweep */}
@@ -221,7 +224,7 @@ export default function HeroAnimationFrame({
       <motion.div
         animate={{ opacity: phase === 'resolve' ? 1 : 0 }}
         transition={{ duration: 0.3 }}
-        className="absolute bottom-24 left-3 z-20 pointer-events-none"
+        className="absolute bottom-[82px] left-2 sm:bottom-24 sm:left-3 z-20 pointer-events-none"
       >
         <span className="text-[9px] font-mono uppercase tracking-widest text-[#22C55E] font-bold bg-green-50 border border-green-200 rounded px-2 py-0.5">
           After ZippyScale
@@ -236,19 +239,19 @@ export default function HeroAnimationFrame({
             : phase === 'resolve' ? { y: 0 } : { y: '105%' }
         }
         transition={reduce ? { duration: 0 } : { duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute bottom-0 left-0 right-0 bg-[#D5EB4B] text-[#1A1A2E] py-3.5 px-4 z-30 shadow-[0_-4px_20px_rgba(213,235,75,0.3)]"
+        className="absolute bottom-0 left-0 right-0 bg-[#D5EB4B] text-[#1A1A2E] py-2.5 px-3 sm:py-3.5 sm:px-4 z-30 shadow-[0_-4px_20px_rgba(213,235,75,0.3)]"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3">
           <motion.div
             animate={reduce ? {} : { scale: [1, 1.08, 1] }}
             transition={reduce ? {} : { duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-9 h-9 rounded-full bg-[#1A1A2E] text-[#D5EB4B] flex items-center justify-center font-bold text-xs shrink-0"
+            className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#1A1A2E] text-[#D5EB4B] flex items-center justify-center font-bold text-[10px] sm:text-xs shrink-0"
           >
             ZS
           </motion.div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm leading-tight">{resolutionTitle}</p>
-            <p className="text-[11px] text-[#1A1A2E]/70 leading-tight mt-0.5">{resolutionSubtitle}</p>
+            <p className="font-bold text-xs sm:text-sm leading-tight">{resolutionTitle}</p>
+            <p className="text-[10px] sm:text-[11px] text-[#1A1A2E]/70 leading-tight mt-0.5">{resolutionSubtitle}</p>
           </div>
           <span className="hidden sm:flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-[#1A1A2E]/70">
             <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" aria-hidden="true" />

@@ -159,7 +159,7 @@ Pipeline: invisible until the Friday partner sync. By then, Monday\'s urgent ask
       rebuttal: 'They never see a system. They email or WhatsApp the same partner they always have. The auto-status digest sounds like the partner because we train it on her writing style. The dunning email goes out under her name and signature. The client experience improves because nothing slips, the partner stays in the loop.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: 'Cut DSO from 60 to 35 days on a ₹3Cr revenue base = ₹2L+ of working capital freed annually. Reclaim 8 hrs/week of partner time at ₹3-5K/hr blended = ₹1L+/month of partner capacity unlocked. Sprint payback inside 1-2 months on most professional-services firms. We split 50/50 (Week 0 / Week 4) if cash is tight.',
     },
   ],
@@ -181,8 +181,8 @@ Pipeline: invisible until the Friday partner sync. By then, Monday\'s urgent ask
       answer: 'No. The dunning sequence is written in your firm\'s tone, sent under the assigned partner\'s name and signature. D+3 is gentle, D+10 includes a polite statement, D+20 escalates to the partner who reviews before sending. Net: clients pay sooner, partners stop being the bad cop.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all template approvals (WhatsApp, email, proposal, dunning), AI proposal drafter training, Razorpay + Zoho Books bridge, auto project kickoff, Friday digest, partner Monday brief, dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all template approvals (WhatsApp, email, proposal, dunning), AI proposal drafter training, Razorpay + Zoho Books bridge, auto project kickoff, Friday digest, partner Monday brief, dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
     },
     {
       question: 'Have you done this for a professional services firm before?',

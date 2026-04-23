@@ -159,7 +159,7 @@ iOS 14 broke Meta attribution 18 months ago. She is flying blind on which audien
       rebuttal: 'Per-SKU cycles auto-update from your Shopify product data. New SKU added, you set the cycle once at SKU creation, every customer who buys it gets the right nudge at the right day. No manual maintenance needed.',
     },
     {
-      objection: 'We cannot afford ₹1.5L upfront.',
+      objection: 'We cannot afford ₹2L upfront.',
       rebuttal: 'Recovering 12% more carts on ₹2K/day of abandons is ₹240/day = ₹7.2K/month. Add replenishment lift on a ₹3-5L/month base = ₹40-80K/month. Cut COD RTO from 35% to 18% on 100 orders/month = ₹30-50K/month savings. Sprint payback inside 2-3 months on most D2C revenue bands. We split 50/50 (Week 0 / Week 4) if cash is tight.',
     },
   ],
@@ -181,8 +181,8 @@ iOS 14 broke Meta attribution 18 months ago. She is flying blind on which audien
       answer: 'Meta Conversions API server-side events plus GHL\'s order-back-to-source stitching. We deduplicate browser pixel + server events to avoid double-counting. The Looker Studio dashboard shows you cohort-level ROAS by Meta audience, Google campaign, and organic source.',
     },
     {
-      question: 'What does ₹1.5L include and what is recurring?',
-      answer: 'One-time ₹1.5L sprint covers the full 4-week build, all WABA template approvals, AI content drafter trained on your DMs, cart recovery flows, replenishment cycles, VIP sequence, returns pipeline, Meta CAPI setup, attribution dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
+      question: 'What does ₹2L include and what is recurring?',
+      answer: 'One-time ₹2L sprint covers the full 4-week build, all WABA template approvals, AI content drafter trained on your DMs, cart recovery flows, replenishment cycles, VIP sequence, returns pipeline, Meta CAPI setup, attribution dashboard, team training, and 30-day hypercare. Recurring is ₹16K/month for WABA hosting, GHL, AI inference, n8n hosting, and email infra.',
     },
     {
       question: 'Have you done this for a D2C brand before?',
