@@ -1,14 +1,57 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { writeSession, type DiscoverySession } from "../lib/discovery-session";
+import { initSession, writeSession } from "../lib/discovery-session";
+import { generateAudit, type Industry, type AutomationArea } from "../lib/audit-generator";
+
+const VALID_INDUSTRIES: Industry[] = [
+  "manufacturing",
+  "professional-services",
+  "retail",
+  "healthcare",
+  "hospitality",
+  "education",
+  "construction",
+  "it-software",
+  "real-estate",
+  "other",
+];
+
+const VALID_AREAS: AutomationArea[] = [
+  "lead-flow",
+  "invoice-payment",
+  "reports",
+  "whatsapp-followups",
+  "retention",
+  "ai-voice-chat",
+  "inventory-orders",
+  "hr-payroll",
+  "special-internal",
+  "other",
+];
 
 function nextMonday(): string {
   const now = new Date();
-  const day = now.getUTCDay(); // 0 Sun .. 6 Sat
+  const day = now.getUTCDay();
   const daysUntilMonday = day === 1 ? 7 : (8 - day) % 7 || 7;
   const d = new Date(now);
   d.setUTCDate(d.getUTCDate() + daysUntilMonday);
   return d.toISOString().slice(0, 10);
+}
+
+function parseIndustry(raw: string | null): Industry {
+  if (!raw) return "other";
+  const normalized = raw.toLowerCase().trim().replace(/\s+/g, "-");
+  return (VALID_INDUSTRIES.includes(normalized as Industry)
+    ? (normalized as Industry)
+    : "other");
+}
+
+function parseTickedAreas(raw: string | null): AutomationArea[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim().toLowerCase().replace(/\s+/g, "-"))
+    .filter((s) => VALID_AREAS.includes(s as AutomationArea)) as AutomationArea[];
 }
 
 export default function DiscoverySetup() {
@@ -25,17 +68,30 @@ export default function DiscoverySetup() {
       );
       return;
     }
-    const session: DiscoverySession = {
+
+    const industry = parseIndustry(params.get("industry"));
+    const tickedAreas = parseTickedAreas(params.get("ticked"));
+
+    const audit = generateAudit({
+      industry,
+      company,
+      tickedAreas,
+      revenueBand: params.get("revenue") ?? undefined,
+    });
+
+    const session = initSession({
       company,
       name,
-      cs1: params.get("cs1") ?? "",
-      cs2: params.get("cs2") ?? "",
-      kickoffDate: params.get("kickoff") ?? nextMonday(),
+      industry,
+      tickedAreas,
       contactId: params.get("contactId") ?? "",
       phoneE164: params.get("phone") ?? "",
+      kickoffDate: params.get("kickoff") ?? nextMonday(),
       sessionStartedAt: new Date().toISOString(),
-      draftBottlenecks: { b1: "", b2: "", b3: "", savedAt: "" },
-    };
+      audit,
+      coi: audit.coiDefaults,
+      sprintCount: Math.min(3, Math.max(1, tickedAreas.length <= 4 ? 1 : tickedAreas.length <= 8 ? 2 : 3)) as 1 | 2 | 3,
+    });
     writeSession(session);
     navigate("/discovery", { replace: true });
   }, [params, navigate]);
