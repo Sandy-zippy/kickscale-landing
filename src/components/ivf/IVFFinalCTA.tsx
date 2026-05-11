@@ -45,12 +45,12 @@ export default function IVFFinalCTA() {
             ↑ Lock my slot — hero form
           </a>
         </div>
-        <div className="mt-16 pt-8 border-t border-[#2A2A35]/15 text-sm text-[#9CA3AF] flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-          <span>ZippyScale · Hyderabad</span>
-          <span>·</span>
-          <a href="https://zippyscale.in" className="hover:text-[#2A2A35]">zippyscale.in</a>
-          <span>·</span>
-          <a href="/privacy" className="hover:text-[#2A2A35]">Privacy</a>
+        <div className="mt-16 pt-8 border-t border-[#2A2A35]/15 text-sm text-[#9CA3AF] flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <span className="inline-flex items-center min-h-[44px] px-2">ZippyScale · Hyderabad</span>
+          <span aria-hidden>·</span>
+          <a href="https://zippyscale.in" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#2A2A35]">zippyscale.in</a>
+          <span aria-hidden>·</span>
+          <a href="/privacy" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#2A2A35]">Privacy</a>
         </div>
       </motion.div>
     </section>
