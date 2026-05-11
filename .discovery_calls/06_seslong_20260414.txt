@@ -1,0 +1,351 @@
+﻿📝 Notes
+Apr 14, 2026
+Seslong traders Discovery Meet
+Invited Sandy Kadyan rajat.karnani@seslong.com Bhargav Naidu
+Attachments Seslong traders Discovery Meet
+Meeting records Transcript Recording 
+
+
+
+
+Summary
+Initial discussion defined 3 AI implementation baskets, with focus on immediate operational efficiency via customized solutions, followed by a request for a detailed proposal and a successful CRM system demonstration.
+
+Define AI Priority Baskets
+3 priority baskets for AI implementation were defined: operational efficiency, logistic support, and CRM, with operational workflow deemed the most critical area for immediate improvement. For logistics, the system must determine the best, most priority-wise route for 130–140 clients.
+
+Proposed Operational/CRM Solution
+It was proposed that connecting existing data sources, specifically using the WhatsApp API to scrape data and implement triggers, could support the operational workflow, which includes integrating a new CRM tool. This initial operational efficiency and CRM workflow build is estimated to take 1 month, with an MVP available within 1 to 2 weeks.
+
+Request Detailed Proposal and Demo
+A formal proposal detailing problem points, solutions, workflow, costs, and timeline was requested to help with the decision-making process. The vendor demonstrated an existing CRM implementation for a driver aggregator platform that handles 400 drivers monthly, showcasing automated triggers and clear metric tracking.
+
+
+
+
+Next steps
+* [Rajat Karnani] Send Workflow: Send the detailed actual workflow order and document via email by tomorrow evening.
+* [Sandy Kadyan, Bhargav Naidu] Develop Proposal: Build a one-page PDF proposal listing requirements, solutions, costs, and timeline for the operation and CRM integration. Include a video demonstration of similar past workflows for visual understanding.
+* [Sandy Kadyan, Bhargav Naidu] Establish Communication: Create a WhatsApp group quickly to manage input requests and resolve development blockades.
+
+
+
+
+Details
+* Defining the Three Priority Baskets for AI Implementation: Rajat Karnani outlined three key areas for potential AI and workflow improvements: operational efficiency, logistic support/betterment, and Customer Relationship Management (CRM) (00:00:00). The operational part is considered the most critical, and they can tackle all three matters separately before integrating them (00:01:02). For logistics, the system should determine the best and most priority-wise route for vehicles serving 130–140 clients (00:00:00).
+* Proposed Solution for Operational and CRM Workflow: Sandy Kadyan explained that they can build custom applications if the existing workflow is complicated or if current tools cannot handle the load (00:01:02). They suggested that the operational workflow is fairly simple, primarily requiring connecting existing data sources, specifically using the WhatsApp API to scrape data and implement triggers based on fixed times or when orders start coming in (e.g., Tuesdays and Wednesdays). This data can then be analyzed by an AI layer and pushed into a sales order pipeline, possibly integrating a new CRM tool since Zoho is currently only used for accounting (00:02:11).
+* Integrating CRM into the Initial Phase: Sandy Kadyan proposed that CRM could be included as part of the first bucket (operations) because having a CRM in place would make it easier to create automatic triggers and execute workflows when items are moved between pipelines. This approach would allow the client to see their work and fine-tune later or add more things related to logistics (bucket two) and client-side CRM (bucket three) (00:04:05). The initial workflow build, which addresses operational efficiency and CRM, is estimated to be completed within one month, with a working Minimum Viable Product (MVP) available within one to two weeks (00:15:07).
+* Request for a Detailed Proposal and Demo: Rajat Karnani requested a formal proposal that outlines the intended solution, including a summary of the problem points and solutions, the resulting workflow, the associated costs, and an approximate timeline for integration (00:05:00). They emphasized the need for a demo or video showing similar past work, specifically requesting visualization of how data is picked up from WhatsApp and moved through the system to help them better visualize the process flow. Rajat Karnani noted that they are also talking to a couple of other people, making the timeline and cost factors essential for their decision-making process (00:06:45) (00:13:04).
+* Demonstration of an Existing CRM Implementation: Bhargav Naidu and Sandy Kadyan showcased a system built for a driver aggregator platform that handles 400 drivers monthly (00:08:29). The system uses pipelines to track contacts through stages, from new lead to contacted, qualified, and then to various process steps like payment, care plan, and driver matching (00:10:02). Automated triggers are set at critical stages, sending updates via WhatsApp to both the client and the founder, and it provides clear metrics on opportunity costs and lead statuses (00:11:00).
+* Plan for Developing and Finalizing the Proposal: Sandy Kadyan explained their payment structure involves working in phases or sprints, where payment is received only after the workflow is complete and the client is satisfied (00:15:07). They confirmed they would create a Product Requirements Document (PRD) detailing the steps understood in the client's processes, along with the timeline, commercials, and the entire workflow (00:17:11). Rajat Karnani committed to sending a document detailing their current workflow order by tomorrow evening to aid the development of the proposal, and they suggested creating a WhatsApp group for quick communication regarding any doubts or blockages encountered during the development process (00:18:06).
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
+📖 Transcript
+Apr 14, 2026
+Seslong traders Discovery Meet - Transcript
+00:00:00
+ 
+Rajat Karnani: The second basket is now today we have more than 130 140 clients. If we have four or five vehicles uh we would always want to know which is the
+Sandy Kadyan: Okay.
+Rajat Karnani: best route for a vehicle to go in in order to ensure that delivery happens in
+Sandy Kadyan: Mhm.
+Rajat Karnani: time. So the one is but there also is times when the c some customer may need it more urgently than the other
+Sandy Kadyan: Okay.
+Rajat Karnani: customer. So then we have to not only put it as the best route but also the priority wise.
+Sandy Kadyan: Yes.
+Rajat Karnani: So this is the second basket that we that we need. The third basket is that we would like to have a system where uh
+Sandy Kadyan: Okay.
+Rajat Karnani: if any information that requires to be sent to the client or any suppose we have a new product or or anything like that uh how we can use AI to be able uh that we can send it through to all these numbers to all these groups basically.
+Sandy Kadyan: Okay.
+ 
+ 
+00:01:02
+ 
+Rajat Karnani: So that becomes part of the CRM also that we kind of are looking uh to build. So these are three different baskets.
+Sandy Kadyan: Okay.
+Rajat Karnani: One is the operation operational efficiency. Second is the logistic support and uh betterment and third is the
+Sandy Kadyan: Yes.
+Rajat Karnani: CRM and we can tackle all three matters separately before we integrate it.
+Sandy Kadyan: Okay.
+Rajat Karnani: The most critical part is obviously the first operational part and we can move to the second
+Sandy Kadyan: Yeah.
+Rajat Karnani: and third as we if things fall in place and you know understandings are the alignments there between us in terms of what you need and you're able to deliver then we can take it step by
+Sandy Kadyan: Yes. Yes. Okay.
+Rajat Karnani: step
+Sandy Kadyan: That is perfect. So, yeah, we do have more than enough, I guess. M so uh we'll tell you as to what all we have uh currently built and what are we currently working on. So we are working on applications uh if uh your workflow is kind of complicated and if uh there are tools which can't handle the load of your workflow then we can build custom applications too that also we are doing for some of our clients.
+ 
+ 
+00:02:11
+ 
+Sandy Kadyan: Okay. But uh this operational workflow which is there it's kind of fairly simple. we just need to connect all the dots right you're already having most of the data in WhatsApp right so using WhatsApp API we can kind of scrape that data and uh timing wise also you're having triggers right uh so you start getting orders on Tuesdays and Wednesdays in certain time buckets so uh using those triggers or using a fixed time every day right uh data
+Bhargav Naidu: Thank you.
+Sandy Kadyan: can be scraped from all your WhatsApp group and all right uh including screenshots which are there including text layer which is there and we can bring in an AI layer in between which kind of understands your setup and using that we can push the data to a sales order pipeline. Currently you're using Zoho for your CRM too or uh how does that work?
+Rajat Karnani: So,
+Bhargav Naidu: No, it's only for the
+Sandy Kadyan: So for the CRM part two,
+Rajat Karnani: Zo,
+Bhargav Naidu: accountings.
+Rajat Karnani: Zo,
+Sandy Kadyan: right?
+Rajat Karnani: uh, you have a CRM module?
+ 
+ 
+00:03:10
+ 
+Rajat Karnani: No,
+Bhargav Naidu: No, no,
+Rajat Karnani: we don't.
+Bhargav Naidu: no.
+Rajat Karnani: No,
+Bhargav Naidu: They're using Zoho only for accounting right now,
+Rajat Karnani: we don't have a CRM module in
+Bhargav Naidu: Sandy.
+Rajat Karnani: Zo.
+Bhargav Naidu: Only for accounting.
+Sandy Kadyan: Okay. Only for accounting. So we can bring in a CRM tool where we can build different pipelines, right? As to uh order coming in, then uh sales invoice getting generated, right? And then along with that uh pushing that invoice uh to your client side if you want to mail it to them, WhatsApp it to them. So whatever workflow which is there then uh these pod copies which are there right? So whatever your workflow is there we can uh build in pipelines. Okay. And when things are getting moved in pipeline, certain triggers can come into action and the things which are happening manually now which our team is doing that thing can happen on auto cuz if uh the channel of communication is WhatsApp most of the things can be automated we can create those workflows for you or if uh the channel of communication is email also that also can be automated.
+ 
+ 
+00:04:05
+ 
+Sandy Kadyan: uh calls is not there yet. Okay, AI calls are not there yet. It's like 70 to 80% there. But uh communication wise and invoice wise it can be done. It can be built uh fairly easily. It's not that complicated. So yeah,
+Rajat Karnani: Okay.
+Sandy Kadyan: we can we can start with uh the first bucket which is operation, right? Uh and you guys can also see as to how do we go about things.
+Rajat Karnani: Okay.
+Sandy Kadyan: Okay. And once you see our first work or the first workflow which we build for you guys then we can always fine tune it later or we can add in more things in uh bucket number two bucket number three as you were saying right client side of things CRM side of things
+Bhargav Naidu: logistic side of things.
+Sandy Kadyan: and yeah logistics side of things is the second bucket and then the third one is the CRM if I'm not wrong right but I do think CRM can be started with initially
+Bhargav Naidu: Sh
+Rajat Karnani: Yeah.
+ 
+ 
+00:05:00
+ 
+Sandy Kadyan: cuz uh the current workflow which is there uh if we have a CRM in place it'll be kind of easy
+Rajat Karnani: Okay.
+Sandy Kadyan: when you're moving things in between pipelines and all then automatically triggers can be created and workflows can execute on its own. So I I do think CRM can be a part of uh the first bucket
+Rajat Karnani: Okay.
+Sandy Kadyan: only.
+Bhargav Naidu: That's
+Rajat Karnani: Okay. So let's do one thing.
+Bhargav Naidu: true.
+Sandy Kadyan: Yes.
+Rajat Karnani: Uh there are two parts that I mean obviously the knowledge I mean of the knowledge at AI level. So you'll have to take a baby step with us at each time for us to understand the entire workflow process etc. It may take time for us to understand a certain thing.
+Sandy Kadyan: Yes.
+Rajat Karnani: Uh and likewise it may take time for you all to understand some of the in nitty-gritty of you know some detailing that we may need along the way.
+Sandy Kadyan: Yes.
+Rajat Karnani: I think there are two parts that we can look at it is one is if you could just make a model of sorts where you could uh sort of summarize the in brief what you all intend to propose and put in place.
+ 
+ 
+00:06:03
+ 
+Rajat Karnani: uh of course there is a cost component to it as well. So what is the kind of costs that are there because before you before we proceed forward let us just understand what is the kind of costs that are involved in this as well uh take a final decision on whether we proceed or proceed.
+Sandy Kadyan: Yes.
+Rajat Karnani: So if you could build a proposal in terms of a these are the things that we're probably going to be able to these are these are the problem points and these are the solutions you have and this is how the workflow will eventually happen. It'll give me a sense of how the process flow will fall into place.
+Sandy Kadyan: Yeah.
+Rajat Karnani: I can then study it once over a couple of days.
+Sandy Kadyan: Yeah.
+Rajat Karnani: Understand whether it makes sense or not. Share that along with your commercials.
+Sandy Kadyan: Yeah.
+Rajat Karnani: Uh so that then we have a clear idea whether it is affordable for us at this point in time or do we want to pick it at a
+ 
+ 
+00:06:45
+ 
+Sandy Kadyan: Yeah.
+Rajat Karnani: later date. Uh simultaneously I mean we just we're talking to a couple of people more as well.
+Sandy Kadyan: Okay.
+Rajat Karnani: So just want to get a sense of you know uh a what is it that you can put together uh in terms of a process flow what is the cost attached to it and an approximate timeline in which you know all of these can be
+Sandy Kadyan: Yeah,
+Rajat Karnani: integrated
+Sandy Kadyan: perfect. Raj, it's it's kind of fairly simple workflow wise. Uh yeah, we do have your workflow with
+Rajat Karnani: uh also do you have a demo when you send the proposal if you have a demo or something of something that you have done in the past
+Sandy Kadyan: us.
+Rajat Karnani: similar to what we're doing right Now uh because since we don't see AI on a regular basis apart from what's already available with claude and you know all of these things that you use for mails and messages and stuff
+Sandy Kadyan: Yes.
+Rajat Karnani: like that or financial understanding for the process flow if you have something that you have a video
+ 
+ 
+00:07:36
+ 
+Sandy Kadyan: Yes.
+Rajat Karnani: of it'll help us also come a couple of steps forward or closer to what you all want to communicate to us uh visually we'll start understanding things
+Sandy Kadyan: Yes. Yeah.
+Bhargav Naidu: Oh.
+Sandy Kadyan: No. No, it does make sense cuz to be very frank, the industry is also kind of new. Uh, so we were uh I don't know if Valv did tell you this that we started this thing,
+Rajat Karnani: Yeah.
+Sandy Kadyan: we started offering the services in Vancouver, Canada. So that is where we did pick this thing up from and our existing team uh it's like three to four people
+Rajat Karnani: Okay.
+Sandy Kadyan: who actually build AI automations are based out of that place only and we brought this offer to India to see as
+Rajat Karnani: Sure.
+Sandy Kadyan: to what's the requirement here and we did build some workflows for Indian businesses too and I do think if we show you those workflows you'll have a much better understanding as to what can we build
+Bhargav Naidu: Why don't we show the sunrise the CRM that we have integrated completely so that we
+ 
+ 
+00:08:29
+ 
+Sandy Kadyan: Right.
+Bhargav Naidu: can give a better idea
+Sandy Kadyan: Yeah, I can show you these things and we can also share uh in a documented format uh so that you guys can have a look at that thing again too. But if I just have to quickly show you guys what Keny built. Are you guys able to see the
+Rajat Karnani: Yeah,
+Sandy Kadyan: screen?
+Rajat Karnani: we can see it.
+Sandy Kadyan: So uh when we talking about uh CRM right uh so the CRM is like a marketing CRM they needed our help in uh client acquisition and client retention. So we did build the system for them. Right now when a particular contact is kind of moved around automatically triggers uh triggers get triggered in place and then certain automations happen. So we have built this thing internally in the system right if you can see the automation section
+Bhargav Naidu: I I'll let's give you a view over this part.
+Sandy Kadyan: here.
+Bhargav Naidu: Mr. Rajat uh Sandy, can we go to the opportunities once again please? Let's go first go to contacts.
+ 
+ 
+00:10:02
+ 
+Bhargav Naidu: So Mr. Rajat, how this works is this is basically a driver aggregator platform who deals into 400 drivers a month. Okay. So they provide drivers for 400 people a month on a regular basis. So these are all the contacts first they are listed over here. These are automated. Okay. They also get the same thing in WhatsApp only their requirement details clearly. Whenever they get the details clear can you open any one mo Jane for example Sandy? Yeah come down their phone number is taken over here. Can you go to additional info? Additional information. It's so okay. They didn't fill the additional information yet. Go with me. Then no problem. So they get all the details over here. Once the details are created over here, then what happens? We'll go to opportunities. In opportunities, they first start from the new lead scenario. They'll follow the new leads. Then what happens? Their sales team whenever they get in touch with these clients, they move them to contacted.
+ 
+ 
+00:11:00
+ 
+Bhargav Naidu: If they lift the call, if they have conversation with them after contacted, if a person is actually qualified or they actually ready to take our services, then they go into qualified and as soon as they move to qualified, there are two triggers that are happening. First trigger that's going to the founder that there is one new qualified lead today. The second trigger is going for the client. Congratulations, you are qualified to take our services. Our team will stay in touch with you. That goes to WhatsApp. Okay. Now once the client is qualified then they send the payment link for the client for the onboarding process. Okay, for taking the payment once the client makes the payment you can see that 15k is coming over here now in the onboarding part you see on every client you see 15,000 15,000 15,000 that's the standard fee that they'll be taking this is their opportunity cost you you'll know very clearly how many how many leads you have won
+Rajat Karnani: Okay.
+Bhargav Naidu: today once they go for that then they have a care plan okay if anyone is choosing their care plan after that once their whole process completed then they have to match their drivers which means a driver needs to be assigned for that client.
+ 
+ 
+00:12:02
+ 
+Bhargav Naidu: So let's go a bit more sides and now this is driver man. So now there are five people whose drivers have not been matched yesterday. If it was manual on paper this was never known. Now if we know there are five people whose drivers were not assigned yesterday and 10 people whose drivers have been assigned yesterday. Got it? So this is how their process we have integrated and then once this whole process is done then they move to clients can move more yeah then they move into clients either in any place where the with the client is not interested or didn't make the payment it will go to lost or not qualified clearly and for each stage as we are moving the automations are triggered for the founder also and also for the client through via WhatsApp completely and once a person becomes a client every month there will be update
+Rajat Karnani: Okay.
+Bhargav Naidu: going to the client on the driver review that this month how many days the driver is is present, how many days the driver is absent, how much amount of money you need to pay to the driver, it's all automated completely.
+ 
+ 
+00:13:04
+ 
+Sandy Kadyan: So this is uh this is one of the thing right uh we also have
+Bhargav Naidu: Yeah.
+Sandy Kadyan: if uh when it comes to custom automation so this is as per their requirement as to whatever client wanted us to build that is built there and we can build some custom uh
+Bhargav Naidu: Right. This
+Sandy Kadyan: some complicated created custom workflows too, right? Whereas uh triggers can be custom triggers which you guys want.
+Bhargav Naidu: better.
+Sandy Kadyan: Uh so if this thing happens then certain action needs to be built and all and we can kind of deploy uh some custom workflows like this
+Rajat Karnani: Okay. So I have one suggestion before we proceed further.
+Sandy Kadyan: also.
+Rajat Karnani: Why don't you all sh is there something that there is an integration with WhatsApp that we can see as a video that stuff is getting picked up from WhatsApp because uh the use case will be a there'll be a direct application in our minds as well that okay fine this is how the workflow will go because Right now what's happening is I need to see how it is getting picked up for me to really start visualizing the whole process.
+ 
+ 
+00:14:08
+ 
+Rajat Karnani: So do you all have any uh client where there is a WhatsApp pickup and then further moved in and that's in a video or something like that.
+Sandy Kadyan: WhatsApp project we did build that thing for ourself as to our internal project uh management uh system which is there right so we did build that thing internally right but it's kind of happening
+Rajat Karnani: Right.
+Sandy Kadyan: manually now cuz uh WhatsApp has some security layer the API thing which is there WhatsApp's API you can't send bulk messages so our team is kind of big okay so we we are kind of making so I'm like I can explain you the entire flow here
+Rajat Karnani: Go ahead. Sorry. Go ahead.
+Sandy Kadyan: only instead of Google as a trigger right uh WhatsApp would be a trigger here and the workflow would be anything which happens on WhatsApp right we can
+Rajat Karnani: Okay.
+Sandy Kadyan: configure we can we can pick up data we can extract data let's say you wanted to pick up screenshots So that can be extracted here, right? That can be analyzed using an AI layer here, right?
+ 
+ 
+00:15:07
+ 
+Sandy Kadyan: AI can filter those messages out and then based on the requirement, we can kind of push the data into different things.
+Rajat Karnani: Understood. And if you want the data to be moved in in an Excel sheet format,
+Sandy Kadyan: So it can be custom made.
+Rajat Karnani: I'm assuming that can be done.
+Sandy Kadyan: Yeah, that can be done.
+Rajat Karnani: Okay.
+Bhargav Naidu: Can I
+Sandy Kadyan: Yeah.
+Bhargav Naidu: just
+Sandy Kadyan: So as to it can be customized as to whatever your requirement is and to be very frank uh commercials also would be like uh whatever your requirement is we'll have a PR right and based on that PR once we complete the entire workflow and once you're satisfied then we'll receive the entire payment so we uh we to kind of work in phases sprints as so your first requirement which is there will first understand how many sprints would it take one sprint is generally a month right and uh this operational workflow which is that it can easily be built within a month right and within a week or two we'll build some type of working MVP which you guys can test internally and then we can fix few bugs and all and once the workflow is kind of complete complete then we receive our entire commercials too so it it's not like uh yeah as to risk
+ 
+ 
+00:16:17
+ 
+Bhargav Naidu: f***.
+Sandy Kadyan: uh it won't be a risky thing if you're kind of thinking in that way as to will we be able to
+Rajat Karnani: No, no,
+Sandy Kadyan: execute the workflow and
+Rajat Karnani: it's not about I I understand it's not about risk and just to get an idea of what it cost because we it could cost from one to 100, right? We don't know the number. So, we just need to have a perspective of you know what is the cost that it will take for you to build something that we have said. So my suggestion is if you could put it all together in a say onepage PDF document of
+Sandy Kadyan: Yes.
+Rajat Karnani: sorts or a proposal of sorts sorry uh put the requirement list so I can go through a checklist of all the requirements whether we've we've covered all the areas or not what is the approximate cost that it would take for you to build that thing and the time period. So it gives us a a a bird's eye view on what would be the approximate uh timelines and things like that and from there we the meeting whether it is a I mean whether
+ 
+ 
+00:17:11
+ 
+Sandy Kadyan: Okay.
+Rajat Karnani: there is a cost element that we need to discuss or whether there's a process flow element that needs to be discussed we can do that in the next round.
+Sandy Kadyan: Okay. Sounds good.
+Rajat Karnani: Anything else?
+Sandy Kadyan: So what what we'll do is uh the current workflow which is there which is related
+Bhargav Naidu: Great.
+Sandy Kadyan: to operations, right? operations and the CRM part.
+Bhargav Naidu: Right.
+Sandy Kadyan: So we'll uh create a PRD as to what we understood in terms of steps which are there in their processes. Okay. And then yeah uh three things we'll add in timeline commercials and the entire workflow.
+Bhargav Naidu: Let's directly send an right clear that will be easier for point that has a
+Sandy Kadyan: No, I think no no first we need to kind of see as to we understood things right cuz uh
+Bhargav Naidu: detail. Okay.
+Sandy Kadyan: to be very frank we are not from this industry right so we would be needing more input from them that this is
+Bhargav Naidu: Okay.
+Rajat Karnani: Yeah and along the way while you're building this any input you need you're free to you can you can make a WhatsApp group
+ 
+ 
+00:18:06
+ 
+Sandy Kadyan: the
+Rajat Karnani: quickly. So any information that you you can just keep pinging me if you have any doubt and I understand because each industry is different each industry's nuances are different. So whatever issues that you may crop up and you feel that there is a blockade there, you can always call me up and I'll tell you what's happening because then I can tell you on ground what the reality
+Sandy Kadyan: Yeah. And when it comes to operations,
+Bhargav Naidu: Okay.
+Sandy Kadyan: right, if Rajat,
+Rajat Karnani: This
+Sandy Kadyan: you could kind of uh create a doc where you can uh give us that doc based on these are the things or this is the workflow. Now I kind of understand it in a generic way but if you can give me more details there of your actual
+Rajat Karnani: show
+Sandy Kadyan: workflow it'll be easier for us also to kind of plan the entire workflow and give you the exact timeline as to how much time will it take.
+Rajat Karnani: sure I can get you that.
+Sandy Kadyan: Okay.
+Rajat Karnani: I can get you that.
+ 
+ 
+00:18:57
+ 
+Sandy Kadyan: Yeah.
+Rajat Karnani: That shouldn't be too difficult, right? So, I mean,
+Sandy Kadyan: Yeah.
+Rajat Karnani: let's do one thing. Let's give me a couple of days. I'll get the workflow order that I need to send you first. Based on that, you all prepare uh the data that that we discussed along with the etc.
+Sandy Kadyan: Yes. Yes.
+Rajat Karnani: And then let's take it from there.
+Sandy Kadyan: Yep.
+Bhargav Naidu: That's all.
+Sandy Kadyan: Sounds
+Bhargav Naidu: That's clear. So,
+Sandy Kadyan: good.
+Bhargav Naidu: R.
+Rajat Karnani: Works. I'll send you a mail. Today is Tuesday.
+Bhargav Naidu: Yeah.
+Rajat Karnani: You can expect my mail by tomorrow evening.
+Bhargav Naidu: Well, perfect. Sounds good.
+Sandy Kadyan: Okay.
+Bhargav Naidu: You can do that.
+Rajat Karnani: All right.
+Bhargav Naidu: Okay. After that,
+Rajat Karnani: Okay.
+Bhargav Naidu: we'll have an extra next Google meet afterwards.
+Rajat Karnani: Done. Thanks.
+Bhargav Naidu: Okay.
+Rajat Karnani: Yeah.
+Bhargav Naidu: Perfect.
+Rajat Karnani: Done.
+Sandy Kadyan: Okay, guys.
+Rajat Karnani: All right.
+Sandy Kadyan: Nice meeting you.
+Bhargav Naidu: Perfect.
+Rajat Karnani: Thank you.
+Bhargav Naidu: Thank you so much.
+Sandy Kadyan: Have a good one.
+Rajat Karnani: Thank you.
+Bhargav Naidu: Have a good day.
+Rajat Karnani: You too. Good day. Good day, guys.
+ 
+ 
+Transcription ended after 00:19:44
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.

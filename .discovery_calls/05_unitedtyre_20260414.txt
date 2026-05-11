@@ -1,0 +1,843 @@
+﻿📝 Notes
+Apr 14, 2026
+United tyre group Discovery meet
+Invited Teg Sethi Sandy Kadyan Bhargav Naidu
+Attachments United tyre group Discovery meet
+Meeting records Transcript 
+
+
+
+
+Summary
+B2B sales automation discussion centered on implementing WhatsApp API and CRM integration, with cost concerns arising from the proposed recurring software fees.
+
+Current B2B Sales Operations
+The B2B tire sales process relies on custom software for quotation generation, applying fixed discounts, and managing very thin margins of 1% to 2%. Sales operations include Dealer Sales Representatives managing 15 to 16 dealers, focusing on daily order taking, estimating, and dispatch preparation.
+
+Proposed AI Automation Flow
+The proposed Phase 1 automation involves using the WhatsApp API to scrape inquiries, generate quotations via custom software, and integrate with a CRM for lead tracking. The goal is to automate order taking and estimating to free up sales staff for customer-centric issues like claims and complex problems.
+
+Project Scope and Cost Review
+The automation project, including WhatsApp API integration and CRM setup, is estimated to take 1 sprint for a one-time cost of 1.5 lakh rupees. The recurring monthly cost of 15,000 to 16,000 rupees raised cost concerns because it was higher than the company's current manpower costs.
+
+
+
+
+Next steps
+* [Bhargav Naidu] Contact Vendor: Schedule call with custom software vendor; Obtain API information for system integration.
+* [Teg Sethi] Secure Number: Provide new phone number; Ensure number lacks existing WhatsApp or WhatsApp Business registration for API integration.
+* [Bhargav Naidu] Send Proposal: Provide timelines, commercials, and detailed execution plan; Shoot the Agreement of Understanding (AOU) document for review.
+
+
+
+
+Details
+* B2B Lead Generation and Quotation Process: Teg Sethi described their B2B sales process for tires, where leads are generated either by the company from dealers or through references in the market. The moment a lead is received, they create a quotation using custom software, selecting the variant, applying a fixed discount percentage based on a chart, and inputting the quantity to generate an estimate. The custom software helps control manual errors, such as incorrect pricing or excessive discounting, which is critical because margins in the tire industry are very thin, operating around 1% to 2% (00:00:55).
+* Internal Team Management and Sales Operations: The company has created a community for every Dealer Sales Representative (DSR) where they are supposed to add all their dealers and form groups (00:01:49). This structure helps track how many dealers each person is handling, with each DSR currently managing about 15 to 16 dealers across 16 groups. The daily routine for the sales team involves calling dealers, taking orders, preparing, and finalizing the estimates, and creating dispatches based on established routes (00:03:03).
+* Dispatch Notification and Current Tracking: Once orders are finalized, the dispatches are shared in a separate dispatch group by 5:00 PM, after which dispatching begins (00:03:56). Bhargav Naidu's Presentation inquired about how the status of each dispatch is tracked, and Teg Sethi explained that it is assumed that the salesperson who initiates the dispatch is responsible for ensuring it is made, otherwise, they do not receive an incentive. Currently, the low volume of sales means they are not facing major issues with this system, but they are seeking solutions to scale beyond the existing level (00:04:51).
+* AI Automation Expectations for Sales Staff: Teg Sethi expressed a desire for AI to automate the repetitive tasks of order taking and estimating to free up the sales staff. The expectation is that the process would be automatic, involving a WhatsApp message to the dealer, which, upon response, would allow the system to auto-calculate the estimates and basic calculations based on a predefined list. The goal is for the dispatch list to be ready by 5:00 PM without manual involvement from the sales team, allowing them to focus on customer-centric issues like claims or complex problems (00:05:39).
+* Custom Order Discounting Strategy: When dealers ask for discounts, the company uses a "variation sale" strategy involving a discount chart based on product volume. High-volume products, such as 12-inch and 13-inch tires, are given a higher percentage discount, while low-moving items, such as 17-inch tires, receive a lower percentage discount (00:07:25). This method creates a "window" of flexibility, allowing the sales staff to manage customer-requested discounts by compensating for them using the higher margins available on low-volume items (00:08:05).
+* Proposed AI Automation Flow via WhatsApp: Bhargav Naidu's Presentation outlined a proposed automated flow starting when vendor inquiries come through WhatsApp groups (00:08:53). The AI would pick up the information, process it through the custom software to generate a quotation with appropriate discounts, and send it back to the vendor for clarification. If the vendor requests a better discount, the AI can propose a better policy within set limits; upon receiving a confirmation, the AI would generate a Purchase Order (PO) and notify the dispatch team (00:09:29).
+* Payment Options and Credit Limit Management: Payment is collected either in advance or upon delivery via bank transfer or cash (00:09:29). The system needs to provide customers with the option to select either cash or bank transfer when the quotation is sent. Furthermore, every dealer account has a set limit, and if an order exceeds that limit, the AI must ensure the order is handled appropriately, such as dividing a large order into two to avoid exceeding the credit limit (00:10:23).
+* Sales Team Intervention Benchmark and Scaling: The automation should limit sales team involvement to escalations or customized options, such as when a dealer places a high-ticket value order, like one above three or four lakh rupees (00:11:03). Bhargav Naidu's Presentation suggested that this benchmark would make high-value clients feel more connected to the brand, and then proceeded to suggest another option for increasing brand value and automating the order-taking process, introducing the concept of a landing page (00:11:43).
+* Landing Page Concept and Custom CRM Demonstration: Bhargav Naidu's Presentation showed an example of a landing page used for another client in the driver aggregation business, where a client can enter all their requirements, including their care plan choice and custom requirements (00:12:30). This data is sent to a custom CRM that tracks the lead through various stages, such as 'New Lead,' 'Contacted,' 'Qualified,' and 'Onboarded' (00:14:08). The CRM also provides a dashboard to reconcile data, showing the revenue involved at each stage and allowing the team to track progress and pending tasks (00:15:04).
+* Challenges with Landing Page Implementation: Teg Sethi noted that the suggested landing page approach requires the dealer to fill in the information themselves, which presents a challenge due to their clientele not being very technically educated or willing to use new technology (00:16:00). Teg Sethi emphasized that the transition to technology must be gradual and ready for the people involved (00:16:43). Teg Sethi confirmed that automation is desirable to reduce the growing cost of manpower, with the intention of replacing the efforts of multiple people with one person managing the automated system (00:17:37).
+* AI Automation using WhatsApp API and CRM Integration: Bhargav Naidu's Presentation affirmed that automation via WhatsApp is possible using an API and suggested that the flow should involve scraping data from WhatsApp groups and feeding it into the custom software (00:18:25). They proposed linking this to a CRM to clearly visualize the status of every lead, ensuring that when volume increases, the team is prepared. The system would also use the WhatsApp API to send automatic client notifications at every stage movement (e.g., order confirmed, packing, delivery) to address the current problem of salespeople forgetting to update clients (00:19:51).
+* AI Role and Lead Allocation in CRM: Bhargav Naidu's Presentation clarified that in the CRM, different access levels would be provided for admin and users, with all leads consolidated in one place and clearly assigned to a person (00:22:24). Teg Sethi theorized that the AI agent would become a salesperson itself, potentially taking over the work of underperforming DSRs (00:23:12). Bhargav Naidu's Presentation confirmed that a separate user for the AI would be created in the CRM, and the automation process would begin when a lead is assigned to the AI (00:23:46).
+* Updating AI Data and Inventory Check: Teg Sethi inquired about updating the discount schemes and prices for the AI, and Bhargav Naidu's Presentation confirmed that access would be given to a vector database so they can constantly update the data (00:24:35). However, checking inventory is a complication because the stock is not only at their location but also at the company's location, and the company will not provide access to their software (00:25:12). The current flow will need to be adjusted so that the AI creates the lead, but then triggers a notification to the salesperson to manually confirm stock availability before the AI proceeds with the next steps (00:25:55).
+* AI for Pricing Strategy and Dealer Performance Mapping: Teg Sethi inquired whether the AI could help map their pricing strategy and dealer performances, such as identifying which dealers are more profitable based on past orders and supply restrictions (00:26:40). Bhargav Naidu's Presentation confirmed that the AI could generate dashboards with inbound/outbound sales and cash collection data, but for complex pricing strategies, the AI would require specific data and training (00:27:40). Teg Sethi further elaborated on the manual process of mapping dealers into categories (small, large, extra-large volume) for different tire brands and prioritizing small volume dealers for profit generation (00:28:37).
+* AI Manipulation and Project Phasing: Teg Sethi questioned if the AI could handle manipulative interactions, such as strategically pushing more profitable products when a low-availability item is requested (00:29:16). Bhargav Naidu's Presentation responded that AI could be "very manipulative" but that this capability relies entirely on the vector database and training model, confirming it would be a "phase two" project due to its complexity (00:30:02) (00:32:33). The primary project will focus on the automations from WhatsApp to order processing via the CRM (00:30:47) (00:32:33).
+* Automation Proposal and Costs: Bhargav Naidu's Presentation summarized the proposed Phase One project, which includes WhatsApp API integration, CRM integration with manual stock confirmation, client notifications, and client retention activities (00:33:17). The timeline for this end-to-end automation process is estimated to take one sprint (one month). The cost for this single sprint is 1.5 lakh rupees, which is a one-time charge for the completion of the task (00:34:00).
+* Recurring Costs and Value Discussion: The recurring monthly cost for the entire system (including the custom CRM, WhatsApp API paid to Meta, and official email ID) is estimated to be around 15,000 to 16,000 rupees (00:34:58). Teg Sethi expressed concern that the recurring software cost is higher than their current manpower costs, stating that they would expect the software to reduce their costs, not equalize or increase them (00:36:31) (00:38:29). Bhargav Naidu's Presentation concluded the meeting and committed to sending a detailed proposal outlining the required steps and expected output (00:39:19).
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
+📖 Transcript
+Apr 14, 2026
+United tyre group Discovery meet - Transcript
+00:00:00
+ 
+Bhargav Naidu's Presentation: Now it's gone. Yeah, now it's easier. Go
+Teg Sethi: Fine. So now what happens is that generally our leads that we
+Bhargav Naidu's Presentation: on.
+Teg Sethi: take since we're doing a B2B sale I'm doing for the company.
+Bhargav Naidu's Presentation: Mhm.
+Teg Sethi: So the company people they give us the leads for the dealers that are there and second is
+Bhargav Naidu's Presentation: Okay. Okay.
+Teg Sethi: by references. So generally in the market we selling tires anyone who requires tires they tend to find out who is providing the best rate in the market.
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: So the moment we get a lead so we create a quotation for the customer we get into the software and we select the
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: variant.
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: There we go. We select the variant. We provide the discount whatever discount percentage that we fixed up. We have a chart for that input of the
+ 
+ 
+00:00:55
+ 
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: quantity.
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: So an estimate is made for across the tire. Let's say now once yeah
+Bhargav Naidu's Presentation: Got it. Got it. This is B2B directly
+Teg Sethi: so once this output is there then that on based on the output the quotation is
+Bhargav Naidu's Presentation: guys.
+Teg Sethi: uh cross check once it's finalized the dispatch is made from the
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: finalized option
+Bhargav Naidu's Presentation: Okay. So this software which is there is given to you by the it's it's all made by yourself or is is it from the vendors?
+Teg Sethi: it's a custom software it's custom software.
+Bhargav Naidu's Presentation: It's a custom software. Okay.
+Teg Sethi: H no now this has been a month.
+Bhargav Naidu's Presentation: Got you got it done way back this one right?
+Teg Sethi: So we've been basically using software because what happens is generally that uh how do
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: you control the manual error? So in case someone takes in the price differently or if someone over discounts the tire.
+ 
+ 
+00:01:49
+ 
+Teg Sethi: It's very difficult to uh figure out the exact cost on phone and at times it happens that we are also wrong.
+Bhargav Naidu's Presentation: Right. I know.
+Teg Sethi: Uh let's say a tire costing 2100.
+Bhargav Naidu's Presentation: I know. I know.
+Teg Sethi: Someone says that uh just uh leave 50 rupees on the tire. Now 50 bucks seems like a small job but in terms of percentage that is
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: 2%.
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: So you tend to have them mistake and apart from
+Bhargav Naidu's Presentation: Again in entire industry the margins are also very thin back once again.
+Teg Sethi: that. Yeah.
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: So basically you're working in a margin of like one and a half one one to two%.
+Bhargav Naidu's Presentation: Right. Right. Right.
+Teg Sethi: Now apart from that we also have another thing I show you next Now we've also made for every DSR we made a community.
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: So in this community everyone is supposed to add in all the dealers and make in the groups.
+ 
+ 
+00:03:03
+ 
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: So once all the groups are there based on
+Bhargav Naidu's Presentation: H
+Teg Sethi: the groups we see that how many dealers is that particular person
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: handling.
+Bhargav Naidu's Presentation: Okay. This is of your internal team. Okay. Perfect. Perfect. And you have five people team and they're handling how many groups right now? 16
+Teg Sethi: No 16 groups.
+Bhargav Naidu's Presentation: groups.
+Teg Sethi: So basically they are everyone has around 15 to 16 dealers.
+Bhargav Naidu's Presentation: Okay. So,
+Teg Sethi: So they generally do a Yeah,
+Bhargav Naidu's Presentation: everyone has 15 to 16 dealers in total.
+Teg Sethi: right. And now the basic process is that when they walk in the morning, they're supposed to uh call up the dealer, take in their orders,
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: prepare the estimate, finalize the estimate and create dispatches.
+Bhargav Naidu's Presentation: Mhm.
+Teg Sethi: Now dispatches are based on roots. So let's say we working on uh route one today.
+ 
+ 
+00:03:56
+ 
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: So all the dealers in the root particular route will have to be called the requirements have to be noted and based on
+Bhargav Naidu's Presentation: H.
+Teg Sethi: the requirement their uh dispatches and final calculations to be made.
+Bhargav Naidu's Presentation: Okay. I got I got an idea now. So let's say your quotation everything is done till here your software is is doing the job completely. Okay.
+Teg Sethi: Right.
+Bhargav Naidu's Presentation: Once the quotation is made, how is a dispatch team
+Teg Sethi: So then we have another group for the dispatch.
+Bhargav Naidu's Presentation: notified?
+Teg Sethi: Once the orders are final, they keep sharing the dispatches in that uh dispatch group.
+Bhargav Naidu's Presentation: Okay,
+Teg Sethi: So by 5:00 we have to have all the So by
+Bhargav Naidu's Presentation: let let's say okay go
+Teg Sethi: 5:00 they have to have all the dispatches that are finalized.
+Bhargav Naidu's Presentation: right.
+Teg Sethi: After 5:00 we start the dispatches.
+Bhargav Naidu's Presentation: Okay. Now for example, let's say today you have got 20 dispatches that need to be done.
+ 
+ 
+00:04:51
+ 
+Bhargav Naidu's Presentation: Let's take an example. Okay. Now, if you want to check the status of each dispatch, how how you going to check it?
+Teg Sethi: We don't we it's assume that uh whichever salesperson has put in a dispatch it's his responsibility to make sure that the dispatch is made. So if the dispatch is not made the incentive will not be
+Bhargav Naidu's Presentation: So,
+Teg Sethi: made.
+Bhargav Naidu's Presentation: let's take an example. Do you face an inconvenience or an issue at this place or not?
+Teg Sethi: See as of now I'm not facing any issue at all as such because the volumes are low.
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: So right now the kind of volume that they're doing so with uh three people four people down the line they're comfortable doing that
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: sale it's about increasing the beyond that uh existing level.
+Bhargav Naidu's Presentation: Okay. So,
+Teg Sethi: Now where I foresee AI,
+Bhargav Naidu's Presentation: you need a
+Teg Sethi: if I put in my uh expectation from AI would be that this process from order
+ 
+ 
+00:05:39
+ 
+Bhargav Naidu's Presentation: right
+Teg Sethi: taking and calling up everyone and that should be automatic as in generally a WhatsApp should go if any response comes into the WhatsApp they should be able to autoc calculate based on a pre previously provided list and the basic calculation and estimates that are there that should be done automatically. So the only the dispatch at the end of the day the dispatch uh the what we do at 5:00 that should be ready with them without their being involved in that process.
+Bhargav Naidu's Presentation: two.
+Teg Sethi: Their handling would be more over like if there is any problem with the customer if he's having any issues which he's not able to understand. But your basic uh repeated repetitive task should not be be uh should not be handled by the sales staff. The sales staff should be handling the more uh customercentric points where uh let's say uh something they're not able to understand or their claim issues or something that requires that a personal assistant to be there because I feel order taking and uh estimating is a very basic
+ 
+ 
+00:06:48
+ 
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: job.
+Bhargav Naidu's Presentation: Right. Uh so Mr. T, can you give me an idea about the percentages? Cuz point is in this case what you've explained me. Okay. Let's take an example. A dealer drops in his requirement. Okay. And he asks for a particular discount. Okay. Then now this is a custom order completely.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: Right. So uh we have in this case we have to limit the AI to give a
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: certain offer only. Okay. And we can't cross this offer. If you want to cross this offer then you have there has to be a manual intervention wherein your saleserson has to get on a call with
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: the explain him clearly and then has to go to manual process back once again. Got it?
+Teg Sethi: Right.
+Bhargav Naidu's Presentation: Is this is what you're expecting
+ 
+ 
+00:07:25
+ 
+Teg Sethi: So what we generally do is so see basically what happens when you give provide anyone an estimate it's a very natural tendency that
+Bhargav Naidu's Presentation: completely
+Teg Sethi: if I give someone a quotation 10,000 he would like he will try and put it to 98 or 95 or
+Bhargav Naidu's Presentation: right
+Teg Sethi: 97 that's a very general tendency everyone who tries to say that 100 bucks they feel that they've done the job.
+Bhargav Naidu's Presentation: right?
+Teg Sethi: So what we generally do is so we've created a chart where we do a variation sale. So there are certain products that are high uh the high volume products they're given a higher percentage of discount whereas
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: the lowmoving items are given a lower percentage of discount so that even if there is a difference that
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: lower percentage of discount enables them to manage the discount within that shelf. So we given a bracket.
+Bhargav Naidu's Presentation: Got it.
+Teg Sethi: So let's say if an item like let's say 12 in and 13 in is a high volume discount right and
+ 
+ 
+00:08:05
+ 
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: at the same time a 17in tire would be a low volume discount.
+Bhargav Naidu's Presentation: Right. Okay.
+Teg Sethi: Now if I'm saving like uh I've given a quotation of 10% on uh 12 and 13 but I'm giving a 7% quotation on 17 in. Now that 3% accounts to like let's say 1,500 or 2,000 rupees.
+Bhargav Naidu's Presentation: Mhm.
+Teg Sethi: Now if someone ask me for that 1,000 rupee discount or 500 discount I can easily manage it from the 17in
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: window.
+Bhargav Naidu's Presentation: Right. Right. Got it. Got it.
+Teg Sethi: So we that's how we uh train our staff to understand discounting because at the end of the day we would prefer giving everyone a flat discount of 10%.
+Bhargav Naidu's Presentation: Okay. Right.
+Teg Sethi: But no one likes to be told flat that this is your costing.
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: So everyone wants something extra. So where do you get that extra from?
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: So we create loops within the product
+ 
+ 
+00:08:53
+ 
+Bhargav Naidu's Presentation: Got it. Got it. Got it. That's a sweet option.
+Teg Sethi: itself.
+Bhargav Naidu's Presentation: That's a nice That's nice. I got the idea now. Okay. So nice. So this is what you want your AI to uh understand and provide the information properly. Okay. So that the process automate. Okay.
+Teg Sethi: Right.
+Bhargav Naidu's Presentation: Now let me run down the flow once clearly for you. Okay. Cuz this is what we can create also. That's why. Okay. So the orders are coming the inquiries or or the quot or the requirements of of vendors are coming through
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: WhatsApp okay into WhatsApp groups okay now once the WhatsApp it comes in over there okay then from there
+Teg Sethi: Mhm. Right. Mhm.
+Bhargav Naidu's Presentation: uh the AI should pick up the information completely from them okay whatever the requirements are then it has to go into
+ 
+ 
+00:09:29
+ 
+Teg Sethi: Right.
+Bhargav Naidu's Presentation: your software get the percentage quotation everything ready okay send it send it send it to the to the vendor get a clarification from them is it okay to proceed with this thing or not okay if they want a better percentages completely Then the AI itself drops the message clearly in what all case it can provide a better discount policy right give that information out once they get a thumbs up or
+Teg Sethi: All right.
+Bhargav Naidu's Presentation: a yes note completely from from in in through WhatsApp okay then it should root out uh uh PO purchase order completely okay and give it to your uh dispatch team
+Teg Sethi: Right.
+Bhargav Naidu's Presentation: right but what about payment options how do you collect payments
+Teg Sethi: payments ad once advance or on delivery right so the vehicle that
+Bhargav Naidu's Presentation: advance or on delivery and how is the payment rooted? Is it cash or razor pay or bank account
+Teg Sethi: goes uh bank and cash
+Bhargav Naidu's Presentation: details? Bank and cash both.
+Teg Sethi: both so the cash collection uh becomes the portion if it's a cash collection that
+ 
+ 
+00:10:23
+ 
+Bhargav Naidu's Presentation: Okay. So in this case, right?
+Teg Sethi: becomes the responsibility of the driver when he drops the goods he has to collect the payment in
+Bhargav Naidu's Presentation: Okay. Okay. Got it. So now the point is uh we have to also provide the option of cash and bank transfer options for the customer. When once he send the purchase order or the quotation for the customer we have to give him option of what he wants to select. Based upon that the AI has processed the complete process. Okay.
+Teg Sethi: All right. So let's say if there is a back transaction.
+Bhargav Naidu's Presentation: No.
+Teg Sethi: So let's say someone will put put in the payment 2 days later. So we have made limits for every account.
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: So it cannot go beyond that limit.
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: So let's say there's a dealer whom we are comfortable giving 20,000 worth of goods. Now you can't bill him 21,000 worth of goods.
+ 
+ 
+00:11:03
+ 
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: So the order has to be brought down.
+Bhargav Naidu's Presentation: Okay. Got
+Teg Sethi: But you can't tell a dealer that I'm not going to give you money the tire because you paid me less.
+Bhargav Naidu's Presentation: it.
+Teg Sethi: So what we do is we divide the order into two. If it's a 40,000 order, we do it 20,000. We don't have the goods right now. But we'll fulfill the order in your next
+Bhargav Naidu's Presentation: Got it.
+Teg Sethi: order.
+Bhargav Naidu's Presentation: Got it. So uh Mr. T I have this is one option what you're dealing with right now. I can automate this process for you completely. Okay. So that your sales team's effort which are there are are going to be decreased. Your sales team will only be involved where there is an escalation or a customized option to be involved if if they cross a certain value. Let's take an example.
+Teg Sethi: Right.
+Bhargav Naidu's Presentation: The dealer is placing the order of above about three lakh rupees or about four lakh rupees.
+ 
+ 
+00:11:43
+ 
+Bhargav Naidu's Presentation: That's the only place where sales team will be involved or else they won't be involved. Something like that.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: a benchmark kind of a feel. Okay.
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: So that the person who's placing a high ticket value order even he feels he feels welcome. He feels far more uh connected to the brand back once again. Okay.
+Teg Sethi: Good
+Bhargav Naidu's Presentation: Yeah. Now I have another option for you in which I can actually tell you that your brand value
+Teg Sethi: read.
+Bhargav Naidu's Presentation: can substantially increase and also your order taking process can be automated very fast. Would you be open to listen to that?
+Teg Sethi: Okay. Your phone.
+Bhargav Naidu's Presentation: Perfect. Have you have you heard of the concept of landing pages by any chance?
+Teg Sethi: You have to go. I don't know exactly what you mean. Maybe I've heard of it.
+Bhargav Naidu's Presentation: Okay,
+Teg Sethi: Not exactly the terminology.
+ 
+ 
+00:12:30
+ 
+Bhargav Naidu's Presentation: I will give you a basic idea. Let me just uh share my screen for a
+Teg Sethi: Really?
+Bhargav Naidu's Presentation: second. I think you can see my screen now. Perfect.
+Teg Sethi: Yeah.
+Bhargav Naidu's Presentation: So what I'll do now is uh let me just go here and try so Mr. stage what happened is I have a client uh in Hyderabad right now I'm working on their uh expansion plan across India okay they actually provide driver aggregating platform okay so any client who wants drivers okay these are the people who actually get get the require of a client clearly okay based upon that they go into their pool of drivers okay they select what driver suits them better and then based upon that they send the driver to them and then his driver's attendance okay his timelines his salaries everything are calculated and given to the client back once again as a care plan Okay, this plan I came up for them.
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: Okay, before it was just normal plan for them.
+ 
+ 
+00:13:23
+ 
+Bhargav Naidu's Presentation: Got it. Now this is called a landing page.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: Now in landing page already whatever client wants to understand everything is already over here. Okay. So now let's take an example.
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: Now he wants to place the order for a driver. He he'll just click on get your driver. Now here already all the details are over here. his full name, his mobile number, his city, location, which vehicle type does he uh does he drive? Okay, which city he wants the or to to be done completely? Okay, area location completely. Okay, whether he wants a premium driver or a professional driver, what is the preferred date he wants the driver to be delivered to his home? Okay, what care plan does he want to choose and does he have any custom requirement completely? Okay, and then the requirement is sent.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: And when the requirement is sent,
+ 
+ 
+00:14:08
+ 
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: what happens is it is sent to a custom CRM. Let's take an example. I'll just show you this one also.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: Now, it is sent to a custom CRM in which every lead comes in into new lead first. Okay. Now for example a lead comes in then the your the sales team gets in touch with the lead completely and then if the
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: client lifts the call and the conversation is done it's moved to contacted. If if a client already spoke to the uh salesperson and also placed his requirement clear he'll be moving into qualified. So he'll move from here to qualified.
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: You see that now Monica is moved to qualified.
+Teg Sethi: Yeah.
+Bhargav Naidu's Presentation: You see that now from qualified if the payment is done it is moved to onboarded.
+Teg Sethi: Yeah. Okay.
+Bhargav Naidu's Presentation: From there if he has chosen a plan he moves to care plan.
+ 
+ 
+00:15:04
+ 
+Bhargav Naidu's Presentation: After that in driver matching after that into driver assessment you know exactly at what stage how much money you have also is involved. You see that on top of it here in driver management there's 75,000 involved
+Teg Sethi: Yeah.
+Bhargav Naidu's Presentation: in driver as there's 1 lakh 42,000 involved. And all this data is reconciled into your dashboards. So in dashboards you can clearly see that this week last week this my client has made 2.75 lakh rupees. Okay. So in this in what stage how much revenue is still there in new leads there's uh sorry in in in what stage what all things are there completely what are the tasks that need to be completed and they're not completed yet by the team. How many in total leads they close complete all the information is over here. And the best part is as the fulfillment is a big issue back once again the client also knows at what stage the the particular client is stuck upon. You got the idea
+ 
+ 
+00:16:00
+ 
+Teg Sethi: But then yeah,
+Bhargav Naidu's Presentation: clear?
+Teg Sethi: but then there's a requirement that this uh fill up will have to be done by the dealer
+Bhargav Naidu's Presentation: Yes. So now what happens in this case I'll give you an idea.
+Teg Sethi: himself.
+Bhargav Naidu's Presentation: Okay. So how this happens usually is whenever a client requirement is comes to an action. Okay. We send a link to the client. Okay, it's so everyone can't type information very very easily. Okay, and sometimes there's always man manual errors while typing the by typing. What we do is we send a link to the client. He can enter anything he wants through the link. Complete. That's a prop proper landing page in which all the information is there.
+Teg Sethi: So what what happened what happens with us?
+Bhargav Naidu's Presentation: Complete.
+Teg Sethi: with WhatsApp coming in it has made things a little comfortable that people are able to type in WhatsApp and everything
+Bhargav Naidu's Presentation: Right.
+ 
+ 
+00:16:43
+ 
+Teg Sethi: but generally the mode uh the clientele that we have are not very uh educated and everyone will try and type in a little different.
+Bhargav Naidu's Presentation: Okay, now I got Yeah. Right, right,
+Teg Sethi: So what my asking them to be technologically independent that becomes a challenge.
+Bhargav Naidu's Presentation: right. Got it. No problem.
+Teg Sethi: Even in our uh larger scale the bigger shops the companies are having a hard time
+Bhargav Naidu's Presentation: Guess
+Teg Sethi: trying to accommodate uh people getting into technologies. So a lot of companies are investing in technology platforms and everything but at the end of the day people are like why should we do it at all when we can do a simple thing on over phone if we have people doing it for us why should we do the effort
+Bhargav Naidu's Presentation: So what happens Mr.
+Teg Sethi: ourselves
+Bhargav Naidu's Presentation: stages if not today tomorrow if not tomorrow day after tomorrow there will be a time we need to transition completely okay this is what I tell every single client of mine also because see now we are comfortable tomorrow we might not be comfortable and we won't also 100% by the pace we're going it completely right now
+ 
+ 
+00:17:37
+ 
+Teg Sethi: it's the transition will always be there but when we are doing a transition we also make it uh
+Bhargav Naidu's Presentation: right slow
+Teg Sethi: the transition has to be ready for the people the understanding
+Bhargav Naidu's Presentation: right
+Teg Sethi: today so we understand that uh see order taking becomes an advantage for me so we
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: I've been working on making saucers and stuff like this for the last 5 years because we see that this is a cost
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: that is increasing for us so let's say if I'm handling five manpower and their job is just to call up and make an order but that's costing me about 40 50,000 rupees a So if I say that
+Bhargav Naidu's Presentation: Right. Right. Right. Right. Right.
+Teg Sethi: they've created a sale of uh let's say 1 cr but that 1 cr cost me 50,000 rupees right now and I can automate this and make an uh WhatsApp group where probably I can get
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: it done by one guy at 10,000 and no one uh it doesn't hurt saving money and at the same
+ 
+ 
+00:18:25
+ 
+Bhargav Naidu's Presentation: Right. Right.
+Teg Sethi: time the cost the labor that I have today who uh let's say I'm paying them an average of 15 to 20,000 basic salary apart from incentive that will cost me around about 30 to 40,000 rupees in 3 years or four years
+Bhargav Naidu's Presentation: Right. Right. Right.
+Teg Sethi: down the line.
+Bhargav Naidu's Presentation: Right. Right. Right.
+Teg Sethi: So at one point or the other we have to make processes which will be able to replace the manpower that is
+Bhargav Naidu's Presentation: Right. Right. So in your case,
+Teg Sethi: there.
+Bhargav Naidu's Presentation: you're absolutely right in this in this manner. Okay. In your case, what I would suggest for you right now in this case is yeah, WhatsApp thing will definitely do it. That that's not a big issue at all because WhatsApp has API. There are some regulation involved. That's it. API can be connected out.
+ 
+ 
+00:19:05
+ 
+Bhargav Naidu's Presentation: No problem with the part completely. Okay. Now what we have to do in this format is we need to lock all the groups and we have to scrape data out from there. Okay. And then from there it the every message has to be converted into a a transcript format completely and then it should be feeded into into your particular software. Does your software support API by any chance?
+Teg Sethi: It's a custom. So it should
+Bhargav Naidu's Presentation: Okay. So whomever you got it done from okay we will have a call with them. Okay. To get a small information to and fro so it's easier for us.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: Okay. That shouldn't be a problem. Fine.
+Teg Sethi: What I'm assuming is that your uh API basically would be able to should be able to be connected to some CRM sort of a thing where the leads the process lead can be easily seen as in which at which stage a
+ 
+ 
+00:19:51
+ 
+Bhargav Naidu's Presentation: Yes, that's what I was telling you about that.
+Teg Sethi: particular lead is.
+Bhargav Naidu's Presentation: Yes. So the CRM which I have to shown you right now for Sunrise. Okay.
+Teg Sethi: So that becomes
+Bhargav Naidu's Presentation: We have to create something for you also in which it is every stage is clearcut
+Teg Sethi: right.
+Bhargav Naidu's Presentation: scenario so that when the volume increases we are ready for it. We know exactly at what stage what land is there clearly.
+Teg Sethi: Right.
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: And everything so and the best part is what you all this thing is connected to WhatsApp API one moment.
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: So what happens is every time a stage is moved let's say an example this is one big problem which clients also face. Let's say an example I place the order. Okay. And my order has to be dispatched by today evening 5:00. Okay. But I want to also know the process what's happening.
+ 
+ 
+00:20:35
+ 
+Bhargav Naidu's Presentation: Like for example my order is being packed my order is being delivered.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: Okay. Usually it's on phone calls. And if a salesperson doesn't intimate a client, the client has no idea.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: So what happen in this case? Whenever a stage is moved, let's say your order has been confirmed, a WhatsApp message is sent to the client immediately that your order is confirmed. Once a stage is moved to packing, a message is is sent to the client automatically that your order is being packed, your delivery agent will get in touch with you. Okay. Once the order is delivered,
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: then there's a thank you note. Thank you for uh being a part of uh United Tires Group. Okay. We would appreciate if you can clear the advance to the driver. If it's a cash on delivery order,
+Teg Sethi: You get
+Bhargav Naidu's Presentation: okay, once the cash everything is paid,
+ 
+ 
+00:21:18
+ 
+Teg Sethi: there.
+Bhargav Naidu's Presentation: the driver also came back once and given the cash. There's a thank you note again that goes out. Hey, thank you so much for your purchase. Okay, we would appreciate to be be stay in touch with us for a longer run also something like that. Got it?
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: All these things auto and the best part is every week or every month let's say you onboarded a new tire uh brand into your into your firm you want to notify all your vendors about this thing it can be shoot out every single thing through WhatsApp can be automated that should be a problem for but for that we
+Teg Sethi: You good?
+Bhargav Naidu's Presentation: need a WhatsApp API integration for that for that I need a one new number which has no WhatsApp at all it shouldn't have WhatsApp it shouldn't have WhatsApp business also yeah that can be auto so basically I'm going to automate your whole systems from your order collection to processing of
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: the order from the client communication and also client retention all this thing is done at one place only completely and all this notification is is provided to you it provided to you and one dashboard only that's a CRM how does that
+ 
+ 
+00:22:24
+ 
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: sound
+Teg Sethi: And uh how about uh tracking new leads and uh efficiencies.
+Bhargav Naidu's Presentation: All the lead.
+Teg Sethi: So let's say the CRM would be under different different people.
+Bhargav Naidu's Presentation: Yeah. M
+Teg Sethi: So there will be people uh there will be different uh sales people responsible for different uh clients that will come in.
+Bhargav Naidu's Presentation: right right. So how it works there will be only one CRM.
+Teg Sethi: So how
+Bhargav Naidu's Presentation: Okay. In one CRM what we'll do is we have different access can be provided.
+Teg Sethi: can Mhm.
+Bhargav Naidu's Presentation: Admin has different access different controls and users have different access different controls. Every user every user's profile is different.
+Teg Sethi: Mhm. Okay.
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: They'll have to punch in the
+Bhargav Naidu's Presentation: they can see. Yes.
+Teg Sethi: lead.
+Bhargav Naidu's Presentation: And all the leads are consolidated at one place. Okay. Before every lead, the person's name will be there.
+ 
+ 
+00:23:12
+ 
+Bhargav Naidu's Presentation: So it's very clear.
+Teg Sethi: So if I understand the AI agent would become one of the sales people.
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: So it will be eating into the DRS of people who are not able to
+Bhargav Naidu's Presentation: Right. It's as simple as that. Let's take an example.
+Teg Sethi: perform.
+Bhargav Naidu's Presentation: A lead has has come in into from in WhatsApp. This is the initial process we're going to follow. There will be a buffering period. Okay. Let's say the AI immediately scrapes for the data. It waits until the lead is created manually.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: If it's not created manually, a trigger is formed where an AI creates the lead and it's created to AI only. It won't be changed.
+Teg Sethi: So basically what I'll have to do is that one of my sales people would be linked to this AI and he will try and move in most of his DSR into the AI.
+Bhargav Naidu's Presentation: Right.
+ 
+ 
+00:23:46
+ 
+Teg Sethi: So that will become a part-time uh saleserson for him and he will keep checking that wherever
+Bhargav Naidu's Presentation: Right. So basically we will give a different user for AI also.
+Teg Sethi: the Mhm.
+Bhargav Naidu's Presentation: That's it. That's how it's going to work upon completely. And once it's it it gets it into your CRM, it automates the whole process.
+Teg Sethi: So if I even I pick up an order and I just put into the CRM, it will be able to work from
+Bhargav Naidu's Presentation: No, the you until and unless you don't uh create a workflow to it.
+Teg Sethi: there.
+Bhargav Naidu's Presentation: See, it can only form triggers. But once you create a lead manually, you have to move it manually only until you give a trigger to it.
+Teg Sethi: So that's why I said that in case if I like let's say right now what I do is if I have to create uh give a lead to any of my sales people what I do is just WhatsApp that WhatsApp the lead to the group once I've the lead to the group they
+ 
+ 
+00:24:35
+ 
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: start working on it and it starts uh the process starts
+Bhargav Naidu's Presentation: Right. So here you'll allocate the lead to C.
+Teg Sethi: so
+Bhargav Naidu's Presentation: That's what the trigger would be is here once you create a lead instead of naming it on you, you'll assign it to the AI and it'll create the process.
+Teg Sethi: right and then the AI will move it to the last process of the dispatch only the manual process
+Bhargav Naidu's Presentation: Yes. Yes. The dispatch it.
+Teg Sethi: will have to be handled by the
+Bhargav Naidu's Presentation: Yes.
+Teg Sethi: team
+Bhargav Naidu's Presentation: Yes. Yes. These are the
+Teg Sethi: and uh what functionality and we will have to give the input every month as in what the discount schemes
+Bhargav Naidu's Presentation: functionalities.
+Teg Sethi: and the prices we'll have to give to the AI every month uh repeatedly
+Bhargav Naidu's Presentation: So basically Yes. So what happens is the vector database we will give you a back end access completely.
+ 
+ 
+00:25:12
+ 
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: You can keep updating the data as as much as possible. That shouldn't be a problem. Once the vector database is active, okay, it has as much data as possible. Let's take an example. Uh you used this system for an year completely. Entire industry what happens? There are seasons also in which you your discounts change here and there,
+Teg Sethi: All right, that's changed.
+Bhargav Naidu's Presentation: right?
+Teg Sethi: But there'll be another problem. Uh, can the AI cross check the inventories? that that becomes a problem because generally the manual interface that is there is for people to check in the inventory
+Bhargav Naidu's Presentation: Hi
+Teg Sethi: requirement. So let's say someone's order 100 tires you will also have to check in that whether those 100 tires are available or not. So either that lead will have to be assigned by the AI to the saleserson to check in the data
+Bhargav Naidu's Presentation: Now, now we can do this thing if you have a APR.
+ 
+ 
+00:25:55
+ 
+Teg Sethi: or
+Bhargav Naidu's Presentation: Do you have an APR? You have a stock recording software by any chance?
+Teg Sethi: Ali but it is uh
+Bhargav Naidu's Presentation: Oh, perfect. So, we can link tally to this thing.
+Teg Sethi: the stock is not only at our goods the stock is also at the company goods but
+Bhargav Naidu's Presentation: Yeah, no problem. the case if the stock is updated live then that should it shouldn't be a problem cuz AI can't
+Teg Sethi: can it pick up from because company cannot give give you access to their
+Bhargav Naidu's Presentation: h okay now that's a that that
+Teg Sethi: uh software.
+Bhargav Naidu's Presentation: that that's a problem in this case then what we it has to do is the then the AI triggers that so this is how then the flow is going to be so once the lead is created okay the AI
+Teg Sethi: They'll have to trigger to the you'll have to go back to the salesperson confirm the
+Bhargav Naidu's Presentation: it creates a lead automatically yes it should notify the saleserson to just clarify
+ 
+ 
+00:26:40
+ 
+Teg Sethi: requirement.
+Bhargav Naidu's Presentation: and click Okay.
+Teg Sethi: Yeah. So they will confirm which all stocks available.
+Bhargav Naidu's Presentation: The first stage.
+Teg Sethi: They'll have to update the stock require stock availability and once they've updated the stock availability then you can do the next two
+Bhargav Naidu's Presentation: Yes. Yes.
+Teg Sethi: three process on its
+Bhargav Naidu's Presentation: Right. Right.
+Teg Sethi: own
+Bhargav Naidu's Presentation: So you saw I have moved stairs in in in the driver platform which I've showed you.
+Teg Sethi: seems logical that the advantage that will be there is basically the CRM that will be implemented in this whole process would be
+Bhargav Naidu's Presentation: Yeah.
+Teg Sethi: able to uh provide a little bit of clarity on what is happening at the uh sales
+Bhargav Naidu's Presentation: Yes. Very good.
+Teg Sethi: person level That should
+Bhargav Naidu's Presentation: Right, right, right,
+Teg Sethi: work.
+Bhargav Naidu's Presentation: right.
+Teg Sethi: And okay, that seems okay. And uh we will have to update this thing. Also, can uh the I help me in mapping my pricing strategy and my uh dealer performances?
+ 
+ 
+00:27:40
+ 
+Bhargav Naidu's Presentation: It can provide you dashboard definitely. It'll give you inbound and outbound sales completely like for example how many leads you got, how many leads are closed, how many are dispatched completely,
+Teg Sethi: Nothing.
+Bhargav Naidu's Presentation: what is your uh cash collection completely and what are in the pipeline which means they're not collected cash yet. Okay, it can give you all the data in your dashboard.
+Teg Sethi: Now when I'm talking about uh uh price mapping, so when I'm talking price mapping is like what uh focus or what dealers I could have charged more.
+Bhargav Naidu's Presentation: Now that depends upon Uh-huh.
+Teg Sethi: So let's say if I'm talking about MRF if there is an uh restriction to the
+Bhargav Naidu's Presentation: Uh-huh.
+Teg Sethi: supply so uh can the air decide based on the
+Bhargav Naidu's Presentation: Mhm.
+Teg Sethi: past orders which dealers are more profitable for me to attend to in the first stage rather than attending to the second stage.
+Bhargav Naidu's Presentation: Yeah. Yeah, it can do that. So this for example until and unless you don't pop up this question to the AI and give the respective data to it.
+ 
+ 
+00:28:37
+ 
+Bhargav Naidu's Presentation: Okay. It can't take out the data completely. So let's say I didn't know.
+Teg Sethi: So like generally what we do is we have a price mapping soft uh what we do is we do a price mapping manually.
+Bhargav Naidu's Presentation: Yeah.
+Teg Sethi: So we create a whole discount structure.
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: Once we've created the whole discount structure we try getting into the single page. Now in the single page we create uh uh pricing on different
+Bhargav Naidu's Presentation: H.
+Teg Sethi: nodes. So like we've got large volume dealers,
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: we got small volume dealers, we got extra large volume dealers. So we map in all dealers as in which category we're putting them.
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: But let's say they working with four brands. So a dealer who might be a large volume dealer for JK might be a small volume dealer for MRF for
+Bhargav Naidu's Presentation: H.
+Teg Sethi: CAT.
+Bhargav Naidu's Presentation: Right. Right. Right.
+ 
+ 
+00:29:16
+ 
+Teg Sethi: So that's where the sales people are trained to understand that you have to put in every dealer into the small volume category. So it's no use taking orders from the large volume values. See large value is good for making a output for creating the turnover. But at the same time your every vehicle has to have certain small volume dealers where the profit is generated from.
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: So that mixup should be able to be recognized by the AI also.
+Bhargav Naidu's Presentation: Mhm. Right. Right. Right. I got the idea. It can be possible. Yes, it can be possible. But we need to attach
+Teg Sethi: So generally when we take an order we make it a uh when we take an order what we do is
+Bhargav Naidu's Presentation: Mhm.
+Teg Sethi: like let's say someone's asking for MRF. Now MRF is a low availability item for me. So if someone asks for 20 MRF tires I'll probably give him two or four.
+ 
+ 
+00:30:02
+ 
+Teg Sethi: Now for the vehicle I need 20 tires. So, I'll provide four tires and then I try and push in the other products that are profitable for me without exactly telling the dealer
+Bhargav Naidu's Presentation: Got it.
+Teg Sethi: that uh uh I have the tire but I don't want to give it to you.
+Bhargav Naidu's Presentation: Got it. Got it. Got it.
+Teg Sethi: So, you get to create reasons as in why uh this this particular stock is not available uh something or the other. You try and elongate it by a day or something. I can find arranging goods for you.
+Bhargav Naidu's Presentation: So I
+Teg Sethi: Finally, you'll get irritated. you like okay fine given five tires okay fine you need the vehicle immediately I don't have a tire so I need another 12 tires
+Bhargav Naidu's Presentation: understand
+Teg Sethi: you give me this order so those interaction though can AI handle that kind of an inter interactive
+Bhargav Naidu's Presentation: right right
+Teg Sethi: uh
+Bhargav Naidu's Presentation: M to be very open with you AI can be very manipulative okay what what happens it's it's all about the vector database you
+ 
+ 
+00:30:47
+ 
+Teg Sethi: stage
+Bhargav Naidu's Presentation: provide it has to actually map this information based upon training model completely okay it won't happen from day one that's for sure I'll tell you okay but as you keep on mapping it as you keep on training the data completely okay
+Teg Sethi: obviously
+Bhargav Naidu's Presentation: at one stage it will reach but you have to keep on cross-checking this data okay that's the only possibility is there so this can be a different project that's going to be running behind it completely but the main project is about automations first okay now you're trying to build a AI model a chatbot model completely which can read the information what is provided by the client. Reconcilate with the existing information which it has also check with the what do you call uh stock availabilities and details.
+Teg Sethi: So basically what we're trying right what we're trying basically is that the number of sale people that are
+Bhargav Naidu's Presentation: Yeah.
+Teg Sethi: associated in that kind of thing they have the uh so let's say one the my main sale performer would be comfortable in doing one vehicle load a day.
+ 
+ 
+00:31:48
+ 
+Teg Sethi: So he will not try and take an order for the second load at all.
+Bhargav Naidu's Presentation: Right. Right.
+Teg Sethi: So out of his eight hours of testing I see a maximum output he what he does is he like work for two two and a half three hours and then he'll lag behind he's like why should I do two vehicles a day when I can easily manage within one vehicle so that comfort is not there with a automated uh
+Bhargav Naidu's Presentation: Right. Right. Right.
+Teg Sethi: computer so like right now there is a phase behind the uh order but what we see AI as in tomorrow so we see that tomorrow that saleserson should be
+Bhargav Naidu's Presentation: Mhm.
+Teg Sethi: be replaced by the AI chatbot itself that why should anyone require
+Bhargav Naidu's Presentation: Right. Right.
+Teg Sethi: you coming on the phone when I can do everything on the chat itself.
+Bhargav Naidu's Presentation: Right. Got it.
+Teg Sethi: So that's where we
+Bhargav Naidu's Presentation: that that's going to be a project anyhow.
+ 
+ 
+00:32:33
+ 
+Teg Sethi: see.
+Bhargav Naidu's Presentation: I understand that's going to be a project anyhow to deal with. That's going to be a phase two. Let's put it phase two as of now that one. Okay.
+Teg Sethi: Yeah.
+Bhargav Naidu's Presentation: Because that's an integrated detailed work that's going to go long. Okay. For this case, okay, but yes, this automations can can definitely be done.
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: Uh from the WhatsApp to the order processing part through the CRM that can definitely be done that shouldn't be a problem at all for us to do it
+Teg Sethi: You
+Bhargav Naidu's Presentation: completely. Okay.
+Teg Sethi: okay?
+Bhargav Naidu's Presentation: So, let me give you a details about how we take things forward from here on. Okay. So, what we're doing right now is a discovery meet.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: Okay. After discovery meet what happens is I also at the end of discovery meet I give you a pitch clearly I already gave you a pitch that what all process we'll be doing completely okay I also provide we'll provide you the timelines and commercials clearly okay and then once you're okay with these things I will shoot aou once I shoot theou for you you guys go through the complete
+ 
+ 
+00:33:17
+ 
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: once you're okay with theou you can tell me let's proceed with things I will shoot the first invoice invoice to you once the first invoice is cleared then we'll take the other things forward completely Okay. Okay. Let me give you an idea about this format now clearly. Okay.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: Now as I address the whole format for you clearly from the WhatsApp automations to CRM integration then a manual inter intervention of of a salesperson. Okay. After the lead is created he will just move the stage after checking the stock. Once he moves the st stock is available he give a green signal. The AI moves all the steps clearly and then give it to dispatch team. Okay. This process is all automated process and you can also see in what stage what person is involved or what vendor is involved completely. Okay. And in the process, WhatsApp API integration, client client notifications,
+ 
+ 
+00:34:00
+ 
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: client uh what do you call uh inbound uh notification, client stage movement notification and also the client detention program uh activities will also be done through AI only completely. That shouldn't be a problem at all. Back once again.
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: Okay. Now once this whole part is done completely then the dispatch is happening. Then everything is reconciled your everyday reports your uh uh what do you say dashboard details everything is formed by the end of the day back once again it's actually live by the end of you can take a complete detail completely okay so this takes about for
+Teg Sethi: Right.
+Bhargav Naidu's Presentation: us one sprint so one sprint is
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: basically one month in one month there are four weeks so it takes us one
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: month to build the whole process of end to end part Okay. Completely. So for each sprint we charge 1.5 lakh
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: rupees.
+ 
+ 
+00:34:58
+ 
+Teg Sethi: That's 1.5 monthly.
+Bhargav Naidu's Presentation: Yeah. So basically for your task it'll take 1 month for us to complete. Yes.
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: So that's why I told let's put a as a second option completely. The chatbot which we were talking about the saleserson which we're talking about. Okay.
+Teg Sethi: And what's the recurring cost?
+Bhargav Naidu's Presentation: Let's put it secondary in this case. Adding it to 1.5 lakh
+Teg Sethi: What's the recurring cost? That's a one time
+Bhargav Naidu's Presentation: rupees. Okay.
+Teg Sethi: 1.5.
+Bhargav Naidu's Presentation: Apart from that, the recurring cost will be around uh 15 to 16,000 rupees because everything is paid to the CRM. Okay. We need a CRM completely for that. Okay. We'll build a custom CRM for you. Okay. CRM will be there.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: You'll get a WhatsApp API which is paid to Meta itself, not for us. Then we also need a official mail ID which is accessible for admin access separately.
+ 
+ 
+00:35:44
+ 
+Bhargav Naidu's Presentation: So for that we need Google Workspace.
+Teg Sethi: already
+Bhargav Naidu's Presentation: Yeah. So that's that need to be there.
+Teg Sethi: there.
+Bhargav Naidu's Presentation: We'll give you the working. It It'll be less. It'll be very less. It'll be like 15 16,000 hardly.
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: Yeah. And if any issues are there here and there, support, we're always there to help you out. That shouldn't be a problem at all. And then if you want more automations to be done, let's say example, you want to work up, you want us to work up on this AI project which you're talking about,
+Teg Sethi: Mhm.
+Bhargav Naidu's Presentation: then we'll give you different sprint like for this doing this thing.
+Teg Sethi: Yeah.
+Bhargav Naidu's Presentation: Maybe it'll take 90 days for us for doing this one. Then a second print
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: starts.
+Teg Sethi: Okay.
+Bhargav Naidu's Presentation: Yes,
+Teg Sethi: So,
+Bhargav Naidu's Presentation: that's how it's going to
+ 
+ 
+00:36:31
+ 
+Teg Sethi: what
+Bhargav Naidu's Presentation: work. You have request please go ahead. No problem.
+Teg Sethi: I'm trying to figure out your software is going to be more costly than the manpower that I'm having
+Bhargav Naidu's Presentation: Jeez,
+Teg Sethi: then.
+Bhargav Naidu's Presentation: as in give me an idea.
+Teg Sethi: So if I have a dedicated man bar as of today it's going to cost me about
+Bhargav Naidu's Presentation: Mhm.
+Teg Sethi: 10,000 a month if I incentivize and everything that lands up to be around
+Bhargav Naidu's Presentation: Okay.
+Teg Sethi: 25,000 but his involvement is anyway is going to be
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: there.
+Bhargav Naidu's Presentation: But
+Teg Sethi: So that 15 to 16,000 a month would become an add-on cost for me without
+Bhargav Naidu's Presentation: yeah,
+Teg Sethi: very much uh reducing and then see if I I see AI to be a helpful tool but at the same
+Bhargav Naidu's Presentation: right
+Teg Sethi: time uh to be able to reduce my cost not increase it. So, I'll be able to probably save one man bar at it.
+ 
+ 
+00:37:36
+ 
+Bhargav Naidu's Presentation: now for example Yeah. Mhm.
+Teg Sethi: But if my man bar is at 10,000 and my recording is at 15, doesn't make sense then.
+Bhargav Naidu's Presentation: Now for example once the orders are all consolidated from all the groups you only need one man power right that's it you don't need
+Teg Sethi: Yeah.
+Bhargav Naidu's Presentation: five multiple jobs as
+Teg Sethi: Yeah. But they're doing multiple jobs.
+Bhargav Naidu's Presentation: in
+Teg Sethi: So as of now as of now how so right now my dedicated sales team is basically two people.
+Bhargav Naidu's Presentation: H
+Teg Sethi: So one is into retail sale and one is into wholesale. Fine. The other three staff they're basically doing claim accounts. They're handling other jobs also and it is a part-time sale that they have to do over the time. Now where we were seeing was that if I can introduce AI and we can simplify the process for them,
+Bhargav Naidu's Presentation: right.
+Teg Sethi: they can be more proactive in their order than working.
+Bhargav Naidu's Presentation: Mhm.
+Teg Sethi: But as I understand your process right now,
+ 
+ 
+00:38:29
+ 
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: the only place where I can see them being helped out is probably saving a little time on the interaction, the middle middle interaction that they have where they're making estimates and stuff like that. But I
+Bhargav Naidu's Presentation: Not just midway interactions also cross-checking the status of each order completely back once again and everything is
+Teg Sethi: see like I see value add and maybe the CRM shows that a better dashboard is available to
+Bhargav Naidu's Presentation: recorded.
+Teg Sethi: me.
+Bhargav Naidu's Presentation: Mhm. Okay.
+Teg Sethi: But when I'm if I'm calculating the whole uh thing somewhere or the other
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: I feel that you lost me on the portion the recurring cost becomes either higher or at the same cost what I'm bearing at this point of time. So if I'm introducing the software,
+Bhargav Naidu's Presentation: So Mr. Right.
+Teg Sethi: so I'm introduc if I'm introducing the software,
+Bhargav Naidu's Presentation: Right.
+Teg Sethi: I would expect the software to be able to cut down my cost not increase or even equalize it
+ 
+ 
+00:39:19
+ 
+Bhargav Naidu's Presentation: Mhm.
+Teg Sethi: because see with every software there will also come into challenges into implementation into providing the data inputs for it. So every month there has to be a person who will provide uh the prices to it to be able to help with uh the interactions and at the same time there will be other players where the customers will need to be made uh comfortable with using the AS platform. Hello
+Bhargav Naidu's Presentation: Yeah. Yeah. Uh, Mr. P, can you do one thing? I I have to make a move to the office. Okay. Can I take things for call?
+Teg Sethi: uh not an issue. What you do is you just uh drop me a detail sort of a thing as then where you understand what all
+Bhargav Naidu's Presentation: Okay. Yeah. Okay.
+Teg Sethi: exactly you'll have to do and what output can we get and then we'll uh try and communicate over a
+Bhargav Naidu's Presentation: Okay,
+Teg Sethi: WhatsApp.
+Bhargav Naidu's Presentation: that that sounds good. That sounds good. No problem with the case.
+Teg Sethi: No, that'll be good.
+Bhargav Naidu's Presentation: Okay,
+Teg Sethi: Thank you.
+Bhargav Naidu's Presentation: perfect. Perfect.
+Teg Sethi: Nice.
+Bhargav Naidu's Presentation: Thank you for your time,
+Teg Sethi: Yeah.
+Bhargav Naidu's Presentation: Mr. Have a good day.
+Teg Sethi: Same here. Nice talking.
+Bhargav Naidu's Presentation: Bye-bye.
+ 
+ 
+Transcription ended after 00:40:34
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.

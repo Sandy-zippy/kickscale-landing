@@ -1,0 +1,1285 @@
+﻿📝 Notes
+Apr 23, 2026
+Cleanpro services Pvt Ltd - Discovery Meet
+Invited jay@cleanpro.in Sandy Kadyan Bhargav Naidu
+Attachments Cleanpro services Pvt Ltd - Discovery Meet
+Meeting records Transcript 
+
+
+
+
+Summary
+Discussion focused on end-to-end business automation via integrated AI systems for lead generation and service fulfillment.
+
+Current Business Operations Overview
+Clean Pro Services relies on manual lead routing and resource allocation using Zoho CRM and Field Sales Management. The primary challenge remains inconsistent call response times hindering customer satisfaction.
+
+Proposed Automation Strategy
+The strategy targets full process automation across 6 stages including lead qualification and post-service feedback. The implementation will utilize AI-driven tools with API integration over 2 months.
+
+Project Terms and Implementation
+The project involves a 400000 rupee investment structured over 2 sprint-based phases. Development will proceed without disrupting existing operations to ensure system stability.
+
+
+
+
+Next steps
+* [Jayachandran Pillai] Obtain Lead Metrics: Contact Mr. Praep to determine the specific bifurcation ratios for inbound leads (call, WhatsApp, email).
+* [Bhargav Naidu] Send Project MOU: Draft and send the Memorandum of Understanding detailing the project scope and deliverables.
+* [Jayachandran Pillai] Review Commercials: Hand over automation project commercial details to finance and operation teams for review and approval.
+* [Bhargav Naidu] Provide App References: Send references and client examples for previous mobile app development projects.
+* [Jayachandran Pillai] Schedule API Call: Organize a technical call to discuss API compatibility for payroll and attendance software (ALP Consulting systems).
+* [Bhargav Naidu] Connect Sandy: Connect expert Sandy to discuss the staffing automation requirements for AL Consulting.
+* [Jayachandran Pillai] Coordinate Next Meeting: Review Bhargavs schedule and coordinate the next call, deciding whether to include the operations guy.
+
+
+
+
+Details
+* Initial Technical Difficulties and Meeting Context: The meeting began with Bhargav Naidu experiencing audio issues, which were eventually resolved by Jayachandran Pillai. The purpose of the meeting was to discuss the complete automation of one of Jayachandran Pillai's multiple businesses, specifically focusing on the lead flow and end-to-end process (00:00:00). Bhargav Naidu planned to understand the current lead generation to fulfillment program and the tools currently in use (00:04:47).
+* Clean Pro Services Business Overview: Jayachandran Pillai described their company, Clean Pro Services, which has two verticals, one of which is the one-time cleaning of high-end residential villas (00:04:47). Inquiries are received through multiple sources, including WhatsApp, calls, emails, and referrals (00:05:41).
+* Current Lead and Sales Process: The residential cleaning inquiries are currently routed to Zoho CRM, where an executive handles the requirement. Following the understanding of the requirement, a quote is sent, and once payment is received, the job is updated in Zoho FSM (Field Sales Management) for calendar blocking and team allocation (00:05:41).
+* Resource Allocation and Team Structure: Jayachandran Pillai explained that they allocate a team of approximately 10 people for a standard four-bedroom house cleaning service. The company employs about 40 cleaners or housekeepers whose jobs are allocated either in advance or on the same day based on the inquiry (00:06:55).
+* Existing Software Tools and Challenges: The current team uses Zoho CRM, Zoho FSM, Piky assist, and a cloud telephony system with MCQ for managing queries. A primary challenge is the inconsistent response time for calls, leading to customer frustration, especially when sales executives are on the move and cannot answer immediately (00:06:55).
+* Automation Goal and Service Differentiation: Jayachandran Pillai's objective is to achieve a seamless, end-to-end automated customer experience from the moment a call is triggered until the job is executed. They seek to automate the entire process, including a bot for after-hours calls, with minimal human intervention, only escalating to an executive when necessary (00:08:20).
+* Competitive Advantage and Quality Focus: Clean Pro Services positions themselves against competitors like Urban Company by maintaining a service level and pricing that is much higher. This premium pricing is justified because all 40 housekeepers are employees on their payroll, ensuring high quality of work, specialized chemicals, and superior equipment, without outsourcing to third parties (00:09:29).
+* Customer Retention Strategy: Clean Pro Services maintains a high client retention rate (approximately 75%) purely based on the quality of their service (00:10:30). One current retention program involves offering a subscription model for clients who request weekly cleaning services, which automatically schedules the cleaning appointments (00:11:33).
+* The Six-Stage Business Breakdown: Bhargav Naidu proposed a six-stage model for the business process: acquisition, payment, allocation (of a cleaning team), fulfillment, post-review, and retention. They noted that most acquisition appears to be inbound (calls, WhatsApp, email) (00:12:18).
+* Proposed Stages for Automation: Bhargav Naidu outlined the steps for automation, starting with acquisition, where an AI agent could qualify leads in multiple languages, and route only complex calls to a salesperson. Subsequent steps include automated payment link delivery, verification of payment screenshots, and automatic allocation notification to the client (00:15:39).
+* Fulfillment and Post-Review Automation: Fulfillment itself remains a manual job. Bhargav Naidu proposed that once fulfillment is completed and updated in the CRM, an immediate WhatsApp message should be sent for a post-review and feedback. This feedback triggers the client's entry into the retention program (00:16:31).
+* Software Recommendations and Integrations: Bhargav Naidu stated that all stages can be automated, including calls, WhatsApp, and email, and recommended AI Sensei over Wati for WhatsApp automation due to its advanced AI capabilities, despite being slightly more costly (00:17:17). They confirmed that existing tools like Zoho are likely integrable, but a smart team is needed for backend API integration (00:17:59).
+* Importance of API Compatibility: Bhargav Naidu stressed that any tool lacking API access must be replaced because API compatibility is crucial for future automation and improving the customer experience (00:18:45). A vector database must be provided by the client to train the AI with all necessary information for handling inquiries (00:19:30).
+* Automation of Allocation and Fulfillment Verification: While initial allocation requires some manual intervention to add staff details, future automation will depend on building a backend system that tracks staff availability and proximity (00:20:17). Fulfillment requires the team to update the CRM that the work is done and take a verification photo, which is tracked via location (00:20:57).
+* Focus on Immediate Post-Review: Bhargav Naidu emphasized that the post-review process must happen immediately, even before the fulfillment person leaves, via an automated IVR call (00:20:57). This allows for on-the-spot issue resolution, shifting from damage control to a preventative approach (00:21:53).
+* Automation Timeline and Methodology: Jayachandran Pillai expressed a desire for a robust system rather than a rushed one (00:22:38). Bhargav Naidu estimated the full automation process would take approximately 2 months in total, including 6 weeks of core development and 1.5 weeks for data gathering (00:26:21).
+* Phase Breakdown of Automation: The first phase, focusing on acquisition automation (call, WhatsApp, email), is expected to take 2 weeks to build the vector database. Connecting this to the payment gateway and FMS allocation will take an additional 1 week (00:24:38). Building the backend tool for fulfillment team verification and integrating face/house verification will take 2 weeks, and the final review stage automation will take 1 week (00:25:25).
+* Retention Program Modules and Automation Approach: The retention program will include 30 to 40 different modules, or workflows, that contain specific options and triggers based on customer history, such as scheduling a next cleaning appointment (00:27:03). Bhargav Naidu committed to building the system without disturbing the current running business operations (00:31:39).
+* Commercial Terms and Payment Structure: Bhargav Naidu uses a sprint-based charging model, with each sprint equal to 1 month (00:27:51). The total cost for the 2-month project is 4 lakh rupees (2 lakh per sprint for Indian clients, discounted from the usual 2.5 lakh). The payment structure is 70% in advance and 30% delivered in person upon handover (00:28:33) (00:46:20).
+* The Role of the Automation Team: Bhargav Naidu explained their role is to break down the business into manageable processes, and their partner, Sandy, an expert prompt engineer, will lead the system construction with six other engineers (00:29:56). The team charges for their time, focusing on providing the right prompting and integration, rather than charging separately for each automation type (00:29:15).
+* Meeting Logistics and Recording: Bhargav Naidu confirmed that the current conversation is being automated, recorded, and transcribed directly into their system. Jayachandran Pillai acknowledged this automated process (00:56:49).
+* Team Location and Office Space: Bhargav Naidu clarified that they do not have an office in Bangalore, but they maintain multiple work locations in Hyderabad. Their Hyderabad setup includes a 12-seater co-working space and a penthouse, which Bhargav Naidu and Sandy use, while the team sits in a different space. Additionally, they have a 14-person team in Canada handling Canadian operations (00:56:49).
+* Offer of Assistance: Jayachandran Pillai extended an offer for Bhargav Naidu to use their office space in Bangalore or Hyderabad, mentioning they also have an office in Hyderabad in the "hitech city" area. Bhargav Naidu expressed they are always equipped with a system regardless of location. Bhargav Naidu thanked Jayachandran Pillai and accepted the offer for assistance in Bangalore (00:56:49).
+* Meeting Conclusion: The participants concluded the meeting and exchanged farewells (00:56:49).
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
+📖 Transcript
+Apr 23, 2026
+Cleanpro services Pvt Ltd - Discovery Meet - Transcript
+00:00:00
+ 
+Bhargav Naidu: Hello. How are you? M I'm audible. I I I can't hear you actually. No, I can't hear you at all. Give me a moment. Yeah, I still can't hear you. Your mic maybe it's mute. Just please check it. I still can't hear. Can you talk a bit? Maybe you need to uh exit and come back one thing. Maybe that's that's that may solve it.
+Jayachandran Pillai: Now, can you hear me?
+Bhargav Naidu: Yeah, this comfortable.
+Jayachandran Pillai: Perfect. Just like
+Bhargav Naidu: Yeah. Yeah. Mr. J, one moment.
+Jayachandran Pillai: this.
+Bhargav Naidu: Connected. Yep. So, Mr. Okay. Uh I was just uh trying to understand a few things from your side also.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Uh we had a call the other day and you mentioned that you have multiple businesses and this is the one business that you want to automate completely. Okay. Yeah. So we were discussing about the lead flow and and and process completely.
+ 
+ 
+00:04:47
+ 
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: So this meeting I'll give you overview of the whole part. I would like to understand the whole lead generation to fulfillment program completely you can share your screen that shouldn't be a problem at all okay if you give a detailed idea in this case what tools are you using at each stage completely okay
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: we will see in what way can we automate things much better in process like for example right now we are using 30 plus different AI tools to automate most of the operations for different people completely okay we have okay more
+Jayachandran Pillai: Okay.
+Bhargav Naidu: than 16 case studies in 16 different businesses so in one business we have handled two three clients also like that So we do custom automation in the same format. So if you give me idea how you working right now at this stage it'll be easy for me to understand.
+Jayachandran Pillai: So currently um this company which is uh clean pro services we
+Bhargav Naidu: Yeah.
+Jayachandran Pillai: are basically into two verticals. One vertical is to um uh clean high-end
+ 
+ 
+00:05:41
+ 
+Bhargav Naidu: Right.
+Jayachandran Pillai: villas. One time cleaning let me put it this way.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: onetime cleaning that means our yeah residential cleaning that means we
+Bhargav Naidu: res That's res.
+Jayachandran Pillai: get inquiries through different uh sources that's uh WhatsApp
+Bhargav Naidu: Okay.
+Jayachandran Pillai: calls um emails referrals and things like that we get
+Bhargav Naidu: Right.
+Jayachandran Pillai: the call it comes to our u Zoho CRM currently and uh from there my executive picks it
+Bhargav Naidu: Okay. Okay.
+Jayachandran Pillai: up understands the requirement After understanding the requirement, we generally send a quote saying that to clean a three-bedroom or
+Bhargav Naidu: Okay.
+Jayachandran Pillai: fourbedroom villa would cost you 10 or 15,000 or whatever it is accordingly. We send it across and once the client pays the
+Bhargav Naidu: Okay.
+Jayachandran Pillai: money, we go and update our field um
+Bhargav Naidu: Okay.
+Jayachandran Pillai: sales not su Zoho FSM that's where we we block the calendar and the team is
+Bhargav Naidu: Yeah.
+Jayachandran Pillai: allocated.
+Bhargav Naidu: Right.
+Jayachandran Pillai: That means if Barav says that I want it this Saturday.
+ 
+ 
+00:06:55
+ 
+Bhargav Naidu: Right.
+Jayachandran Pillai: So for a four-bedroom house we allocate let us say 10 people on Saturday and we say at 11:00 my team will be there Mr. Bargo blah blah blah and it's blocked.
+Bhargav Naidu: Right.
+Jayachandran Pillai: The calendar is blocked like that.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: we have about 40 uh cleaners or housekeepers whose job generally gets allocated on a particular day
+Bhargav Naidu: Okay.
+Jayachandran Pillai: in advance or the same day based on the inquiry.
+Bhargav Naidu: Okay. Go ahead. Go ahead. Got it.
+Jayachandran Pillai: So today I think my team is using um
+Bhargav Naidu: Okay.
+Jayachandran Pillai: now what uh Piky assist uh Zoho CRM and FSM to coordinate this and what happens is we have
+Bhargav Naidu: Right.
+Jayachandran Pillai: two three sales team also um we you use cloud
+Bhargav Naidu: Right.
+Jayachandran Pillai: terony to get all the queries coming in.
+Bhargav Naidu: Slow telephone.
+Jayachandran Pillai: Uh we use yeah we use MCQ for that.
+Bhargav Naidu: Okay. Okay.
+Jayachandran Pillai: So sometimes what happen this the call comes to let us say one of the sales exe executive he's on the bike we are not able to uh you know he doesn't pick up the call customer gets frustrated then after some time he calls up.
+ 
+ 
+00:08:20
+ 
+Jayachandran Pillai: So my goal is that the minute a call gets triggered from the customer's place till it gets executed,
+Bhargav Naidu: H
+Jayachandran Pillai: the job gets executed,
+Bhargav Naidu: Okay.
+Jayachandran Pillai: uh the experience should be seamless and the customer should feel that I love the complete process.
+Bhargav Naidu: Got it. Got it.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Got it.
+Jayachandran Pillai: So that's my objective. So I have been speaking to Zoho and then you know in Bangalore we have hundreds
+Bhargav Naidu: Okay.
+Jayachandran Pillai: of you know you know integrators or you know automation guys and things like I I do not have any much of time though I have asked my team to do it and I don't know
+Bhargav Naidu: Mhm.
+Jayachandran Pillai: what exactly is uh uh the status now so the bottom line I want to automate the complete end to
+Bhargav Naidu: Okay.
+Jayachandran Pillai: end uh process And this process uh should include bot also. The reason because sometimes the client will call up at 7:00 in the night saying that I need a and nobody's there to pick up the call
+ 
+ 
+00:09:29
+ 
+Bhargav Naidu: Right,
+Jayachandran Pillai: and things like that.
+Bhargav Naidu: right, right, right.
+Jayachandran Pillai: And uh I want least intervention of any of the people in the whole process.
+Bhargav Naidu: Mhm. Okay.
+Jayachandran Pillai: It should be completely automated and whenever there is a escalation that means it's not
+Bhargav Naidu: Okay.
+Jayachandran Pillai: getting addressed in the flow uh workflow it should go to the uh
+Bhargav Naidu: Right. Right.
+Jayachandran Pillai: executive and they will fix it.
+Bhargav Naidu: Right.
+Jayachandran Pillai: So this is one of my business which is quite um how do I say critical in terms
+Bhargav Naidu: H
+Jayachandran Pillai: of we are we are competing with urban company we have lot of local guys and
+Bhargav Naidu: right late right.
+Jayachandran Pillai: and we we we are not we don't compete with them but um
+Bhargav Naidu: Any
+Jayachandran Pillai: our service level and our pricing is much much uh higher in terms of urban company or any of the competitors uh The
+Bhargav Naidu: reason for
+Jayachandran Pillai: reason because all these employees are on our role.
+Bhargav Naidu: that?
+Jayachandran Pillai: All the 40 housekeepers are on our role.
+ 
+ 
+00:10:30
+ 
+Jayachandran Pillai: We take care of their insurance, PF, ESI, uh stay everything. So we do not outsource the job to any third party. So when we have so our quality of work the chemicals what we use the machines what we use
+Bhargav Naidu: Okay.
+Jayachandran Pillai: it much much better than any of these guys because generally most of the aggregators what they do they get the client's requirement and they outsource it to a third party who has no
+Bhargav Naidu: Mhm.
+Jayachandran Pillai: no system process um how do I say he just comes with a broom and vacuum cleaner or a scrubber and just takes a bike and just goes and cleans it
+Bhargav Naidu: Okay.
+Jayachandran Pillai: But I'm looking at niche clients whom we go with the best of
+Bhargav Naidu: Okay.
+Jayachandran Pillai: clothes, best of machines, uniformed guy, there is a process and things like that.
+Bhargav Naidu: Okay. Okay.
+Jayachandran Pillai: That is the market we are addressing. That is the reason we have about 75% clients coming back to us for
+Bhargav Naidu: Okay.
+Jayachandran Pillai: service.
+Bhargav Naidu: So basically you have a good retention program and the clients are retaining retention is very good activity is
+ 
+ 
+00:11:33
+ 
+Jayachandran Pillai: We are retaining purely because of the service. Then we don't do any other gimmick to retain them. No, no,
+Bhargav Naidu: not there.
+Jayachandran Pillai: no. We don't do anything. People are happy with our work. Uh the response,
+Bhargav Naidu: Okay.
+Jayachandran Pillai: the way we execute. So though we are costly,
+Bhargav Naidu: But if but if there was an activity then
+Jayachandran Pillai: they come back to us.
+Bhargav Naidu: the churn rate would be much more higher. It's as simple as that.
+Jayachandran Pillai: When you say activity in a sense to retain customer.
+Bhargav Naidu: Yes, there is a retention activity.
+Jayachandran Pillai: Yeah. Yeah.
+Bhargav Naidu: Let's an example,
+Jayachandran Pillai: Yeah. Sure. Sure. Sure. Sure.
+Bhargav Naidu: right?
+Jayachandran Pillai: So,
+Bhargav Naidu: 100%.
+Jayachandran Pillai: so the workflow should also have a retention uh um you know for example
+Bhargav Naidu: Right.
+Jayachandran Pillai: most couple of clients they say was forget about all this thing weekly I want you guys to come and clean the house.
+ 
+ 
+00:12:18
+ 
+Bhargav Naidu: Right.
+Jayachandran Pillai: So it becomes it becomes a subscription model wherein they pay us in money in advance and
+Bhargav Naidu: Right.
+Jayachandran Pillai: we go and automatically calendar is booked saying that okay Wednesday and Saturday we'll go and clean it and come back.
+Bhargav Naidu: Right.
+Jayachandran Pillai: So that is one of our retention programs.
+Bhargav Naidu: Give me one moment. Okay, perfect. Mr. J, uh, I've broken down your business into six different categories right now or six
+Jayachandran Pillai: Okay.
+Bhargav Naidu: six different stages. Okay, correct me if I'm wrong at this stage. Okay, first stage is acquisition.
+Jayachandran Pillai: Okay,
+Bhargav Naidu: Okay, acquisition stage is basically now I feel most of your acquisition is happening inbound only. Either you're getting calls, either you're getting WhatsApp messages or you're getting emails, right?
+Jayachandran Pillai: through the
+Bhargav Naidu: Out yeah so so outbound activity is nothing as of such from your from your
+Jayachandran Pillai: website.
+Bhargav Naidu: side.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: So now point my point is here. Okay, I'll come to in detail later.
+ 
+ 
+00:13:29
+ 
+Bhargav Naidu: Okay. So once the acquisition is done then the call go the call is initiated from the saleserson side to the
+Jayachandran Pillai: Uh-huh.
+Bhargav Naidu: customer okay then he explains about the about the commercials he collects the payment as a payment the second step is payment as the payment is done step number three comes in that is that is allocation a cleaning team
+Jayachandran Pillai: Huh?
+Bhargav Naidu: is allocated to the time and then step four is fulfillment the cleaning team goes to the house completes the whole requirement
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: clearly and step four which is not there I don't know okay there should be post review as soon as the service is
+Jayachandran Pillai: Yeah, there it is.
+Bhargav Naidu: done as soon the service is done. There should be a post review. A call should go to the client back once again asking about the service a feedback kind of a thing. Next step six which is most important is retention which means a client is keeping on getting messages or updates about us not spamming them basically. Okay.
+ 
+ 
+00:14:13
+ 
+Bhargav Naidu: But just like Swiggy and Zumato does keep something like that a good
+Jayachandran Pillai: Sure.
+Bhargav Naidu: entertaining message kind of a thing which can pump them in back one second. Right? So these are the six stages where I can see your business into stage wise division. Okay. Now let me talk about let me uh I have two three questions in each stage right now. Okay. I'll ask these questions then I'll go into the automation part later. Okay.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: So first stage in the acquisition side as you're telling me most of the calls most of the requirements are coming inbound only. Okay. In call, WhatsApp, email, what is the ratio like out of 100%. How much is call? How much is WhatsApp? How much is email?
+Jayachandran Pillai: Oh, I you I need to ask my team to do that.
+Bhargav Naidu: Okay. First thing I would Yeah.
+Jayachandran Pillai: I have no see see I so so bam see I don't involve with the company on a day-to-day
+ 
+ 
+00:14:54
+ 
+Bhargav Naidu: Go on.
+Jayachandran Pillai: basis.
+Bhargav Naidu: Mhm.
+Jayachandran Pillai: Uh uh we had a senior guy who passed away unfortunately.
+Bhargav Naidu: Mhm.
+Jayachandran Pillai: So uh um I don't involve but I find you know I'm I'm just
+Bhargav Naidu: I'm sorry for that.
+Jayachandran Pillai: helping people to build their career especially the blue collared and things like that and so I'm happy about
+Bhargav Naidu: Right.
+Jayachandran Pillai: that part of it.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: So so uh most of the day-to-day uh struggle and things like that my team handles it and uh you know once a week I meet them.
+Bhargav Naidu: Okay. Okay.
+Jayachandran Pillai: Uh so I I'll surely connect after this call to one Mr.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: Praep who will give you more clarity and details about the whole
+Bhargav Naidu: Okay. Okay. First thing I would like to ask you,
+Jayachandran Pillai: thing.
+Bhargav Naidu: I want you to ask Mr. Praep. So what is the bifurcation in this space? So that we also understand that where can we spend more time and money on let's say an example if you tell me calls
+ 
+ 
+00:15:39
+ 
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: are very important for us I can put up a AI automation call agent behind okay which actually qualifies the customer before in hand let's say you are calling me okay the AI agent will call you they'll call in all the
+Jayachandran Pillai: Okay.
+Bhargav Naidu: languages possible whatever language they want they'll talk in that language properly no problem that part okay once the call is done they'll qualify the lead
+Jayachandran Pillai: All right.
+Bhargav Naidu: clearly whether commercials everything is given to them if the client wants you know what commercials everything are cool but I would like to discuss more in detail That's when the AI agent will route the call to a saleserson or else it will tell everything is okay. So it will send a WhatsApp payment link to the client directly. Okay. Now oh yeah coming to the next. Okay. No problem. Let's go for that later. Okay. As the payment link is sent as the person pays the money and sends a screenshot immediately. Screenshot is verified and then the next step of allocation is directly sent to the team.
+ 
+ 
+00:16:31
+ 
+Bhargav Naidu: Then the allocator once he confirms the allocation is done gives the name and number of the person who's going to go to the house. Okay. Okay. The same information is passed upon the client back once again by the AI. Okay. And then this information is passed once with time details.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Clear to the client also back once again. And then the fulfillment party will go to the house that's manual job only any househ.
+Jayachandran Pillai: Okay,
+Bhargav Naidu: But till here till the allocation everything is automated.
+Jayachandran Pillai: perfect.
+Bhargav Naidu: Now as soon as the fulfillment is done once the once the person who has gone over there for fulfillment our team updates the fulfillment is done in the same CRM. He just clicks one button fulfillment is done. Then a immediate message WhatsApp message shot to the client regarding a post review. How would you rate us? Good, bad, excellent and all stuff like that. Once the client clicks on it, then he comes into a retention program completely from there.
+ 
+ 
+00:17:17
+ 
+Bhargav Naidu: All this can be automated completely.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: We can automate the calls, we can automate the WhatsApp,
+Jayachandran Pillai: Okay.
+Bhargav Naidu: we can automate the email also. No problem. The case cuz I see you already using WhatsApp,
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: right? You're already using WhatsAppy.
+Jayachandran Pillai: I think they're using or no I think we are using PikS now.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: We are in the process of speaking to Wati
+Bhargav Naidu: I would suggest go to uh AI sensei which is far better internationally renowned.
+Jayachandran Pillai: also.
+Bhargav Naidu: Okay. And it also has a huge level of AI automations. It is a bit costly uh than vi around 5700 extra. That's it. But the options are crazy level in that. Okay.
+Jayachandran Pillai: That's
+Bhargav Naidu: Cuz we worked in Canadian markets for a very long time. Okay. For a good four years now. Okay. And we still are dealing with Western clients right now. Okay.
+Jayachandran Pillai: okay.
+ 
+ 
+00:17:59
+ 
+Bhargav Naidu: So we only deal with high-end softwares that have no problem at all for next preceding at least 10 20 years established.
+Jayachandran Pillai: Great.
+Bhargav Naidu: That's what you would s the clients all to use back once again. Okay. Uh so yeah I'll recommend you in that.
+Jayachandran Pillai: Sure.
+Bhargav Naidu: So for the payment part what are you using right now for payment gateway?
+Jayachandran Pillai: I think raise a
+Bhargav Naidu: Okay rather pay is the best option in here.
+Jayachandran Pillai: pair.
+Bhargav Naidu: Uh you have free cash order but it has some issues here and there.
+Jayachandran Pillai: Yeah,
+Bhargav Naidu: Okay.
+Jayachandran Pillai: that's that's what I use.
+Bhargav Naidu: Right. Right. So rather pay using a system. Okay. Perfect. So all these things can be integrated properly. Now point is we need not change the best part is as you're already using multiple tools. Okay. And all these tools are integratable with each other completely.
+Jayachandran Pillai: Okay. Mhm.
+Bhargav Naidu: Now the tough part is you need to have a smart person or a team who can integrate these things via backend access.
+ 
+ 
+00:18:45
+ 
+Bhargav Naidu: For that you need API access back once again for all these things.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: And best part is most of the tools have API access. No problem with the part. And whatever tool doesn't have API access,
+Jayachandran Pillai: Okay.
+Bhargav Naidu: I'll directly tell you we have to replace them as soon as possible because the future is all about
+Jayachandran Pillai: Okay.
+Bhargav Naidu: API. API I I think you're familiar with API actions,
+Jayachandran Pillai: Yeah. Yeah.
+Bhargav Naidu: right?
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: It's it's like it's like a gateway to open and do whatever you want to inside completely. AI can go inside. So if it's not there then it's complete waste of time for us to use use that tool also completely cuz in future we we won't be able to automate or
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: improve the experience at all from our end also. Okay. So uh this is how the process going to work out like okay. So first we need to build a acquisition AI channel in which calls WhatsApp emails whatever is happening it is all nurtured into one place completely.
+ 
+ 
+00:19:30
+ 
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Once leads are nured in one place the first acquisition next payment and allocation. These three steps can be automated full-fledged. Okay. The salesperson intervention is will come only here if the ticket size is very high or if it's a corporate order, we'll have to have some bifurcation fields. Okay. When a person talks about these things that's when the calls will be directed to the salesperson or
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: else it can go with the flow completely. No problem with the part. All the questions can be answered.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: We just need to provide a vector database for the AI and it can take all the information. No problem with the part.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: This vector database should be provided from your end for this part.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: Mhm. Mhm.
+Bhargav Naidu: Till allocation everything is automated. Now once allocation is done from allocation a manual intervention happens to just add the name number timings of the person who's going to come to their place.
+ 
+ 
+00:20:17
+ 
+Bhargav Naidu: Okay,
+Jayachandran Pillai: Okay,
+Bhargav Naidu: because this can't be automated because we don't have but this can be autoated in future but once we are familiar with how what
+Jayachandran Pillai: nice.
+Bhargav Naidu: kind of team do we have who's free at what point of time once we build a backend system for that completely right okay at this these slots who is free who's very nearby to that place completely who can go at this point of time clearly these things have to be automated from back end if they're already there I can integrate it but I don't think they're already there right
+Jayachandran Pillai: Mhm. Okay. Uh-huh.
+Bhargav Naidu: now right so we have to do it manually simultaneously we work up on a back end system also when everyone
+Jayachandran Pillai: Okay.
+Bhargav Naidu: slots All is also clearcut.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: So the allocation also happens very fast clearly.
+Jayachandran Pillai: Mhm. Okay.
+Bhargav Naidu: Okay. Just like you know in Swiggy you you place an order.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Okay. And uh in 5 minutes a delivery agent is assigned to you immediately.
+ 
+ 
+00:20:57
+ 
+Bhargav Naidu: Right.
+Jayachandran Pillai: Get it.
+Bhargav Naidu: So like that we should build a process coming forward completely.
+Jayachandran Pillai: Get it. I agree.
+Bhargav Naidu: Right. So yeah fulfillment part is also completely manual. We are not automating that thing anymore because the person has to go through the whole fulfillment part completely. Once the fulfillment part is done, we have to give a back end access for fulfillment team wherein they have to just update in the WhatsApp key work is done and a small photo they have to take with their photo and the house
+Jayachandran Pillai: Mhm. Got that.
+Bhargav Naidu: okay because of verification back once again because we have done this previous clients also because lot of time this will happen
+Jayachandran Pillai: Okay. Yes.
+Bhargav Naidu: and which in which location is tracked photo is tracked his photo is tracked and house photo is tracked completely and
+Jayachandran Pillai: Yes. Yes.
+Bhargav Naidu: once it is submitted once it's verified that's when the post review happens Even before the person leaves the place, the client gets a post review process and post review call also from from IBR from the AI back once again because if there's any issue, the client can complain immediately and we can talk to the agent also, the person who's there at the house also immediately and we can resolve it.
+ 
+ 
+00:21:53
+ 
+Jayachandran Pillai: You're right. You're
+Bhargav Naidu: Usually the post review calls happen way after the service is done and
+Jayachandran Pillai: right.
+Bhargav Naidu: there's that that that's that's a place it's not a post review, it's called damage control to be very open with you.
+Jayachandran Pillai: Yeah. Yeah, you're right.
+Bhargav Naidu: We should not do damage control. We should solve it on spot.
+Jayachandran Pillai: No preventive.
+Bhargav Naidu: If we are able to Yes.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Exactly. Right.
+Jayachandran Pillai: Yep.
+Bhargav Naidu: So if we can do that clearly then we are on par for the money we are charging with the client also because he
+Jayachandran Pillai: Yep.
+Bhargav Naidu: knows you know what I'm going to get a call before this person is going to leave. So if there's anything I can get those things resolved and I need not have this tension of talking to a blue collar person
+Jayachandran Pillai: Okay.
+Bhargav Naidu: because point is I will not be able to talk. I even not discuss it's dirty at this place dirt that no it's very bad.
+ 
+ 
+00:22:38
+ 
+Bhargav Naidu: he can just inform the person who can escalate this point to them. That's what we'll be monitoring.
+Jayachandran Pillai: Perfect.
+Bhargav Naidu: This is how the premium status still stays premium clearly and at the same time it's more functional also same case.
+Jayachandran Pillai: Sure.
+Bhargav Naidu: Okay. So now uh let me give you an idea about how
+Jayachandran Pillai: Agreed.
+Bhargav Naidu: much time it's going to take to automate these things up clearly. Okay.
+Jayachandran Pillai: Perfect.
+Bhargav Naidu: Now now before I go there I would like to ask you how much time do you need? Do you have any urgency? Do you want to do it fast or
+Jayachandran Pillai: Well, that's fine. See,
+Bhargav Naidu: slow?
+Jayachandran Pillai: I want to I want to rob rob you know very robust system. It's not the question of time because see I can't keep see we cannot keep breaking it
+Bhargav Naidu: Right.
+Jayachandran Pillai: opening it up again and you know once a system is just give me a minute
+Bhargav Naidu: Please, please,
+Jayachandran Pillai: uh Anita good morning hey just book the meeting room
+ 
+ 
+00:23:24
+ 
+Bhargav Naidu: please.
+Jayachandran Pillai: no uh for our meeting at where is it first floor okay perfect thanks So,
+Bhargav Naidu: Yeah, please.
+Jayachandran Pillai: so I I am in a hurry in a sense. I don't want just hurry and mess it up. I mean to say do it the best. I don't say you take a very uh you know comfortable time but yes uh uh deliver it in a fairly good
+Bhargav Naidu: Mr. J uh I think I think maybe my question was a bit a bit wrong here and there.
+Jayachandran Pillai: time.
+Bhargav Naidu: Okay. I meant how important is this operation to you in that manner clearly cuz right perfect now we on track then
+Jayachandran Pillai: Absolutely. It is it is it is important.
+Bhargav Naidu: perfect right right point is point is right now I'm
+Jayachandran Pillai: I strongly believe I strongly believe uh Mhm.
+Bhargav Naidu: getting we are flooded with requires in this manner only clearly okay so now now if you don't automate if not today tomorrow day after tomorrow whenever it might be your computers is going to automate automate everything okay and we're going to lose the race completely you are aware about that in this part right so let me give you a basic part for creating the first initiative flow which call automation, WhatsApp automation, uh email automation, acquisition part completely.
+ 
+ 
+00:24:38
+ 
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: It's going to take us at least 2 weeks. Okay.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Cuz point is we have to build a complete vector database completely for it. Okay. And give as many Q&A questions to and pro question as much as possible complete so that it answers every single thing in detail.
+Jayachandran Pillai: Uhhuh.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: Uhhuh.
+Bhargav Naidu: So it'll take two weeks for us to do that. Once the acquisition part is completed then including it to continue to payment gateway then
+Jayachandran Pillai: Uhhuh.
+Bhargav Naidu: connecting it to allocation team from to towards the FMS process. This will take us one week time.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Okay. So in 3 weeks your front end is sorted.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: This is your front end completely. Your front end is sorted completely.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Then building a small tool or a web app completely that is given to the fulfillment team wherein they just have to click they have to log in. It's already logged in anyhow.
+ 
+ 
+00:25:25
+ 
+Bhargav Naidu: Okay. Whatever job which they are doing right now, it's already updated over there.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: For them to just click a process completed and for the face verification and the house verification completely, we need to build a backend software completely. That's integrated to it.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: This will take us 2 weeks time to build it fulfill with the verifications properly.
+Jayachandran Pillai: Mhm. Mhm. This verification is uh that the same
+Bhargav Naidu: Okay.
+Jayachandran Pillai: housekeeper has reached that customer place.
+Bhargav Naidu: Yes. Yes.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Yes, with location tracking it needs to be there.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Either we have to build it from scratch or we have to take a payroll uh software from somebody else.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: White labeling.
+Jayachandran Pillai: Yeah. It's it's Yeah. Yeah. I can get to that.
+Bhargav Naidu: Okay. So we we we'll see see that part clearly.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Okay. Once this thing is done once the automation is this set completely then immediately a trigger has to happen again IVR call has to go to the client the secondary automation that's a uh review stage process completely.
+ 
+ 
+00:26:21
+ 
+Bhargav Naidu: This we can duplicate that shouldn't be a problem because we already built system completely for the front end we'll just
+Jayachandran Pillai: Okay. Mhm. Mhm. Mhm.
+Bhargav Naidu: duplicate it and dump a different data into it. That's it.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: This will take us one week time for doing it.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: So in total it's a 6 weeks process completely. Okay.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: And for us to take data from you okay it will take us one one and a half week easily like few
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: information about about different localities here and there few more questions here and there.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: what to what what clients want more like for example I was going in detail your process also back once again right one one and a half will go here and there
+Jayachandran Pillai: Uhhuh.
+Bhargav Naidu: so it's in total about a two months process completely but after this 2 months everything
+Jayachandran Pillai: Mhm. Okay.
+Bhargav Naidu: is automated from your front end to back end even with the client retention programs
+ 
+ 
+00:27:03
+ 
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: completely and in client retention program also we'll at least give you 30 to 40
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: modules which you can pump clearly like like let's say an example I am a person who has taken
+Jayachandran Pillai: What do you can you explain that in
+Bhargav Naidu: your service about 3 months ago.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Okay. Now point is after 3 months I thought of getting a service but I forgot about it. Then a small message shot to me
+Jayachandran Pillai: Okay.
+Bhargav Naidu: something like that.
+Jayachandran Pillai: Uh,
+Bhargav Naidu: This is a module.
+Jayachandran Pillai: okay.
+Bhargav Naidu: So like that will give 30 to 30 different modules completely because same module going for one same client is is
+Jayachandran Pillai: I got that.
+Bhargav Naidu: useless completely.
+Jayachandran Pillai: I got that. You're talking about template, right?
+Bhargav Naidu: So right right template is only small template but a module consists the workflow also back once
+Jayachandran Pillai: Yeah. Yeah. I see. Got
+Bhargav Naidu: again completely like for example it has options back once again okay get on a call with a with a
+ 
+ 
+00:27:51
+ 
+Jayachandran Pillai: that.
+Bhargav Naidu: consultant okay group my schedule my next cleaning appointment okay schedule my next offer for you in this case something there'll be
+Jayachandran Pillai: Got it. Got it. Got it. Got it.
+Bhargav Naidu: options there's a workflow behind it backwards that's why you call it module so we'll give you at least 30 different modules that
+Jayachandran Pillai: Okay, perfect. Perfect.
+Bhargav Naidu: you can integrate back once again and it just happens with one click okay this is how the whole process is going to
+Jayachandran Pillai: Okay, got that. Mhm.
+Bhargav Naidu: happen completely completely.
+Jayachandran Pillai: Mhm. Mhm.
+Bhargav Naidu: So in 2 months we can automate the whole process completely. Okay.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Now coming to the charges that we usually charge for the clients also. So what happens are usually our monthly we charge on a sprint basis.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Our one sprint is equal to 1 month. Let's take an example. I told you in in uh one month we'll build all your front end completely.
+ 
+ 
+00:28:33
+ 
+Bhargav Naidu: I'll divide this sprint into four weeks.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: So each week what my KPIs are what we have to deliver to you. We'll brief everything very clearly and then we'll have every week we'll have a Monday,
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Wednesday or Friday. These three days are client meetings for us usually. Okay.
+Jayachandran Pillai: Got
+Bhargav Naidu: Any one day we'll fix up on that day at particular time every day we'll catch up.
+Jayachandran Pillai: it.
+Bhargav Naidu: We'll discuss about the KPIs about that week completely. Whatever is done, whatever is not done, whatever shifting, every single thing will be discussed and every prototype you're making,
+Jayachandran Pillai: Okay.
+Bhargav Naidu: we'll give you testing for you also back once again. Okay. So each month is divided like that completely.
+Jayachandran Pillai: Perfect.
+Bhargav Naidu: So two sprints. So it's 2 months. Each sprint we charge 2.5 lakh rupees completely. Okay.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: So right now this is the whole scene right now. So fulfilling this whole part it's around 5 lakh rupees in total doing it.
+ 
+ 
+00:29:15
+ 
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: But right now for Indian clients right now we are not charging 2.5 lakh.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: We are dealing 2 lakh right now.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: for each.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: So usually outside every software company what they charge is they charge based upon the requirements. Let's say you want to have a automation calls they charge separately for that. Emails and WhatsApp they charge separately for that.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: So everything they have charge separately but we charge for our time.
+Jayachandran Pillai: Mhm. I got it.
+Bhargav Naidu: It's as simple as that because charging for every single thing is pointless because AI is already there. Okay. What we need to do is we have to do two fro and with all these things give right prompting.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Okay. integrated properly from behind completely have a proper idea how it's going to work out like clearly that's the only agenda that we have to focus more upon and the most importantly you need someone who can understand the business as
+ 
+ 
+00:29:56
+ 
+Jayachandran Pillai: Okay.
+Bhargav Naidu: fast as possible break it down into as simple terms as possible and integrate individual parts that's what I'm good at so to be very open with you I'm not going to do this automation with you okay I'm good at breaking it down into individual boxes as you can see very clearly I broke this in like six six different
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: ways like in 5 minutes clearly Then I see what automations are required what players clearly where the value as
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: you're telling me it's premium so where the value can be added much better in what all areas completely I map the whole system completely and then I give it to my team I have my partner Sandy who actually an expert into AI
+Jayachandran Pillai: Okay.
+Bhargav Naidu: automations okay he's basically a prompt engineer himself so he's going to build the whole system along with six different
+Jayachandran Pillai: Mhm. Mhm. I see.
+Bhargav Naidu: engineers perfect this is how the whole system will work out like completely now I'm
+Jayachandran Pillai: Perfect. Okay. So,
+ 
+ 
+00:30:45
+ 
+Bhargav Naidu: open for questions
+Jayachandran Pillai: yeah. So, uh you're going to use the same Zoho or Wii or U which is the other one I said uh is uh Piky
+Bhargav Naidu: pick up.
+Jayachandran Pillai: assist.
+Bhargav Naidu: Pick pick. Yes.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Yes.
+Jayachandran Pillai: Are you going to use the same stuffs or you're going to change because I think
+Bhargav Naidu: So
+Jayachandran Pillai: uh Piky assists they got an approval from Meta that yes there
+Bhargav Naidu: please.
+Jayachandran Pillai: uh some some approval stuff I don't know what exactly is that.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: So will all these things will get disrupted or are you going to give a new uh you know API or software or how is it how is it going to
+Bhargav Naidu: So M how it
+Jayachandran Pillai: be the reason let me said see I I there is there are systems that's happening
+Bhargav Naidu: works. Right, right,
+Jayachandran Pillai: okay we are struggling here and there now I do not want the whole thing to be just
+Bhargav Naidu: right, right, right, right,
+Jayachandran Pillai: shaken up and then you know people say I'm not able to see that and the customer gets
+ 
+ 
+00:31:39
+ 
+Bhargav Naidu: right,
+Jayachandran Pillai: confused you know they said what is it you know there's you understand that you know I don't don't want it
+Bhargav Naidu: right, right, right, right.
+Jayachandran Pillai: to be chaotic and uh you know uh get into some kind of
+Bhargav Naidu: 100%.
+Jayachandran Pillai: u you know escalations and things like that I don't have that mind space for all these
+Bhargav Naidu: Right, right. So, Mr.
+Jayachandran Pillai: things
+Bhargav Naidu: Today I'll give you a okay let me go in detail more cuz I've thought about this thing also clearly okay cuz my mind doesn't
+Jayachandran Pillai: Okay.
+Bhargav Naidu: stop once isn't a very interesting opportunity in this space okay so how it works first things first we won't disturb
+Jayachandran Pillai: Mhm. Mhm.
+Bhargav Naidu: anything that's running already because it's a running business we can't take a single day break also because in service industry back
+Jayachandran Pillai: Okay. Yep.
+Bhargav Naidu: on second in service industry we can never take break in product industry we can take break one one day here because already delivery
+Jayachandran Pillai: Mhm. Mhm.
+ 
+ 
+00:32:23
+ 
+Jayachandran Pillai: Correct. Correct.
+Bhargav Naidu: only completely no problem with the part okay now point is what we have to do is once we've built a whole system in in different
+Jayachandran Pillai: Correct.
+Bhargav Naidu: format completely okay in back end once we build all system completely we should first start with integrating one channel of lead let's take an example once we start with call okay or with WhatsApp or with email one channel will start integrating okay because one channel is better integrating
+Jayachandran Pillai: Okay. Okay.
+Bhargav Naidu: all three channels at once is is is foolish we should see what the least channel or a most efficient channel
+Jayachandran Pillai: Mhm. Mhm. Mhm.
+Bhargav Naidu: to start with first we'll automate that thing first clearly but we'll activate it everything is built behind
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: completely but we'll activate so that if there's any bugs we can fix them immediately.
+Jayachandran Pillai: Okay. Mhm.
+Bhargav Naidu: So we'll first analyze one channel that channel is going good then we'll analyze another channel then the another channel completely so slowly we are we are not cutting in between.
+ 
+ 
+00:33:09
+ 
+Jayachandran Pillai: Okay.
+Bhargav Naidu: So if you cut in between what happens let's say an example if I start automating only the allocation process then the person who has done work before and the person who has done work afterwards they'll be confused because they're not aware something has come in between but if I cut it on top only if I cut it on top and then create a process from there directly as there's no man interruption happen for the source at all so it's easy easy for them
+Jayachandran Pillai: Got that point. Yeah.
+Bhargav Naidu: to understand clearly so we'll do in that manner and to be very open with you I told you the initial stage only
+Jayachandran Pillai: Yeah. Yeah. Yeah.
+Bhargav Naidu: Okay. Whatever tools you're using, if they're API compatible, we'll use them. If they are not API compatible,
+Jayachandran Pillai: Okay.
+Bhargav Naidu: even if you want it, I would suggest not to use it.
+Jayachandran Pillai: I got that. No, no. I'm I'm I'm flexible on that part of it.
+Bhargav Naidu: Clear.
+ 
+ 
+00:33:53
+ 
+Jayachandran Pillai: Yeah, that's right.
+Bhargav Naidu: That's very clear from my side.
+Jayachandran Pillai: Yeah. Yeah. Yeah.
+Bhargav Naidu: Okay. Please, any more questions you can ask me,
+Jayachandran Pillai: So, I was just uh so uh so I wanted to
+Bhargav Naidu: please.
+Jayachandran Pillai: have some kind of uh so are you going to use WhatsApp as this communication channel or how is
+Bhargav Naidu: So,
+Jayachandran Pillai: it?
+Bhargav Naidu: for example, Mr. J, do you have an app? Because I don't see an app at all in your website.
+Jayachandran Pillai: No,
+Bhargav Naidu: Okay.
+Jayachandran Pillai: we do not have the reason is that uh see this this this business app I thought that it's
+Bhargav Naidu: H
+Jayachandran Pillai: really not going to be useful because once in a blue moon people ask for cleaning and things like that generally an app will have you know uh pest control this that you know you have a cluster of services so we we are not there and we don't want to get in there immediately so that's the reason we thought that we should not have
+ 
+ 
+00:34:34
+ 
+Bhargav Naidu: like
+Jayachandran Pillai: app then I think one of the vendors said being on WhatsApp is the best thing possible and that's how
+Bhargav Naidu: okay,
+Jayachandran Pillai: Wati came into the picture saying that you know most of them use WhatsApp so it's better to have
+Bhargav Naidu: Right.
+Jayachandran Pillai: communication sales marketing you know announcement everything on WhatsApp what's your view on that call me
+Bhargav Naidu: So Mr. J to be very open with you having an app. Yeah.
+Jayachandran Pillai: J I
+Bhargav Naidu: Sorry J. Okay. Cuz I in India I I I tend to use Mr.
+Jayachandran Pillai: I got that yeah absolutely absolutely
+Bhargav Naidu: in in West it's it's in west we just call it names only usually. Right. So J I I'll be very open with you. Okay. As a premium service if you don't have an app then you're not premium at all.
+Jayachandran Pillai: I
+Bhargav Naidu: The first thing okay irrespective people are using it or not it's secondary guess case because usability is a factor on multiple
+Jayachandran Pillai: see.
+Bhargav Naidu: usage let's take an example now there are many apps I didn't use before but once I started using it as usability case improved I started became more adaptable to it get it so for example um uh how do I
+ 
+ 
+00:35:37
+ 
+Jayachandran Pillai: I see.
+Bhargav Naidu: provide you like like okay this this is a simple psychological factor to be very open with you okay that's one part. Yes, you can. We have to start with WhatsApp only. I'll tell you why also because building an app is a very cost rich process. It's it has good it needs to have good money. We have to earn a lot of money for building an app pack and a lot of iteration is
+Jayachandran Pillai: Is that so?
+Bhargav Naidu: Yeah. Yeah.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Cuz if you want to build a structured app properly with updates everything in detailing end to end and every you need to have a team inside back once again or you have to outsource this project back once again because there always going to be some other update. for fulfilling it.
+Jayachandran Pillai: Okay. Mhm.
+Bhargav Naidu: Okay. The best part what happens is if we can understand the customer performance
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: criteria or customer requirement criteria step by step through WhatsApp that will be our blueprint or a Figma model that we can provide for app later as let's say you tell me you know bhar now I have 20,000 customers okay who are buying from me every 6 months and every 6 months these 20,000 customers or every year these 20,000 customers are repeatedly taking my services.
+ 
+ 
+00:36:46
+ 
+Bhargav Naidu: So one thing is for sure these 20,000 customers are going to download your app and are going to use your app mandatory. Now it's easier process for them completely. But if we don't know who's going to buy, who's going to use then it's completely pointless,
+Jayachandran Pillai: So master see um let's say bar is my customer and maybe monthly not even monthly quarterly once he will use his house or he will
+Bhargav Naidu: right?
+Jayachandran Pillai: ask uh he will get his mother's house or you know uh you our sister's house cleaned and things like that.
+Bhargav Naidu: Right.
+Jayachandran Pillai: Why will Bhagav give a realistic space for my
+Bhargav Naidu: Right.
+Jayachandran Pillai: app which is only into cleaning as of now or only into pest control wherein you have urban company
+Bhargav Naidu: Right.
+Jayachandran Pillai: who is into duty who's into plumbing blah blah blah blah blah.
+Bhargav Naidu: Right.
+Jayachandran Pillai: So do don't you think clean pro having an app will get
+Bhargav Naidu: Right. Now in this case I'll give you a basic example.
+Jayachandran Pillai: lost.
+Bhargav Naidu: Okay.
+ 
+ 
+00:37:42
+ 
+Bhargav Naidu: If you want if you have a interest of only being in residential uh cleaning and commercial cleaning only then to be very open we are not using our food potential
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: cuz let me talk one thing very clearly. Okay, this is one option I have dwelt with with a company called Sunrise Drivers. They're in Bangalore also by the way. Okay, so they provide driver aggregating aggregating services. I have changed their whole model where their profitability was around 30%,
+Jayachandran Pillai: I see.
+Bhargav Naidu: now they're doing at 65%. Okay, now a simple example I'll give you. So what they used to do,
+Jayachandran Pillai: Oh.
+Bhargav Naidu: they used to usually charge 15,000 rupees as yearly uh maintenance fee, the platform fee because we'll provide you a driver. You have to pay us 15,000 first. Okay. Once we provide you a driver, why are you paying 50 15k for us if this driver is absent on a day or else if this driver you didn't like it? We'll provide you unlimited replacements and if driver is absent on so and so day, we'll provide another driver as a backup.
+ 
+ 
+00:38:36
+ 
+Bhargav Naidu: Okay. This is a service for that they're taking 15,000 a year.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Okay. Now what I told them I came into search next year onwards people are not renewing it because as you got a driver you're happy with the driver. Why will you re renew again?
+Jayachandran Pillai: Edit.
+Bhargav Naidu: Now this is in last 10 years of their functions only 6% of them renewed and they have a client base of about 10,000 clients. Okay. Now I came in yesterday itself my meeting up everything everything is done. Okay. We changed the plan for initial purchase initial onboarding fee as 9,9.99. Okay. And then we introduced a care plan. So now it's not sunrise drivers it's so it's it's called care sunrise drivers.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: So in this what we will do we'll provide insurance to the driver also insurance for the car also and along with that
+Jayachandran Pillai: Okay.
+Bhargav Naidu: we'll provide a mechanism wherein usually a person who's owning a driver he has quarrel with the driver on his attendance how much should I pay him how many days he has come in he doesn't he it he doesn't calculate all these things so we are providing a payroll system for you for your driver specifically.
+ 
+ 
+00:39:44
+ 
+Bhargav Naidu: So either you want weekly updates, monthly updates or daily updates. So if you want daily updates, you go for a premium plan wherein you charge you pay us 2,000 a month. If you want every weekly updates, then you go for a basic plan in which it is 1,500 a month. And if you want monthly updates only, month in month you want updates only then you go for basic plan.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Starting plan complete that's 9999. So even if a person goes for 999 rupees for 12 months,
+Jayachandran Pillai: Cool.
+Bhargav Naidu: initially he paid me 10,000 and in a year he's paying me 12,000 extra. So he's getting I'm getting paid 22,000 extra where is 15k where is 22,000 and on top of it as my value ad is much better next year also he'll continue with my plan.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Now my CAC the client acquisition cost was only once and through him I'm getting a recurring revenue throughout the throughout the years as a startup with me and if his driver has changed I'm okay to give a new driver to him because from next month also I'll get money.
+ 
+ 
+00:40:37
+ 
+Bhargav Naidu: This is what a care plan which I've launched. Now the profit is very crazy. Now in the same manner this is upsell this is not one time sell this is upsell now point is we
+Jayachandran Pillai: H
+Bhargav Naidu: have to see other ways when you're telling me now I'm fascinated because you're telling me your client retention model is very good irrespective of you doing marketing now point is why are we not leveraging it why are we not adding different multiple services a small oriented services maybe maybe just washrooms because nowadays you told me very openly for my house also I I stay in
+Jayachandran Pillai: Oh,
+Bhargav Naidu: Aperna it's a very premium gated community now my rent is around 85,000 a month okay now in this is finding a hood person urban club company. They come in, they clean my washrooms, they charge 500 rupees and frankly I'm not okay with it because they do a very crappy job.
+Jayachandran Pillai: I know that. Yep.
+Bhargav Naidu: I don't like the sharp dressing they have. They come in, they do.
+ 
+ 
+00:41:21
+ 
+Bhargav Naidu: I stopped using it. So I am paying my maid only extra 1,000 rupees for getting my washrooms done now because I can see her doing a good job. Now material everything is my control whatever I want to use. Okay. Now this washrooms is a very important.
+Jayachandran Pillai: So
+Bhargav Naidu: So premium communities they love to get the washroom clean every week once at least. So are we doing that? No,
+Jayachandran Pillai: h
+Bhargav Naidu: I don't know what about backyards in villas. Backyard is a very important problem for them. Back once again,
+Jayachandran Pillai: Yeah. Yeah.
+Bhargav Naidu: maybe plantations can be a good option. Anything aesthetically appealing for the person where he can't get an option outside is where we provide. Maybe we launch a plan in which they can go for monthly subscription and irrespective of them calling us, we book an appointment for them immediately.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: That can be next plan maybe.
+Jayachandran Pillai: Cool. Cool.
+Bhargav Naidu: So we'll we'll think we have to think about more options cuz this cleaning segment I'm telling you very openly
+ 
+ 
+00:42:06
+ 
+Jayachandran Pillai: Got that.
+Bhargav Naidu: this is a never- ending segment no matter how many robots come into picture this will never go out especially in India it will never
+Jayachandran Pillai: Yeah. Especially in India. Yeah. Yeah.
+Bhargav Naidu: happen it'll never happen so it's always an open market so now if you if you're very confident that your service is so on top-notch point clearly believe me up not upselling is a
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: very I'm sorry for the word but dumb move for me we we need to we need to upsell that's
+Jayachandran Pillai: Okay.
+Bhargav Naidu: when Our retention model will give us more money than our acquisition model. Clearly that's how it's going to work very easily.
+Jayachandran Pillai: Awesome.
+Bhargav Naidu: You know right now Zumato you take any big companies right now everyone has a loss only their their cap to LTV ratio is almost 1 is to1 but even if they're okay with it because for example if a if a person is buying 1,000 product on me I'm okay to spend 1,000 rupees to acquire the client client I okay to it because once he spend with me from tomorrow whatever he's going to spend a cut is always given to me from tomorrow I learn on
+ 
+ 
+00:42:55
+ 
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: him that is always there completely now I'm going into marketing side because that's where I stand into a lot to be very open cuz I told you I I'm into flows and marketing.
+Jayachandran Pillai: Oh yeah. So what's Oh, I see. I see.
+Bhargav Naidu: Right. Right. Right.
+Jayachandran Pillai: So how did you get into this now?
+Bhargav Naidu: Oh into automations.
+Jayachandran Pillai: Huh?
+Bhargav Naidu: So uh Jay without without having the overall idea where do you build automations?
+Jayachandran Pillai: Let's
+Bhargav Naidu: If I don't even tell you you know this is the area I want automation in what who will know that now that's what my my interest.
+Jayachandran Pillai: go.
+Bhargav Naidu: So as I understand marketing clean cut as I understand business so easily I'm able to see where the caps where can where you can optimize this operation very better. Okay. And as for the clients not clients as per the brands requirement clearly. So when you only premium above above urban club now I'm seeing in that level only completely I'm talking about those services only.
+ 
+ 
+00:43:49
+ 
+Bhargav Naidu: I'm talking about places or services or aspirational aspects in that manner only. So that it correlates with the brand value back once again.
+Jayachandran Pillai: True. But perfect,
+Bhargav Naidu: Now if it's not I won't even talk those things out completely.
+Jayachandran Pillai: perfect, perfect.
+Bhargav Naidu: That's all it is.
+Jayachandran Pillai: So quick thing I have another uh maybe 15 minutes more.
+Bhargav Naidu: Yes. Please, please, please.
+Jayachandran Pillai: Uh so send me send me whatever we discussed on uh click this uh and the other thing
+Bhargav Naidu: Yes. Yes. Yes.
+Jayachandran Pillai: is that I run this company which is into recruitment, staffing, payroll, compliance.
+Bhargav Naidu: You'll be my fourth client.
+Jayachandran Pillai: Uh oh yeah which are the other other three
+Bhargav Naidu: Okay.
+Jayachandran Pillai: clients?
+Bhargav Naidu: I can't disclose client names. Come on.
+Jayachandran Pillai: Oh is it sir? Is that that
+Bhargav Naidu: No, no.
+Jayachandran Pillai: confidential?
+Bhargav Naidu: When it's a competitor, I don't disclose. When it's other way, I'll discuss. No problem in the part.
+ 
+ 
+00:44:33
+ 
+Bhargav Naidu: And I told you sometimes I'll tell you. But same companies I told because point is in the same manners.
+Jayachandran Pillai: Okay,
+Bhargav Naidu: For example, I'm taking a staffing company right now. Okay. I won't take at the same time another staffing company.
+Jayachandran Pillai: come on man. All these things
+Bhargav Naidu: No, no. I'll be very open with you cuz I'll I'll do one thing.
+Jayachandran Pillai: happens.
+Bhargav Naidu: I'll share you my screen. No, no. I'll share you my screen. I'll show you my portfolio. I'll tell you why also. Because my mind doesn't work like that.
+Jayachandran Pillai: Okay, good.
+Bhargav Naidu: When I'm working with you on staffing,
+Jayachandran Pillai: I appreciate.
+Bhargav Naidu: I'll work with you on staffing.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Once the project is done, I'll take more staffing.
+Jayachandran Pillai: Okay, that's fine. Anyway,
+Bhargav Naidu: I'm not tell I will never take staffing.
+Jayachandran Pillai: I'll let that No,
+Bhargav Naidu: That is foolishness because if I if I'm good at something,
+ 
+ 
+00:45:04
+ 
+Jayachandran Pillai: that's all Bav that's all debatable.
+Bhargav Naidu: I'll do it much better.
+Jayachandran Pillai: No problem.
+Bhargav Naidu: Please.
+Jayachandran Pillai: I appreciate your business ethics or whatever you call it. That's fine.
+Bhargav Naidu: Right. Right. Right.
+Jayachandran Pillai: Uh so quick thing.
+Bhargav Naidu: Right.
+Jayachandran Pillai: So um so you you guys said that.
+Bhargav Naidu: Please please please staff
+Jayachandran Pillai: So okay, let me go back now. This this you you guys said that you're going to do an audit.
+Bhargav Naidu: him.
+Jayachandran Pillai: So will you send a person to come here and understand or how is it?
+Bhargav Naidu: So um J how it works is we usually do everything on Google meet. Okay, we come to your place only at the time of hand over. Okay, why?
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Cuz I tell you one thing very openly. Cuz we have teacher team also a lot of aspects clearly in these things. At the handover is a time we come into your place. We stay at least for 2 days over there.
+ 
+ 
+00:45:46
+ 
+Bhargav Naidu: Okay. We give the whole hand over to you completely. We'll even teach your team for 2 days completely. Then we'll move to place.
+Jayachandran Pillai: Okay. Okay.
+Bhargav Naidu: Yes.
+Jayachandran Pillai: Quick thing in staffing.
+Bhargav Naidu: Yeah.
+Jayachandran Pillai: What you guys are doing? Tell me what's the work done. What what what's what what solution?
+Bhargav Naidu: We uh that that Sandy
+Jayachandran Pillai: What what what is the problem you're solving?
+Bhargav Naidu: has a better idea. I'll do one thing. I'll connect Sandy with this part. Stand for the staffing part completely.
+Jayachandran Pillai: Oh, is that so? Okay. Okay.
+Bhargav Naidu: Yeah,
+Jayachandran Pillai: So, I'm looking at that too.
+Bhargav Naidu: cuz Okay,
+Jayachandran Pillai: Let's see. Let's take one of one one at a time.
+Bhargav Naidu: that's better.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: That's better. Okay. So, what I'll do is second step number two.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Okay. I think you're okay with the uh the whole process completely because it's very clean, very neat process completely.
+ 
+ 
+00:46:20
+ 
+Bhargav Naidu: Okay. I hope you're okay with all the commercials details also completely.
+Jayachandran Pillai: Yeah. Commission. So I will hand it over to my uh finance guys and the operation guys to take it
+Bhargav Naidu: Yes.
+Jayachandran Pillai: further.
+Bhargav Naidu: Yes.
+Jayachandran Pillai: So you say it is about uh four lakhs the project will be delivered right?
+Bhargav Naidu: Yes. Yes. Yes.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Yes.
+Jayachandran Pillai: And uh let me just check on that.
+Bhargav Naidu: Yeah.
+Jayachandran Pillai: You you sent me the proposal.
+Bhargav Naidu: No problem. Because I will shoot a MOU first clearly.
+Jayachandran Pillai: Let me just have a board with them.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: Perfect.
+Bhargav Naidu: In which all ladies are mentioned completely. Now let me talk about the payment structure also completely.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: June need not pay us four lakhs up front. Okay,
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: you pay us 70% in advance and 30% you'll deliver to us in person once we are there at your place with
+Jayachandran Pillai: Mhm.
+ 
+ 
+00:46:59
+ 
+Jayachandran Pillai: Okay. Okay.
+Bhargav Naidu: the deliverables completely. Okay,
+Jayachandran Pillai: Okay.
+Bhargav Naidu: so that you also have some confidence in the whole part please.
+Jayachandran Pillai: Yeah. Yeah. So, I leave that to my finance guys.
+Bhargav Naidu: No problem.
+Jayachandran Pillai: Don't don't worry.
+Bhargav Naidu: No problem.
+Jayachandran Pillai: That's transfer. So,
+Bhargav Naidu: That's fine.
+Jayachandran Pillai: don't worry about the payment uh uh getting stuck and stuff like that. So,
+Bhargav Naidu: Yeah.
+Jayachandran Pillai: they want everything to be documented and things like that. Um u what else?
+Bhargav Naidu: One works good.
+Jayachandran Pillai: Okay. And you guys make the app too.
+Bhargav Naidu: We do. Yeah, we make apps. Yes.
+Jayachandran Pillai: Uh can you give some references of apps which you guys have made or some clients and stuff like that?
+Bhargav Naidu: Uh,
+Jayachandran Pillai: Sometimes later on no hurry now just to get a feel of it.
+Bhargav Naidu: no problem. No problem. I'll
+Jayachandran Pillai: Uh because Bangalore being a IT capital there are lot many people who
+ 
+ 
+00:47:30
+ 
+Bhargav Naidu: sure.
+Jayachandran Pillai: is just making app in couple of weeks and giving it and stuff like that.
+Bhargav Naidu: That's That's not going to work in that manner at all.
+Jayachandran Pillai: I I don't know but um even I have a software team here who is doing um development on payroll and HRMS and things like that.
+Bhargav Naidu: Right. Right.
+Jayachandran Pillai: So that company's name is Alp Consulting ALP Consulting.
+Bhargav Naidu: H okay.
+Jayachandran Pillai: So I wanted Yeah.
+Bhargav Naidu: Now uh one small question J as you mentioned. Okay.
+Jayachandran Pillai: Yep.
+Bhargav Naidu: Do you provide API services for that for your for your app or for your processes?
+Jayachandran Pillai: Uh I I
+Bhargav Naidu: Can I integrate your payroll software or attendance software? Okay. Into any any CRM I want
+Jayachandran Pillai: yeah I don't understand this.
+Bhargav Naidu: to
+Jayachandran Pillai: I have a technical person who you shouldn't I don't think so we I think um I don't know ma'am I I have no clue
+Bhargav Naidu: not doing it cuz Puja is not doing it.
+Jayachandran Pillai: about
+ 
+ 
+00:48:30
+ 
+Bhargav Naidu: Neither anyone. I spoke to 12 other vendors. No one is doing it.
+Jayachandran Pillai: I see just let me make a note so that I can I can organize
+Bhargav Naidu: So my session if you can do it please please please please
+Jayachandran Pillai: a call. What is the question you
+Bhargav Naidu: please so it does your payroll software or attendance software whatever it
+Jayachandran Pillai: had?
+Bhargav Naidu: is it is there it does it record only attendance or records payrolls of the same case back once again calculates payroll according to
+Jayachandran Pillai: Yes.
+Bhargav Naidu: attendance completely right right so is it is it compatible to any
+Jayachandran Pillai: Yes. Dash.
+Bhargav Naidu: CRM does it have a API access through which can we link to any
+Jayachandran Pillai: Uh,
+Bhargav Naidu: CRM so for example let's assume Assume let's assume in this case okay now I'm
+Jayachandran Pillai: how does it help if it is any other CRM?
+Bhargav Naidu: a so in staffing this is how it works like you hire team for another company who's working
+Jayachandran Pillai: True. Yes.
+ 
+ 
+00:49:12
+ 
+Bhargav Naidu: at your place right whatever it might be whatever it might be complete okay so now point
+Jayachandran Pillai: Not we generally depute. Yeah.
+Bhargav Naidu: is you want to provide now as you are recording all the uh information completely
+Jayachandran Pillai: Time sheet. Time sheet. Yeah.
+Bhargav Naidu: about the attendance everything okay they are paying you the vendor is paying you money and you are paying them money
+Jayachandran Pillai: Yeah. Yeah. True.
+Bhargav Naidu: so let's say vendor is paying you 100 rupees you are paying 30 rupees 60% open margin no problem of the case completely.
+Jayachandran Pillai: True.
+Bhargav Naidu: Okay. So very good industries stopping bar. Okay. Now point is but if the case
+Jayachandran Pillai: We to correct you this we we have had hardly because it's too competitive or 10 to
+Bhargav Naidu: is
+Jayachandran Pillai: 15%.
+Bhargav Naidu: obviously now I'm talking about the starting case in now it's not in that manner clearly but it's starting case.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Okay that's why you started the business. Oh come on the margin was very huge.
+ 
+ 
+00:49:51
+ 
+Jayachandran Pillai: Yeah. Yeah. Yeah. Yeah. Yeah.
+Bhargav Naidu: Yeah. So now coming to the important parameter.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Okay. Now imagine you are not hiring on your name. You're hiring on vendor's name only.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: you are making them work completely.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: You have to provide the vendor an update about the payrolls. But point is you can't disclose the the software's name.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: It should be on your name only completely. So let's take an example in the sunrise driver scenario because I want this for sunrise drivers right now. Okay.
+Jayachandran Pillai: Uh-huh.
+Bhargav Naidu: So in Sunrise drivers now I'm hiring a driver and I'm sending it to the client's place.
+Jayachandran Pillai: Correct.
+Bhargav Naidu: I should record the attendance.
+Jayachandran Pillai: True.
+Bhargav Naidu: Now I have and I have to send an update to the client.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: Now if I'm using the software I'll get the updates.
+Jayachandran Pillai: True.
+Bhargav Naidu: How will the client get the update?
+ 
+ 
+00:50:33
+ 
+Jayachandran Pillai: Cool.
+Bhargav Naidu: But if this update if the system is in integrated to my to my software to my CRM I
+Jayachandran Pillai: Yeah. Yeah. Yeah. Yeah.
+Bhargav Naidu: can shoot a WhatsApp message from here only as automation as a month attend is calculated a WhatsApp message shoots to the client immediately from
+Jayachandran Pillai: Uh
+Bhargav Naidu: here that's is available completely or else you in your system only there should be another
+Jayachandran Pillai: true.
+Bhargav Naidu: field there should be hirer and there should be client another message should shoot to a client from your space only in this case it's sent but the name should be of sunrise drivers if that's the
+Jayachandran Pillai: H
+Bhargav Naidu: case a lot of brands actually are looking for service like this.
+Jayachandran Pillai: okay
+Bhargav Naidu: I would personally love it because I can sell this as white label service to all my clients
+Jayachandran Pillai: got that got that got that so other than that uh ba we have we do a lot of labor
+Bhargav Naidu: please.
+Jayachandran Pillai: compliance work that means you know a lot of companies struggle whether it's
+ 
+ 
+00:51:18
+ 
+Bhargav Naidu: Okay.
+Jayachandran Pillai: multinational or uh whether any company compliance is very very important we are developing certain software way internally and I'm not pretty happy because I don't think that they're using anything which is the smart way we are doing some nonsense
+Bhargav Naidu: Oh my
+Jayachandran Pillai: legacy stuff uh I I know and and you know people
+Bhargav Naidu: god.
+Jayachandran Pillai: are just romancing with the software trying to do some bugging debugging on some not I think
+Bhargav Naidu: Okay.
+Jayachandran Pillai: today we have moved much this things are all you know u
+Bhargav Naidu: Okay.
+Jayachandran Pillai: very different um uh way of developing or coding And you know so I wanted somebody to really understand what we are doing and things like that before you know because okay let me tell you this is a Japanese invested company uh Al consulting I wanted to do something which which is
+Bhargav Naidu: Okay.
+Jayachandran Pillai: really completely change the automation of my company.
+Bhargav Naidu: Sure.
+Jayachandran Pillai: So to today uh we do we do about about 200 people hiring every month for clients.
+Bhargav Naidu: That's a good one.
+ 
+ 
+00:52:34
+ 
+Bhargav Naidu: At this stage,
+Jayachandran Pillai: Yeah. Yeah. And we Yeah.
+Bhargav Naidu: it's good. Okay.
+Jayachandran Pillai: And we have about four 5,000 people on our role deputed at large
+Bhargav Naidu: Okay.
+Jayachandran Pillai: crimes. Now I wanted somebody to understand what all things we can automate and you
+Bhargav Naidu: Okay.
+Jayachandran Pillai: know uh reduce unnecess.
+Bhargav Naidu: Okay.
+Jayachandran Pillai: So we we are using for our ATS that is uh uh applicant tracking system we are using
+Bhargav Naidu: Right.
+Jayachandran Pillai: uh CPAL ci
+Bhargav Naidu: Right.
+Jayachandran Pillai: and excel hire to uh to screen the
+Bhargav Naidu: Okay.
+Jayachandran Pillai: profiles and you know increase the productivity uh uh passing the resume and stuff like that um trying to implement some virtual interview add value to the client saying that you need not do the interview we will do the interview for you and
+Bhargav Naidu: M for you.
+Jayachandran Pillai: then share the profile based on the assessment and things.
+Bhargav Naidu: Right.
+Jayachandran Pillai: So I wanted somebody to understand what all can be um you know very holistically
+Bhargav Naidu: Right.
+ 
+ 
+00:53:41
+ 
+Jayachandran Pillai: somebody has to understand what all we can automize and come out of the legacy system and stuff like
+Bhargav Naidu: Got it. Got it. Staffing is actually one of the oldest and oldest formats back once again,
+Jayachandran Pillai: that.
+Bhargav Naidu: right? It's it has been hugely profitable since a very long time. Now point is but it has not changed as such. It has not evolved. It has stays the same. Not just for for everyone to be very open. But it's the thought process good because a lot of people have actually moved out of staffing. They have moved into software development from staffing back once again.
+Jayachandran Pillai: H.
+Bhargav Naidu: Okay. But yeah, there are a lot of companies who stayed in staffing. Okay. And they're doing a good job. 200 hiring is a good number. I think uh yeah it's it's a very good number in fact cuz we have dealt with like 50 to 100 in a month. Okay, this 200 is a good number.
+ 
+ 
+00:54:27
+ 
+Bhargav Naidu: So even irrespective of what the process is going to stay common only in here that shouldn't be a problem at all.
+Jayachandran Pillai: Yeah. Yeah.
+Bhargav Naidu: Okay, but maybe the tools which you're using are a bit similar but few of them are here and there. Sandy has a better idea on this thing. So let me do one thing. Okay, let's put a pin in this AL consulting. Let's put a pin on that. uh once we are we have started this this project okay uh about the pro cleaning okay if you are interested to go for that one also simultaneously we'll we'll do a meeting for that also for the apps yeah
+Jayachandran Pillai: which one say okay yeah yeah sure sure so there I'll involve because
+Bhargav Naidu: okay
+Jayachandran Pillai: see what's happening is that uh we have been developing a legacy software and it is very what do you call it's become monolithic or I I don't know what people doesn't want to change things they are
+Bhargav Naidu: Okay.
+Jayachandran Pillai: all my my gut feel says that I think we should dump that aside and have something connected with the as you rightly said that API connection and use it and make the model very light and flexible uh so that we can you know
+ 
+ 
+00:55:29
+ 
+Bhargav Naidu: Right, right, right, right.
+Jayachandran Pillai: navigate uh all this day-to-day hassle much faster.
+Bhargav Naidu: All right. Your gut feelings are always
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: right.
+Jayachandran Pillai: So some but I'm not a technical guy. I I can I can run companies. I can start companies,
+Bhargav Naidu: No, that's that's a we here for me,
+Jayachandran Pillai: but I don't Yeah.
+Bhargav Naidu: Jake. We are here for you.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: That is only we from to Canada for you in this case.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: We we'll work things out. No problem. Okay. So, what I'll do is first I'll shoot you the for this one first. Okay.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: I'll inform the about the ad for for Sandy because he's still sleeping.
+Jayachandran Pillai: Mhm.
+Bhargav Naidu: He didn't wake up yet. He'll wake up around 12:45 to 1:00. Yeah.
+Jayachandran Pillai: Perfect.
+Bhargav Naidu: Because he works with Canadian clients in the back.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: One second.
+Jayachandran Pillai: Okay.
+ 
+ 
+00:56:06
+ 
+Jayachandran Pillai: Got it.
+Bhargav Naidu: Yeah. So,
+Jayachandran Pillai: Now not finish.
+Bhargav Naidu: but I'm married so I can I have to sleep,
+Jayachandran Pillai: Good.
+Bhargav Naidu: right?
+Jayachandran Pillai: Got it.
+Bhargav Naidu: So, let's take this call from there onwards completely. Okay. Sounds good.
+Jayachandran Pillai: Perfect. Thank you,
+Bhargav Naidu: Perfect. Sure. Perfect.
+Jayachandran Pillai: Baba.
+Bhargav Naidu: J, I'll see you once again. Uh, when do we have a second call? When do you schedule it?
+Jayachandran Pillai: I let me see yourou and then let me see how whether I need to patch your call with
+Bhargav Naidu: Okay.
+Jayachandran Pillai: uh uh my ops guy to understand it a little better and things like that. You give me a a little time. Um and the other thing what I was talking about forgot about something else. Okay, I'll catch up later. So,
+Bhargav Naidu: No problem.
+Jayachandran Pillai: uh I shall wait for your no
+Bhargav Naidu: Yeah, it'll take out about uh 2 hours time. In 2 hours,
+ 
+ 
+00:56:49
+ 
+Jayachandran Pillai: problem.
+Bhargav Naidu: you'll find an Yeah,
+Jayachandran Pillai: No
+Bhargav Naidu: it it that's automated.
+Jayachandran Pillai: problem.
+Bhargav Naidu: Whatever is we talking about, everything is recorded. It's already transcribed. It's already going to my system completely.
+Jayachandran Pillai: Got that. Got that. Yeah. So,
+Bhargav Naidu: Okay.
+Jayachandran Pillai: you don't have an office here?
+Bhargav Naidu: In Bangalore. No, no. In Hyderabad, we have an office.
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: We have a 12-seater co-working space in Hyderabad. We have a penthouse in Hyderabad. So, we work for two players. I and Sandy work from the penthouse. Uh we have another space where my team sits in. We have a team in Canada back once again. We have 14 team in Canada. Okay. Who are handling their Canadian operations back once again. So,
+Jayachandran Pillai: Okay.
+Bhargav Naidu: yeah,
+Jayachandran Pillai: Okay.
+Bhargav Naidu: we we are diverse in this matter. Yeah. So,
+Jayachandran Pillai: All right.
+Bhargav Naidu: I'm I'm sitting right now in my home. I have another office back once again.
+Jayachandran Pillai: Perfect. No,
+Bhargav Naidu: So,
+Jayachandran Pillai: no.
+Bhargav Naidu: wherever I go,
+Jayachandran Pillai: You being being entrepreneurs,
+Bhargav Naidu: I got a system over here with me all the time.
+Jayachandran Pillai: use my office in case you need anything. I have an Hyderabad office also in itch city I suppos. Yeah.
+Bhargav Naidu: Is it?
+Jayachandran Pillai: Yeah.
+Bhargav Naidu: Is it okay?
+Jayachandran Pillai: Yeah. Yeah.
+Bhargav Naidu: So,
+Jayachandran Pillai: So Bangalore any help let me know.
+Bhargav Naidu: please please 100% we'll be there.
+Jayachandran Pillai: Okay.
+Bhargav Naidu: Okay. Sure.
+Jayachandran Pillai: Thank you man.
+Bhargav Naidu: Thank you so much.
+Jayachandran Pillai: Thank you. Bye.
+Bhargav Naidu: Have a good day.
+Jayachandran Pillai: You too. Bye.
+ 
+ 
+Transcription ended after 00:57:49
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.

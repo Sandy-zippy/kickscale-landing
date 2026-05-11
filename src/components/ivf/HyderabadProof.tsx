@@ -52,7 +52,7 @@ export default function HyderabadProof() {
           <span className="text-[#9CA3AF]">·</span>
           <span>Fastest-growing AI-based growth marketing agency in India · Visionary Achievers Awards 2026</span>
           <span className="text-[#9CA3AF]">·</span>
-          <a href="https://instagram.com/zippy.scale" target="_blank" rel="noopener noreferrer" className="text-[#2A2A35] font-semibold hover:text-[#D5EB4B] transition-colors">@zippy.scale →</a>
+          <a href="https://instagram.com/zippy.scale" target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] px-2 text-[#2A2A35] font-semibold hover:text-[#D5EB4B] transition-colors">@zippy.scale →</a>
         </motion.div>
       </div>
     </section>

@@ -1,0 +1,10 @@
+import { chromium } from 'playwright'
+const browser = await chromium.launch()
+const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+const page = await ctx.newPage()
+const v = Date.now()
+await page.goto(`https://zippyscale.in/case-studies/homeopathic-clinic-patient-flow?v=${v}`, { waitUntil: 'networkidle' })
+await page.waitForTimeout(2000)
+await page.screenshot({ path: '/tmp/v3-homeo-full.png', fullPage: true })
+console.log('saved /tmp/v3-homeo-full.png')
+await browser.close()

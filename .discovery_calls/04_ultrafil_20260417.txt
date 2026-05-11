@@ -1,0 +1,1085 @@
+﻿📝 Notes
+Apr 17, 2026
+Ultrafil air systems Discovery Meet
+Invited RAHUL NAIK Sandy Kadyan Bhargav Naidu
+Attachments Ultrafil air systems Discovery Meet
+Meeting records Transcript 
+
+
+
+
+Summary
+Ultraill Systems discussed operational bottlenecks and agreed to implement automation via a 2 month system upgrade.
+
+Business Overview and Bottlenecks
+The company manages 5 diverse business verticals using ERPNext. Significant operational bottlenecks exist in pre-sales engineering calculations and project offer creation due to increased volume.
+
+Automation and Performance Strategy
+Management requires automated KPI tracking and inventory management to address productivity gaps. A reporting system will be built to categorize staff performance and streamline purchase actions.
+
+Project Scope and Commercials
+The project will be completed in 2 sprints spanning 2 months. A minimum viable setup will be delivered in the first month to address critical operational problems.
+
+
+
+
+Next steps
+* [The group] Begin Discovery: Conduct a 1-month sprint to analyze 150 personnel workflows and internal processes. Study the current reporting system and ERP Next usage to define automation scope.
+* [The group] Implement Reporting: Build a reporting system providing a 360-degree view of staff efficiency and KPI attainment. Implement automated red, yellow, green alert notifications for underperforming teams.
+* [The group] Automate Inventory: Program automatic purchase order triggers within ERP Next based on reorder level depletion. Provide low inventory alerts to relevant internal teams.
+* [The group] Create MOU: Draft memorandum of understanding document based on meeting discussion.
+* [The group] Share MOU: Distribute the completed memorandum of understanding to Rahul Naik.
+* [RAHUL NAIK] Discuss Project: Review the project scope and commercials with father.
+* [RAHUL NAIK] Provide Feedback: Respond to the group with feedback or approval on the MOU and project scope.
+
+
+
+
+Details
+* Initial Meeting and Setup Introduction: The meeting began with Bhargav Naidu joining late and addressing initial audio issues. Sandy Kadyan then requested RAHUL NAIK to explain their current setup and the areas where they require assistance, bypassing a deep dive into the technical setup details (00:00:00).
+* Company and Business Overview: RAHUL NAIK identified the company as Ultraill Systems, a family manufacturing and service business that also handles projects, currently managed by them (00:00:00). The business operates across five verticals: air filters, air handling units (AHU), cooling coils (upcoming), clean room equipment, projects, and validation (00:01:20).
+* Business Model and Target Customers: The primary business model is B2B, serving target customers in the pharma sector, hospitals, corporate buildings, and defense/government offices requiring centralized air handling units (00:01:20).
+* Client Acquisition for Air Filters: Air filters are a consumable product, and approximately 60% of their revenue comes from old clients with repeat business. The remaining 40% is generated through SEO, word of mouth, or contractors (00:02:23).
+* Client Acquisition for AHU and Projects: AHU is a value product but not repetitive for end-users, although it is repetitive for contractors working on multiple sites (00:02:23). Projects, which can involve values up to 5 CR, are generally one-time engagements, where receiving a lead is the major entry point (00:03:19).
+* Validation Business and Repetitive Revenue: The validation vertical is a repetitive type of business, not a consumable, where the service involves testing if clean rooms or pharmaceuticals adhere to ISO standards (00:03:19). This vertical is approximately 70% to 80% repetitive, with clients requiring testing every 6 months or 1 year per their SOP (00:04:25).
+* Workforce and Current Software Infrastructure: The total workforce is between 140 and 150 people, including staff and all others. The company uses ERPNext as their combined ERP and CRM system for generating leads, opportunities, quotations, and sales orders (00:04:25).
+* Marketing Channels and SEO Effectiveness: While RAHUL NAIK acknowledged the B2B sector requires developing long-term relations, which often happen via offline channels, they also noted that SEO is providing a very good response and regular calls (00:05:32). They clarified that they only focus on organic SEO traffic via keywords, not Google Ads (00:06:27).
+* Sales Funnel Entry Points and Market Positioning: Air filters and validation services act as entry points to new locations or clients. The company is positioned as a one-stop solution, sometimes even selling products outside their normal business line if a client requests a single vendor (00:08:23) (00:32:18).
+* Automation Challenges in Pre-sales and Projects: RAHUL NAIK highlighted a bottleneck in pre-sales and project offer creation, noting that volume has increased significantly recently, possibly due to SEO or word of mouth (00:09:16). Project offers are complex, involving multiple engineering calculations like heat load and air changes per hour, leading to delays and being a current area of deficiency (00:10:12).
+* Project Workflow and Pricing Methodology: When a project inquiry arrives, the team first assesses its feasibility within their domain. They use set prices for components like clean room doors and panels, but they must calculate costs, such as ducting price based on gauge, and subcontract components from external vendors (00:11:20).
+* Automation and Workflow Optimization for Pricing: Sandy Kadyan suggested that workflows for providing prices could be automated by mapping the qualification process, set prices, and quickly collecting quotes from subcontractors. RAHUL NAIK confirmed that they maintain constant contractor prices for two to three months before changes are necessary (00:12:13).
+* Current Bottlenecks and Need for Automation: RAHUL NAIK stated they had previously cleared major bottlenecks in air filter pricing and drawing generation using customized Excel calculations and macros, so this area is currently handled (00:17:50). The current critical bottlenecks are now managerial and operational, relating to communication gaps and the need for faster execution, which is crucial as competitors who started later have achieved 2X revenue growth (00:19:33) (00:31:11).
+* Performance Analysis and Reporting Issues: A key issue is assessing the performance of the 140+ staff, ensuring they are productive and efficient, which has proven difficult for them to analyze manually or through their current systems (00:20:48). They currently rely on daily reports submitted via Google Sheets and ERP, but they lack a system to properly map and analyze the productivity of the team (00:23:13).
+* Proposed Solution: Automated Reporting and KPI Tracking: Sandy Kadyan proposed building an automated system around reporting that categorizes resources into high, medium, and low leverage roles with set daily and weekly KPIs (00:26:27). The proposed system would provide the owner with immediate, color-coded (red, yellow, or green) email reports, alerting them to performance issues without constant personal involvement (00:27:52).
+* Execution and Timeframe for Automation: Sandy Kadyan noted that building automations on their open-source ERPNext system would be very easy and they need to decide on a completion timeline. RAHUL NAIK emphasized the urgency of execution to move past the "firefighting" stage, noting that they currently convert 14% of offers by value, which is already above the industry average (00:28:54).
+* Focus Areas for Manufacturing Improvement: RAHUL NAIK quoted the three core focus areas for a manufacturing industry: increasing revenue, reducing operational expenses, and reducing inventory (00:43:49). They confirmed that their immediate focus is on reducing operational expenses and managing inventory more efficiently (00:44:34).
+* Inventory Automation Requirements: RAHUL NAIK required automated inventory management, specifically a system that would automatically trigger a purchase order or at least a highlight notification when stock levels drop below the reorder level (00:44:34). They explained that ERPNext has auto-email notifications, but the problem is ensuring the purchase person takes timely action amidst 1,700 to 1,800 inventory items (00:46:26).
+* Initial Project Scope and Timeline: Sandy Kadyan suggested that the size of the team (150 people across various verticals) necessitates a careful, vertical-by-vertical approach. They estimated that understanding the internal workflows would require one sprint (one month), and the entire end-to-end system could be completed in at least two sprints, with a working prototype visible within the first month (00:50:25).
+* Revenue Goals and Improvement Philosophy: RAHUL NAIK emphasized the desire for the organization's revenue to double or continuously increase, driven by a philosophy of being "better than yesterday". Sandy Kadyan agreed to provide a minimal viable setup, which will allow for reviewing, fine-tuning, and providing feedback, along with a system aimed at solving most operational problems. They discussed the goal of continuous improvement, summarized by RAHUL NAIK's phrase, "better than yesterday and less than tomorrow" (00:57:09).
+* Project Scope, Timeline, and Commercials: Sandy Kadyan outlined a plan to deliver the full system in two sprints, translating to about two months' time, with a minimum viable setup provided in the first month. Commercial charges are based per sprint, with the usual charge being two lakhs per sprint, totaling four lakhs for the two sprints (00:57:09). The payment structure proposed is 50% upfront at the project start and the remaining 50% upon completion of the entire setup (00:59:00).
+* Process Understanding and Value Proposition: Sandy Kadyan expressed appreciation for the detailed information provided regarding the organization's setup, including the five to six verticals, which has given them a better understanding of how the organization plans to scale. They believe they can offer additional value in scaling the revenue side of the business. The goal is to complete the project before the two sprints are over, although two sprints are allocated as a precautionary measure (00:59:00).
+* Next Steps and Agreement Formalization: The proposed next step is to create a Memorandum of Understanding (MOU) based on the discussion, which will then be shared with RAHUL NAIK (00:59:00). RAHUL NAIK committed to discussing the proposal with their father and reverting to the team. Sandy Kadyan and Bhargav Naidu offered to visit RAHUL NAIK's place if that would facilitate the discussions (01:00:22).
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
+📖 Transcript
+Apr 17, 2026
+Ultrafil air systems Discovery Meet - Transcript
+00:00:00
+ 
+Sandy Kadyan: Hello. Are you able to hear
+Bhargav Naidu: Hey guys, I'm really sorry. I'm really sorry. I'm a bit late today.
+Sandy Kadyan: me?
+Bhargav Naidu: Hey all, all good. How are you? All good. Can you hear me? Uh I'm not able to hear you guys. Especially Rahul, I'm not able to hear you. Sandy, can you hear Rahul?
+Sandy Kadyan: No, man. I can hear you.
+Bhargav Naidu: I'm talking to Rahul. Can you hear? Yeah.
+RAHUL NAIK: Hello.
+Sandy Kadyan: No,
+Bhargav Naidu: Yeah. Yeah. Perfect.
+Sandy Kadyan: it's
+RAHUL NAIK: Yeah. Yes,
+Bhargav Naidu: Yes.
+RAHUL NAIK: sir.
+Bhargav Naidu: So, uh Sandy have given an idea about Rahul if I'm not wrong. Clearly.
+Sandy Kadyan: okay. Uh instead of Bharav kind of uh going about your setup and all, we would like you to kind of explain as to what all areas you want our help on, right? And what is the current setup looking like?
+RAHUL NAIK: So uh basically to start with ultraill systems is a company name and it is a family business started by my
+ 
+ 
+00:01:20
+ 
+Sandy Kadyan: Okay.
+RAHUL NAIK: father and I'm handling it currently.
+Sandy Kadyan: Mhm. Mhm.
+RAHUL NAIK: So this is a manufacturing come service business and also we do projects. So we have five verticles air filters,
+Sandy Kadyan: Mhm.
+RAHUL NAIK: air handling units, cooling coils that is upcoming clean room equipments,
+Sandy Kadyan: Mhm.
+RAHUL NAIK: uh projects and validation. Yeah. So these are the uh verticals and validation comes under service.
+Sandy Kadyan: Okay.
+RAHUL NAIK: We have instruments and we go to clients uh place and we do all the testing and all and regarding all
+Sandy Kadyan: Okay.
+RAHUL NAIK: other things we are into product manufacturing products.
+Sandy Kadyan: Okay.
+RAHUL NAIK: So we do manufacture and uh we give it to our target customers like pharma,
+Sandy Kadyan: Mhm.
+RAHUL NAIK: hospitals and uh you can say corporate buildings and all others like wherever there is an centralized air handling unit required even for the defense sector or government offices and all.
+Sandy Kadyan: Okay.
+Bhargav Naidu: Okay.
+Sandy Kadyan: So I do think most of your setup is B2B only right?
+RAHUL NAIK: Correct.
+ 
+ 
+00:02:23
+ 
+Sandy Kadyan: So uh h how are you going about acquiring clients and all? Is it through referral existing customers? How is that thing working out and all your verticals?
+RAHUL NAIK: Yeah. So uh orders and all uh our air filter orders are like regular like it is a consumable product air filter. So consumable product.
+Sandy Kadyan: Yes.
+RAHUL NAIK: So it will uh revenue generated is approximately 60% is of old clients like repeated business and then 40% from uh e SEO word of mouth or
+Sandy Kadyan: Okay.
+RAHUL NAIK: through uh we can say contractors who take our products and then they give to uh their end customers and then their end customers find our name our label on the product and then they call us back.
+Sandy Kadyan: Okay.
+RAHUL NAIK: So it is how it regarding ahu it is a value product
+Sandy Kadyan: Okay.
+RAHUL NAIK: but it is not a repetative uh yes but for contactctors it is repetitive because they do multiple sides.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: So for next side for other site for like anywhere in the like uh their projects
+ 
+ 
+00:03:19
+ 
+Bhargav Naidu: Okay.
+RAHUL NAIK: they refer but if it is a end user it is not repetitive.
+Sandy Kadyan: Yes.
+RAHUL NAIK: So it is a value product and then cooling coil again it is a repetitive those who are into manufacturing air handling unit they buy it regularly we have not started it but I'm just telling you and
+Sandy Kadyan: Okay.
+Bhargav Naidu: Yeah.
+RAHUL NAIK: projects that is one time uh for a uh pharma or clean room setup that
+Sandy Kadyan: Mhm. Yeah.
+RAHUL NAIK: we do so just the major thing is when we get a lead that's
+Sandy Kadyan: Yeah.
+RAHUL NAIK: it like that is how we go inside and no more like marketing
+Sandy Kadyan: Okay.
+RAHUL NAIK: because the project values So like 2CR, 3 CR, 4CR, 5CR, maybe 50 L also.
+Sandy Kadyan: Yes. Yes.
+RAHUL NAIK: But it is just one time because they the project for one time.
+Sandy Kadyan: Yes.
+RAHUL NAIK: Regarding validation, it is also a consumable uh kind of business.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: Uh it is a repetitive type of business, not consumable. So uh basically validation is like testing whether the given clean room or the pharmaceutical is working in the ISO standards or not.
+ 
+ 
+00:04:25
+ 
+Sandy Kadyan: Okay.
+RAHUL NAIK: So they have set standards ISO standards so that they have so much of particle so much of air flow in the unit and also some parameters. So they require as per their SOP every 6 months or every 1 year it
+Sandy Kadyan: Okay.
+RAHUL NAIK: is almost I can say 70 to 80% repetitive
+Sandy Kadyan: Okay. Validation is 70 to 80% repeat.
+RAHUL NAIK: yes
+Sandy Kadyan: Okay. Other than this.
+RAHUL NAIK: our total work force I would say is like around 140 to 150
+Sandy Kadyan: Okay.
+RAHUL NAIK: including staff and everyone.
+Sandy Kadyan: Okay. And operation wise uh now how are the operations kind of handled? Is it manual or how do you go about
+RAHUL NAIK: uh so basically regarding our software structures and all we are using ERP next as our uh
+Sandy Kadyan: it?
+RAHUL NAIK: ERP and CRM both as in same.
+Sandy Kadyan: Okay.
+RAHUL NAIK: Yeah. So uh we do generate leads opportunity and then convert into quotations offers and
+Bhargav Naidu: Oops.
+RAHUL NAIK: then make it into sales order sales invoice everything in ERP itself and
+ 
+ 
+00:05:32
+ 
+Sandy Kadyan: Yes, it's your CRM too, right?
+RAHUL NAIK: foring we are using as of now Google sheet but soon we'll shift on
+Sandy Kadyan: Yeah.
+RAHUL NAIK: ERP yeah and for marketing as it is
+Sandy Kadyan: Okay.
+RAHUL NAIK: B2B we need to develop relations with the pharmaceutical and uh like it is a like long-term process it is
+Sandy Kadyan: Yeah, it's mostly in offline channels,
+RAHUL NAIK: just not like correct authentic channels but even with on
+Sandy Kadyan: I guess. Not in online channels as
+RAHUL NAIK: with respect to online channels we have done SEO also so we had we have been getting a very good response of
+Sandy Kadyan: much.
+RAHUL NAIK: SEO we have been getting regular calls of SEO that we have we found your website on Google we know about your products on Google and all even SEO is working uh we
+Sandy Kadyan: Mhm. Okay, that's nice.
+RAHUL NAIK: are not much into Instagram because B2B like rarely it gets its interest in Instagram but yes we are there on LinkedIn so that is also
+Sandy Kadyan: Mhm. Nice. And when you're talking about SEO, are you talking about Google ads or are you talking about organic
+ 
+ 
+00:06:27
+ 
+RAHUL NAIK: No, no,
+Sandy Kadyan: traffic?
+RAHUL NAIK: no. Only SEO, not Google Ads.
+Sandy Kadyan: That means you guys are only focusing on keywords and that keywords are kind of bringing traffic to your website and then from there people are booking calls.
+RAHUL NAIK: Yes,
+Sandy Kadyan: Okay.
+RAHUL NAIK: correct.
+Sandy Kadyan: Okay. So this is what we understood till now. Correct me right?
+Bhargav Naidu: Thank you.
+Sandy Kadyan: Uh that it's a family setup right mostly air filters. You with me?
+RAHUL NAIK: Yes.
+Sandy Kadyan: So family setup mostly air filters and there are five verticals uh on
+RAHUL NAIK: Yes.
+Sandy Kadyan: which you guys are currently working on. First one is uh the air filter thing right and there mostly 60% of your business comes from old client and 60% remaining 40% which is there some of it still comes from word of mouth and SEO is working for you in this channel air
+RAHUL NAIK: And also uh maybe like we cannot say word of mouth but a referral
+Sandy Kadyan: filters
+RAHUL NAIK: maybe maybe we cannot say also referral but uh they directly contact the OEM like if you are like having some part inside our like washing machine and all for example like there is some
+ 
+ 
+00:07:32
+ 
+Sandy Kadyan: Yeah.
+RAHUL NAIK: uh if I may say if there's a air filter air purify are installed in our
+Sandy Kadyan: Mhm.
+RAHUL NAIK: car. So I don't want to get it from Toyota. I would would like to get it from the OEM directly so that I can save on price or I can have directly
+Sandy Kadyan: Yes.
+RAHUL NAIK: from the OEM. show in that
+Bhargav Naidu: Okay.
+Sandy Kadyan: Yeah. So uh generally u when it comes to OEM uh you
+RAHUL NAIK: way.
+Sandy Kadyan: have reach over the ground channels people who kind of prefer or who change these filters and all.
+RAHUL NAIK: Yes.
+Sandy Kadyan: Oh. Oh that is what you're calling.
+RAHUL NAIK: Maintenance team.
+Sandy Kadyan: Yeah that is what you're calling word of mouth.
+RAHUL NAIK: Okay. Yeah, that that could be.
+Sandy Kadyan: Okay.
+RAHUL NAIK: And also like uh uh we have our competitors and our customers. Some of the competitors are our customers, some of the customers are our competitors like other ways because we are in the whole supply chain uh like as an air
+ 
+ 
+00:08:23
+ 
+Bhargav Naidu: All
+Sandy Kadyan: Yes.
+RAHUL NAIK: handling unit is made of multiple things including air filters and cooling coil. So even we make juice so that we are their competitors.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: We do projects but project those who do projects they don't make all other things.
+Sandy Kadyan: Yes.
+RAHUL NAIK: So we give it to them. So it is of a different kind of uh industry we can say like we are
+Sandy Kadyan: Okay. So, but it's nice you have covered it all the way.
+RAHUL NAIK: operating.
+Sandy Kadyan: You're doing projects also. You are having an entry point of air filters too.
+Bhargav Naidu: right.
+Sandy Kadyan: You're doing clean rooms too and validation two. You are having that repeat setup and all cuz you're doing testing too, right?
+RAHUL NAIK: Yes.
+Sandy Kadyan: So that's cool.
+RAHUL NAIK: So basically air air filters and validation is the entry point as you just said that is the entry point if we
+Sandy Kadyan: Yes.
+RAHUL NAIK: are going to new locations even we have done uh at this Apple manufacturing in India Bangalore Foxcon so that is the entry point some other
+ 
+ 
+00:09:16
+ 
+Sandy Kadyan: Yeah.
+Bhargav Naidu: Okay.
+RAHUL NAIK: person some other contractor takes the order he subcontracts us to us then we go there and that becomes our entry
+Sandy Kadyan: Mhm.
+RAHUL NAIK: point in that way even we had like in Coca-Cola PNG
+Sandy Kadyan: Mhm. Okay. So the
+RAHUL NAIK: like other all the and major things major
+Sandy Kadyan: Okay. So perfect.
+RAHUL NAIK: MC's
+Sandy Kadyan: Setup wise a lot of things are happening. Now when it comes to automations, right? What all things are you currently looking for?
+RAHUL NAIK: uh what uh like to give a brief idea about my people who give who are into the pre-sales like uh in the what do we say in the offers and all so for air
+Sandy Kadyan: Yes.
+RAHUL NAIK: William I have only one for projects also I only one monitored by my sister uh
+Sandy Kadyan: Mhm.
+RAHUL NAIK: likely.
+Sandy Kadyan: Okay.
+RAHUL NAIK: So because like uh till uh last 3 or 4 months it was like volume was less for project inquiries but I because of SEO or word of mouth I don't know how it has
+ 
+ 
+00:10:12
+ 
+Sandy Kadyan: Yeah.
+RAHUL NAIK: gone short up so it has become so high so uh like
+Bhargav Naidu: Oops.
+RAHUL NAIK: uh still we are like less over there to make one offer for project it will take time for uh for an offer to make uh like for the project segment. Because there are so many things involved not only one.
+Sandy Kadyan: Yeah. Yeah.
+RAHUL NAIK: If it is a filter then just it is a product but a project contains all other things including piping including insulation,
+Sandy Kadyan: Yes.
+RAHUL NAIK: ducting, air handling unit. So there are many things involved.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: uh that is why there I am finding uh this one because there are like lot of engineering things also to be done like calculating the heat load then uh air changes per hour the all
+Sandy Kadyan: Mhm.
+RAHUL NAIK: the industrial technical terms like clean room and all.
+Sandy Kadyan: Yes. Yeah.
+RAHUL NAIK: So there it is like becoming a lacon now or we may say we are facing a
+Sandy Kadyan: Yes.
+RAHUL NAIK: delay.
+Sandy Kadyan: So currently what's your workflow like when it comes to projects as to a project inquiry comes to you guys right then how do you guys go about it?
+ 
+ 
+00:11:20
+ 
+RAHUL NAIK: First we study like if it is it feasible in our like domain or not. If it is feasible then we go through it and uh then we uh like there are like some
+Sandy Kadyan: Yes.
+RAHUL NAIK: set prices like for doors clean room doors, clean room panels, ceiling panels and uh ducting.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: So like then in ducting then there are three types of ducting if I use G then there is 24 gauge
+Sandy Kadyan: Okay.
+RAHUL NAIK: 22 gauge 20 gauge even there is 16 gauge like for critical applications. So I need to calculate the ducting price and then select the ducting price from there like I have to subcontract it from
+Sandy Kadyan: M
+RAHUL NAIK: my other vendors because I cannot make everything here. So there are a lot of things involved regarding that.
+Sandy Kadyan: yes.
+RAHUL NAIK: I'm just the plain examples because you could be understanding all these ducting and panels and all but there are like lot
+Sandy Kadyan: Yeah.
+Bhargav Naidu: Oops.
+RAHUL NAIK: more things like manifold and other all technical things where uh it requires so much of calculation.
+ 
+ 
+00:12:13
+ 
+RAHUL NAIK: Yes. And also for selecting a product it is not just take they have given this product and you have to give it like that comes when the BOQ is very clear a consultant is involved then it is very easy but if we have to do it from scratch it becomes a total monotonous job and it
+Sandy Kadyan: M.
+RAHUL NAIK: takes a lot of
+Sandy Kadyan: Yes.
+RAHUL NAIK: time.
+Sandy Kadyan: Okay. So this is where I see workflows kind of being kind of automated when it comes to providing prices and all if you do have. So we can map uh projects with uh the qualification thing which happens in the starting and then your set prices and then uh shooting out messages to your contractors who you already subcontract things to and then collecting quotes and all and then creating. Okay. So this is one area which can be worked
+RAHUL NAIK: So but uh we don't regularly take contractor prices.
+Sandy Kadyan: on.
+RAHUL NAIK: We take them and then for two or 3 months we keep it constant and then if there is a change then only we change in the prices or or else we don't
+ 
+ 
+00:13:21
+ 
+Sandy Kadyan: Okay. And you were also saying when it comes to pre-sale,
+RAHUL NAIK: change.
+Sandy Kadyan: right? Uh your current offer which is related to project that has kind of taken off.
+RAHUL NAIK: There is an increase like earlier we used to have per day one or two or three maximum four nowadays like uh we are having four or five and that two like
+Sandy Kadyan: Mhm.
+RAHUL NAIK: huge inquiries four or five sometimes it may go for eight also and
+Sandy Kadyan: Okay. Ticket size is higher.
+RAHUL NAIK: even nine also and then there are components so all the things so project I mean like we have given this consolidated name for projects for aos cooling coils doors panels and all and all the other project related because they are used in project.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: So even a a will come under project.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: Filter will also come under project. But filter we are not giving as a project.
+Bhargav Naidu: Mhm.
+RAHUL NAIK: But it is it is we are giving for replacement also. Like if someone has done a project like it has been 5 years or 2 years so after 2 years the filter got choked up so they have to replace.
+ 
+ 
+00:14:22
+ 
+Sandy Kadyan: Yeah.
+RAHUL NAIK: So we give it in that sense also.
+Sandy Kadyan: So does validation also comes in projects uh sub part of
+RAHUL NAIK: Uh no that that is depending on like the customer like if he's uh handing
+Sandy Kadyan: projects?
+RAHUL NAIK: over the project then he has to do validation or else those who are already established in
+Sandy Kadyan: Uh yes.
+RAHUL NAIK: pharma so they have to get their areas verified every 6 months or 12 months according to their
+Sandy Kadyan: Oh okay.
+RAHUL NAIK: SOP.
+Sandy Kadyan: Yeah. Farmer is one sector that this thing would be consistent, right?
+RAHUL NAIK: Yes, there are like critical rules standing should be followed stringent
+Sandy Kadyan: Yeah.
+RAHUL NAIK: because like even if in the validation like I may say a case in uh like one of the pharmaceutical we work with they had just got one area fail and then they had to recall a total batch of two 25 crores.
+Sandy Kadyan: Oh,
+RAHUL NAIK: So that stringent and that critical like the pharma
+Sandy Kadyan: nice.
+RAHUL NAIK: is
+Sandy Kadyan: So uh is it seasonal the uh as we are into air filters and all uh is it seasonal?
+ 
+ 
+00:15:31
+ 
+RAHUL NAIK: no
+Sandy Kadyan: No. Demand is consistent throughout the year.
+RAHUL NAIK: yes sometimes it may be like on the higher side but uh it doesn't give any
+Sandy Kadyan: Okay.
+RAHUL NAIK: signal that uh in April or in October there will be much of the demand But uh like I can say in terms of uh demand or maybe like closing or maybe budgeting things uh it could be March, April or February, March because they want to close the bills,
+Sandy Kadyan: Yes.
+RAHUL NAIK: they want to clear the budget and all say that they they just pressurize that give us fast
+Sandy Kadyan: Yes.
+RAHUL NAIK: delivery and all.
+Sandy Kadyan: Yeah. So apart from that there's demand through and through.
+RAHUL NAIK: Yeah.
+Sandy Kadyan: Nice. So uh let's circle back to automation as an area. We do have a much better idea of your setup now. Thank you. So uh when it comes to automations right uh where do you so uh I'll explain how do we work right based on your particular requirement uh we do make personalized setups personalized workflows cuz every business is different right uh your business has unique requirements and all and we can't install pre-existing setups which are there directly into your setup.
+ 
+ 
+00:16:44
+ 
+Sandy Kadyan: So based on your requirement, your workflow, we'll decide as to how much time would it take to kind of build those workflows for you.
+RAHUL NAIK: Definitely.
+Sandy Kadyan: Generally uh we divide uh the installation phase or automation phase into sprints. One sprint is made up of a month, four weeks, right? So we start with a month time frame, right? So whatever automation requirement you would be having in your entire setup, your setup is very big. already five different pipelines are going on and those five pipelines also have subpipelines subcategories right so instead of thinking about the entire setup right let's pick a bottleneck which is kind of urgent now okay and in that bottleneck let's decide how much how many sprints uh will it take from us will uh so if you can uh explain me about the bottleneck area which you're currently looking at which you need to solve within this coming one month so so that we can kind of break it down and then we can go about okay how do we automate it or how do we bring in that AI layer how do we make the system smart
+ 
+ 
+00:17:50
+ 
+RAHUL NAIK: So actually like uh before I uh just put this on the Instagram like I am interested in your uh this one uh product or like AI automation uh I had cleared two of my
+Sandy Kadyan: Yes.
+RAHUL NAIK: major bottlenecks in my filters air filters particularly. So it is a bulk kind of thing. So every day I get around 15 to 20 inquiries. So for every they have to write in ERP the description and all everything they have to check whether it is feasible or not
+Sandy Kadyan: Okay.
+RAHUL NAIK: and that one person is doing and what I had done is like uh for them to make an offer there are like all customized sizes. If it is standard size there is no need of working out any price or something.
+Sandy Kadyan: Yes.
+RAHUL NAIK: This is a standard price list. They just put it and then they just forward it. And for OEMs we have directly given our prices.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: Sir don't ask us every time you take this price list you release orders on based on this price list so and so is the discount.
+ 
+ 
+00:18:37
+ 
+Sandy Kadyan: Yeah.
+RAHUL NAIK: So then there was a problem of uh this tailor made products.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: Then tailor made products I had designed the boom in excel and then I had done some calculations and then given the
+Sandy Kadyan: Yeah.
+RAHUL NAIK: prices for the for them and also there was one one more problem that uh
+Sandy Kadyan: Yes.
+RAHUL NAIK: like as we are into like multiple things our designers are mostly occupied in project section because that is a more critical and engineered subject than a filter because filter is just like a bulk managing or a commodity we can say. So what what I had done is uh I had converted in into a excel converter. So I would input in excel just the bare minimum even a layman can give input there and then just press a
+Sandy Kadyan: Okay.
+RAHUL NAIK: button and with all the macros and all it will generate a drawing. So there is a problem major problem in generating a drawing for a filter
+Sandy Kadyan: Okay.
+RAHUL NAIK: per project.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: However it is like for every project is different.
+ 
+ 
+00:19:33
+ 
+RAHUL NAIK: So we cannot automate that for filters like the layout is same just ABC we name it as length width height as ABC and then put all the other numbers under them and then the whole marking the center holes how much is the from it from center or from corner like there are multiple things involved
+Sandy Kadyan: Yeah.
+RAHUL NAIK: and the uh like the ratings the performance the grade the class there are multiple things involved so I had done that also that those were my major bottlenecks but regarding my other bottlenecks if I could Okay. Uh I would say it would be much on the managerial level or the operational level. So uh like there is a communication gap or I can say uh things
+Sandy Kadyan: Yeah.
+RAHUL NAIK: don't move fast even though like uh we are considered the fastest in the industry.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: Uh so we want to be more fast and also like no one in the industry like uh in the same industry for air filters particularly because it is a bulk manuction. I'm talking more about that uh projects and all however like uh we do it on like case to case basis a chos projects and all of the things validation that is a continuous ongoing process people come there are set set customers uh there are four teams required four five teams required they go to the customers they
+ 
+ 
+00:20:48
+ 
+RAHUL NAIK: do and they come back there is no much thinking or much involvement or manufacturing involved
+Sandy Kadyan: Okay.
+RAHUL NAIK: there so uh in terms of air filters there like uh we we keep even 2,000 3,000 filters of stock. Even though our like monthly production of air filters is 8,000 filters, we keep stock. Even the stock gets stocked out. But uh like even if we are this fast, people ask us to be more fast. And we want that.
+Sandy Kadyan: No, no,
+RAHUL NAIK: We don't want to lose the opportunity because if I could just process 100 orders instead of 20 or 30 or 50 then my turnaround time will be much more less and my revenue will go
+Sandy Kadyan: no.
+RAHUL NAIK: up.
+Sandy Kadyan: Yes.
+RAHUL NAIK: That is what we are looking at on the operational level and managerial level and thing I could say like I have 140 people uh so like there are like
+Sandy Kadyan: Okay.
+RAHUL NAIK: 70 or 80 people in the like workers and skilled semi-skilled and all others are in staff marketing and all so to carry out their performance like are they giving their eight hours or 9 hours of work that is that worth it or are
+ 
+ 
+00:21:59
+ 
+Sandy Kadyan: Mhm.
+RAHUL NAIK: they really working for the company or what output they are giving or what outcome is like I'm getting from that employee if I'm paying him some 10 rupees so I expect an output around 20
+Sandy Kadyan: Mhm.
+RAHUL NAIK: to 25 rupees from him so that I can cover his salary and other expenses so in that
+Sandy Kadyan: Yes.
+RAHUL NAIK: way so I uh like there are like many things
+Sandy Kadyan: Yeah.
+RAHUL NAIK: we have done to calculate the performance using Google sheets and then giving it to cloud and then analyzing so we have done that but still we are not that uh confident that we could analyze the performance by like uh with using AI and all and even manually also because I myself cannot check everyone because I have my own
+Sandy Kadyan: Yes.
+RAHUL NAIK: works I have to focus on expansion certifications product developments I
+Sandy Kadyan: Yes.
+RAHUL NAIK: can do that by myself and then we have appointed some people we have appointed other consultants also but there was a lot of uh gap I don't know like uh they couldn't do because maybe our people are like not cooperating and all and maybe like they are cooperating also but they could not produce such output that we could analyze them like the thing happens is like every
+ 
+ 
+00:23:13
+ 
+Sandy Kadyan: Yeah.
+RAHUL NAIK: April then there is a like uh chaos key uh How much increment we have to give? What is the percentage? How he has worked the to how to analyze and how to give increment KPI
+Sandy Kadyan: Yes.
+RAHUL NAIK: everything we tried but there is no proper uh thing
+Sandy Kadyan: Yes.
+RAHUL NAIK: there
+Sandy Kadyan: How is reporting happening currently? Is it happening daily, weekly? How are you collecting reports from your team? It's happening daily.
+RAHUL NAIK: daily. Yes.
+Sandy Kadyan: So daily people are uh giving their reports on Google Sheets or
+RAHUL NAIK: Google sheets and also in ERP.
+Sandy Kadyan: what
+RAHUL NAIK: ERP forms and Google sheets. marketing is on Google sheet because they are on the move and others who are in office they give it on ERP
+Sandy Kadyan: ERP has this reporting section and there you already have KPIs in place which you want to
+RAHUL NAIK: we customize actually there is a like there's a lot in ERP we are like maybe using 10 or
+Sandy Kadyan: measure.
+ 
+ 
+00:24:04
+ 
+RAHUL NAIK: 15% or 20% of the ERP's uh capacity uh but again like uh I feel there's uh like there are people who do it but they do only on the routine
+Sandy Kadyan: Mhm.
+RAHUL NAIK: basis we are doing this sales order make quotation sales order manufacture invoice and then that that's it nothing more should be utilized on ERP like ERP has
+Sandy Kadyan: Yeah. Okay.
+RAHUL NAIK: many things like uh even it has an HR module payroll module so we are not working uh currently with that and also uh I would say
+Sandy Kadyan: Okay.
+RAHUL NAIK: uh basically to say it in a short uh line I could say that we are just using it for the operational Not for analyzing or not for like doing it much of doing much of it from
+Sandy Kadyan: Got it. So,
+RAHUL NAIK: it.
+Sandy Kadyan: ERP is related to operations. marketing is happening on Google Sheets right and currently reporting wise people are giving you daily reports but then you're not able to map those reports on time or uh there's no system to it right cuz you are occupied in your things and all and then when you suddenly sit on those reports and all you two are not able to understand clearly that is it productive is my team being productive are they efficient are they operating at 10 on 10 or at what level they're currently on okay that's one side and the second side where you're looking uh for is customization most of it you have done through Excel
+ 
+ 
+00:25:32
+ 
+Sandy Kadyan: sheets the inflowing
+RAHUL NAIK: No, that is just for uh this one for pricing and
+Sandy Kadyan: orders yeah inflow yeah before orders
+RAHUL NAIK: before
+Sandy Kadyan: uh let's say an inquiry comes in right so uh and an inquiry is something uh which needs customization is it happening automatically now is that thing sorted
+RAHUL NAIK: That is happening for air filters. But for project again inquiry is different for every project. So we cannot like guess
+Sandy Kadyan: Yes. Yes.
+RAHUL NAIK: anything.
+Sandy Kadyan: But for projects you you have sorted it through macros on Excel, right? And drawing is also there. Okay. So that part we don't need to touch. I guess now reporting part and your ERP part, right? As to how can we take the juice out of ERP. We can work on that. I guess we can start there.
+RAHUL NAIK: H. So our ERP is ERP next. It is an open source ERP and uh we can it it also has an
+Sandy Kadyan: Uh-huh. It's a CRM, right?
+ 
+ 
+00:26:27
+ 
+RAHUL NAIK: inbuilt CRM.
+Sandy Kadyan: Okay.
+RAHUL NAIK: Yeah.
+Sandy Kadyan: And is it is it uh is the system made for manufacturing or for your type of
+RAHUL NAIK: Yes,
+Sandy Kadyan: businesses?
+RAHUL NAIK: actually uh like it has the all the modules like even accounting, operations, sales, marketing, HR, quality,
+Sandy Kadyan: Okay.
+RAHUL NAIK: everything else.
+Sandy Kadyan: reporting when it when operations are there how is reporting on the system.
+RAHUL NAIK: It is like we have created a custom form where people their reporting like what they have
+Sandy Kadyan: Yes.
+RAHUL NAIK: done every two hours their output or
+Sandy Kadyan: Yes. But so every two hours uh are people filling
+RAHUL NAIK: something.
+Sandy Kadyan: it?
+RAHUL NAIK: Some of them are and some of them they are not filling it but uh again like because of lack of followup or I'm not getting involved in that because of my time and all.
+Sandy Kadyan: Yes.
+RAHUL NAIK: So there is a problem there.
+Sandy Kadyan: Okay. So I think we can form a system around reporting where you don't need to get involved your time. Uh so generally for other businesses who do come to us for uh this thing right operations uh or bringing efficiency in operations or reporting we generally categorize their setup or their uh resources uh which they're using for going about their setups into uh high level categories as to people whose action would leverage the business most medium level and low level and then we do set up KPIs for all these roles.
+ 
+ 
+00:27:52
+ 
+Sandy Kadyan: Okay. And these roles also if they're performing, if they're hitting daily KPIs, weekly KPIs, we give reports to business owners in terms of red, yellow or green. Okay, that way every day in the end of the day, let's say you get a report on your email stating high leverage people who are there in my setup, right? They did hit these many KPIs and currently it's yellow. That means okay, I need to focus. And if it stays yellow for 2, three days, you'll be notified again, right? Okay, you need to have a meeting with these people. You need to get them together and you need to solve their bottleneck. they're not able to solve their bottleneck or they're not focused right let's say when it comes to uh low leverage people okay there let's say it's green for 4 days and yellow for remaining 2 three days which are there okay there also the same thing happens so whatever does move your business needle if the most important KPI for you is bringing in cash flow right so the people who are affecting cash flow a lot okay uh reporting would be focused on those people more so yeah we can build a system around this so you're ERP is an open source setup.
+ 
+ 
+00:28:54
+ 
+RAHUL NAIK: Yes.
+Sandy Kadyan: So if it's an open source setups then building automations on top of this would be very easy. Okay. And what kind of timeline do you have uh for this thing making reporting systems and all? Okay. Making sure these reporting systems are working properly. How much time uh do you want or how fast do you want this project to be completed? Based on that, we'll decide how many.
+RAHUL NAIK: like we are trying it from long.
+Sandy Kadyan: Yes.
+RAHUL NAIK: Uh but like what happens is like as we have so many verticals and then there is like firefighting execute bill like it is
+Sandy Kadyan: Yeah.
+RAHUL NAIK: the SOCSL loop so that like we are entangled in that
+Sandy Kadyan: Yes.
+RAHUL NAIK: we want to get out from that because we have a lot of potential as we like as with respect to our brand name with respect to the inquiries what we are getting with respect to like the status
+Sandy Kadyan: Yeah.
+RAHUL NAIK: in the market everything is hold very well but only execution is the
+ 
+ 
+00:29:58
+ 
+Sandy Kadyan: Yes. Yes.
+RAHUL NAIK: major thing like if I could say in terms of numbers I could just uh tell you that out of like uh uh I have just converted 14% of my offers with respect to value. So you just imagine that how like what is the uh inquiry
+Sandy Kadyan: Oh,
+RAHUL NAIK: volume
+Sandy Kadyan: okay. 14 is decent for your setup at your scale.
+RAHUL NAIK: 14%
+Sandy Kadyan: It's it's Yeah, it's it's actually better. Usual conversion rate is like 3 to 5%.
+RAHUL NAIK: 1/4
+Sandy Kadyan: Yours is 14. It's It's more than double three times. And on top of this if you are able to implement these reporting systems and all automatically team efficiency so you can double your setup okay whatever you're
+RAHUL NAIK: and also like uh with with respect to even team so uh there are a
+Sandy Kadyan: doing
+RAHUL NAIK: lot of old people also so like they like they have their own saturation level
+Sandy Kadyan: okay
+RAHUL NAIK: key like this is enough for me I'm like yes I'm comfortable here so they don't want to grow upon that or like they are not willing to grow and because of them others are like facing
+ 
+ 
+00:31:11
+ 
+Sandy Kadyan: Yeah.
+RAHUL NAIK: the same or others are like learning the same from them so they are not ready to adopt the new culture Yeah,
+Sandy Kadyan: Yep.
+RAHUL NAIK: as as I'm the second generation, I will have my own ideas to put in the business to make it grow because I could like let it
+Sandy Kadyan: Yes.
+RAHUL NAIK: go as if it it was run traditionally like 10 years ago because the what we say uh the generation or the timeline 10 years ago was completely different than what it is now. Now everyone is going very fast with respect to revenue,
+Sandy Kadyan: Yes.
+RAHUL NAIK: with respect to growth, with respect to manufacturing. Like there are some examples like those who have started after us they have gone 2x of revenue
+Sandy Kadyan: Yes.
+RAHUL NAIK: like in the same manufacturing and we have seen them in front of us.
+Sandy Kadyan: Oh, yes.
+RAHUL NAIK: Like definitely like there are like other parameters also involved like they are in the projects or any other things they have got major projects and then there were game changing and all but that will that that that doesn't mean that we should not get the same or that will not affect us in
+ 
+ 
+00:32:18
+ 
+Sandy Kadyan: Yes.
+RAHUL NAIK: that
+Sandy Kadyan: So currently as demand is not the problem. The only problem is how fast you can execute it. Right.
+RAHUL NAIK: correct
+Sandy Kadyan: And other people your competitors when you're saying they've grown like two three times in very less time. Okay. Uh so mostly they're playing operation game only then cuz demand is already there in
+RAHUL NAIK: So because not doing all these things I am doing all these things because I have an advantage at the same
+Sandy Kadyan: Yeah.
+RAHUL NAIK: time I can say I have a disadvantage. Advantage is that I am a one-stop solution.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: So if anyone wants uh so even like for that matter I have sold refrigerator which is none of my
+Sandy Kadyan: Yes.
+RAHUL NAIK: business to sell. But client has because you are doing all of this I want a single vendor to source everything for me.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: So we have done that we don't help.
+Sandy Kadyan: Yes. Yes.
+RAHUL NAIK: So that is that is and we are in the similar industry.
+ 
+ 
+00:33:03
+ 
+RAHUL NAIK: It is not like uh this is an HBC and then others we are making some chocolates or biscuits or anything else or any uh what do you say in the oil industry or something but it it gives an advantage
+Sandy Kadyan: Yeah.
+RAHUL NAIK: but again disadvantage is like executing and managing all the verticals managing manpower respect
+Sandy Kadyan: Mhm.
+RAHUL NAIK: to that. So that is one of the major concern
+Sandy Kadyan: So, so, so, so let's do this thing, right?
+RAHUL NAIK: we
+Sandy Kadyan: 150 people are there in our setup currently. If you have to break those people down by uh this thing processes verticals, how do we do that?
+RAHUL NAIK: Approximately I could say 45 then 60 to 70 people are in air filters
+Sandy Kadyan: Okay.
+RAHUL NAIK: because it contains a lot of processes and then 25 to
+Sandy Kadyan: Yeah.
+RAHUL NAIK: 27 are in validation and uh rest are in
+Sandy Kadyan: Okay.
+RAHUL NAIK: uh projects and marketing I have some 15 to 16 like all over like India and
+Sandy Kadyan: Okay.
+RAHUL NAIK: all.
+Sandy Kadyan: So when you're saying marketing, it's sales too, right?
+ 
+ 
+00:34:03
+ 
+Sandy Kadyan: It covers sales too or people who go and talk to uh general trade people or marketing is
+RAHUL NAIK: Uh
+Sandy Kadyan: strictly online. Sales too, right? Sales and marketing. Sales and marketing 15 to 16.
+RAHUL NAIK: yes.
+Sandy Kadyan: Air filter 60 to 70 validation 20 to 70 uh 20 to 27 there's like 100 here and then in projects you're having roughly
+RAHUL NAIK: Yes.
+Sandy Kadyan: 20.
+RAHUL NAIK: And I'm talking only about Hyderabad unit. Then we have another Chandigar unit and then also we are setting up Bodra unit in Gujarat.
+Sandy Kadyan: Okay. So you guys are based out of Hyderabad.
+RAHUL NAIK: So I'm not sorry.
+Sandy Kadyan: You guys are based out of Hyderabad.
+RAHUL NAIK: Yes. Najaran.
+Sandy Kadyan: Nice. So we can have this we could have had this meeting in person right but no worries
+RAHUL NAIK: Yeah.
+Sandy Kadyan: now we have an idea so that once we prepare our we can explain you that in detail as to how will we go about it so okay let's uh break uh this thing to 60 to 70 people which are there on a filters to right uh how are their roles divided how many are managing client facing things.
+ 
+ 
+00:35:24
+ 
+Sandy Kadyan: How many are managing the operational
+RAHUL NAIK: 4 to 37 people are working on shop floor
+Sandy Kadyan: thing? Okay.
+RAHUL NAIK: and the rest are like uh those who are in coordination production planning and all.
+Sandy Kadyan: Okay. 50 are here. Remaining 20 are here. Coordination. So people who are on soft floors, these may be daily labors or what?
+RAHUL NAIK: We have it on roll. Not daily laborers. We have it on on
+Sandy Kadyan: H okay.
+RAHUL NAIK: roll
+Sandy Kadyan: So reporting uh currently what's the system of reporting for these people the people who are on short floor.
+RAHUL NAIK: actually like uh as it is a customized thing. One product may take half minute, one product may take seven minutes. So again like we are skeptical key how like what could we how or how could we take the
+Sandy Kadyan: Yes.
+RAHUL NAIK: average? If there are like only standard filters then they can do thousands of them in one day.
+Sandy Kadyan: Yes.
+RAHUL NAIK: If there are tailor made they like struggle to get even 250 or 200 like everything is like uh complicated.
+ 
+ 
+00:36:24
+ 
+Sandy Kadyan: Yeah.
+RAHUL NAIK: So again we are like how how to manage that gap or how to pinpoint that what is this efficiency
+Sandy Kadyan: So I'm trying to understand this. You're saying air filters we have already automated, right? Customized uh orders also which we
+RAHUL NAIK: staff level production planning and all they are doing it
+Sandy Kadyan: Okay.
+RAHUL NAIK: manually like depending on priority if this customer says I want very agent very agent if there is an audit and all then we support him so it goes first based on emergency
+Sandy Kadyan: Okay. Okay.
+RAHUL NAIK: and all.
+Sandy Kadyan: Priority.
+RAHUL NAIK: So basically there's a lot of firefighting going
+Sandy Kadyan: Okay. Yeah.
+RAHUL NAIK: on.
+Sandy Kadyan: At this scale firefighting would be there and I do think yeah systems would be one thing which will help you to come out of this firefighting stage then you can change some more numbers.
+RAHUL NAIK: Correct.
+Sandy Kadyan: Two areas is we can look at your existing setup too which you have kind of customized using Excel cuz Excel is kind of old these days.
+ 
+ 
+00:37:32
+ 
+Sandy Kadyan: there uh we can build custom solutions on lang chain n we can bring in AI layer in so that thing can also be done and related to your reporting uh I do think reporting can be a good start where we there you'll be able to see output also within a week or so week or two right if you install the system inside your team you you'll be able to see things so uh help me understand this this is what you want you want to have a 360° view of your entire setup as to 150 people are there in my team. Okay. Are these 150 people moving in the same direction where my vision is and is everyone efficient?
+RAHUL NAIK: Correct.
+Sandy Kadyan: Right. And that if I map it down properly by KPIs and by uh automating reports to you and when urgent alerts are there as to okay this team is not able to perform or they're kind of stuck you'll be able to direct your focus properly. Right. Okay. It can be built fairly simple only.
+ 
+ 
+00:38:32
+ 
+Sandy Kadyan: The problem is simple but it may take some time cuz we need to kind of understand uh 150 people okay internal workflows what is the current reporting system and this ERP next setup which you're currently using. So I do think it's easy. Okay. Can be
+RAHUL NAIK: So like uh like as I as I have told you like with respect to the old people or like those who are uh like
+Sandy Kadyan: done.
+RAHUL NAIK: from very long maybe like one person is like from 18 or 19 years then some of them are like more than 10 years four or five people and uh there are like some toxic people also we know them but uh our uh what we can say majguri is that we cannot move them or remove them then they are like spoiling the culture of the country uh company. So there are also things like that also like uh our vision like uh is to get the best of the people from other competitors best competitors. So from other MNC's who could work and also to attract them we should we should be
+ 
+ 
+00:39:27
+ 
+Sandy Kadyan: Okay.
+RAHUL NAIK: capable like yes baba you are leaving M andC and you are coming to us. So you will get the same culture or you will get the same uh response or you will get the same welcoming thing or we can say um same kind of comfort that you are working in MNC.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: We can say that we want to go on that level because like having people on very low level
+Sandy Kadyan: Yeah.
+RAHUL NAIK: or like those who are like bas that and all is okay. We are even ready to give even we even have people who are taking 70,000 80,000 one lakh also but the thing is matching their salary with their output if I'm paying one
+Sandy Kadyan: Mhm.
+RAHUL NAIK: lakh how much I'm getting that is the major
+Sandy Kadyan: So currently for you money equation is I'm spending this much money on resources.
+RAHUL NAIK: thing
+Sandy Kadyan: Let's say you're spending 10 rupees on resources and you're like uh out of this 10 rupees how much am I making right especially when it comes to resources which you are playing with.
+ 
+ 
+00:40:38
+ 
+RAHUL NAIK: Majorly I'm looking at salary because uh if if I talk about my fixed expenses then salary is one of the major expense I have
+Sandy Kadyan: Yeah. Okay.
+RAHUL NAIK: electricity and all other things are nominal I can say with respect to salary and uh
+Sandy Kadyan: Okay.
+RAHUL NAIK: if I tend to say we have a lot of variable uh expenses with respect to raw material because like the raw material itself is very costly. to make things.
+Sandy Kadyan: Yes.
+RAHUL NAIK: So obviously like uh there is no other option than increasing the capacity or increasing the number
+Sandy Kadyan: Yeah. Yeah.
+RAHUL NAIK: of products that I manufacture. If it was just fixed asset would be more then just multiplying the sales would be
+Sandy Kadyan: Yeah.
+RAHUL NAIK: easy but I have variable expenses more that that depends like that is like we are
+Sandy Kadyan: Yes.
+RAHUL NAIK: very uh okay with that because that is the kind of industry we are in for some industries for some service industries Fix assets are same but just scaling them will be easy
+ 
+ 
+00:41:35
+ 
+Sandy Kadyan: Mhm.
+RAHUL NAIK: but here we have all the raw materials variable expenses and all other things also one more
+Sandy Kadyan: So variable expenses you can't
+RAHUL NAIK: point we can't control because maybe like uh if I have some 70% of
+Sandy Kadyan: control.
+RAHUL NAIK: raw material cost then I cannot reduce I can just make it 65 or maximum
+Sandy Kadyan: Mhm. Yes.
+RAHUL NAIK: 60 making some design improvements or making some uh like reducing scrap or doing some
+Sandy Kadyan: Mhm.
+RAHUL NAIK: things I can make it 60 Or maybe like I 60 is too high I guess or maybe I could say
+Sandy Kadyan: Yes. Yes.
+RAHUL NAIK: 65 also I would uh I would like to highlight this point also like with respect to
+Sandy Kadyan: Okay.
+RAHUL NAIK: the inventory. So with respect to inventory I have to have each and every bit in my inventory.
+Sandy Kadyan: So you have uh as to units wise how much stock do you keep and market demand
+RAHUL NAIK: For air filters it is 2,000 to 3,000.
+Sandy Kadyan: is
+RAHUL NAIK: market demand is like uh I could say if if I were to give it give it on my full
+ 
+ 
+00:42:29
+ 
+Sandy Kadyan: 10,000.
+RAHUL NAIK: uh even like making uh 30,000 filters will also be less demand
+Sandy Kadyan: Okay. So demand wise you don't have a problem.
+RAHUL NAIK: I don't have any problem sir I just have problem in executing and also store I mean not only finished goods even for raw materials consumables housekeeping and all other
+Sandy Kadyan: Uh-huh.
+Bhargav Naidu: Yeah.
+Sandy Kadyan: Okay.
+Bhargav Naidu: Max,
+RAHUL NAIK: Correct.
+Sandy Kadyan: and he has this 360° view of as to what's going on in a setup.
+Bhargav Naidu: right?
+Sandy Kadyan: Okay, as per reporting per process per person, right, and per position filter,
+Bhargav Naidu: Right.
+Sandy Kadyan: right? So uh he will be able to kind of optimize his setup within like a week or two or at least he'll be able to see okay he bottleneck or this particular person is the bottleneck exactly he may be knowing now also but he'll have exact kpis
+Bhargav Naidu: Right. Right. But how how uh inte this is going to be integral process for sure. But when how long do do we have time?
+ 
+ 
+00:43:49
+ 
+Bhargav Naidu: Is there any time limit anything as such? Do you decide anything? I'm sorry. Yeah, just uh yeah,
+RAHUL NAIK: has
+Bhargav Naidu: as soon as possible. Now, I like the idea. I like the idea of that. Then then Santi is the one who's going to give you a timeline then.
+RAHUL NAIK: yes basically like uh with respect to all the world's
+Bhargav Naidu: Santi, please.
+RAHUL NAIK: major manufacturing because I'm into manufacturing segment I I would consider all the manufacturing gurus as my guru only
+Bhargav Naidu: Right, right,
+RAHUL NAIK: So it's uh like gold from Israel he had written a very beautiful book and
+Bhargav Naidu: right.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: then there are many other supporting documents which say that there are only three things in a manufacturing industry that you could you should focus on like the top management.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: First one is to increase revenue.
+Bhargav Naidu: First first. Right. Huh. Right.
+RAHUL NAIK: Second one is to reduce operational expenses. Third one is to reduce inventory.
+ 
+ 
+00:44:34
+ 
+Bhargav Naidu: Right.
+RAHUL NAIK: Yes, reducing inventory doesn't mean that you should keep less inventory.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: But it should be on rotating. You just fill it,
+Bhargav Naidu: Right.
+RAHUL NAIK: it goes. You just fill it, it goes. You just fill it, it goes in that way.
+Sandy Kadyan: Yeah. There's no dead stock.
+RAHUL NAIK: I filter or product should not lie in my place.
+Bhargav Naidu: Right.
+RAHUL NAIK: It should directly get built and it should go to the client's
+Sandy Kadyan: Yes. Yes.
+RAHUL NAIK: place.
+Sandy Kadyan: So currently you have already solved revenue.
+Bhargav Naidu: Come
+Sandy Kadyan: You're already chasing revenue,
+Bhargav Naidu: on.
+Sandy Kadyan: right? You want to reduce operational expense or you want to make it more
+RAHUL NAIK: Correct.
+Sandy Kadyan: efficient.
+RAHUL NAIK: Correct. And also to manage inventory. Uh so if if my purchase button is not efficient that if my uh reorder level is going
+Sandy Kadyan: Okay.
+RAHUL NAIK: uh if my stock level is going below the reorder level it should automatically automatically trigger that purchase order should be released to so and so supplier or it should at least give a highlight that so and so is
+ 
+ 
+00:45:26
+ 
+Sandy Kadyan: Yes.
+RAHUL NAIK: less in this store. So you please order and keep it the keep it in minimum stock.
+Sandy Kadyan: This thing can very easily be automated.
+Bhargav Naidu: Good.
+Sandy Kadyan: We have already done this thing for an e-commerce brand. So they were struggling with managing inventory cuz most of the problem in a D2C side is inventory management
+RAHUL NAIK: H.
+Sandy Kadyan: only, right?
+Bhargav Naidu: Inventory.
+Sandy Kadyan: And then that the issue which they're having with dead stock and all.
+RAHUL NAIK: Correct.
+Sandy Kadyan: So we did optimize this thing based on uh the demand which they were getting from the market. What products needs needs to be stored at what level and then triggers are there as soon as if an order kind of drops below this level automatically notification goes to their internal team stating you need to place a purchase order related to this particular product. And timeline wise uh it's we also take into account timeline how much time would it take for that purchase order to arrive and all and again the inventory to go back into Right.
+ 
+ 
+00:46:26
+ 
+Sandy Kadyan: So
+RAHUL NAIK: also like there are like features a number of features in ERP next that it gives auto email notifications
+Sandy Kadyan: that
+RAHUL NAIK: that all the stock stock reorder levels are reached or there is a low inventory it triggers but the problem is if the purchase person doesn't take action there the problem comes and each and every email I not trade or retain I have some 1700 to 18800 items including finished
+Bhargav Naidu: All
+Sandy Kadyan: Yeah. Yeah.
+RAHUL NAIK: goods so if I remove finished goods maybe like 500 or 600 so all those are raw material including consumables and all so I cannot keep a watch on those 1500 or thousand items also if I can say so I cannot watch a th000 items and then like
+Sandy Kadyan: Yes.
+RAHUL NAIK: ask that
+Bhargav Naidu: right.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: do because I have to have on the bigger
+Sandy Kadyan: Yes. Yes. You need to focus on the bigger picture. And currently the managers which are there who are managing these people, it should be their job, right?
+ 
+ 
+00:47:20
+ 
+RAHUL NAIK: They are there but again like as we have divisions and verticals they are like divided kind of they work here also they work there also like it is like they common
+Sandy Kadyan: Okay, take
+RAHUL NAIK: also like even H is common and then purchase is common for both
+Sandy Kadyan: care.
+RAHUL NAIK: like or the all the verticals I can say there's just supporting person
+Sandy Kadyan: Mhm.
+RAHUL NAIK: then there is one person who goes to the market and then like it is like supporting functions are common marketing is also common it is not like we don't have dedicated for air filters or dedicated for
+Sandy Kadyan: Okay.
+RAHUL NAIK: projects we don't have like that is like common they are like
+Sandy Kadyan: Yeah. Yeah. Okay. Okay.
+RAHUL NAIK: divided
+Sandy Kadyan: So, team layer team layer is divided into all your verticals and sometimes when they f****** in some vertical, okay, it's not like that they're actually f****** it up cuz they focus here also. So they also don't know what is the most important task they need to attack
+RAHUL NAIK: But they have been given the priority that you are in this like they have been segregated but still like
+ 
+ 
+00:48:16
+ 
+Sandy Kadyan: right.
+RAHUL NAIK: there is as as it is in the same industry or same product line it is depending on
+Sandy Kadyan: Yes.
+RAHUL NAIK: uh the other thing or the other thing is depending on the other thing in that
+Sandy Kadyan: Yes.
+RAHUL NAIK: way.
+Sandy Kadyan: Okay. Sounds interesting man. Interesting problem to solve. and ERP. Next, I am kind of as a intrigued as to what all things can be built cuz it's open sourced right so many things can be customized to internally for your particular setup
+RAHUL NAIK: Yes.
+Sandy Kadyan: only and if it's open source we can bring AI also there only right and we can these days uh there are some clients in west who wanted us to make agents AI agents which are kind of autonomous which kind of do things on their own but uh it's it's kind of expensive on the expensive side as to currently they're burning close to $100 a day only on tokens for making that AI agent run autonomously right
+RAHUL NAIK: Oh,
+Sandy Kadyan: so expensive side but we can still build internal systems so what's your budget like
+ 
+ 
+00:49:28
+ 
+RAHUL NAIK: I have not fixed any budget s because I have not thought anything about uh like putting this thing like when
+Sandy Kadyan: Rahul
+RAHUL NAIK: I when I uh submitted the form I have not thought about any budget but I thought key let's check like what they can do for a manufacturing industry what AI can do for a maning industry because if it was a SAS platform or a software company or a like more on the software side
+Sandy Kadyan: Yes.
+RAHUL NAIK: or maybe if I have less leads generated or I have more of newsletter or I have to shoot many emails to everyone then it would be on a different side but my problems are on the
+Sandy Kadyan: Yes.
+RAHUL NAIK: other side don't have on the uh sales or pre-sales or marketing I have on the
+Sandy Kadyan: Yes. Yes. Yes. Yeah,
+RAHUL NAIK: side
+Sandy Kadyan: fulfillment uh making it more efficient. So, so, so I'll give you an idea Rahul as to how do we operate.
+RAHUL NAIK: correct
+Sandy Kadyan: Okay, as I did tell you that we uh take up a project and then based on uh the scale of work, we divide it into sprints.
+ 
+ 
+00:50:25
+ 
+Sandy Kadyan: How many sprints will it require? Right?
+RAHUL NAIK: correct
+Sandy Kadyan: Your particular your particular setup as it as it involves 150 people, right? And in 150 people also people are working in various verticals and all. Okay. So we can't create one system which kind of fits all. Okay. We need to kind of go it vertical by vertical. Okay. And in particular vertical also people who are working in various processes. So for understanding that thing only it'll take us one sprint. on sprint as in one month to actually see how are these 150 people going about things. Okay. And then story story building systems week on week. Okay. So I do think we can make this project in at least two sprints. two sprint which is like end to end system but working prototype where you will be able to see reports that you'll be able to see within one month but we need to kind of fine-tune it more based on your requirement your feedback cuz uh major problem which people generally do is they give requirements to builders like us we build you a solution but then no one
+ 
+ 
+00:51:21
+ 
+RAHUL NAIK: Correct.
+Sandy Kadyan: fine-tunes that solution for you okay so we would be fine- tuning it too and when you do require when you will be scaling your team for that also we can add on things later. Okay. But I do think for your particular problem for this particular issue two sprints should be more than enough.
+RAHUL NAIK: Or else we could work in the other way like uh uh back engineering.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: What we can do is we could do on the role based that if a person is attached to this role
+Sandy Kadyan: Okay.
+RAHUL NAIK: then he has so and so reporting system or this KPIs KS we do person wise we'll
+Sandy Kadyan: Okay. Okay.
+RAHUL NAIK: do it role wise. So this is my expected hierarchy and then these are the KS KPIs for so and so person so
+Sandy Kadyan: Okay.
+RAHUL NAIK: and so roles and the major thing what I learned over these years like even like hiring QMS consultants hiring all the performance analysts and all
+Sandy Kadyan: Okay.
+RAHUL NAIK: other things. So what I have learned is like people hesitate or people are like more on like or they are very lazy to write or they don't want to write basically what they are doing
+ 
+ 
+00:52:34
+ 
+Sandy Kadyan: Yeah. Yeah. Yeah.
+RAHUL NAIK: like like
+Sandy Kadyan: Yes.
+RAHUL NAIK: they have their own version of themselves but they are not thinking like how we are thinking because their mindset
+Sandy Kadyan: Yes.
+RAHUL NAIK: is different
+Sandy Kadyan: Yes. Yes. That problem will solve that problem to no problem cuz we have solved that problem for our setup too.
+RAHUL NAIK: Yes.
+Sandy Kadyan: Uh our team was also very hesitant as to we don't want to give daily reports.
+Bhargav Naidu: There is a
+Sandy Kadyan: We are working right everything is happening nice we are making money also then also you want these type of reports then
+Bhargav Naidu: light.
+Sandy Kadyan: also you want to see dashboards so that thing we can solve role wise that's not a problem
+RAHUL NAIK: Yes.
+Sandy Kadyan: okay that thing can be done so when you're saying uh wise automation set what are you thinking uh how many uh how many roles should we start
+RAHUL NAIK: like like as you said grade A, grade B, grade C,
+Sandy Kadyan: He can't
+RAHUL NAIK: the managerial levels, then the operational levels,
+ 
+ 
+00:53:34
+ 
+Sandy Kadyan: aim.
+RAHUL NAIK: then the down level.
+Sandy Kadyan: Okay. I guess right. And people have to do
+RAHUL NAIK: If there are fabricators, if there are like like I have any number of machines, so I have people working on them and if someone is absent then I have to ask him to work on that machine and if I have some particular other product then then this efficiency will
+Sandy Kadyan: Yeah.
+RAHUL NAIK: change from that machine to this machine then I will have to have one person continuously monitoring in the shop floor
+Sandy Kadyan: Yeah.
+RAHUL NAIK: that so that
+Sandy Kadyan: Mhm. Mhm. Yeah.
+RAHUL NAIK: challenge.
+Sandy Kadyan: Yeah. Down level, operational level, manager level inve.
+RAHUL NAIK: I cannot say I have made but because again it takes
+Sandy Kadyan: So we can fine-tune this thing based on their current role and then we can
+RAHUL NAIK: like or by education I am an engineer.
+Sandy Kadyan: Nice. We are engineers
+RAHUL NAIK: So yeah so I am an engineer and then I got a degree in
+ 
+ 
+00:54:56
+ 
+Sandy Kadyan: too.
+RAHUL NAIK: MBA like in family business.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: So it was not a full-time course also.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: So I was not taught the like uh what do we say the conventional or the traditional MBA like
+Sandy Kadyan: Okay.
+RAHUL NAIK: thesis projects and all we were taught directly that if you are going as a second generation or third generation how to
+Sandy Kadyan: Yeah.
+RAHUL NAIK: handle things that's it we were not taugh about KBI managing people HR and all
+Sandy Kadyan: Yes.
+RAHUL NAIK: this so like doing it with respect to chat GPT and cloud and other uh
+Sandy Kadyan: Yeah.
+RAHUL NAIK: things I'm like building it based on my and fine-tuning it based on my requirements but
+Sandy Kadyan: Mhm.
+RAHUL NAIK: I I have like honestly I have I have not like done for everyone.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: I have done for major roles like many roles but not for
+Sandy Kadyan: Okay.
+RAHUL NAIK: everyone.
+Sandy Kadyan: The KS or KPIs whatever you have made will build on that. Okay. And whatever we think would be a KPI which you need to kind of measure for moving the needle needle right efficiently.
+ 
+ 
+00:56:04
+ 
+RAHUL NAIK: Correct.
+Sandy Kadyan: Take
+RAHUL NAIK: So like there are like uh like many what do you say calculations
+Sandy Kadyan: care.
+RAHUL NAIK: like there is one Bangalore company who has like 2.5 lakh times what it pays to its employees suppose he's paying huh
+Sandy Kadyan: Yeah. Yeah. Yeah.
+RAHUL NAIK: yeah so like like obviously like it is different from industry to industry because if it is a software industry like there are less people and the revenue is very
+Sandy Kadyan: Yeah. You see Claude, right? Claude, 2500 people's team doing a revenue of $30 billion. Okay.
+RAHUL NAIK: See and then and like then there are
+Sandy Kadyan: 25. That's it.
+RAHUL NAIK: industries like jewelry or diamonds. So a diamond person like uh like there's this person in Surat Dakia.
+Sandy Kadyan: Mhm.
+RAHUL NAIK: So he has around 3,000 uh people and then they have revenue of some
+Sandy Kadyan: Mhm.
+RAHUL NAIK: 16,000 cr Indian.
+Sandy Kadyan: Okay.
+RAHUL NAIK: So like it it is like because of the product value is so high.
+Sandy Kadyan: Nice.
+RAHUL NAIK: So it is like scalable.
+ 
+ 
+00:57:09
+ 
+RAHUL NAIK: Okay, understandable.
+Sandy Kadyan: Yes.
+RAHUL NAIK: But we also want but at least we have to multiply with respect to ourselves. Yes,
+Sandy Kadyan: Yeah.
+RAHUL NAIK: there is this much but revenue should be doubling or like going on the higher side every time because
+Sandy Kadyan: Yeah.
+RAHUL NAIK: we want to be better than yesterday and uh like what do we say better than yesterday
+Sandy Kadyan: Yeah.
+RAHUL NAIK: and less than tomorrow like
+Sandy Kadyan: Better than yesterday and less than tomorrow.
+RAHUL NAIK: maybe like or better
+Sandy Kadyan: The better tomorrow something like that I
+RAHUL NAIK: something like that better than yesterday.
+Sandy Kadyan: guess.
+RAHUL NAIK: Yeah, better tomorrow. Not not tomorrow.
+Sandy Kadyan: Yeah.
+RAHUL NAIK: But I don't think framing better than
+Bhargav Naidu: No, Min.
+RAHUL NAIK: yesterday.
+Sandy Kadyan: Okay. We would give you minimal viable setup just you'll be able to review things you'll be able to fine- tune things you'll be able to give us feedback and team currently and second we will be delivering you a system this say most of your operational problems mostly can solve so we can do this thing in two sprints two sprints two months time so first month I'm look minimum viable set okay so payment wise if I have to talk about commercials okay we generally charge people per sprint okay to as this thing will take two sprints our usual charge per sprint
+ 
+ 
+00:59:00
+ 
+Sandy Kadyan: is two lakhs So those sprints it would be roughly be four lakhs. Okay. And this may be you can go about doing 50% of the payment in the starting right when we kind of starting the project and remaining 50 once the entire setup is done. Okay. P document okay. So when we are saying two sprints we want to complete it before two sprints and give it to you okay but in case that's the reason we are taking like two sprints it's related we'll make anou okay process be understood in detail right and thank you for educating us related to your setup man okay five six verticals which are there how are you going about it how are you planning to scale it and all now we have a much better understanding and I I do think we can offer some more values and scaling to revenue
+Bhargav Naidu: Yeah.
+Sandy Kadyan: side but I do think
+Bhargav Naidu: Okay.
+Sandy Kadyan: so this thing will be a good start I guess okay so what you can do is we can create anou related to the same thing discussion
+ 
+ 
+01:00:22
+ 
+Bhargav Naidu: Yeah.
+RAHUL NAIK: Yeah.
+Bhargav Naidu: Yeah. Yeah. Yeah.
+Sandy Kadyan: where right you're taking notes and I do I think uh Gemini is also taking notes
+Bhargav Naidu: Yeah. Yeah. Yeah.
+Sandy Kadyan: now. Yeah.
+Bhargav Naidu: Yeah.
+Sandy Kadyan: So based on this create anou and then share it with Rahul Rahul you can revert back to us. Okay and project scope and then let's take things from there.
+RAHUL NAIK: Yes. I have to discuss with this my with my father
+Sandy Kadyan: Okay.
+Bhargav Naidu: Yeah,
+Sandy Kadyan: Yeah.
+Bhargav Naidu: once more is end you can discuss.
+RAHUL NAIK: also
+Sandy Kadyan: And if you discuss if you do want us to come down to your
+Bhargav Naidu: It'll be easier.
+Sandy Kadyan: place too, we'll kind of see our calendar and then we can go about it too. Okay.
+Bhargav Naidu: Okay,
+Sandy Kadyan: Okay man. Nice meeting you.
+Bhargav Naidu: sounds good.
+Sandy Kadyan: Have a good one.
+RAHUL NAIK: Yeah,
+Sandy Kadyan: Okay.
+RAHUL NAIK: same.
+Sandy Kadyan: Yeah. I
+RAHUL NAIK: Sure. Bye-bye.
+ 
+ 
+Transcription ended after 01:01:19
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.
