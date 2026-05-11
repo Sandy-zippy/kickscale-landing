@@ -31,6 +31,10 @@ const CaseStudyIndex = lazy(() => import('./pages/CaseStudyIndex'))
 const CaseStudyRouter = lazy(() => import('./pages/case-studies/CaseStudyRouter'))
 const Discovery = lazy(() => import('./pages/Discovery'))
 const DiscoverySetup = lazy(() => import('./pages/DiscoverySetup'))
+const IVF = lazy(() => import('./pages/IVF'))
+const CosmeticDental = lazy(() => import('./pages/CosmeticDental'))
+const HairTransplant = lazy(() => import('./pages/HairTransplant'))
+const EyeSurgery = lazy(() => import('./pages/EyeSurgery'))
 
 function AutomationHome() {
   const [isQuizVisible, setIsQuizVisible] = useState(false)
@@ -107,6 +111,10 @@ export default function App() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/discovery/setup" element={<DiscoverySetup />} />
             <Route path="/discovery" element={<Discovery />} />
+            <Route path="/ivf" element={<IVF />} />
+            <Route path="/cosmetic-dental" element={<CosmeticDental />} />
+            <Route path="/hair-transplant" element={<HairTransplant />} />
+            <Route path="/eye-surgery" element={<EyeSurgery />} />
           </Routes>
         </Suspense>
       </ExportModeProvider>
