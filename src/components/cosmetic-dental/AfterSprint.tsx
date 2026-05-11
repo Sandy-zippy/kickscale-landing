@@ -4,7 +4,7 @@ import Icon from './Icon'
 
 const OUTCOMES = [
   { metric: 45, suffix: '%', headline: 'Case bookings up', body: 'Within 90 days vs your trailing baseline. Cases started, not selfies submitted.' },
-  { metric: 50, suffix: '%', headline: 'Case-CAC down', body: 'Server-side attribution recovers what iOS 14 + DPDP killed in your pixel.' },
+  { metric: 50, suffix: '%', headline: 'Case cost down', body: 'Server-side attribution recovers what iOS 14 + DPDP killed in your pixel.' },
   { metric: 45, suffix: '%', headline: 'EMI friction killed', body: 'Pre-approved EMI before the chair. Patients walk in financed.' },
 ]
 
@@ -47,7 +47,7 @@ export default function AfterSprint() {
             </div>
             <div className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2A2A35] text-[#FFFDF7] text-xs font-mono">
               <Icon name="arrow-right" size={12} className="text-[#D5EB4B]" />
-              Case-CAC, not CPL
+              Case cost, not call cost
             </div>
           </motion.div>
 

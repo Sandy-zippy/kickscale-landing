@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 
 const PHASES = [
   { range: 'Days 1–14', title: 'Your campaigns + AI graft-count go live', intro: 'Tracking turned on. AI scalp-to-graft tool deployed. First fresh creative shipping.', items: ['Transplant-attribution tracking turned on','AI graft-count tool deployed (scalp photo → estimate)','WhatsApp follow-up + doctor-led updates workflow live','First fresh doctor-led creative in ad accounts','Day 14: campaigns LIVE, first weekly report'] },
-  { range: 'Days 15–45', title: 'Your graft-CAC starts dropping', intro: 'Variants tested daily. Your numbers vs Day-0 baseline. Money-back checkpoint at Day 30.', items: ['8 to 12 fresh ad variants every week','Tuesday call: what worked, what we cut','Day 30 checkpoint: full refund if no lift','Front-desk call analysis, top blockers fixed','Mid-sprint scorecard: your numbers vs Day 0'] },
+  { range: 'Days 15–45', title: 'Your graft cost starts dropping', intro: 'Variants tested daily. Your numbers vs Day-0 baseline. Money-back checkpoint at Day 30.', items: ['8 to 12 fresh ad variants every week','Tuesday call: what worked, what we cut','Day 30 checkpoint: full refund if no lift','Front-desk call analysis, top blockers fixed','Mid-sprint scorecard: your numbers vs Day 0'] },
   { range: 'Days 46–90', title: 'Your transplant volume scales', intro: 'Winners get scaled. Losers killed. Your 30 to 50 percent lift, locked.', items: ['Winners scaled 3 to 5×, losers killed','Optional geo expansion (Vijayawada, Vizag)','Day 75 final scorecard begins','Day 90 review: your 30 to 50 percent lift','Continue at founding rate, or pause'] },
 ]
 

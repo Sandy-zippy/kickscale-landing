@@ -38,7 +38,7 @@ export default function HairTransplantHero() {
             <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[#5A5A66]">
               <span className="inline-flex items-center gap-1.5"><span className="text-[#D5EB4B] font-bold font-mono">→</span><span><span className="text-[#2A2A35] font-bold">35–50%</span> lift in transplants</span></span>
               <span className="text-[#9CA3AF]">·</span>
-              <span className="inline-flex items-center gap-1.5"><span className="text-[#D5EB4B] font-bold font-mono">→</span><span><span className="text-[#2A2A35] font-bold">35%</span> graft-CAC drop</span></span>
+              <span className="inline-flex items-center gap-1.5"><span className="text-[#D5EB4B] font-bold font-mono">→</span><span><span className="text-[#2A2A35] font-bold">35%</span> graft-cost drop</span></span>
               <span className="text-[#9CA3AF]">·</span>
               <span className="inline-flex items-center gap-1.5"><span className="text-[#D5EB4B] font-bold font-mono">→</span><span>30-day refund guarantee</span></span>
             </div>

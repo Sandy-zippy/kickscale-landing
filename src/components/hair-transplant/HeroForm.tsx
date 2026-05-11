@@ -65,7 +65,7 @@ export default function HeroForm() {
           3 founding slots left. ₹2L locked
         </div>
         <h3 className="text-2xl font-bold text-[#2A2A35] leading-tight">See your 90-day graft-conversion target.</h3>
-        <p className="text-sm text-[#5A5A66] mt-1.5 leading-relaxed">Free graft-CAC audit + a custom growth target for your clinic. Reply in 4 hours.</p>
+        <p className="text-sm text-[#5A5A66] mt-1.5 leading-relaxed">Free free transplant audit + a custom growth target for your clinic. Reply in 4 hours.</p>
       </div>
       <div>
         <label htmlFor="clinic_name" className={labelClass}>Your clinic</label>
@@ -98,7 +98,7 @@ export default function HeroForm() {
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
       <button type="submit" disabled={submitting} className="w-full px-6 py-3.5 rounded-lg bg-[#2A2A35] text-[#FFFDF7] font-bold hover:bg-[#1A1A22] disabled:opacity-50 transition-colors cursor-pointer">
-        {submitting ? 'Submitting…' : 'Get free ₹40K graft-CAC audit + 90-day transplant plan →'}
+        {submitting ? 'Submitting…' : 'Get free ₹40K free transplant audit + 90-day transplant plan →'}
       </button>
       <p className="text-xs text-[#9CA3AF] text-center leading-relaxed">DPDP-compliant. We don&apos;t pitch your competitors. Reply within 30 min on WhatsApp · audit by EOD.</p>
     </motion.form>

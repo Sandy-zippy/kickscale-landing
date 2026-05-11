@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 
 const PHASES = [
   { range: 'Days 1–14', title: 'Your campaigns + eligibility quiz go live', intro: 'Tracking turned on. 60-second eligibility quiz deployed. First fresh creative shipping.', items: ['Procedure-attribution tracking turned on','60-second AI eligibility quiz deployed','WhatsApp + SMS reminders saving leads on autopilot','First surgeon-led + tech-storytelling creative in ad accounts','Day 14: campaigns LIVE, first weekly report'] },
-  { range: 'Days 15–45', title: 'Your procedure-CAC starts dropping', intro: 'Variants tested daily. Your numbers vs Day-0 baseline. Money-back checkpoint at Day 30.', items: ['8 to 12 fresh ad variants every week','Tuesday call: what worked, what we cut','Day 30 checkpoint: full refund if no lift','Front-desk call analysis, top blockers fixed','Mid-sprint scorecard: your numbers vs Day 0'] },
+  { range: 'Days 15–45', title: 'Your procedure cost starts dropping', intro: 'Variants tested daily. Your numbers vs Day-0 baseline. Money-back checkpoint at Day 30.', items: ['8 to 12 fresh ad variants every week','Tuesday call: what worked, what we cut','Day 30 checkpoint: full refund if no lift','Front-desk call analysis, top blockers fixed','Mid-sprint scorecard: your numbers vs Day 0'] },
   { range: 'Days 46–90', title: 'Your OT volume scales', intro: 'Winners get scaled. Losers killed. Your 30 to 50 percent lift, locked.', items: ['Winners scaled 3 to 5×, losers killed','Optional geo expansion (Vijayawada, Vizag)','Day 75 final scorecard begins','Day 90 review: your 30 to 50 percent lift','Continue at founding rate, or pause'] },
 ]
 

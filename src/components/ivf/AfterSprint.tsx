@@ -12,7 +12,7 @@ const OUTCOMES = [
   {
     metric: 35,
     suffix: '%',
-    headline: 'Cycle-CAC down',
+    headline: 'Cycle cost down',
     body: 'Server-side attribution recovers what iOS 14 + DPDP killed in your pixel.',
   },
   {
@@ -70,7 +70,7 @@ export default function AfterSprint() {
             </div>
             <div className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2A2A35] text-[#FFFDF7] text-xs font-mono">
               <Icon name="arrow-right" size={12} className="text-[#D5EB4B]" />
-              Cycle-CAC, not CPL
+              Cycle cost, not call cost
             </div>
           </motion.div>
 

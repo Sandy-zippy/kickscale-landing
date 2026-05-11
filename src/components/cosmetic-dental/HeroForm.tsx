@@ -112,7 +112,7 @@ export default function HeroForm() {
           See your 90-day case-acceptance target.
         </h3>
         <p className="text-sm text-[#5A5A66] mt-1.5 leading-relaxed">
-          Free case-CAC audit + a custom growth target for your clinic. Reply in 4 hours.
+          Free free case audit + a custom growth target for your clinic. Reply in 4 hours.
         </p>
       </div>
 
@@ -153,7 +153,7 @@ export default function HeroForm() {
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       <button type="submit" disabled={submitting} className="w-full px-6 py-3.5 rounded-lg bg-[#2A2A35] text-[#FFFDF7] font-bold hover:bg-[#1A1A22] disabled:opacity-50 transition-colors cursor-pointer">
-        {submitting ? 'Submitting…' : 'Get free ₹40K case-CAC audit + 90-day case plan →'}
+        {submitting ? 'Submitting…' : 'Get free ₹40K free case audit + 90-day case plan →'}
       </button>
 
       <p className="text-xs text-[#9CA3AF] text-center leading-relaxed">

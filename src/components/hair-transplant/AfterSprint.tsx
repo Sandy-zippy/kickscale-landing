@@ -4,7 +4,7 @@ import Icon from './Icon'
 
 const OUTCOMES = [
   { metric: 40, suffix: '%', headline: 'Transplant bookings up', body: 'Within 90 days vs your trailing baseline. Booked transplants, not scalp uploads.' },
-  { metric: 35, suffix: '%', headline: 'Graft-CAC down', body: 'Server-side attribution recovers what iOS 14 + DPDP killed in your pixel.' },
+  { metric: 35, suffix: '%', headline: 'Graft cost down', body: 'Server-side attribution recovers what iOS 14 + DPDP killed in your pixel.' },
   { metric: 50, suffix: '%', headline: 'Refund liability cut', body: 'Doctor-led creative + flat pricing + post-op audit. Your brand stays clean.' },
 ]
 
@@ -30,7 +30,7 @@ export default function AfterSprint() {
               <span className="text-[10px] sm:text-xs font-mono text-[#2A2A35] tracking-wider uppercase font-bold">Your live dashboard</span>
             </div>
             <div className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2A2A35] text-[#FFFDF7] text-xs font-mono">
-              <Icon name="arrow-right" size={12} className="text-[#D5EB4B]" />Graft-CAC, not CPL
+              <Icon name="arrow-right" size={12} className="text-[#D5EB4B]" />Graft cost, not call cost
             </div>
           </motion.div>
           <div className="grid grid-cols-1 gap-3">

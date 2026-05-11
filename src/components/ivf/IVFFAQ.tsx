@@ -5,11 +5,11 @@ import Icon from './Icon'
 const FAQS = [
   {
     q: 'Where have you done this before?',
-    a: 'ZippyScale has run cycle-attributed Meta + Google performance for fertility clinics in Bombay. Anonymized scorecards: ~67% cycle-bookings lift, 40% cycle-CAC drop, 60%+ no-show reduction over a 6-month engagement. NDA-bound so we don’t name them. Hyderabad is the first city we’re opening with founding-clinic case-study rights, so your story replaces ours on this page if you say yes.',
+    a: 'ZippyScale has run cycle-attributed Meta + Google performance for fertility clinics in Bombay. Anonymized scorecards: ~67% cycle-bookings lift, 40% cycle-cost drop, 60%+ no-show reduction over a 6-month engagement. NDA-bound so we don’t name them. Hyderabad is the first city we’re opening with founding-clinic case-study rights, so your story replaces ours on this page if you say yes.',
   },
   {
     q: '₹2L/mo vs my current ₹50K retainer, too steep?',
-    a: 'Different mechanics. A ₹50K retainer pays an account exec who reports CPL. ₹2L/mo runs a full growth team: server-side attribution via Stape, AI creative variants via Higgsfield + Nano Banana, GHL + WhatsApp drip, weekly cycle-CAC reviews, Claude call-analysis. A clinic doing ₹2L/mo on Meta with broken attribution wastes ~30% of spend (~₹7.2L/year). The recovered spend pays for the sprint inside 2 quarters.',
+    a: 'Different mechanics. A ₹50K retainer pays an account exec who reports CPL. ₹2L/mo runs a full growth team: server-side attribution via Stape, AI creative variants via Higgsfield + Nano Banana, GHL + WhatsApp drip, weekly cycle cost reviews, Claude call-analysis. A clinic doing ₹2L/mo on Meta with broken attribution wastes ~30% of spend (~₹7.2L/year). The recovered spend pays for the sprint inside 2 quarters.',
   },
   {
     q: 'Can your team avoid getting our ad account banned?',

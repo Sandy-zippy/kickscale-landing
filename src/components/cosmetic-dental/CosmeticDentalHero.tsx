@@ -64,7 +64,7 @@ export default function IVFHero() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="text-lg sm:text-xl text-[#5A5A66] mb-10 max-w-3xl leading-relaxed"
         >
-          More qualified IVF couples to your clinic. Cycle-CAC down, no-shows cut, doctor calendar booked weeks out.{' '}
+          More qualified makeover patients to your clinic. Case cost down, no-shows cut, doctor calendar booked weeks out.{' '}
           <span className="font-semibold text-[#2A2A35]">Same ad spend. Hyderabad-only.</span> If you don&apos;t see 30%+ lift by Day 90, you get a refund.
         </motion.p>
 
@@ -84,7 +84,7 @@ export default function IVFHero() {
               <span className="text-[#9CA3AF]">·</span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="text-[#D5EB4B] font-bold font-mono">→</span>
-                <span><span className="text-[#2A2A35] font-bold">25–40%</span> CAC drop</span>
+                <span><span className="text-[#2A2A35] font-bold">25–40%</span> cost drop</span>
               </span>
               <span className="text-[#9CA3AF]">·</span>
               <span className="inline-flex items-center gap-1.5">
