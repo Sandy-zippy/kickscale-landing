@@ -1,0 +1,924 @@
+﻿📝 Notes
+Mar 3, 2026
+Vijay X NuBuild Google Meet.
+Invited founder@nubuildco.com Sandy Kadyan Bhargav Naidu Aishwarya Kurakula Saahil Hussain
+Attachments Vijay X NuBuild Google Meet. 
+Meeting records Transcript 
+
+
+Summary
+Bhargav Naidu's Presentation confirmed the software's functionality and emphasized the need for updates due to delayed deliverables, while introducing Aishwarya Reddy to Vijay Krishna as the new social media and appointment setting manager who will focus on brand positioning and lead generation to acquire high-value clients. The team discussed the strategy of brand positioning and generating leads via referrals and Meta Ads, where Aishwarya Reddy is tasked with qualifying leads and booking one-to-one consultations with Vijay Krishna. Bhargav Naidu's Presentation urged Vijay Krishna to immediately provide details on the lead magnet, hero images for the landing page, and backstories for social media posts, with the goal of launching ads on Friday, while all participants confirmed a follow-up meeting every Thursday at 3:00 for deliverables review.
+
+
+Details
+* Meeting Setup and Language Protocol: Bhargav Naidu's Presentation initiated the meeting by confirming that the software was operational and requested that the conversation remain entirely in English to simplify the transcription process. Bhargav Naidu's Presentation noted that they only needed updates, as deliverables were getting delayed, and they wanted a clear idea for the coming Thursday's progress (00:01:01).
+* Introduction of Aishwarya Reddy and Role Definition: Bhargav Naidu's Presentation introduced Aishwarya Reddy to Vijay Krishna, confirming that Aishwarya Reddy would manage social media and appointment setting (00:01:01). Bhargav Naidu's Presentation clarified that Aishwarya Reddy is skilled in social media management, and Vijay Krishna should provide them with clear direction on elements like fonts and color parameters for the first week (00:02:22).
+* Project Overview and Team Assignments: Vijay Krishna inquired about the status of the landing page work, which Bhargav Naidu's Presentation confirmed Sandy is currently handling. Aishwarya Reddy admitted to not having a complete idea about the "new build" venture and sought clarification on their role and expected deliverables, leading Bhargav Naidu's Presentation to agree to provide a clear project overview (00:03:21).
+* Overview of New Build and Client Focus: Bhargav Naidu's Presentation explained that Vijay Krishna is a very creative, class-oriented architect who focuses on highly selective, high-ticket clients, and whose work emphasizes building houses with character and meaning, not just big houses. Since Vijay Krishna's name is not yet highly reputed, the responsibility of Zippy Scale is to portray his story and credibility in the market (00:04:15).
+* Strategic Objectives and Lead Generation: The immediate strategy involves two processes: brand positioning and lead generation, with the current focus on qualifying people so that new build can first create case studies. These case studies will then be used for retargeting new ads to acquire higher-value clients. The primary immediate needs are brand positioning and generating leads (00:05:02).
+* Social Media Management and Branding: Aishwarya Reddy is tasked with initially managing the social media aspect for branding, which Zippy Scale is doing as a "good gesture" for Vijay Krishna until they build an in-house team. Bhargav Naidu's Presentation committed to providing all necessary information regarding branding, including the logo and color redoing, and confirmed that Aishwarya Reddy will handle posts and stories for at least a week until the ads gain momentum (00:05:48).
+* Lead Generation and Appointment Setting Process: Leads will be sourced from referrals, where Vijay Krishna is already strong, and from social media via Meta Ads. Aishwarya Reddy's primary responsibility once a lead clicks on an ad and answers specific questions is to qualify the person and then book an appointment for a one-to-one consultation with Vijay Krishna (00:06:27). Once the deal is closed and marked in the CRM, the Meta Ads system automatically targets similar high-quality leads (00:07:12).
+* Consultation Fees and Ad Strategy: Vijay Krishna confirmed that they charge for a one-to-one consultation, which Bhargav Naidu's Presentation indicated is reflected in the ad creative. Bhargav Naidu's Presentation reviewed the ad strategy, noting that each ad is different, targeting different people, and has a unique Call To Action (CTA), such as a paid consultation ($4,9.99) or a free strategy call (00:07:52).
+* Meeting Schedule and Training Plan: The team will hold a meeting every Thursday at 3:00 for deliverables and Key Performance Indicator (KPI) review. The upcoming Thursday meeting will also include a small training session for Aishwarya Reddy, where Vijay Krishna will brief them on the qualification process and necessary architectural and real estate framework questions (00:08:32).
+* Aishwarya Reddy's Background and Future Tasks: Bhargav Naidu's Presentation noted that Aishwarya Reddy's previous experience in the real estate sector and as an appointment center/sales head will make it easier for Vijay Krishna to train them on specific parameters (00:09:16). The immediate deliverables required from Zippy Scale for this coming Thursday are the lead magnet, landing page changes, and social media content (00:10:09).
+* Deliverables Required from Vijay Krishna: Bhargav Naidu's Presentation stressed the urgency of getting three things from Vijay Krishna by the end of the day: clarification on the costings and details for the lead magnet, shortlisted hero images for the landing page, and backstories of created spaces for social media posts (00:10:59). Vijay Krishna confirmed they would share these objectives and photographs to the group by the end of the day (00:12:34).
+* Ad Launch and Content Strategy: The target is to launch the ads on Friday, and by Thursday, the team needs a complete 7-day content plan ready. This plan includes scheduling two posts every day, creating a bank of 14 posts, to quickly populate the Instagram handle before the campaign starts (00:14:02).
+* Review of Ad Creatives and Copy: The team reviewed several ad copies and creatives, with Bhargav Naidu's Presentation noting that the copies for ads 1, 2, and 4 were generally good, but the images/creatives for almost all ads needed to be changed to increase visibility and context (00:15:19) (00:16:36). Vijay Krishna was tasked with providing 10 shortlisted images for the ads so that AI could optimize the image-to-copy matching (00:15:58).
+* Ad Copy Specific Changes: The second ad, "Why hire fire vendors when I can do all design," needs the 'I' to be changed to look more prominently like the number 'one' (00:16:36). The third ad, a cost guide lead magnet, needs the copy changed from "build in Hyderabad" to "build a house in Hyderabad" (00:19:38). The sixth ad also needs the specific wording "a house" added (00:22:41).
+* Ad Types and Lead Qualification: Bhargav Naidu's Presentation explained the difference between ad types: the paid consultation ad (Ad 1) yields more qualified leads, while the free strategy call ad (Ad 2) generates more leads requiring manual qualification. The cost guide ad (Ad 3/Ad 6) is a lead magnet used to gauge interest in getting a project done in Hyderabad and requires data submission for download (00:18:48) (00:23:28).
+* Credibility and Business Details: The "Authority Ad" (Ad 4) will leverage Vijay Krishna's experience of six years and delivery of over 25 crores worth of properties (00:20:23). Bhargav Naidu's Presentation suggested that Aishwarya Reddy schedule a separate call with Vijay Krishna to understand his business better and prepare credibility questions (00:21:07).
+* Email Addresses and Communication Channels: The team discussed the purpose of different email addresses for New Build: `hello@newbuild.com` will be used for organic, random inquiries; `team@newbuild.com` will be used for client communications (e.g., Aishwarya Reddy); and the founder's communication will go through `founder@newbuild.com` (00:27:34).
+* Qualification Process and Questionnaire: Bhargav Naidu's Presentation showed the free strategy call questionnaire on the website, which captures the lead's full name, phone number, current budget, and project timeline/type. This data will enable Aishwarya Reddy to pre-qualify leads by asking small, specific questions like location and square footage before passing them to Vijay Krishna (00:30:01).
+* Instagram Content Strategy: The goal is to fill the Instagram page quickly, starting with at least one line (three posts) by Thursday (00:32:09). The initial three pinned posts will cover the "What, Why, and How" of the company: What is New Build, Why a person should onboard them, and Case studies/How they are building homes (00:32:43).
+* Commitment to Initial Posting: Vijay Krishna confirmed they would send all necessary images and details by today evening, and the team will start posting content tomorrow morning to ensure they have at least two to three posts on the page before the Friday ad launch (00:35:49) (00:37:39). Bhargav Naidu's Presentation assigned Aishwarya Reddy the task of closely following up with Vijay Krishna on all pending deliverables, suggesting a follow-up call at 6:45 PM (00:37:04).
+
+
+Suggested next steps
+* Vijay Krishna will provide the costing and details for the lead magnet, the shortlisted and hero images for the landing page, and the backstories of the projects for social media by today evening.
+* Vijay Krishna will provide 10 shortlisted images for the ads by today evening.
+* Aishwarya Reddy will follow up with Vijay Krishna to ensure the deliverables are ready by 7:00.
+* Aishwarya Reddy will start posting on the Instagram handle from tomorrow morning.
+* Vijay Krishna will drop the list of his deliverables in the group.
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+Please provide feedback about using Gemini to take notes in a short survey.
+📖 Transcript
+Mar 3, 2026
+Vijay X NuBuild Google Meet. - Transcript
+00:00:00
+ 
+Bhargav Naidu's Presentation: So now the so now this software is on so it's easier for us. Okay. So MS and all stuff will be easier going on. Okay. One moment I must um so uh Vij let's let's keep this thing in English completely so the transcript also is easier for us. Okay.
+Vijay Krishna: showing. Sorry, I see it.
+Bhargav Naidu's Presentation: Yeah.
+Vijay Krishna: It was muted.
+Bhargav Naidu's Presentation: No, no. I'm I'm I'm telling you. Let's keep it in that in in English only completely.
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: Okay.
+Vijay Krishna: Yeah. Sorry. Yeah, I got
+Bhargav Naidu's Presentation: Perfect.
+Vijay Krishna: it.
+Bhargav Naidu's Presentation: Where is she?
+Vijay Krishna: Who else are
+Bhargav Naidu's Presentation: Uh I sure is joining.
+Vijay Krishna: joining?
+Bhargav Naidu's Presentation: That's it. S is already working on your task only completely. That's why it'll be like hardly like 10 15 minutes call. That's it.
+ 
+ 
+00:01:01
+ 
+Bhargav Naidu's Presentation: I just wanted half your updates cuz point it's been long. It's been like what one and a half week. 13th was our last meeting last month. Okay. After that we we actually couldn't get time. You also were busy here and there. Okay. and deliverables were getting delayed a lot. Okay, we also were clueless what to do. So let's let's get the clear idea so that the next th this coming
+Vijay Krishna: Let's have a streamline and uh you know the I think like the
+Bhargav Naidu's Presentation: Thursday.
+Vijay Krishna: immediate thing that was supposed to start is Instagram posting is
+Bhargav Naidu's Presentation: Yeah.
+Vijay Krishna: um who is the one dealing uh the social media
+Bhargav Naidu's Presentation: Now,
+Vijay Krishna: work.
+Bhargav Naidu's Presentation: uh, I should deal with that. That's why I'm asking her to join. Yeah.
+Vijay Krishna: Okay.
+Bhargav Naidu's Presentation: Okay. I think I think she's in Okay, here you go.
+ 
+ 
+00:02:22
+ 
+Bhargav Naidu's Presentation: Yeah. So, hi A. This is Vijay.
+Aishwarya Reddy: Hi, widget.
+Bhargav Naidu's Presentation: So,
+Vijay Krishna: Hey,
+Bhargav Naidu's Presentation: I I will be the one who will be handling your uh social and also the appointment setting part completely.
+Aishwarya Reddy: Hello.
+Bhargav Naidu's Presentation: Okay.
+Vijay Krishna: got
+Bhargav Naidu's Presentation: Perfect. So I sure I wanted to you to also be be a part of the meeting cuz point is uh there are a few deliverables that are
+Vijay Krishna: Okay.
+Bhargav Naidu's Presentation: uh there that we need to provide from uh new build side and there are some deliverables that need to be provided from Vijay side also to make sure the work is going on track. Okay. Now okay so Vijay Aishwara is not just an appointment setup but she's also good at social
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: media. Okay. She knows what to post, how to post. Okay. Context uh a lot of parameters are there. Okay. But still I would suggest as she provides data in the group I want you to give her direction clearly okay regarding uh you know uh fonts regarding uh color parameters and everything if you guide her like one week clearly after that awareny for taking care of these things okay
+ 
+ 
+00:03:21
+ 
+Vijay Krishna: Okay, got it.
+Bhargav Naidu's Presentation: now one moment one
+Vijay Krishna: Uh so uh is the landing page work has been done?
+Bhargav Naidu's Presentation: moment one moment already this guy he's working audio audio okay Right. All right. Sandy is working on the landing page part completely. Okay. I'll just
+Vijay Krishna: So Aisha to give you a brief I don't know like uh uh I think like as you are taking part of
+Bhargav Naidu's Presentation: Okay.
+Vijay Krishna: the uh social media one uh I think like we never spoke
+Aishwarya Reddy: Mhm.
+Vijay Krishna: about what we are trying to build here new build uh what's the idea that you
+Aishwarya Reddy: Um honestly I do not have much idea about it but uh that's where I'm into this meeting so that I can get an idea
+Vijay Krishna: Oh,
+Aishwarya Reddy: about what exactly what what would be my role and what exactly am I supposed to you know deliver in
+Bhargav Naidu's Presentation: I'll give you a clear idea. Okay, let me give first idea clear for then we'll go forward.
+ 
+ 
+00:04:15
+ 
+Bhargav Naidu's Presentation: Okay, so Ashara uh I gave you an idea about about new build previously. Remember Vijay he's he's an architect he's starting his venture new completely you remember that one?
+Aishwarya Reddy: Yes.
+Bhargav Naidu's Presentation: Yes. So this is Vijay by the way.
+Aishwarya Reddy: Yes.
+Bhargav Naidu's Presentation: What is he is a very creative architect okay? He he only works with very selective people. Okay, he's not a mass oriented person at all. Okay,
+Aishwarya Reddy: Mhm.
+Bhargav Naidu's Presentation: he's very classoriented person and his USP is not building big houses but houses that have meaning to it. Okay, so everything that he touches or everything that he builds has a character,
+Aishwarya Reddy: Great.
+Bhargav Naidu's Presentation: has a meaning and has a backstory behind it. Okay.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So to be very open with you, he actually has to work with very high ticket clients.
+Aishwarya Reddy: Great.
+Bhargav Naidu's Presentation: But as his name is not very reputed in the market as of now, it's our responsibility to speak his minds into the market.
+ 
+ 
+00:05:02
+ 
+Aishwarya Reddy: Great.
+Bhargav Naidu's Presentation: Okay.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So that's where uh you know zippy scale comes into picture completely that how do we portray his story into the market clearly? How do we build a credibility? Okay. Now whatever we show right now what we're trying to build is we are trying to uh what you qualify people so that uh Vijay and new build can build their case studies first. Okay. Once they build their case studies we can retarget those uh case studies into new ads and
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: new formats completely and go to a higher clients back once again. Got it?
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So there are two process which we are working on right now. So uh for generating leads. So predominantly right now what we need is we need two things. We need brand positioning and we need leads to go for new build completely. Okay.
+Aishwarya Reddy: Wait.
+Bhargav Naidu's Presentation: Right V that's the point right we want brand building and and leads completely perfect.
+ 
+ 
+00:05:48
+ 
+Vijay Krishna: Yeah.
+Aishwarya Reddy: Huh?
+Vijay Krishna: Yeah. Right.
+Bhargav Naidu's Presentation: So so in in the in the brand building perspective Aishwara you have to take care of the social media part clearly initially it's actually not a part of ZP scale.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Okay. But for Vijay we are initiating the social media after that he going to take care of any of so initially whatever direction he's going to give it because as he doesn't have an in-house social media team right now.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Okay. We don't want to stop it. We want to initiate it. So that's why we are doing as a you know as a good gesture for him because he's very close to me back once again. Okay. We need to initial social media part and branding perspective the logo we have designed we have we are redoing few more colors
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: in this format completely. I'll provide you all the information completely. Okay.
+ 
+ 
+00:06:27
+ 
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So post stories and also will be taken care by your side initially for at least like a week or so until the ads especially are on a good flow completely.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Okay. Next coming to the leads perspective back once again we are trying to get leads from two areas.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: One is from referrals and second is from social media that's from meta ads referrals already Vijay
+Aishwarya Reddy: Okay. Okay.
+Bhargav Naidu's Presentation: is very strong with his referrals because he already has done very sweet projects.
+Aishwarya Reddy: Great.
+Bhargav Naidu's Presentation: When it comes to meta ads and all stuff that's where Zcal is coming into picture I'm showing you I'll show you the funnel completely. What's your responsibilities? Once a person clicks on the ad, answers all his question, all the ad questions because the questions are in the ad also are very specific. Once those are selected, then what what happens? You need to qualify the person.
+Aishwarya Reddy: Okay.
+ 
+ 
+00:07:12
+ 
+Bhargav Naidu's Presentation: Okay. That easy or right ad for for Vijay's time or not clearly. Okay. And then pass on the lead to Vijay.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Okay. And pass on the lead to Vijay.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: How you have to fix an appointment with him for a onetoone consultation. Okay. Okay, maybe at the venue at maybe at his uh location property or at his office.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Okay, once the appointment is booked in the then from there on Vijay will take care of the whole part. Once the deal is closed,
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Vijay will inform you. Okay, so once the deal is closed, then if you mark it closed in the CRM, the meta automatically understand okay these kind of people are getting closed by new build. So I have to show the ads for these kind of people only more and more. Got the point?
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Clear Vijay,
+ 
+ 
+00:07:52
+ 
+Aishwarya Reddy: Got it.
+Bhargav Naidu's Presentation: you're also clear.
+Vijay Krishna: Right. Uh but uh is I should aware that uh you know we do charge for a uh onetoone
+Bhargav Naidu's Presentation: Yes. Yes. Yes. Yes.
+Vijay Krishna: consultation.
+Bhargav Naidu's Presentation: So that's all I'm I'm I'm going I'm going to to that thing in the in the ad process completely as you can see over here. Can you guys see my screen clearly?
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: Yeah.
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: Aisha you can see it.
+Aishwarya Reddy: Yes,
+Bhargav Naidu's Presentation: Great. So if you can see add one Aurora uh uh fear fear resolution.
+Aishwarya Reddy: I can.
+Bhargav Naidu's Presentation: Okay. So in this you can see the offer is $4,9.99.
+Aishwarya Reddy: Mhm.
+Bhargav Naidu's Presentation: You see it over here.
+Aishwarya Reddy: Yes,
+Bhargav Naidu's Presentation: So there are uh free strategy call.
+Aishwarya Reddy: I do.
+Bhargav Naidu's Presentation: So every ad is different. Every ad is targeted to different people and every ad CTA that is call to action is very different.
+ 
+ 
+00:08:32
+ 
+Bhargav Naidu's Presentation: Okay. So what happens is when you get a lead it'll be clearly mentioned the the lead has come from what ad and what is
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: the CTA or what which means what is the output? What is the expectation of the client or or the lead when he's clicking on the ad clearly. Okay. See till here I I'll brief you clearly what after this thing what happens in this case is I on Thursday we have a meet every
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Thursday we have a meet at 3:00 of Vijay that's a that's a deliverables meet in this meet whatever weekly deliverables or KPIs we fix in last week we will be delivering those things for Vijay
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: on those days okay so in Thursday meet this Thursday coming meet so today's uh today
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: is Tuesday if I'm not wrong yes today's Tuesday so in next two days we have another meet coming up with
+Aishwarya Reddy: Yeah.
+Bhargav Naidu's Presentation: DJ In that meet it will not just be a delivery meet but it will also be a small training session
+ 
+ 
+00:09:16
+ 
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: for you by Vijay because he will give you a brief about qualification process which means what are the questions that a ar a person who
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: expert in architectural and real estate uh with the framework needs to understand. One good thing is Vijay Aishwara is from a real estate background.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: She already qualified lease for real estate. Vijay, can you hear me?
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: Yeah. So, Aishwara actually worked in a real estate firm.
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: Okay. She was the head of the appointment center and sales. So, she had close Yeah.
+Vijay Krishna: Hello.
+Bhargav Naidu's Presentation: She had close to six to eight people working under her.
+Vijay Krishna: Right. Got
+Bhargav Naidu's Presentation: Okay. So, she she's still in that particular area.
+Vijay Krishna: it.
+Bhargav Naidu's Presentation: So, it's easier for you to train her also in his parameters. She'll understand all the terms that are very important for you.
+ 
+ 
+00:10:09
+ 
+Vijay Krishna: Sure.
+Bhargav Naidu's Presentation: Okay.
+Vijay Krishna: you know like uh uh when we are catching up this Thursday
+Bhargav Naidu's Presentation: Yeah.
+Vijay Krishna: um let's definitely uh brief about briefer about the things and
+Bhargav Naidu's Presentation: Yes.
+Vijay Krishna: uh I'll be more uh I have noted on the points that you know how our marketing strategies uh should go on the objectives of
+Bhargav Naidu's Presentation: Okay. Okay. We'll work on those. No problem. The case. Okay. Perfect.
+Vijay Krishna: right
+Bhargav Naidu's Presentation: So, let me So, uh, so coming to the deliverable. So, I sure now you understand the gist of it completely.
+Aishwarya Reddy: I
+Bhargav Naidu's Presentation: Okay, perfect. So coming to the delivery perspective.
+Aishwarya Reddy: do.
+Bhargav Naidu's Presentation: So this meeting I want to keep it short, sweet and and and crisp concretely. So uh first thing is first delivery which is there is the uh lead magnet and landing p changes.
+Aishwarya Reddy: Mhm.
+Bhargav Naidu's Presentation: These are the two two things that need to be sorry lead magnet landing page and social media.
+ 
+ 
+00:10:59
+ 
+Aishwarya Reddy: Okay. Can I get the copy of it?
+Bhargav Naidu's Presentation: I'll send you I'll send you.
+Aishwarya Reddy: Like if do you have any?
+Bhargav Naidu's Presentation: Okay. So lead magnet, landing page and social media.
+Aishwarya Reddy: Okay,
+Bhargav Naidu's Presentation: These are three deliverables that need to be provided by Zippy scale to Vijay this coming Thursday.
+Aishwarya Reddy: good.
+Bhargav Naidu's Presentation: Okay. So Vijay we clear?
+Vijay Krishna: Yeah, we
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So in lead magnet okay Vijay had to confirm the data points which
+Vijay Krishna: have
+Bhargav Naidu's Presentation: were the costings the details and everything. Vijay if you remember okay you wanted to talk to your team also and everything right.
+Vijay Krishna: Yes. Yes. Yes. Yes.
+Bhargav Naidu's Presentation: We need this to be done by today EOD by anyhow by hook or crook. Please please note it down Vijay. Okay.
+Vijay Krishna: Yeah,
+Aishwarya Reddy: Okay.
+Vijay Krishna: I I have the I have already noted the deliverables. Uh uh thing is like you know writing up some stories for the post that was
+ 
+ 
+00:11:38
+ 
+Bhargav Naidu's Presentation: Okay.
+Vijay Krishna: supposed to be posted on the Instagram handle. Uh write the backstory of the spaces that we created.
+Bhargav Naidu's Presentation: Huh?
+Vijay Krishna: And the second thing is uh uh you know uh collect all the much needed photographs for the landing page and creating post.
+Bhargav Naidu's Presentation: Yes. Uh
+Vijay Krishna: And um what else? Check the rates of the uh of the uh free cost
+Bhargav Naidu's Presentation: Yes, lead magnet.
+Vijay Krishna: guide.
+Bhargav Naidu's Presentation: This is the lead magnet which we're discussing right now.
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: Costing part.
+Vijay Krishna: And yeah,
+Bhargav Naidu's Presentation: Okay.
+Vijay Krishna: the objectives that I'm clear with,
+Bhargav Naidu's Presentation: Right.
+Vijay Krishna: right?
+Bhargav Naidu's Presentation: Right. So, so point is already the maximum change is already done. We we are just waiting for landing page and lead magnet. For landing page, we we want the short list and hero images from your side, right? Yeah.
+Vijay Krishna: Hello.
+Bhargav Naidu's Presentation: For landing page we need shortlisted and hero images from your side.
+ 
+ 
+00:12:34
+ 
+Bhargav Naidu's Presentation: If you think if you remember we discussed.
+Vijay Krishna: Yeah. Yeah. Right.
+Bhargav Naidu's Presentation: Okay. We just need to place them.
+Vijay Krishna: Right.
+Bhargav Naidu's Presentation: And for lead magnet we need cost uh clarifications from your side costing and details.
+Vijay Krishna: Of the cost red book.
+Bhargav Naidu's Presentation: Okay.
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: Yes.
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: For social media already we have a few posts but point is we wanted from your side uh the backstory of the uh of the what do you call the projects whether you have worked upon so that we can so these three are pending just because we need data that's it
+Vijay Krishna: Yeah,
+Bhargav Naidu's Presentation: okay if you can provide it today uh at least by 6 or 7:00 maximum today night I'll get these things done clearly
+Vijay Krishna: sure. I'll pose him uh uh to the group this uh by end of the
+Bhargav Naidu's Presentation: Yes please. Yes please. So Aisha just be in touch with Vijay.
+Aishwarya Reddy: Yes.
+ 
+ 
+00:13:19
+ 
+Bhargav Naidu's Presentation: Okay. Now I want these details clearly.
+Vijay Krishna: day.
+Bhargav Naidu's Presentation: If I I'll also I'm also there's a small transit happening in the meeting anyhow.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Okay. We'll get the M report also clearly.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: But I want you to follow up upon these things. Okay. Just so Vijay once drop down those things which you have written down for yourself in the group.
+Aishwarya Reddy: Okay,
+Vijay Krishna: Sure.
+Bhargav Naidu's Presentation: once WhatsApp yes so that I show you also we'll be on them clearly to remind you about these
+Vijay Krishna: I'll share the objectives. Right.
+Bhargav Naidu's Presentation: things once okay now perfect so guys let's let's do chop chop things first okay so Vijay
+Vijay Krishna: Right.
+Bhargav Naidu's Presentation: uh before we do go for that okay your things are still pending so finish those things up today but
+Aishwarya Reddy: heat.
+Bhargav Naidu's Presentation: let's finalize or give me changes which are there in the ads clearly okay because we need to start the ads first okay
+ 
+ 
+00:14:02
+ 
+Vijay Krishna: Yeah. I'll share the objectives on the photographs and uh hand over the content that you guys have of the
+Bhargav Naidu's Presentation: Yeah.
+Vijay Krishna: shoot that we have done in the zippy scale or so that we can
+Bhargav Naidu's Presentation: Yes. Yes. Yes. Yes. Yes. Already everything is done.
+Vijay Krishna: stop.
+Bhargav Naidu's Presentation: The videos are almost done clearly. So by Thursday I'll provide his videos also clearly complete.
+Vijay Krishna: Okay.
+Bhargav Naidu's Presentation: Okay.
+Vijay Krishna: Okay.
+Bhargav Naidu's Presentation: So by Thursday what we'll do is we will get ready with the 7 days content plan and also the ads plan completely so that
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: from Friday on we are
+Vijay Krishna: Okay.
+Bhargav Naidu's Presentation: launching.
+Vijay Krishna: But uh before that we need to fill up the Instagram handle page, right? There is no post in the Instagram handle.
+Bhargav Naidu's Presentation: No that's what I'm talking about. So from uh from this day what do you call from uh Thursday yeah I'll give you a complete 7 days plan
+ 
+ 
+00:14:37
+ 
+Vijay Krishna: Thursday. Okay.
+Bhargav Naidu's Presentation: it we'll just schedule the post completely every day two two posts okay it just schedule it
+Vijay Krishna: Right.
+Bhargav Naidu's Presentation: so that every day even if people are not working on creating the post at least 7 days 14 post bank we already have okay we'll schedule those post up directly okay as is your responsibility complete okay
+Vijay Krishna: Right. Yeah.
+Bhargav Naidu's Presentation: you'll be working with me to get these things done okay perfect so guys uh so uh Vijay
+Aishwarya Reddy: Got it. Got it. Got it.
+Bhargav Naidu's Presentation: if you can see these ads right of okay the ads which we have already made so we made how many eight ads in total
+Vijay Krishna: Yeah. Yeah.
+Bhargav Naidu's Presentation: completely okay so let's go one by one clearly mark the changes in this thing all so that it's easier for us to change things up
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: okay so first ad which is there is a fear of resolution okay which means the point is people who
+Vijay Krishna: Okay.
+ 
+ 
+00:15:19
+ 
+Bhargav Naidu's Presentation: are afraid upon uh but this is this form kind of ad completely okay it's clear that there's no budget surprises no delays no excuses completely okay Hello.
+Vijay Krishna: Yeah. Yeah. Yeah.
+Bhargav Naidu's Presentation: Yeah. So the copy of the ad is different. So copy of the ads are very clear. No,
+Vijay Krishna: Here.
+Bhargav Naidu's Presentation: don't worry about the copy. Just tell me the creative side. How how is the copy of the creative? And also how was the image of the creative? Is it good or you want changes in
+Vijay Krishna: No,
+Bhargav Naidu's Presentation: that?
+Vijay Krishna: I think like you know the image itself that need to be changed. Uh I think like we can go with this one.
+Bhargav Naidu's Presentation: Let's do one thing now. If that's a problem, let's do one. Okay. How is the copy? Copy is good.
+Vijay Krishna: The copy is good.
+Bhargav Naidu's Presentation: Okay.
+ 
+ 
+00:15:58
+ 
+Vijay Krishna: I mean like
+Bhargav Naidu's Presentation: Let's do one thing. Let's see every ad's copy.
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: Okay. What you do is give me 10 images. Okay. Now 10 images that you want to use it for ads.
+Vijay Krishna: Yeah. Right.
+Bhargav Naidu's Presentation: What we will do is based upon the copy the AI will automatically select what what uh image has to go for what copy clearly. Okay. But all the images are what you selected only completely.
+Vijay Krishna: Okay.
+Bhargav Naidu's Presentation: It is easier format right.
+Vijay Krishna: Right.
+Bhargav Naidu's Presentation: So A please note one more point also that we need to have uh 10 shortlisted images from Vijay for the ads.
+Aishwarya Reddy: Okay. Great.
+Bhargav Naidu's Presentation: Okay.
+Aishwarya Reddy: Got
+Bhargav Naidu's Presentation: Perfect. So first copy is good. Second copy.
+Aishwarya Reddy: it.
+Bhargav Naidu's Presentation: Why hire fire vendors when I can do all design?
+Vijay Krishna: When one can do it all.
+ 
+ 
+00:16:36
+ 
+Bhargav Naidu's Presentation: Yeah. When I can when I can do it all. Okay.
+Vijay Krishna: When one one can do it
+Bhargav Naidu's Presentation: Design to when one. So this I I is looking like one now.
+Vijay Krishna: all.
+Bhargav Naidu's Presentation: So we have to change this I. Okay. So it should look like one. One should be more prominent clearly, right? Okay. This one it's looking like I but it should like it should look like one
+Vijay Krishna: Yeah.
+Bhargav Naidu's Presentation: properly. Okay. But this copy also is good. Okay. Design to construction to interior to handover. This also is looking good. But the point is the image should be changed behind that. So that the context the text which is there is far more visible clearly. Right.
+Vijay Krishna: Uh just a second. Bago. I'm joining you from the laptop. There is a last shot
+ 
+ 
+00:17:20
+ 
+Bhargav Naidu's Presentation: Okay.
+Vijay Krishna: against
+Bhargav Naidu's Presentation: Join from the laptop and then exit from the phone. Okay. Yeah. Done.
+SPACEOID DESIGNS: Yes.
+Bhargav Naidu's Presentation: Okay.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: Perfecto. Perfecto. Start broadcast. Right. So the second image changes is the I is looking like I it's actually has to be one. The main uh thing should be the one can do do it all completely. Okay.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: And the image also should be a bit blur or else the image should be changed properly because the design to construction to interior to handover is not looking very clear. Okay. rest all is is is perfect. So this is for free consultation. Okay. So Aish if you see the first ad the agenda is when you click on book consult they have to pay $4,9.99 for design consultation. Got it? The second ad which is there it's a free strategy call wherein appointment sector will just take details which
+ 
+ 
+00:18:48
+ 
+Aishwarya Reddy: Yes.
+Bhargav Naidu's Presentation: means the first category ads you will get lot of direct bookings. The second ad which is there you'll get a lot of uh strategy call meetings which wherein you are getting you'll get involved more. These are called qualifications.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So first ad gives you more qualified leads. Second ad gives you more leads. You'll need to qualify them manually back once again. Got it? So next the third ad which is there is a cost guide.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: This is called a trip wire or else usually it's called a lead magnet wherein you'll understand how many people in Hyderabad are interested in getting a new project done because they
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: might be a potential buyers right away or they might be a potential buyers coming in coming forward. We need to nurture these audience clearly. Got it.
+Aishwarya Reddy: Got
+Bhargav Naidu's Presentation: So in cost guide clearly already we have made a cost guide.
+ 
+ 
+00:19:38
+ 
+Bhargav Naidu's Presentation: So this is how it is free download.
+Aishwarya Reddy: it.
+Bhargav Naidu's Presentation: How much does it really cost to build to build in Hyderabad? It should actually be build a house in Hyderabad. Vijay a house in
+SPACEOID DESIGNS: How much does it really cost to build get?
+Bhargav Naidu's Presentation: Hyderabad.
+SPACEOID DESIGNS: Yeah. To build a house in
+Bhargav Naidu's Presentation: Yes. So the change is the third ad.
+SPACEOID DESIGNS: Hyderabad.
+Bhargav Naidu's Presentation: Third ad which is there. It has to add a house in Hyderabad. Okay. And then the download link is there. Square square square foot rates, material cost, timeline planning, everything is properly properly there. New build logo is very clear. Rest the creative is very good.
+SPACEOID DESIGNS: Yeah,
+Bhargav Naidu's Presentation: No problem the case. Okay.
+SPACEOID DESIGNS: I think like this is perfect.
+Bhargav Naidu's Presentation: Yeah.
+SPACEOID DESIGNS: Uh don't you think uh the cost guide should go up and sit in the second position in
+ 
+ 
+00:20:23
+ 
+Bhargav Naidu's Presentation: No, but cuz point is what we are trying to do right now.
+SPACEOID DESIGNS: ad two?
+Bhargav Naidu's Presentation: We have categorized the ads which are there completely into random categories cuz point is we have we have given prompts in that manner completely. Okay, first 1 2 3 4 doesn't matter completely. So this 1 2 3 4 is not a priority part completely.
+SPACEOID DESIGNS: Ready?
+Bhargav Naidu's Presentation: Okay, it's just arranged arrange. That's it. Okay, there's no priority in this as such. They're just different ads. That's it. Okay, great. Now go let's go to ad number four. And now what is authority? Authority act. Now this is 6 years 25 crores plus deliver.
+Aishwarya Reddy: started.
+Bhargav Naidu's Presentation: Okay. This is what important for you ashwaria. Okay. So Vijay is going to give you this information about his business about his experience also on the Thursday meeting clearly.
+ 
+ 
+00:21:07
+ 
+Bhargav Naidu's Presentation: Okay. Okay. But before that if you want uh once his delays are ready tomorrow if you want we can actually get on a call with Vijay. You can personally make a call to Vijay. Okay. Schedule a meeting with him. Where do you understand his business better? Okay.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So this I'll give you so for that I'll I'll give you the credibility questions also clearly because Vijay if he starts explaining he'll explain he'll give you a lot of details but you need to be sharp enough to ask what is required only okay so he has
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: already has experience of six years okay and he has delivered more than 25 crores
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: worth of properties completely okay okay this is the whole format completely so this
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: again is a uh consultation part So anyone is
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: interested to get a new house done. So but I feel there should be more context to be added for this one which means uh new build.
+ 
+ 
+00:22:00
+ 
+Bhargav Naidu's Presentation: So how is this creative? What do you feel?
+SPACEOID DESIGNS: in add number
+Bhargav Naidu's Presentation: Add number four. Yes or else?
+SPACEOID DESIGNS: four.
+Bhargav Naidu's Presentation: No. This is looking good only but the creative needs to be changed. That's why it's looking a bit off. The copy is good.
+SPACEOID DESIGNS: Yeah, probably this is not the picture that is
+Bhargav Naidu's Presentation: The creative needs to be changed. Okay. Okay. The copy is growing.
+SPACEOID DESIGNS: uh
+Bhargav Naidu's Presentation: So add four. Copy is good. Only creativity distribution. That's fine. Okay. So let's go to add five. Transformation part. Okay.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: From empty plot to move in ready. One team one timeline. Okay. So this is this is the ad which sends them to our landing page to review our existing work. Okay.
+ 
+ 
+00:22:41
+ 
+Bhargav Naidu's Presentation: Once they look into our existing work, then they'll then go for book an appointment wherein they'll go for either free consultation or they'll opt for a 4,900 consultation. Got it. This gives us more clicks to go to a landing page to build credibility completely.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: Okay. This ad is for that.
+SPACEOID DESIGNS: Yeah. This is this is
+Bhargav Naidu's Presentation: Yes.
+SPACEOID DESIGNS: good.
+Bhargav Naidu's Presentation: Next ad number six. Ad number six. Sorry. Okay. Question hook. Planning a build. Planning to build in Hyderabad. So again, planning to build a house in Hyderabad. We should be specific. At number six, a house. Planning to build a house in Hyderabad. Here's what no one tells you about about construction costs about construction
+SPACEOID DESIGNS: timelines.
+Bhargav Naidu's Presentation: cost timelines and choosing the right team.
+SPACEOID DESIGNS: I'm choosing the right time right
+Bhargav Naidu's Presentation: Okay.
+ 
+ 
+00:23:28
+ 
+SPACEOID DESIGNS: thing.
+Bhargav Naidu's Presentation: This is again cost guide completely. Okay. Now the point Auroria and Vijay you have to understand is once a person clicks on cost guide he has to give his data then and only then he can download the cost guide completely. Okay.
+Aishwarya Reddy: Yeah.
+Bhargav Naidu's Presentation: Okay.
+Aishwarya Reddy: So that we can see who's really watching it and also get the leads
+Bhargav Naidu's Presentation: Yes. Yes. Yes. Yes. When when I'm talking about data everything is there in that format.
+Aishwarya Reddy: done.
+Bhargav Naidu's Presentation: Okay. There's a qualifying questioner completely wherein I'll show you the question also later for you complete. Okay.
+SPACEOID DESIGNS: So this is the same free cost that we are offering as a lead magnet
+Bhargav Naidu's Presentation: Yes. Yes. Yes. Yes.
+Aishwarya Reddy: Yeah.
+Bhargav Naidu's Presentation: Yes. Completely. Yeah. Same cost guide. Okay.
+ 
+ 
+00:23:57
+ 
+SPACEOID DESIGNS: right
+Bhargav Naidu's Presentation: Next, premium lifestyle. Okay, these are homes that reflect your success. Now, here,
+SPACEOID DESIGNS: I think probably we we thought of some some other uh caption here this
+Bhargav Naidu's Presentation: yes, the copy is is
+SPACEOID DESIGNS: is like home that reflects homes
+Bhargav Naidu's Presentation: is
+SPACEOID DESIGNS: that reflects your dreams
+Bhargav Naidu's Presentation: okay.
+SPACEOID DESIGNS: probably.
+Bhargav Naidu's Presentation: homes that I would say build homes that reflect your dreams cuz point is I want to add this build because it is new build. Got it?
+SPACEOID DESIGNS: homes.
+Bhargav Naidu's Presentation: Yeah.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: Build home that reflects your dream.
+SPACEOID DESIGNS: Yeah, probably. Yeah. Build homes that
+Bhargav Naidu's Presentation: Build homes that reflect your dreams. Okay. So I will add build and instead of success there should be dream.
+SPACEOID DESIGNS: reflect.
+Bhargav Naidu's Presentation: Okay. build dream instead of success. Okay, so this is also is is a good one. Again, creative needs to change.
+ 
+ 
+00:24:59
+ 
+Bhargav Naidu's Presentation: That's that's all good completely.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: But the CTA, the call to action for this thing, CTA H.
+Aishwarya Reddy: How about is build your dream homes that reflect your
+Bhargav Naidu's Presentation: No, no, no, no. Again, see the point is if you talk about uh see there is
+Aishwarya Reddy: success.
+Bhargav Naidu's Presentation: there's a there's a uh importance of copy. Okay, a copy should not seem like a casual conversation but it should feel like okay this is uh casually sophisticated. Got it?
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So this adding sophisticated it's all about copy game only. So when you see good brands okay even though they they publish or they in ads or whatever it might be or or in holdings the words that they use look very similar but they're uplifting. They are very good to uh you know read or good to feel about. They make you think. Got it.
+Aishwarya Reddy: Got
+Bhargav Naidu's Presentation: It should feel simple but it should make you think.
+ 
+ 
+00:25:56
+ 
+Aishwarya Reddy: it.
+Bhargav Naidu's Presentation: So this this is a copy in that format. Complete. Okay. So never use sentences in any ad.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: If you want to build a good quality brand never use sentences. Okay. Perfect.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Next ad number eight. Okay. This is retargeting which is this ad is used for people who have already visited our page or or else who who has already clicked on our ad which I use for you most importantly.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: Okay. Once a person clicks on cost guide once a person any ad if they click up on this is what they'll get.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: Okay. Still thinking about your dream home fixed timeline transparent pricing one team limited consolidation slots book now. Okay. This ad is perfect, neat, clean, classic. But point is, I still don't like the image. The image is taking away the beauty of the of the copy.
+ 
+ 
+00:26:45
+ 
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: Okay. So,
+SPACEOID DESIGNS: Right.
+Bhargav Naidu's Presentation: let's come back to the seventh ad. Seventh ad, the CTA is not mentioned. Is not mentioned.
+SPACEOID DESIGNS: See here.
+Bhargav Naidu's Presentation: So, this ad for example, the premium premium lifestyle. Okay. Homes that reflect reflect your dreams. Build homes that reflect your dreams. Is a copy that we finalized. Okay. But what is a CTA? What is a call to action?
+SPACEOID DESIGNS: Welcome.
+Bhargav Naidu's Presentation: Do I need to click on it for cost guide? Do I need to click on it for booking a consultation? Or what is it exactly? That's not mentioned over here.
+SPACEOID DESIGNS: I think probably that can take you uh take through the different uh design spaces of
+Bhargav Naidu's Presentation: Okay.
+SPACEOID DESIGNS: our case studies and have a story about
+Bhargav Naidu's Presentation: So basically if you see Yeah,
+SPACEOID DESIGNS: it.
+Bhargav Naidu's Presentation: it's if it's mentioned none just for branding only completely.
+ 
+ 
+00:27:34
+ 
+SPACEOID DESIGNS: Okay.
+Bhargav Naidu's Presentation: So maybe this is for getting more clicks. I need to clarify this thing once again with the with the with the team also. Okay.
+SPACEOID DESIGNS: Just make a note of it. Uh we'll discuss about it on
+Bhargav Naidu's Presentation: Yes. That's why that's why that's why I made a note on this part clearly.
+SPACEOID DESIGNS: Thursday.
+Bhargav Naidu's Presentation: Okay. So, this is the whole thing and V the number this is the one
+SPACEOID DESIGNS: Number just keep it for now. I'll try to get it uh get a new number by end of this
+Bhargav Naidu's Presentation: and this is the website is correct.
+SPACEOID DESIGNS: week.
+Bhargav Naidu's Presentation: Hello.com.
+SPACEOID DESIGNS: It's not hello. We haven't created any other mail ID. I just created one for myself. So,
+Bhargav Naidu's Presentation: There's founder.
+SPACEOID DESIGNS: let's create one probably.
+Bhargav Naidu's Presentation: There's only founder only as of now,
+SPACEOID DESIGNS: Yeah. Founder at company.com.
+Bhargav Naidu's Presentation: right?
+SPACEOID DESIGNS: Uh, let's keep this as a team at new.com or new
+ 
+ 
+00:28:16
+ 
+Bhargav Naidu's Presentation: No, no, no, no, no, no, no. I told you one clear if you remember.
+SPACEOID DESIGNS: company.
+Bhargav Naidu's Presentation: Okay, the email ids that you make should be very specific, okay, to the use case. So,
+SPACEOID DESIGNS: Right.
+Bhargav Naidu's Presentation: first thing team.com is only for your team people who are client-f facing part completely. Okay. Like for example, Aishwar is there,
+SPACEOID DESIGNS: Okay.
+Bhargav Naidu's Presentation: she'll use team at that new build.com. Okay. The other person joins your team, he'll use team. What you have to use? You have to use reach us at that new.com only for inquire only for uh organic or uh you know uh any official things apart from apart from your official mail ID.
+SPACEOID DESIGNS: Okay.
+Bhargav Naidu's Presentation: Okay.
+SPACEOID DESIGNS: Right.
+Bhargav Naidu's Presentation: Reach us at direct newbuildcode.com.
+SPACEOID DESIGNS: Uh yeah, reaches for probably uh you know the converted
+Bhargav Naidu's Presentation: Yes.
+SPACEOID DESIGNS: clients.
+Bhargav Naidu's Presentation: Yes. Or people who want to just just just reach you.
+ 
+ 
+00:29:09
+ 
+Bhargav Naidu's Presentation: People who want to understand.
+SPACEOID DESIGNS: Yeah, for that I think like hello is fine enough.
+Bhargav Naidu's Presentation: Hello is fine.
+SPACEOID DESIGNS: It's it's saying that you know you you're just knowing about the company just calling
+Bhargav Naidu's Presentation: Hello. Hello actually is Yeah. Yeah. Yeah. Yeah. Hello is Hello is good. So we'll use hello at the new.com for the for the organic inquiries who just want to enquire randomly or
+SPACEOID DESIGNS: on
+Bhargav Naidu's Presentation: want to know about the brand clearly. Okay. team at team@newel.com for any uh what do you call uh client communications completely okay the founder communication will go through you that's founderadnew.com
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: okay perfect so guys let me uh I now I'm going to the website part completely to show
+SPACEOID DESIGNS: Yeah.
+Aishwarya Reddy: Yeah.
+Bhargav Naidu's Presentation: you an idea what is the qualification process okay now so this is how the website looks like clearly
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: okay so in this we have already made a few changes completely but we are still making a few changes based upon uh the pictures once the shortest from which I will change all the whole thing completely.
+ 
+ 
+00:30:01
+ 
+Bhargav Naidu's Presentation: Okay.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So in this if a person clicks on free strategy call this is the file that he'll get. He needs to give his phone number full name phone number his current budget.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Okay this is again the name product timeline the name should be changed over here. Okay I I'll get this one done. So then the instead of project timeline it should be when do you want to start something like that completely should be over here.
+Aishwarya Reddy: Okay, based upon this information I can see what what is his budget and what exactly is
+Bhargav Naidu's Presentation: Yes. Yes. So it's clear. Yes. Yes. So let's take an example.
+Aishwarya Reddy: requirements.
+Bhargav Naidu's Presentation: Bav Naidu mobile number is 88019. Okay. Client my my budget is close to 1 to3 CR. Okay. And I am planning to start in next 3 months.
+Aishwarya Reddy: Mhm.
+Bhargav Naidu's Presentation: Okay.
+ 
+ 
+00:30:45
+ 
+Aishwarya Reddy: Thank you.
+Bhargav Naidu's Presentation: And my project type is I want to get a uh renovation done completely. Okay. So you can have a word. Hi Mr. Bharav.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: I see that you want to start your renovation property in next 1 to 3 months. Okay. And your budget is 1 to 3 crores. Okay. Can I understand in what area are you located in? Okay.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: What is the square fit clearly? Okay.
+Aishwarya Reddy: Mhm.
+Bhargav Naidu's Presentation: So small questions which are there need to be asked completely. Okay. We actually are redesigning this question to a better extent also.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Completely.
+Aishwarya Reddy: Yeah.
+Bhargav Naidu's Presentation: Okay.
+Aishwarya Reddy: Also the area space right if needed with
+Bhargav Naidu's Presentation: So yes yes yes yes the location Vijay if you remember we discussed if you remember Vijay
+Aishwarya Reddy: the in the
+Bhargav Naidu's Presentation: we discussed about
+ 
+ 
+00:31:20
+ 
+SPACEOID DESIGNS: Yeah, we did discuss. I think like you know uh as we have a week of time to fill up the Instagram handle meanwhile
+Bhargav Naidu's Presentation: the
+Aishwarya Reddy: location
+SPACEOID DESIGNS: uh we can create a proper pattern kind of BOQ or not a BOQ probably a questionnaire that need to be asked and pitch that need to be given to the client from me.
+Bhargav Naidu's Presentation: yes yes yes so that's why I'm I'm telling from from Friday we'll start the ads. So you start the ads on Friday. Friday and Saturday 2 days it will take take time for ads to process completely from Sunday on we'll get good quality leads will start coming from Sunday onwards. Okay. So Thursday once the meeting is done you train a on these parameters.
+SPACEOID DESIGNS: Okay.
+Bhargav Naidu's Presentation: Friday and Saturday also I'll book a for 1 hour for you.
+SPACEOID DESIGNS: Right. Right. But we the pro I was thinking you know we are just filling up the page first with the ads
+Bhargav Naidu's Presentation: filling up the page
+ 
+ 
+00:32:09
+ 
+SPACEOID DESIGNS: bother you know our Instagram handle is uh
+Bhargav Naidu's Presentation: as
+SPACEOID DESIGNS: very vague it's there is nothing in the page right we need to have some content before
+Bhargav Naidu's Presentation: yes.
+SPACEOID DESIGNS: we start uh our
+Bhargav Naidu's Presentation: So that's what before Thursday itself.
+SPACEOID DESIGNS: campaign
+Bhargav Naidu's Presentation: Okay. You that format. Okay. No, I already gave I share the task today on we we'll start posting something on that.
+SPACEOID DESIGNS: right okay all right then
+Bhargav Naidu's Presentation: Okay. Yeah. So I should just note down this thing once. Okay. We should by Thursday at least.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So today is what? Today is Tuesday. Okay. By Thursday at least we need to have one line filled up. Okay. These three posts. Okay.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: The first three post uh which just give a small uh idea about first first three post.
+ 
+ 
+00:32:43
+ 
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: What do you want it to be like? Okay.
+SPACEOID DESIGNS: Uh yeah, sure.
+Bhargav Naidu's Presentation: My my agenda would be like what why and
+SPACEOID DESIGNS: Uh
+Bhargav Naidu's Presentation: how what is new
+SPACEOID DESIGNS: yeah, probably. What? Y and power.
+Bhargav Naidu's Presentation: build completely? Okay. Why a person has to choose new build and how can a person get in touch with
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: us? Got it? So these three are very important.
+Aishwarya Reddy: Can you repeat it again,
+SPACEOID DESIGNS: Yeah.
+Aishwarya Reddy: please?
+Bhargav Naidu's Presentation: What? Why and how? What is new build?
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: How a person uh sorry what is new build?
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: Why a person should get in get why why a person should uh onboard new build? And last, how can I get in touch with new builds or yeah, something like something that that that's that that's the easier process to go
+ 
+ 
+00:33:34
+ 
+Aishwarya Reddy: Okay.
+SPACEOID DESIGNS: not not how can I get in touch with you but uh you know how we are building uh the extraordinary
+Bhargav Naidu's Presentation: with. Uh yeah, but yeah,
+SPACEOID DESIGNS: homes.
+Bhargav Naidu's Presentation: that can be a problem. Case studies basically case studies can be a last last good one.
+SPACEOID DESIGNS: Yeah. Yeah.
+Bhargav Naidu's Presentation: Okay.
+SPACEOID DESIGNS: So I figure let's design these posts uh in this way and p pin them up in the at the top of the page so
+Bhargav Naidu's Presentation: Yes.
+SPACEOID DESIGNS: that you know as soon as you land in Instagram handle you will know what is actually is
+Bhargav Naidu's Presentation: Yes. Yes. Yes. Yes. Okay. So, sure we'll get this to none.
+SPACEOID DESIGNS: about.
+Bhargav Naidu's Presentation: But before that, for doing that, we need to actually shoot uh Vijay for a small content kind of a thing. Okay.
+SPACEOID DESIGNS: Yeah know let's do it on Thursday.
+Bhargav Naidu's Presentation: Okay. So,
+ 
+ 
+00:34:08
+ 
+Aishwarya Reddy: Thank you.
+Bhargav Naidu's Presentation: so that's what so before that what we'll do is Aisha let you and me just
+SPACEOID DESIGNS: Uh I think like you know bar
+Bhargav Naidu's Presentation: like Yeah.
+SPACEOID DESIGNS: just a second just a second so I don't think like you know uh this
+Bhargav Naidu's Presentation: Yeah.
+SPACEOID DESIGNS: is this I think can happen uh from Friday if uh as per my guess because you know let's sit once on the creatives okay let's do this way uh we are having a clear meeting on Thursday I I'll come properly dress for the photo shoot whatever that is need to
+Bhargav Naidu's Presentation: Yes.
+SPACEOID DESIGNS: be We'll do the shoot. We'll sit on the Instagram handle, you know, how to post all the posts for at least four to five days each uh each day or three posts.
+Bhargav Naidu's Presentation: H
+SPACEOID DESIGNS: At least there will be 15 posts in the page. And uh make sure like you know by next Thursday um on before we reach uh you know not the coming Thursday but uh the upcoming the next coming uh Thursday by the time
+ 
+ 
+00:35:02
+ 
+Bhargav Naidu's Presentation: no no no no no no V I I understand what you're telling me is is actually good
+SPACEOID DESIGNS: we will Yeah.
+Bhargav Naidu's Presentation: only okay it's actually good for to be very open with you,
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: okay? Cuz it we'll get more time to do it. But point is, buddy, we it's it's already getting, you know, uh a bit further. What my sgestion would be is, okay, you you you think once clearly, okay, anyhow, this Thursday, you're meeting up. Okay, we'll do a small shoot for you.
+SPACEOID DESIGNS: Right.
+Bhargav Naidu's Presentation: Anyhow, okay, before that if we can start posting static content at least.
+SPACEOID DESIGNS: Right.
+Bhargav Naidu's Presentation: So, for example, you anyhow you you are giving me today 10 uh images, the best images you're providing me,
+SPACEOID DESIGNS: Image is ready.
+Bhargav Naidu's Presentation: right?
+SPACEOID DESIGNS: Yeah. All
+Bhargav Naidu's Presentation: Okay. With those 10 images we can make corrosal posts, we can make static post and we can make similar small motion graphic videos also with that.
+ 
+ 
+00:35:49
+ 
+Bhargav Naidu's Presentation: Okay.
+SPACEOID DESIGNS: right.
+Bhargav Naidu's Presentation: So before Thursday if we can post at least one or two lines which is two static post one coral post or else two static post one small real video. Okay. We will see that okay traction how is it?
+SPACEOID DESIGNS: Okay. Right. Right.
+Bhargav Naidu's Presentation: Okay small at least it it'll start up.
+SPACEOID DESIGNS: Yeah. Let's do that. Not a problem.
+Bhargav Naidu's Presentation: It will stand up because see point is for me taking action is more important.
+SPACEOID DESIGNS: Yeah. Yeah. Yeah.
+Bhargav Naidu's Presentation: Okay.
+SPACEOID DESIGNS: Let's start the thing from uh today uh from tomorrow morning itself.
+Bhargav Naidu's Presentation: Perfect.
+SPACEOID DESIGNS: I I'll share all the images and uh
+Bhargav Naidu's Presentation: Today night bro today even please.
+SPACEOID DESIGNS: No, no, no, no.
+Bhargav Naidu's Presentation: Okay.
+SPACEOID DESIGNS: You you post it by tomorrow morning.
+Bhargav Naidu's Presentation: Ah tomorrow we'll post.
+SPACEOID DESIGNS: But I'll send you all the things by today evening actually.
+Bhargav Naidu's Presentation: Yes.
+ 
+ 
+00:36:26
+ 
+Bhargav Naidu's Presentation: 100%. 100%. Okay.
+SPACEOID DESIGNS: Right.
+Bhargav Naidu's Presentation: So I should please make a note of this thing please. Okay.
+Aishwarya Reddy: So,
+Bhargav Naidu's Presentation: Perfect. So this is where we are closing things up in this meeting completely. Okay. So deliverables are clear completely. We just need to change the images in in this format. In this in in this case just the images are are pending in the website completely.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: Resto is already sorted up completely. Okay. Uh the uh deliverables from Vijay did you drop it in the group Vijay by any
+SPACEOID DESIGNS: Right.
+Bhargav Naidu's Presentation: chance?
+SPACEOID DESIGNS: Which details right
+Bhargav Naidu's Presentation: Your deliverables which are pending from your side. Yeah.
+SPACEOID DESIGNS: now?
+Bhargav Naidu's Presentation: Please drop it in the group right now.
+SPACEOID DESIGNS: Sure. Yeah. I'll just drop the B.
+Bhargav Naidu's Presentation: Okay.
+SPACEOID DESIGNS: Yeah.
+Bhargav Naidu's Presentation: Awar you're you're you comfortable?
+ 
+ 
+00:37:04
+ 
+Bhargav Naidu's Presentation: You have an idea now?
+Aishwarya Reddy: Yes.
+Bhargav Naidu's Presentation: Perfect. So guys,
+Aishwarya Reddy: Yeah.
+Bhargav Naidu's Presentation: let's catch up on Thursday. Okay, clearly on this part, please follow up on Vijay because see, I'll tell you one thing very openly. He is a person. He's very passionate about what he does. Okay, he once gets involved into work,
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: he'll forget everything. Rest of the world doesn't matter to him. Okay?
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: I myself have to call him three to four times. Okay? And he's he travels very often.
+Aishwarya Reddy: Got it.
+Bhargav Naidu's Presentation: So what I want you to do is keep a time of 7:00.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: So call him at 6:45. Tell him key Mr.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Vijay, we need this information by 7:00. Okay. Is it ready or not ready? If not ready, can can I get it in next one hour at least?
+ 
+ 
+00:37:39
+ 
+Bhargav Naidu's Presentation: Okay.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Make sure you get this thing done. Okay. So, you should be on on Vijay completely.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Okay. And it's very cool, very chill dude.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Okay. Now, perfect. So, Vijay,
+SPACEOID DESIGNS: Yeah,
+Bhargav Naidu's Presentation: we clear on this part that he
+SPACEOID DESIGNS: I I'll make sure I'll make sure I do remember them and uh send
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: won't trouble a
+SPACEOID DESIGNS: it but yeah yeah yeah it's fine I should yeah I I'll drop them as my
+Bhargav Naidu's Presentation: lot.
+SPACEOID DESIGNS: part.
+Aishwarya Reddy: Thank you.
+SPACEOID DESIGNS: So yeah uh so definitely let's uh let me send you the 10 pictures first today and uh be prepared with the Thursday morning uh Thursday meeting and you guys start posting from
+Bhargav Naidu's Presentation: Yes. 3:00.
+SPACEOID DESIGNS: tomorrow so that we'll have at least two to three post on the page and see the
+Bhargav Naidu's Presentation: Perfect. Perfect.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Today Ash, let's sit on the creative part of Vijay also today.
+SPACEOID DESIGNS: traction.
+Bhargav Naidu's Presentation: Okay. Now once you are done with this part, give me a call.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: We'll sit on the V creative part. Okay. Now done.
+Aishwarya Reddy: Okay.
+Bhargav Naidu's Presentation: Ch. Thank you so much for the meet.
+SPACEOID DESIGNS: Sure. All right. Yeah. Yeah.
+Bhargav Naidu's Presentation: I hope this has given a good clarity for us for next Thursday's direction. Okay.
+ 
+ 
+Transcription ended after 00:38:56
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.

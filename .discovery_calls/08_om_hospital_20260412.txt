@@ -1,0 +1,1594 @@
+﻿📝 Notes
+Apr 12, 2026
+Om homeopathic multi speciality Hospital automation understanding meet
+Invited Dr. Piyush Zinzuvadia Bhargav Naidu Sandy Kadyan
+Attachments Om homeopathic multi speciality Hospital automation understanding meet
+Meeting records Transcript 
+
+
+
+
+Summary
+Automation experts explained service offerings for global scaling and customization, with the doctor describing homeopathy challenges and specific automation needs.
+
+Discussed Automation Services and Examples
+Automation experts detailed their services, including building internal automations and outreach marketing campaigns using Python scripts for B2B and B2C clients. Their methodology involves 4-week sprints and a custom CRM to track automated processes for clients like a college needing lead generation.
+
+Homeopathy Challenges and Automation Needs
+The doctor explained that achieving a cure in homeopathy requires a 90 to 120 minute detailed consultation, with the biggest challenge being selecting 1 perfect remedy out of thousands for a disease. Automation is needed to save time on repetitive mechanical tasks and to find patients globally who can afford the treatment.
+
+Proposed Phase One Strategy and Costs
+The group decided to focus the first 2 months on lead generation and testing software in the Indian market before scaling internationally, with the initial focus on performance marketing. An initial investment of 2 lakhs was estimated for developing a landing page, social media strategy, and a custom CRM, excluding ad spend.
+
+
+
+
+Next steps
+* [The group] Research Global Market: Identify specific countries and geographic areas searching for homeopathic treatments. Determine key diseases and search volumes for targeted marketing efforts.
+* [The group] Analyze Local Pricing: Determine the prices and fees local doctors charge for specific treatments in target international areas.
+* [Piyush Zinzuvadia] Prepare Patient Data: Provide organized case studies and patient data to the marketing team. Use this information to build effective marketing materials.
+* [Sandy Kadyan] Send Documents: Send all required strategic documents and estimations to Piyush for immediate review.
+* [Piyush Zinzuvadia] Define Features: Determine the specific features required for the management software development.
+* [Piyush Zinzuvadia] Review Documents: Review the received contract documents, requirements, and expectations.
+
+
+
+
+Details
+* Introduction and Expertise: Bhargav Naidu introduced their partner, Sandy Kadyan, who is an expert in AI automation, to Piyush Zinzuvadia, and mentioned that they wanted them to be part of the meeting. Sandy Kadyan then initiated the discussion by asking about Piyush Zinzuvadia's current setup, the things they are looking for, and any bottlenecks they are facing.
+* Service Explanation Request: Piyush Zinzuvadia suggested that it would be more effective if Sandy Kadyan explained their services in detail first so that they could then describe their specific requirements based on the platform being offered (00:02:02).
+* Automation Project Examples: Sandy Kadyan explained that they are currently working on multiple projects, including building an application for a warehouse auditing professional that focuses on different construction phases, such as steel type and dimensions. They described their methodology, which involves dividing requirements into four-week sprints and informing the client about which processes can be automated (00:02:02).
+* Types of Automation and Client Examples: Sandy Kadyan mentioned they build applications, internal automations, and outreach automations based on the client's needs, citing a B2B example of automating marketing campaigns for a college to attract students (00:02:57). For the college, they scraped school databases, collected market signals, performed Google keyword mapping, and scraped YouTube to identify searches (00:03:49).
+* Automated Marketing Funnel and CRM: They elaborated that they automated the Google Ads setup for the college and created a backend funnel that automatically notifies the client's internal team via WhatsApp, counselors via emails, and appointment setters using their respective channels (00:03:49). Additionally, they built a custom CRM to track everything, emphasizing that these processes are automated using Python scripts and are not manual, requiring only a one-time build (00:04:40).
+* Data-Driven Ad Strategy and Sprints: Sandy Kadyan explained that ad strategy depends on whether the client is testing ads, already has historical data, or is trying to emulate a competitor's success (00:05:32). They noted that most data is publicly available, allowing them to gather signals and determine if a project can be completed in a single sprint (00:06:28).
+* Introduction to Homeopathy: Piyush Zinzuvadia began to brief the team about their services as a doctor, first asking if Sandy Kadyan or Bhargav Naidu had any prior knowledge or experience with homeopathic treatments (00:06:28). Piyush Zinzuvadia defined chronic diseases, such as diabetes, as conditions that typically require lifelong treatment in allopathy, whereas homeopathy offers curative treatment without side effects (00:07:20).
+* Homeopathy's Curative Potential: Piyush Zinzuvadia asserted that homeopathy has the potential to permanently cure 80 to 90 percent of diseases deemed "incurable" on the internet, especially if the pathology is reversible and the disease is in the initial to mid-stages (00:07:20). They then explained the three types of treatment outcomes: suppression, which moves the disease from a less important organ (e.g., skin) to a more important one (e.g., heart); palliation, which provides only temporary relief; and cure, which is the desired outcome and is the opposite of suppression (00:08:29) (00:12:31).
+* Detailed Consultation and Diagnosis Process: Achieving a cure in homeopathy requires a very long, detailed consultation that takes approximately one and a half to two hours, covering the patient's full case history, including family history, pregnancy history, past treatments, and side effects (00:13:34). The treatment analysis must be conducted on four levels: physical, mental, emotional, and spiritual, and they only take a maximum of two new appointments a day to ensure adequate time and justice is given to each patient (00:14:38) (00:16:40).
+* The Challenge of Remedy Selection: A major challenge in homeopathy is that for any single disease condition, there are thousands of potential medicines, and the doctor must select only one that perfectly suits the patient based on all mental, emotional, physical, and historical factors (00:14:38). This process is likened to shopping on Amazon, where applying filters narrows the list of remedies from thousands down to a manageable few (00:15:42).
+* Automation Needs for Efficiency and Scale: Piyush Zinzuvadia identified the primary need for automation as saving time on repetitive, mechanical tasks, specifically noting that 50% of the initial 2-3 hour consultation consists of asking the same questions to every patient. They also mentioned needing automation for reminders and appointment booking, though they have already hired an IT company for website and clinic management software development (00:17:42).
+* Market Focus and Global Scaling Goal: Piyush Zinzuvadia emphasized that saving time requires finding more patients, specifically those who can afford the treatment and do not bargain, highlighting that in India, patients often calculate the charge per month rather than the long-term value. Their vision is to scale globally within one to two years, and they need help reaching the exact target audience who can afford the charge of the treatment (00:18:43) (00:20:37).
+* International Market Research Requirements: To scale globally, Piyush Zinzuvadia needs a team or experts to research and identify countries or areas where patients are searching for homeopathic treatment for specific diseases (00:20:37). They also require research on the local doctors' charges in those areas to establish competitive pricing, aligning with the marketing principles of product, price, place, and promotion (00:21:41).
+* Existing Automation and Future Nurturing Needs: The current IT company is developing automation for the patient flow after the appointment is booked, but this software is only 50% complete. After the patient is cured and the treatment is closed, or if they discontinue treatment, Piyush Zinzuvadia wants to implement a process to nurture them, rebuild trust, encourage them to repurchase, and refer friends and family (00:22:48). Bhargav Naidu clarified this as building a 360-degree customer retention program with upsell and cross-sell opportunities (00:23:42).
+* Review of Current Automation and Scaling Strategy: Sandy Kadyan confirmed their understanding of Piyush Zinzuvadia's model, including the difference between allopathy and homeopathy, the two-part consultation structure (general and personalized questions), and the desire to scale the practice internationally after the internal systems are automated (00:23:42). They noted that the current capacity manages new and old patients, with an average minimum treatment timeline of 8 months to one year (00:26:04).
+* Data Organization and Digital Presence: Piyush Zinzuvadia mentioned that they had only shifted from paper to digital case-taking about three years ago and currently use Google Workspace (Docs, Calendar) for everything (00:28:08). They rated their current online presence as three out of ten but noted that the website is 50% complete and they want to go international, which is why they were interested in working with Sandy Kadyan's team, given their operations in Canada, the US, and the Middle East (00:29:52).
+* Website and Data Presentation Assessment: Sandy Kadyan observed the current website and noted areas for improvement, such as linking the homepage to relevant keywords (00:32:55). Piyush Zinzuvadia then shared their internal patient case system, which tracks symptom improvement using color-coded highlighting (0-30% improvement: no highlighting; 30-70%: yellow; >70%: green) (00:38:13). Sandy Kadyan commended the organization of the data, noting it would be very easy for them to use this information for marketing materials and automation (00:44:57).
+* Focus on Accuracy and Initial Automation Step: Piyush Zinzuvadia emphasized that the core of their practice is the accuracy of the data obtained from the patient, which they cannot compromise (00:54:16). Sandy Kadyan suggested that the smallest initial step for automation could be voice-to-text transcription of the consultation, which could automatically generate the necessary forms and records, thereby addressing the issue of the 30-minute average time wasted on documenting information (00:51:09).
+* Discussion of Current Transcription Model Capabilities: Sandy Kadyan provided an overview of their current model accuracy, noting that English transcription models are currently about 95% accurate for conversations in English, while Indian models are in the range of 80% to 90% accuracy. They stated that, as a team, their system is 90% accurate and that most contracts they undertake include this capability. Piyush Zinzuvadia acknowledged this information and indicated they had specific development documents ready (00:56:46).
+* Need for Multilingual and Context-Specific Question Systems: Piyush Zinzuvadia detailed the necessity of a comprehensive question system, citing a 38-page document of questions already prepared. They explained that specific questions are required for different patient demographics, including female, pediatric, geriatric (patients over 55-60 years old), and male patients (00:56:46). Furthermore, they emphasized the critical need for a multilingual system that can translate and transcribe multiple languages, including Gujarati, Hindi, and English, as they cannot afford mistakes when going international (00:59:55) (01:13:26).
+* Proposed Phase One Focus on Lead Qualification and CRM: Bhargav Naidu suggested that for phase one, focusing on lead qualification or client retention programs integrated with a Customer Relationship Management (CRM) system would have a very good impact. Piyush Zinzuvadia then shared the patient journey flow, which starts from the source, progresses through treatment, and is managed via an admin dashboard (01:02:14).
+* Systematic Appointment and Lead Management Requirements: Piyush Zinzuvadia has developed a systematic appointment system encompassing booking, rescheduling, and cancellation, which they prepared to describe to the development team. They require features like a public calendar, notifications, and an inquiry form that is easy to understand and better than Google Forms, along with a system for follow-ups and classifying leads into high-intent ("hot") and "junk" leads (01:05:00). They also emphasized a unique feature for tracking patient progress (e.g., headache, vomiting, joint pain) from "yellow to green percentage" so patients can visually understand their health analytics over a period, such as four months (01:08:25).
+* Clinic Growth and Admin Dashboard Analytics: Piyush Zinzuvadia explained the need for two main clinic growth functions: analytics and promotion/marketing (01:08:25). The analytics should provide data such as revenue, the total number of patients to date, and the reasons why patients drop treatment. The admin dashboard needs to display a complete health profile, an in-depth homeopathic consultation form, and a health progress report (01:10:49).
+* Decision to Focus on Lead Generation and Marketing Strategy: Piyush Zinzuvadia confirmed they want to focus on generating more leads for the next two months to test the software in the Indian market before expanding internationally. Sandy Kadyan suggested using Facebook performance marketing as a new channel for ads and discussed the minimum amount required for this effort (01:13:26). Bhargav Naidu interjected, suggesting they first understand the "number equation" of the clinic, including average ticket size and client duration (01:19:11).
+* First-Month Service Package and Expected Costs: Sandy Kadyan confirmed that for an initial investment, which they roughly estimated at two lakhs, they could develop a landing page, social media strategy, and integrate WhatsApp-based customer engagement, excluding the ad spend budget. Bhargav Naidu clarified that this package includes their custom CRM for tracking information and data integration with the clinic's currently developing management software (01:21:16) (01:30:24). Piyush Zinzuvadia sought clarification on the minimum amount required for ads, acknowledging that performance is dependent on the ad strategy (01:15:30) (01:24:45).
+* Discussion on Revenue Sharing and Long-Term Collaboration: Piyush Zinzuvadia inquired about a revenue-sharing model, expressing a desire to collaborate long-term and start with that model if possible. Sandy Kadyan explained that they currently use a base payment model (e.g., 1.5 lakhs) plus a percentage per conversion based on performance, which is only offered after establishing confidence in the numbers (01:37:06). Sandy Kadyan confirmed they are highly confident in the performance marketing side (01:43:25).
+* Consensus on Strategy and Next Steps: The group agreed that online marketing, especially case studies and proper messaging, is important since patients often try homeopathy as a last resort. They decided that the immediate focus would be on performance marketing, confirming the plan aligns with Piyush Zinzuvadia's expectations, and Piyush Zinzuvadia will receive documents to review (01:28:31). Bhargav Naidu reassured Piyush Zinzuvadia that the online channel can serve as the first point of contact, even if patients eventually travel across India for a physical consultation (01:51:33).
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
+📖 Transcript
+Apr 12, 2026
+Om homeopathic multi speciality Hospital automation understanding meet - Transcript
+00:00:00
+ 
+Bhargav Naidu: Hey Andy, what's up? All good
+Sandy Kadyan: you go. Where is your voice coming from?
+Bhargav Naidu: coming from. Okay. Yeah. Yeah, I can hear
+Sandy Kadyan: I have a
+Bhargav Naidu: you.
+Sandy Kadyan: look.
+Bhargav Naidu: I am. Okay. Yeah.
+Piyush Zinzuvadia: Hello.
+Bhargav Naidu: Head out to be all good.
+Piyush Zinzuvadia: Yeah, all good. How are
+Bhargav Naidu: All good me Dr. Kish.
+Piyush Zinzuvadia: you?
+Bhargav Naidu: Okay. So Dr. Bish I'd like to introduce you to Sandy. He is my partner. He actually is an expert in AI automation.
+Piyush Zinzuvadia: Okay.
+Bhargav Naidu: So I wanted him to be a part of this need. Yeah. So Sandy, this is Dr.
+Sandy Kadyan: Hey Bish, how are you?
+Bhargav Naidu: P.
+Sandy Kadyan: All good,
+Piyush Zinzuvadia: Yes, all good. How are you?
+Sandy Kadyan: good working on Sundays today.
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: Nice. So yeah, can you uh talk to us about your setup as to what are you looking for and currently what bottlenecks you guys are facing?
+ 
+ 
+00:02:02
+ 
+Piyush Zinzuvadia: I think it would be better if you can explain uh your services in detail so that I can describe my requirements as far as your platform is concerned.
+Sandy Kadyan: Okay. So, uh there are there are few projects which we are working on currently.
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: Okay. One of the project is we are building an app for a guy who does uh
+Piyush Zinzuvadia: I think
+Sandy Kadyan: warehouse auditing as to if a warehouse is constructed properly. So, a warehouse is constructed in different stages phase one, phase 2, phase three. Right?
+Piyush Zinzuvadia: that's
+Sandy Kadyan: uh initially the steel initially it starts with steel as to the type of steel which comes in okay the dimensions there so currently we are building personalized solutions for him
+Piyush Zinzuvadia: better for him.
+Sandy Kadyan: okay and it's a phase by phase project okay let's say whatever requirement you give us okay we divide that thing into sprints okay one sprint is made up of four weeks okay and in one sprint the things which can be automated we'll tell you
+Piyush Zinzuvadia: Okay.
+ 
+ 
+00:02:57
+ 
+Sandy Kadyan: okay if your requirement kind requires more sprints. Okay, 2 months, 3 months, we'll let you know that also. So,
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: generally we work in sprints usually monthly basis. Whatever your requirements are, we can build you applications, we can build you internal automations, we can build you outreach automations. Okay? So,
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: it generally depends on what your requirement is. So, currently we are building an app for this person. On top of that,
+Piyush Zinzuvadia: Sure.
+Sandy Kadyan: there are other people also there are other B2B guys also. So let's say a college is there who wants to attract students. So we have auto automated their marketing campaigns for them. Currently we are doing also
+Piyush Zinzuvadia: Can you explain this? Uh when you say you have automated the marketing campaigns like what does that mean exactly? If you can elaborate on that.
+Sandy Kadyan: so let's say students are there. Okay. So in these three months people would be looking for admissions and colleges.
+ 
+ 
+00:03:49
+ 
+Sandy Kadyan: Okay. So these people are promoting BBA courses, BCA courses and they are promote uh they're positioning themselves as an international brand.
+Piyush Zinzuvadia: looking
+Sandy Kadyan: They're affiliated with an international group. Okay. So what we did was the database of school which is there. We have kind of scraped that data. Okay. And we have collected signals from market as to currently what are people searching for. Okay. Uh we have done Google keywords mapping. We have done we have scraped uh YouTube as to what's what are people searching on YouTube as a platform.
+Piyush Zinzuvadia: If you're watching
+Sandy Kadyan: Okay. And then we have automated Google ads as a platform where we are running ads for those people.
+Piyush Zinzuvadia: YouTube,
+Sandy Kadyan: So we automated that setup for them and through that we have a backend funnel also. Let's say a lead comes in their internal team would be getting notified through WhatsApp. Okay. Their uh counselors would be getting notified through emails.
+Piyush Zinzuvadia: WhatsApp
+ 
+ 
+00:04:40
+ 
+Sandy Kadyan: Okay. Okay. And their appointment setters would be getting off automate uh their appointment setters would be getting notified using their channels. And we did build a custom CRM for those people where they can track everything.
+Piyush Zinzuvadia: Got it.
+Sandy Kadyan: So yeah, this is related to
+Piyush Zinzuvadia: So basically uh whenever as far as your client
+Sandy Kadyan: marketing.
+Bhargav Naidu: Oh,
+Piyush Zinzuvadia: is concerned so for him or him the part is automatic but in the back end you are like running manually all these workflows right?
+Sandy Kadyan: No,
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: no, no. It's not manual. It's kind of automated. We are running Python scripts.
+Piyush Zinzuvadia: They're
+Sandy Kadyan: Let's say a lead is coming. It's kind of automated. We just need to sit and build it once and then your team has to be
+Bhargav Naidu: heat.
+Piyush Zinzuvadia: running
+Sandy Kadyan: currently okay. So this international school example only or international college example only. So let's say Google funnel we have made up. Okay.
+ 
+ 
+00:05:32
+ 
+Sandy Kadyan: And from Google ads the leads are getting pushed through CRM. So we did sit with that team for like two weeks to understand what are problems those clients face
+Piyush Zinzuvadia: all the problems.
+Sandy Kadyan: and we have created automated sequences. This my client engagement is also happening automatically and team update is also happening automatically and for a business owner reports are also getting generated automatically that this is what my team did this week. So it's like
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: that.
+Piyush Zinzuvadia: So as far as running ads is concerned. So that part you create the whole strategy of performance marketing and then you decide a budget on the basis of the last uh like add uh ads
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: performance.
+Sandy Kadyan: It it depends, right? Cuz some people they want to test ads. Okay. Some people have already run ads.
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: They already have the data. Okay. Some people have seen a competitor who is running ads.
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: Okay. And they want to kind of try ads too.
+ 
+ 
+00:06:28
+ 
+Sandy Kadyan: Okay. It's working for those people. It will work for us also. So we collect all the data from the uh because most of the data is available publicly, right? You can get all those signals and then we map okay this project can be built in like one sprint.
+Piyush Zinzuvadia: say that.
+Sandy Kadyan: It's like that.
+Piyush Zinzuvadia: Okay. Okay. So now let me brief you about uh what I do the services I provide as a doctor and as a person. So do you know anything about homeopathy first of all or uh have you taken any treatment you or any one of your family member the homeopathic
+Sandy Kadyan: homeopathy.
+Piyush Zinzuvadia: treatments?
+Sandy Kadyan: So I am coming back to India after like four five years.
+Bhargav Naidu: Yeah.
+Sandy Kadyan: So I'm kind of understanding the market. I'm talking to business owners like you. It'll be much better if you explain us in detail.
+Piyush Zinzuvadia: Okay no issues. So I will explain you in brief first of all what does homeopathy mean so that you can understand in a better way
+ 
+ 
+00:07:20
+ 
+Bhargav Naidu: What is this?
+Piyush Zinzuvadia: what do I want from you guys as a platform. So basically uh we are experts in treat in the treatment of the incurable chronic diseases uh especially those patients who are suffering from the hopeless cases. Hopeless in let's say for example a diabetes it is not a grave disease but whenever you are suffering the diabetes any alopathy doctor would say that you have to treat this this medicine this treatment for your lifetime till you live right.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: So this is called the chronic disease which does not have any curative treatment as far as uh the cure without side effects is concerned. So as a homeopathic doctor homeopathy provides a treatment without any side
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: effects plus once the treatment is perfectly suited the medicine is perfectly suited uh to the uh patient in front of me. So the disease whether it is 10 years long,
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: 20 years, 30 years or may it be generational disease it gets permanently cured if the disease is in the initial stage and the mid-stages like if the pathology is reversible like the if you search any of the diseases in the Google in the internet throughout the internet
+ 
+ 
+00:08:29
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: and uh all the diseases in which incurable term is mentioned that this does have only management like you can only manage the disease you cannot cure it
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: permanently out of all these disease at least 80 to 90% of such diseases which are termed incurable on the Google homeopathy has potential to cure this diseases without any side effects and permanently so there are three concepts
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: basically uh when whenever any patient says that I have got a good results from particular doctor number one type of result is uh the patient the treatment has completely suppressed the condition of the disease. Now what do we mean by suppression? Let's say for example you are coming to me as a patient with the complaint of ringom. Ringo is a kind of skin disease. Do you know anything about ring?
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Ringworm.
+Sandy Kadyan: No, no,
+Bhargav Naidu: Ring worms,
+Sandy Kadyan: no.
+Bhargav Naidu: right?
+Piyush Zinzuvadia: Uh name me any uh ring.
+Bhargav Naidu: Ring worms. Yeah. Yeah.
+ 
+ 
+00:09:35
+ 
+Bhargav Naidu: Ring. Yes. Yes. Yes. Go on. Yeah.
+Piyush Zinzuvadia: So it is a kind of skin disease where you have lot and lot of itching.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: The visible parts the parts become red,
+Bhargav Naidu: Right.
+Piyush Zinzuvadia: inflamed, swelled, you have scratching, you have scale formations and all those uh it is also having some cosmetic issues. Okay. And there is lot of aging intolerable aging.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: So let's say if you're coming to me for the treatment of ringome which you are suffering which have been suffering from let's say 5 to 6 years long. Okay I am giving you the treatment for 3 to 4 months your ring symptoms are completely disappeared from your skin. Right? After 3 months of my treatment as a alopathy doctor I'm talking about okay now you are completely satisfied with the doctor and the treatment. Why?
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: because the symptoms are disappeared which were like very much uh uh like producing very much issues as far as your cosmetic is concerned but after uh 6 to 8 months or 1 year you are coming back to me with a complaint of any joint issues joint disease now I will uh diagnose the disease I will name that
+ 
+ 
+00:10:37
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: disease once again that now you are suffering from let's say for example rheumatoid arthritis it is a kind of joint disorder for So that you have to go to orthopedic doctor.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Okay. Now I'm treating you for this joint problem for let's say 1 and a half months, 2 months or 3 months. Again your joint symptoms are disappeared and you have got good results. So you are again satisfied that the doctor is good.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: First of all he gave results in my skin problem. Now he also result in my joint problem. But after one year, two year or three years down the line you are coming back to me again with any heart heart problem or let's say any lung
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: problem any disease which have a heart or lung issues. Now again I'm diagnosing the uh disease condition I understanding the treatment. So if you understand the chronology first time you came with the skin complaint, second time you came with the joint complaint,
+ 
+ 
+00:11:30
+ 
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: third time with the heart complaint. So this is the hierarchy which we call in the homeopathic separation.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: Why? because your disease has transferred from less important organ that is skin to more important organ that is heart.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: So basically each and every organ and system in our body have certain importance in terms of vitality. Okay.
+Bhargav Naidu: Right.
+Piyush Zinzuvadia: So whenever your disease gets transferred from less important organ towards more important organ more important in the sense more important for survival. Okay. If 1 cm cut is in your finger, end of the finger, you will not die. But if the same 1 cm cut is in your liver,
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: it is a dangerous condition for you.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: Same 1 cm cut is in your heart,
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: you will live maybe for 2 3 minutes, four, five minutes and the same 1 cm gut is in your brain.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: Okay. So this is the importance of every organ and there is a fixed chronology of
+ 
+ 
+00:12:31
+ 
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: importance which we call vital organs.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: So this is the uh direction of separation.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: So in separate whenever the complaints are getting suppressed in that case also patient says I have got a good results. So number one separation number two you are coming to me same case you are coming to me uh another doctor uh with the complaint of ring warm same problem I am giving you certain medications for let's say 1 month 2 month and your symptoms are better you got relief but after some time again same symptoms reappear at the same location same symptoms so it is
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: not changing the organ it is there only but for short time for temporary you are getting temporary relief So that is called paleation.
+Sandy Kadyan: Okay. Okay.
+Piyush Zinzuvadia: In that case also patient is getting good result because the symptoms are relieved for short time. Third type of result is cure. Now what happens is cure. It is exactly opposite to separation. If if uh the same patient who is suffering from the heart disease is coming to me.
+ 
+ 
+00:13:34
+ 
+Piyush Zinzuvadia: So as a homeopathy doctor I will take the full case history start starting from the his family history like what disease his family members the blood relatives has suffered from then coming to the pregnancy history of the patient's mother then starting from the birth to till date what diseases the patient has been suffering from all those diseases what treatment the
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: patient had taken in the past what side effects patient had suffered from in the past so after studying all these the patient's nature patients personality, patient's physical look, patient's physical constitution, mental temperament, everything we need to study in detail which takes almost one and a half to two hours depending on the person. Okay. After studying all this, I will prescribe certain medication to this patient who is suffering currently from heart problem but in the past before five six years he suffered from the skin problem that is ringing warm.
+Sandy Kadyan: Yeah.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: Now with my treatment her his heart problem will will get improved mentally the patient will feel better emotionally emotional health will improve.
+ 
+ 
+00:14:38
+ 
+Piyush Zinzuvadia: So basically I need to analyze each and every followup at four levels being a homeopathic doctor. Number one uh patient should get improved at physical level number two at mental level. Number three at emotional level number four at spiritual level. So this is like uh uh some long process as far as consultation from
+Sandy Kadyan: Hm.
+Piyush Zinzuvadia: my side is concerned. Okay. But once the medicine gets suited perfectly to this particular patient,
+Sandy Kadyan: H.
+Piyush Zinzuvadia: it gives results which is like unbelievable. It is completely magical. If not in all the patients,
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: at least 60 to 70% of such patients who are suffering from hopeless disease condition which we say incurable get such good results.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: So here the biggest challenge as far as me as a homeopath is concerned is what that if you are coming to me let's say with a hole in the heart if I say in the simple words okay for that we have thousands of medicine in homeopathy
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: for one disease condition you name any disase condition any for that we have thousands of
+ 
+ 
+00:15:42
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: medicine out of all those thousands of medicine I have to select only one
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: which complete completely suits the patient mentally, emotionally, physically, spiritually, his past history, present complaint, family history everything that medicine is completely suitable for that I need to do I need
+Sandy Kadyan: Okay. Okay.
+Piyush Zinzuvadia: to have lot of information from the patient. So the consultation is very long 1 hour,
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: 2 hour, 3 hours. After consultation is over,
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: I need to research all the data which I have got from the patient in a software.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: So that the range of the medicine from thousands it gets to hundreds and then I get to 50 remedies, 10 remedies, five remedies based on the information I got to the patient. It is like a shopping on the Amazon.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: You keep on applying filters the list of the products will get shorter and shorter and then you will get that
+Sandy Kadyan: Yeah.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: one product which is perfectly suitable for you that is the remedy of the patient which will cure the patient not suppress
+ 
+ 
+00:16:40
+ 
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: the patient not piate the patient. Okay.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: So this is the biggest and this is the reason why homeopathy is not famous globally. It is famous but there are very less number of doctors who practice uh according to the original principles of homeopathy. Okay. Okay. Because of this method of consultation I I have to take maximum two new
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: appointments in a day in one day.
+Bhargav Naidu: All
+Piyush Zinzuvadia: So I only take two patients in a day because I need to understand I I need to give the time which they
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: require. I need to give the justice to each and every patient so that I can give such results such unbelievable results.
+Sandy Kadyan: Yes.
+Bhargav Naidu: right.
+Piyush Zinzuvadia: So uh maximum number of patient new new patient in a month which I
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: take now is maximum 10 to 15 as far as my current practice is concerned.
+Sandy Kadyan: Okay.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: Apart from that there are old patients there are follow-ups in a day 8 to 10 old patients are there in a
+ 
+ 
+00:17:42
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: day 8 to 10. Okay. Now the challenge for me is as far as you guys are concerned how we can collaborate that I will explain
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: you now. Uh first of all I need to save time on those task which are repetitive which I need to uh give time mechanical way.
+Bhargav Naidu: Good. Good. Good. Nice.
+Piyush Zinzuvadia: So basically when I say my first consultation occurs only for almost 2 to three hours. So there are certain questions 50% of the consultation I need to ask same question to every patient.
+Bhargav Naidu: Good
+Piyush Zinzuvadia: So this part can be automated number one.
+Sandy Kadyan: Yes.
+Bhargav Naidu: morning.
+Piyush Zinzuvadia: Number two uh if I am saving 50% of my time in consultation. Okay. After that uh there need to have certain automation as far as reminders are concerned, appointment booking is concerned. So for that I have hired already I have hired an IT company for the development of the website and the clinic management software.
+ 
+ 
+00:18:43
+ 
+Piyush Zinzuvadia: Now what part am I lacking in this the uh technology development is the
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: source of the deeds. Now if I'm saving the time I have more time.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: Okay.
+Bhargav Naidu: Right.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: If I have more time, I need to have more patient. If I want to grow and want to scale as far as if we take it as a startup.
+Bhargav Naidu: Good. Good.
+Piyush Zinzuvadia: Now if I want to scale if the accuracy of my prescription is same or improving and if I am saving my time so obviously I would I would look for the patient who can afford the charge of the treatment who do not come and bargain because uh they are they will already suffer for the lifetime if they are not coming to me and taking
+Sandy Kadyan: Yeah,
+Piyush Zinzuvadia: the treatment they are going to suffer for the lifetime and for such diseases so what
+Bhargav Naidu: Mhm.
+Sandy Kadyan: there.
+Piyush Zinzuvadia: patients do is they will calculate charge per month they will not calculate in terms of value they are getting this is the mindset especially in India not all of them but but it depends
+ 
+ 
+00:19:40
+ 
+Bhargav Naidu: All
+Sandy Kadyan: Okay.
+Bhargav Naidu: right.
+Piyush Zinzuvadia: the like what what is your target audience it is not likely all of them are there so what services you provide you need to reach to the exact audience for which you are sitting in the
+Bhargav Naidu: All right.
+Piyush Zinzuvadia: market if you are charging let's say there are homeopaths whom I know who are
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: charging 50 rupees there are homeopaths who are charging 500 00 rupees for the consultation.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: There are also charging 5,000, 50,000, even five lakhs. I know all of them.
+Sandy Kadyan: Mhm.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: So, and all of them are gi. But it depends how you are showing your brand,
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: what is your presentation, what is the perception in the mind of the patient. So from the side of the patient and
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: from your side how you are reaching to your target audience. So that is not my technical part.
+Sandy Kadyan: Yes.
+Bhargav Naidu: All
+Piyush Zinzuvadia: I think that is your
+ 
+ 
+00:20:37
+ 
+Sandy Kadyan: Mhm. Yeah.
+Piyush Zinzuvadia: part with the help of performance marketing, getting marketing, growing social media presence, website and there are many many ways which you guys know better than me this
+Bhargav Naidu: right.
+Piyush Zinzuvadia: part.
+Sandy Kadyan: Yep.
+Piyush Zinzuvadia: So uh number one uh when I say that uh I want to scale this uh only to reach to those clients or those patients who can afford this. So for that my vision in uh coming one to two years I I will go global.
+Bhargav Naidu: Okay,
+Piyush Zinzuvadia: Okay.
+Bhargav Naidu: that's good.
+Piyush Zinzuvadia: So,
+Bhargav Naidu: That's
+Piyush Zinzuvadia: so when we say that I will go global,
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: uh I need to have a team or maybe two,
+Bhargav Naidu: good.
+Piyush Zinzuvadia: three persons, four persons who are experts in the research key all over in all over the world which which is a particular area of a particular country in which patients are searching for homeopathic treatment okay for a particular disease.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: So if we can identify that particular country or that particular area and also
+ 
+ 
+00:21:41
+ 
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: we can identify the disease for which they are searching treatment for in the Google.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: Number one. Number two if you can identify also the amount which they are ready to pay for that
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: treatment. So what are the local doctors charging in that particular country for the treatment which they want.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: So based on this so basically there are four Ps of marketing which we need to product price place and promotion product I have price we need to research according to the
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: area and the country we are targeting also uh there there need to be perfect research on the place where our target audience are sitting and searching already searching there so I just need to meet them through technology for which I need help of
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: you as a platform home after the patient books the
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: appointment after that the I think majority of the task are
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: uh automated as far as the management software which I have hired an IT company for.
+ 
+ 
+00:22:48
+ 
+Piyush Zinzuvadia: So they're already developing all the features which I want after patient comes and books the
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: appointment.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Okay.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: So once the flow starts after booking the appointment the treatment starts during a treatment the flow is already automated but it is 50% completed but is still under development the software in the website. Okay. And after patient is cured,
+Sandy Kadyan: Okay.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: after I close the treatment, look what there are only two possibilities.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: Either the patient will get cured and I will close the treatment within 6 month or one year depending
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: on the disease condition or number two possibility is I will they will leave the treatment in between only because of many reasons there is no. Yeah.
+Bhargav Naidu: discontin.
+Piyush Zinzuvadia: So in both the scenarios how we can nurture them again,
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: how we can rebuild the trust, how can make them repurchase,
+Bhargav Naidu: Mhm.
+Piyush Zinzuvadia: how how can we make them refer to their friends and family.
+ 
+ 
+00:23:42
+ 
+Bhargav Naidu: So you want to build,
+Piyush Zinzuvadia: So uh that is the
+Bhargav Naidu: right? So you want to build a customer retention program with upsell and crossell
+Piyush Zinzuvadia: yes 360°
+Bhargav Naidu: opportunities.
+Piyush Zinzuvadia: I'm your you are on the top of my mind whenever any digital marketing consulting agency is he
+Bhargav Naidu: All
+Piyush Zinzuvadia: is we can contact him.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: So that's the idea basically.
+Bhargav Naidu: right.
+Sandy Kadyan: Okay. So let us uh let me repeat the things which you have said so that you have an
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: understanding as to what we understood. Okay. So market there are two types of treatments. One is alopathy which most of the people kind of go traditional
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: homeopathy homeopathy starts with root cause
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: whatever symptoms are there symptoms.
+Piyush Zinzuvadia: Yes. And that is lifetime without any cure and with lots of side effects.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: And in homeopathy what we do is we start from the bottom as to family history,
+ 
+ 
+00:24:59
+ 
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: birth right, treatment history, physical status,
+Piyush Zinzuvadia: Yes. Everything.
+Sandy Kadyan: mental status and that is the reason that is the reason generally consultations are lengthy and your
+Piyush Zinzuvadia: Everything. Yes.
+Sandy Kadyan: consultation can also be divided into two parts. One is set of questions which you ask everyone. Okay.
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: And then set of personal questions based on their particular case.
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: Okay. that that is one part. Second part is now you want to scale it and in your head you're having an ICP as to profile
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: right second phase you want to take this thingational positioning once the internal system is kind of automated right currently your internal
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: system as to place from which you're getting clients.
+Piyush Zinzuvadia: Actually your your voice is
+Sandy Kadyan: One is uh new tokens which are coming in more time
+Piyush Zinzuvadia: getting like it is getting interrupted in between.
+Sandy Kadyan: limited
+Piyush Zinzuvadia: I'm
+ 
+ 
+00:26:04
+ 
+Bhargav Naidu: There is echo if I'm not wrong
+Piyush Zinzuvadia: not
+Bhargav Naidu: right.
+Sandy Kadyan: from your side can you can you can you mute it once I'm like because of that I guess
+Piyush Zinzuvadia: I
+Sandy Kadyan: I'm having echo for your voice Yeah,
+Piyush Zinzuvadia: just
+Bhargav Naidu: Huh? Is it I I'll do one thing.
+Sandy Kadyan: but I'll try to take it slow.
+Bhargav Naidu: Give me one moment.
+Sandy Kadyan: Okay.
+Bhargav Naidu: I'll just uh go back and join one second. Okay.
+Sandy Kadyan: Okay. So, now is it audible?
+Piyush Zinzuvadia: Yeah. Yeah. It is uh clear. But uh there are certain words
+Sandy Kadyan: It's It's not echoing
+Bhargav Naidu: How is it now?
+Sandy Kadyan: from your side. It's echoing. Can you Can you mute yourself once? Yeah. Uh is it clear now obvious?
+Piyush Zinzuvadia: Yes. Yes. Yes. You can continue.
+Sandy Kadyan: Yes. So we were saying that currently capacity wise you're doing new workins and old
+Piyush Zinzuvadia: Yeah.
+ 
+ 
+00:27:07
+ 
+Sandy Kadyan: people who are coming to you cuz generally timeline of uh the treatment as we are trying to cure it from the
+Piyush Zinzuvadia: effects on the No,
+Sandy Kadyan: root it's like 6 months. Right.
+Piyush Zinzuvadia: it is like not not fixed but it depends on the patient and the stage of the disease and the cooperation of the patient like
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: So basically you can take if you want to take average time minimum patient
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: will stay with me for uh 8 months to one year that is minimum.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Okay. Average on an average I'm
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: telling
+Sandy Kadyan: And then roughly 60% of the people they complete treatment.
+Piyush Zinzuvadia: yeah they get this type of results which I'm talking about this
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: cure.
+Sandy Kadyan: Yes. Yes.
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: And in total how many uh case studies do we have related to uh the treatments which we have done? You must be in the industry for such a long time, right?
+ 
+ 
+00:28:08
+ 
+Sandy Kadyan: So data have we
+Piyush Zinzuvadia: Yes. Uhhuh.
+Sandy Kadyan: collected.
+Piyush Zinzuvadia: So let me share you that uh in brief. So basically what happened is I started my practice uh 8 years ago. So initially I was taking the cases on the paper pen and paper method traditional
+Sandy Kadyan: Okay. Okay.
+Piyush Zinzuvadia: method complaints and prescription. So uh I have shifted from uh paper to digital uh for last I think uh 3 years maybe 3 years.
+Sandy Kadyan: Okay. Okay.
+Piyush Zinzuvadia: If you are sending me 10 patients to miss 10 such patient which are hopeless cases
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: this is my practice
+Sandy Kadyan: Mhm. Okay.
+Piyush Zinzuvadia: number No
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: continue
+Sandy Kadyan: data as
+Piyush Zinzuvadia: patience inquiries in the sense can you elaborate your question I can
+Sandy Kadyan: okay inquiry as in now people are coming in okay database problems disases
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: related diseases let's say me as a marketer I want to find right patients for you so if you can kind of present me with data That's Andy or Zcale as a team.
+ 
+ 
+00:29:52
+ 
+Sandy Kadyan: These are the people who are my best customers or best case studies. We want to find more people like this so that we can produce more results and we can market more.
+Piyush Zinzuvadia: You want testimonial basically a video testimonial or the ratings in the
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: review.
+Sandy Kadyan: Yes. Yeah. For collected data. If you have collected results somewhere, uh you must be having an internal database too, right?
+Piyush Zinzuvadia: Google Workspace used basically. Okay. Google Docs,
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Google Calendar to schedule the appointments and everything basically whole Google Workspace I use currently. So automate it is much much helpful as far as
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: meal that is perfect. If I want to scale from this level that is not enough.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: I need to build a system and processes which can automate the this task also.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: So
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: 50% I'm not using that but the software is still
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: under development also I want to go international so website is also international standard by studying the existing website already because this is this is not my field.
+ 
+ 
+00:31:30
+ 
+Sandy Kadyan: Yeah, that is where we come in, right?
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: And good thing is uh if you do have international kind of expectations, right? We operate in Canada, we operate in US, we operate in Middle East too.
+Piyush Zinzuvadia: That's why I was more interested in this meeting.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: So
+Sandy Kadyan: and website wise also currently it's in development
+Piyush Zinzuvadia: yeah. Yeah.
+Sandy Kadyan: right
+Piyush Zinzuvadia: Uh you can see the it is also live on the Google. You can have a look once it is 50% completed but there are a lot of things which are like I need to
+Sandy Kadyan: okay
+Piyush Zinzuvadia: add the content and the UIUX needs also to be changed but
+Sandy Kadyan: website
+Piyush Zinzuvadia: Dr.
+Sandy Kadyan: You're from Rajcot.
+Piyush Zinzuvadia: current city.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: So, this is the site, right? Screen share.
+Piyush Zinzuvadia: No, no. This is uh uh this one. This one.
+Sandy Kadyan: Is is this a site?
+Piyush Zinzuvadia: Yes. Yes. Yes.
+ 
+ 
+00:32:55
+ 
+Piyush Zinzuvadia: This is my current clinic. Uh
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: right.
+Sandy Kadyan: If I see I'm no coach, but okay. Okay. Why
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: usage homeage? Currently people are searching for your homepage your name as home and home. It should actually be.
+Piyush Zinzuvadia: Sorry.
+Sandy Kadyan: So if you can see this thing, are you able to see this?
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: Drop
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: down the crap.
+Piyush Zinzuvadia: Drop down. website
+Sandy Kadyan: One second.
+Piyush Zinzuvadia: homeage.
+Sandy Kadyan: Let me share everything. Are you able to see the drop down?
+Piyush Zinzuvadia: I can I can see you.
+Sandy Kadyan: So now up homepage is attached to it's not attached to any
+Piyush Zinzuvadia: Yes. Yes.
+Sandy Kadyan: keyword.
+Piyush Zinzuvadia: Yes. Yes. This is not this is very much
+Sandy Kadyan: Uh so we have treated celebrities
+Piyush Zinzuvadia: content.
+Sandy Kadyan: also.
+Piyush Zinzuvadia: No, no, no, no.
+Bhargav Naidu: It's just their POVs.
+Piyush Zinzuvadia: It is these celebrities trust homeopathy.
+ 
+ 
+00:35:05
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: So
+Sandy Kadyan: Oh,
+Piyush Zinzuvadia: maybe
+Sandy Kadyan: copies. Okay. And login patients can login.
+Piyush Zinzuvadia: Yes. Yes. Pat
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: reports platform
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: access my admin dashboard will be there patients dashboard will be there dashboard of the staff dashboard of the assistant doctor. So be
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: okay.
+Sandy Kadyan: And social we are there.
+Piyush Zinzuvadia: Social med.
+Sandy Kadyan: Okay. Homeopathy, right? Second market online search volume. So
+Bhargav Naidu: Location Her
+Piyush Zinzuvadia: Okay. Second.
+Sandy Kadyan: second Gujarat. These people are coming number one.
+Piyush Zinzuvadia: First
+Sandy Kadyan: Yes. currently closed and products and all reviews. Yeah, someone is handling it. Are we from your team?
+Piyush Zinzuvadia: Uh huh. posting the I think Apollo that is at very much basic
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: level
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: online presence. I would rate myself like three out of 10.
+ 
+ 
+00:38:13
+ 
+Sandy Kadyan: The opportunity opportunity then
+Piyush Zinzuvadia: Sorry.
+Sandy Kadyan: opportunity is there lot of things can be
+Piyush Zinzuvadia: Yeah. Yeah. Definitely because of practice that
+Sandy Kadyan: done. Okay.
+Piyush Zinzuvadia: I have been growing organically only 100% offline. Organically there is market.
+Sandy Kadyan: Oh, yes.
+Piyush Zinzuvadia: Yes,
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: this is my first website is my
+Sandy Kadyan: Nice.
+Piyush Zinzuvadia: first like online presence. I think
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: January as a doctor
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: everything that you will see
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: PDF screen so that you will have a better idea. Just a
+Sandy Kadyan: Oh,
+Piyush Zinzuvadia: minute. Can you see the screen? This is my
+Sandy Kadyan: on the clear.
+Piyush Zinzuvadia: drive.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: It is in English.
+Sandy Kadyan: Hello.
+Piyush Zinzuvadia: First impression.
+Sandy Kadyan: Yeah. Yeah.
+Piyush Zinzuvadia: These are the folders of my patients. Uh
+Sandy Kadyan: Nice.
+Piyush Zinzuvadia: before
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: 247 January 25th
+ 
+ 
+00:41:31
+ 
+Sandy Kadyan: H.
+Piyush Zinzuvadia: February
+Sandy Kadyan: Okay. Okay.
+Piyush Zinzuvadia: resource output software screen. So prescription these are the followups.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: So this is a system which I have developed. Now let's say patient go this one 1 2 3 4 5 six symptoms are there. Okay.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: So I will track each and every symptoms from your head to toe either it is at mental level or it is at emotional level physical level. So a particular symptom if the improvement if the improvement is between 0 to 30%. Okay. If the no highlighting if the improvement is between 30 to 70% yellow
+Sandy Kadyan: Okay. Mhm.
+Piyush Zinzuvadia: highlighting if the improvement is more than 70% like between 70 to 100 it will be green
+Sandy Kadyan: Mhm. Okay. Okay.
+Piyush Zinzuvadia: highlighted
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: I don't know there is no need to read each and everything the whole case
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: medicine is more perfect means it is not working. Okay
+ 
+ 
+00:43:05
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: system. Sorry. Yeah. See this is the first date when patient consulted me. Okay. 9 April 2025.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Okay. So this was the condition when patient came to me for the first time.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: First and the last toe patient was suffering from diabetes. Then thyroid problem.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: Then patient is 80% blind. She was 50% deaf. Then she was also suffering from the blockage of the blood vessels till the end of the distal part of the
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: body. So gang becomes like
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: this. Okay.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: Usually there is no treatment in the alopathy in alopathy or any other science. Not only any other
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: science patient is was fed up of the operation. So she does not did not want to go for the operation. So one of my patient gave the reference. So 94 after months
+ 
+ 
+00:44:57
+ 
+Sandy Kadyan: Okay. Okay.
+Piyush Zinzuvadia: evening this is
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: the finger. Okay,
+Sandy Kadyan: Yep.
+Piyush Zinzuvadia: that means the blood circulation is again recovered the blood vessel was in%
+Sandy Kadyan: Yep.
+Piyush Zinzuvadia: block in both the lower limbs customiz like this depending on the disease condition all these problems were
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: therea
+Sandy Kadyan: Also it's very easy if you have organized it this beautifully it's very easy for us also to kind of use this information marketing materials yeah for whatever automations you want to build right only bottleneck which
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: we get from clients is data
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: organization you have already organized it beautifully
+Piyush Zinzuvadia: Yeah. Yeah. So
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: record.
+Sandy Kadyan: Okay. Okay.
+Piyush Zinzuvadia: How is the patient's nature and the personality?
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: Then comes our other functions of the other systems.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: How is your appetite, thirst, stool, urine, sleep, perspiration, everything about The complaints in the chronology starting from the birth.
+ 
+ 
+00:46:40
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: The current age is 41. Okay.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: From the 13 year of age then 20
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: years
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: between 24 to 28. What was the event?
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: What was the effect of the event on the patient's mind and the body description 273 till the
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: present age at 40 years of age is the first
+Sandy Kadyan: Okay. So, how much time are you spending on one
+Piyush Zinzuvadia: late one.
+Sandy Kadyan: document?
+Piyush Zinzuvadia: Sorry
+Sandy Kadyan: How much time are youending?
+Piyush Zinzuvadia: in this month only, first April. or patient started treatment in the uh fourth month of 25. Okay. So like this.
+Sandy Kadyan: Okay. Yeah.
+Piyush Zinzuvadia: So
+Sandy Kadyan: Oh. Mhm. Okay.
+Piyush Zinzuvadia: including me even sometimes I also get surprised heart failure
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: heart was working only 10% usually
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: fraction that is in between 60 to 70% healthy persons heart failure% only 40% below
+ 
+ 
+00:48:54
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: 40%
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: topiologist
+Sandy Kadyan: Mhm. Okay.
+Piyush Zinzuvadia: Nobody's ready to start the treat. You use the patient was not financially they were ready to spend the
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: money as as much as doctor will say the surgeon will say
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: yes. So that patient came to me via reference only.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: And treatment 1 and a half to one year and 8 9 months something from
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: 10% to 15 then 25 then 30 then 40 then 50 she also living right now
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: there is no treatment going on no homeopathy noathy no treatment
+Sandy Kadyan: Nice. Mhm.
+Piyush Zinzuvadia: homeopathy because
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: not only recovery
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: management
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: treatment.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Obviously there
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: is
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: a
+Sandy Kadyan: Yes. Yes.
+Piyush Zinzuvadia: Treat
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: the time is wasted.
+Sandy Kadyan: Okay.
+ 
+ 
+00:51:09
+ 
+Piyush Zinzuvadia: My time is wasted. So I take minimum 30 minutes on an
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: average.
+Sandy Kadyan: Yeah. Mhm. already questions and this
+Piyush Zinzuvadia: I
+Sandy Kadyan: conversation which we are having is maybe we are capturing notes and all rightank
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: right Maybe industry say you did educate as to break down then how do you approach your treatment
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: right we can do things monthly also for you but we don't want to start step by step.
+Piyush Zinzuvadia: I think there is again a kind of interruption of beach word.
+Sandy Kadyan: Maybe I'm saying
+Piyush Zinzuvadia: All right. Continue. Continue.
+Sandy Kadyan: I was like, it can be patient journey also. It can be uh customer retention
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: requirements.
+Piyush Zinzuvadia: That's right.
+Sandy Kadyan: of all the things which you need performance marketing social media placement we can do all the things Start.
+Piyush Zinzuvadia: I I got it. What do I want?
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: So now what do you think after uh like understanding the understanding my part uh which is the exact point from which we can start like at the smallest step what is the
+ 
+ 
+00:54:16
+ 
+Sandy Kadyan: Smallest
+Piyush Zinzuvadia: what can be the smallest level from where we can start this the automation
+Sandy Kadyan: treat
+Piyush Zinzuvadia: Hey, how
+Sandy Kadyan: Voice transcript voice
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: you sit with a person for like half an hour automatically transcribe conversation automatically form again.
+Piyush Zinzuvadia: already. I love technology because of my
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: profession
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: like what is the accuracy I can expect.
+Sandy Kadyan: B. Yes.
+Piyush Zinzuvadia: I use notion very frequently. I think you must be knowing about me as a brand, me as a doctor. What is the center point? Center point is the accuracy of the data which I'm getting from the patient. This is the center of the
+Sandy Kadyan: Exactly.
+Piyush Zinzuvadia: homeopathy.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: First of all,
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: the skill of the doctor about the accuracy of the technology.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: So this is something where I cannot compromise
+Sandy Kadyan: So
+Piyush Zinzuvadia: like
+Sandy Kadyan: important
+Piyush Zinzuvadia: Yeah.
+ 
+ 
+00:56:46
+ 
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: right so currently the models which are working English transcription is
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: 95% there when people are having conversation in English right 9% accuracy Indian models which are kind of 80 to 90% there.
+Piyush Zinzuvadia: Gotcha. I can't open
+Sandy Kadyan: % as a team as a team it's 90% there
+Piyush Zinzuvadia: Huh? I I understand that. I understand that. But
+Sandy Kadyan: 90% whatever we are
+Piyush Zinzuvadia: uh
+Sandy Kadyan: building system.
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: Most of the contracts which we do right Right. We add that thing into that can be
+Piyush Zinzuvadia: Right. So see basically
+Sandy Kadyan: a good start. Uh-huh.
+Piyush Zinzuvadia: development
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: already I'm trying attractive. See, can you see
+Sandy Kadyan: Uh-huh.
+Piyush Zinzuvadia: this?
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: 38 pages questions. See only
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: questions.
+Sandy Kadyan: Uhhuh.
+Piyush Zinzuvadia: up maybe.
+Sandy Kadyan: In general questions. Yeah.
+Piyush Zinzuvadia: So there are specific questions for female patients, specific question for pediatric
+ 
+ 
+00:59:55
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: specific questions for the geriatric patient old age after 55 60 years of age. Specific question for male
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: question
+Sandy Kadyan: Yes. Yes.
+Piyush Zinzuvadia: already
+Sandy Kadyan: Yeah. Okay. Mhm.
+Piyush Zinzuvadia: when we will go
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: because most of the patients are Gujarati. Okay.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: Then when we go there will be multiple languages even apart from the English also
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: because I know only three languages Hindi and English
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: depending on the country they live For
+Sandy Kadyan: Yes. Yes. Yes.
+Piyush Zinzuvadia: example, there's a pat in his local language. I'm talking in my local language. And there is a system which can like translate translate translate
+Sandy Kadyan: Pass it.
+Piyush Zinzuvadia: basically.
+Sandy Kadyan: Yes. Mhm.
+Piyush Zinzuvadia: We need a system for that. We need technology for that. There is no other option.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: Yes.
+ 
+ 
+01:02:14
+ 
+Sandy Kadyan: Phase two currently
+Piyush Zinzuvadia: Yes.
+Bhargav Naidu: So uh just just sorry for interrupting. Okay.
+Sandy Kadyan: right.
+Bhargav Naidu: So Sandy uh for phase one I really feel the lead qualification or client retention programs with the CRM can be a very good impact.
+Piyush Zinzuvadia: CRM by the way.
+Sandy Kadyan: If for some reason your voice is repeating.
+Piyush Zinzuvadia: Uh, am I
+Bhargav Naidu: Yeah.
+Piyush Zinzuvadia: audible?
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: Just give me a minute. visible.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: This is the flow of patient's journey starting from
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: This is the source. treat basically patient journey from zero knowledge to getting cured or leave the
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: treatment. This is the admin
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: dashboard
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: and everything. visible clearly.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: Yes. Okay. So this is the starting
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: points and then they get convinced on that point only.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: appointment.
+ 
+ 
+01:05:00
+ 
+Piyush Zinzuvadia: I have developed systematic appointment system
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: starting from appointment booking, rescheduling, cancellation. This is I have prepared to describe my requirement to the developer team.
+Sandy Kadyan: Yep.
+Piyush Zinzuvadia: Okay. which is publicly visible Appointment
+Sandy Kadyan: Yep.
+Piyush Zinzuvadia: calendar. notification question form. This is the features which I want in the form itself.
+Sandy Kadyan: Yes. Yes.
+Piyush Zinzuvadia: Easy to understand just like Google forms better from Google forms not limited to that
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: notification at particular intervals followups before the during the treatment system. There are two possibilities. This is the whole patient's journey admin. is manager manager patton
+Sandy Kadyan: You okay? Mhm.
+Piyush Zinzuvadia: appointment calendar inquiry forms leads are high intent leads who needs nurturing and then low junk leads
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: invest basically you can say hot leads and junk leads.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: Okay. And then you open followups. And these are the patient.
+ 
+ 
+01:08:25
+ 
+Piyush Zinzuvadia: That is the case record
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: folder.
+Sandy Kadyan: Okay. Mhm.
+Piyush Zinzuvadia: This is the feature which I don't think anybody in the world any doctor in the world.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: So I will explain you in brief.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: You are suffering from headache for last 15 years,
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: vomiting for last 3 months, knee joint pain for last 5 years and etc etc. to
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: follow%
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: the journey will be from yellow to green percentage.
+Sandy Kadyan: Mhm. Okay.
+Piyush Zinzuvadia: So that they can understand in the last four
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: months at the end of four
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: months.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: Health analytics option patient invoice and then
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: clinic. Okay. So clinic growth one is analytics and second is promotion and marketing.
+Sandy Kadyan: Yeah. Mhm. Yes.
+Piyush Zinzuvadia: Analytics in this month and in this
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: year
+Sandy Kadyan: Yeah.
+ 
+ 
+01:10:49
+ 
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: pative
+Sandy Kadyan: Okay. Mhm.
+Piyush Zinzuvadia: Pat.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: What is the reason of dropping a treatment?
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: mention what is the total number of patient
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: till date and then the revenue
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: partime
+Sandy Kadyan: No.
+Piyush Zinzuvadia: I think we can define the strategy more clearly
+Sandy Kadyan: Yes. Yes. Yeah.
+Piyush Zinzuvadia: This is the admin
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: dashboard.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Complete health profile. This is the basic information. uh contact number, name, age, birth,
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: etc., etc. Then this is the in-depth homeopathic consultation
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: form.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: online
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: and then health progress report and
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: then
+Sandy Kadyan: Okay. Okay. workflow priority in one
+Piyush Zinzuvadia: a
+Sandy Kadyan: month
+Piyush Zinzuvadia: Uh software.
+Sandy Kadyan: right as currently
+Piyush Zinzuvadia: Okay. H.
+Sandy Kadyan: There are many things which we can do.
+ 
+ 
+01:13:26
+ 
+Sandy Kadyan: We can also build the entire set for you. But we have already resources,
+Piyush Zinzuvadia: Yes.
+Sandy Kadyan: right? Yes. Yes.
+Piyush Zinzuvadia: You can ask that and we can build that next two months. I want to focus on generating more leads.
+Sandy Kadyan: Okay,
+Piyush Zinzuvadia: Okay. Yeah.
+Sandy Kadyan: I
+Piyush Zinzuvadia: Number of
+Sandy Kadyan: got
+Piyush Zinzuvadia: pat
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: software in India for at least for 6 months.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: When we will go international, I cannot afford any mistake there. at
+Sandy Kadyan: Yes. Yes. Okay.
+Piyush Zinzuvadia: least to maximum number of patients.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: Yes,
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: there will be there will be a certain loophectic
+Sandy Kadyan: Exactly.
+Piyush Zinzuvadia: in the sense I will be
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: able to more patience.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: So I need to generate leads
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: now.
+Sandy Kadyan: Okay. Performance markets and
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: Facebook performance marketing.
+ 
+ 
+01:15:30
+ 
+Piyush Zinzuvadia: potential next time I think minimum amount around 5 10,000 15,000 per month to say no See Miracle
+Sandy Kadyan: performance marketing a new channel as in for ads. Let's say I'm spending,000
+Piyush Zinzuvadia: is cost per lead
+Sandy Kadyan: cost. Yes.
+Piyush Zinzuvadia: it.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: That is what your point is.
+Sandy Kadyan: Yeah. Not not even
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: that. Okay. Okay. Yeah.
+Piyush Zinzuvadia: Yes. Yes.
+Sandy Kadyan: And numberually
+Piyush Zinzuvadia: What is the minimum amount that according
+Sandy Kadyan: markets
+Piyush Zinzuvadia: to
+Sandy Kadyan: qualified.
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: Whatever your current cost of consultation is Right. And
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: let's say let's say treat
+Piyush Zinzuvadia: understand.
+Sandy Kadyan: Currently we
+Bhargav Naidu: So
+Sandy Kadyan: are burning close to 10 to 15,000 per
+Bhargav Naidu: sunny.
+Sandy Kadyan: day on good days
+Piyush Zinzuvadia: 10,000
+Sandy Kadyan: 10,000 per day Right. And yes.
+Piyush Zinzuvadia: So I understand that.
+Bhargav Naidu: So,
+Sandy Kadyan: Yes.
+ 
+ 
+01:19:11
+ 
+Piyush Zinzuvadia: Yeah.
+Bhargav Naidu: so Sandy, I I would suggest if we can understand the number equation
+Piyush Zinzuvadia: I I would suggest if you can understand the
+Bhargav Naidu: of Dr. Push then we maybe we can get a better idea as
+Piyush Zinzuvadia: information
+Sandy Kadyan: number equation.
+Bhargav Naidu: in what is his average ticket size like of one client?
+Piyush Zinzuvadia: like of one
+Bhargav Naidu: What is the average duration of one client?
+Piyush Zinzuvadia: of you can check
+Sandy Kadyan: We got to know that now he did show showed
+Bhargav Naidu: Okay.
+Sandy Kadyan: us
+Piyush Zinzuvadia: on the website I think health investment plans Good
+Bhargav Naidu: Doesn't care.
+Sandy Kadyan: Uh-huh.
+Piyush Zinzuvadia: option.
+Sandy Kadyan: And
+Piyush Zinzuvadia: Yeah. Facebook.
+Sandy Kadyan: Facebook
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: library.
+Piyush Zinzuvadia: Right. I think like ruled out five competitors in the same area
+Sandy Kadyan: and
+Piyush Zinzuvadia: that
+Sandy Kadyan: okay library,
+Piyush Zinzuvadia: Yeah. Yeah.
+Sandy Kadyan: right?
+Piyush Zinzuvadia: Right. Right. Right. Yes. Yes. Yeah.
+Sandy Kadyan: individually
+ 
+ 
+01:21:16
+ 
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: very
+Piyush Zinzuvadia: Yeah. I understand
+Sandy Kadyan: easy
+Piyush Zinzuvadia: that.
+Sandy Kadyan: Facebook,
+Piyush Zinzuvadia: anybody,
+Sandy Kadyan: right?
+Piyush Zinzuvadia: right?
+Sandy Kadyan: It's very easy to blow up ads.
+Piyush Zinzuvadia: Yeah. Mhm.
+Sandy Kadyan: Right. and full-blown website when you're
+Piyush Zinzuvadia: Great.
+Sandy Kadyan: running that can be a good one.
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: But then again, right
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: you need money for ads also. Sprint performance market.
+Piyush Zinzuvadia: So what do you right? So the first first month what will the amount which uh which will be going from my pocket including everything your service charge the ad spend budget everything like is the amount which I should
+Sandy Kadyan: landing page
+Piyush Zinzuvadia: Expect
+Sandy Kadyan: development and creative devel. customer engagement, WhatsApp based on when you add on more services per month.
+Piyush Zinzuvadia: per month.
+Sandy Kadyan: And this is excluding ads.
+Piyush Zinzuvadia: I think it will require like including ad budget. Sorry,
+Sandy Kadyan: No excluding.
+Piyush Zinzuvadia: excluding.
+Sandy Kadyan: Yes.
+ 
+ 
+01:24:45
+ 
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: Yeah.
+Sandy Kadyan: qualifyment WhatsApp. social
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: med
+Piyush Zinzuvadia: I understand.
+Sandy Kadyan: would be a sweet spot.
+Piyush Zinzuvadia: I
+Sandy Kadyan: week on week performance
+Piyush Zinzuvadia: think
+Sandy Kadyan: and rough with two lakhs. We can show you some numbers online space may
+Piyush Zinzuvadia: it's a number. So what is what is the number which I can expect in the first second and third month
+Sandy Kadyan: and
+Piyush Zinzuvadia: two
+Sandy Kadyan: everything everything would be dependent on performance
+Piyush Zinzuvadia: month
+Sandy Kadyan: numbers appointment.
+Piyush Zinzuvadia: sorry I didn't listen that 400 rupees qualified Okay, let's get
+Sandy Kadyan: Uh to normal conversation starter lead anyone,
+Piyush Zinzuvadia: back.
+Sandy Kadyan: anyone and everyone who is putting an inquiry But let's say highend
+Piyush Zinzuvadia: What
+Sandy Kadyan: treatment
+Piyush Zinzuvadia: is
+Sandy Kadyan: But
+Piyush Zinzuvadia: Got it.
+Sandy Kadyan: currently market
+Piyush Zinzuvadia: That's
+Sandy Kadyan: and
+Piyush Zinzuvadia: right.
+Sandy Kadyan: motor easily.
+Piyush Zinzuvadia: I'm
+Sandy Kadyan: It's easy demand existing problem. Come here. Huh?
+Piyush Zinzuvadia: Definitely they will at least try.
+ 
+ 
+01:28:31
+ 
+Sandy Kadyan: Huh?
+Piyush Zinzuvadia: They don't choose homeopathy for the first like
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: usually patient 70% % of them have already changed 10 15 doctors before meals and then they come to trial just to try let's try
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: if something good happens it is already a big challenge
+Sandy Kadyan: Yes. Uhhuh.
+Piyush Zinzuvadia: already.
+Sandy Kadyan: I was like in reality as it makes sense
+Piyush Zinzuvadia: Yes,
+Sandy Kadyan: also.
+Bhargav Naidu: message important.
+Piyush Zinzuvadia: definitely.
+Bhargav Naidu: What kind of message are we delivering to the clients to make sure
+Sandy Kadyan: case studies here already showcase that we have done this. It's a good play which we can
+Piyush Zinzuvadia: Yes. Yes,
+Sandy Kadyan: play
+Piyush Zinzuvadia: definitely. Sure.
+Sandy Kadyan: the things which we did discuss and performance marketing related which can be a start for us. Okay. Is it matching your expectations?
+Piyush Zinzuvadia: expectations.
+Sandy Kadyan: And if it makes sense for you, then we can start
+Piyush Zinzuvadia: Sure,
+Sandy Kadyan: working.
+Piyush Zinzuvadia: sure. Sure. You can send me all the documents.
+ 
+ 
+01:30:24
+ 
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: I think
+Sandy Kadyan: Okay. Yes.
+Piyush Zinzuvadia: I can
+Bhargav Naidu: forms.
+Piyush Zinzuvadia: go
+Sandy Kadyan: WhatsApp, right? And initially once we start cracking money equation for you then we want
+Piyush Zinzuvadia: for you.
+Sandy Kadyan: percentage.
+Piyush Zinzuvadia: So estimate also
+Bhargav Naidu: So, uh, Sandy, can you please uh explain And Dr. Push what all can he expect in this one lakh rupees claim so that he'll also get an idea.
+Sandy Kadyan: So we currently will develop your landing
+Piyush Zinzuvadia: people.
+Sandy Kadyan: page. Social medong
+Piyush Zinzuvadia: market
+Sandy Kadyan: with back
+Piyush Zinzuvadia: WhatsApp.
+Sandy Kadyan: WhatsApp And
+Piyush Zinzuvadia: Mhm.
+Sandy Kadyan: Indian market that can
+Piyush Zinzuvadia: Mhm.
+Sandy Kadyan: become.
+Piyush Zinzuvadia: Okay.
+Bhargav Naidu: So Dr. P, I think you got an idea clear what you can expect.
+Sandy Kadyan: Okay.
+Piyush Zinzuvadia: Yeah. Yeah. Is that correct?
+Bhargav Naidu: Perfect. So basically we are also providing our CRM to you also to track the informations
+Piyush Zinzuvadia: Uh is it possible that the the management software which currently
+ 
+ 
+01:33:11
+ 
+Bhargav Naidu: clearly.
+Piyush Zinzuvadia: developing already
+Bhargav Naidu: Right. Right. Right. Right.
+Piyush Zinzuvadia: can we do that integration?
+Bhargav Naidu: Uh yes. So PG our CRM is a custom CRM completely.
+Piyush Zinzuvadia: Okay.
+Bhargav Naidu: So this records data as per our wish. Okay. So all this data has already stored.
+Piyush Zinzuvadia: Okay.
+Bhargav Naidu: Once your system is completely built, we can integrate and upload the data over there back on it. That's what Sandy is for. That's what Sandy does the best job
+Piyush Zinzuvadia: That's the best part.
+Bhargav Naidu: at.
+Sandy Kadyan: Okay. Your voice also,
+Bhargav Naidu: Clear.
+Sandy Kadyan: my voice also echoing voice is
+Bhargav Naidu: That's the whole point.
+Sandy Kadyan: here
+Bhargav Naidu: I don't understand it.
+Piyush Zinzuvadia: That's all.
+Sandy Kadyan: so that you have an idea.
+Piyush Zinzuvadia: Sure. Sure. Sure. Sure.
+Bhargav Naidu: So P first is all a clear aspect.
+Piyush Zinzuvadia: Sure.
+Bhargav Naidu: This is a daily job. Can you help clearly? Okay.
+ 
+ 
+01:34:28
+ 
+Bhargav Naidu: If you have any questions, any queries, you can ask us very openly. No problem in the case.
+Piyush Zinzuvadia: No problem. Sure.
+Bhargav Naidu: Okay.
+Piyush Zinzuvadia: Sure.
+Bhargav Naidu: You see the Oh,
+Piyush Zinzuvadia: Okay.
+Bhargav Naidu: it's good.
+Piyush Zinzuvadia: I always
+Bhargav Naidu: It's
+Sandy Kadyan: Generally this is how the dashboard would look like as to what is opportunity status
+Bhargav Naidu: good.
+Piyush Zinzuvadia: go
+Sandy Kadyan: like Okay.
+Piyush Zinzuvadia: about
+Sandy Kadyan: Personal calendar.
+Piyush Zinzuvadia: it.
+Sandy Kadyan: as to every lead which is coming in internally.
+Piyush Zinzuvadia: Please
+Sandy Kadyan: WhatsApp. We want to show you
+Piyush Zinzuvadia: work. I guess
+Sandy Kadyan: different. Let's say
+Piyush Zinzuvadia: you have to decide.
+Sandy Kadyan: marketing
+Piyush Zinzuvadia: anything
+Sandy Kadyan: workflows. You can create here as soon as the lead came
+Piyush Zinzuvadia: here.
+Sandy Kadyan: in.
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: So all in all set
+Bhargav Naidu: Usually separate thing but we actually can build it much more faster.
+Piyush Zinzuvadia: Mhm. Got it.
+Sandy Kadyan: Because already five months
+ 
+ 
+01:37:06
+ 
+Bhargav Naidu: Wait.
+Sandy Kadyan: building it should not take more than one
+Piyush Zinzuvadia: Actually
+Sandy Kadyan: month. Uh-huh.
+Piyush Zinzuvadia: I will like think that what what features I want.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: Exactly. They take their own time to develop that particular feature. Right.
+Sandy Kadyan: Mhm.
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: Whatever is working for other people will work for us also.
+Piyush Zinzuvadia: Definitely. Definitely.
+Sandy Kadyan: experiment. Okay. Performance market It's a proper strategy.
+Piyush Zinzuvadia: Mhm. Right. Right. Right. And uh revenue sharing. Can you explain
+Sandy Kadyan: Yeah. First
+Piyush Zinzuvadia: that?
+Sandy Kadyan: month. Okay. performance
+Piyush Zinzuvadia: based
+Sandy Kadyan: appointment they're paying us a base of 1.5 lakhs and every conversion which comes from
+Piyush Zinzuvadia: on my life.
+Sandy Kadyan: us percentage cuz they have seen ad
+Piyush Zinzuvadia: That's
+Sandy Kadyan: performance we are spending 10aks on ads for those people only Google admission which is coming from our side
+Piyush Zinzuvadia: Right.
+ 
+ 
+01:40:00
+ 
+Sandy Kadyan: and strategy They're also happy paying us eventually.
+Piyush Zinzuvadia: They're also happy.
+Sandy Kadyan: Let's say I'm very much sure with the base.
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: It's that
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: fifth partnership model, right? And
+Piyush Zinzuvadia: Is it possible if you are comfortable from the starting only if we can go on the revolutionary model I will collaborate with you guys. It is not long-term what my vision is in upcoming 2 years, 3 years, 5 years down the line. I think this is completely new for me. It is not like I don't have confidence in you guys. You know your job best and I know my job best you are confident about that you are taking guys. Is it possible?
+Sandy Kadyan: Initially Right. Right.
+Piyush Zinzuvadia: actually
+Sandy Kadyan: I need to feel confident after seeing those numbers. And once you see those numbers,
+Piyush Zinzuvadia: That's too
+Sandy Kadyan: I am also not very happy.
+Piyush Zinzuvadia: much.
+Sandy Kadyan: as to I can't operate
+Piyush Zinzuvadia: about.
+ 
+ 
+01:43:25
+ 
+Sandy Kadyan: right social media performance appointment
+Piyush Zinzuvadia: set
+Sandy Kadyan: sett
+Piyush Zinzuvadia: up
+Sandy Kadyan: currently personally performance marketing I'm very
+Piyush Zinzuvadia: performance. Okay.
+Sandy Kadyan: confident performance marketing side and People will be using people online to market themselves
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: in $4,000 $4,000.
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: Right. Right. Say step by step we are trying to build and let's say
+Piyush Zinzuvadia: Right.
+Sandy Kadyan: project rightis right and me personally I'm building applications softares for other businesses That is what I'll be doing personally.
+Piyush Zinzuvadia: depending on The requirement of the
+Sandy Kadyan: features. Yes.
+Piyush Zinzuvadia: service
+Sandy Kadyan: resources
+Piyush Zinzuvadia: management software.
+Sandy Kadyan: price.
+Piyush Zinzuvadia: Can you tell me the range?
+Sandy Kadyan: I'm saying product,
+Piyush Zinzuvadia: Look flow.
+Sandy Kadyan: huh?
+Piyush Zinzuvadia: staff.
+Sandy Kadyan: Second month roughly.
+Piyush Zinzuvadia: I think your requirements and then my expectation my document though I think I think you can sign that I will go through
+Sandy Kadyan: Yes. Yes.
+Piyush Zinzuvadia: it once then let's
+ 
+ 
+01:47:07
+ 
+Sandy Kadyan: opportunity
+Piyush Zinzuvadia: see different Yeah.
+Sandy Kadyan: market
+Piyush Zinzuvadia: Yeah. Right. Right.
+Sandy Kadyan: market
+Piyush Zinzuvadia: Definitely.
+Sandy Kadyan: startance
+Piyush Zinzuvadia: I think last five to six months either team
+Sandy Kadyan: legitally market.
+Piyush Zinzuvadia: Right. Right. pat.
+Sandy Kadyan: Uh yes.
+Piyush Zinzuvadia: So that should be the content which I should have in that
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: agency. It is like error method. I think for two or three years agency most of them are junk leads. Now I know many
+Sandy Kadyan: Uh-huh.
+Piyush Zinzuvadia: In terms of marketing field,
+Sandy Kadyan: Uh-huh. CM CPM
+Piyush Zinzuvadia: cost per CPM,
+Sandy Kadyan: mill CPM.
+Piyush Zinzuvadia: CTM, CPM, uh cost per
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: something impression.
+Sandy Kadyan: Instagram.
+Piyush Zinzuvadia: impression.
+Sandy Kadyan: Counting
+Piyush Zinzuvadia: So reach
+Sandy Kadyan: impression. But charge
+Piyush Zinzuvadia: Mhm. Mhm.
+Sandy Kadyan: Right. Right.
+Piyush Zinzuvadia: More
+Sandy Kadyan: Wait, science.
+Piyush Zinzuvadia: as a
+Sandy Kadyan: Uh-huh. Yes. Uh-huh.
+ 
+ 
+01:51:33
+ 
+Piyush Zinzuvadia: I cannot be blindly dependent on someone from first day.
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: That repo is also important for long-term
+Sandy Kadyan: Yes. Yes.
+Piyush Zinzuvadia: collaboration.
+Sandy Kadyan: And you see exactly sweet. customers
+Piyush Zinzuvadia: Exactly.
+Sandy Kadyan: dashboard
+Piyush Zinzuvadia: Mhm.
+Sandy Kadyan: and confidence build.
+Piyush Zinzuvadia: Right. Definitely.
+Sandy Kadyan: I
+Piyush Zinzuvadia: According to you first
+Sandy Kadyan: Yes.
+Piyush Zinzuvadia: month around more than 80% offline treatment which is
+Sandy Kadyan: I would suggest I I would suggest
+Piyush Zinzuvadia: I'm going to put that
+Sandy Kadyan: Second Anderson market. We'll be able to do
+Piyush Zinzuvadia: Okay.
+Bhargav Naidu: No also in the same uh topic clear okay we observe that online can
+Piyush Zinzuvadia: topics here.
+Sandy Kadyan: it.
+Piyush Zinzuvadia: Okay. We observe that
+Bhargav Naidu: be the first channel of point of contact after your
+Piyush Zinzuvadia: contact
+Bhargav Naidu: consolidation online is done then the patient would would love to travel anywhere across India to meet
+Piyush Zinzuvadia: the patient travel.
+Bhargav Naidu: you to have a proper understanding that can be easier just like Sandy told Help.
+Piyush Zinzuvadia: Sure.
+Sandy Kadyan: minutes of performance marketing.
+Piyush Zinzuvadia: sir. Sure.
+Sandy Kadyan: Come start.
+Piyush Zinzuvadia: different. Okay. Sure. Sure. Sure. Definitely. I will contact you guys.
+Sandy Kadyan: Yeah.
+Piyush Zinzuvadia: Okay.
+Sandy Kadyan: Okay. Okay. It was nice meeting
+Piyush Zinzuvadia: Sure.
+Bhargav Naidu: Dr. P. Everything is okay. Complete.
+Sandy Kadyan: you.
+Bhargav Naidu: Fine.
+Piyush Zinzuvadia: Sorry. Yeah. Yeah. Yeah.
+Bhargav Naidu: Perfect.
+Piyush Zinzuvadia: As of now it is completed.
+Bhargav Naidu: Sure.
+Piyush Zinzuvadia: Yeah. Thank you. Thank you.
+Bhargav Naidu: Perfect.
+Piyush Zinzuvadia: It was nice meeting you too.
+Sandy Kadyan: Okay.
+Bhargav Naidu: Nice meeting you too.
+Sandy Kadyan: Have a good one.
+Piyush Zinzuvadia: Nice meeting you.
+Sandy Kadyan: Bye.
+Piyush Zinzuvadia: Yeah.
+Bhargav Naidu: Bye-bye.
+Piyush Zinzuvadia: Bye.
+ 
+ 
+Transcription ended after 01:55:32
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.

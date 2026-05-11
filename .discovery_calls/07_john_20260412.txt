@@ -1,0 +1,410 @@
+﻿📝 Notes
+Apr 12, 2026
+John Discovery Meet
+Invited Jacin John Wesley Sandy Kadyan Bhargav Naidu
+Attachments John Discovery Meet
+Meeting records Transcript 
+
+
+
+
+Summary
+Service delivery reviewed identifying manual invoicing and client follow-up bottlenecks with low client ticket sizes requiring price adjustment.
+
+Review Current Service Bottlenecks
+Current content services involve strategy, writing, content shoots, design, and scheduling, with the primary operational bottlenecks identified as manual invoicing and client follow-up processes. Automating payment processing and integrating a payment gateway like Razorpay with a CRM was determined as the solution to fix the invoicing problem.
+
+Address Client Approval Process
+Manual follow-up for client content approvals via email and WhatsApp was highlighted as a major operational bottleneck. This issue can be resolved using a CRM to build an internal communication system with automated follow-ups, eliminating the use of personal phones.
+
+Scaling Strategy and Pricing
+Analysis showed the team is undercharging, with an average monthly ticket size of 50k to 60k, indicating the main bottleneck is acquiring higher-ticket clients, not retention. The recommendation for scaling included properly positioning the company, implementing a filter for low-paying clients, and charging higher rates for qualitative work.
+
+
+
+
+Next steps
+* [Jacin John Wesley] Contact Partner: Reach out when business setup is ready for performance scaling discussions.
+
+
+
+
+Details
+* Current Service Offerings and Team Structure: Jacin John Wesley outlined their content process, which involves strategizing content based on client goals, writing, and, if required, content shoots. Design and video editing are handled by their team, which includes both co-founders who design and edit, a full-time designer, and a part-time editor, in addition to Jacin John Wesley's sibling assisting part-time with some videos. Sandy Kadyan confirmed that their current responsibilities include strategy, writing, content shoots, and design/scheduling.
+* Identifying Bottlenecks and Automation Needs: Sandy Kadyan inquired about current bottlenecks, noting that the team is doing many tasks manually and may want to automate processes such as invoices, payment processing, email/WhatsApp follow-ups, customer retention, and report generation, which Jacin John Wesley had previously listed (00:00:58). Jacin John Wesley confirmed that manually creating and sending invoices is a time sink and a bottleneck, sometimes leading to missed deadlines and delayed payments (00:01:57).
+* Payment Processing Automation and CRM Integration: The speakers discussed automating payment processing, with Sandy Kadyan suggesting that recurring payments can be easily automated once the company's registration is complete (00:02:49). They further suggested connecting a payment gateway like Razorpay to a Customer Relationship Management (CRM) system to automatically send invoices, reminders, or internal notifications to the team for follow-up. Jacin John Wesley acknowledged that this solution, possibly involving a CRM access provided by Sandy Kadyan's team, would fix the invoicing problem (00:03:50).
+* Automating Client Approvals and Follow-ups: Jacin John Wesley identified a major operational bottleneck in the follow-up process for client content approvals, which is currently done manually via email and WhatsApp (00:03:50). Sandy Kadyan suggested that this issue could also be resolved using a CRM, which would allow them to build an internal system for client communication, eliminating the need to use personal phones and enabling automatic follow-ups if clients do not respond (00:05:51). While Jacin John Wesley's team currently uses ClickUp for project management, the reliance on WhatsApp for client follow-ups persists, but a CRM with WhatsApp integration could resolve this operational challenge (00:06:45).
+* Analyzing Pricing and Customer Retention: The conversation shifted to customer retention, where Jacin John Wesley stated that most clients stay for a long period, with an average monthly ticket size of 50 to 60k for social media services (00:07:41). Sandy Kadyan concluded that the client is charging too little for their services, which include content strategy, writing, and scheduling shoots, suggesting that their current bottleneck is not retention but rather acquiring higher-ticket clients (00:08:51). Sandy Kadyan advised Jacin John Wesley to pursue higher-ticket clients, as their current price point of 50k per client (resulting in about 2.5 lakhs for five clients) is insufficient to maintain their team even with optimized operations (00:09:48).
+* Focusing on Acquisition Over Operation: Sandy Kadyan asserted that acquisition is the primary bottleneck, not operational efficiency, and proposed helping Jacin John Wesley's team with lead flow and performance marketing to target higher-paying clients (00:10:42). Sandy Kadyan outlined a strategy involving repositioning the company, building landing pages, setting up tracking, and designing a higher-value offer, followed by running ads with a minimum budget of one lakh, estimating a total upfront cost of about two lakhs for 30 days (00:11:28). Jacin John Wesley expressed concerns about the financial commitment needed for the proposed performance marketing strategy, indicating they would not be able to invest the amount suggested at this time (00:13:10).
+* Recommendations for Scaling and Price Point Adjustment: Given the current financial constraints, Sandy Kadyan advised Jacin John Wesley to focus on having decent margins by charging more for qualitative work. Sandy Kadyan suggested that Jacin John Wesley needs to properly position themself and implement a filter to avoid low-paying clients, also recommending three-month contracts instead of monthly ones to increase ticket size (00:14:49). They agreed that once Jacin John Wesley's setup has grown and they are ready for performance marketing, they should reach out again for help with the acquisition strategy (00:16:00).
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
+📖 Transcript
+Apr 12, 2026
+John Discovery Meet - Transcript
+00:00:00
+ 
+Jacin John Wesley: Does he need uh more leads or does he need uh according to that monthly goal? Uh we'll strategize the content and then we go into the writing
+Sandy Kadyan: Okay.
+Jacin John Wesley: part.
+Sandy Kadyan: So currently uh strategy you guys are handling writing you guys are handling and then from there if required you guys are getting involved in content shoots right and then
+Jacin John Wesley: Right.
+Sandy Kadyan: uh designing and scheduling that also mostly you're using AI and it's done by your team right?
+Jacin John Wesley: Design is done by my team. Video edit is done by my team.
+Sandy Kadyan: Mhm.
+Jacin John Wesley: So,
+Sandy Kadyan: Mhm.
+Jacin John Wesley: uh to briefly tell you both me and the other friend who's a co-founder, we both design,
+Sandy Kadyan: Mhm.
+Jacin John Wesley: we both do edit. He he also go be uh he he'll be part of some of the shoots.
+Sandy Kadyan: Mhm.
+Jacin John Wesley: Uh so there we have a full-time designer and uh editor who is doing part-time
+ 
+ 
+00:00:58
+ 
+Sandy Kadyan: Mhm.
+Jacin John Wesley: but mostly most of the work is done by him.
+Sandy Kadyan: Okay.
+Jacin John Wesley: Uh terms of video edit and whatever even this this
+Sandy Kadyan: Mhm.
+Jacin John Wesley: designer also takes some small videos uh like testimonial kind of thing which can be done on phone itself. So that's the major thing.
+Sandy Kadyan: Okay.
+Jacin John Wesley: Uh there there's one um my own brother who works part-time for a couple of
+Sandy Kadyan: Mhm.
+Jacin John Wesley: videos.
+Sandy Kadyan: Mhm. And workflow wise, so currently where where is the bottleneck?
+Jacin John Wesley: Yeah.
+Sandy Kadyan: Uh so you guys are doing things manually. You want to automate uh some process or you have a workflow in your head whereas so it should happen this way. We have something planned
+Jacin John Wesley: Uh so while I was filling the form I had some things in mind. Is it possible to get that on? So I'll try to remember
+Bhargav Naidu: I I'll I'll ask the questions. Wait,
+Sandy Kadyan: currently like invoices and payment processing was one option.
+ 
+ 
+00:01:57
+ 
+Bhargav Naidu: you have it?
+Jacin John Wesley: that.
+Sandy Kadyan: Second is email and WhatsApp uh follow-ups for second which you have filled up from your side. Next is customer retention and third is report generation.
+Jacin John Wesley: Yeah, we'll do one by one.
+Sandy Kadyan: Okay.
+Jacin John Wesley: So the first one is payment processing and everything.
+Sandy Kadyan: Yeah.
+Jacin John Wesley: Yeah,
+Sandy Kadyan: Yes.
+Jacin John Wesley: every time me or my friend had to sit down and make the invoice and send the client that's definitely a timet thing.
+Sandy Kadyan: Yes.
+Jacin John Wesley: Sometimes we might be caught in the work and we might miss out on the sending dates and everything that delays the payment.
+Sandy Kadyan: Okay. Yes.
+Jacin John Wesley: That's one bottleneck.
+Sandy Kadyan: Okay, that can be done. Do you guys use any CRM currently?
+Jacin John Wesley: So right now we are using this tool called reference to create.
+Sandy Kadyan: Mhm. Reference for
+Jacin John Wesley: So I'm good invoices. I'm good with that.
+Sandy Kadyan: invoices.
+Jacin John Wesley: But my co-founder is still learning.
+ 
+ 
+00:02:49
+ 
+Jacin John Wesley: So sometimes I might not be able to do it. He'll take some time for that. So yeah.
+Sandy Kadyan: So you can you can basically automate payments on uh any payment gateway too, right? Uh see if there are recurring payments in India especially razor pay works if I'm not wrong
+Jacin John Wesley: Right.
+Sandy Kadyan: right.
+Jacin John Wesley: So our our registration process got little stuck uh because of uh some uh issue with the what do we say
+Sandy Kadyan: Mhm.
+Jacin John Wesley: uh with the rental agreement thing.
+Sandy Kadyan: Okay.
+Jacin John Wesley: So we are running this right from my house uh here. So,
+Sandy Kadyan: Mhm.
+Jacin John Wesley: so uh my my mom who is owner actually there's no pills that is uh generating on her name that got stuck here. We are working on that.
+Sandy Kadyan: So I do think uh as soon as the registration part is done recurring payment wise it it can be automated very easily right.
+Jacin John Wesley: Right, right,
+Sandy Kadyan: So, so that should not be a bottleneck, right?
+ 
+ 
+00:03:50
+ 
+Jacin John Wesley: right,
+Sandy Kadyan: It's it's it's a very easy fix and then what can be done is you can kind of connect Razer Pay to a CRM,
+Jacin John Wesley: right.
+Sandy Kadyan: right? Where your client data is there and by forming a basic connection of accounting there automatically invoices or reminders can be sent out or internal notification can be sent out to your team to take follow-ups and all. So, that's like an easy fix.
+Jacin John Wesley: Got it.
+Sandy Kadyan: If you connect your CRM,
+Jacin John Wesley: Got it.
+Sandy Kadyan: if you're having a CRM well input or else we can give you access to a CRM which we are currently using where Razer Pay can be integrated and you can fix that problem.
+Jacin John Wesley: Got it.
+Sandy Kadyan: So invoicing part it's easy.
+Jacin John Wesley: Got
+Sandy Kadyan: Okay. Next is email and WhatsApp followup.
+Jacin John Wesley: it.
+Sandy Kadyan: This is interesting.
+Jacin John Wesley: Email and WhatsApp followup is majorly for the uh client approvals of uh from the client that delayed.
+Sandy Kadyan: Okay.
+Jacin John Wesley: So I I just selected the option because it felt interesting but also that's a place where we had to follow up keep following up the client.
+ 
+ 
+00:04:52
+ 
+Sandy Kadyan: Mhm.
+Jacin John Wesley: and that gets delayed. So,
+Sandy Kadyan: So generally generally uh John as to email and WhatsApp as a channel right it can be used in two ways again. one is uh outreach and second is operations.
+Jacin John Wesley: right.
+Sandy Kadyan: Right? So if you're thinking about operation,
+Jacin John Wesley: Okay.
+Sandy Kadyan: the strategy would be different. If you're thinking about uh acquisition, the strategy would be different. Right?
+Jacin John Wesley: Right.
+Sandy Kadyan: So is it about acquisition or is it about operation?
+Jacin John Wesley: It's for the operation, not for the acquisition.
+Sandy Kadyan: Okay. Okay.
+Jacin John Wesley: It's for the approval of the content. Let's say most of the clients as I mentioned doesn't get into the micromanagement but few of them who gets into the micromanagement ar this designers uh could be like this or this content could be that for them if uh because most of we don't
+Sandy Kadyan: Okay.
+Jacin John Wesley: have a project manager uh uh kind of thing.
+Sandy Kadyan: Mhm.
+ 
+ 
+00:05:51
+ 
+Jacin John Wesley: So one of us uh is going to jump into manage the client communication part.
+Sandy Kadyan: So here also this problem can be solved using a CRM right.
+Jacin John Wesley: So
+Sandy Kadyan: So our CRM uh we can build an internal system using which you can put in your client data there. Okay. And when you kind of move stages or there only you don't even need to use uh your own phone. Okay. They're only in the CRM if you kind of text them messages and go to them.
+Jacin John Wesley: here
+Sandy Kadyan: Okay. And when they reply, you can build internal automations as to okay uh client has replied you'll get a notification or if it's pending, if they're not responding, a follow-up can be sent to them automatically. That also can be set.
+Jacin John Wesley: Okay. So the follow is sent through which
+Sandy Kadyan: Okay.
+Jacin John Wesley: application?
+Sandy Kadyan: As as to we have a CRM go level we are currently using, we can set up a sub account for you there.
+ 
+ 
+00:06:45
+ 
+Sandy Kadyan: Okay. And then uh we can find we can form client pipelines. Okay. Okay, client fulfillment pipelines. Let's say a project is there. Okay, there you are moving stages. Uh so you need approval from client related to a certain subject,
+Jacin John Wesley: Right.
+Sandy Kadyan: right?
+Jacin John Wesley: So we have set up that on the ClickUp.
+Sandy Kadyan: So
+Jacin John Wesley: Uh so we have already done that. But then uh for the CL client to check that that also even the ClickUp also sends
+Sandy Kadyan: yeah.
+Jacin John Wesley: a lot of notification on the mail. But for us to we have to follow up on the WhatsApp again.
+Sandy Kadyan: So then WhatsApp.
+Jacin John Wesley: Yeah. All
+Sandy Kadyan: So WhatsApp generally WhatsApp has this 24-hour thing right as to whatever messages you want to send you need to get those messages approved 24 as before if you are using an automated template but let's say you're shooting messages okay whereas to client has initiated the conversation then you can do two and fro it's same as if you're chatting on your own phone but the conversation will happen on a CRM right so it's something related to
+ 
+ 
+00:07:41
+ 
+Jacin John Wesley: right.
+Sandy Kadyan: that If you want to integrate that thing in ClickUp too, I'm not so sure as to clickup has WhatsApp integration there, right? Cuz it's basically for project management, right? But generally a CRM has that.
+Jacin John Wesley: Right.
+Sandy Kadyan: If you use a CRM, it'll be able to solve that problem for you.
+Jacin John Wesley: Got
+Sandy Kadyan: Okay?
+Jacin John Wesley: it.
+Sandy Kadyan: So that is related to your WhatsApp followup. Then customer retention
+Jacin John Wesley: Right. Uh most of our uh customers staying long uh uh journey with us long
+Sandy Kadyan: Mhm. What's your average ticket size as to how much are you currently charging people for the social media services
+Jacin John Wesley: uh
+Sandy Kadyan: which you're giving?
+Jacin John Wesley: mostly around uh 50 60k per
+Sandy Kadyan: Okay.
+Jacin John Wesley: month.
+Sandy Kadyan: And and 50 to 60k what all are you offering?
+Jacin John Wesley: So everything that I've told like right from content uh uh writing uh strategy writing and couple of shows uh it won't be much maybe uh something that we can cover for a month content according to the
+ 
+ 
+00:08:51
+ 
+Sandy Kadyan: Mhm. So, so are you are you are you are you uh promoting any fixed number of content pieces which will go out from their site
+Jacin John Wesley: strategy.
+Sandy Kadyan: static or videos something like
+Jacin John Wesley: Yeah, we are going to define how many of that uh before before every month
+Sandy Kadyan: that.
+Jacin John Wesley: or before every couple of months.
+Sandy Kadyan: Mhm.
+Jacin John Wesley: So it won't go beyond 20 pieces.
+Sandy Kadyan: So 20 pieces are then how many static post,
+Jacin John Wesley: Uh so that differs from client to
+Sandy Kadyan: how many videos?
+Jacin John Wesley: client according to the name.
+Sandy Kadyan: Okay.
+Jacin John Wesley: Yeah. So
+Sandy Kadyan: So when you're talking about retention, right? So when you're offering social media at 50 to 60,000 first of all you're charging two less. Okay.
+Jacin John Wesley: right.
+Sandy Kadyan: And uh second thing which is there if uh you're doing video content if you're scheduling shoots also you're deploying resources.
+Jacin John Wesley: All
+Sandy Kadyan: Right.
+Jacin John Wesley: right.
+Sandy Kadyan: So that is also one bottleneck which you'll have right if you're charging too less.
+ 
+ 
+00:09:48
+ 
+Sandy Kadyan: And third thing is people if they're paying less they will stick with you but you need to chase a little higher ticket clients. I guess right so current bottleneck is not about retaining I guess it's about
+Jacin John Wesley: Right.
+Sandy Kadyan: getting higher ticket clients then
+Jacin John Wesley: That that's the issue.
+Sandy Kadyan: yeah so I I would sug this instead of focusing on operations cuz your ticket
+Jacin John Wesley: Yeah.
+Sandy Kadyan: size if you can kind of uh cuz you already have case studies going
+Jacin John Wesley: All
+Sandy Kadyan: to people are sticking with you people are working with you so I do think uh outreach should be
+Jacin John Wesley: right.
+Sandy Kadyan: one thing where you should kind of think about automation rather than fulfillment, right? Cuz let's say you're having five clients, okay? On an average, a person is paying you 50,000. That's like 2.5 lakhs, right?
+Jacin John Wesley: Is
+Sandy Kadyan: That's like peanuts. You won't be able to maintain your team even if you're optimizing the operations,
+Jacin John Wesley: it
+Sandy Kadyan: right?
+ 
+ 
+00:10:42
+ 
+Sandy Kadyan: Operations is not your bottleneck. Okay? Uh acquisition is your bottleneck as of now.
+Jacin John Wesley: I think yeah.
+Sandy Kadyan: Yeah. So I think uh instead of focusing on report generation Yes.
+Jacin John Wesley: So, so we tried two clients, but most of the clients that we would find would end in the sweet spot.
+Sandy Kadyan: Yeah.
+Jacin John Wesley: Yeah.
+Sandy Kadyan: So we can kind of help you on the performance side. Okay. That is that is one side I think complete lead flow which is there right which you've written as your bottleneck.
+Jacin John Wesley: Right.
+Sandy Kadyan: That is where we can come in. Other things are kind of easy cuz if you can show your work properly right
+Jacin John Wesley: Right. Right.
+Sandy Kadyan: and if you give us an ad budget we can plan your funnel for you.
+Jacin John Wesley: Got
+Sandy Kadyan: That is that is where I think both of us can exchange value
+Jacin John Wesley: it.
+Sandy Kadyan: right cuz uh we deal in uh performance also we deal
+ 
+ 
+00:11:28
+ 
+Jacin John Wesley: Right.
+Sandy Kadyan: in systems also so our entire uh placement is that will find the right type of people which you're looking for right at the right price point where it makes sense for you also okay
+Jacin John Wesley: All right.
+Sandy Kadyan: but two things are there one is uh our ticket size is kind of high okay we have a base We have a base of like one lakh right even if we are taking performance our performance marketing
+Jacin John Wesley: Hey,
+Sandy Kadyan: fee for running campaigns is like one lakh cuz uh we won't be running campaigns on how do I put
+Jacin John Wesley: I miss it.
+Sandy Kadyan: it just putting a Facebook form out there just by creating some creators out there just by running some offer out there it won't work
+Jacin John Wesley: Hey,
+Sandy Kadyan: that way you'll only be able to close low ticket clients like that okay 50 to 60,000 if you want to chase
+Jacin John Wesley: wait.
+Sandy Kadyan: 1.5 lakhs or two lakhs monthly retainers then you need to position yourself right so we'll work on the positioning first for a week we'll We'll build your landing pages.
+ 
+ 
+00:12:22
+ 
+Sandy Kadyan: Okay. We'll set a proper tracking. We'll design your offer. Okay. Social media wise, how and what we can offer so that it makes sense for your team also to kind of fulfill it.
+Jacin John Wesley: All
+Sandy Kadyan: Okay. And for client also to say yes.
+Jacin John Wesley: right.
+Sandy Kadyan: Okay. And once we do that then we'll start ads. And for ads also we need a rough budget of at least one lakh. Okay. So give or take if you can give us like two lakhs for a period of like 30 days, we'll show you some results in terms of conversion. You just need to convert like three or four people. Okay, even if you're converting like four people at 1.5 lakhs, that's like that's like four uh that's like six lakhs, right? You're spending two lakhs and you're making six lakhs. Okay, so that can be done. I guess someone is waiting to join the meeting. Is your partner joining or what
+ 
+ 
+00:13:10
+ 
+Jacin John Wesley: No, I didn't share that to anyone. Is Is that uh Oh,
+Sandy Kadyan: is an noteaker?
+Jacin John Wesley: it's my note taker. I guess it's it joined.
+Sandy Kadyan: will will share the notes already. Var is also taking notes.
+Jacin John Wesley: No, no, no. It's automatically connected to my So,
+Sandy Kadyan: Okay.
+Jacin John Wesley: I think that's why Yeah,
+Sandy Kadyan: Okay.
+Jacin John Wesley: it's okay. You don't have to let
+Sandy Kadyan: So, I'm like,
+Jacin John Wesley: that
+Sandy Kadyan: yeah, this is uh what I'm thinking which will make sense.
+Jacin John Wesley: understood. uh uh
+Sandy Kadyan: What do you think?
+Jacin John Wesley: I mean with I can be honest with the financial part of thing uh
+Sandy Kadyan: Mhm.
+Jacin John Wesley: that that would something that would that would filter us out uh right now uh that's what
+Sandy Kadyan: Yeah.
+Jacin John Wesley: I was asking Bargo on the call what is the what is what is something that you filter
+Sandy Kadyan: Mhm.
+Jacin John Wesley: out your clients with so currently I don't think I would be
+ 
+ 
+00:14:03
+ 
+Sandy Kadyan: Yeah.
+Jacin John Wesley: able to uh put in that much of amount for
+Sandy Kadyan: Yeah. Yeah. No, no,
+Jacin John Wesley: sure.
+Sandy Kadyan: it does make sense cuz to be very frank, uh if you're doing if you're attempting performance also, right, you need to do it right. Okay. And and for that,
+Jacin John Wesley: Right.
+Sandy Kadyan: you need to be kind of prepared. So currently,
+Jacin John Wesley: Right.
+Sandy Kadyan: I do think once you kind of scale up to that level where it's like you want to try
+Jacin John Wesley: Right.
+Sandy Kadyan: performance at that time, I think we can have a discussion, right?
+Jacin John Wesley: Right.
+Sandy Kadyan: cuz even if we kind of build these internal systems for you which is like operation wise they won't
+Jacin John Wesley: Right.
+Sandy Kadyan: solve most of your problem which you're currently facing
+Jacin John Wesley: Right.
+Sandy Kadyan: right so that is what I
+Jacin John Wesley: Yeah. So, so your perspective what what could be done in a better way to get
+ 
+ 
+00:14:49
+ 
+Sandy Kadyan: think
+Jacin John Wesley: there in next couple of months or whatever timeline?
+Sandy Kadyan: it it it can be done in u so whatever setup you're running right uh have decent margins Instead of playing on small margins or instead of doing work yourself, I would suggest uh have decent margin so that you can offer qualitative work to your client. Okay?
+Jacin John Wesley: Right.
+Sandy Kadyan: Cuz it's it's very easy to close client by saying payers like 30 or 40,
+Jacin John Wesley: So,
+Sandy Kadyan: right?
+Jacin John Wesley: so there are clients that we close around one one to 1.5 but they are project based. They are not retainer based.
+Sandy Kadyan: Uh-huh.
+Jacin John Wesley: So when it when it's coming to retain a waste uh most of them are closing at this point. Uh,
+Sandy Kadyan: retain a retainer base also that is the reason you need to position yourself right I think okay you need to have a filter as to I won't be working with people who are going below
+Jacin John Wesley: hey.
+Sandy Kadyan: this cuz my price range is this and the second thing which you can do is you can do you can do three month contracts instead of doing monthly do three three months
+ 
+ 
+00:16:00
+ 
+Jacin John Wesley: Right.
+Sandy Kadyan: bucket that is one direction I can give you right that kind works for
+Jacin John Wesley: Right.
+Sandy Kadyan: us also. We start with initial low ticket items. Our one lakh base is not actually one lakh as uh I'm having this meeting with you. It's actually 1.5 lakhs and generally from our referral network if you're getting a contract we take 3 months up front right so that's like 4.5 lakhs five lakhs as a ticket
+Jacin John Wesley: Great. Great.
+Sandy Kadyan: size then only I'll be able to allocate resources or else I won't be able to allocate resources right then I
+Jacin John Wesley: Obviously. Yeah.
+Sandy Kadyan: I have to do work myself I won't be making money team won't be making money how will I fulfill for client right so it'll be a problem there so I'm like once you
+Jacin John Wesley: That's true.
+Sandy Kadyan: kind of grow your setup at that time if you're thinking about performance at that time I I do think we can help you out there that okay yeah no
+ 
+ 
+00:16:50
+ 
+Jacin John Wesley: I'll definitely reach out once I think I'm ready. Yeah.
+Sandy Kadyan: worries and in the meantime if you need help with building small small systems that's like I I do think your internal team will be able to do it right cuz it's not that complicated the other problems which you are currently facing
+Jacin John Wesley: Hey,
+Sandy Kadyan: right you're already using clickup for project management client notification wise currently
+Jacin John Wesley: thank
+Sandy Kadyan: uh I would suggest charge people more instead of uh so if you kind of one thing which I've seen is if you don't uh if you charge people less right only people who pay less these are the people who have more POVs they're like how is this thing done how is that thing done cuz they're having time
+Jacin John Wesley: That's That's
+Sandy Kadyan: right so don't waste your time there on those people that is what I would
+Jacin John Wesley: true. Right.
+Sandy Kadyan: suggest okay okay then man that was nice meeting
+Jacin John Wesley: Yeah. Thank you.
+Sandy Kadyan: you okay and yeah Hopefully when you do plan of scaling do reach out.
+Jacin John Wesley: So,
+Sandy Kadyan: Okay.
+Jacin John Wesley: right.
+Sandy Kadyan: Okay.
+Jacin John Wesley: Thank you both. Bye.
+ 
+ 
+Transcription ended after 00:18:01
+
+
+This editable transcript was computer generated and might contain errors. People can also change the text after it was created.

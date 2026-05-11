@@ -1,0 +1,46 @@
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import Icon from './Icon'
+
+const FAQS = [
+  { q: 'Where have you done this before?', a: 'ZippyScale has run procedure-attributed Meta + Google performance for eye surgery clinics in Bombay. Anonymized scorecards: ~45% procedure-bookings lift, 32% procedure-CAC drop, 50%+ trust-objection neutralisation over a 6-month engagement. NDA-bound so we don’t name them. Hyderabad is the first city we’re opening with founding-clinic case-study rights.' },
+  { q: '₹2L/mo vs my current ₹50K retainer, too steep?', a: 'Different mechanics. A ₹50K retainer pays an account exec who reports CPL. ₹2L/mo runs a full growth team: server-side attribution via Stape, 60-second eligibility quiz tool, surgeon-led creative production, weekly procedure-CAC reviews, Claude call-analysis. A clinic doing ₹2L/mo on Meta with broken attribution wastes ~30% of spend (~₹7.2L/year). The recovered spend pays for the sprint inside 2 quarters.' },
+  { q: 'Can your team avoid getting our ad account banned?', a: 'Every creative passes a 14-point compliance gate before it reaches Meta’s review queue: NMC, ASCI, Meta Health-Restricted, Google Healthcare, DPDP, no "100% guaranteed" or vision-restoration overpromise, no before/after misrepresentation, price-claim honesty, surgeon-credential accuracy, procedure-volume claim sourcing, patient consent, post-op care disclosure. 1,000+ creatives shipped, zero bans.' },
+  { q: 'What happens after Day 90?', a: 'You see the scorecard. Continue at the founding rate (₹2L/mo locked forever vs ₹3L/mo standard) or pause. No long-term lock-in. Campaigns we built stay running on your ad accounts; we step back from active operations.' },
+  { q: 'Do you handle LASIK and cataracts together, or separately?', a: 'Together, on the same stack. The eligibility quiz qualifies for both. Creative variants split by procedure focus. Some clinics lean 80% LASIK / 20% cataracts, others the opposite. We dial creative mix based on your OT capacity and seasonal demand. Cataract camps + LASIK weekend drives can run in parallel.' },
+  { q: 'Hyderabad-only? My referral catchment is wider.', a: 'Hyderabad-first because that’s where unit economics are highest and we city-lock founding clinics for 12 months. From Day 60+, we expand the same campaigns to Vijayawada, Vizag, Warangal, Bangalore, Coimbatore: your call when to add geos.' },
+]
+
+export default function EyeSurgeryFAQ() {
+  const [open, setOpen] = useState<number | null>(0)
+  return (
+    <section className="bg-[#FFFDF7] py-20 sm:py-28 px-6 border-t border-[#2A2A35]/10">
+      <div className="max-w-4xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-100px' }} transition={{ duration: 0.5 }} className="mb-10">
+          <div className="text-xs tracking-[0.18em] uppercase font-bold text-[#2A2A35]/60 mb-3">Common questions</div>
+          <h2 className="text-4xl sm:text-5xl font-bold text-[#2A2A35] leading-[1.05] tracking-tight">Six questions every Hyderabad eye-surgery clinic owner asks.</h2>
+        </motion.div>
+        <div className="space-y-3">
+          {FAQS.map((f, i) => {
+            const isOpen = open === i
+            return (
+              <motion.div key={f.q} initial={{ opacity: 0, y: 8 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.3, delay: i * 0.04 }} className="rounded-xl border-2 border-[#2A2A35]/15 bg-[#FFFDF7] overflow-hidden hover:border-[#2A2A35]/30 transition-colors">
+                <button type="button" onClick={() => setOpen(isOpen ? null : i)} className="w-full px-5 sm:px-6 py-5 flex items-center justify-between gap-4 text-left cursor-pointer" aria-expanded={isOpen}>
+                  <span className="text-base sm:text-lg font-semibold text-[#2A2A35]">{f.q}</span>
+                  <motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.2 }} className="flex-shrink-0 h-8 w-8 rounded-full bg-[#D5EB4B] flex items-center justify-center text-[#2A2A35] font-bold"><Icon name="plus" size={16} /></motion.span>
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
+                      <div className="px-5 sm:px-6 pb-6 text-[#5A5A66] leading-relaxed">{f.a}</div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}

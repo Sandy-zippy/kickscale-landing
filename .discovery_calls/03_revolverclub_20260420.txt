@@ -1,0 +1,49 @@
+﻿📝 Notes
+Apr 20, 2026
+The Revolver Club Discovery Meet
+Invited Bhargav Naidu Sandy Kadyan vishal@therevolverclub.com
+Attachments The Revolver Club Discovery Meet
+Meeting records Recording 
+
+
+
+
+Summary
+Meeting reviewed social media expansion and CRM automation strategies for preparing infrastructure for upcoming capital deployment cycles.
+
+Social Media Expansion Plans
+Team intends to automate marketing and scale to new product categories. Focus remains on Instagram despite exploration of Twitter.
+
+Backend Infrastructure Requirements
+Current lead tracking relies on manual Excel sheets causing lead leakage. Decision made to implement AI-based CRM and ticketing systems.
+
+Growth and Scaling Strategy
+Future objectives include physical experience stores and increased ad spend. Digital infrastructure must be ready within 3 months for funding.
+
+
+
+
+Next steps
+* [The group] Develop Proposal: Prepare a phased execution road map detailing automation system implementation across social media, CRM, ticketing, and Shopify agentic flows. Include specific output expectations and rough performance numbers.
+* [Bhargav Naidu] Deliver Proposal: Update client contact with the automation proposal by the end of the day or tomorrow morning.
+
+
+
+
+Details
+* Social Media Automation and Expansion: The TRC Social Media team, which currently consists of three people based in Bombay, wants to leverage AI to automate their marketing efforts to facilitate daily posting, as they are currently posting only once or twice a week. They are also looking to scale their marketing footprint to support multiple upcoming product categories and franchises with specific campaign methodologies. They are primarily focused on Instagram, where they have 50,000 followers, but they also want to expand their efforts to Twitter, although they were advised that maximizing Instagram's return on investment may be more beneficial currently.
+* Current Social Media Team Structure: The current social media team has three members, one of whom works with the owner on content collaboration. The other two members are responsible for video, design, and creative work, functioning as graphic designers who manage two different categories, such as music systems and vinyl records or watches. The TRC Social Media team acknowledged that while some content could be automated, community-focused content that happens in real-time would still need manual input into the AI system.
+* Existing Product Categories and Future Plans: The company currently deals with vinyls, hi-fi systems, and watches, but they plan to introduce cameras, coffee, and host numerous events. The goal is to evolve into an experiential store where customers can explore products based on their interests. They currently spend a small amount, estimated at 20,000–30,000, rarely on Instagram ads, and they noted that their web analytics are not fully set up.
+* Website Analytics and Development: The TRC Social Media team confirmed that their website analytics are "not entirely" set up, although they have worked on their Google Business profile. The person handling the content collaboration is also managing the website, which has multiple back-end analytical tools installed, such as Microsoft Clarity and Hotjar, which Sandy Kadyan noted are redundant and require cleaning up. It was noted that Facebook Pixel and Google Analytics are present, and if data flows correctly, all activities should be properly attributed.
+* Average Order Values and Events: Average order values vary by category: vinyls range between 3,000 to 8,000, hi-fi music systems range from 15,000 to 35,000 online, and watches are typically between 2,500 and 5,000. The company plans offline events, described as a community building exercise, on a weekly or fortnightly basis, which typically draw an average attendance of 40 to 80 people. These events are primarily for community building and listening sessions, though some events, such as the one on the 18th, were specifically for buying records.
+* CRM and Ticketing Automation Requirements: The team is seeking automation for their customer relationship management (CRM) and ticketing processes, as they currently use Excel for lead tracking and emails for complaints, which causes lead leakage and delayed response times. They are looking for an AI-based system that can capture leads, place them into a CRM, and provide a dashboard with an escalation matrix for follow-up based on timelines, such as two hours for general inquiries. The desired system should also classify customers, such as high-value customers, to ensure they receive quicker responses than others.
+* Integration and Platform Automation Needs: Current back-end needs include integrating Shopify with Tally, and they are seeking a replacement for their current email campaign/WhatsApp message provider, Bitespeed, as the provider failed to deliver promised AI automation. They confirmed that the current lead flow involves type forms, which store data on Excel or Google Sheets, with some automations running through Bitespeed. The team also wants to leverage Shopify extensions for agentic flows to automate cross-selling and upselling opportunities based on product lifetime value and frequency.
+* Paid Ads Strategy and Financial Outlook: The company wants to optimize social media for followers who are more likely to spend money, which Sandy Kadyan suggested should be handled through paid ads, not organic content. The current ad spend is minimal, and increasing consistent spending to one or two lakhs could yield a return of 10x to 15x, citing success in similar decor categories. Sandy Kadyan emphasized that fixing the CRM is critical to properly "milking the cow" of inbound demand, as many leads currently sit in Excel sheets without follow-up.
+* Timeline and Scaling Objectives: The company is in the process of raising funds and needs to have their digital marketing strategy and automation systems in place within two to three months for capital deployment. They expect to secure funding in one to two months and plan to use the capital to scale their operations, establishing their own franchises, such as a vinyl bar concept, and expanding into physical experience stores across four to five new areas in the next six to eight months.
+* Request for Proposal and Next Steps: TRC Social Media requested a detailed proposal outlining the execution plan, including a step-ladder approach (Phase 1, Phase 2, Phase 3), the expertise to be provided, and the expected outcomes. The proposal will cover the automation of social media, the back-end CRM and lead management, customer support, and a strategy for scaling using Facebook ads and Shopify agentic flows. Sandy Kadyan committed to delivering a proposal by the end of the current day or the following morning, including rough numbers for expected increases in average order value by category.
+
+
+
+
+You should review Gemini's notes to make sure they're accurate. Get tips and learn how Gemini takes notes
+How is the quality of these specific notes? Take a short survey to let us know your feedback, including how helpful the notes were for your needs.
