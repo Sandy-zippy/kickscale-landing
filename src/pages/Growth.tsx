@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Nav from '../components/layout/Nav'
 import Footer from '../components/layout/Footer'
 import ClientWall from '../components/growth/ClientWall'
+import AnimatedCounter from '../components/ui/AnimatedCounter'
 import { METRICS, PILLARS, VERTICALS, CLIENTS, VERTICAL_OPTIONS, SPEND_BANDS } from '../data/growth'
 
 const ENDPOINT =
@@ -117,6 +118,37 @@ function GrowthHero() {
             See our work
           </a>
         </motion.div>
+
+        {/* The engine diagram. Wide and label-dense, so on phones it scrolls
+            horizontally inside its own container rather than shrinking to mush. */}
+        <motion.figure
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="mt-12 sm:mt-14"
+        >
+          <div className="relative">
+            <div
+              aria-hidden
+              className="absolute -inset-6 rounded-3xl blur-3xl"
+              style={{ background: 'radial-gradient(ellipse at center, rgba(213,235,75,0.13), transparent 70%)' }}
+            />
+            <div className="relative overflow-x-auto rounded-2xl border border-white/10 bg-black/40 [-webkit-overflow-scrolling:touch]">
+              <motion.img
+                src="/growth-flow.webp"
+                width={1672}
+                height={941}
+                alt="The ZippyScale growth engine: Google, Meta, WhatsApp, email and manual outreach feed into lead capture and CRM integration, then lead qualification, sales and deal closure, and finally client retention and growth."
+                className="block w-[860px] min-w-[860px] sm:w-full sm:min-w-0 h-auto"
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </div>
+          </div>
+          <figcaption className="mt-4 text-center text-xs text-white/35 sm:hidden">
+            Swipe to explore the full engine →
+          </figcaption>
+        </motion.figure>
       </div>
     </section>
   )
@@ -137,9 +169,13 @@ function ResultsBar() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
             >
-              <div className="font-['Space_Grotesk'] font-bold text-3xl sm:text-4xl text-[#D5EB4B]">
-                {m.value}
-              </div>
+              <AnimatedCounter
+                target={m.value}
+                prefix={m.prefix}
+                suffix={m.suffix}
+                duration={1.8}
+                className="block font-['Space_Grotesk'] font-bold text-3xl sm:text-4xl text-[#D5EB4B] tabular-nums"
+              />
               <div className="mt-1.5 text-sm text-white/70 leading-snug">{m.label}</div>
               {m.note && <div className="text-xs text-white/40 mt-0.5">{m.note}</div>}
             </motion.div>
@@ -223,6 +259,7 @@ function ClientsSection() {
 /* ─────────────────────────  Verticals  ───────────────────────── */
 
 function VerticalsSection() {
+  const [active, setActive] = useState(0)
   return (
     <section className="bg-[#FFFDF7]">
       <div className="max-w-6xl mx-auto px-5 py-20 sm:py-24">
@@ -234,37 +271,64 @@ function VerticalsSection() {
           sales cycles we have already built for.
         </p>
 
-        <div className="mt-12 space-y-4">
-          {VERTICALS.map((v, i) => (
-            <motion.div
+        {/* tabbed rather than a stacked wall of copy — one segment on screen at a time */}
+        <div className="mt-12 flex flex-wrap gap-2">
+          {VERTICALS.map((v, idx) => (
+            <button
               key={v.slug}
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.4, delay: i * 0.05 }}
-              className="grid md:grid-cols-[1fr_auto] gap-6 items-center rounded-2xl border border-[#E5E7EB] bg-white p-7"
+              onClick={() => setActive(idx)}
+              aria-pressed={active === idx}
+              className={`relative rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${
+                active === idx ? 'text-[#0c0c10]' : 'text-[#4B5563] hover:text-[#1A1A2E]'
+              }`}
             >
-              <div>
-                <h3 className="font-['Space_Grotesk'] font-bold text-xl text-[#1A1A2E]">
-                  {v.name}
-                </h3>
-                <p className="mt-2 text-[#4B5563] leading-relaxed max-w-2xl">{v.blurb}</p>
-              </div>
-              <div className="flex flex-wrap gap-2 md:justify-end">
-                {v.clients.map(slug => {
-                  const c = CLIENTS.find(x => x.slug === slug)!
-                  return (
-                    <span
-                      key={slug}
-                      className="rounded-full border border-[#E5E7EB] bg-[#FAFAF7] px-3 py-1 text-xs font-medium text-[#4B5563]"
-                    >
-                      {c.name}
-                    </span>
-                  )
-                })}
-              </div>
-            </motion.div>
+              {active === idx && (
+                <motion.span
+                  layoutId="vertical-pill"
+                  className="absolute inset-0 rounded-full bg-[#D5EB4B]"
+                  transition={{ type: 'spring', stiffness: 400, damping: 34 }}
+                />
+              )}
+              <span className="relative">{v.name}</span>
+            </button>
           ))}
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-[#E5E7EB] bg-white p-7 sm:p-9 min-h-[190px]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={VERTICALS[active].slug}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25 }}
+            >
+              <h3 className="font-['Space_Grotesk'] font-bold text-2xl text-[#1A1A2E]">
+                {VERTICALS[active].name}
+              </h3>
+              <p className="mt-3 max-w-2xl text-[#4B5563] leading-relaxed">
+                {VERTICALS[active].blurb}
+              </p>
+              {VERTICALS[active].clients.length > 0 && (
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9CA3AF]">
+                    Who we do this for
+                  </span>
+                  {VERTICALS[active].clients.map(slug => {
+                    const c = CLIENTS.find(x => x.slug === slug)!
+                    return (
+                      <span
+                        key={slug}
+                        className="rounded-full border border-[#E5E7EB] bg-[#FAFAF7] px-3 py-1 text-xs font-medium text-[#4B5563]"
+                      >
+                        {c.name}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </section>

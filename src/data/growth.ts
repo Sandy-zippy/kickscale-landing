@@ -7,38 +7,41 @@ export interface Client {
   slug: string
   name: string
   vertical: string
-  /** true when the mark is designed for a dark ground and needs a dark tile to stay legible */
-  darkTile?: boolean
 }
 
+/** Dark grounds are baked into the artwork for marks designed light-on-dark
+ *  (Groom2B, Business Mint, Seslong, Sunrise) — every tile is a plain white card. */
 export const CLIENTS: Client[] = [
   { slug: 'my-perfect-fit', name: 'My Perfect Fit', vertical: 'Luxury & Bespoke Retail' },
   { slug: 'blutailor', name: 'BluTailor', vertical: 'Luxury & Bespoke Retail' },
-  { slug: 'groom2b', name: 'Groom2B', vertical: 'Luxury & Bespoke Retail', darkTile: true },
+  { slug: 'groom2b', name: 'Groom2B', vertical: 'Luxury & Bespoke Retail' },
   { slug: 'swathi-veldandi', name: 'Swathi Veldandi', vertical: 'Luxury & Bespoke Retail' },
   { slug: 'iyra', name: 'IYRA School of Business & Technology', vertical: 'Education' },
   { slug: 'ebs-ethames', name: 'EBS — Ethames Business School', vertical: 'Education' },
   { slug: 'lume', name: 'LUME', vertical: 'Networking Groups' },
   { slug: 'business-mint', name: 'Business Mint', vertical: 'PR & Media' },
-  { slug: 'vyva', name: 'VyVA', vertical: 'Commercial Real Estate' },
+  { slug: 'vyva', name: 'VyVA', vertical: 'Technology' },
   { slug: 'mywiz-ai', name: 'myWiz.ai', vertical: 'Technology' },
-  { slug: 'seslong', name: 'Seslong', vertical: 'Technology', darkTile: true },
+  { slug: 'seslong', name: 'Seslong', vertical: 'Technology' },
   { slug: 'iqra', name: 'IQRA', vertical: 'Manufacturing & Quality' },
   { slug: 'sunrise-drivers', name: 'Sunrise Drivers', vertical: 'Services' },
 ]
 
 export interface Metric {
-  value: string
+  /** numeric target the counter animates to */
+  value: number
+  prefix?: string
+  suffix?: string
   label: string
   note?: string
 }
 
 export const METRICS: Metric[] = [
-  { value: '₹48L+', label: 'annual ad spend managed', note: 'across client accounts' },
-  { value: '12+', label: 'clients partnered' },
-  { value: '15+', label: 'websites & landing pages built' },
-  { value: '10+', label: 'CRMs designed and deployed' },
-  { value: '100+', label: 'sales staff trained' },
+  { value: 48, prefix: '₹', suffix: 'L+', label: 'annual ad spend managed', note: 'across client accounts' },
+  { value: 12, suffix: '+', label: 'clients partnered' },
+  { value: 15, suffix: '+', label: 'websites & landing pages built' },
+  { value: 10, suffix: '+', label: 'CRMs designed and deployed' },
+  { value: 100, suffix: '+', label: 'sales staff trained' },
 ]
 
 export interface Vertical {
@@ -82,7 +85,7 @@ export const VERTICALS: Vertical[] = [
     name: 'Commercial Real Estate',
     blurb:
       'High-ticket, long-cycle deals where the metric that matters is a site visit that actually shows up.',
-    clients: ['vyva'],
+    clients: [],
   },
 ]
 

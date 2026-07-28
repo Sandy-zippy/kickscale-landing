@@ -25,11 +25,8 @@ export default function ClientWall({ only, compact = false }: Props) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-40px' }}
           transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.4) }}
-          className={`flex items-center justify-center rounded-xl border px-5 py-6 transition-colors ${
-            c.darkTile
-              ? 'bg-[#14181A] border-[#14181A]'
-              : 'bg-white border-[#E5E7EB] hover:border-[#D5EB4B]'
-          }`}
+          whileHover={{ y: -3 }}
+          className="flex items-center justify-center rounded-xl border border-[#E5E7EB] bg-white px-5 py-6 transition-colors hover:border-[#D5EB4B] hover:shadow-[0_14px_30px_-22px_rgba(20,20,30,0.5)]"
         >
           <img
             src={`/logos/clients/${c.slug}.png`}
@@ -37,7 +34,8 @@ export default function ClientWall({ only, compact = false }: Props) {
             title={`${c.name} — ${c.vertical}`}
             loading="lazy"
             decoding="async"
-            className="max-h-12 sm:max-h-14 w-auto object-contain"
+            /* kept deliberately small: the sources are ~5x this, so they stay crisp on retina */
+            className="max-h-10 sm:max-h-12 w-auto object-contain"
           />
         </motion.div>
       ))}
