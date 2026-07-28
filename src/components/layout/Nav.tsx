@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { GIVEAWAYS } from '../../data/giveaways'
 
 interface NavProps {
   /** Set to true on pages that don't render the ScarcityBanner. Avoids the 48px top-12 gap. */
@@ -10,6 +11,7 @@ interface NavProps {
 
 export default function Nav({ noBanner = false, ctaHref = '/#quiz' }: NavProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [giveawaysOpen, setGiveawaysOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [bannerVisible, setBannerVisible] = useState(
     () => !noBanner && sessionStorage.getItem('scarcity_dismissed') !== 'true'
@@ -51,6 +53,65 @@ export default function Nav({ noBanner = false, ctaHref = '/#quiz' }: NavProps) 
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-6">
           <a
+            href="/growth"
+            className="text-sm font-medium text-[#1A1A2E] hover:text-[#B8CF2E] transition-colors"
+          >
+            Growth Marketing
+          </a>
+
+          {/* Giveaways dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setGiveawaysOpen(true)}
+            onMouseLeave={() => setGiveawaysOpen(false)}
+          >
+            <a
+              href="/giveaways"
+              className="flex items-center gap-1 text-sm font-medium text-[#1A1A2E] hover:text-[#B8CF2E] transition-colors"
+              aria-haspopup="true"
+              aria-expanded={giveawaysOpen}
+            >
+              Giveaways
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden
+                className={`transition-transform ${giveawaysOpen ? 'rotate-180' : ''}`}>
+                <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+            </a>
+            <AnimatePresence>
+              {giveawaysOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.16 }}
+                  className="absolute left-0 top-full pt-3 w-72"
+                >
+                  <div className="rounded-xl border border-[#E5E7EB] bg-white p-2 shadow-[0_18px_40px_-24px_rgba(20,20,30,0.35)]">
+                    {GIVEAWAYS.map(g => (
+                      <a
+                        key={g.slug}
+                        href={g.href}
+                        className="block rounded-lg px-3 py-2.5 hover:bg-[#FAFAF7] transition-colors"
+                      >
+                        <span className="block text-sm font-semibold text-[#1A1A2E]">
+                          {g.emoji} {g.title}
+                        </span>
+                        <span className="block text-xs text-[#6B7280] mt-0.5">{g.forWho}</span>
+                      </a>
+                    ))}
+                    <a
+                      href="/giveaways"
+                      className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-[#B8CF2E] hover:bg-[#FAFAF7] transition-colors"
+                    >
+                      See all giveaways →
+                    </a>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <a
             href="/case-studies"
             className="text-sm font-medium text-[#1A1A2E] hover:text-[#B8CF2E] transition-colors"
           >
@@ -87,6 +148,58 @@ export default function Nav({ noBanner = false, ctaHref = '/#quiz' }: NavProps) 
             className="md:hidden overflow-hidden border-t border-[#E5E7EB] bg-[rgba(255,253,247,0.98)]"
           >
             <div className="max-w-6xl mx-auto px-5 py-4 space-y-3">
+              <a
+                href="/growth"
+                className="block w-full text-center rounded-lg border border-[#E5E7EB] bg-white px-5 py-3 text-sm font-semibold text-[#1A1A2E] hover:border-[#D5EB4B] transition-colors"
+                onClick={() => setMenuOpen(false)}
+              >
+                Growth Marketing
+              </a>
+
+              {/* Giveaways accordion */}
+              <div className="rounded-lg border border-[#E5E7EB] bg-white overflow-hidden">
+                <button
+                  onClick={() => setGiveawaysOpen(v => !v)}
+                  className="flex w-full items-center justify-center gap-1.5 px-5 py-3 text-sm font-semibold text-[#1A1A2E]"
+                  aria-expanded={giveawaysOpen}
+                >
+                  Giveaways
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" aria-hidden
+                    className={`transition-transform ${giveawaysOpen ? 'rotate-180' : ''}`}>
+                    <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </button>
+                <AnimatePresence>
+                  {giveawaysOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden border-t border-[#E5E7EB] bg-[#FAFAF7]"
+                    >
+                      {GIVEAWAYS.map(g => (
+                        <a
+                          key={g.slug}
+                          href={g.href}
+                          className="block px-5 py-3 text-sm text-[#1A1A2E] border-b border-[#E5E7EB] last:border-0"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          {g.emoji} {g.title}
+                        </a>
+                      ))}
+                      <a
+                        href="/giveaways"
+                        className="block px-5 py-3 text-sm font-semibold text-[#B8CF2E]"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        See all giveaways →
+                      </a>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               <a
                 href="/case-studies"
                 className="block w-full text-center rounded-lg border border-[#E5E7EB] bg-white px-5 py-3 text-sm font-semibold text-[#1A1A2E] hover:border-[#D5EB4B] transition-colors"

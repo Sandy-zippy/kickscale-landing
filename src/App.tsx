@@ -27,6 +27,8 @@ import { ExportModeProvider } from './contexts/ExportModeContext'
 import DeckLoader from './components/discovery/DeckLoader'
 
 const GrowthOffer = lazy(() => import('./pages/GrowthOffer'))
+const Growth = lazy(() => import('./pages/Growth'))
+const Giveaways = lazy(() => import('./pages/Giveaways'))
 const CaseStudyIndex = lazy(() => import('./pages/CaseStudyIndex'))
 const CaseStudyRouter = lazy(() => import('./pages/case-studies/CaseStudyRouter'))
 const Discovery = lazy(() => import('./pages/Discovery'))
@@ -106,6 +108,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<AutomationHome />} />
             <Route path="/growth-offer" element={<GrowthOffer />} />
+            <Route path="/growth" element={<Growth />} />
+            <Route path="/giveaways" element={<Giveaways />} />
             <Route path="/case-studies" element={<CaseStudyIndex />} />
             <Route path="/case-studies/:slug" element={<CaseStudyRouter />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
