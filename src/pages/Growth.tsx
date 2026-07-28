@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Nav from '../components/layout/Nav'
 import Footer from '../components/layout/Footer'
-import ClientWall from '../components/growth/ClientWall'
+import ClientMarquee from '../components/growth/ClientMarquee'
 import AnimatedCounter from '../components/ui/AnimatedCounter'
 import VideoWall from '../components/growth/VideoWall'
 import SmoothScroll from '../components/growth/SmoothScroll'
@@ -206,14 +206,18 @@ function ClientsSection() {
   return (
     <section className="relative overflow-hidden bg-[#EDF2F7]">
       <FrostGrid />
-      <div className="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
-        <Eyebrow>Client roster</Eyebrow>
-        <Display className="mt-7 text-[#1A1A2E]">The brands we build for</Display>
-        <p className="mt-6 max-w-2xl text-lg text-[#4B5563]">
-          Across couture, education, membership, media, commercial real estate and technology.
-        </p>
-        <div className="mt-12">
-          <ClientWall />
+      <div className="relative mx-auto max-w-6xl px-5 py-16 sm:py-20">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div>
+            <Eyebrow>Client roster</Eyebrow>
+            <Display className="mt-6 text-[#1A1A2E]">The brands we build for</Display>
+          </div>
+          <p className="max-w-sm text-[#4B5563] md:text-right">
+            Across couture, education, membership, media, commercial real estate and technology.
+          </p>
+        </div>
+        <div className="mt-10">
+          <ClientMarquee />
         </div>
       </div>
     </section>

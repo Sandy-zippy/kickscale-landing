@@ -134,3 +134,36 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
   0%, 100% { transform: translate(-50%, 0) scale(1); }
   50% { transform: translate(-50%, -30px) scale(1.1); }
 }
+
+/* ── client logo marquee (/growth) ──
+   The track holds the row twice, so translating exactly -50% lands copy #2
+   where copy #1 started and the loop is invisible. */
+@keyframes zs-marquee-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+
+.zs-marquee {
+  animation-name: zs-marquee-scroll;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+/* let a visitor stop the belt to read a logo */
+.group:hover .zs-marquee { animation-play-state: paused; }
+
+/* dissolve both ends so logos enter and leave instead of being clipped */
+.zs-marquee-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zs-marquee { animation: none; }
+  /* without motion the second copy is redundant and the row would overflow */
+  .zs-marquee > div:last-child { display: none; }
+  .zs-marquee { flex-wrap: wrap; width: 100%; justify-content: center; }
+  .zs-marquee > div { flex-wrap: wrap; justify-content: center; }
+  .zs-marquee-mask { -webkit-mask-image: none; mask-image: none; }
+}
