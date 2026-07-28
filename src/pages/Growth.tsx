@@ -18,38 +18,22 @@ const ENDPOINT =
 function GrowthHero() {
   return (
     <section className="relative isolate flex min-h-[94vh] items-center overflow-hidden bg-[#0B0B14] text-white">
-      {/* ── the engine diagram, full-bleed ──
-          object-cover + a very slow drift so it reads as the room the copy sits in,
-          not a picture placed on the page. Every edge is dissolved into the page
-          colour by the gradient stack below, so there is no visible frame. */}
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <motion.img
-          src="/growth-flow.webp"
-          alt=""
-          aria-hidden
-          width={1672}
-          height={941}
-          className="h-full w-full scale-[1.18] object-cover object-center opacity-[0.58] sm:scale-105"
-          initial={{ scale: 1.22 }}
-          animate={{ scale: [1.18, 1.24, 1.18] }}
-          transition={{ duration: 34, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        {/* dissolve the rectangle: vignette + all four edges into #0B0B14 */}
+      {/* Black gradient backdrop. Not a flat fill: a soft radial lift behind the
+          copy plus a slow hue drift, so the hero has depth without an image. */}
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[#08080D]">
         <div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 105% 85% at 50% 52%, transparent 12%, rgba(11,11,20,0.55) 62%, #0B0B14 96%)' }}
+          style={{ background: 'radial-gradient(ellipse 90% 70% at 50% 38%, #1C1C28 0%, #101018 42%, #08080D 78%)' }}
         />
-        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#0B0B14] via-[#0B0B14]/80 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#0B0B14] via-[#0B0B14]/85 to-transparent" />
-        <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-[#0B0B14] to-transparent" />
-        <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-[#0B0B14] to-transparent" />
-        {/* legibility scrim directly behind the copy — a soft dark ellipse in the middle
-            only, so the funnel keeps its glow out at the edges */}
-        <div
+        <motion.div
           className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 62% 48% at 50% 46%, rgba(11,11,20,0.78), rgba(11,11,20,0.25) 62%, transparent 78%)' }}
+          style={{ background: 'radial-gradient(ellipse 60% 45% at 50% 45%, rgba(46,46,66,0.55), transparent 70%)' }}
+          animate={{ opacity: [0.75, 1, 0.75], scale: [1, 1.06, 1] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
         />
-        <div className="absolute inset-0 bg-[#0B0B14]/40 sm:bg-[#0B0B14]/25" />
+        {/* settle the base into pure black at the bottom edge so the section
+            below starts from black rather than a visible seam */}
+        <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#08080D] to-transparent" />
       </div>
 
       <div className="relative mx-auto w-full max-w-4xl px-5 py-28 text-center sm:py-32">
@@ -108,12 +92,6 @@ function GrowthHero() {
           </a>
         </motion.div>
 
-        {/* screen-reader description of the backdrop, which is decorative for sighted users */}
-        <p className="sr-only">
-          Our growth engine: Google Ads, Meta Ads, WhatsApp marketing, email marketing and manual
-          outreach feed into lead capture and CRM integration, then lead qualification, sales and
-          deal closure, and finally client retention and growth.
-        </p>
       </div>
     </section>
   )
