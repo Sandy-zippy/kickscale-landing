@@ -167,3 +167,22 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
   .zs-marquee > div { flex-wrap: wrap; justify-content: center; }
   .zs-marquee-mask { -webkit-mask-image: none; mask-image: none; }
 }
+
+/* per-tile bob, composed on top of the belt's horizontal travel */
+@keyframes zs-float-bob {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, var(--zs-lift, -10px), 0); }
+}
+
+.zs-float {
+  animation-name: zs-float-bob;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.group:hover .zs-float { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .zs-float { animation: none; }
+}
