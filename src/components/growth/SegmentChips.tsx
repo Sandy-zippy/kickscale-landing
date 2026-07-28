@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 
 /**
- * The five segments, shown all at once in the hero.
+ * The six segments, shown all at once in the hero.
  * (Replaced a rotating single-word treatment — a visitor should be able to
  * find themselves in the list immediately rather than wait for their turn.)
  *
@@ -65,12 +65,15 @@ const Building = () => (
   </svg>
 )
 
-/** ECG trace — speciality hospitals & clinics.
-    Deliberately not a building-with-a-cross: that reads too close to the
-    commercial real-estate tower sitting two chips along. */
-const Pulse = () => (
+/** medical case with a cross — speciality hospitals & clinics.
+    The universal healthcare mark. The case outline plus the handle keeps it
+    clearly distinct from the real-estate tower two chips along, which a bare
+    cross would not. */
+const Medical = () => (
   <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden {...s}>
-    <path d="M2.2 10h3.1l1.6-4.2 2.8 8.4 1.9-5.4 1.3 3.1h4.9" />
+    <rect x="2.6" y="5.6" width="14.8" height="11.2" rx="2.2" />
+    <path d="M7.2 5.6V4.3a1.2 1.2 0 0 1 1.2-1.2h3.2a1.2 1.2 0 0 1 1.2 1.2v1.3" />
+    <path d="M10 8.6v5.2M7.4 11.2h5.2" />
   </svg>
 )
 
@@ -79,7 +82,7 @@ const SEGMENTS: { label: string; icon: ReactNode }[] = [
   { label: 'Schools & Colleges', icon: <Cap /> },
   { label: 'Networking Groups', icon: <Network /> },
   { label: 'PR Agencies', icon: <Megaphone /> },
-  { label: 'Speciality Hospitals & Clinics', icon: <Pulse /> },
+  { label: 'Speciality Hospitals & Clinics', icon: <Medical /> },
   { label: 'Commercial Real Estate', icon: <Building /> },
 ]
 
