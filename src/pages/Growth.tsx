@@ -4,6 +4,7 @@ import Nav from '../components/layout/Nav'
 import Footer from '../components/layout/Footer'
 import ClientWall from '../components/growth/ClientWall'
 import AnimatedCounter from '../components/ui/AnimatedCounter'
+import VideoWall from '../components/growth/VideoWall'
 import { METRICS, PILLARS, VERTICALS, CLIENTS, VERTICAL_OPTIONS, SPEND_BANDS } from '../data/growth'
 
 const ENDPOINT =
@@ -27,128 +28,128 @@ function GrowthHero() {
   }, [])
 
   return (
-    <section className="relative overflow-hidden bg-[#1A1A2E] text-white">
-      {/* slow gradient field */}
-      <div className="pointer-events-none absolute inset-0 opacity-[0.55]">
-        <motion.div
-          className="absolute -top-40 -left-32 h-[36rem] w-[36rem] rounded-full blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(213,235,75,0.22), transparent 65%)' }}
-          animate={{ x: [0, 70, 0], y: [0, 45, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+    <section className="relative isolate flex min-h-[94vh] items-center overflow-hidden bg-[#0B0B14] text-white">
+      {/* ── the engine diagram, full-bleed ──
+          object-cover + a very slow drift so it reads as the room the copy sits in,
+          not a picture placed on the page. Every edge is dissolved into the page
+          colour by the gradient stack below, so there is no visible frame. */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <motion.img
+          src="/growth-flow.webp"
+          alt=""
+          aria-hidden
+          width={1672}
+          height={941}
+          className="h-full w-full scale-[1.18] object-cover object-center opacity-[0.58] sm:scale-105"
+          initial={{ scale: 1.22 }}
+          animate={{ scale: [1.18, 1.24, 1.18] }}
+          transition={{ duration: 34, repeat: Infinity, ease: 'easeInOut' }}
         />
-        <motion.div
-          className="absolute -bottom-48 -right-24 h-[34rem] w-[34rem] rounded-full blur-3xl"
-          style={{ background: 'radial-gradient(circle, rgba(120,140,255,0.20), transparent 65%)' }}
-          animate={{ x: [0, -60, 0], y: [0, -40, 0] }}
-          transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}
+        {/* dissolve the rectangle: vignette + all four edges into #0B0B14 */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'radial-gradient(ellipse 105% 85% at 50% 52%, transparent 12%, rgba(11,11,20,0.55) 62%, #0B0B14 96%)' }}
         />
+        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#0B0B14] via-[#0B0B14]/80 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-[#0B0B14] via-[#0B0B14]/85 to-transparent" />
+        <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-[#0B0B14] to-transparent" />
+        <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-[#0B0B14] to-transparent" />
+        {/* legibility scrim directly behind the copy — a soft dark ellipse in the middle
+            only, so the funnel keeps its glow out at the edges */}
+        <div
+          className="absolute inset-0"
+          style={{ background: 'radial-gradient(ellipse 62% 48% at 50% 46%, rgba(11,11,20,0.78), rgba(11,11,20,0.25) 62%, transparent 78%)' }}
+        />
+        <div className="absolute inset-0 bg-[#0B0B14]/40 sm:bg-[#0B0B14]/25" />
       </div>
 
-      <div className="relative max-w-6xl mx-auto px-5 pt-28 pb-20 sm:pt-36 sm:pb-28">
+      <div className="relative mx-auto w-full max-w-4xl px-5 py-28 text-center sm:py-32">
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center rounded-full bg-[#D5EB4B] px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0c0c10]"
+          className="inline-flex items-center rounded-full border border-[#D5EB4B]/40 bg-[#D5EB4B]/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#D5EB4B] backdrop-blur-sm"
         >
           Growth Marketing Agency
         </motion.p>
 
         <motion.h1
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.08 }}
-          className="mt-6 font-['Space_Grotesk'] font-bold leading-[1.04] tracking-[-0.03em] text-[2.5rem] sm:text-[4rem]"
+          transition={{ duration: 0.7, delay: 0.08 }}
+          className="mt-8 font-['Space_Grotesk'] font-bold leading-[1.02] tracking-[-0.035em] text-[2.75rem] sm:text-[4.5rem] lg:text-[5.25rem] [text-shadow:0_2px_40px_rgba(11,11,20,0.85)]"
         >
-          We are your growth partners
-          <span className="block text-[#D5EB4B]">— not just another agency.</span>
+          We are your
+          <br />
+          growth partners
+          <span className="mt-1 block bg-gradient-to-r from-[#D5EB4B] via-[#E4F57A] to-[#B8CF2E] bg-clip-text text-transparent">
+            not just another agency.
+          </span>
         </motion.h1>
 
-        <motion.div
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.18 }}
-          className="mt-7 max-w-2xl text-lg sm:text-xl text-white/75 leading-relaxed"
+          transition={{ duration: 0.7, delay: 0.22 }}
+          className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/70 sm:text-xl [text-shadow:0_1px_20px_rgba(11,11,20,0.9)]"
         >
-          <p>
-            One partner for your entire front end — website, ads, CRM, lead qualification,
-            closing support and sales training. We build the structure, then we work inside it
-            with you.
-          </p>
-          <p className="mt-4 flex flex-wrap items-baseline gap-x-2 text-base text-white/55">
-            <span>Built for</span>
-            {/* grid-stack so every option occupies the same cell — no reflow as it cycles */}
-            <span className="grid">
-              {/* invisible sizer: reserves the width of the longest option */}
-              <span aria-hidden className="col-start-1 row-start-1 invisible font-semibold">
-                {ROTATING.reduce((a, b) => (b.length > a.length ? b : a))}
-              </span>
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={i}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.32 }}
-                  className="col-start-1 row-start-1 font-semibold text-[#D5EB4B]"
-                >
-                  {ROTATING[i]}
-                </motion.span>
-              </AnimatePresence>
+          Ads, landing pages, CRM, qualification, closing and sales training —
+          one team owning every step between a stranger and a signed client.
+        </motion.p>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+          className="mt-6 flex flex-wrap items-baseline justify-center gap-x-2 text-base text-white/50"
+        >
+          <span>Built for</span>
+          {/* grid-stack so every option occupies the same cell — no reflow as it cycles */}
+          <span className="grid">
+            <span aria-hidden className="col-start-1 row-start-1 invisible font-semibold">
+              {ROTATING.reduce((a, b) => (b.length > a.length ? b : a))}
             </span>
-          </p>
-        </motion.div>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={i}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.32 }}
+                className="col-start-1 row-start-1 font-semibold text-[#D5EB4B]"
+              >
+                {ROTATING[i]}
+              </motion.span>
+            </AnimatePresence>
+          </span>
+        </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.28 }}
-          className="mt-12 flex flex-wrap gap-3"
+          transition={{ duration: 0.6, delay: 0.38 }}
+          className="mt-12 flex flex-wrap justify-center gap-3"
         >
           <a
             href="#enquire"
-            className="inline-flex items-center rounded-lg bg-[#D5EB4B] px-7 py-3.5 text-sm font-bold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
+            className="inline-flex items-center rounded-lg bg-[#D5EB4B] px-8 py-4 text-sm font-bold text-[#0c0c10] shadow-[0_10px_40px_-12px_rgba(213,235,75,0.6)] transition-colors hover:bg-[#E4F57A]"
           >
             Book a growth audit
           </a>
           <a
-            href="/case-studies"
-            className="inline-flex items-center rounded-lg border border-white/25 px-7 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
+            href="#conversations"
+            className="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/5 px-8 py-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/10"
           >
-            See our work
+            Hear from our clients
           </a>
         </motion.div>
 
-        {/* The engine diagram. Wide and label-dense, so on phones it scrolls
-            horizontally inside its own container rather than shrinking to mush. */}
-        <motion.figure
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="mt-12 sm:mt-14"
-        >
-          <div className="relative">
-            <div
-              aria-hidden
-              className="absolute -inset-6 rounded-3xl blur-3xl"
-              style={{ background: 'radial-gradient(ellipse at center, rgba(213,235,75,0.13), transparent 70%)' }}
-            />
-            <div className="relative overflow-x-auto rounded-2xl border border-white/10 bg-black/40 [-webkit-overflow-scrolling:touch]">
-              <motion.img
-                src="/growth-flow.webp"
-                width={1672}
-                height={941}
-                alt="The ZippyScale growth engine: Google, Meta, WhatsApp, email and manual outreach feed into lead capture and CRM integration, then lead qualification, sales and deal closure, and finally client retention and growth."
-                className="block w-[860px] min-w-[860px] sm:w-full sm:min-w-0 h-auto"
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-              />
-            </div>
-          </div>
-          <figcaption className="mt-4 text-center text-xs text-white/35 sm:hidden">
-            Swipe to explore the full engine →
-          </figcaption>
-        </motion.figure>
+        {/* screen-reader description of the backdrop, which is decorative for sighted users */}
+        <p className="sr-only">
+          Our growth engine: Google Ads, Meta Ads, WhatsApp marketing, email marketing and manual
+          outreach feed into lead capture and CRM integration, then lead qualification, sales and
+          deal closure, and finally client retention and growth.
+        </p>
       </div>
     </section>
   )
@@ -484,6 +485,7 @@ export default function Growth() {
         <ResultsBar />
         <WhatWeDo />
         <ClientsSection />
+        <VideoWall />
         <VerticalsSection />
         <EnquiryForm />
       </main>
