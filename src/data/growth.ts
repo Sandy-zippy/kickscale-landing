@@ -49,6 +49,9 @@ export interface Vertical {
   name: string
   blurb: string
   clients: string[]
+  /** existing pages on the site that prove this vertical — shown when we have
+   *  work to point at but no client logo cleared for the roster */
+  links?: { label: string; href: string }[]
 }
 
 export const VERTICALS: Vertical[] = [
@@ -79,6 +82,20 @@ export const VERTICALS: Vertical[] = [
     blurb:
       'Media and publishing businesses selling retainers — building the inbound engine and the qualification layer behind it.',
     clients: ['business-mint'],
+  },
+  {
+    slug: 'speciality-hospitals-clinics',
+    name: 'Speciality Hospitals & Clinics',
+    blurb:
+      'Consult-driven healthcare — IVF, dental, hair, ophthalmology, dermatology. Booked consults that show up, and the retention loop that brings patients back for the full course.',
+    clients: [],
+    links: [
+      { label: 'IVF', href: '/ivf' },
+      { label: 'Cosmetic dental', href: '/cosmetic-dental' },
+      { label: 'Hair transplant', href: '/hair-transplant' },
+      { label: 'Eye surgery', href: '/eye-surgery' },
+      { label: 'Clinic Retention OS', href: '/giveaways/clinic-retention-os/' },
+    ],
   },
   {
     slug: 'commercial-real-estate',
@@ -131,6 +148,7 @@ export const VERTICAL_OPTIONS = [
   'International School / College',
   'Networking Group',
   'PR Agency',
+  'Speciality Hospital / Clinic',
   'Commercial Real Estate',
   'Other',
 ]

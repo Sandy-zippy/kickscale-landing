@@ -65,11 +65,21 @@ const Building = () => (
   </svg>
 )
 
+/** ECG trace — speciality hospitals & clinics.
+    Deliberately not a building-with-a-cross: that reads too close to the
+    commercial real-estate tower sitting two chips along. */
+const Pulse = () => (
+  <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden {...s}>
+    <path d="M2.2 10h3.1l1.6-4.2 2.8 8.4 1.9-5.4 1.3 3.1h4.9" />
+  </svg>
+)
+
 const SEGMENTS: { label: string; icon: ReactNode }[] = [
   { label: 'Luxury & Bespoke Retail', icon: <Hanger /> },
   { label: 'Schools & Colleges', icon: <Cap /> },
   { label: 'Networking Groups', icon: <Network /> },
   { label: 'PR Agencies', icon: <Megaphone /> },
+  { label: 'Speciality Hospitals & Clinics', icon: <Pulse /> },
   { label: 'Commercial Real Estate', icon: <Building /> },
 ]
 

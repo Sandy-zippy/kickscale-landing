@@ -233,7 +233,7 @@ function VerticalsSection() {
       <FrostGrid />
       <div className="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
         <Eyebrow>Segments</Eyebrow>
-        <Display className="mt-7 text-[#1A1A2E]">Five segments we know deeply</Display>
+        <Display className="mt-7 text-[#1A1A2E]">Six segments we know deeply</Display>
         <p className="mt-6 max-w-2xl text-lg text-[#4B5563]">
           We do not take every brief. These are the businesses whose funnels, objections and
           sales cycles we have already built for.
@@ -280,6 +280,22 @@ function VerticalsSection() {
               <p className="mt-3 max-w-2xl leading-relaxed text-[#4B5563]">
                 {VERTICALS[active].blurb}
               </p>
+              {VERTICALS[active].links && (
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <span className="font-['JetBrains_Mono'] text-[10px] font-bold uppercase tracking-[0.16em] text-[#9CA3AF]">
+                    Work in this segment
+                  </span>
+                  {VERTICALS[active].links!.map(l => (
+                    <a
+                      key={l.href}
+                      href={l.href}
+                      className="rounded-full border border-[#DDE5EC] bg-white/80 px-3 py-1 text-xs font-medium text-[#4B5563] transition-colors hover:border-[#D5EB4B] hover:text-[#1A1A2E]"
+                    >
+                      {l.label} →
+                    </a>
+                  ))}
+                </div>
+              )}
               {VERTICALS[active].clients.length > 0 && (
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <span className="font-['JetBrains_Mono'] text-[10px] font-bold uppercase tracking-[0.16em] text-[#9CA3AF]">
