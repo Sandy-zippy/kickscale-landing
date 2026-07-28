@@ -1,3 +1,4 @@
+import { checkForNewBuild } from './lib/version-gate'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import clarity from '@microsoft/clarity'
@@ -36,3 +37,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>
 )
+
+checkForNewBuild()
