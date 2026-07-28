@@ -26,7 +26,10 @@ function Tile({ slug, name, vertical }: { slug: string; name: string; vertical: 
       <img
         src={`/logos/clients/${slug}.png`}
         alt={name}
-        loading="lazy"
+        /* not lazy: the belt scrolls tiles in from off-screen, so a lazy image
+           pops in as an empty card. All 13 are ~165KB total and every one is
+           guaranteed to be shown, so load them up front. Both copies share the
+           same URLs, so each file is still fetched only once. */
         decoding="async"
         className="max-h-10 w-auto object-contain opacity-90 transition-opacity duration-300 group-hover/tile:opacity-100"
       />
