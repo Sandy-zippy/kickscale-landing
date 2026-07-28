@@ -6,29 +6,16 @@ import ClientWall from '../components/growth/ClientWall'
 import AnimatedCounter from '../components/ui/AnimatedCounter'
 import VideoWall from '../components/growth/VideoWall'
 import SmoothScroll from '../components/growth/SmoothScroll'
+import SegmentChips from '../components/growth/SegmentChips'
 import { FrostGrid, Eyebrow, Display, Panel, Check, PANEL_SHADOW, HUD_SHADOW } from '../components/growth/linea'
 import { METRICS, PILLARS, VERTICALS, CLIENTS, VERTICAL_OPTIONS, SPEND_BANDS } from '../data/growth'
 
 const ENDPOINT =
   'https://script.google.com/macros/s/AKfycbzzacqtwW_Wfk3EB-4WmCQrNFK92yeT2ziRNJvV4Ujy_468HHwCRHiGN0OkxTMLZyKJKQ/exec'
 
-const ROTATING = [
-  'luxury & bespoke retail',
-  'international schools',
-  'networking groups',
-  'PR agencies',
-  'commercial real estate',
-]
-
 /* ─────────────────────────  Hero  ───────────────────────── */
 
 function GrowthHero() {
-  const [i, setI] = useState(0)
-  useEffect(() => {
-    const t = setInterval(() => setI(v => (v + 1) % ROTATING.length), 2600)
-    return () => clearInterval(t)
-  }, [])
-
   return (
     <section className="relative isolate flex min-h-[94vh] items-center overflow-hidden bg-[#0B0B14] text-white">
       {/* ── the engine diagram, full-bleed ──
@@ -99,32 +86,7 @@ function GrowthHero() {
           one team owning every step between a stranger and a signed client.
         </motion.p>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.7, delay: 0.3 }}
-          className="mt-6 flex flex-wrap items-baseline justify-center gap-x-2 text-base text-white/50"
-        >
-          <span>Built for</span>
-          {/* grid-stack so every option occupies the same cell — no reflow as it cycles */}
-          <span className="grid">
-            <span aria-hidden className="col-start-1 row-start-1 invisible font-semibold">
-              {ROTATING.reduce((a, b) => (b.length > a.length ? b : a))}
-            </span>
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={i}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.32 }}
-                className="col-start-1 row-start-1 font-semibold text-[#D5EB4B]"
-              >
-                {ROTATING[i]}
-              </motion.span>
-            </AnimatePresence>
-          </span>
-        </motion.p>
+        <SegmentChips />
 
         <motion.div
           initial={{ opacity: 0, y: 12 }}
