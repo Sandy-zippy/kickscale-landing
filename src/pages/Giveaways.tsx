@@ -11,7 +11,7 @@ export default function Giveaways() {
 
   return (
     <>
-      <Nav noBanner ctaHref="/growth#enquire" />
+      <Nav noBanner floating ctaHref="/growth#enquire" />
       <main>
         <section className="bg-[#1A1A2E] text-white">
           <div className="max-w-6xl mx-auto px-5 pt-28 pb-16 sm:pt-32 sm:pb-20">

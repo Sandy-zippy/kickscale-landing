@@ -7,9 +7,11 @@ interface NavProps {
   noBanner?: boolean
   /** Override the CTA href. Defaults to "/#quiz" so it works from both LP and sub-routes. */
   ctaHref?: string
+  /** Floating detached pill instead of a full-width bar (used on /growth). */
+  floating?: boolean
 }
 
-export default function Nav({ noBanner = false, ctaHref = '/#quiz' }: NavProps) {
+export default function Nav({ noBanner = false, ctaHref = '/#quiz', floating = false }: NavProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [giveawaysOpen, setGiveawaysOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -39,9 +41,20 @@ export default function Nav({ noBanner = false, ctaHref = '/#quiz' }: NavProps) 
       initial={{ y: -40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className={`fixed ${bannerVisible ? 'top-12' : 'top-0'} left-0 right-0 z-50 bg-[rgba(255,253,247,0.95)] backdrop-blur-xl border-b border-[#E5E7EB] transition-all duration-300 ${scrolled ? 'shadow-sm' : ''}`}
+      className={
+        floating
+          ? `fixed ${bannerVisible ? 'top-14' : 'top-4'} left-1/2 z-50 w-[min(1100px,calc(100%-1.5rem))] -translate-x-1/2 rounded-full border border-white/90 bg-[rgba(255,255,255,0.94)] backdrop-blur-xl transition-all duration-300`
+          : `fixed ${bannerVisible ? 'top-12' : 'top-0'} left-0 right-0 z-50 bg-[rgba(255,253,247,0.95)] backdrop-blur-xl border-b border-[#E5E7EB] transition-all duration-300 ${scrolled ? 'shadow-sm' : ''}`
+      }
+      style={
+        floating
+          ? { boxShadow: scrolled
+              ? '0 22px 60px -34px rgba(52,69,92,0.55), inset 0 1px 0 rgba(255,255,255,0.9)'
+              : '0 14px 44px -30px rgba(52,69,92,0.45), inset 0 1px 0 rgba(255,255,255,0.9)' }
+          : undefined
+      }
     >
-      <div className="max-w-6xl mx-auto flex items-center justify-between px-5 py-3">
+      <div className={`mx-auto flex items-center justify-between ${floating ? 'px-5 py-2.5' : 'max-w-6xl px-5 py-3'}`}>
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 shrink-0">
           <img src="/logos/icon-64.png" alt="ZippyScale" className="w-7 h-7" />
@@ -145,7 +158,7 @@ export default function Nav({ noBanner = false, ctaHref = '/#quiz' }: NavProps) 
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="md:hidden overflow-hidden border-t border-[#E5E7EB] bg-[rgba(255,253,247,0.98)]"
+            className={`md:hidden overflow-hidden border-t border-[#E5E7EB] bg-[rgba(255,253,247,0.98)] ${floating ? "rounded-b-[26px]" : ""}`}
           >
             <div className="max-w-6xl mx-auto px-5 py-4 space-y-3">
               <a

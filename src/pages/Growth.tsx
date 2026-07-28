@@ -5,6 +5,8 @@ import Footer from '../components/layout/Footer'
 import ClientWall from '../components/growth/ClientWall'
 import AnimatedCounter from '../components/ui/AnimatedCounter'
 import VideoWall from '../components/growth/VideoWall'
+import SmoothScroll from '../components/growth/SmoothScroll'
+import { FrostGrid, Eyebrow, Display, Panel, Check, PANEL_SHADOW, HUD_SHADOW } from '../components/growth/linea'
 import { METRICS, PILLARS, VERTICALS, CLIENTS, VERTICAL_OPTIONS, SPEND_BANDS } from '../data/growth'
 
 const ENDPOINT =
@@ -159,31 +161,37 @@ function GrowthHero() {
 
 function ResultsBar() {
   return (
-    <section className="bg-[#14141F] border-t border-white/10">
-      <div className="max-w-6xl mx-auto px-5 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+    <section className="relative overflow-hidden bg-[#EDF2F7]">
+      <FrostGrid />
+      <div className="relative mx-auto max-w-6xl px-5 py-16 sm:py-20">
+        <Eyebrow>By the numbers</Eyebrow>
+        <div
+          className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-white/80 bg-[#D6E2EC] md:grid-cols-5"
+          style={{ boxShadow: HUD_SHADOW }}
+        >
           {METRICS.map((m, i) => (
             <motion.div
               key={m.label}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.06 }}
+              transition={{ duration: 0.5, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-white/85 p-6 backdrop-blur-xl"
             >
               <AnimatedCounter
                 target={m.value}
                 prefix={m.prefix}
                 suffix={m.suffix}
                 duration={1.8}
-                className="block font-['Space_Grotesk'] font-bold text-3xl sm:text-4xl text-[#D5EB4B] tabular-nums"
+                className="block font-['Space_Grotesk'] text-[2.15rem] font-bold tracking-[-0.03em] text-[#1A1A2E] tabular-nums"
               />
-              <div className="mt-1.5 text-sm text-white/70 leading-snug">{m.label}</div>
-              {m.note && <div className="text-xs text-white/40 mt-0.5">{m.note}</div>}
+              <div className="mt-1.5 text-sm leading-snug text-[#4B5563]">{m.label}</div>
+              {m.note && <div className="mt-0.5 font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.12em] text-[#9CA3AF]">{m.note}</div>}
             </motion.div>
           ))}
         </div>
-        <p className="mt-9 text-sm text-white/45 border-t border-white/10 pt-6">
-          We report on <span className="text-white/80 font-semibold">CAC — cost to acquire a
+        <p className="mt-7 max-w-3xl text-sm text-[#6B7280]">
+          We report on <span className="font-semibold text-[#1A1A2E]">CAC — cost to acquire a
           client</span>, not cost per lead. Cheap leads that never close are the most expensive
           thing in marketing.
         </p>
@@ -196,40 +204,33 @@ function ResultsBar() {
 
 function WhatWeDo() {
   return (
-    <section className="bg-[#FFFDF7]">
-      <div className="max-w-6xl mx-auto px-5 py-20 sm:py-24">
-        <h2 className="font-['Space_Grotesk'] font-bold text-3xl sm:text-[2.75rem] leading-tight tracking-[-0.02em] text-[#1A1A2E] max-w-3xl">
-          A one-stop solution for everything in front of your customer.
-        </h2>
-        <p className="mt-5 max-w-2xl text-lg text-[#4B5563] leading-relaxed">
+    <section className="relative overflow-hidden bg-[#F4F7FA]">
+      <FrostGrid />
+      <div className="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
+        <Eyebrow>What we do</Eyebrow>
+        <Display className="mt-7 max-w-3xl text-[#1A1A2E]">
+          A one-stop solution for everything
+          <br className="hidden sm:block" /> in front of your customer.
+        </Display>
+        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#4B5563]">
           Most agencies hand you leads and leave. We build the whole front end — and stay
           hands-on through structuring, training and closing.
         </p>
 
         <div className="mt-14 grid gap-6 md:grid-cols-3">
           {PILLARS.map((p, i) => (
-            <motion.div
-              key={p.num}
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.45, delay: i * 0.1 }}
-              className="rounded-2xl border border-[#E5E7EB] bg-white p-7"
-            >
-              <div className="font-['Space_Grotesk'] text-sm font-bold text-[#B8CF2E]">{p.num}</div>
-              <h3 className="mt-2 font-['Space_Grotesk'] font-bold text-2xl text-[#1A1A2E]">
+            <Panel key={p.num} delay={i * 0.09} className="p-7">
+              <span className="font-['JetBrains_Mono'] text-xs font-bold tracking-[0.16em] text-[#B8CF2E]">
+                {p.num}
+              </span>
+              <h3 className="mt-2.5 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.02em] text-[#1A1A2E]">
                 {p.title}
               </h3>
               <p className="mt-2 text-[#4B5563]">{p.lead}</p>
-              <ul className="mt-5 space-y-2.5">
-                {p.items.map(it => (
-                  <li key={it} className="flex gap-2.5 text-sm text-[#374151] leading-relaxed">
-                    <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#D5EB4B]" />
-                    {it}
-                  </li>
-                ))}
+              <ul className="mt-6 space-y-3">
+                {p.items.map(it => <Check key={it}>{it}</Check>)}
               </ul>
-            </motion.div>
+            </Panel>
           ))}
         </div>
       </div>
@@ -241,12 +242,12 @@ function WhatWeDo() {
 
 function ClientsSection() {
   return (
-    <section className="bg-white border-y border-[#E5E7EB]">
-      <div className="max-w-6xl mx-auto px-5 py-20 sm:py-24">
-        <h2 className="font-['Space_Grotesk'] font-bold text-3xl sm:text-4xl tracking-[-0.02em] text-[#1A1A2E]">
-          The brands we build for
-        </h2>
-        <p className="mt-4 max-w-2xl text-[#4B5563]">
+    <section className="relative overflow-hidden bg-[#EDF2F7]">
+      <FrostGrid />
+      <div className="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
+        <Eyebrow>Client roster</Eyebrow>
+        <Display className="mt-7 text-[#1A1A2E]">The brands we build for</Display>
+        <p className="mt-6 max-w-2xl text-lg text-[#4B5563]">
           Across couture, education, membership, media, commercial real estate and technology.
         </p>
         <div className="mt-12">
@@ -262,31 +263,31 @@ function ClientsSection() {
 function VerticalsSection() {
   const [active, setActive] = useState(0)
   return (
-    <section className="bg-[#FFFDF7]">
-      <div className="max-w-6xl mx-auto px-5 py-20 sm:py-24">
-        <h2 className="font-['Space_Grotesk'] font-bold text-3xl sm:text-4xl tracking-[-0.02em] text-[#1A1A2E]">
-          Five segments we know deeply
-        </h2>
-        <p className="mt-4 max-w-2xl text-[#4B5563]">
+    <section className="relative overflow-hidden bg-[#F4F7FA]">
+      <FrostGrid />
+      <div className="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
+        <Eyebrow>Segments</Eyebrow>
+        <Display className="mt-7 text-[#1A1A2E]">Five segments we know deeply</Display>
+        <p className="mt-6 max-w-2xl text-lg text-[#4B5563]">
           We do not take every brief. These are the businesses whose funnels, objections and
           sales cycles we have already built for.
         </p>
 
-        {/* tabbed rather than a stacked wall of copy — one segment on screen at a time */}
         <div className="mt-12 flex flex-wrap gap-2">
           {VERTICALS.map((v, idx) => (
             <button
               key={v.slug}
               onClick={() => setActive(idx)}
               aria-pressed={active === idx}
-              className={`relative rounded-full px-5 py-2.5 text-sm font-semibold transition-colors ${
-                active === idx ? 'text-[#0c0c10]' : 'text-[#4B5563] hover:text-[#1A1A2E]'
+              className={`relative rounded-full px-5 py-2.5 font-['JetBrains_Mono'] text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
+                active === idx ? 'text-[#0c0c10]' : 'text-[#6B7280] hover:text-[#1A1A2E]'
               }`}
             >
               {active === idx && (
                 <motion.span
                   layoutId="vertical-pill"
                   className="absolute inset-0 rounded-full bg-[#D5EB4B]"
+                  style={{ boxShadow: '0 10px 26px -14px rgba(184,207,46,0.9)' }}
                   transition={{ type: 'spring', stiffness: 400, damping: 34 }}
                 />
               )}
@@ -295,24 +296,27 @@ function VerticalsSection() {
           ))}
         </div>
 
-        <div className="mt-6 rounded-2xl border border-[#E5E7EB] bg-white p-7 sm:p-9 min-h-[190px]">
+        <div
+          className="mt-6 min-h-[200px] rounded-[14px] border border-white/80 bg-white/70 p-7 backdrop-blur-xl sm:p-9"
+          style={{ boxShadow: PANEL_SHADOW }}
+        >
           <AnimatePresence mode="wait">
             <motion.div
               key={VERTICALS[active].slug}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
             >
-              <h3 className="font-['Space_Grotesk'] font-bold text-2xl text-[#1A1A2E]">
+              <h3 className="font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.02em] text-[#1A1A2E]">
                 {VERTICALS[active].name}
               </h3>
-              <p className="mt-3 max-w-2xl text-[#4B5563] leading-relaxed">
+              <p className="mt-3 max-w-2xl leading-relaxed text-[#4B5563]">
                 {VERTICALS[active].blurb}
               </p>
               {VERTICALS[active].clients.length > 0 && (
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-[#9CA3AF]">
+                  <span className="font-['JetBrains_Mono'] text-[10px] font-bold uppercase tracking-[0.16em] text-[#9CA3AF]">
                     Who we do this for
                   </span>
                   {VERTICALS[active].clients.map(slug => {
@@ -320,7 +324,7 @@ function VerticalsSection() {
                     return (
                       <span
                         key={slug}
-                        className="rounded-full border border-[#E5E7EB] bg-[#FAFAF7] px-3 py-1 text-xs font-medium text-[#4B5563]"
+                        className="rounded-full border border-[#DDE5EC] bg-white/80 px-3 py-1 text-xs font-medium text-[#4B5563]"
                       >
                         {c.name}
                       </span>
@@ -403,15 +407,14 @@ function EnquiryForm() {
   }
 
   const field =
-    'w-full rounded-lg border border-[#E5E7EB] bg-white px-4 py-3 text-[#1A1A2E] placeholder-[#9CA3AF] focus:border-[#D5EB4B] focus:outline-none focus:ring-2 focus:ring-[#D5EB4B]/30 transition'
+    'w-full rounded-[10px] border border-white/15 bg-white/[0.06] px-4 py-3.5 text-white placeholder-white/40 backdrop-blur-sm transition focus:border-[#D5EB4B]/60 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-[#D5EB4B]/25'
 
   return (
-    <section id="enquire" className="bg-[#1A1A2E] text-white scroll-mt-24">
+    <section id="enquire" className="relative overflow-hidden bg-[#12121C] text-white scroll-mt-24">
       <div className="max-w-3xl mx-auto px-5 py-20 sm:py-24">
-        <h2 className="font-['Space_Grotesk'] font-bold text-3xl sm:text-4xl tracking-[-0.02em]">
-          Tell us what needs fixing.
-        </h2>
-        <p className="mt-4 text-white/70">
+        <Eyebrow tone="dark">Start here</Eyebrow>
+        <Display className="mt-7 text-white">Tell us what needs fixing.</Display>
+        <p className="mt-6 text-lg text-white/70">
           We will look at your funnel and come back with where the leak is. No deck, no pitch
           theatre.
         </p>
@@ -438,11 +441,11 @@ function EnquiryForm() {
             <div className="grid sm:grid-cols-2 gap-4">
               <select name="vertical" className={field} defaultValue="">
                 <option value="" disabled>Your segment</option>
-                {VERTICAL_OPTIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                {VERTICAL_OPTIONS.map(v => <option key={v} value={v} className="text-[#1A1A2E]">{v}</option>)}
               </select>
               <select name="spend" className={field} defaultValue="">
                 <option value="" disabled>Current monthly ad spend</option>
-                {SPEND_BANDS.map(s => <option key={s} value={s}>{s}</option>)}
+                {SPEND_BANDS.map(s => <option key={s} value={s} className="text-[#1A1A2E]">{s}</option>)}
               </select>
             </div>
             <textarea
@@ -479,7 +482,8 @@ export default function Growth() {
 
   return (
     <>
-      <Nav noBanner ctaHref="#enquire" />
+      <SmoothScroll />
+      <Nav noBanner floating ctaHref="#enquire" />
       <main>
         <GrowthHero />
         <ResultsBar />
