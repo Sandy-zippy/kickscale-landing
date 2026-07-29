@@ -8,7 +8,7 @@ import SmoothScroll from '../components/growth/SmoothScroll'
 import SegmentChips from '../components/growth/SegmentChips'
 import OrbitField from '../components/growth/OrbitField'
 import SegmentCards from '../components/growth/SegmentCards'
-import PlaybookRail from '../components/growth/PlaybookRail'
+import SegmentInsight from '../components/growth/SegmentInsight'
 import EngineTimeline from '../components/growth/EngineTimeline'
 import SpinBadge from '../components/growth/SpinBadge'
 import {
@@ -241,24 +241,22 @@ function SegmentsSection() {
 
 /* ─────────────────────────  Playbooks  ───────────────────────── */
 
-function PlaybooksSection() {
+function UnderstandSection() {
   return (
     <Band tone="ink" className="py-20 sm:py-24">
-      <Kicker>Playbooks · 10 industries</Kicker>
+      <Kicker>What we understand</Kicker>
       <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <Split
           className={DISPLAY}
-          lines={[[{ text: 'Check out' }], [{ text: 'our work.', as: 'stroke-serif' }]]}
+          lines={[[{ text: 'We already know' }], [{ text: "what's broken.", as: 'stroke-serif' }]]}
         />
-        {/* These are modelled target outcomes, not delivered client results —
-            said plainly here so the numbers on the cards can't be misread. */}
         <p className="max-w-md text-white/55">
-          Full teardowns of how we structure each industry: what breaks, what we build, and the
-          before-and-after we target in the first ninety days.
+          Six segments, and the same conversations in each of them. If you recognise your own
+          business below, we have built this before.
         </p>
       </div>
       <div className="mt-12">
-        <PlaybookRail />
+        <SegmentInsight />
       </div>
     </Band>
   )
@@ -486,7 +484,7 @@ export default function Growth() {
         <ClientsSection />
         <MetricBand />
         <SegmentsSection />
-        <PlaybooksSection />
+        <UnderstandSection />
         <VideoWall />
         <EngineSection />
         <EnquiryForm />

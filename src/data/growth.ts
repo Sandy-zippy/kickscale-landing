@@ -52,11 +52,32 @@ export interface Vertical {
   /** existing pages on the site that prove this vertical — shown when we have
    *  work to point at but no client logo cleared for the roster */
   links?: { label: string; href: string }[]
+  /** one line on the card face — the thing that makes this segment different */
+  hook: string
+  /** what we actually run for them; 4 tags, shown on the card front */
+  runs: string[]
+  /** ⚠️ COPY WRITTEN BY CLAUDE 2026-07-29, NOT YET SIGNED OFF BY SANDY.
+   *  Grounded in the segments we work in, but these are claims about the
+   *  client's world — check them before treating them as verified. */
+  pains: string[]
+  gains: string[]
 }
 
 export const VERTICALS: Vertical[] = [
   {
     slug: 'luxury-bespoke-retail',
+    hook: 'One customer is worth lakhs. The appointment matters more than the click.',
+    runs: ['Meta & Google ads', 'WhatsApp booking', 'Appointment CRM', 'Sales training'],
+    pains: [
+      'Enquiries land in a personal WhatsApp and get lost between fittings',
+      'A \u20b93L order and a time-waster look identical in the inbox',
+      'Nobody follows up after the first appointment',
+    ],
+    gains: [
+      'Every enquiry in one pipeline, tagged with the ad that produced it',
+      'Appointment reminders and fitting follow-ups that fire on their own',
+      'Cost per order, so you know which creative actually pays',
+    ],
     name: 'Luxury & Bespoke Retail',
     blurb:
       'Made-to-measure, bridal and premium retail — where one customer is worth lakhs and the appointment matters more than the click.',
@@ -64,6 +85,18 @@ export const VERTICALS: Vertical[] = [
   },
   {
     slug: 'education',
+    hook: 'Long consideration windows. Parents and students need nurture, not a hard close.',
+    runs: ['Admissions funnel', 'Parent nurture', 'Counsellor CRM', 'Call-team training'],
+    pains: [
+      'Admission season floods the counsellor\u2019s phone, then goes quiet',
+      'Parents research for months; follow-up stops after week one',
+      'Nobody can say which campaign filled which seat',
+    ],
+    gains: [
+      'One admissions pipeline from first enquiry to fee payment',
+      'Long nurture for parents and students, running the whole cycle',
+      'Counsellor performance visible per stage, not per feeling',
+    ],
     name: 'International Schools & Colleges',
     blurb:
       'Admissions funnels with long consideration windows — parent and student journeys that need nurture, not a hard close.',
@@ -71,6 +104,18 @@ export const VERTICALS: Vertical[] = [
   },
   {
     slug: 'networking-groups',
+    hook: 'Fill the room, qualify the applicants, keep renewals healthy.',
+    runs: ['Member acquisition', 'Application screening', 'Renewal automation', 'Event promotion'],
+    pains: [
+      'The room fills late and the wrong applicants get in',
+      'Renewals depend on someone remembering to ask',
+      'Growth stalls the moment the founder stops posting',
+    ],
+    gains: [
+      'Applications screened before they reach your committee',
+      'Renewal and referral sequences that run every cycle',
+      'An acquisition engine that is not the founder\u2019s calendar',
+    ],
     name: 'Networking Groups',
     blurb:
       'Membership and community businesses — filling rooms, qualifying applicants, and keeping renewals healthy.',
@@ -78,6 +123,18 @@ export const VERTICALS: Vertical[] = [
   },
   {
     slug: 'pr-agencies',
+    hook: 'You sell credibility. The inbound engine has to prove it first.',
+    runs: ['Inbound engine', 'Proof assets', 'Retainer pipeline', 'Pitch training'],
+    pains: [
+      'You sell visibility but have no inbound engine of your own',
+      'Every retainer conversation starts from scratch',
+      'Wins are never packaged into something that sells the next one',
+    ],
+    gains: [
+      'An inbound pipeline that qualifies before the first call',
+      'Your own coverage turned into proof assets that close',
+      'A pitch process the team can repeat without the founder',
+    ],
     name: 'PR Agencies',
     blurb:
       'Media and publishing businesses selling retainers — building the inbound engine and the qualification layer behind it.',
@@ -85,6 +142,18 @@ export const VERTICALS: Vertical[] = [
   },
   {
     slug: 'speciality-hospitals-clinics',
+    hook: 'A booked consult that shows up beats ten cheap enquiries.',
+    runs: ['Consult booking', 'No-show recovery', 'Patient recall', 'Front-desk training'],
+    pains: [
+      'Cheap enquiries flood in and almost none show up',
+      'The front desk is the bottleneck and nobody is training them',
+      'Patients disappear after the first consult',
+    ],
+    gains: [
+      'Booked consults with reminders and no-show recovery',
+      'Front-desk scripts and training, so the call converts',
+      'Recall loops that bring patients back for the full course',
+    ],
     name: 'Speciality Hospitals & Clinics',
     blurb:
       'Consult-driven healthcare — IVF, dental, hair, ophthalmology, dermatology. Booked consults that show up, and the retention loop that brings patients back for the full course.',
@@ -99,6 +168,18 @@ export const VERTICALS: Vertical[] = [
   },
   {
     slug: 'commercial-real-estate',
+    hook: 'Long cycles, big tickets. The only metric is a site visit that happens.',
+    runs: ['Site-visit funnel', 'Buyer qualification', 'Follow-up cadence', 'Broker enablement'],
+    pains: [
+      'Long cycles mean leads go cold before anyone calls twice',
+      'Site visits get promised and never happen',
+      'Broker follow-up is invisible until the deal is already lost',
+    ],
+    gains: [
+      'Qualification that separates a buyer from a browser',
+      'Site-visit booking and confirmation that actually holds',
+      'A follow-up cadence you can see, per broker, per deal',
+    ],
     name: 'Commercial Real Estate',
     blurb:
       'High-ticket, long-cycle deals where the metric that matters is a site visit that actually shows up.',

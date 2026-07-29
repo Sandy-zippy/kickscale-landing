@@ -100,7 +100,7 @@ function Card({ index, slug }: { index: number; slug: string }) {
       tabIndex={0}
       role="group"
       aria-label={`${v.name} — focus to reveal details`}
-      className="zs-flip h-[310px] rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D5EB4B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050507]"
+      className="zs-flip h-[360px] rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D5EB4B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050507]"
     >
       <div className="zs-flip-inner h-full w-full">
         {/* front */}
@@ -108,30 +108,49 @@ function Card({ index, slug }: { index: number; slug: string }) {
           className={`zs-flip-front zs-gloss overflow-hidden ${face} border-white/10`}
           style={{ background: INK_2, borderTopColor: accent, borderTopWidth: 3 }}
         >
-          <div className="flex items-start justify-between">
-            <span className="font-['JetBrains_Mono'] text-xs font-bold tracking-[0.16em]" style={{ color: accent }}>
-              {String(index + 1).padStart(2, '0')}
+          {/* oversized ghosted numeral — gives the card weight where it was
+              previously just empty space */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute -right-3 -top-7 font-['Space_Grotesk'] text-[7.5rem] font-bold leading-none"
+            style={{ color: accent, opacity: 0.09 }}
+          >
+            {String(index + 1).padStart(2, '0')}
+          </span>
+
+          <div className="relative flex items-start justify-between">
+            <span
+              className="flex h-11 w-11 items-center justify-center rounded-[13px]"
+              style={{ background: `${accent}1F`, color: accent }}
+            >
+              <Icon slug={slug} />
             </span>
             <span className="font-['JetBrains_Mono'] text-[9px] font-bold uppercase tracking-[0.18em] text-white/25">
               Flip ↻
             </span>
           </div>
 
-          <span className="mt-7 block" style={{ color: accent }}>
-            <Icon slug={slug} />
-          </span>
-
-          <h3 className="mt-auto font-['Space_Grotesk'] text-[1.6rem] font-bold leading-[1.05] tracking-[-0.02em] text-white">
+          <h3 className="relative mt-5 font-['Space_Grotesk'] text-[1.35rem] font-bold leading-[1.1] tracking-[-0.02em] text-white">
             {v.name}
           </h3>
+          <p className="relative mt-2 text-[13px] leading-snug text-white/50">{v.hook}</p>
 
-          <span
-            className="mt-5 inline-flex h-9 w-9 items-center justify-center rounded-full text-[15px] font-bold text-[#0A0A0C]"
-            style={{ background: accent }}
-            aria-hidden
-          >
-            →
-          </span>
+          <div className="relative mt-auto pt-5">
+            <span className="font-['JetBrains_Mono'] text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
+              What we run
+            </span>
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {v.runs.map(r => (
+                <span
+                  key={r}
+                  className="rounded-full border px-2.5 py-1 text-[11px] font-medium"
+                  style={{ borderColor: `${accent}33`, color: `${accent}D9` }}
+                >
+                  {r}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* back */}
