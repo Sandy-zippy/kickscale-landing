@@ -346,10 +346,12 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
   will-change: transform, opacity;
 }
 
-/* the receiving tile lights just as a card arrives */
+/* The receiving tile lights just as a card arrives. Colour comes in per lane
+   so each segment flashes in its own accent, matching /growth's segment cards. */
 @keyframes zs-catch {
   0%, 68%  { border-color: rgba(255,255,255,0.10); background: rgba(255,255,255,0.03); }
-  80%      { border-color: rgba(213,235,75,0.85); background: rgba(213,235,75,0.14); }
+  80%      { border-color: var(--zs-catch-border, rgba(213,235,75,0.85));
+             background: var(--zs-catch-bg, rgba(213,235,75,0.14)); }
   100%     { border-color: rgba(255,255,255,0.10); background: rgba(255,255,255,0.03); }
 }
 .zs-catch {
