@@ -5,7 +5,8 @@ import { GIVEAWAYS } from '../../data/giveaways'
 interface NavProps {
   /** Set to true on pages that don't render the ScarcityBanner. Avoids the 48px top-12 gap. */
   noBanner?: boolean
-  /** Override the CTA href. Defaults to "/#quiz" so it works from both LP and sub-routes. */
+  /** Override the CTA href. Defaults to the AI-automation quiz, which is where
+   * that funnel lives now that / is the growth page. */
   ctaHref?: string
   /** Floating detached pill instead of a full-width bar (used on /growth). */
   floating?: boolean
@@ -50,7 +51,7 @@ const SKIN = {
   },
 } as const
 
-export default function Nav({ noBanner = false, ctaHref = '/#quiz', floating = false, dark = false }: NavProps) {
+export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz', floating = false, dark = false }: NavProps) {
   const c = dark ? SKIN.dark : SKIN.light
   const [menuOpen, setMenuOpen] = useState(false)
   const [giveawaysOpen, setGiveawaysOpen] = useState(false)
@@ -116,10 +117,10 @@ export default function Nav({ noBanner = false, ctaHref = '/#quiz', floating = f
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-6">
           <a
-            href="/growth"
+            href="/ai-automation"
             className={`text-sm font-medium ${c.link} transition-colors`}
           >
-            Growth Marketing
+            AI Automation
           </a>
 
           {/* Giveaways dropdown */}
@@ -212,11 +213,11 @@ export default function Nav({ noBanner = false, ctaHref = '/#quiz', floating = f
           >
             <div className="max-w-6xl mx-auto px-5 py-4 space-y-3">
               <a
-                href="/growth"
+                href="/ai-automation"
                 className={`block w-full text-center rounded-lg border ${c.sheetCard} px-5 py-3 text-sm font-semibold transition-colors`}
                 onClick={() => setMenuOpen(false)}
               >
-                Growth Marketing
+                AI Automation
               </a>
 
               {/* Giveaways accordion */}

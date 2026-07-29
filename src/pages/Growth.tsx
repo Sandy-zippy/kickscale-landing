@@ -316,7 +316,7 @@ function EnquiryForm() {
       marketing_spend: String(f.get('spend') || ''),
       automate_areas: String(f.get('challenge') || ''),
       source: 'growth-page-enquiry',
-      page: '/growth',
+      page: '/', // growth is the homepage now; `source` stays growth-page-enquiry for reporting continuity
       submittedAt: new Date().toISOString(),
     }
 

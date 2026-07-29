@@ -25,7 +25,7 @@ export default function Giveaways() {
 
   return (
     <>
-      <Nav noBanner floating dark ctaHref="/growth#enquire" />
+      <Nav noBanner floating dark ctaHref="/#enquire" />
       <main>
         <section
           className="relative isolate overflow-hidden bg-[#050507] pt-32 pb-20 text-white sm:pt-36 sm:pb-24"
@@ -116,7 +116,7 @@ export default function Giveaways() {
                   straight out of live client work.
                 </p>
                 <div className="mt-7">
-                  <Pill href="/growth#enquire" variant="ink">
+                  <Pill href="/#enquire" variant="ink">
                     Tell us what to build next
                   </Pill>
                 </div>

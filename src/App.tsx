@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { captureUTM } from './lib/analytics'
 import { trackSectionView, trackSectionScroll } from './lib/tracking'
 import ScarcityBanner from './components/layout/ScarcityBanner'
@@ -40,6 +40,12 @@ const EyeSurgery = lazy(() => import('./pages/EyeSurgery'))
 
 function AutomationHome() {
   const [isQuizVisible, setIsQuizVisible] = useState(false)
+
+  // This page used to be "/" and inherited the static title from index.html.
+  // That shell now describes the growth homepage, so it sets its own.
+  useEffect(() => {
+    document.title = 'ZippyScale | AI Automations That Run Your Business While You Scale'
+  }, [])
 
   useEffect(() => {
     const quizEl = document.getElementById('quiz')
@@ -106,9 +112,13 @@ export default function App() {
       <ExportModeProvider>
         <Suspense fallback={<DeckLoader />}>
           <Routes>
-            <Route path="/" element={<AutomationHome />} />
+            {/* Growth marketing is the front door as of 2026-07-29; the
+                AI-automation funnel moved to /ai-automation. /growth is kept as
+                a redirect so older links, ads and shared URLs still land. */}
+            <Route path="/" element={<Growth />} />
+            <Route path="/ai-automation" element={<AutomationHome />} />
+            <Route path="/growth" element={<Navigate to="/" replace />} />
             <Route path="/growth-offer" element={<GrowthOffer />} />
-            <Route path="/growth" element={<Growth />} />
             <Route path="/giveaways" element={<Giveaways />} />
             <Route path="/case-studies" element={<CaseStudyIndex />} />
             <Route path="/case-studies/:slug" element={<CaseStudyRouter />} />
