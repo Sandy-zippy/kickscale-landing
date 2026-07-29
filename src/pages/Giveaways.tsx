@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import Nav from '../components/layout/Nav'
 import Footer from '../components/layout/Footer'
 import { GIVEAWAYS } from '../data/giveaways'
+import GiveawayFlow from '../components/growth/GiveawayFlow'
 import { Band, Kicker, Pill, Reveal, SignalField, Split, DISPLAY, EASE_OUT, LIME } from '../components/growth/kinetic'
 
 export default function Giveaways() {
@@ -39,7 +40,8 @@ export default function Giveaways() {
                 'radial-gradient(ellipse 75% 60% at 30% 40%, #16161F 0%, #0B0B12 46%, #050507 78%)',
             }}
           />
-          <div className="relative mx-auto max-w-6xl px-5">
+          <div className="relative mx-auto grid max-w-6xl gap-12 px-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8">
+            <div>
             <Kicker>Giveaways · free, no call required</Kicker>
             <Split
               as="h1"
@@ -50,6 +52,11 @@ export default function Giveaways() {
               Working models and calculators we built for our own clients. Put your numbers in,
               get a plan back. Nothing gated behind a sales call.
             </p>
+            </div>
+
+            <div className="hidden lg:block">
+              <GiveawayFlow />
+            </div>
           </div>
         </section>
 
