@@ -316,11 +316,12 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
 .zs-flip:focus-within .zs-flip-front { visibility: hidden; }
 
 /* ── hero orbit pulse ──
-   A 6px dash on a ~1006px ellipse perimeter, so exactly one lit segment
-   travels the ring. Offset must match the dasharray total in OrbitField. */
+   One short dash travelling the ring. The ring length comes in as
+   --zs-orbit-len from OrbitField, so changing the radius there can never
+   leave this keyframe out of sync. */
 @keyframes zs-orbit-pulse {
   from { stroke-dashoffset: 0; }
-  to   { stroke-dashoffset: -1006px; }
+  to   { stroke-dashoffset: calc(-1 * var(--zs-orbit-len, 840px)); }
 }
 .zs-orbit-pulse {
   animation: zs-orbit-pulse 7s linear infinite;

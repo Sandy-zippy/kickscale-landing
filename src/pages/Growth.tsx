@@ -48,6 +48,8 @@ function GrowthHero() {
         }}
       />
 
+      {/* Copy column stays the wider one: the two hero CTAs sit side by side in
+          ~545px and wrap to two rows below that. */}
       <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8">
         <div>
           <Kicker>Growth marketing agency · Hyderabad</Kicker>
