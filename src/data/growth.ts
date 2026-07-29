@@ -143,6 +143,76 @@ export const PILLARS = [
   },
 ]
 
+/**
+ * Accent colour per segment. Used for the flip-card top rule, the numeral and
+ * the circular arrow — the reference gives each card its own hue so a grid of
+ * six doesn't read as one grey block. Ordered to match VERTICALS.
+ */
+export const SEGMENT_ACCENTS: Record<string, string> = {
+  'luxury-bespoke-retail': '#D5EB4B',
+  education: '#7DD3FC',
+  'networking-groups': '#C4B5FD',
+  'pr-agencies': '#F9A8D4',
+  'speciality-hospitals-clinics': '#6EE7B7',
+  'commercial-real-estate': '#FDBA74',
+}
+
+export interface EngineStage {
+  num: string
+  title: string
+  lead: string
+  detail: string
+  accent: string
+}
+
+/**
+ * The five stages of ZippyScale's growth engine — the same flow as Sandy's
+ * funnel diagram (public/growth-flow.webp), rebuilt as a scroll-driven
+ * timeline so the story survives without the image he asked to remove.
+ */
+export const ENGINE_STAGES: EngineStage[] = [
+  {
+    num: '01',
+    title: 'Capture',
+    lead: 'Every channel lands in one place.',
+    detail:
+      'Meta, Google, YouTube, WhatsApp, the website form and the manual walk-in all write into a single CRM record. Nothing sits in a personal inbox waiting to be forgotten.',
+    accent: '#D5EB4B',
+  },
+  {
+    num: '02',
+    title: 'Qualify',
+    lead: 'Your team only works the real ones.',
+    detail:
+      'Enquiries are scored and routed the moment they arrive. Budget, timeline and intent captured before a salesperson spends an hour on someone who was never going to buy.',
+    accent: '#7DD3FC',
+  },
+  {
+    num: '03',
+    title: 'Close',
+    lead: 'We sit in the sales seat with you.',
+    detail:
+      'WhatsApp and call sequences that actually fire, scripts your team will use, and hands-on support on live deals. This is the step most agencies hand back to you.',
+    accent: '#C4B5FD',
+  },
+  {
+    num: '04',
+    title: 'Retain',
+    lead: 'The second sale costs a fraction of the first.',
+    detail:
+      'Retention models built around your repeat cycle — recall, re-order, renewal, referral. Built once, then running without anyone remembering to run it.',
+    accent: '#6EE7B7',
+  },
+  {
+    num: '05',
+    title: 'Scale',
+    lead: 'We report on CAC, then bring it down.',
+    detail:
+      'Cost to acquire a client, not cost per lead. Once the number is honest and stable, spend goes up against a known return instead of a hopeful one.',
+    accent: '#FDBA74',
+  },
+]
+
 export const VERTICAL_OPTIONS = [
   'Luxury & Bespoke Retail',
   'International School / College',

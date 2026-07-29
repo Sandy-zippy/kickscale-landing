@@ -15,6 +15,20 @@
   --zs-dark-border: #3E3E48;
   --zs-dark-text: #FAFAFA;
 
+  /* Ink scale — the near-black grounds /growth is built on.
+     Deeper than --zs-dark-bg, which is a charcoal card colour, not a page ground. */
+  --zs-ink: #050507;
+  --zs-ink-2: #0B0B12;
+  --zs-ink-3: #14141C;
+  --zs-ink-border: rgba(255, 255, 255, 0.10);
+  --zs-ink-text: #FAFAFA;
+  --zs-ink-text-soft: rgba(255, 255, 255, 0.62);
+
+  /* Warm off-white for light bands on ink pages. Deliberately warm — the cool
+     frost greys of the previous design read as grey next to the lime. */
+  --zs-bone: #F5F5F0;
+  --zs-bone-2: #EDEDE6;
+
   /* Lime accents */
   --zs-lime: #D5EB4B;
   --zs-lime-dark: #B8CF2E;

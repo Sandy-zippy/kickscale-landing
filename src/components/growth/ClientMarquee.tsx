@@ -35,9 +35,9 @@ function Tile({ slug, name, vertical, idx }: { slug: string; name: string; verti
   return (
     <div
       title={`${name} — ${vertical}`}
-      className="zs-float group/tile mx-3 flex h-[88px] w-[190px] shrink-0 items-center justify-center rounded-[14px] border border-white/80 bg-white/75 px-6 backdrop-blur-xl hover:border-[#D5EB4B]"
+      className="zs-float group/tile mx-3 flex h-[88px] w-[190px] shrink-0 items-center justify-center rounded-[20px] border border-[#E2E2D8] bg-white px-6 transition-colors hover:border-[#D5EB4B]"
       style={{
-        boxShadow: '0 20px 50px -38px rgba(52,69,92,0.5), inset 0 1px 0 rgba(255,255,255,0.86)',
+        boxShadow: '0 18px 44px -34px rgba(40,44,36,0.45)',
         animationDuration: `${f.dur}s`,
         animationDelay: `${f.delay}s`,
         ['--zs-lift' as string]: `-${f.lift}px`,

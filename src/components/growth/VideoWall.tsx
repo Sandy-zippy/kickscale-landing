@@ -28,7 +28,7 @@ function Card({ v, onOpen, i }: { v: ClientVideo; onOpen: () => void; i: number 
       viewport={{ once: true, margin: '-60px' }}
       transition={{ duration: 0.45, delay: Math.min(i * 0.07, 0.5) }}
       whileHover={{ y: -4 }}
-      className="group relative block w-full overflow-hidden rounded-2xl border border-white/10 bg-[#14141F] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D5EB4B]"
+      className="group relative block w-full overflow-hidden rounded-[24px] border border-[#E2E2D8] bg-white text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8CF2E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F5F0]"
       aria-label={`Play ${v.title} — ${v.who}, ${v.meta}`}
     >
       <div className="relative aspect-video overflow-hidden bg-[#0B0B14]">
@@ -56,9 +56,9 @@ function Card({ v, onOpen, i }: { v: ClientVideo; onOpen: () => void; i: number 
         </div>
       </div>
       <div className="p-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#B8CF2E]">{v.who}</p>
-        <h3 className="mt-1.5 font-['Space_Grotesk'] text-lg font-bold text-white">{v.title}</h3>
-        <p className="mt-0.5 text-sm text-white/45">{v.meta}</p>
+        <p className="font-['JetBrains_Mono'] text-[10px] font-bold uppercase tracking-[0.16em] text-[#8CA31B]">{v.who}</p>
+        <h3 className="mt-1.5 font-['Space_Grotesk'] text-lg font-bold text-[#111214]">{v.title}</h3>
+        <p className="mt-0.5 text-sm text-[#6B7280]">{v.meta}</p>
       </div>
     </motion.button>
   )
@@ -82,12 +82,16 @@ export default function VideoWall() {
   }, [open, close])
 
   return (
-    <section id="conversations" className="bg-[#0B0B14] scroll-mt-24">
-      <div className="max-w-6xl mx-auto px-5 py-20 sm:py-24">
-        <h2 className="font-['Space_Grotesk'] font-bold text-3xl sm:text-4xl tracking-[-0.02em] text-white">
+    <section id="conversations" className="scroll-mt-28 bg-[#F5F5F0]">
+      <div className="mx-auto max-w-6xl px-5 py-20 sm:py-24">
+        <p className="flex items-center gap-3 font-['JetBrains_Mono'] text-[11px] font-bold uppercase tracking-[0.2em] text-[#6B7280]">
+          <span aria-hidden className="inline-block h-px w-8 shrink-0 bg-[#D5EB4B]" />
+          Conversations
+        </p>
+        <h2 className="mt-6 font-['Space_Grotesk'] text-[2rem] font-bold uppercase leading-[0.9] tracking-[-0.03em] text-[#111214] sm:text-[2.9rem] lg:text-[3.4rem]">
           In their words
         </h2>
-        <p className="mt-4 max-w-2xl text-white/60 leading-relaxed">
+        <p className="mt-5 max-w-2xl leading-relaxed text-[#4B5563]">
           Real sessions with the people we work for — unscripted, unedited.
         </p>
 

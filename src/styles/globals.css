@@ -43,6 +43,15 @@
   font-display: swap;
   src: url("/fonts/jetbrains-mono-700.woff2") format("woff2");
 }
+/* Serif counterpoint for the outlined half of /growth display headings.
+   Used on ~4 words, so swap is fine — it must never block first paint. */
+@font-face {
+  font-family: "Fraunces";
+  font-style: italic;
+  font-weight: 300;
+  font-display: swap;
+  src: url("/fonts/fraunces-italic-300.woff2") format("woff2");
+}
 
 :root {
   --dark-bg: #2A2A35;
@@ -73,6 +82,17 @@ body {
   overflow-x: hidden;
   margin: 0;
 }
+
+/* Ink pages (/growth) opt in by stamping data-theme on <html>.
+   Without this the cream body shows through as gutters when iOS rubber-bands
+   past the top or bottom of a near-black page. Scoped by attribute so every
+   other route keeps the cream ground untouched. */
+html[data-theme="ink"],
+html[data-theme="ink"] body {
+  background: var(--zs-ink);
+  color: var(--zs-ink-text);
+}
+html[data-theme="ink"] { color-scheme: dark; }
 
 h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
 
@@ -185,4 +205,153 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
 
 @media (prefers-reduced-motion: reduce) {
   .zs-float { animation: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   /growth kinetic language
+   Every animation below is CSS-only and paired with a reduced-motion
+   kill rule at the bottom of this block. No JS animation loop.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── outlined display text ──
+   The signature device: one headline mixing solid, lime and outlined words.
+   text-stroke has no standard fallback, so `color: transparent` is applied
+   only inside the @supports guard — otherwise an unsupporting browser would
+   render invisible text. */
+.zs-stroke {
+  /* The stroke colour CANNOT be currentColor: the @supports rule below sets
+     color: transparent, which would make currentColor transparent too and the
+     text would vanish. Each band sets --zs-stroke-color for its own ground. */
+  -webkit-text-stroke: 1.5px var(--zs-stroke-color, #FFFFFF);
+  color: inherit;
+}
+@supports (-webkit-text-stroke: 1px red) {
+  .zs-stroke { color: transparent; }
+}
+@media (min-width: 640px) {
+  .zs-stroke { -webkit-text-stroke-width: 2px; }
+}
+
+/* ── per-character headline landing ──
+   Characters drop in and settle. Driven by --zs-i (character index) set
+   inline, so one keyframe serves any headline length. */
+@keyframes zs-land {
+  from { opacity: 0; transform: translate3d(0, 0.42em, 0) rotate(4deg); }
+  to   { opacity: 1; transform: translate3d(0, 0, 0) rotate(0); }
+}
+
+/* .zs-ch is the individual character. Words are wrapped one level up so a
+   line can only break at a space — see Split() — which is why this targets a
+   class rather than a direct child. */
+.zs-land .zs-ch {
+  display: inline-block;
+  animation: zs-land 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--zs-i, 0) * 34ms + var(--zs-line-delay, 0ms));
+  will-change: transform, opacity;
+}
+
+/* ── signal field ──
+   Slow drift plus an out-of-phase twinkle. Each particle gets its own
+   duration/delay inline so the field never pulses in unison. */
+@keyframes zs-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(var(--zs-dx, 6px), var(--zs-dy, -10px), 0); }
+}
+@keyframes zs-twinkle {
+  0%, 100% { opacity: var(--zs-lo, 0.15); }
+  50%      { opacity: var(--zs-hi, 0.7); }
+}
+
+.zs-particle {
+  animation-name: zs-drift, zs-twinkle;
+  animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+
+/* ── diagonal gloss sweep across a card face ── */
+@keyframes zs-gloss {
+  from { transform: translate3d(-120%, 0, 0) rotate(18deg); }
+  to   { transform: translate3d(220%, 0, 0) rotate(18deg); }
+}
+.zs-gloss::after {
+  content: "";
+  position: absolute;
+  inset: -40% -60%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+.zs-gloss:hover::after,
+.zs-gloss:focus-within::after {
+  opacity: 1;
+  animation: zs-gloss 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── flip card ──
+   Flips on hover AND focus-within, so it is reachable by keyboard. The back
+   face is hidden from the tab order until it faces the viewer. */
+.zs-flip { perspective: 1400px; }
+.zs-flip-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+.zs-flip:hover .zs-flip-inner,
+.zs-flip:focus-within .zs-flip-inner { transform: rotateY(180deg); }
+
+.zs-flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.zs-flip-back { transform: rotateY(180deg); }
+
+/* keep the hidden face out of the tab order — backface-visibility alone
+   still leaves its links focusable */
+.zs-flip .zs-flip-back { visibility: hidden; }
+.zs-flip:hover .zs-flip-back,
+.zs-flip:focus-within .zs-flip-back { visibility: visible; }
+.zs-flip:hover .zs-flip-front,
+.zs-flip:focus-within .zs-flip-front { visibility: hidden; }
+
+/* ── hero orbit pulse ──
+   A 6px dash on a ~1006px ellipse perimeter, so exactly one lit segment
+   travels the ring. Offset must match the dasharray total in OrbitField. */
+@keyframes zs-orbit-pulse {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -1006px; }
+}
+.zs-orbit-pulse {
+  animation: zs-orbit-pulse 7s linear infinite;
+  filter: drop-shadow(0 0 6px rgba(213, 235, 75, 0.9));
+}
+
+/* ── rotating badge ring ── */
+@keyframes zs-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.zs-spin { animation: zs-spin 18s linear infinite; will-change: transform; }
+
+/* ── horizontal drag rail ──
+   pan-y keeps vertical scroll and the browser's back-swipe working while the
+   rail owns horizontal movement. */
+.zs-rail {
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.zs-rail::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .zs-land .zs-ch { animation: none; opacity: 1; transform: none; }
+  .zs-particle { animation: none; }
+  .zs-orbit-pulse { animation: none; stroke-dasharray: none; opacity: 0.35; }
+  .zs-gloss:hover::after,
+  .zs-gloss:focus-within::after { animation: none; opacity: 0; }
+  .zs-spin { animation: none; }
+  /* the flip is the only way to reach the back-face content, so keep it —
+     just make it instant rather than animated */
+  .zs-flip-inner { transition: none; }
 }

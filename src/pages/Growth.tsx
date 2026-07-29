@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import Nav from '../components/layout/Nav'
 import Footer from '../components/layout/Footer'
 import ClientMarquee from '../components/growth/ClientMarquee'
@@ -7,8 +6,23 @@ import AnimatedCounter from '../components/ui/AnimatedCounter'
 import VideoWall from '../components/growth/VideoWall'
 import SmoothScroll from '../components/growth/SmoothScroll'
 import SegmentChips from '../components/growth/SegmentChips'
-import { FrostGrid, Eyebrow, Display, Panel, Check, PANEL_SHADOW, HUD_SHADOW } from '../components/growth/linea'
-import { METRICS, PILLARS, VERTICALS, CLIENTS, VERTICAL_OPTIONS, SPEND_BANDS } from '../data/growth'
+import OrbitField from '../components/growth/OrbitField'
+import SegmentCards from '../components/growth/SegmentCards'
+import PlaybookRail from '../components/growth/PlaybookRail'
+import EngineTimeline from '../components/growth/EngineTimeline'
+import SpinBadge from '../components/growth/SpinBadge'
+import {
+  Band,
+  Kicker,
+  Pill,
+  Reveal,
+  SignalField,
+  Split,
+  DISPLAY,
+  DISPLAY_SM,
+  LIME,
+} from '../components/growth/kinetic'
+import { METRICS, PILLARS, VERTICAL_OPTIONS, SPEND_BANDS } from '../data/growth'
 
 const ENDPOINT =
   'https://script.google.com/macros/s/AKfycbzzacqtwW_Wfk3EB-4WmCQrNFK92yeT2ziRNJvV4Ujy_468HHwCRHiGN0OkxTMLZyKJKQ/exec'
@@ -17,164 +31,128 @@ const ENDPOINT =
 
 function GrowthHero() {
   return (
-    <section className="relative isolate flex min-h-[94vh] items-center overflow-hidden bg-[#0B0B14] text-white">
-      {/* Black gradient backdrop. Not a flat fill: a soft radial lift behind the
-          copy plus a slow hue drift, so the hero has depth without an image. */}
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[#08080D]">
-        <div
-          className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 90% 70% at 50% 38%, #1C1C28 0%, #101018 42%, #08080D 78%)' }}
-        />
-        <motion.div
-          className="absolute inset-0"
-          style={{ background: 'radial-gradient(ellipse 60% 45% at 50% 45%, rgba(46,46,66,0.55), transparent 70%)' }}
-          animate={{ opacity: [0.75, 1, 0.75], scale: [1, 1.06, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        {/* settle the base into pure black at the bottom edge so the section
-            below starts from black rather than a visible seam */}
-        <div className="absolute inset-x-0 bottom-0 h-56 bg-gradient-to-t from-[#08080D] to-transparent" />
-      </div>
+    <section
+      className="relative isolate flex min-h-[94vh] items-center overflow-hidden bg-[#050507] pt-28 pb-16 text-white sm:pt-32"
+      // outlined display text needs an explicit colour; this section is not a
+      // <Band>, so it declares its own (see .zs-stroke in globals.css)
+      style={{ ['--zs-stroke-color' as string]: '#FFFFFF' }}
+    >
+      <SignalField count={54} />
+      {/* radial lift behind the copy so the black has depth without an image */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 60% at 30% 42%, #16161F 0%, #0B0B12 45%, #050507 76%)',
+        }}
+      />
 
-      <div className="relative mx-auto w-full max-w-4xl px-5 py-28 text-center sm:py-32">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="inline-flex items-center rounded-full border border-[#D5EB4B]/40 bg-[#D5EB4B]/10 px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#D5EB4B] backdrop-blur-sm"
-        >
-          Growth Marketing Agency
-        </motion.p>
+      <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-8">
+        <div>
+          <Kicker>Growth marketing agency · Hyderabad</Kicker>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.08 }}
-          className="mt-8 font-['Space_Grotesk'] font-bold leading-[1.02] tracking-[-0.035em] text-[2.75rem] sm:text-[4.5rem] lg:text-[5.25rem] [text-shadow:0_2px_40px_rgba(11,11,20,0.85)]"
-        >
-          We are your
-          <br />
-          growth partners
-          <span className="mt-1 block bg-gradient-to-r from-[#D5EB4B] via-[#E4F57A] to-[#B8CF2E] bg-clip-text text-transparent">
-            not just another agency.
-          </span>
-        </motion.h1>
+          <Split
+            as="h1"
+            className={`mt-7 ${DISPLAY}`}
+            lines={[
+              [{ text: 'We are your', as: 'stroke-serif' }],
+              [{ text: 'Growth', as: 'lime' }],
+              [{ text: 'Partners.' }],
+            ]}
+          />
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.7, delay: 0.22 }}
-          className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-white/70 sm:text-xl [text-shadow:0_1px_20px_rgba(11,11,20,0.9)]"
-        >
-          Ads, landing pages, CRM, qualification, closing and sales training —
-          one team owning every step between a stranger and a signed client.
-        </motion.p>
+          <p className="mt-7 max-w-xl text-[1.05rem] leading-relaxed text-white/60 sm:text-lg">
+            Not just another agency. Ads, landing pages, CRM, qualification, closing and sales
+            training — one team owning every step between a stranger and a signed client.
+          </p>
 
-        <SegmentChips />
+          <SegmentChips />
 
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.38 }}
-          className="mt-12 flex flex-wrap justify-center gap-3"
-        >
-          <a
-            href="#enquire"
-            className="inline-flex items-center rounded-lg bg-[#D5EB4B] px-8 py-4 text-sm font-bold text-[#0c0c10] shadow-[0_10px_40px_-12px_rgba(213,235,75,0.6)] transition-colors hover:bg-[#E4F57A]"
-          >
-            Book a growth audit
-          </a>
-          <a
-            href="#conversations"
-            className="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/5 px-8 py-4 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/10"
-          >
-            Hear from our clients
-          </a>
-        </motion.div>
-
-      </div>
-    </section>
-  )
-}
-
-/* ─────────────────────────  Results  ───────────────────────── */
-
-function ResultsBar() {
-  return (
-    <section className="relative overflow-hidden bg-[#EDF2F7]">
-      <FrostGrid />
-      <div className="relative mx-auto max-w-6xl px-5 py-16 sm:py-20">
-        <Eyebrow>By the numbers</Eyebrow>
-        <div
-          className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-white/80 bg-[#D6E2EC] md:grid-cols-5"
-          style={{ boxShadow: HUD_SHADOW }}
-        >
-          {METRICS.map((m, i) => (
-            <motion.div
-              key={m.label}
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-              className="bg-white/85 p-6 backdrop-blur-xl"
-            >
-              <AnimatedCounter
-                target={m.value}
-                prefix={m.prefix}
-                suffix={m.suffix}
-                duration={1.8}
-                className="block font-['Space_Grotesk'] text-[2.15rem] font-bold tracking-[-0.03em] text-[#1A1A2E] tabular-nums"
-              />
-              <div className="mt-1.5 text-sm leading-snug text-[#4B5563]">{m.label}</div>
-              {m.note && <div className="mt-0.5 font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.12em] text-[#9CA3AF]">{m.note}</div>}
-            </motion.div>
-          ))}
+          <div className="mt-10 flex flex-wrap gap-3">
+            <Pill href="#enquire">Book a growth audit</Pill>
+            <Pill href="#conversations" variant="ghost">
+              Hear from our clients
+            </Pill>
+          </div>
         </div>
-        <p className="mt-7 max-w-3xl text-sm text-[#6B7280]">
-          We report on <span className="font-semibold text-[#1A1A2E]">CAC — cost to acquire a
-          client</span>, not cost per lead. Cheap leads that never close are the most expensive
-          thing in marketing.
-        </p>
+
+        <div className="hidden lg:block">
+          <OrbitField />
+        </div>
       </div>
     </section>
   )
 }
 
-/* ─────────────────────────  Pillars  ───────────────────────── */
+/* ─────────────────────────  Positioning + pillars  ───────────────────────── */
 
-function WhatWeDo() {
+function WhoWeAre() {
   return (
-    <section className="relative overflow-hidden bg-[#F4F7FA]">
-      <FrostGrid />
-      <div className="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
-        <Eyebrow>What we do</Eyebrow>
-        <Display className="mt-7 max-w-3xl text-[#1A1A2E]">
-          A one-stop solution for everything
-          <br className="hidden sm:block" /> in front of your customer.
-        </Display>
-        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[#4B5563]">
-          Most agencies hand you leads and leave. We build the whole front end — and stay
-          hands-on through structuring, training and closing.
-        </p>
+    <Band tone="bone" className="py-20 sm:py-28">
+      <Kicker tone="bone">More than an agency</Kicker>
 
-        <div className="mt-14 grid gap-6 md:grid-cols-3">
-          {PILLARS.map((p, i) => (
-            <Panel key={p.num} delay={i * 0.09} className="p-7">
-              <span className="font-['JetBrains_Mono'] text-xs font-bold tracking-[0.16em] text-[#B8CF2E]">
+      <div className="mt-7 grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+        <Split
+          className={`${DISPLAY} text-[#111214]`}
+          lines={[
+            [{ text: 'We run ' }, { text: 'marketing', as: 'lime' }],
+            [{ text: 'and ' }, { text: 'sales', as: 'stroke' }, { text: '.' }],
+          ]}
+        />
+        <Reveal delay={0.12}>
+          <p className="text-[1.05rem] leading-relaxed text-[#4B5563]">
+            Most agencies hand you leads and leave. We build the whole front end — and stay
+            hands-on through structuring, training and closing. One team, one number to answer
+            for.
+          </p>
+          <div className="mt-6">
+            <Pill href="#enquire" variant="ink">
+              Book a growth audit
+            </Pill>
+          </div>
+        </Reveal>
+      </div>
+
+      <div className="mt-14 grid gap-5 md:grid-cols-3">
+        {PILLARS.map((p, i) => (
+          <Reveal key={p.num} delay={i * 0.09}>
+            <div className="h-full rounded-[24px] border border-[#E2E2D8] bg-white p-7">
+              <span className="font-['JetBrains_Mono'] text-xs font-bold tracking-[0.16em] text-[#8CA31B]">
                 {p.num}
               </span>
-              <h3 className="mt-2.5 font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.02em] text-[#1A1A2E]">
+              <h3 className="mt-2.5 font-['Space_Grotesk'] text-[1.6rem] font-bold uppercase tracking-[-0.02em] text-[#111214]">
                 {p.title}
               </h3>
               <p className="mt-2 text-[#4B5563]">{p.lead}</p>
               <ul className="mt-6 space-y-3">
-                {p.items.map(it => <Check key={it}>{it}</Check>)}
+                {p.items.map(it => (
+                  <li key={it} className="flex gap-3 text-[14.5px] leading-relaxed text-[#374151]">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      aria-hidden
+                      className="mt-1 shrink-0"
+                    >
+                      <path
+                        d="M3 8.4l3.2 3.2L13 4.8"
+                        stroke="#7E9B12"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span>{it}</span>
+                  </li>
+                ))}
               </ul>
-            </Panel>
-          ))}
-        </div>
+            </div>
+          </Reveal>
+        ))}
       </div>
-    </section>
+    </Band>
   )
 }
 
@@ -182,121 +160,126 @@ function WhatWeDo() {
 
 function ClientsSection() {
   return (
-    <section className="relative overflow-hidden bg-[#EDF2F7]">
-      <FrostGrid />
-      <div className="relative mx-auto max-w-6xl px-5 py-16 sm:py-20">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-          <div>
-            <Eyebrow>Client roster</Eyebrow>
-            <Display className="mt-6 text-[#1A1A2E]">The brands we build for</Display>
-          </div>
-          <p className="max-w-sm text-[#4B5563] md:text-right">
-            Across couture, education, membership, media, commercial real estate and technology.
-          </p>
+    <Band tone="bone" className="pb-20 sm:pb-24">
+      <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+        <div>
+          <Kicker tone="bone">Client roster</Kicker>
+          <h2 className={`mt-6 ${DISPLAY_SM} text-[#111214]`}>The brands we build for</h2>
         </div>
-        <div className="mt-10">
-          <ClientMarquee />
-        </div>
+        <p className="max-w-sm text-[#4B5563] md:text-right">
+          Across couture, education, membership, media, commercial real estate and technology.
+        </p>
       </div>
-    </section>
+      <div className="mt-10">
+        <ClientMarquee />
+      </div>
+    </Band>
   )
 }
 
-/* ─────────────────────────  Verticals  ───────────────────────── */
+/* ─────────────────────────  Metrics  ───────────────────────── */
 
-function VerticalsSection() {
-  const [active, setActive] = useState(0)
+function MetricBand() {
   return (
-    <section className="relative overflow-hidden bg-[#F4F7FA]">
-      <FrostGrid />
-      <div className="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
-        <Eyebrow>Segments</Eyebrow>
-        <Display className="mt-7 text-[#1A1A2E]">Six segments we know deeply</Display>
-        <p className="mt-6 max-w-2xl text-lg text-[#4B5563]">
-          We do not take every brief. These are the businesses whose funnels, objections and
-          sales cycles we have already built for.
-        </p>
-
-        <div className="mt-12 flex flex-wrap gap-2">
-          {VERTICALS.map((v, idx) => (
-            <button
-              key={v.slug}
-              onClick={() => setActive(idx)}
-              aria-pressed={active === idx}
-              className={`relative rounded-full px-5 py-2.5 font-['JetBrains_Mono'] text-[11px] font-bold uppercase tracking-[0.12em] transition-colors ${
-                active === idx ? 'text-[#0c0c10]' : 'text-[#6B7280] hover:text-[#1A1A2E]'
-              }`}
-            >
-              {active === idx && (
-                <motion.span
-                  layoutId="vertical-pill"
-                  className="absolute inset-0 rounded-full bg-[#D5EB4B]"
-                  style={{ boxShadow: '0 10px 26px -14px rgba(184,207,46,0.9)' }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 34 }}
-                />
-              )}
-              <span className="relative">{v.name}</span>
-            </button>
-          ))}
-        </div>
-
-        <div
-          className="mt-6 min-h-[200px] rounded-[14px] border border-white/80 bg-white/70 p-7 backdrop-blur-xl sm:p-9"
-          style={{ boxShadow: PANEL_SHADOW }}
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={VERTICALS[active].slug}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <h3 className="font-['Space_Grotesk'] text-2xl font-bold tracking-[-0.02em] text-[#1A1A2E]">
-                {VERTICALS[active].name}
-              </h3>
-              <p className="mt-3 max-w-2xl leading-relaxed text-[#4B5563]">
-                {VERTICALS[active].blurb}
-              </p>
-              {VERTICALS[active].links && (
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <span className="font-['JetBrains_Mono'] text-[10px] font-bold uppercase tracking-[0.16em] text-[#9CA3AF]">
-                    Work in this segment
-                  </span>
-                  {VERTICALS[active].links!.map(l => (
-                    <a
-                      key={l.href}
-                      href={l.href}
-                      className="rounded-full border border-[#DDE5EC] bg-white/80 px-3 py-1 text-xs font-medium text-[#4B5563] transition-colors hover:border-[#D5EB4B] hover:text-[#1A1A2E]"
-                    >
-                      {l.label} →
-                    </a>
-                  ))}
-                </div>
-              )}
-              {VERTICALS[active].clients.length > 0 && (
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <span className="font-['JetBrains_Mono'] text-[10px] font-bold uppercase tracking-[0.16em] text-[#9CA3AF]">
-                    Who we do this for
-                  </span>
-                  {VERTICALS[active].clients.map(slug => {
-                    const c = CLIENTS.find(x => x.slug === slug)!
-                    return (
-                      <span
-                        key={slug}
-                        className="rounded-full border border-[#DDE5EC] bg-white/80 px-3 py-1 text-xs font-medium text-[#4B5563]"
-                      >
-                        {c.name}
-                      </span>
-                    )
-                  })}
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+    <Band tone="lime" className="py-14 sm:py-16">
+      <div className="grid grid-cols-2 gap-y-10 md:grid-cols-5">
+        {METRICS.map((m, i) => (
+          <Reveal
+            key={m.label}
+            delay={i * 0.07}
+            className={`px-2 sm:px-4 ${i > 0 ? 'md:border-l md:border-[#0A0A0C]/15' : ''}`}
+          >
+            <AnimatedCounter
+              target={m.value}
+              prefix={m.prefix}
+              suffix={m.suffix}
+              duration={1.8}
+              className="block font-['Space_Grotesk'] text-[2.6rem] font-bold leading-none tracking-[-0.04em] text-[#0A0A0C] tabular-nums sm:text-[3rem]"
+            />
+            <div className="mt-2.5 text-[13.5px] font-semibold leading-snug text-[#0A0A0C]">
+              {m.label}
+            </div>
+            {m.note && (
+              <div className="mt-1 font-['JetBrains_Mono'] text-[10px] uppercase tracking-[0.12em] text-[#0A0A0C]/55">
+                {m.note}
+              </div>
+            )}
+          </Reveal>
+        ))}
       </div>
-    </section>
+      <p className="mt-10 max-w-3xl text-sm text-[#0A0A0C]/70">
+        We report on <span className="font-bold text-[#0A0A0C]">CAC — cost to acquire a client</span>,
+        not cost per lead. Cheap leads that never close are the most expensive thing in marketing.
+      </p>
+    </Band>
+  )
+}
+
+/* ─────────────────────────  Segments  ───────────────────────── */
+
+function SegmentsSection() {
+  return (
+    <Band tone="ink" className="py-20 sm:py-28">
+      <SignalField count={28} grid={false} />
+      <Kicker>Segments</Kicker>
+      <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <Split
+          className={DISPLAY}
+          lines={[[{ text: 'Six segments' }], [{ text: 'we know ' }, { text: 'deeply', as: 'stroke-serif' }]]}
+        />
+        <p className="max-w-sm text-white/55">
+          We do not take every brief. These are the businesses whose funnels, objections and sales
+          cycles we have already built for.
+        </p>
+      </div>
+      <SegmentCards />
+    </Band>
+  )
+}
+
+/* ─────────────────────────  Playbooks  ───────────────────────── */
+
+function PlaybooksSection() {
+  return (
+    <Band tone="ink" className="py-20 sm:py-24">
+      <Kicker>Playbooks · 10 industries</Kicker>
+      <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <Split
+          className={DISPLAY}
+          lines={[[{ text: 'Check out' }], [{ text: 'our work.', as: 'stroke-serif' }]]}
+        />
+        {/* These are modelled target outcomes, not delivered client results —
+            said plainly here so the numbers on the cards can't be misread. */}
+        <p className="max-w-md text-white/55">
+          Full teardowns of how we structure each industry: what breaks, what we build, and the
+          before-and-after we target in the first ninety days.
+        </p>
+      </div>
+      <div className="mt-12">
+        <PlaybookRail />
+      </div>
+    </Band>
+  )
+}
+
+/* ─────────────────────────  Engine  ───────────────────────── */
+
+function EngineSection() {
+  return (
+    <Band tone="ink" className="py-20 sm:py-28">
+      <SignalField count={34} />
+      <Kicker>The growth engine</Kicker>
+      <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <Split
+          className={DISPLAY}
+          lines={[[{ text: 'What makes' }], [{ text: 'us ' }, { text: 'different?', as: 'stroke' }]]}
+        />
+        <p className="max-w-sm text-white/55">
+          Five stages, built once and then running without anyone remembering to run them.
+        </p>
+      </div>
+      <EngineTimeline />
+    </Band>
   )
 }
 
@@ -367,69 +350,108 @@ function EnquiryForm() {
   }
 
   const field =
-    'w-full rounded-[10px] border border-white/15 bg-white/[0.06] px-4 py-3.5 text-white placeholder-white/40 backdrop-blur-sm transition focus:border-[#D5EB4B]/60 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-[#D5EB4B]/25'
+    'w-full rounded-[14px] border border-white/12 bg-white/[0.04] px-4 py-3.5 text-white placeholder-white/35 backdrop-blur-sm transition focus:border-[#D5EB4B]/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-[#D5EB4B]/25'
 
   return (
-    <section id="enquire" className="relative overflow-hidden bg-[#12121C] text-white scroll-mt-24">
-      <div className="max-w-3xl mx-auto px-5 py-20 sm:py-24">
-        <Eyebrow tone="dark">Start here</Eyebrow>
-        <Display className="mt-7 text-white">Tell us what needs fixing.</Display>
-        <p className="mt-6 text-lg text-white/70">
-          We will look at your funnel and come back with where the leak is. No deck, no pitch
-          theatre.
-        </p>
+    <Band tone="ink" id="enquire" className="py-20 sm:py-28" inner="max-w-3xl">
+      <SignalField count={30} />
 
-        {sent ? (
-          <div className="mt-10 rounded-2xl border border-[#D5EB4B]/40 bg-[#D5EB4B]/10 p-8">
-            <h3 className="font-['Space_Grotesk'] font-bold text-2xl text-[#D5EB4B]">
-              Got it — we will be in touch.
-            </h3>
-            <p className="mt-3 text-white/75">
-              Your details are with our team. Expect a message shortly.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={submit} className="mt-10 space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <input name="name" placeholder="Your name" className={field} autoComplete="name" />
-              <input name="phone" placeholder="Mobile number" inputMode="numeric" className={field} autoComplete="tel" />
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <input name="business" placeholder="Business name" className={field} />
-              <input name="email" type="email" placeholder="Email (optional)" className={field} autoComplete="email" />
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <select name="vertical" className={field} defaultValue="">
-                <option value="" disabled>Your segment</option>
-                {VERTICAL_OPTIONS.map(v => <option key={v} value={v} className="text-[#1A1A2E]">{v}</option>)}
-              </select>
-              <select name="spend" className={field} defaultValue="">
-                <option value="" disabled>Current monthly ad spend</option>
-                {SPEND_BANDS.map(s => <option key={s} value={s} className="text-[#1A1A2E]">{s}</option>)}
-              </select>
-            </div>
-            <textarea
-              name="challenge"
-              rows={3}
-              placeholder="What do you want to fix? (optional)"
-              className={field}
-            />
-            {err && <p className="text-sm text-[#FCA5A5]">{err}</p>}
-            <button
-              type="submit"
-              disabled={busy}
-              className="w-full rounded-lg bg-[#D5EB4B] px-7 py-4 font-bold text-[#0c0c10] hover:bg-[#E4F57A] disabled:opacity-60 transition-colors"
-            >
-              {busy ? 'Sending…' : 'Request my growth audit'}
-            </button>
-            <p className="text-xs text-white/40 text-center">
-              We use your details only to contact you about this enquiry.{' '}
-              <a href="/privacy" className="underline hover:text-white/70">Privacy policy</a>.
-            </p>
-          </form>
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-6">
+        <div>
+          <Kicker>Start here</Kicker>
+          <Split
+            className={`mt-7 ${DISPLAY}`}
+            lines={[[{ text: "Let's build" }], [{ text: 'something.', as: 'lime' }]]}
+          />
+        </div>
+        <SpinBadge />
       </div>
-    </section>
+
+      <p className="mt-7 text-lg text-white/60">
+        Tell us what needs fixing. We will look at your funnel and come back with where the leak
+        is. No deck, no pitch theatre.
+      </p>
+
+      {sent ? (
+        <div
+          className="mt-10 rounded-[24px] border p-8"
+          style={{ borderColor: `${LIME}55`, background: 'rgba(213,235,75,0.08)' }}
+        >
+          <h3 className="font-['Space_Grotesk'] text-2xl font-bold" style={{ color: LIME }}>
+            Got it — we will be in touch.
+          </h3>
+          <p className="mt-3 text-white/70">
+            Your details are with our team. Expect a message shortly.
+          </p>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="mt-10 space-y-4">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <input name="name" placeholder="Your name" className={field} autoComplete="name" />
+            <input
+              name="phone"
+              placeholder="Mobile number"
+              inputMode="numeric"
+              className={field}
+              autoComplete="tel"
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <input name="business" placeholder="Business name" className={field} />
+            <input
+              name="email"
+              type="email"
+              placeholder="Email (optional)"
+              className={field}
+              autoComplete="email"
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <select name="vertical" className={field} defaultValue="">
+              <option value="" disabled>
+                Your segment
+              </option>
+              {VERTICAL_OPTIONS.map(v => (
+                <option key={v} value={v} className="text-[#111214]">
+                  {v}
+                </option>
+              ))}
+            </select>
+            <select name="spend" className={field} defaultValue="">
+              <option value="" disabled>
+                Current monthly ad spend
+              </option>
+              {SPEND_BANDS.map(s => (
+                <option key={s} value={s} className="text-[#111214]">
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <textarea
+            name="challenge"
+            rows={3}
+            placeholder="What do you want to fix? (optional)"
+            className={field}
+          />
+          {err && (
+            <p role="alert" className="text-sm text-[#FCA5A5]">
+              {err}
+            </p>
+          )}
+          <Pill type="submit" className="w-full" disabled={busy}>
+            {busy ? 'Sending…' : 'Request my growth audit'}
+          </Pill>
+          <p className="text-center text-xs text-white/35">
+            We use your details only to contact you about this enquiry.{' '}
+            <a href="/privacy" className="underline hover:text-white/70">
+              Privacy policy
+            </a>
+            .
+          </p>
+        </form>
+      )}
+    </Band>
   )
 }
 
@@ -440,17 +462,31 @@ export default function Growth() {
     document.title = 'ZippyScale Growth | Growth Marketing Agency for High-Ticket Businesses'
   }, [])
 
+  // The global body background is cream (#FFFDF7). Without this the ink page
+  // shows cream gutters when iOS rubber-bands past the top or bottom.
+  useEffect(() => {
+    const el = document.documentElement
+    const prev = el.getAttribute('data-theme')
+    el.setAttribute('data-theme', 'ink')
+    return () => {
+      if (prev === null) el.removeAttribute('data-theme')
+      else el.setAttribute('data-theme', prev)
+    }
+  }, [])
+
   return (
     <>
       <SmoothScroll />
-      <Nav noBanner floating ctaHref="#enquire" />
+      <Nav noBanner floating dark ctaHref="#enquire" />
       <main>
         <GrowthHero />
-        <ResultsBar />
-        <WhatWeDo />
+        <WhoWeAre />
         <ClientsSection />
+        <MetricBand />
+        <SegmentsSection />
+        <PlaybooksSection />
         <VideoWall />
-        <VerticalsSection />
+        <EngineSection />
         <EnquiryForm />
       </main>
       <Footer />
