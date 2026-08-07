@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Luxury Bespoke &amp; Retail Master Class — ZippyScale</title>
+<meta name="description" content="A growing library of ZippyScale growth playbooks for luxury retail and bespoke brands — frameworks, execution roadmaps and self-audit tools, addressed to your business."/>
+<link rel="icon" href="/favicon.png" type="image/png"/>
+<style>
+/* ══════════════════════════════════════════════════════════════════
+   Design tokens — the same ink/bone/lime kinetic language as /growth
+   and the restyled Client Retention OS. Self-hosted fonts, same paths.
+   ══════════════════════════════════════════════════════════════════ */
+@font-face{font-family:"Space Grotesk";font-style:normal;font-weight:500;font-display:block;src:url("/fonts/space-grotesk-500.woff2") format("woff2")}
+@font-face{font-family:"Space Grotesk";font-style:normal;font-weight:700;font-display:block;src:url("/fonts/space-grotesk-700.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url("/fonts/inter-400.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url("/fonts/inter-500.woff2") format("woff2")}
+@font-face{font-family:"Inter";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/inter-700.woff2") format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:700;font-display:swap;src:url("/fonts/jetbrains-mono-700.woff2") format("woff2")}
+@font-face{font-family:"Fraunces";font-style:italic;font-weight:300;font-display:swap;src:url("/fonts/fraunces-italic-300.woff2") format("woff2")}
+
+:root{
+  --ink:#050507; --ink-2:#0B0B12; --ink-3:#14141C;
+  --bone:#F5F5F0; --bone-2:#EDEDE6;
+  --lime:#D5EB4B; --lime-deep:#B8CF2E;
+  --ink-border:rgba(255,255,255,.10); --ink-text:#FAFAFA; --ink-soft:rgba(255,255,255,.6);
+  --shadow-panel:0 26px 70px -46px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.06);
+  --radius:24px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--ink-text);font-family:Inter,system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3,h4{font-family:"Space Grotesk",system-ui,sans-serif;margin:0;letter-spacing:-.02em;line-height:1.08}
+p{margin:0}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+.hide{display:none!important}
+::selection{background:rgba(213,235,75,.35)}
+
+/* ── kicker / eyebrow ── */
+.kicker{display:inline-flex;align-items:center;gap:10px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+.kicker::before{content:"";width:28px;height:1px;background:var(--lime);flex:none}
+.kicker.on-bone{color:#6B7280}
+
+/* ── display type ── */
+.display{font-size:clamp(30px,4.4vw,54px);font-weight:700;text-transform:uppercase;letter-spacing:-.03em;line-height:.94}
+.display .lime{color:var(--lime)}
+.display .stroke{-webkit-text-stroke:1.6px #fff;color:transparent;font-family:Fraunces,Georgia,serif;font-style:italic;font-weight:300;text-transform:none}
+@supports not (-webkit-text-stroke:1px red){.display .stroke{color:#fff}}
+
+/* ── nav ── */
+.nav{position:sticky;top:0;z-index:50;background:rgba(5,5,7,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--ink-border)}
+.nav-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px}
+.brand{display:inline-flex;align-items:center;gap:9px;text-decoration:none}
+.brand img{height:26px;width:26px;display:block}
+.brand span{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:16px;color:#fff}
+.nav-tag{font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);border:1px solid var(--ink-border);border-radius:999px;padding:6px 12px}
+
+/* ── signal field backdrop ── */
+.field{position:absolute;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
+.field span{position:absolute;border-radius:50%;background:#fff;animation:zsdrift var(--dur,14s) cubic-bezier(.45,0,.55,1) infinite}
+.field span.lime{background:var(--lime)}
+@keyframes zsdrift{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(var(--dx,6px),var(--dy,-16px),0)}}
+.hero-glow::before{content:"";position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse 80% 60% at 30% 34%,#16161F 0%,#0B0B12 46%,#050507 78%)}
+
+/* ── gate ── */
+#gate{position:relative;min-height:100vh;display:flex;align-items:center;padding:96px 0 60px}
+.gate-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+@media(max-width:900px){.gate-grid{grid-template-columns:1fr}}
+.gate-copy p.lead{margin-top:20px;max-width:46ch;color:var(--ink-soft);font-size:17px;line-height:1.65}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ink-border);background:rgba(255,255,255,.03);border-radius:999px;padding:9px 16px;font-size:13px;color:rgba(255,255,255,.75)}
+.chip b{color:var(--lime);font-family:"JetBrains Mono",monospace;font-size:11px}
+
+.gate-card{background:#0B0B12;border:1px solid var(--ink-border);border-radius:var(--radius);padding:30px;box-shadow:var(--shadow-panel)}
+.gate-card h2{font-size:21px;text-transform:uppercase}
+.gate-card .hint{margin-top:6px;font-size:13px;color:var(--ink-soft)}
+label{display:block;font-size:12.5px;font-weight:600;margin:16px 0 6px;color:rgba(255,255,255,.8)}
+input,select{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--ink-border);background:rgba(255,255,255,.04);color:#fff;font:inherit;font-size:15px}
+select{appearance:none;background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" stroke="%23999" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>');background-repeat:no-repeat;background-position:right 14px center}
+input::placeholder{color:rgba(255,255,255,.32)}
+input:focus,select:focus{outline:2px solid rgba(213,235,75,.5);outline-offset:1px;border-color:rgba(213,235,75,.5)}
+option{color:#111}
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;border:0;border-radius:999px;font:inherit;font-weight:800;font-family:"Space Grotesk",sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:14px;cursor:pointer;padding:15px 20px;width:100%;margin-top:22px;background:var(--lime);color:#0A0A0C;box-shadow:0 0 40px -12px rgba(213,235,75,.7);transition:.18s}
+.btn:hover{background:var(--lime-deep)}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+.err{color:#FCA5A5;font-size:12.5px;margin-top:10px;min-height:1em}
+.privacy{font-size:11.5px;color:rgba(255,255,255,.35);margin-top:14px;text-align:center}
+
+/* ── hub ── */
+#hub{position:relative;min-height:100vh;padding:40px 0 100px}
+.hub-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;padding-top:32px}
+.prepared{font-family:"JetBrains Mono",monospace;font-size:11px;color:rgba(255,255,255,.4)}
+.prepared b{color:var(--lime);letter-spacing:.04em}
+.not-you{font-size:12px;color:rgba(255,255,255,.4);text-decoration:underline;cursor:pointer;background:none;border:0;font:inherit;padding:0}
+.not-you:hover{color:#fff}
+
+.picker{margin-top:30px;background:#0B0B12;border:1px solid var(--ink-border);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow-panel)}
+.picker label{margin-top:0}
+#playbookSelect{font-size:16px;padding:15px 16px;font-family:"Space Grotesk",sans-serif;font-weight:700}
+.picker-meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;font-family:"JetBrains Mono",monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.45)}
+.picker-meta span{border:1px solid var(--ink-border);border-radius:999px;padding:5px 11px}
+
+/* ── playbook content ── */
+#playbook{margin-top:36px}
+.pb-head{border-radius:var(--radius);border:1px solid var(--ink-border);padding:34px 30px;position:relative;overflow:hidden;box-shadow:var(--shadow-panel)}
+.pb-head::before{content:"";position:absolute;inset:0;opacity:.16;background:radial-gradient(ellipse 120% 90% at 0% 0%,var(--accent,#D5EB4B),transparent 60%)}
+.pb-head>*{position:relative}
+.pb-framework{display:inline-flex;align-items:center;gap:10px;font-family:"JetBrains Mono",monospace;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent,#D5EB4B);border:1px solid var(--accent-45,rgba(213,235,75,.45));border-radius:999px;padding:7px 14px}
+.pb-head h1{margin-top:18px;font-size:clamp(26px,3.6vw,40px);text-transform:none;letter-spacing:-.02em}
+.pb-head .sub{margin-top:10px;color:rgba(255,255,255,.55);font-size:15px}
+.pb-head .meta{margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:rgba(255,255,255,.4)}
+.pb-actions{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+.btn-ghost{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ink-border);background:rgba(255,255,255,.04);color:#fff;border-radius:999px;padding:11px 18px;font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+.btn-ghost:hover{border-color:var(--accent,#D5EB4B);color:var(--accent,#D5EB4B)}
+
+.section{margin-top:26px;background:#0B0B12;border:1px solid var(--ink-border);border-radius:var(--radius);padding:28px 26px}
+.section h2{font-size:12px;font-family:"JetBrains Mono",monospace;text-transform:uppercase;letter-spacing:.16em;color:var(--accent,#D5EB4B);margin-bottom:16px}
+.section h3{font-size:16px;font-weight:700;margin:18px 0 8px;color:#fff}
+.section p{color:rgba(255,255,255,.68);font-size:14.5px;line-height:1.7;margin-bottom:10px}
+.section ul{margin:0 0 10px;padding-left:20px;color:rgba(255,255,255,.68);font-size:14.5px;line-height:1.7}
+.section li{margin-bottom:4px}
+.callout{border:1px dashed var(--accent-55,rgba(213,235,75,.55));background:var(--accent-08,rgba(213,235,75,.08));border-radius:14px;padding:16px 18px;margin:14px 0}
+.callout p{color:rgba(255,255,255,.85);margin-bottom:4px}
+.callout p:last-child{margin-bottom:0}
+.threshold{margin-top:12px;font-size:14px;font-weight:600;color:var(--accent,#D5EB4B)}
+
+.letters{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:6px}
+.letter-card{border:1px solid var(--ink-border);border-radius:16px;padding:18px;background:rgba(255,255,255,.02)}
+.letter-big{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:30px;color:var(--accent,#D5EB4B);line-height:1}
+.letter-card h4{margin-top:8px;font-size:14.5px;font-weight:700;color:#fff}
+.letter-card p,.letter-card ul{font-size:13.5px;margin-top:6px}
+
+.roadmap-item{border-left:2px solid var(--ink-border);padding:4px 0 16px 18px;position:relative}
+.roadmap-item::before{content:"";position:absolute;left:-5px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--accent,#D5EB4B)}
+.roadmap-item .label{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:15px;color:#fff;margin-bottom:6px}
+
+table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:13.5px}
+th,td{border:1px solid var(--ink-border);padding:9px 12px;text-align:left;color:rgba(255,255,255,.72)}
+th{background:rgba(255,255,255,.04);color:#fff;font-family:"JetBrains Mono",monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.08em}
+
+.chain{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin:12px 0}
+.chain .link{font-size:14px;color:rgba(255,255,255,.75)}
+.chain .arrow{color:var(--accent,#D5EB4B);font-size:13px;padding-left:2px}
+
+.check-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--ink-border);cursor:pointer;user-select:none}
+.check-row:last-child{border-bottom:0}
+.check-box{width:19px;height:19px;border-radius:6px;border:1.5px solid rgba(255,255,255,.3);flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.check-row.on .check-box{background:var(--accent,#D5EB4B);border-color:var(--accent,#D5EB4B)}
+.check-box svg{opacity:0;transition:.15s}
+.check-row.on .check-box svg{opacity:1}
+.check-row span{font-size:14.5px;color:rgba(255,255,255,.78)}
+.score-bar{margin-top:18px;padding-top:16px;border-top:1px solid var(--ink-border);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.score-num{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:30px;color:var(--accent,#D5EB4B)}
+.score-label{font-size:14px;color:rgba(255,255,255,.65);max-width:44ch}
+
+.team-role{border-radius:16px;padding:16px 18px;margin-bottom:10px;border:1px solid var(--ink-border);background:rgba(255,255,255,.02)}
+.team-role.you{border-color:var(--accent,#D5EB4B);background:var(--accent-09,rgba(213,235,75,.09))}
+.team-role .role-name{font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.5)}
+.team-role.you .role-name{color:var(--accent,#D5EB4B)}
+.team-role.you .role-name::after{content:" · this is you";text-transform:none;letter-spacing:0;opacity:.85}
+
+.final-thought{border-left:3px solid var(--accent,#D5EB4B);padding-left:18px}
+.final-thought p{font-size:16px;color:rgba(255,255,255,.85);font-family:Fraunces,Georgia,serif;font-style:italic}
+
+.cta-box{border-radius:var(--radius);padding:28px 26px;background:var(--ink);border:1px solid var(--ink-border);position:relative;overflow:hidden;margin-top:26px}
+.cta-box::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 90% 120% at 90% 50%,rgba(213,235,75,.14),transparent 62%)}
+.cta-box>*{position:relative}
+.cta-box h2{font-size:19px;text-transform:none;color:#fff;font-family:"Space Grotesk",sans-serif;font-weight:700}
+.cta-box p{color:rgba(255,255,255,.6);margin-top:8px}
+.wa-btn{display:inline-flex;align-items:center;gap:9px;margin-top:16px;border:0;border-radius:999px;background:var(--lime);color:#0A0A0C;font-family:"Space Grotesk",sans-serif;font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:.04em;padding:14px 22px;text-decoration:none}
+
+footer{border-top:1px solid var(--ink-border);padding:26px 0 46px;text-align:center;color:rgba(255,255,255,.35);font-size:12.5px}
+
+@media(prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-row">
+    <a class="brand" href="/"><img src="/logos/icon-64.png" alt=""/><span>ZippyScale</span></a>
+    <span class="nav-tag">Luxury Bespoke &amp; Retail Master Class</span>
+  </div>
+</nav>
+
+<!-- ═══════════════ GATE ═══════════════ -->
+<section id="gate" class="hero-glow">
+  <div class="field" id="field"></div>
+  <div class="wrap gate-grid">
+    <div class="gate-copy">
+      <p class="kicker">Members' library · growing every month</p>
+      <h1 class="display" style="margin-top:22px">
+        THE <span class="lime">MASTER CLASS</span><br/>
+        <span class="stroke">for luxury retail.</span>
+      </h1>
+      <p class="lead">Every growth playbook we've built for luxury and bespoke retail brands —
+        one library, addressed to your business. Put your details in once and the whole
+        collection unlocks, with new playbooks added as we publish them.</p>
+      <div class="chips" id="frameworkChips"></div>
+    </div>
+
+    <div class="gate-card">
+      <h2>Unlock the library</h2>
+      <p class="hint">Takes 20 seconds. Your details stay with ZippyScale only.</p>
+      <form id="gateForm">
+        <label for="g-name">Your name</label>
+        <input id="g-name" type="text" placeholder="Priya Sharma" autocomplete="name"/>
+        <label for="g-mobile">Mobile number</label>
+        <input id="g-mobile" type="tel" inputmode="numeric" placeholder="98XXXXXXXX" autocomplete="tel"/>
+        <label for="g-brand">Brand / business name</label>
+        <input id="g-brand" type="text" placeholder="e.g. Rajesh Silks"/>
+        <label for="g-designation">Your role</label>
+        <select id="g-designation">
+          <option value="" selected disabled>Select your role…</option>
+          <option>Owner</option>
+          <option>CEO</option>
+          <option>Senior Employee</option>
+          <option>Employee</option>
+          <option>Marketer</option>
+        </select>
+        <button type="submit" class="btn" id="gateSubmit">Unlock the master class →</button>
+        <div class="err" id="gateErr"></div>
+      </form>
+      <p class="privacy">We use your details only to personalise this library and follow up about it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ HUB ═══════════════ -->
+<section id="hub" class="hide hero-glow">
+  <div class="field" id="fieldHub"></div>
+  <div class="wrap">
+    <div class="hub-top">
+      <div>
+        <p class="kicker">Luxury Bespoke &amp; Retail Master Class</p>
+        <p class="prepared" style="margin-top:10px">Prepared for <b id="prBrand">—</b> · <span id="prName">—</span> · <span id="prRole">—</span></p>
+      </div>
+      <button class="not-you" id="notYou">Not you? Switch profile</button>
+    </div>
+
+    <div class="picker">
+      <label for="playbookSelect">Choose a playbook</label>
+      <select id="playbookSelect"></select>
+      <div class="picker-meta" id="pickerMeta"></div>
+    </div>
+
+    <div id="playbook"></div>
+  </div>
+</section>
+
+<footer>Luxury Bespoke &amp; Retail Master Class by ZippyScale · New playbooks added regularly · +91 99899 90419 · bhargav@zippyscale.com</footer>
+
+<div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0B0B12;border:1px solid var(--ink-border);color:#fff;padding:12px 20px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:200">Downloading…</div>
+<iframe name="leadsink" id="leadsink" style="display:none" title="leadsink"></iframe>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+/* ============================================================
+   CONFIG — paste the Apps Script Web App URL once it's deployed.
+   Same fire-and-forget hidden-iframe pattern as clinic-retention-os.
+   ============================================================ */
+const SHEET_ENDPOINT = "";
+
+const DESIGNATIONS = ["Owner","CEO","Senior Employee","Employee","Marketer"];
+const ACCENTS = { craft:"#D5EB4B", value:"#7DD3FC", reach:"#C4B5FD", filter:"#F9A8D4", signal:"#6EE7B7" };
+/* which Team Implementation Guide row this designation should see first */
+const ROLE_FOR_DESIGNATION = {
+  Owner: "Founder", CEO: "Founder",
+  Marketer: "Marketing Team",
+  "Senior Employee": "Management", // falls back to Sales Team if a doc has no Management row
+  Employee: "Sales Team",
+};
+
+/* ============================================================
+   CONTENT — transcribed in full from the 5 Drive docs (GP-001..005).
+   Every playbook is a flexible block tree, not fixed fields, because
+   the docs are NOT structurally identical (see plan). A RichBlock is
+   either a string (paragraph), {list:[...]}, or {callout:[...]}.
+   ============================================================ */
+const PLAYBOOKS = [
+{
+  id:"GP-001", slug:"craft", framework:"CRAFT",
+  title:"Why Luxury Ads Fail When They're Built Like D2C Ads",
+  readTime:"8 Minutes", implementationTime:"2–3 Days",
+  problem:{
+    heading:"The Problem",
+    intro:[
+      "Most luxury retail and bespoke businesses don't have a traffic problem.",
+      "They have a positioning problem.",
+      "When a potential customer scrolls through Instagram, they subconsciously categorize every brand within seconds.",
+      "If your advertisement looks like every other retail promotion, your brand is mentally placed alongside brands competing on discounts — not craftsmanship.",
+      "Luxury buyers don't compare products the same way mass-market buyers do.",
+      "They're evaluating trust, exclusivity, experience, craftsmanship, and confidence.",
+      "The moment your ad looks like a sale, you've already lost the perception battle."
+    ],
+    symptomsHeading:"Symptoms You May Already Be Seeing",
+    symptoms:["Good reach but poor enquiries.","Lots of clicks but very few meaningful conversations.","People asking only for discounts.","High ad spend with inconsistent sales.","Competitors with seemingly \"simpler\" ads getting better quality clients.","Your brand attracting browsers instead of buyers."],
+    thresholdText:"If you recognize three or more of these symptoms, the issue is likely not your advertising budget — it's your advertising strategy."
+  },
+  why:{ heading:"Why This Actually Happens", body:[
+    "Most marketing agencies use the same advertising playbook for every client.",
+    "That works reasonably well for fast-moving consumer products.",
+    "It does not work for luxury purchasing decisions.",
+    "Luxury buying is emotional first. Logical second.",
+    "People purchasing a ₹2 lakh dining table, a handcrafted diamond necklace, or a bespoke sherwani are not asking 'Is this the cheapest option?'",
+    "Instead, they're asking:",
+    {list:["Can I trust this brand?","Does this represent my identity?","Is the craftsmanship genuinely exceptional?","Will this purchase still make me proud five years from now?","Does this experience justify the investment?"]},
+    "When your advertisements focus on offers instead of ownership, you attract price-sensitive audiences rather than value-driven buyers.",
+    "Luxury businesses don't lose customers because of pricing.",
+    "They lose customers because they communicate like commodity brands."
+  ]},
+  frameworkSection:{
+    heading:"The ZippyScale Luxury Advertising Framework",
+    intro:["We use a simple framework internally when evaluating luxury campaigns."],
+    letters:[
+      {letter:"C", title:"Craft Before Commerce", body:["Show the making before the marketing — artisans, materials, processes, precision.","This builds emotional value before discussing commercial value."]},
+      {letter:"R", title:"Reach the Right Audience", body:["Your goal is not maximum reach. Your goal is maximum relevance.","Build audiences from existing premium customers, high-value purchase history, repeat buyers, and referral customers.","Avoid broad luxury interests whenever possible."]},
+      {letter:"A", title:"Activate Conversations", body:["Luxury purchases rarely happen through impulse checkouts.","Every advertisement should create a conversation — WhatsApp, Instagram DM, consultation booking, appointment scheduling.","The conversation becomes the beginning of the sales journey."]},
+      {letter:"F", title:"Focus on Experience", body:["Don't advertise products. Advertise experiences.","Show store visits, consultations, behind-the-scenes craftsmanship, client journeys, delivery moments, installation, personal fittings.","Luxury clients remember experiences longer than specifications."]},
+      {letter:"T", title:"Track Business Metrics", body:["Never optimize for clicks, likes, or reach.","Instead measure qualified conversations, appointment bookings, consultation rate, revenue generated, and cost per qualified enquiry.","These metrics determine whether your campaigns are building a business or simply generating attention."]}
+    ]
+  },
+  toolkit:{
+    roadmap:{ heading:"Your 3-Day Execution Plan", items:[
+      {label:"Day 1 — Audit Your Current Ads", body:["Review your last ten advertisements. For each ad, ask:",
+        {list:["Does it lead with price or craftsmanship?","Does it educate or simply promote?","Does it create curiosity?","Does it invite conversation?","Would a premium buyer feel this brand is exclusive?"]},
+        "Remove anything that feels transactional."]},
+      {label:"Day 2 — Rebuild Your Creative Strategy", body:["Create content around:",
+        {list:["Making process","Materials","Founder philosophy","Client transformations","Design thinking","Quality standards","Behind-the-scenes moments"]},
+        "Every creative should answer: Why is this worth paying a premium for?"]},
+      {label:"Day 3 — Optimize Your Funnel", body:[
+        {callout:["Instead of: Advertisement → Website → Checkout","Build: Advertisement → WhatsApp → Consultation → Quotation → Follow-up → Sale"]},
+        "Luxury businesses sell through relationships — not shopping carts."]}
+    ]}
+  },
+  teamGuide:[
+    {role:"Founder", items:["Define brand positioning.","Approve messaging.","Review campaign quality weekly."]},
+    {role:"Marketing Team", items:["Produce craft-focused creatives.","Avoid discount-heavy messaging.","Test conversation-based CTAs."]},
+    {role:"Sales Team", items:["Respond to WhatsApp enquiries within 15 minutes.","Continue conversations naturally.","Avoid sending price lists immediately.","Qualify buyers before discussing pricing."], note:"Consistency between marketing and sales is essential."}
+  ],
+  selfAudit:{
+    items:["Our ads showcase craftsmanship more than pricing.","We understand who our highest-value customers are.","Our campaigns are optimized for conversations.","We track qualified enquiries rather than clicks.","Every enquiry is followed up consistently.","We know our cost per qualified conversation.","Our sales team receives marketing-qualified leads.","Our creatives reflect our premium positioning."],
+    bands:[{min:0,max:3,label:"Your advertising is likely attracting the wrong audience."},{min:4,max:6,label:"Your foundation exists, but the system needs refinement."},{min:7,max:8,label:"You have a strong luxury acquisition framework. Continue optimizing and measuring results."}]
+  },
+  quickWins:{ heading:"Five Quick Wins You Can Implement Today", items:[
+    "Pause any ad that leads with discounts instead of craftsmanship.",
+    "Replace \"Shop Now\" CTAs with conversation-driven CTAs such as \"Book a Consultation\" or \"Message Us on WhatsApp.\"",
+    "Review your last 20 enquiries and identify which source generated the highest-value customers.",
+    "Create one behind-the-scenes video showing your making process.",
+    "Measure cost per qualified conversation instead of cost per click for your next campaign."
+  ]},
+  cta:{ heading:"Need Help Building This for Your Business?",
+    intro:["You've now learned why luxury ads fail when they're built like D2C campaigns and how to reposition your advertising around craftsmanship, conversations, and qualified buyers.","If you'd like a second opinion on your current campaigns, we'd be happy to review them."],
+    box:"Click the WhatsApp button below and our team will help you identify where your advertising is attracting the wrong audience — and what you can change to generate more qualified conversations."
+  }
+},
+{
+  id:"GP-002", slug:"value", framework:"VALUE",
+  title:"The Real Cost of Acquiring a Luxury Client (That Most Businesses Never Calculate)",
+  readTime:"8 Minutes", implementationTime:"2 Hours",
+  problem:{
+    heading:"The Problem",
+    intro:[
+      "Most luxury retail and bespoke businesses believe they know what it costs to acquire a customer.",
+      "In reality, they're usually looking at only one number — their advertising spend.",
+      "If you spent ₹1 lakh on Meta Ads and closed five clients, you might assume your customer acquisition cost is ₹20,000.",
+      "But that's only a fraction of the real investment.",
+      "Every consultation, every product sample, every follow-up call, every showroom visit, every designer's time, every sales executive's effort — all of these consume time and money before a customer finally purchases.",
+      "When these costs aren't measured, founders make decisions based on incomplete information.",
+      "That leads to two dangerous outcomes:",
+      {list:["Investing more in channels that appear profitable but aren't.","Cutting channels that seem expensive but actually generate the highest-value clients."]}
+    ],
+    symptomsHeading:"Common Symptoms",
+    symptoms:["Marketing budget keeps increasing but profits don't.","You know your ad spend but not your actual acquisition cost.","Every lead source is treated as equally profitable.","You don't know which channel deserves more investment.","Agencies report leads, but you measure revenue."],
+    thresholdText:null
+  },
+  why:{ heading:"Why This Happens", body:[
+    "Most luxury businesses grow through referrals, exhibitions, and walk-ins before they begin investing in marketing.",
+    "During that phase, customer acquisition feels \"free.\"",
+    "As the business expands, paid campaigns, consultants, sales teams, and operational costs become part of acquiring every new client.",
+    "However, the tracking system rarely evolves.",
+    "The founder continues measuring only advertising spend while ignoring the hidden costs that influence profitability.",
+    "Without a complete picture, every marketing decision becomes a guess rather than a business decision backed by data."
+  ]},
+  frameworkSection:{
+    heading:"The ZippyScale VALUE Framework",
+    intro:["To understand the true cost of acquiring a luxury client, use the VALUE Framework."],
+    letters:[
+      {letter:"V", title:"Verify Every Lead Source", body:["Never group all enquiries together.","Separate them by source: Instagram Ads, Google Search, Organic Instagram, Referrals, Architects, Interior Designers, Walk-ins, Existing Customers.","Every source behaves differently."]},
+      {letter:"A", title:"Add Every Acquisition Cost", body:["Include every expense involved in winning the client — not just advertising.","Meta or Google Ads, sales salaries (allocated), consultation hours, sample production, showroom demonstrations, follow-up calls, travel expenses, design revisions before confirmation.","If money or time was invested before the sale, it belongs in your acquisition cost."]},
+      {letter:"L", title:"Link Costs to Actual Sales", body:["Don't divide by enquiries. Don't divide by appointments.","Divide total acquisition cost by confirmed sales.","Only conversions generate revenue. Everything else is activity."]},
+      {letter:"U", title:"Understand Customer Value", body:["A ₹40,000 acquisition cost may be terrible for a ₹60,000 sale, or excellent for a ₹4 lakh bespoke project.","Every acquisition cost must be evaluated against Average Order Value (AOV), Gross Margin, Repeat Purchase Potential, and Referral Value.","Without context, CAC is meaningless."]},
+      {letter:"E", title:"Evaluate Every Month", body:["Customer acquisition isn't a one-time calculation — review it monthly.","Markets change. Campaigns change. Customer behavior changes.","Your decisions should evolve with them."]}
+    ]
+  },
+  toolkit:{
+    roadmap:{ heading:"Your 2-Hour Execution Roadmap", items:[
+      {label:"Step 1", body:["Create one spreadsheet with every lead source. Don't combine them. Track individually."]},
+      {label:"Step 2", body:["List every acquisition expense.", {list:["Advertising","Sales","Consultation","Sampling","Travel","Agency Fees","Everything."]}]},
+      {label:"Step 3", body:["Count actual confirmed sales from each source.","Ignore enquiries. Ignore clicks. Ignore impressions.","Revenue begins only after conversion."]},
+      {label:"Step 4", body:[{callout:["Calculate Your Real Acquisition Cost:","Real Acquisition Cost = Total Cost ÷ Confirmed Customers","Repeat this calculation for every individual source."]}]},
+      {label:"Step 5", body:["Compare each source against:", {list:["Revenue Generated","Average Order Value","Profit Margin","Repeat Business"]}, "Now you'll know where to invest more — and where to stop wasting money."]}
+    ]}
+  },
+  teamGuide:[
+    {role:"Founder", items:["Review acquisition costs every month.","Approve budgets based on profitability — not volume."]},
+    {role:"Marketing Team", items:["Track every enquiry source accurately.","Stop reporting only impressions and clicks.","Report qualified conversations and confirmed sales."]},
+    {role:"Sales Team", items:["Record:", ["Lead Source","Consultation Completed","Sale Closed","Order Value"].join(" · ")], note:"Without accurate data, marketing decisions become unreliable."}
+  ],
+  selfAudit:{
+    items:["Every lead has a clearly identified source.","We know how many clients came from each channel.","We include consultation costs in acquisition cost.","We include sampling costs.","We include sales effort.","We calculate acquisition cost using confirmed sales.","We compare acquisition cost against order value.","We review these numbers every month."],
+    bands:[{min:0,max:3,label:"You're making marketing decisions without financial visibility."},{min:4,max:6,label:"You have some tracking, but your numbers are incomplete."},{min:7,max:8,label:"Excellent. Your acquisition decisions are driven by business economics, not assumptions."}]
+  },
+  quickWins:{ heading:"Five Quick Wins You Can Implement Today", items:[
+    "Separate every lead source in your CRM or spreadsheet.",
+    "Stop reporting only lead numbers — track confirmed sales.",
+    "Add consultation and sampling costs to your acquisition calculations.",
+    "Review your last three months of acquisition costs by source.",
+    "Shift next month's marketing budget toward the highest-profit acquisition channel — not necessarily the cheapest."
+  ]},
+  cta:{ heading:"Need Help Building a Customer Acquisition Dashboard?",
+    intro:["Understanding acquisition cost is only the first step.","The real advantage comes when your CRM automatically tracks:"],
+    extra:{ heading:"Automated Tracking: Beyond Manual Spreadsheets",
+      intro:["Stop relying on manual tracking that consumes time and obscures your data. An automated CRM dashboard provides instant, real-time visibility into your business performance:"],
+      items:["End-to-End Journey Tracking: Map every lead from the initial touchpoint to final purchase.","Sales Conversion & Revenue: View actual closed deals and revenue, not just vanity lead counts.","Dynamic CAC & ROMI: Automatically calculate your true Cost Per Acquisition and Return on Marketing Investment.","Profit-Driven Decisions: Identify exactly which channels generate your most valuable clients."]
+    },
+    box:"If you'd like ZippyScale to build this system for your business, click the WhatsApp button below. We'll help you identify which channels generate your most profitable clients and where your marketing budget is creating the highest return."
+  }
+},
+{
+  id:"GP-003", slug:"reach", framework:"REACH",
+  title:"From Lucky Walk-ins to Predictable Leads",
+  subtitle:"Build a Lead Generation System That Doesn't Depend on Chance",
+  readTime:"10 Minutes", implementationTime:"7 Days",
+  problem:{
+    heading:"The Problem",
+    intro:[
+      "Most luxury retail and bespoke businesses don't actually have a lead generation system.",
+      "They have a lead arrival system.",
+      "Customers walk in. Someone refers them. An architect remembers their name. A previous client sends a friend. The business grows.",
+      "The founder believes: \"Our reputation brings business.\" And that's true. Until growth becomes a goal.",
+      "The moment you want to open another branch, enter another city, or increase monthly revenue, referrals and walk-ins alone are no longer enough.",
+      "Growth slows — not because your product is bad, but because your business was never designed to generate demand consistently."
+    ],
+    symptomsHeading:"Common Symptoms",
+    symptoms:["You don't know how many leads you'll receive next month.","Walk-ins fluctuate unpredictably.","Referrals happen, but nobody actively asks for them.","Your Instagram gets likes but very few enquiries.","You've never consistently tested paid marketing.","One slow month immediately affects revenue.","You cannot forecast future sales with confidence."],
+    thresholdText:"If three or more of these sound familiar, your business is dependent on luck rather than a repeatable acquisition system."
+  },
+  why:{ heading:"Why This Happens", body:[
+    "Luxury and bespoke businesses usually grow through reputation.",
+    "The first hundred customers rarely come from sophisticated marketing. They come from trust. Personal relationships. Word of mouth. Exceptional craftsmanship.",
+    "That's exactly how it should start.",
+    "The challenge is that founders often mistake this early success for a scalable system.",
+    "As the business grows, the market changes. New competitors emerge. Customer acquisition becomes more expensive. Expansion introduces new geographies where your reputation doesn't yet exist.",
+    "The business now needs a system that creates awareness before relationships can create trust.",
+    "Without that system, every expansion depends on hope rather than predictability."
+  ]},
+  frameworkSection:{
+    heading:"The ZippyScale REACH Framework",
+    intro:["To build a business that generates opportunities consistently, use the REACH Framework."],
+    letters:[
+      {letter:"R", title:"Request Referrals Systematically", body:["Don't wait for referrals. Ask for them.","Every satisfied client should receive a structured referral request after a successful delivery.","Track who referred, who was referred, referral conversion rate, and referral revenue.","Referrals are most powerful when they're intentional — not accidental."]},
+      {letter:"E", title:"Educate Through Content", body:["Luxury buyers research before they enquire.","Create content that answers: how products are made, why materials matter, what differentiates craftsmanship, what mistakes buyers should avoid.","Education builds authority long before the first conversation."]},
+      {letter:"A", title:"Activate Small Paid Campaigns", body:["Don't jump into large advertising budgets. Validate one acquisition channel first.","Measure cost per conversation, qualified enquiries, consultation bookings, and sales conversions.","Scale only after proving profitability."]},
+      {letter:"C", title:"Create Multiple Lead Sources", body:["Never depend on one source.","Build a balanced acquisition portfolio: referrals, organic Instagram, Google Search, Meta Ads, architects, interior designers, existing clients, walk-ins, partnerships.","The stronger the mix, the lower the risk."]},
+      {letter:"H", title:"Health Check Every Month", body:["Review your lead sources monthly.","Ask: which channel generated the highest revenue? Which generated the highest-quality clients? Which source is declining? Which deserves more investment?","Lead generation isn't a campaign. It's a business system."]}
+    ]
+  },
+  toolkit:{
+    roadmap:{ heading:"Your 7-Day Execution Roadmap", items:[
+      {label:"Day 1 — Audit Current Lead Sources", body:["List every enquiry from the last three months. Categorize them by source. Calculate the percentage contribution of each."]},
+      {label:"Day 2 — Build Your Referral Process", body:["Write one referral request. Create a follow-up message. Assign responsibility for asking every satisfied client. Begin tracking referral performance."]},
+      {label:"Day 3 — Launch Your Education Strategy", body:["Identify ten customer questions. Turn each into one educational post. Focus on teaching, not selling."]},
+      {label:"Day 4 — Test One Paid Channel", body:["Allocate a small budget. Choose one objective. Track conversations — not clicks.","Don't expand until you have enough data to make a confident decision."]},
+      {label:"Day 5 — Map Your Lead Sources", body:["Create a simple dashboard. Every lead should have a source. Every source should have measurable performance."]},
+      {label:"Day 6 — Review Team Responsibilities", body:["Define who creates content, who asks for referrals, who responds to enquiries, and who reviews performance.","Every lead source should have clear ownership."]},
+      {label:"Day 7 — Build Your Monthly Growth Dashboard", body:["Track:", {list:["Leads by source","Qualified enquiries","Conversion rate","Revenue generated","Cost per acquisition","Referral rate"]}, "What gets measured gets improved."]}
+    ]}
+  },
+  teamGuide:[
+    {role:"Founder", items:["Own the growth strategy.","Review lead source performance every month.","Approve marketing investments based on measurable outcomes."]},
+    {role:"Marketing Team", items:["Publish educational content consistently.","Track source-wise lead performance.","Run small acquisition experiments.","Report revenue, not vanity metrics."]},
+    {role:"Sales Team", items:["Record every enquiry source.","Ask for referrals after successful deliveries.","Respond to all new enquiries within a defined SLA.","Ensure every conversation is logged for future follow-up."]},
+    {role:"Management", items:["Review lead mix monthly.","No single lead source should account for more than 50% of the total pipeline.","A healthy business is diversified."]}
+  ],
+  selfAudit:{
+    items:["We know where every lead comes from.","We actively ask satisfied clients for referrals.","We have a documented referral process.","We consistently publish educational content.","We have tested at least one paid acquisition channel.","We measure lead quality by source.","We review lead performance every month.","No single source contributes more than 50% of our pipeline."],
+    bands:[{min:0,max:3,label:"Your lead generation depends heavily on luck and relationships."},{min:4,max:6,label:"You have a foundation, but your lead generation isn't yet predictable."},{min:7,max:8,label:"You've built a diversified acquisition engine capable of supporting sustainable growth and expansion."}]
+  },
+  quickWins:{ heading:"Five Quick Wins You Can Implement Today", items:[
+    "Ask your last five satisfied clients for one referral each.",
+    "Create a spreadsheet tracking every lead source separately.",
+    "Plan your next four educational posts around common customer questions.",
+    "Test one small paid campaign with a fixed budget and clear success metric.",
+    "Review your pipeline and identify if any one lead source contributes more than half of your enquiries."
+  ]},
+  cta:{ heading:"Need Help Building a Predictable Lead Engine?",
+    intro:["Generating leads consistently isn't about choosing between referrals, content, or paid advertising.","It's about designing a system where multiple channels work together to create a steady flow of qualified enquiries."],
+    box:"If you'd like ZippyScale to build a lead generation engine tailored to your business, click the WhatsApp button below. We'll review your current acquisition channels, identify where your pipeline is vulnerable, and help you build a predictable, scalable lead system that supports long-term growth."
+  }
+},
+{
+  id:"GP-004", slug:"filter", framework:"FILTER",
+  title:"Stop Giving Every Enquiry the Same Attention",
+  subtitle:"How Luxury Brands Protect Their Team's Time Without Losing Genuine Buyers",
+  readTime:"10 Minutes", implementationTime:"2–3 Days",
+  problem:{
+    heading:"1. The Problem",
+    intro:[
+      "Most luxury retail and bespoke businesses unknowingly reward the wrong enquiries.",
+      "The first person to message often receives the first consultation. The loudest customer gets the quickest response. The founder steps into conversations simply because someone asked for a meeting.",
+      "Over time, this creates an invisible cost.",
+      "Your highest-skilled people spend their time educating people who may never buy, while serious buyers wait for attention.",
+      "As enquiry volume increases, your team becomes the bottleneck — not your product.",
+      "This isn't because your team is inefficient. It's because every enquiry enters your business with exactly the same priority."
+    ],
+    symptomsHeading:"Common Symptoms",
+    symptoms:["Every enquiry gets a full consultation, regardless of buying intent.","Sales executives spend hours answering questions that never convert.","Founders still join first meetings for basic enquiries.","Free samples, quotations, or design revisions are provided before commitment.","Serious buyers wait because calendars are full.","No one can clearly explain why one enquiry was prioritised over another."],
+    thresholdText:null,
+    businessImpact:{
+      heading:"Business Impact",
+      intro:"No qualification system creates a chain reaction:",
+      chain:["More low-quality consultations","Less time for genuine buyers","Slower response times","Lower conversion rates","Founder dependency","Revenue leakage"],
+      closing:"The problem isn't that you're receiving too many enquiries. The problem is that every enquiry costs the same amount of team time."
+    }
+  },
+  why:{ heading:"2. Why This Happens", body:[
+    "Most luxury businesses begin with one founder. That founder personally speaks to every customer. Every enquiry matters. Every conversation feels valuable.",
+    "That mindset helps build the first phase of the business.",
+    "However, when the business grows, time becomes your most expensive asset.",
+    "The challenge is that the process rarely evolves. The team continues treating every enquiry equally because no qualification system was ever designed.",
+    "Eventually, the founder becomes the default escalation point — not because they're needed, but because the business lacks a structured decision-making process.",
+    "This isn't a people problem. It's a systems problem."
+  ]},
+  frameworkSection:{
+    heading:"3. The ZippyScale FILTER Framework",
+    intro:["The FILTER Framework helps your business direct the right amount of attention to the right enquiries, ensuring premium customer experience while protecting your team's time."],
+    letters:[
+      {letter:"F", title:"Frame the Right Questions", body:["Before offering a consultation, gather essential context: product/service interest, expected timeline, approximate investment range, who's deciding, new or ongoing project.","These questions create clarity for your team and help the customer feel understood from the very beginning."]},
+      {letter:"I", title:"Identify Buying Signals", body:["Look for: asking about process or craftsmanship, discussing timelines or deadlines, seeking customization details, showing urgency.","Repeated price comparisons or vague \"just looking\" conversations may indicate early-stage research.","The objective is not to dismiss these enquiries — but to assign the right level of follow-up."]},
+      {letter:"L", title:"Limit Free Access", body:["Offer a meaningful first consultation, but set boundaries for unlimited design revisions, multiple free samples, repeated quotation revisions, and extended strategy discussions before commitment.","Clear boundaries protect both your team's time and the perceived value of your expertise."]},
+      {letter:"T", title:"Track Every Enquiry", body:["Classify consistently using a three-level model: Hot (ready to move forward near-term), Warm (interested, needs nurturing), Cold (early-stage research, low intent).","Once categorized, each enquiry should have an owner, a next action, a follow-up date, and a priority level."]},
+      {letter:"E", title:"Escalate Qualified Leads", body:["Not every enquiry needs the founder. Hot goes to Founder / Senior Sales, Warm to Sales Consultant, Cold to automated nurturing and periodic follow-up.","This ensures founder involvement is reserved for opportunities where it creates the greatest value."]},
+      {letter:"R", title:"Review the System Monthly", body:["Qualification is never a one-time exercise. Review conversion rate by lead score, average response time, founder involvement rate, consultation-to-sale ratio, false positives, and false negatives.","Continuous refinement keeps the system aligned with your business."]}
+    ]
+  },
+  toolkit:{
+    heading:"4. Implementation Toolkit",
+    templates:{ heading:"A. Ready-to-Use Templates", items:[
+      {title:"Luxury Qualification Form", matrix:{columns:["Field","Example"], rows:[["Customer Name","—"],["Product Category","—"],["Budget Range","—"],["Timeline","—"],["Decision Maker","—"],["Project Stage","—"],["Lead Source","—"],["Assigned Salesperson","—"],["Lead Score","Hot / Warm / Cold"],["Next Follow-up Date","—"]]}},
+      {title:"First Consultation Script", body:[{list:["Welcome the client and understand their project.","Ask the five qualification questions.","Confirm expectations and timeline.","Explain the consultation process.","Agree on the next step before ending the conversation."]}]}
+    ]},
+    checklistGroup:{ heading:"B. Operational Checklists", items:[
+      {title:"Before Every Consultation", items:["Qualification form completed.","Budget discussed.","Timeline confirmed.","Decision maker identified.","Product category recorded.","Lead score assigned.","Follow-up scheduled."]},
+      {title:"Weekly Sales Manager Checklist", items:["Review all Hot leads.","Check overdue follow-ups.","Audit lead scores for consistency.","Review founder escalations.","Identify consultations with no next action."]}
+    ]},
+    matrixGroup:{ heading:"C. Decision Matrices", items:[
+      {title:"Lead Scoring Matrix", columns:["Criteria","Hot","Warm","Cold"], rows:[["Timeline","<30 days","1–3 months",">3 months"],["Budget","Confirmed","Indicative","Unknown"],["Decision Maker","Present","Partial","Unknown"],["Engagement","High","Moderate","Low"]]},
+      {title:"Escalation Matrix", columns:["Lead Type","Owner","Response SLA"], rows:[["Hot","Founder / Senior Sales","Within 15 minutes"],["Warm","Sales Consultant","Within 2 hours"],["Cold","CRM / Automation","Within 24 hours"]]}
+    ]},
+    kpiTable:{ heading:"D. Dashboard & KPIs", columns:["KPI","Target","Review"], rows:[["Hot Lead Conversion Rate","Increasing","Weekly"],["Average Response Time","<30 mins","Daily"],["Consultation-to-Sale Ratio","Improving","Weekly"],["Founder Escalation Rate","Decreasing","Monthly"],["Average Lead Age","Decreasing","Weekly"],["Follow-up Compliance","Above 95%","Weekly"]]},
+    automation:{ heading:"E. Automation Opportunities",
+      intro:"This process becomes significantly stronger when supported by automation. Examples include:",
+      items:["Automatically assigning new enquiries based on territory or product category.","Applying Hot, Warm, or Cold tags using predefined qualification criteria.","Creating follow-up tasks immediately after a consultation.","Sending WhatsApp acknowledgements as soon as an enquiry is received.","Escalating Hot leads to senior team members through CRM notifications.","Triggering reminder sequences when no follow-up has occurred within the defined SLA.","Building dashboards that display lead quality, response time, and conversion trends in real time."],
+      closing:"Automation doesn't replace your sales team — it ensures consistency, reduces manual effort, and prevents qualified opportunities from being overlooked."
+    },
+    roadmap:{ heading:"5. Execution Roadmap", items:[
+      {label:"Day 1 — Standardize Qualification", body:[{list:["Roll out the Luxury Qualification Form.","Train the team on the five mandatory qualification questions.","Agree on one scoring standard for all enquiries."]}]},
+      {label:"Day 2 — Implement the FILTER System", body:[{list:["Introduce Hot, Warm, and Cold classifications.","Configure the Escalation Matrix.","Start tracking response SLAs.","Build the KPI dashboard."]}]},
+      {label:"Day 3 — Activate Automation", body:[{list:["Configure lead assignment.","Set up follow-up reminders.","Create WhatsApp acknowledgement messages.","Enable escalation notifications for Hot leads."]}]},
+      {label:"Week 1 Review", body:["Evaluate:", {list:["Was every enquiry scored?","Were response SLAs met?","Did founder involvement reduce?","Did the team follow the qualification checklist consistently?","Which qualification questions provided the strongest buying signals?"]}, "If the answer to these questions is \"yes,\" you've successfully transformed your enquiry handling from a reactive process into a structured qualification system."]}
+    ]}
+  }
+},
+{
+  id:"GP-005", slug:"signal", framework:"SIGNAL",
+  title:"Why Discount-Driven Marketing Quietly Kills Premium Positioning",
+  subtitle:"The SIGNAL Framework",
+  readTime:"10 Minutes", implementationTime:"5 Days",
+  problem:{
+    heading:"1. The Problem",
+    intro:[
+      "Most luxury retail and bespoke businesses treat a discount as a harmless, temporary fix for a slow month.",
+      "It isn't temporary.",
+      "Every discount changes how a customer perceives your brand — and that perception doesn't reset once the offer ends.",
+      "A client who bought during a sale now expects the next one. A client who saw your prices slashed once now questions your prices at full value.",
+      "Premium brands don't compete on lower prices. They compete on stronger signals."
+    ],
+    symptomsHeading:"Common Symptoms",
+    symptoms:["You've discounted more than once in the last six months.","Customers ask \"when's the next sale\" before asking about the product.","Your team hesitates or over-explains when stating a price.","Marketing leans on urgency and price cuts more than craftsmanship.","Repeat customers wait for offers instead of buying at full price.","You've never audited whether your touchpoints actually look and feel premium."],
+    thresholdText:"If three or more of these sound familiar, your discounting is quietly training your best customers to wait."
+  },
+  why:{ heading:"2. Why This Happens", body:[
+    "Discounting is the fastest lever any founder can pull. Sales are slow, so a sale goes out — and it works immediately.",
+    "That immediate result is exactly what makes it dangerous.",
+    "Nobody tracks the second-order cost: how many future full-price sales get delayed because a client is now conditioned to wait for the next offer.",
+    "Luxury and mass-market businesses are optimizing for different things. Mass-market wants volume. Luxury wants perceived scarcity. But the marketing playbooks — discount graphics, countdown stickers, \"hurry, offer ends soon\" — get borrowed across anyway.",
+    "The result is a brand that looks premium in the store, but sounds like a clearance outlet in its marketing."
+  ]},
+  frameworkSection:{
+    heading:"3. The ZippyScale SIGNAL Framework",
+    intro:["Premium brands don't compete on lower prices.","They compete on stronger signals.","The SIGNAL Framework helps you strengthen the signals that justify premium pricing before the customer ever asks, \"Can you reduce the price?\""],
+    letters:[
+      {letter:"S", title:"Set the Price Without Justification", body:["State your price with clarity and confidence.","Avoid explaining why it's expensive unless the customer genuinely seeks more context.","The more defensive you sound about pricing, the more uncertain the customer becomes. Confidence communicates value."]},
+      {letter:"I", title:"Invest in Perceived Value", body:["Premium pricing begins long before the product is discussed.","Ask yourself: Does your store feel premium? Does your packaging create anticipation? Does your website reflect craftsmanship? Does your consultation feel personalized?","Every interaction should reinforce the value of your offering."]},
+      {letter:"G", title:"Guard Exclusivity", body:["Scarcity creates desire.","Instead of relying on urgency through discounts, build exclusivity through limited collections, made-to-order production, appointment-only consultations, limited production runs, and personalization.","Exclusivity is far more powerful than urgency."]},
+      {letter:"N", title:"Narrate the Craft", body:["Customers don't simply buy products. They buy stories.","Show the materials, the artisans, the making process, the design philosophy, and the attention to detail.","Craftsmanship reduces price sensitivity."]},
+      {letter:"A", title:"Align Every Touchpoint", body:["Your brand is only as premium as its weakest interaction.","Review every customer touchpoint: Instagram, website, store, staff, packaging, quotations, WhatsApp messages, follow-up.","One inconsistent experience can weaken premium perception."]},
+      {letter:"L", title:"Lead Every Pricing Conversation with Confidence", body:["Your sales team should never apologise for the price.","Train them to pause after stating the price, allow the customer to respond, explain value only after understanding the customer's concern, and never offer discounts before being asked.","Confidence creates confidence."]}
+    ]
+  },
+  toolkit:{
+    heading:"4. Implementation Toolkit",
+    templates:{ heading:"A. Ready-to-Use Templates", items:[
+      {title:"Premium Pricing Language Guide", matrix:{columns:["Instead of","Use"], rows:[["❌ \"It's expensive because…\"","✅ \"This piece is priced at ₹2,40,000.\" Pause. Allow the client to process the information."]]}},
+      {title:"Premium Value Story Template", body:["Every product page should answer:", {list:["What inspired this piece?","What materials were selected?","Who crafted it?","What makes it different?","Why was it created?"]}]},
+      {title:"Brand Touchpoint Audit Sheet", matrix:{columns:["Touchpoint","Premium?","Needs Improvement"], rows:[["Store Experience","☐","☐"],["Packaging","☐","☐"],["Website","☐","☐"],["Instagram","☐","☐"],["WhatsApp Communication","☐","☐"],["Sales Consultation","☐","☐"],["Invoice & Quotations","☐","☐"],["Delivery Experience","☐","☐"]]}}
+    ]},
+    checklistGroup:{ heading:"B. Operational Checklists", items:[
+      {title:"Before Launching Any Discount Campaign", items:["Is the objective clearly defined?","Have non-price alternatives been considered?","Will this affect premium positioning?","Is the campaign time-bound?","Have loyal clients been considered?","Is there a post-campaign recovery plan?"]},
+      {title:"Weekly Brand Review Checklist", items:["Review customer objections.","Audit social media messaging.","Check pricing consistency.","Review sales conversations.","Audit store experience."]}
+    ]},
+    matrixGroup:{ heading:"C. Decision Matrices", items:[
+      {title:"Promotion Decision Matrix", columns:["Situation","Recommended Approach"], rows:[["Slow sales month","Strengthen storytelling before discounting"],["New collection launch","Create exclusivity and appointments"],["Clearing discontinued inventory","Limited, controlled offer with clear communication"],["VIP customer relationship","Personal value-add rather than public discount"],["Festival season","Experience-led campaigns instead of price-led messaging"]]},
+      {title:"Brand Consistency Matrix", columns:["Touchpoint","Owner","Review Frequency"], rows:[["Store Experience","Store Manager","Weekly"],["Social Media","Marketing","Weekly"],["Packaging","Operations","Monthly"],["Website","Marketing","Monthly"],["Sales Conversations","Sales Manager","Weekly"]]}
+    ]},
+    kpiTable:{ heading:"D. Dashboard & KPIs", columns:["KPI","Why It Matters","Review"], rows:[["Average Selling Price","Measures pricing discipline","Monthly"],["Gross Margin","Indicates profitability","Monthly"],["Discounted Orders (%)","Tracks dependency on offers","Monthly"],["Repeat Purchase Rate","Indicates brand loyalty","Quarterly"],["Average Order Value","Reflects premium positioning","Monthly"],["Customer Objections by Type","Reveals positioning gaps","Monthly"]]},
+    automation:{ heading:"E. Automation Opportunities",
+      intro:"Many pricing and brand consistency tasks can be systemized without reducing the luxury experience. Examples include:",
+      items:["CRM reminders before promotional campaigns for management approval.","Automated follow-up journeys that reinforce craftsmanship and brand stories instead of price.","WhatsApp sequences introducing materials, design philosophy, or production milestones after an enquiry.","Dashboard alerts when the percentage of discounted sales exceeds your internal threshold.","AI-assisted analysis of customer objections to identify recurring pricing concerns.","Centralized content calendars ensuring every channel communicates a consistent premium message."],
+      closing:"Automation should protect consistency — not replace human relationships."
+    },
+    roadmap:{ heading:"5. Execution Roadmap", items:[
+      {label:"Day 1 — Audit Your Brand Signals", body:[{list:["Complete the Brand Touchpoint Audit.","Review your last ten social media posts.","Identify where price is being emphasized over craftsmanship."]}]},
+      {label:"Day 2 — Standardize Pricing Communication", body:[{list:["Introduce the Premium Pricing Language Guide.","Train the sales team on confident pricing conversations.","Remove unnecessary price justification from existing scripts."]}]},
+      {label:"Day 3 — Strengthen Premium Perception", body:[{list:["Rewrite product stories using the Value Story Template.","Refresh one customer touchpoint that currently feels transactional.","Define clear rules for when discounts may and may not be used."]}]},
+      {label:"Day 4 — Measure Positioning", body:[{list:["Build the Positioning Dashboard.","Start tracking discount dependency, average selling price, and customer objections.","Review the Promotion Decision Matrix before approving future campaigns."]}]},
+      {label:"Day 5 — Build Long-Term Discipline", body:[{list:["Schedule a monthly brand review.","Assign owners for every customer touchpoint.","Treat premium positioning as a system — not a campaign."]}]}
+    ]}
+  },
+  finalThought:{ heading:"Final Thought", lines:[
+    "Luxury brands aren't remembered because they charged the least.",
+    "They're remembered because every interaction consistently reinforced their value.",
+    "The strongest premium businesses don't remove discounts from their strategy. They remove the need to rely on them."
+  ]}
+}
+];
+
+/* ============================================================
+   RENDER HELPERS
+   ============================================================ */
+function hexToRgb(hex){
+  hex = hex.replace("#","");
+  var n = parseInt(hex,16);
+  return [(n>>16)&255, (n>>8)&255, n&255];
+}
+/** color-mix() hangs html2canvas (used by the PDF export), so every accent
+ *  tint is pre-computed as plain rgba() custom properties instead. */
+function accentVars(hex){
+  var rgb = hexToRgb(hex);
+  var rgbStr = rgb.join(",");
+  return "--accent:"+hex+";--accent-08:rgba("+rgbStr+",.08);--accent-09:rgba("+rgbStr+",.09);--accent-45:rgba("+rgbStr+",.45);--accent-55:rgba("+rgbStr+",.55)";
+}
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+/** A RichBlock is a string (paragraph), {list:[...]}, or {callout:[...]}. */
+function renderRich(blocks){
+  if(!blocks) return "";
+  return blocks.map(function(b){
+    if (typeof b === "string") return "<p>"+esc(b)+"</p>";
+    if (b.list) return "<ul>"+b.list.map(function(li){return "<li>"+esc(li)+"</li>";}).join("")+"</ul>";
+    if (b.callout) return "<div class=\"callout\">"+b.callout.map(function(l){return "<p>"+esc(l)+"</p>";}).join("")+"</div>";
+    return "";
+  }).join("");
+}
+
+function renderMatrix(m){
+  var head = "<tr>"+m.columns.map(function(c){return "<th>"+esc(c)+"</th>";}).join("")+"</tr>";
+  var body = m.rows.map(function(r){return "<tr>"+r.map(function(c){return "<td>"+esc(c)+"</td>";}).join("")+"</tr>";}).join("");
+  return "<table>"+head+body+"</table>";
+}
+
+function renderRoadmap(rm){
+  var out = "<h2>"+esc(rm.heading)+"</h2>";
+  out += rm.items.map(function(it){
+    return "<div class=\"roadmap-item\"><div class=\"label\">"+esc(it.label)+"</div>"+renderRich(it.body)+"</div>";
+  }).join("");
+  return out;
+}
+
+function renderTeamGuide(guide, designation){
+  var wantRole = ROLE_FOR_DESIGNATION[designation];
+  var hasWantRole = guide.some(function(r){ return r.role === wantRole; });
+  // "Senior Employee" prefers Management but falls back to Sales Team if a
+  // given doc has no Management row (only GP-003 has one).
+  if (!hasWantRole && wantRole === "Management") wantRole = "Sales Team";
+  var ordered = guide.slice().sort(function(a,b){
+    var av = a.role === wantRole ? 0 : 1, bv = b.role === wantRole ? 0 : 1;
+    return av - bv;
+  });
+  var out = "<h2>Team Implementation Guide</h2>";
+  out += ordered.map(function(r){
+    var you = r.role === wantRole;
+    return "<div class=\"team-role"+(you?" you":"")+"\"><div class=\"role-name\">"+esc(r.role)+"</div><ul style=\"margin-top:8px\">"+
+      r.items.map(function(i){return "<li>"+esc(i)+"</li>";}).join("")+"</ul>"+
+      (r.note ? "<p style=\"margin-top:6px;font-size:13px;color:rgba(255,255,255,.5)\">"+esc(r.note)+"</p>" : "")+
+      "</div>";
+  }).join("");
+  return out;
+}
+
+var auditState = {}; // slug -> Set of checked indices, persisted to localStorage
+
+function loadAuditState(slug){
+  try{
+    var raw = localStorage.getItem("zs_mc_audit_"+slug);
+    auditState[slug] = raw ? new Set(JSON.parse(raw)) : new Set();
+  }catch(e){ auditState[slug] = new Set(); }
+}
+function saveAuditState(slug){
+  try{ localStorage.setItem("zs_mc_audit_"+slug, JSON.stringify(Array.from(auditState[slug]))); }catch(e){}
+}
+function scoreFor(bands, n){
+  for (var i=0;i<bands.length;i++){ if (n>=bands[i].min && n<=bands[i].max) return bands[i].label; }
+  return "";
+}
+
+function renderSelfAudit(audit, slug){
+  loadAuditState(slug);
+  var checked = auditState[slug];
+  var rows = audit.items.map(function(item, i){
+    var on = checked.has(i);
+    return "<div class=\"check-row"+(on?" on":"")+"\" data-i=\""+i+"\">"+
+      "<span class=\"check-box\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 12 12\" fill=\"none\"><path d=\"M2 6.2l2.6 2.6L10 3.2\" stroke=\"#0A0A0C\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span>"+
+      "<span>"+esc(item)+"</span></div>";
+  }).join("");
+  return "<h2>Self-Audit — click to check</h2>"+
+    "<div id=\"auditRows\">"+rows+"</div>"+
+    "<div class=\"score-bar\"><div class=\"score-num\" id=\"auditScore\">"+checked.size+"/"+audit.items.length+"</div>"+
+    "<div class=\"score-label\" id=\"auditLabel\">"+esc(scoreFor(audit.bands, checked.size))+"</div></div>";
+}
+
+function wireSelfAudit(section, audit, slug){
+  var rows = section.querySelectorAll(".check-row");
+  rows.forEach(function(row){
+    row.addEventListener("click", function(){
+      var i = parseInt(row.getAttribute("data-i"), 10);
+      var set = auditState[slug];
+      if (set.has(i)) set.delete(i); else set.add(i);
+      saveAuditState(slug);
+      row.classList.toggle("on");
+      var n = set.size;
+      section.querySelector("#auditScore").textContent = n+"/"+audit.items.length;
+      section.querySelector("#auditLabel").textContent = scoreFor(audit.bands, n);
+    });
+  });
+}
+
+/** Builds the full playbook DOM into #playbook. */
+function renderPlaybook(slug){
+  var pb = PLAYBOOKS.find(function(p){ return p.slug === slug; });
+  if (!pb) return;
+  var accent = ACCENTS[slug] || "#D5EB4B";
+  var profile = getProfile();
+  var designation = profile.designation;
+
+  var html = "";
+
+  // header
+  html += "<div class=\"pb-head\" style=\""+accentVars(accent)+"\">";
+  html += "<span class=\"pb-framework\">"+esc(pb.framework)+" Framework</span>";
+  html += "<h1>"+esc(pb.title)+"</h1>";
+  if (pb.subtitle) html += "<p class=\"sub\">"+esc(pb.subtitle)+"</p>";
+  html += "<p class=\"sub\" style=\"margin-top:14px;color:rgba(255,255,255,.75)\">Prepared for <strong>"+esc(profile.brand)+"</strong> — "+esc(profile.name)+" · "+esc(profile.designation)+"</p>";
+  html += "<div class=\"meta\"><span>"+esc(pb.id)+"</span><span>"+esc(pb.readTime)+" read</span><span>Implementation: "+esc(pb.implementationTime)+"</span></div>";
+  html += "<div class=\"pb-actions\"><button class=\"btn-ghost\" id=\"downloadBtn\">⬇ Download branded PDF</button></div>";
+  html += "</div>";
+
+  // problem
+  html += "<div class=\"section\" style=\""+accentVars(accent)+"\">";
+  html += "<h2>"+esc(pb.problem.heading)+"</h2>";
+  html += renderRich(pb.problem.intro);
+  if (pb.problem.symptomsHeading){
+    html += "<h3>"+esc(pb.problem.symptomsHeading)+"</h3><ul>"+pb.problem.symptoms.map(function(s){return "<li>"+esc(s)+"</li>";}).join("")+"</ul>";
+    if (pb.problem.thresholdText) html += "<div class=\"threshold\">"+esc(pb.problem.thresholdText)+"</div>";
+  }
+  if (pb.problem.businessImpact){
+    var bi = pb.problem.businessImpact;
+    html += "<h3>"+esc(bi.heading)+"</h3><p>"+esc(bi.intro)+"</p>";
+    html += "<div class=\"chain\">"+bi.chain.map(function(c,i){ return "<span class=\"link\">"+esc(c)+"</span>"+(i<bi.chain.length-1?"<span class=\"arrow\">↓</span>":""); }).join("")+"</div>";
+    html += "<p>"+esc(bi.closing)+"</p>";
+  }
+  html += "</div>";
+
+  // why
+  html += "<div class=\"section\" style=\""+accentVars(accent)+"\"><h2>"+esc(pb.why.heading)+"</h2>"+renderRich(pb.why.body)+"</div>";
+
+  // framework
+  html += "<div class=\"section\" style=\""+accentVars(accent)+"\"><h2>"+esc(pb.frameworkSection.heading)+"</h2>"+renderRich(pb.frameworkSection.intro)+
+    "<div class=\"letters\">"+pb.frameworkSection.letters.map(function(l){
+      return "<div class=\"letter-card\"><div class=\"letter-big\">"+esc(l.letter)+"</div><h4>"+esc(l.title)+"</h4>"+renderRich(l.body)+"</div>";
+    }).join("")+"</div></div>";
+
+  // ---- ordering: designation decides whether "your role" content leads ----
+  var leadWithTeam = designation === "Employee" || designation === "Marketer" || designation === "Senior Employee";
+
+  var toolkitHtml = "<div class=\"section\" style=\""+accentVars(accent)+"\">";
+  if (pb.toolkit.heading) toolkitHtml += "<h2 style=\"font-size:15px;color:#fff;text-transform:none;font-family:'Space Grotesk',sans-serif;letter-spacing:-0.01em;margin-bottom:18px\">"+esc(pb.toolkit.heading)+"</h2>";
+  if (pb.toolkit.templates){
+    toolkitHtml += "<h3>"+esc(pb.toolkit.templates.heading)+"</h3>";
+    toolkitHtml += pb.toolkit.templates.items.map(function(t){
+      return "<h3 style=\"font-size:14px;color:rgba(255,255,255,.85)\">"+esc(t.title)+"</h3>"+(t.matrix?renderMatrix(t.matrix):renderRich(t.body));
+    }).join("");
+  }
+  if (pb.toolkit.checklistGroup){
+    toolkitHtml += "<h3>"+esc(pb.toolkit.checklistGroup.heading)+"</h3>";
+    toolkitHtml += pb.toolkit.checklistGroup.items.map(function(c){
+      return "<h3 style=\"font-size:14px;color:rgba(255,255,255,.85)\">"+esc(c.title)+"</h3><ul>"+c.items.map(function(i){return "<li>"+esc(i)+"</li>";}).join("")+"</ul>";
+    }).join("");
+  }
+  if (pb.toolkit.matrixGroup){
+    toolkitHtml += "<h3>"+esc(pb.toolkit.matrixGroup.heading)+"</h3>";
+    toolkitHtml += pb.toolkit.matrixGroup.items.map(function(m){
+      return "<h3 style=\"font-size:14px;color:rgba(255,255,255,.85)\">"+esc(m.title)+"</h3>"+renderMatrix(m);
+    }).join("");
+  }
+  if (pb.toolkit.kpiTable){
+    toolkitHtml += "<h3>"+esc(pb.toolkit.kpiTable.heading)+"</h3>"+renderMatrix(pb.toolkit.kpiTable);
+  }
+  if (pb.toolkit.automation){
+    var au = pb.toolkit.automation;
+    toolkitHtml += "<h3>"+esc(au.heading)+"</h3><p>"+esc(au.intro)+"</p><ul>"+au.items.map(function(i){return "<li>"+esc(i)+"</li>";}).join("")+"</ul><p>"+esc(au.closing)+"</p>";
+  }
+  toolkitHtml += "</div>";
+  var roadmapHtml = "<div class=\"section\" style=\""+accentVars(accent)+"\">"+renderRoadmap(pb.toolkit.roadmap)+"</div>";
+
+  html += roadmapHtml;
+  html += toolkitHtml;
+
+  // team guide + self-audit — order flips for team-first designations
+  var teamHtml = pb.teamGuide ? "<div class=\"section\" style=\""+accentVars(accent)+"\">"+renderTeamGuide(pb.teamGuide, designation)+"</div>" : "";
+  var auditHtml = pb.selfAudit ? "<div class=\"section\" style=\""+accentVars(accent)+"\" id=\"auditSection\">"+renderSelfAudit(pb.selfAudit, slug)+"</div>" : "";
+
+  if (leadWithTeam){ html += teamHtml; html += auditHtml; }
+  else { html += auditHtml; html += teamHtml; }
+
+  // quick wins
+  if (pb.quickWins){
+    html += "<div class=\"section\" style=\""+accentVars(accent)+"\"><h2>"+esc(pb.quickWins.heading)+"</h2><ul>"+pb.quickWins.items.map(function(i){return "<li>"+esc(i)+"</li>";}).join("")+"</ul></div>";
+  }
+
+  // final thought
+  if (pb.finalThought){
+    html += "<div class=\"section\" style=\""+accentVars(accent)+"\"><h2>"+esc(pb.finalThought.heading)+"</h2><div class=\"final-thought\">"+pb.finalThought.lines.map(function(l){return "<p>"+esc(l)+"</p>";}).join("")+"</div></div>";
+  }
+
+  // cta
+  if (pb.cta){
+    html += "<div class=\"cta-box\" style=\""+accentVars(accent)+"\"><h2>"+esc(pb.cta.heading)+"</h2>"+renderRich(pb.cta.intro);
+    if (pb.cta.extra){
+      html += "<h3 style=\"color:#fff;font-size:14.5px;margin-top:14px\">"+esc(pb.cta.extra.heading)+"</h3>"+renderRich(pb.cta.extra.intro)+
+        "<ul style=\"color:rgba(255,255,255,.6)\">"+pb.cta.extra.items.map(function(i){return "<li>"+esc(i)+"</li>";}).join("")+"</ul>";
+    }
+    html += "<p style=\"color:rgba(255,255,255,.8);margin-top:10px\">"+esc(pb.cta.box)+"</p>";
+    html += "<a class=\"wa-btn\" href=\"https://wa.me/919989990419?text="+encodeURIComponent("Hi ZippyScale, I just went through the "+pb.framework+" playbook for "+profile.brand+" and want help implementing it.")+"\" target=\"_blank\" rel=\"noopener\">💬 Message us on WhatsApp</a>";
+    html += "</div>";
+  }
+
+  document.getElementById("playbook").innerHTML = html;
+
+  var downloadBtn = document.getElementById("downloadBtn");
+  if (downloadBtn) downloadBtn.addEventListener("click", function(){ downloadPdf(pb, profile); });
+
+  if (pb.selfAudit){
+    var auditSection = document.getElementById("auditSection");
+    if (auditSection) wireSelfAudit(auditSection, pb.selfAudit, slug);
+  }
+
+  logPlaybookView(pb);
+}
+
+function downloadPdf(pb, profile){
+  var toast = document.getElementById("toast");
+  toast.style.opacity = "1";
+  var el = document.getElementById("playbook");
+  var filename = (profile.brand||"Brand").replace(/[^a-z0-9]+/gi,"-") + "-" + pb.framework + "-Playbook.pdf";
+  html2pdf().set({
+    margin: 10,
+    filename: filename,
+    html2canvas: { scale: 2, backgroundColor: "#050507" },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+  }).from(el).save().then(function(){ toast.style.opacity = "0"; });
+}
+
+/* ============================================================
+   GATE + PROFILE
+   ============================================================ */
+var PROFILE_KEY = "zs_mc_profile";
+
+function getProfile(){
+  try{ return JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); }catch(e){ return null; }
+}
+function setProfile(p){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); }catch(e){} }
+function clearProfile(){ try{ localStorage.removeItem(PROFILE_KEY); }catch(e){} }
+
+function logLead(lead){
+  if(!SHEET_ENDPOINT) return;
+  try{
+    var f = document.createElement("form");
+    f.method = "POST"; f.action = SHEET_ENDPOINT; f.target = "leadsink"; f.style.display = "none";
+    Object.keys(lead).forEach(function(k){
+      var i = document.createElement("input");
+      i.type = "hidden"; i.name = k; i.value = (lead[k]==null?"":lead[k]);
+      f.appendChild(i);
+    });
+    document.body.appendChild(f);
+    f.submit();
+    setTimeout(function(){ if (f.parentNode) f.parentNode.removeChild(f); }, 3000);
+  }catch(e){}
+}
+
+var loggedViews = {};
+function logPlaybookView(pb){
+  if (loggedViews[pb.slug]) return; // once per playbook per session is enough signal
+  loggedViews[pb.slug] = true;
+  var profile = getProfile();
+  if (!profile) return;
+  logLead({
+    name: profile.name, mobile: profile.mobile, brand: profile.brand, designation: profile.designation,
+    event: "playbook_view", playbook: pb.id + " " + pb.framework, page: "/giveaways/luxury-retail-masterclass/"
+  });
+}
+
+function showHub(){
+  document.getElementById("gate").classList.add("hide");
+  document.getElementById("hub").classList.remove("hide");
+  var profile = getProfile();
+  document.getElementById("prBrand").textContent = profile.brand;
+  document.getElementById("prName").textContent = profile.name;
+  document.getElementById("prRole").textContent = profile.designation;
+
+  var select = document.getElementById("playbookSelect");
+  select.innerHTML = PLAYBOOKS.map(function(p){
+    return "<option value=\""+p.slug+"\">"+esc(p.framework)+" — "+esc(p.title)+"</option>";
+  }).join("");
+
+  var initial = (location.hash||"").replace("#","");
+  if (!PLAYBOOKS.some(function(p){return p.slug===initial;})) initial = PLAYBOOKS[0].slug;
+  select.value = initial;
+  renderMeta(initial);
+  renderPlaybook(initial);
+
+  select.addEventListener("change", function(){
+    location.hash = select.value;
+    renderMeta(select.value);
+    renderPlaybook(select.value);
+    window.scrollTo({top: document.getElementById("playbook").offsetTop - 20, behavior: "smooth"});
+  });
+
+  window.addEventListener("hashchange", function(){
+    var slug = (location.hash||"").replace("#","");
+    if (PLAYBOOKS.some(function(p){return p.slug===slug;}) && slug !== select.value){
+      select.value = slug; renderMeta(slug); renderPlaybook(slug);
+    }
+  });
+}
+
+function renderMeta(slug){
+  var pb = PLAYBOOKS.find(function(p){ return p.slug===slug; });
+  document.getElementById("pickerMeta").innerHTML =
+    "<span>"+esc(pb.id)+"</span><span>"+esc(pb.readTime)+" read</span><span>"+esc(pb.implementationTime)+" to implement</span>";
+}
+
+document.getElementById("gateForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  var name = document.getElementById("g-name").value.trim();
+  var rawMobile = document.getElementById("g-mobile").value.trim();
+  var mobile = rawMobile.replace(/[\s-]/g,"").replace(/^\+?91/,"");
+  var brand = document.getElementById("g-brand").value.trim();
+  var designation = document.getElementById("g-designation").value;
+  var err = document.getElementById("gateErr");
+
+  if (!name) return err.textContent = "Please enter your name.";
+  if (!/^[6-9]\d{9}$/.test(mobile)) return err.textContent = "Please enter a valid 10-digit mobile number.";
+  if (!brand) return err.textContent = "Please enter your brand or business name.";
+  if (!designation) return err.textContent = "Please select your role.";
+  err.textContent = "";
+
+  var profile = { name: name, mobile: mobile, brand: brand, designation: designation };
+  setProfile(profile);
+  logLead({ name: name, mobile: mobile, brand: brand, designation: designation, event: "gate_unlock", page: "/giveaways/luxury-retail-masterclass/" });
+
+  var w = window;
+  w.dataLayer = w.dataLayer || [];
+  w.dataLayer.push({ event: "masterclass_unlock", designation: designation });
+
+  showHub();
+});
+
+document.getElementById("notYou").addEventListener("click", function(){
+  clearProfile();
+  document.getElementById("hub").classList.add("hide");
+  document.getElementById("gate").classList.remove("hide");
+  document.getElementById("gateForm").reset();
+});
+
+/* framework chips on the gate, one per playbook */
+document.getElementById("frameworkChips").innerHTML = PLAYBOOKS.map(function(p){
+  return "<span class=\"chip\"><b>"+esc(p.framework)+"</b> "+esc(p.title.split(" ").slice(0,5).join(" "))+"…</span>";
+}).join("");
+
+/* signal-field particle backdrop, same technique used on /growth and the
+   restyled Retention OS — fixed hash instead of Math.random so it's stable */
+function buildField(id, count){
+  var el = document.getElementById(id);
+  if (!el) return;
+  var h = function(n){ var x = Math.sin(n*12.9898)*43758.5453; return x-Math.floor(x); };
+  for (var i=0;i<count;i++){
+    var s = document.createElement("span");
+    var lime = h(i+301) > 0.82;
+    if (lime) s.className = "lime";
+    s.style.left = (h(i+1)*100)+"%"; s.style.top = (h(i+101)*100)+"%";
+    var size = 1+Math.round(h(i+201)*2);
+    s.style.width = size+"px"; s.style.height = size+"px";
+    s.style.setProperty("--dx", ((h(i+401)-0.5)*26)+"px");
+    s.style.setProperty("--dy", (-6-h(i+501)*22)+"px");
+    s.style.setProperty("--dur", (9+h(i+601)*13)+"s");
+    s.style.opacity = lime ? 0.7 : 0.28;
+    el.appendChild(s);
+  }
+}
+buildField("field", 40);
+buildField("fieldHub", 30);
+
+/* boot */
+(function(){
+  var profile = getProfile();
+  if (profile) showHub();
+})();
+</script>
+</body></html>

@@ -49,8 +49,9 @@ export default function Giveaways() {
               lines={[[{ text: 'Free tools you' }], [{ text: 'can actually', as: 'lime' }], [{ text: 'use.', as: 'stroke-serif' }]]}
             />
             <p className="mt-7 max-w-2xl text-[1.05rem] leading-relaxed text-white/60 sm:text-lg">
-              Working models and calculators we built for our own clients. Put your numbers in,
-              get a plan back. Nothing gated behind a sales call.
+              Working models and calculators we built for our own clients. Most are free with no
+              form. One is a members' library — put your details in once and the whole
+              collection unlocks.
             </p>
             </div>
 

@@ -25,4 +25,13 @@ export const GIVEAWAYS: Giveaway[] = [
     emoji: '🩺',
     href: '/giveaways/clinic-retention-os/',
   },
+  {
+    slug: 'luxury-retail-masterclass',
+    title: 'Luxury Bespoke & Retail Master Class',
+    forWho: 'For luxury retail & bespoke brand owners',
+    blurb:
+      'Every growth playbook we’ve built for luxury and bespoke retail — CRAFT, VALUE, REACH, FILTER, SIGNAL and more as we publish them. One login, addressed to your brand, with a self-audit that scores as you go.',
+    emoji: '\u{1F48E}',
+    href: '/giveaways/luxury-retail-masterclass/',
+  },
 ]
