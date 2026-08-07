@@ -1,8 +1,21 @@
 // ══════════════════════════════════════════════
 // ZippyScale Luxury Retail Master Class — lead capture
 // Dedicated to public/giveaways/luxury-retail-masterclass/index.html.
-// Deliberately separate from Code.gs (the AI-automation quiz funnel) —
-// different GHL pipeline concerns, and this keeps that live funnel untouched.
+//
+// Writes into its OWN TAB ("Masterclass Leads") inside the SAME spreadsheet
+// Client Retention OS already uses ("Clinic Leads Organic",
+// 1XaZiIX492tLK5GVx6PnaQID1A8HI_A2H6UeSu1OYs9U) — per Sandy: one sheet file,
+// not a second one. The tab is created automatically on first write
+// (SpreadsheetApp.insertSheet), so nothing needs to be pre-made by hand.
+// Never writes into the "Leads" tab — that's the clinic funnel's data.
+//
+// This is still its OWN standalone Apps Script project + deployment,
+// completely separate from whatever script (if any) already answers for
+// Retention OS, and separate from apps-script/Code.gs (the AI-automation
+// quiz funnel). Reusing the SHEET as a write target carries zero risk to
+// either of those; reusing their SCRIPT would. That file is shared
+// "anyone with the link can edit", so any account deploying this can write
+// to it with no sharing step required.
 //
 // Receives a standard HTML form POST (application/x-www-form-urlencoded),
 // NOT JSON — the page's logLead() submits a hidden <form>, same mechanism
@@ -17,11 +30,13 @@ function getConfig() {
     GHL_PIT: props.getProperty('GHL_PIT') || 'pit-add82ec0-12f5-4e34-9e2f-e636dadce75c',
     GHL_LOCATION_ID: 'DSK3kgZgwWoIRnAYf9uC',
     GHL_BHARGAV_ID: 'DWsVEAIiC5tYCO6Judqn',
-    // "Luxury Retail Masterclass Leads" — created 2026-08-07, owned by sandy@zippyscale.com
-    SHEETS_ID: props.getProperty('MASTERCLASS_SHEETS_ID') || '1Sn86BWn-0ltHlRvG-eamOMsK04STTh99JVDshz0I7oI',
+    // "Clinic Leads Organic" — the SAME spreadsheet Client Retention OS
+    // writes into. We only ever touch our own tab within it (see TAB_NAME).
+    SHEETS_ID: props.getProperty('MASTERCLASS_SHEETS_ID') || '1XaZiIX492tLK5GVx6PnaQID1A8HI_A2H6UeSu1OYs9U',
   }
 }
 
+var TAB_NAME = 'Masterclass Leads'
 var HEADER = ['Timestamp', 'Name', 'Mobile', 'Brand', 'Designation', 'Event', 'Playbook', 'Page']
 
 function doPost(e) {
@@ -54,8 +69,11 @@ function doGet() {
 
 function appendRow(data, config) {
   var ss = SpreadsheetApp.openById(config.SHEETS_ID)
-  var sheet = ss.getSheets()[0]
-  if (sheet.getLastRow() === 0) sheet.appendRow(HEADER)
+  var sheet = ss.getSheetByName(TAB_NAME)
+  if (!sheet) {
+    sheet = ss.insertSheet(TAB_NAME)
+    sheet.appendRow(HEADER)
+  }
   sheet.appendRow([
     new Date().toISOString(),
     data.name || '', data.mobile || '', data.brand || '', data.designation || '',
