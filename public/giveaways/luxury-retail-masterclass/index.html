@@ -251,7 +251,8 @@ footer{border-top:1px solid var(--ink-border);padding:26px 0 46px;text-align:cen
 <footer>Luxury Bespoke &amp; Retail Master Class by ZippyScale · New playbooks added regularly · +91 99899 90419 · bhargav@zippyscale.com</footer>
 
 <div id="toast" style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#0B0B12;border:1px solid var(--ink-border);color:#fff;padding:12px 20px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:200">Downloading…</div>
-<iframe name="leadsink" id="leadsink" style="display:none" title="leadsink"></iframe>
+<!-- logLead() now creates its own disposable iframe per call (see the JS) so
+     concurrent submissions can't race each other; no static target needed. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script>
@@ -903,11 +904,33 @@ function getProfile(){
 function setProfile(p){ try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); }catch(e){} }
 function clearProfile(){ try{ localStorage.removeItem(PROFILE_KEY); }catch(e){} }
 
+var logLeadSeq = 0;
+/**
+ * Fire-and-forget lead post via a hidden form + hidden iframe (same
+ * mechanism as clinic-retention-os/index.html). Each call gets its OWN
+ * throwaway iframe rather than a single shared "leadsink" target.
+ *
+ * Bug this fixes: the gate-submit handler fires logLead(gate_unlock) and
+ * then, in the same synchronous tick, showHub() -> renderPlaybook() ->
+ * logPlaybookView() -> a second logLead(playbook_view) call. Two form
+ * submissions targeting the SAME iframe race — the second navigation
+ * cancels the first mid-flight, so the earlier POST never completes.
+ * Confirmed live: gate_unlock rows (and therefore the GHL upsert, which
+ * only runs on that event) were silently never reaching the sheet, while
+ * playbook_view rows landed fine because they happened to fire further
+ * apart. A dedicated iframe per call makes concurrent submissions
+ * impossible to collide, regardless of timing.
+ */
 function logLead(lead){
   if(!SHEET_ENDPOINT) return;
   try{
+    var target = "leadsink" + (logLeadSeq++);
+    var iframe = document.createElement("iframe");
+    iframe.name = target; iframe.style.display = "none";
+    document.body.appendChild(iframe);
+
     var f = document.createElement("form");
-    f.method = "POST"; f.action = SHEET_ENDPOINT; f.target = "leadsink"; f.style.display = "none";
+    f.method = "POST"; f.action = SHEET_ENDPOINT; f.target = target; f.style.display = "none";
     Object.keys(lead).forEach(function(k){
       var i = document.createElement("input");
       i.type = "hidden"; i.name = k; i.value = (lead[k]==null?"":lead[k]);
@@ -915,7 +938,10 @@ function logLead(lead){
     });
     document.body.appendChild(f);
     f.submit();
-    setTimeout(function(){ if (f.parentNode) f.parentNode.removeChild(f); }, 3000);
+    setTimeout(function(){
+      if (f.parentNode) f.parentNode.removeChild(f);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }, 4000);
   }catch(e){}
 }
 
