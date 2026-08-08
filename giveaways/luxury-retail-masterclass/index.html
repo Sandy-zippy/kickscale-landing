@@ -86,19 +86,10 @@ option{color:#111}
 .err{color:#FCA5A5;font-size:12.5px;margin-top:10px;min-height:1em}
 .privacy{font-size:11.5px;color:rgba(255,255,255,.35);margin-top:14px;text-align:center}
 
-/* ── hub ── */
-#hub{position:relative;min-height:100vh;padding:40px 0 100px}
-.hub-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;padding-top:32px}
-.prepared{font-family:"JetBrains Mono",monospace;font-size:11px;color:rgba(255,255,255,.4)}
-.prepared b{color:var(--lime);letter-spacing:.04em}
+/* ── playbook page (post-submit) ── */
+#playbookPage{position:relative;min-height:100vh;padding:40px 0 100px}
 .not-you{font-size:12px;color:rgba(255,255,255,.4);text-decoration:underline;cursor:pointer;background:none;border:0;font:inherit;padding:0}
 .not-you:hover{color:#fff}
-
-.picker{margin-top:30px;background:#0B0B12;border:1px solid var(--ink-border);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow-panel)}
-.picker label{margin-top:0}
-#playbookSelect{font-size:16px;padding:15px 16px;font-family:"Space Grotesk",sans-serif;font-weight:700}
-.picker-meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:10px;font-family:"JetBrains Mono",monospace;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.45)}
-.picker-meta span{border:1px solid var(--ink-border);border-radius:999px;padding:5px 11px}
 
 /* ── playbook content ── */
 #playbook{margin-top:36px}
@@ -179,7 +170,10 @@ footer{border-top:1px solid var(--ink-border);padding:26px 0 46px;text-align:cen
 <nav class="nav">
   <div class="wrap nav-row">
     <a class="brand" href="/"><img src="/logos/icon-64.png" alt=""/><span>ZippyScale</span></a>
-    <span class="nav-tag">Luxury Bespoke &amp; Retail Master Class</span>
+    <div style="display:flex;align-items:center;gap:16px">
+      <button class="not-you hide" id="notYou">Not you? Switch profile</button>
+      <span class="nav-tag">Luxury Bespoke &amp; Retail Master Class</span>
+    </div>
   </div>
 </nav>
 
@@ -188,20 +182,20 @@ footer{border-top:1px solid var(--ink-border);padding:26px 0 46px;text-align:cen
   <div class="field" id="field"></div>
   <div class="wrap gate-grid">
     <div class="gate-copy">
-      <p class="kicker">Members' library · growing every month</p>
+      <p class="kicker">Growing every month · new playbooks added regularly</p>
       <h1 class="display" style="margin-top:22px">
         THE <span class="lime">MASTER CLASS</span><br/>
         <span class="stroke">for luxury retail.</span>
       </h1>
-      <p class="lead">Every growth playbook we've built for luxury and bespoke retail brands —
-        one library, addressed to your business. Put your details in once and the whole
-        collection unlocks, with new playbooks added as we publish them.</p>
+      <p class="lead">Growth playbooks we've built for luxury and bespoke retail brands.
+        Pick the one you need, tell us a little about your business, and it's addressed
+        straight to you.</p>
       <div class="chips" id="frameworkChips"></div>
     </div>
 
     <div class="gate-card">
-      <h2>Unlock the library</h2>
-      <p class="hint">Takes 20 seconds. Your details stay with ZippyScale only.</p>
+      <h2>Get your playbook</h2>
+      <p class="hint">Takes 30 seconds. Your details stay with ZippyScale only.</p>
       <form id="gateForm">
         <label for="g-name">Your name</label>
         <input id="g-name" type="text" placeholder="Priya Sharma" autocomplete="name"/>
@@ -218,32 +212,32 @@ footer{border-top:1px solid var(--ink-border);padding:26px 0 46px;text-align:cen
           <option>Employee</option>
           <option>Marketer</option>
         </select>
-        <button type="submit" class="btn" id="gateSubmit">Unlock the master class →</button>
+        <label for="g-playbook">Which playbook do you want?</label>
+        <select id="g-playbook">
+          <option value="" selected disabled>Select a playbook…</option>
+        </select>
+        <label for="g-area">Area / city</label>
+        <input id="g-area" type="text" placeholder="e.g. Banjara Hills, Hyderabad"/>
+        <label for="g-revenue">Annual revenue</label>
+        <select id="g-revenue">
+          <option value="" selected disabled>Select a range…</option>
+          <option>Under ₹50L</option>
+          <option>₹50L – ₹1Cr</option>
+          <option>₹1Cr – ₹3Cr</option>
+          <option>Above ₹3Cr</option>
+        </select>
+        <button type="submit" class="btn" id="gateSubmit">Get my playbook →</button>
         <div class="err" id="gateErr"></div>
       </form>
-      <p class="privacy">We use your details only to personalise this library and follow up about it.</p>
+      <p class="privacy">We use your details only to personalise this playbook and follow up about it.</p>
     </div>
   </div>
 </section>
 
-<!-- ═══════════════ HUB ═══════════════ -->
-<section id="hub" class="hide hero-glow">
-  <div class="field" id="fieldHub"></div>
+<!-- ═══════════════ PLAYBOOK PAGE ═══════════════ -->
+<section id="playbookPage" class="hide hero-glow">
+  <div class="field" id="fieldPlaybookPage"></div>
   <div class="wrap">
-    <div class="hub-top">
-      <div>
-        <p class="kicker">Luxury Bespoke &amp; Retail Master Class</p>
-        <p class="prepared" style="margin-top:10px">Prepared for <b id="prBrand">—</b> · <span id="prName">—</span> · <span id="prRole">—</span></p>
-      </div>
-      <button class="not-you" id="notYou">Not you? Switch profile</button>
-    </div>
-
-    <div class="picker">
-      <label for="playbookSelect">Choose a playbook</label>
-      <select id="playbookSelect"></select>
-      <div class="picker-meta" id="pickerMeta"></div>
-    </div>
-
     <div id="playbook"></div>
   </div>
 </section>
@@ -260,7 +254,7 @@ footer{border-top:1px solid var(--ink-border);padding:26px 0 46px;text-align:cen
    CONFIG — paste the Apps Script Web App URL once it's deployed.
    Same fire-and-forget hidden-iframe pattern as clinic-retention-os.
    ============================================================ */
-const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbw08_g4a7nQyZIxxgsr8PFTUeOkGPso1lT1v0YY_yIfKTCH2TfiP08mTarS1dJWgOYpKg/exec";
+const SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbwQfu8CX5_nm2xaaWJTKkS38HJwQjscIju3WvI6_KNfpnJk7D0GmsA4KJyyQiWtHo1xgw/exec";
 
 const DESIGNATIONS = ["Owner","CEO","Senior Employee","Employee","Marketer"];
 const ACCENTS = { craft:"#D5EB4B", value:"#7DD3FC", reach:"#C4B5FD", filter:"#F9A8D4", signal:"#6EE7B7" };
@@ -876,8 +870,6 @@ function renderPlaybook(slug){
     var auditSection = document.getElementById("auditSection");
     if (auditSection) wireSelfAudit(auditSection, pb.selfAudit, slug);
   }
-
-  logPlaybookView(pb);
 }
 
 function downloadPdf(pb, profile){
@@ -910,16 +902,11 @@ var logLeadSeq = 0;
  * mechanism as clinic-retention-os/index.html). Each call gets its OWN
  * throwaway iframe rather than a single shared "leadsink" target.
  *
- * Bug this fixes: the gate-submit handler fires logLead(gate_unlock) and
- * then, in the same synchronous tick, showHub() -> renderPlaybook() ->
- * logPlaybookView() -> a second logLead(playbook_view) call. Two form
- * submissions targeting the SAME iframe race — the second navigation
- * cancels the first mid-flight, so the earlier POST never completes.
- * Confirmed live: gate_unlock rows (and therefore the GHL upsert, which
- * only runs on that event) were silently never reaching the sheet, while
- * playbook_view rows landed fine because they happened to fire further
- * apart. A dedicated iframe per call makes concurrent submissions
- * impossible to collide, regardless of timing.
+ * There's only ever one logLead() call per visit now (gate submit fires
+ * everything — name/mobile/brand/designation/area/revenue/playbook — in one
+ * payload), so the race this per-call-iframe design originally fixed can't
+ * recur here. Kept anyway: it's the correct pattern the moment a second
+ * call gets added later, and costs nothing when there's only one.
  */
 function logLead(lead){
   if(!SHEET_ENDPOINT) return;
@@ -945,56 +932,18 @@ function logLead(lead){
   }catch(e){}
 }
 
-var loggedViews = {};
-function logPlaybookView(pb){
-  if (loggedViews[pb.slug]) return; // once per playbook per session is enough signal
-  loggedViews[pb.slug] = true;
-  var profile = getProfile();
-  if (!profile) return;
-  logLead({
-    name: profile.name, mobile: profile.mobile, brand: profile.brand, designation: profile.designation,
-    event: "playbook_view", playbook: pb.id + " " + pb.framework, page: "/giveaways/luxury-retail-masterclass/"
-  });
-}
-
-function showHub(){
+/**
+ * Shows the chosen playbook directly — no hub, no browsing. The playbook is
+ * picked once, at the gate, and that's the only thing this ever renders for
+ * this visitor (until they use "not you?" and resubmit with a different
+ * choice). Replaces the old showHub()/dropdown/hash-sync machinery, which
+ * doesn't apply once there's nothing left to switch between.
+ */
+function showPlaybookPage(slug){
   document.getElementById("gate").classList.add("hide");
-  document.getElementById("hub").classList.remove("hide");
-  var profile = getProfile();
-  document.getElementById("prBrand").textContent = profile.brand;
-  document.getElementById("prName").textContent = profile.name;
-  document.getElementById("prRole").textContent = profile.designation;
-
-  var select = document.getElementById("playbookSelect");
-  select.innerHTML = PLAYBOOKS.map(function(p){
-    return "<option value=\""+p.slug+"\">"+esc(p.framework)+" — "+esc(p.title)+"</option>";
-  }).join("");
-
-  var initial = (location.hash||"").replace("#","");
-  if (!PLAYBOOKS.some(function(p){return p.slug===initial;})) initial = PLAYBOOKS[0].slug;
-  select.value = initial;
-  renderMeta(initial);
-  renderPlaybook(initial);
-
-  select.addEventListener("change", function(){
-    location.hash = select.value;
-    renderMeta(select.value);
-    renderPlaybook(select.value);
-    window.scrollTo({top: document.getElementById("playbook").offsetTop - 20, behavior: "smooth"});
-  });
-
-  window.addEventListener("hashchange", function(){
-    var slug = (location.hash||"").replace("#","");
-    if (PLAYBOOKS.some(function(p){return p.slug===slug;}) && slug !== select.value){
-      select.value = slug; renderMeta(slug); renderPlaybook(slug);
-    }
-  });
-}
-
-function renderMeta(slug){
-  var pb = PLAYBOOKS.find(function(p){ return p.slug===slug; });
-  document.getElementById("pickerMeta").innerHTML =
-    "<span>"+esc(pb.id)+"</span><span>"+esc(pb.readTime)+" read</span><span>"+esc(pb.implementationTime)+" to implement</span>";
+  document.getElementById("playbookPage").classList.remove("hide");
+  document.getElementById("notYou").classList.remove("hide");
+  renderPlaybook(slug);
 }
 
 document.getElementById("gateForm").addEventListener("submit", function(e){
@@ -1004,33 +953,58 @@ document.getElementById("gateForm").addEventListener("submit", function(e){
   var mobile = rawMobile.replace(/[\s-]/g,"").replace(/^\+?91/,"");
   var brand = document.getElementById("g-brand").value.trim();
   var designation = document.getElementById("g-designation").value;
+  var playbookSlug = document.getElementById("g-playbook").value;
+  var area = document.getElementById("g-area").value.trim();
+  var revenue = document.getElementById("g-revenue").value;
   var err = document.getElementById("gateErr");
 
   if (!name) return err.textContent = "Please enter your name.";
   if (!/^[6-9]\d{9}$/.test(mobile)) return err.textContent = "Please enter a valid 10-digit mobile number.";
   if (!brand) return err.textContent = "Please enter your brand or business name.";
   if (!designation) return err.textContent = "Please select your role.";
+  if (!playbookSlug) return err.textContent = "Please select which playbook you want.";
+  if (!area) return err.textContent = "Please enter your area / city.";
+  if (!revenue) return err.textContent = "Please select your annual revenue.";
   err.textContent = "";
 
-  var profile = { name: name, mobile: mobile, brand: brand, designation: designation };
+  var pb = PLAYBOOKS.find(function(p){ return p.slug === playbookSlug; });
+  var profile = {
+    name: name, mobile: mobile, brand: brand, designation: designation,
+    area: area, revenue: revenue, playbookSlug: playbookSlug,
+  };
   setProfile(profile);
-  logLead({ name: name, mobile: mobile, brand: brand, designation: designation, event: "gate_unlock", page: "/giveaways/luxury-retail-masterclass/" });
+
+  // One call, every field — the previous version fired this THEN a second
+  // logLead() for the initial playbook view, and the two raced into a
+  // shared iframe (see the note on logLead()). Collapsing to a single
+  // submission-time event removes that failure mode entirely rather than
+  // working around it.
+  logLead({
+    name: name, mobile: mobile, brand: brand, designation: designation,
+    area: area, revenue: revenue, playbook: pb ? (pb.id + " " + pb.framework) : playbookSlug,
+    event: "gate_unlock", page: "/giveaways/luxury-retail-masterclass/",
+  });
 
   var w = window;
   w.dataLayer = w.dataLayer || [];
-  w.dataLayer.push({ event: "masterclass_unlock", designation: designation });
+  w.dataLayer.push({ event: "masterclass_unlock", designation: designation, playbook: playbookSlug });
 
-  showHub();
+  showPlaybookPage(playbookSlug);
 });
 
 document.getElementById("notYou").addEventListener("click", function(){
   clearProfile();
-  document.getElementById("hub").classList.add("hide");
+  document.getElementById("playbookPage").classList.add("hide");
+  document.getElementById("notYou").classList.add("hide");
   document.getElementById("gate").classList.remove("hide");
   document.getElementById("gateForm").reset();
 });
 
-/* framework chips on the gate, one per playbook */
+/* playbook dropdown + framework chips, both driven off the same PLAYBOOKS list */
+document.getElementById("g-playbook").innerHTML += PLAYBOOKS.map(function(p){
+  return "<option value=\""+p.slug+"\">"+esc(p.framework)+" — "+esc(p.title)+"</option>";
+}).join("");
+
 document.getElementById("frameworkChips").innerHTML = PLAYBOOKS.map(function(p){
   return "<span class=\"chip\"><b>"+esc(p.framework)+"</b> "+esc(p.title.split(" ").slice(0,5).join(" "))+"…</span>";
 }).join("");
@@ -1056,12 +1030,14 @@ function buildField(id, count){
   }
 }
 buildField("field", 40);
-buildField("fieldHub", 30);
+buildField("fieldPlaybookPage", 30);
 
-/* boot */
+/* boot: a remembered visitor lands straight back on the SAME playbook they
+   originally chose — one-and-done, consistent with there being no browsing
+   after submit. "Not you?" is the only way to pick a different one. */
 (function(){
   var profile = getProfile();
-  if (profile) showHub();
+  if (profile && profile.playbookSlug) showPlaybookPage(profile.playbookSlug);
 })();
 </script>
 </body></html>
