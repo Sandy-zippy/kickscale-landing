@@ -3,7 +3,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Luxury Bespoke &amp; Retail Master Class — ZippyScale</title>
-<meta name="description" content="A growing library of ZippyScale growth playbooks for luxury retail and bespoke brands — frameworks, execution roadmaps and self-audit tools, addressed to your business."/>
+<meta name="description" content="A growing library of ZippyScale growth playbooks for luxury bespoke and retail brands — frameworks, execution roadmaps and self-audit tools, addressed to your business."/>
 <link rel="icon" href="/favicon.png" type="image/png"/>
 <style>
 /* ══════════════════════════════════════════════════════════════════
@@ -61,6 +61,14 @@ a{color:inherit}
 .field span.lime{background:var(--lime)}
 @keyframes zsdrift{0%,100%{transform:translate3d(0,0,0)}50%{transform:translate3d(var(--dx,6px),var(--dy,-16px),0)}}
 .hero-glow::before{content:"";position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse 80% 60% at 30% 34%,#16161F 0%,#0B0B12 46%,#050507 78%)}
+
+/* ── hero motif: retail line-icons drifting behind the gate copy ── */
+.motif{position:absolute;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
+.motif span{position:absolute;display:block;color:rgba(255,255,255,.14);animation:zsfloat var(--dur,17s) ease-in-out infinite}
+.motif span.lime{color:rgba(213,235,75,.3)}
+.motif svg{display:block}
+@keyframes zsfloat{0%,100%{transform:translate3d(0,0,0) rotate(0deg)}50%{transform:translate3d(var(--dx,10px),var(--dy,-14px),0) rotate(var(--rot,5deg))}}
+@media(max-width:900px){.motif{display:none}}
 
 /* ── gate ── */
 #gate{position:relative;min-height:100vh;display:flex;align-items:center;padding:96px 0 60px}
@@ -180,12 +188,32 @@ footer{border-top:1px solid var(--ink-border);padding:26px 0 46px;text-align:cen
 <!-- ═══════════════ GATE ═══════════════ -->
 <section id="gate" class="hero-glow">
   <div class="field" id="field"></div>
+  <div class="motif" aria-hidden="true">
+    <span style="top:7%;left:6%;--dx:12px;--dy:-16px;--rot:6deg;--dur:15s">
+      <svg viewBox="0 0 24 24" width="34" height="34"><path d="M4 8h16l-1.5 12a1 1 0 0 1-1 .9H6.5a1 1 0 0 1-1-.9L4 8Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M8 8V6a4 4 0 0 1 8 0v2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </span>
+    <span class="lime" style="top:11%;right:6%;--dx:-10px;--dy:14px;--rot:-5deg;--dur:19s">
+      <svg viewBox="0 0 24 24" width="28" height="28"><circle cx="12" cy="5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 6.6v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 8.8s-9 3.6-9 7.6a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1c0-4-9-7.6-9-7.6Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    </span>
+    <span style="top:44%;left:3%;--dx:8px;--dy:-12px;--rot:4deg;--dur:16s">
+      <svg viewBox="0 0 24 24" width="26" height="26"><path d="M11 4h6a1 1 0 0 1 1 1v6l-9 9-7-7 9-9Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="15" cy="8" r="1.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+    </span>
+    <span class="lime" style="top:38%;right:4%;--dx:-9px;--dy:-15px;--rot:-6deg;--dur:18s">
+      <svg viewBox="0 0 24 24" width="30" height="30"><path d="M5 9 9 4h6l4 5-7 11-7-11Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5 9h14M9 4l1.5 5L12 20l1.5-11L15 4" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>
+    </span>
+    <span style="bottom:10%;left:8%;--dx:11px;--dy:13px;--rot:5deg;--dur:20s">
+      <svg viewBox="0 0 24 24" width="34" height="34"><path d="M3 10 4 4h16l1 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M4 10h16v10H4V10Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 20v-6h6v6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+    </span>
+    <span style="bottom:16%;left:47%;--dx:-8px;--dy:-11px;--rot:-4deg;--dur:14s">
+      <svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="5" r="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 8v6M12 8l-4 3M12 8l4 3M12 14l-3 6M12 14l3 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </span>
+  </div>
   <div class="wrap gate-grid">
     <div class="gate-copy">
       <p class="kicker">Growing every month · new playbooks added regularly</p>
       <h1 class="display" style="margin-top:22px">
         THE <span class="lime">MASTER CLASS</span><br/>
-        <span class="stroke">for luxury retail.</span>
+        <span class="stroke">for luxury bespoke &amp; retail.</span>
       </h1>
       <p class="lead">Growth playbooks we've built for luxury and bespoke retail brands.
         Pick the one you need, tell us a little about your business, and it's addressed
@@ -216,9 +244,13 @@ footer{border-top:1px solid var(--ink-border);padding:26px 0 46px;text-align:cen
         <select id="g-playbook">
           <option value="" selected disabled>Select a playbook…</option>
         </select>
-        <label for="g-area">Area / city</label>
-        <input id="g-area" type="text" placeholder="e.g. Banjara Hills, Hyderabad"/>
-        <label for="g-revenue">Annual revenue</label>
+        <label for="g-state">State</label>
+        <input id="g-state" list="stateList" type="text" placeholder="e.g. Telangana" autocomplete="off"/>
+        <datalist id="stateList"></datalist>
+        <label for="g-city">City</label>
+        <input id="g-city" list="cityList" type="text" placeholder="e.g. Hyderabad" autocomplete="off"/>
+        <datalist id="cityList"></datalist>
+        <label for="g-revenue">Monthly revenue</label>
         <select id="g-revenue">
           <option value="" selected disabled>Select a range…</option>
           <option>Under ₹50L</option>
@@ -903,10 +935,10 @@ var logLeadSeq = 0;
  * throwaway iframe rather than a single shared "leadsink" target.
  *
  * There's only ever one logLead() call per visit now (gate submit fires
- * everything — name/mobile/brand/designation/area/revenue/playbook — in one
- * payload), so the race this per-call-iframe design originally fixed can't
- * recur here. Kept anyway: it's the correct pattern the moment a second
- * call gets added later, and costs nothing when there's only one.
+ * everything — name/mobile/brand/designation/state/city/revenue/playbook —
+ * in one payload), so the race this per-call-iframe design originally fixed
+ * can't recur here. Kept anyway: it's the correct pattern the moment a
+ * second call gets added later, and costs nothing when there's only one.
  */
 function logLead(lead){
   if(!SHEET_ENDPOINT) return;
@@ -954,7 +986,8 @@ document.getElementById("gateForm").addEventListener("submit", function(e){
   var brand = document.getElementById("g-brand").value.trim();
   var designation = document.getElementById("g-designation").value;
   var playbookSlug = document.getElementById("g-playbook").value;
-  var area = document.getElementById("g-area").value.trim();
+  var state = document.getElementById("g-state").value.trim();
+  var city = document.getElementById("g-city").value.trim();
   var revenue = document.getElementById("g-revenue").value;
   var err = document.getElementById("gateErr");
 
@@ -963,14 +996,15 @@ document.getElementById("gateForm").addEventListener("submit", function(e){
   if (!brand) return err.textContent = "Please enter your brand or business name.";
   if (!designation) return err.textContent = "Please select your role.";
   if (!playbookSlug) return err.textContent = "Please select which playbook you want.";
-  if (!area) return err.textContent = "Please enter your area / city.";
-  if (!revenue) return err.textContent = "Please select your annual revenue.";
+  if (!state) return err.textContent = "Please enter your state.";
+  if (!city) return err.textContent = "Please enter your city.";
+  if (!revenue) return err.textContent = "Please select your monthly revenue.";
   err.textContent = "";
 
   var pb = PLAYBOOKS.find(function(p){ return p.slug === playbookSlug; });
   var profile = {
     name: name, mobile: mobile, brand: brand, designation: designation,
-    area: area, revenue: revenue, playbookSlug: playbookSlug,
+    state: state, city: city, revenue: revenue, playbookSlug: playbookSlug,
   };
   setProfile(profile);
 
@@ -981,7 +1015,7 @@ document.getElementById("gateForm").addEventListener("submit", function(e){
   // working around it.
   logLead({
     name: name, mobile: mobile, brand: brand, designation: designation,
-    area: area, revenue: revenue, playbook: pb ? (pb.id + " " + pb.framework) : playbookSlug,
+    state: state, city: city, revenue: revenue, playbook: pb ? (pb.id + " " + pb.framework) : playbookSlug,
     event: "gate_unlock", page: "/giveaways/luxury-retail-masterclass/",
   });
 
@@ -1008,6 +1042,66 @@ document.getElementById("g-playbook").innerHTML += PLAYBOOKS.map(function(p){
 document.getElementById("frameworkChips").innerHTML = PLAYBOOKS.map(function(p){
   return "<span class=\"chip\"><b>"+esc(p.framework)+"</b> "+esc(p.title.split(" ").slice(0,5).join(" "))+"…</span>";
 }).join("");
+
+/* State + city: <input list> + <datalist> gives free typing AND a filtered
+   suggestion list natively, no custom combobox needed, and it still accepts
+   a value that isn't in the list (smaller towns we didn't enumerate).
+   States are the full, exact set of 36 (28 states + 8 UTs). Cities are a
+   curated set per state — capitals, major hubs, well-known tier-2 towns —
+   not an exhaustive list of every Indian town, which isn't practical to
+   hand-embed here; free typing covers the gap. */
+var STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"];
+
+var CITIES = {
+  "Andhra Pradesh": ["Visakhapatnam","Vijayawada","Guntur","Nellore","Kurnool","Kadapa","Kakinada","Tirupati","Rajahmundry","Anantapur","Eluru","Ongole","Chittoor","Srikakulam","Vizianagaram","Machilipatnam","Proddatur","Nandyal"],
+  "Arunachal Pradesh": ["Itanagar","Naharlagun","Pasighat","Tawang","Ziro","Bomdila","Along","Tezu","Changlang","Roing"],
+  "Assam": ["Guwahati","Silchar","Dibrugarh","Jorhat","Nagaon","Tinsukia","Tezpur","Bongaigaon","Karimganj","Sivasagar","Goalpara","Barpeta","North Lakhimpur","Diphu"],
+  "Bihar": ["Patna","Gaya","Bhagalpur","Muzaffarpur","Darbhanga","Purnia","Arrah","Begusarai","Katihar","Munger","Chapra","Bettiah","Motihari","Saharsa","Siwan","Hajipur"],
+  "Chhattisgarh": ["Raipur","Bhilai","Bilaspur","Korba","Durg","Rajnandgaon","Jagdalpur","Ambikapur","Raigarh","Dhamtari"],
+  "Goa": ["Panaji","Margao","Vasco da Gama","Mapusa","Ponda","Bicholim","Curchorem","Sanquelim"],
+  "Gujarat": ["Ahmedabad","Surat","Vadodara","Rajkot","Bhavnagar","Jamnagar","Junagadh","Gandhinagar","Anand","Nadiad","Mehsana","Bharuch","Navsari","Valsad","Porbandar","Morbi","Vapi"],
+  "Haryana": ["Gurugram","Faridabad","Panipat","Ambala","Karnal","Hisar","Rohtak","Sonipat","Yamunanagar","Panchkula","Bhiwani","Sirsa","Kurukshetra","Rewari"],
+  "Himachal Pradesh": ["Shimla","Manali","Dharamshala","Solan","Mandi","Kullu","Una","Bilaspur","Hamirpur","Chamba","Kangra"],
+  "Jharkhand": ["Ranchi","Jamshedpur","Dhanbad","Bokaro","Hazaribagh","Deoghar","Giridih","Ramgarh","Dumka","Phusro"],
+  "Karnataka": ["Bengaluru","Mysuru","Hubballi","Mangaluru","Belagavi","Davanagere","Ballari","Shivamogga","Tumakuru","Udupi","Hassan","Gulbarga","Bidar","Chikkamagaluru","Bagalkot","Raichur"],
+  "Kerala": ["Kochi","Thiruvananthapuram","Kozhikode","Thrissur","Kollam","Kannur","Alappuzha","Palakkad","Kottayam","Malappuram","Kasaragod","Idukki","Pathanamthitta","Wayanad"],
+  "Madhya Pradesh": ["Bhopal","Indore","Jabalpur","Gwalior","Ujjain","Sagar","Dewas","Satna","Ratlam","Rewa","Katni","Singrauli","Burhanpur","Khandwa","Chhindwara"],
+  "Maharashtra": ["Mumbai","Pune","Nagpur","Nashik","Aurangabad","Solapur","Kolhapur","Thane","Navi Mumbai","Amravati","Nanded","Sangli","Akola","Latur","Jalgaon","Satara","Ahmednagar"],
+  "Manipur": ["Imphal","Thoubal","Bishnupur","Churachandpur","Ukhrul","Senapati"],
+  "Meghalaya": ["Shillong","Tura","Jowai","Nongstoin","Baghmara"],
+  "Mizoram": ["Aizawl","Lunglei","Champhai","Serchhip","Kolasib"],
+  "Nagaland": ["Kohima","Dimapur","Mokokchung","Tuensang","Wokha","Zunheboto"],
+  "Odisha": ["Bhubaneswar","Cuttack","Rourkela","Berhampur","Sambalpur","Puri","Balasore","Bhadrak","Baripada","Angul","Jharsuguda"],
+  "Punjab": ["Ludhiana","Amritsar","Jalandhar","Patiala","Bathinda","Mohali","Pathankot","Hoshiarpur","Moga","Firozpur","Kapurthala","Sangrur"],
+  "Rajasthan": ["Jaipur","Jodhpur","Udaipur","Kota","Ajmer","Bikaner","Bhilwara","Alwar","Sikar","Bharatpur","Pali","Sri Ganganagar","Chittorgarh","Mount Abu"],
+  "Sikkim": ["Gangtok","Namchi","Gyalshing","Mangan","Rangpo"],
+  "Tamil Nadu": ["Chennai","Coimbatore","Madurai","Tiruchirappalli","Salem","Tirunelveli","Erode","Vellore","Thoothukudi","Thanjavur","Dindigul","Kanchipuram","Nagercoil","Karur","Ooty"],
+  "Telangana": ["Hyderabad","Warangal","Nizamabad","Karimnagar","Khammam","Ramagundam","Secunderabad","Mahbubnagar","Nalgonda","Adilabad","Siddipet"],
+  "Tripura": ["Agartala","Udaipur","Dharmanagar","Kailashahar","Belonia"],
+  "Uttar Pradesh": ["Lucknow","Kanpur","Ghaziabad","Agra","Varanasi","Meerut","Prayagraj","Noida","Bareilly","Aligarh","Moradabad","Saharanpur","Gorakhpur","Jhansi","Mathura","Firozabad","Muzaffarnagar","Ayodhya"],
+  "Uttarakhand": ["Dehradun","Haridwar","Nainital","Rishikesh","Roorkee","Haldwani","Rudrapur","Kashipur","Almora","Mussoorie"],
+  "West Bengal": ["Kolkata","Howrah","Durgapur","Asansol","Siliguri","Bardhaman","Malda","Kharagpur","Habra","Berhampore","Darjeeling","Krishnanagar"],
+  "Andaman and Nicobar Islands": ["Port Blair","Diglipur","Car Nicobar"],
+  "Chandigarh": ["Chandigarh"],
+  "Dadra and Nagar Haveli and Daman and Diu": ["Silvassa","Daman","Diu"],
+  "Delhi": ["New Delhi","Dwarka","Rohini","Saket","Karol Bagh","Connaught Place","Janakpuri","Pitampura"],
+  "Jammu and Kashmir": ["Srinagar","Jammu","Anantnag","Baramulla","Udhampur","Kathua","Sopore"],
+  "Ladakh": ["Leh","Kargil"],
+  "Lakshadweep": ["Kavaratti","Agatti","Minicoy"],
+  "Puducherry": ["Puducherry","Karaikal","Mahe","Yanam"],
+};
+var ALL_CITIES = Object.keys(CITIES).reduce(function(acc,k){ return acc.concat(CITIES[k]); }, []);
+
+function populateDatalist(id, arr){
+  document.getElementById(id).innerHTML = arr.map(function(v){ return "<option value=\""+esc(v)+"\"></option>"; }).join("");
+}
+populateDatalist("stateList", STATES);
+populateDatalist("cityList", ALL_CITIES);
+
+document.getElementById("g-state").addEventListener("input", function(){
+  var cities = CITIES[this.value] || ALL_CITIES;
+  populateDatalist("cityList", cities);
+});
 
 /* signal-field particle backdrop, same technique used on /growth and the
    restyled Retention OS — fixed hash instead of Math.random so it's stable */

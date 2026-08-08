@@ -37,7 +37,7 @@ function getConfig() {
 }
 
 var TAB_NAME = 'Masterclass Leads'
-var HEADER = ['Timestamp', 'Name', 'Mobile', 'Brand', 'Designation', 'Area', 'Revenue', 'Playbook', 'Event', 'Page']
+var HEADER = ['Timestamp', 'Name', 'Mobile', 'Brand', 'Designation', 'State', 'City', 'Revenue', 'Playbook', 'Event', 'Page']
 
 function doPost(e) {
   try {
@@ -77,7 +77,7 @@ function appendRow(data, config) {
   sheet.appendRow([
     new Date().toISOString(),
     data.name || '', data.mobile || '', data.brand || '', data.designation || '',
-    data.area || '', data.revenue || '',
+    data.state || '', data.city || '', data.revenue || '',
     data.playbook || '', data.event || '', data.page || '',
   ])
   return { status: 'ok', row: sheet.getLastRow() }
@@ -96,12 +96,14 @@ function upsertGHLContact(data, config) {
   else if (phone.length === 12 && phone.indexOf('91') === 0) phone = '+' + phone
 
   var designationSlug = slugify(data.designation)
-  var areaSlug = slugify(data.area)
+  var stateSlug = slugify(data.state)
+  var citySlug = slugify(data.city)
   var revenueSlug = slugify(data.revenue)
   var playbookSlug = slugify(data.playbook)
   var tags = ['masterclass-lead', 'source-luxury-retail-masterclass']
   if (designationSlug) tags.push('designation-' + designationSlug)
-  if (areaSlug) tags.push('area-' + areaSlug)
+  if (stateSlug) tags.push('state-' + stateSlug)
+  if (citySlug) tags.push('city-' + citySlug)
   if (revenueSlug) tags.push('revenue-' + revenueSlug)
   if (playbookSlug) tags.push('playbook-' + playbookSlug)
 
