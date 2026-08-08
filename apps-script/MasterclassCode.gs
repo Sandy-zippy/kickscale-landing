@@ -37,7 +37,7 @@ function getConfig() {
 }
 
 var TAB_NAME = 'Masterclass Leads'
-var HEADER = ['Timestamp', 'Name', 'Mobile', 'Brand', 'Designation', 'Event', 'Playbook', 'Page']
+var HEADER = ['Timestamp', 'Name', 'Mobile', 'Brand', 'Designation', 'Area', 'Revenue', 'Playbook', 'Event', 'Page']
 
 function doPost(e) {
   try {
@@ -77,9 +77,16 @@ function appendRow(data, config) {
   sheet.appendRow([
     new Date().toISOString(),
     data.name || '', data.mobile || '', data.brand || '', data.designation || '',
-    data.event || '', data.playbook || '', data.page || '',
+    data.area || '', data.revenue || '',
+    data.playbook || '', data.event || '', data.page || '',
   ])
   return { status: 'ok', row: sheet.getLastRow() }
+}
+
+// Rupee sign and en-dashes show up in the revenue band text (e.g. "₹50L – ₹1Cr"),
+// so a plain whitespace/slash replace isn't enough to get a clean ASCII tag.
+function slugify(s) {
+  return (s || '').toLowerCase().replace(/₹/g, 'rs').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
 }
 
 function upsertGHLContact(data, config) {
@@ -88,9 +95,15 @@ function upsertGHLContact(data, config) {
   if (phone.length === 10) phone = '+91' + phone
   else if (phone.length === 12 && phone.indexOf('91') === 0) phone = '+' + phone
 
-  var designationSlug = (data.designation || '').toLowerCase().replace(/[\s\/]+/g, '-')
+  var designationSlug = slugify(data.designation)
+  var areaSlug = slugify(data.area)
+  var revenueSlug = slugify(data.revenue)
+  var playbookSlug = slugify(data.playbook)
   var tags = ['masterclass-lead', 'source-luxury-retail-masterclass']
   if (designationSlug) tags.push('designation-' + designationSlug)
+  if (areaSlug) tags.push('area-' + areaSlug)
+  if (revenueSlug) tags.push('revenue-' + revenueSlug)
+  if (playbookSlug) tags.push('playbook-' + playbookSlug)
 
   var contactPayload = {
     locationId: config.GHL_LOCATION_ID,
