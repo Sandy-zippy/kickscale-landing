@@ -70,6 +70,23 @@ a{color:inherit}
 @keyframes zsfloat{0%,100%{transform:translate3d(0,0,0) rotate(0deg)}50%{transform:translate3d(var(--dx,10px),var(--dy,-14px),0) rotate(var(--rot,5deg))}}
 @media(max-width:900px){.motif{display:none}}
 
+/* ── storefront showcase: the actual dynamic centerpiece — a shopfront
+   whose window display and caption cycle through luxury store categories,
+   with a customer walking past. One shared keyframe, each item offset by
+   a negative animation-delay so they play in sequence forever from load. ── */
+.showcase{width:min(260px,78%);margin-bottom:26px}
+.showcase-scene{position:relative}
+.showcase-frame{width:100%;height:auto;display:block;color:rgba(255,255,255,.5)}
+.showcase-icon{position:absolute;left:19.5%;top:46%;width:15%;aspect-ratio:1}
+.showcase-icon span,.showcase-caption span{position:absolute;inset:0;opacity:0;animation:zsscene 15s infinite}
+.showcase-icon svg{width:100%;height:100%;color:var(--lime)}
+.showcase-caption{margin-top:12px;height:15px;position:relative;font-family:"JetBrains Mono",monospace;font-size:10.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.showcase-caption b{color:var(--lime)}
+.showcase-walker{position:absolute;left:0;bottom:1%;width:20px;height:20px;color:rgba(255,255,255,.55);animation:zswalk 7s linear infinite}
+@keyframes zsscene{0%,100%{opacity:0}1.5%{opacity:1}16.5%{opacity:1}18%{opacity:0}}
+@keyframes zswalk{0%{transform:translate(-24px,0)}50%{transform:translate(118px,-2px)}100%{transform:translate(260px,0)}}
+@media(max-width:900px){.showcase{margin:0 auto 28px}}
+
 /* ── gate ── */
 #gate{position:relative;min-height:100vh;display:flex;align-items:center;padding:96px 0 60px}
 .gate-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
@@ -210,6 +227,38 @@ footer{border-top:1px solid var(--ink-border);padding:26px 0 46px;text-align:cen
   </div>
   <div class="wrap gate-grid">
     <div class="gate-copy">
+      <div class="showcase" aria-hidden="true">
+        <div class="showcase-scene">
+          <svg class="showcase-frame" viewBox="0 0 120 88">
+            <path d="M8 26 14 10h92l6 16" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M8 26h104" stroke="currentColor" stroke-width="2"/>
+            <path d="M8 26v6M28 26v6M48 26v6M68 26v6M88 26v6M108 26v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <rect x="14" y="32" width="92" height="46" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+            <rect x="50" y="52" width="20" height="26" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="66" cy="65" r="1.4" fill="currentColor" stroke="none"/>
+            <rect x="22" y="40" width="20" height="18" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <rect x="78" y="40" width="20" height="18" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M4 78h112" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          <div class="showcase-icon">
+            <span style="animation-delay:0s"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 6.6v2.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><path d="M12 8.8s-9 3.6-9 7.6a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1c0-4-9-7.6-9-7.6Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
+            <span style="animation-delay:-3s"><svg viewBox="0 0 24 24"><path d="M5 9 9 4h6l4 5-7 11-7-11Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M5 9h14M9 4l1.5 5L12 20l1.5-11L15 4" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg></span>
+            <span style="animation-delay:-6s"><svg viewBox="0 0 24 24"><path d="M3 17.5c0-1.6 1.2-2.8 2.8-3.2l6.7-1.7c1-2.1 3.1-3.6 5.5-3.6H20v6.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.5 14.3 9 12.8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></span>
+            <span style="animation-delay:-9s"><svg viewBox="0 0 24 24"><circle cx="12" cy="4.6" r="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M9.5 6.5h5l1 3-1.5.7 1.5 1.3-2.5 9h-3l-2.5-9 1.5-1.3-1.5-.7 1-3Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg></span>
+            <span style="animation-delay:-12s"><svg viewBox="0 0 24 24"><path d="M8 5h8l-1.5 5h-5L8 5Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 10v7" stroke="currentColor" stroke-width="1.3"/><path d="M8 20h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M9.3 17h5.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg></span>
+          </div>
+          <span class="showcase-walker">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 8v6M12 8l-4 3M12 8l4 3M12 14l-3 6M12 14l3 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+        <p class="showcase-caption">
+          <span style="animation-delay:0s">Now showing: <b>Clothing Boutique</b></span>
+          <span style="animation-delay:-3s">Now showing: <b>Jewelry House</b></span>
+          <span style="animation-delay:-6s">Now showing: <b>Footwear Atelier</b></span>
+          <span style="animation-delay:-9s">Now showing: <b>Bridal Couture</b></span>
+          <span style="animation-delay:-12s">Now showing: <b>Home &amp; D&eacute;cor</b></span>
+        </p>
+      </div>
       <p class="kicker">Growing every month · new playbooks added regularly</p>
       <h1 class="display" style="margin-top:22px">
         THE <span class="lime">MASTER CLASS</span><br/>
