@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root{
   --ink:#111111; --paper:#f5f5ef; --surface:#ffffff; --surface-2:#f0f0e8;
@@ -288,7 +288,7 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:20px;color:
     <nav>
       <button class="navbtn ghost" onclick="goHome()">← Home</button>
       <button class="navbtn" onclick="exportAnswers()">Export answers (JSON)</button>
-      <button class="navbtn" onclick="downloadPDF()">Download PDF</button>
+      <button class="navbtn" id="pdfBtn" onclick="downloadPDF()">Download PDF</button>
       <button class="navbtn ghost" onclick="logout()">Log out</button>
     </nav>
   </header>
@@ -926,58 +926,83 @@ function exportAnswers(){
   a.download='ego-premium-onboarding-answers.json'; a.click();
 }
 
-function downloadPDF(){
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const margin = 48;
-  const maxW = pageW - margin * 2;
-  let y = margin;
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 
-  function ensureSpace(h){ if (y + h > pageH - margin) { doc.addPage(); y = margin; } }
-  function rule(){ doc.setDrawColor(217,234,102); doc.setLineWidth(2); doc.line(margin, y, margin+50, y); y += 16; }
+const SECTION_ORDER = ['retail','wholesale','dash','call','conv'];
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(17,17,17);
-  doc.text('EGO Premium — CRM Onboarding Answers', margin, y); y += 22;
-  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(107,107,95);
-  doc.text('Zippyscale Client Portal · exported ' + new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}), margin, y);
-  y += 24;
+function buildExportContainer(){
+  const container = document.createElement('div');
+  container.id = 'pdf-export-root';
+  container.style.cssText = 'position:fixed;left:-99999px;top:0;width:760px;background:#fff;';
 
+  const cover = document.createElement('div');
+  cover.className = 'pdf-section';
+  cover.style.cssText = 'padding:60px 34px 40px;background:#fff;';
   let totalQ = 0, answeredQ = 0;
-  Object.keys(DATA.sections).forEach(k => {
-    DATA.sections[k].questions.forEach(q => { totalQ++; if (STATE[q.id]) answeredQ++; });
-  });
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(77,88,23);
-  doc.text(`${answeredQ} of ${totalQ} questions answered`, margin, y);
-  y += 26;
+  SECTION_ORDER.forEach(k => DATA.sections[k].questions.forEach(q => { totalQ++; if (STATE[q.id]) answeredQ++; }));
+  cover.innerHTML = `
+    <div class="eyebrow">Zippyscale Client Portal</div>
+    <h1 style="font-size:26px;max-width:520px">EGO Premium — CRM Build Architecture</h1>
+    <p style="color:var(--muted);font-size:13.5px;margin-top:10px">Full onboarding answers plus the complete build plan for every stage — generated ${new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}.</p>
+    <div class="pillrow"><span class="pill"><b>${answeredQ}</b> of ${totalQ} questions answered</span><span class="pill">5 sections</span></div>`;
+  container.appendChild(cover);
 
-  Object.keys(DATA.sections).forEach(key => {
+  SECTION_ORDER.forEach(key => {
     const S = DATA.sections[key];
-    ensureSpace(46);
-    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(17,17,17);
-    doc.text(S.title, margin, y); y += 16;
-    rule();
+    const sec = document.createElement('div');
+    sec.className = 'pdf-section';
+    sec.style.cssText = 'padding:30px 34px;background:#fff;';
 
-    S.questions.forEach(q => {
-      const answered = !!STATE[q.id];
-      const ans = answered ? STATE[q.id] : 'Not answered yet';
+    const qaHtml = S.questions.map(q => {
+      const ans = STATE[q.id];
+      return `<div class="q" style="page-break-inside:avoid">
+        <div class="q-top"><span class="q-id">${q.id}</span><span class="q-prompt">${escapeHtml(q.prompt)}</span></div>
+        ${q.help ? `<div class="q-help">${escapeHtml(q.help)}</div>` : ''}
+        <div style="margin-top:8px;font-size:13px;color:${ans ? '#2c2e26' : '#a8a89a'};white-space:pre-wrap">${ans ? escapeHtml(ans) : 'Not answered yet'}</div>
+      </div>`;
+    }).join('');
 
-      doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(17,17,17);
-      const qLines = doc.splitTextToSize(`${q.id}  ${q.prompt}`, maxW);
-      ensureSpace(qLines.length * 13 + 20);
-      doc.text(qLines, margin, y); y += qLines.length * 13 + 4;
+    const wfHtml = S.workflow.map((st, i) => `
+      <div class="step" style="page-break-inside:avoid">
+        <div class="step-rail"><div class="step-no">${String(i + 1).padStart(2, '0')}</div><div class="step-line"></div></div>
+        <div class="step-body"><h4>${st.h}</h4>${st.html}</div>
+      </div>`).join('');
 
-      doc.setFont('helvetica','normal'); doc.setFontSize(10);
-      doc.setTextColor(answered ? 45 : 160, answered ? 50 : 160, answered ? 38 : 160);
-      const aLines = doc.splitTextToSize(ans, maxW - 12);
-      ensureSpace(aLines.length * 12.5 + 14);
-      doc.text(aLines, margin + 12, y); y += aLines.length * 12.5 + 14;
-    });
-    y += 8;
+    sec.innerHTML = `
+      <div class="secbar" style="page-break-after:avoid"><div class="chip ${S.chip}"></div><div><h2>${S.title}</h2></div><span class="tag ${S.tagcls}">${S.tag}</span></div>
+      <p style="color:var(--muted);max-width:640px;margin:8px 0 22px;font-size:13.5px">${S.blurb}</p>
+      <h3 style="font-family:var(--dsp);font-size:16px;margin:0 0 14px;page-break-after:avoid">What we asked, and what we got back</h3>
+      ${qaHtml}
+      <h3 style="font-family:var(--dsp);font-size:16px;margin:28px 0 14px;page-break-after:avoid">How we're building it</h3>
+      ${wfHtml}`;
+    container.appendChild(sec);
   });
 
-  doc.save('EGO-Premium-CRM-Onboarding-Answers.pdf');
+  document.body.appendChild(container);
+  Object.keys(STATE).forEach(qid => { if (STATE[qid]) fillSlots(qid, STATE[qid]); });
+  return container;
+}
+
+async function downloadPDF(){
+  const btn = document.getElementById('pdfBtn');
+  const original = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Generating PDF…';
+  const container = buildExportContainer();
+  try {
+    await html2pdf().from(container).set({
+      margin: [28, 26, 28, 26],
+      filename: 'EGO-Premium-CRM-Build-Architecture.pdf',
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale: 2, useCORS: true, windowWidth: 760, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], before: '.pdf-section' },
+    }).save();
+  } finally {
+    container.remove();
+    btn.disabled = false; btn.textContent = original;
+  }
 }
 
 /* ================= PORTAL NAVIGATION ================= */
