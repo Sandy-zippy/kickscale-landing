@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --ink:#111111; --paper:#f5f5ef; --surface:#ffffff; --surface-2:#f0f0e8;
@@ -287,7 +288,7 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:20px;color:
     <nav>
       <button class="navbtn ghost" onclick="goHome()">← Home</button>
       <button class="navbtn" onclick="exportAnswers()">Export answers (JSON)</button>
-      <button class="navbtn" onclick="window.print()">Print / PDF</button>
+      <button class="navbtn" onclick="downloadPDF()">Download PDF</button>
       <button class="navbtn ghost" onclick="logout()">Log out</button>
     </nav>
   </header>
@@ -923,6 +924,60 @@ function exportAnswers(){
   const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='ego-premium-onboarding-answers.json'; a.click();
+}
+
+function downloadPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 48;
+  const maxW = pageW - margin * 2;
+  let y = margin;
+
+  function ensureSpace(h){ if (y + h > pageH - margin) { doc.addPage(); y = margin; } }
+  function rule(){ doc.setDrawColor(217,234,102); doc.setLineWidth(2); doc.line(margin, y, margin+50, y); y += 16; }
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(17,17,17);
+  doc.text('EGO Premium — CRM Onboarding Answers', margin, y); y += 22;
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(107,107,95);
+  doc.text('Zippyscale Client Portal · exported ' + new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}), margin, y);
+  y += 24;
+
+  let totalQ = 0, answeredQ = 0;
+  Object.keys(DATA.sections).forEach(k => {
+    DATA.sections[k].questions.forEach(q => { totalQ++; if (STATE[q.id]) answeredQ++; });
+  });
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(77,88,23);
+  doc.text(`${answeredQ} of ${totalQ} questions answered`, margin, y);
+  y += 26;
+
+  Object.keys(DATA.sections).forEach(key => {
+    const S = DATA.sections[key];
+    ensureSpace(46);
+    doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(17,17,17);
+    doc.text(S.title, margin, y); y += 16;
+    rule();
+
+    S.questions.forEach(q => {
+      const answered = !!STATE[q.id];
+      const ans = answered ? STATE[q.id] : 'Not answered yet';
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(10.5); doc.setTextColor(17,17,17);
+      const qLines = doc.splitTextToSize(`${q.id}  ${q.prompt}`, maxW);
+      ensureSpace(qLines.length * 13 + 20);
+      doc.text(qLines, margin, y); y += qLines.length * 13 + 4;
+
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.setTextColor(answered ? 45 : 160, answered ? 50 : 160, answered ? 38 : 160);
+      const aLines = doc.splitTextToSize(ans, maxW - 12);
+      ensureSpace(aLines.length * 12.5 + 14);
+      doc.text(aLines, margin + 12, y); y += aLines.length * 12.5 + 14;
+    });
+    y += 8;
+  });
+
+  doc.save('EGO-Premium-CRM-Onboarding-Answers.pdf');
 }
 
 /* ================= PORTAL NAVIGATION ================= */
