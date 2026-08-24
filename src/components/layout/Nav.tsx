@@ -182,6 +182,12 @@ export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz',
             Case Studies
           </a>
           <a
+            href="/client-login/"
+            className={`text-sm font-medium ${c.link} transition-colors`}
+          >
+            Client Login
+          </a>
+          <a
             href={ctaHref}
             className="inline-flex items-center rounded-lg bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
           >
@@ -270,6 +276,13 @@ export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz',
                 onClick={() => setMenuOpen(false)}
               >
                 Case Studies
+              </a>
+              <a
+                href="/client-login/"
+                className={`block w-full text-center rounded-lg border ${c.sheetCard} px-5 py-3 text-sm font-semibold transition-colors`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Client Login
               </a>
               <a
                 href={ctaHref}
