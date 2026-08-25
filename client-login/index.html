@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{
   --ink:#111111; --paper:#f5f5ef; --surface:#ffffff; --surface-2:#f0f0e8;
@@ -1057,96 +1057,411 @@ function exportAnswers(){
   a.download='ego-premium-onboarding-answers.json'; a.click();
 }
 
-function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
 const SECTION_ORDER = ['retail','wholesale','dash','call','conv'];
 
-function buildExportHTML(){
+/* ================= PDF ENGINE (hand-drawn with jsPDF -- no screenshotting) =================
+   Draws the whole document as real vector text/shapes, with an exact cursor and explicit
+   page-break checks before every block. This is deliberate: the previous html2canvas/html2pdf
+   approach screenshots the live page, which is fast to build but has no reliable way to know
+   where a block will land relative to a page edge -- that's what caused the blank pages and
+   duplicated/clipped content. Drawing it directly means WE decide, every time, so it can't happen. */
+
+const PDF_C = {
+  ink: [17,17,17], white: [255,255,255],
+  lime: [217,234,102], limeText: [58,66,17], limeLine: [166,185,62],
+  cream: [246,246,239], line: [226,226,216], muted: [107,107,95],
+  amberBg: [253,246,232], amberLine: [201,148,74], amberText: [122,79,20],
+  win: [217,234,102], winText: [58,66,17],
+  lost: [248,222,212], lostText: [153,64,32],
+  hold: [252,237,211], holdText: [140,92,36],
+};
+
+// jsPDF's built-in fonts use WinAnsi encoding: em/en-dash, curly quotes and the
+// middle dot render fine as-is, but arrows/rupee/sigma do not exist in it and
+// come out as garbage glyphs -- swap those for plain-ASCII equivalents.
+function pdfSafe(str){
+  return String(str)
+    .replace(/→/g, '->').replace(/←/g, '<-')
+    .replace(/₹/g, 'Rs ').replace(/Σ/g, 'Sum of ');
+}
+
+function extractBlocks(html){
+  const doc = new DOMParser().parseFromString(`<div id="root">${html}</div>`, 'text/html');
+  const root = doc.getElementById('root');
+  if (!root) return [];
+  // Fill every answer slot with its real STATE value (or a clean placeholder) BEFORE
+  // reading any text out -- the raw template markup only has the dashed "unfilled"
+  // placeholder baked in, so without this every slot would show that instead of
+  // the client's actual answer, which is the entire point of this document.
+  root.querySelectorAll('.slot').forEach(sp => {
+    const qid = sp.getAttribute('data-ref');
+    const val = STATE[qid];
+    sp.textContent = val ? val : 'Not yet confirmed';
+  });
+
+  const nodes = Array.from(root.children);
+  const blocks = [];
+  for (let i = 0; i < nodes.length; i++){
+    const el = nodes[i];
+    const cls = el.className || '';
+    if (el.tagName === 'DIV' && cls.includes('stageflow')){
+      const items = Array.from(el.querySelectorAll('.stg, .sarr')).map(s => ({
+        text: pdfSafe(s.textContent.trim()),
+        kind: s.classList.contains('sarr') ? 'arrow' : s.classList.contains('win') ? 'win' : s.classList.contains('lost') ? 'lost' : s.classList.contains('hold') ? 'hold' : 'normal',
+      }));
+      blocks.push({ type: 'stageflow', items });
+    } else if (el.tagName === 'DIV' && cls.includes('tblwrap')){
+      const table = el.querySelector('table');
+      const rows = table ? Array.from(table.querySelectorAll('tr')).map(tr => Array.from(tr.children).map(td => pdfSafe(td.textContent.trim()))) : [];
+      blocks.push({ type: 'table', headers: rows[0] || [], rows: rows.slice(1) });
+    } else if (el.tagName === 'DIV' && cls.includes('grouphdr')){
+      const title = pdfSafe(el.textContent.trim());
+      const next = nodes[i + 1];
+      let fields = [];
+      if (next && (next.className || '').includes('groupbox')){
+        fields = Array.from(next.querySelectorAll('.fld')).map(f => ({ text: pdfSafe(f.textContent.trim()), calc: f.classList.contains('calc') }));
+        i++;
+      }
+      blocks.push({ type: 'group', title, fields });
+    } else if (el.tagName === 'DIV' && cls.includes('callout')){
+      blocks.push({ type: 'callout', amber: cls.includes('amber'), text: pdfSafe(el.textContent.trim()) });
+    } else if (el.tagName === 'UL'){
+      blocks.push({ type: 'list', items: Array.from(el.querySelectorAll('li')).map(li => pdfSafe(li.textContent.trim())) });
+    } else if (el.tagName === 'DIV' && cls.includes('groupbox')){
+      // A .groupbox with no preceding .grouphdr (stands alone, no title)
+      const fields = Array.from(el.querySelectorAll('.fld')).map(f => ({ text: pdfSafe(f.textContent.trim()), calc: f.classList.contains('calc') }));
+      blocks.push({ type: 'group', title: '', fields });
+    } else if (el.tagName === 'P' && cls.includes('mini')){
+      const label = pdfSafe(el.textContent.trim());
+      const next = nodes[i + 1];
+      if (next && (next.className || '').includes('groupbox')){
+        const fields = Array.from(next.querySelectorAll('.fld')).map(f => ({ text: pdfSafe(f.textContent.trim()), calc: f.classList.contains('calc') }));
+        blocks.push({ type: 'group', title: label, fields });
+        i++;
+      } else if (next && next.tagName === 'P' && !(next.className || '').includes('mini')){
+        const value = pdfSafe(next.textContent.trim());
+        i++;
+        blocks.push({ type: 'label-value', label, value });
+      } else {
+        // Mini label sitting in front of something else (a table, a callout, ...) --
+        // it's a caption for that block, not an unanswered field. Don't consume `next`
+        // and don't claim "(no answer yet)" -- that block renders itself right after.
+        blocks.push({ type: 'caption', label });
+      }
+    } else {
+      const t = pdfSafe(el.textContent.trim());
+      if (t) blocks.push({ type: 'para', text: t });
+    }
+  }
+  return blocks;
+}
+
+function pdfEnsureSpace(st, h){
+  if (st.y + h > st.pageH - st.margin){ st.doc.addPage(); st.y = st.margin; }
+}
+function pdfWrapped(st, str, size, opts = {}){
+  const { bold = false, color = PDF_C.ink, indent = 0, gap = 1.34, spacingAfter = 6 } = opts;
+  st.doc.setFont('helvetica', bold ? 'bold' : 'normal');
+  st.doc.setFontSize(size);
+  const lines = st.doc.splitTextToSize(str, st.maxW - indent);
+  const lineH = size * gap;
+  pdfEnsureSpace(st, lines.length * lineH + spacingAfter);
+  st.doc.setTextColor(...color);
+  lines.forEach(line => { st.doc.text(line, st.margin + indent, st.y); st.y += lineH; });
+  st.y += spacingAfter;
+  return lines.length;
+}
+function pdfHeading(st, str, size, opts = {}){ pdfWrapped(st, str, size, { bold: true, spacingAfter: 8, ...opts }); }
+
+function pdfCoverPage(st, answeredQ, totalQ){
+  st.y = st.margin + 60;
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(9.5);
+  st.doc.setTextColor(...PDF_C.limeText);
+  st.doc.text('ZIPPYSCALE CLIENT PORTAL', st.margin, st.y);
+  st.y += 30;
+  pdfWrapped(st, 'EGO Premium — CRM Build Architecture', 25, { bold: true, spacingAfter: 10 });
+  pdfWrapped(st, `Full onboarding answers plus the complete build plan for every stage — generated ${new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}.`, 12, { color: PDF_C.muted, spacingAfter: 16 });
+
+  const chip1 = `${answeredQ} of ${totalQ} questions answered`, chip2 = '5 sections';
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(11);
+  let cx = st.margin;
+  [chip1, chip2].forEach(txt => {
+    const w = st.doc.getTextWidth(txt) + 24;
+    st.doc.setFillColor(...PDF_C.lime);
+    st.doc.roundedRect(cx, st.y, w, 24, 12, 12, 'F');
+    st.doc.setTextColor(...PDF_C.limeText);
+    st.doc.text(txt, cx + 12, st.y + 16);
+    cx += w + 10;
+  });
+  st.y += 50;
+
+  // A bold section index on the cover, since a plain title page is exactly the "empty page" complaint.
+  st.doc.setDrawColor(...PDF_C.line); st.doc.setLineWidth(0.75);
+  st.doc.line(st.margin, st.y, st.margin + st.maxW, st.y); st.y += 22;
+  pdfHeading(st, "WHAT'S INSIDE", 10.5, { color: PDF_C.muted, spacingAfter: 12 });
+  SECTION_ORDER.forEach((key, i) => {
+    const S = DATA.sections[key];
+    const rowH = 30;
+    pdfEnsureSpace(st, rowH + 4);
+    st.doc.setFillColor(...PDF_C.ink);
+    st.doc.circle(st.margin + 10, st.y + rowH/2 - 2, 10, 'F');
+    st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(10);
+    st.doc.setTextColor(...PDF_C.lime);
+    st.doc.text(String(i + 1), st.margin + 10, st.y + rowH/2 + 2, { align: 'center' });
+    st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(12.5);
+    st.doc.setTextColor(...PDF_C.ink);
+    st.doc.text(S.title, st.margin + 28, st.y + rowH/2 - 2);
+    st.doc.setFont('helvetica', 'normal'); st.doc.setFontSize(9.5);
+    st.doc.setTextColor(...PDF_C.muted);
+    st.doc.text(`${S.questions.length} questions · ${S.workflow.length} build steps`, st.margin + 28, st.y + rowH/2 + 11);
+    st.y += rowH;
+  });
+}
+
+function pdfSectionBanner(st, num, title, tag){
+  pdfEnsureSpace(st, 60);
+  const h = 46;
+  st.doc.setFillColor(...PDF_C.ink);
+  st.doc.rect(st.margin, st.y, st.maxW, h, 'F');
+  st.doc.setFillColor(...PDF_C.lime);
+  st.doc.circle(st.margin + 24, st.y + h/2, 13, 'F');
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(12);
+  st.doc.setTextColor(...PDF_C.limeText);
+  st.doc.text(String(num), st.margin + 24, st.y + h/2 + 4, { align: 'center' });
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(16);
+  st.doc.setTextColor(...PDF_C.white);
+  st.doc.text(title, st.margin + 48, st.y + h/2 + 5);
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(8.5);
+  st.doc.setTextColor(...PDF_C.lime);
+  st.doc.text(tag.toUpperCase(), st.margin + st.maxW - 10, st.y + h/2 + 3, { align: 'right' });
+  st.y += h + 16;
+}
+
+function pdfStepHeader(st, num, heading){
+  pdfEnsureSpace(st, 34);
+  st.doc.setFillColor(...PDF_C.ink);
+  st.doc.roundedRect(st.margin, st.y, 24, 20, 5, 5, 'F');
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(9.5);
+  st.doc.setTextColor(...PDF_C.lime);
+  st.doc.text(String(num).padStart(2, '0'), st.margin + 12, st.y + 13.5, { align: 'center' });
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(13);
+  st.doc.setTextColor(...PDF_C.ink);
+  st.doc.text(heading, st.margin + 32, st.y + 14.5);
+  st.y += 30;
+}
+
+function pdfQACard(st, qid, prompt, help, answer){
+  const innerW = st.maxW - 24;
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(10.5);
+  const promptLines = st.doc.splitTextToSize(prompt, innerW);
+  st.doc.setFont('helvetica', 'normal'); st.doc.setFontSize(9);
+  const helpLines = help ? st.doc.splitTextToSize(help, innerW) : [];
+  const answerText = answer || 'Not answered yet';
+  st.doc.setFontSize(10);
+  const answerLines = st.doc.splitTextToSize(answerText, innerW);
+
+  const padTop = 12, padBottom = 12, badgeH = 20, lineH1 = 13.5, lineH2 = 11.5, lineH3 = 13.5, gapA = 5, gapB = 8;
+  const innerH = badgeH + promptLines.length * lineH1 + (helpLines.length ? helpLines.length * lineH2 + gapA : 0) + gapB + answerLines.length * lineH3;
+  const boxH = padTop + innerH + padBottom;
+  pdfEnsureSpace(st, boxH + 10);
+
+  st.doc.setFillColor(...PDF_C.cream);
+  st.doc.setDrawColor(...PDF_C.line); st.doc.setLineWidth(0.75);
+  st.doc.roundedRect(st.margin, st.y, st.maxW, boxH, 6, 6, 'FD');
+  st.doc.setFillColor(...(answer ? PDF_C.lime : [235,235,225]));
+  st.doc.rect(st.margin, st.y, 4, boxH, 'F');
+
+  let iy = st.y + padTop + 10;
+  const qidW = st.doc.getTextWidth(qid) + 12;
+  st.doc.setFillColor(...PDF_C.lime);
+  st.doc.roundedRect(st.margin + 12, iy - 10, qidW, 15, 4, 4, 'F');
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(8.5);
+  st.doc.setTextColor(...PDF_C.limeText);
+  st.doc.text(qid, st.margin + 12 + qidW/2, iy, { align: 'center' });
+  iy += badgeH;
+
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(10.5);
+  st.doc.setTextColor(...PDF_C.ink);
+  promptLines.forEach(l => { st.doc.text(l, st.margin + 12, iy); iy += lineH1; });
+  if (helpLines.length){
+    st.doc.setFont('helvetica', 'normal'); st.doc.setFontSize(9); st.doc.setTextColor(...PDF_C.muted);
+    helpLines.forEach(l => { st.doc.text(l, st.margin + 12, iy); iy += lineH2; });
+    iy += gapA;
+  }
+  iy += gapB - lineH1;
+  st.doc.setFont('helvetica', answer ? 'normal' : 'italic'); st.doc.setFontSize(10);
+  st.doc.setTextColor(...(answer ? [40,42,34] : [166,166,150]));
+  answerLines.forEach(l => { st.doc.text(l, st.margin + 12, iy); iy += lineH3; });
+
+  st.y += boxH + 10;
+}
+
+function pdfChipFlow(st, chips){
+  const padX = 8, h = 18, gap = 6;
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(9);
+  let x = st.margin;
+  pdfEnsureSpace(st, h + 6);
+  chips.forEach(c => {
+    const w = Math.min(st.doc.getTextWidth(c.text) + padX * 2, st.maxW);
+    if (x + w > st.margin + st.maxW && x !== st.margin){ x = st.margin; st.y += h + 6; pdfEnsureSpace(st, h + 6); }
+    const fill = c.kind === 'win' ? PDF_C.win : c.kind === 'lost' ? PDF_C.lost : c.kind === 'hold' ? PDF_C.hold : c.calc ? PDF_C.lime : PDF_C.white;
+    const textColor = c.kind === 'win' ? PDF_C.winText : c.kind === 'lost' ? PDF_C.lostText : c.kind === 'hold' ? PDF_C.holdText : c.calc ? PDF_C.limeText : PDF_C.ink;
+    if (c.kind === 'arrow'){
+      st.doc.setTextColor(...PDF_C.muted);
+      st.doc.text(c.text, x, st.y + h/2 + 3);
+      x += st.doc.getTextWidth(c.text) + gap;
+      return;
+    }
+    st.doc.setFillColor(...fill); st.doc.setDrawColor(...PDF_C.line); st.doc.setLineWidth(0.6);
+    st.doc.roundedRect(x, st.y, w, h, 4, 4, fill === PDF_C.white ? 'FD' : 'F');
+    st.doc.setTextColor(...textColor);
+    st.doc.text(c.text, x + padX, st.y + h/2 + 3);
+    x += w + gap;
+  });
+  st.y += h + 10;
+}
+
+function pdfGroupBox(st, title, fields){
+  if (title){
+    pdfEnsureSpace(st, 30);
+    st.doc.setFillColor(...PDF_C.ink);
+    st.doc.rect(st.margin, st.y, st.maxW, 22, 'F');
+    st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(9);
+    st.doc.setTextColor(...PDF_C.white);
+    st.doc.text(title.toUpperCase(), st.margin + 10, st.y + 14.5);
+    st.y += 22 + 8;
+  }
+  pdfChipFlow(st, fields.map(f => ({ text: f.text, calc: f.calc })));
+}
+
+function pdfCallout(st, text, amber){
+  const bg = amber ? PDF_C.amberBg : PDF_C.cream, ln = amber ? PDF_C.amberLine : PDF_C.limeLine;
+  st.doc.setFont('helvetica', 'normal'); st.doc.setFontSize(9.5);
+  const lines = st.doc.splitTextToSize(text, st.maxW - 24);
+  const boxH = lines.length * 12.5 + 16;
+  pdfEnsureSpace(st, boxH + 8);
+  st.doc.setFillColor(...bg);
+  st.doc.roundedRect(st.margin, st.y, st.maxW, boxH, 5, 5, 'F');
+  st.doc.setFillColor(...ln);
+  st.doc.rect(st.margin, st.y, 3.5, boxH, 'F');
+  st.doc.setTextColor(...(amber ? PDF_C.amberText : [58,66,17]));
+  let iy = st.y + 15;
+  lines.forEach(l => { st.doc.text(l, st.margin + 14, iy); iy += 12.5; });
+  st.y += boxH + 8;
+}
+
+function pdfTable(st, headers, rows){
+  const colW = st.maxW / Math.max(headers.length, 1);
+  st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(8.5);
+  pdfEnsureSpace(st, 22);
+  st.doc.setFillColor(...PDF_C.ink);
+  st.doc.rect(st.margin, st.y, st.maxW, 20, 'F');
+  st.doc.setTextColor(...PDF_C.white);
+  headers.forEach((h, i) => st.doc.text(String(h).toUpperCase(), st.margin + i * colW + 8, st.y + 13.5));
+  st.y += 20;
+
+  st.doc.setFont('helvetica', 'normal'); st.doc.setFontSize(9);
+  rows.forEach((row, ri) => {
+    const cellLines = row.map(cell => st.doc.splitTextToSize(String(cell), colW - 16));
+    const rowH = Math.max(...cellLines.map(l => l.length), 1) * 12 + 10;
+    pdfEnsureSpace(st, rowH);
+    if (ri % 2 === 1){ st.doc.setFillColor(...PDF_C.cream); st.doc.rect(st.margin, st.y, st.maxW, rowH, 'F'); }
+    st.doc.setTextColor(...PDF_C.ink);
+    cellLines.forEach((lines, ci) => {
+      let cy = st.y + 12;
+      lines.forEach(l => { st.doc.text(l, st.margin + ci * colW + 8, cy); cy += 12; });
+    });
+    st.y += rowH;
+    st.doc.setDrawColor(...PDF_C.line); st.doc.setLineWidth(0.5);
+    st.doc.line(st.margin, st.y, st.margin + st.maxW, st.y);
+  });
+  st.y += 10;
+}
+
+function pdfLabelValue(st, label, value){
+  pdfWrapped(st, label.toUpperCase(), 8.5, { bold: true, color: PDF_C.muted, spacingAfter: 4 });
+  if (!value){ pdfWrapped(st, '(no answer yet)', 9.5, { color: [180,180,168], spacingAfter: 8 }); return; }
+  st.doc.setFont('helvetica', 'normal'); st.doc.setFontSize(9.5);
+  const lines = st.doc.splitTextToSize(value, st.maxW - 14);
+  const boxH = lines.length * 12.5 + 12;
+  pdfEnsureSpace(st, boxH + 8);
+  st.doc.setFillColor(...PDF_C.lime);
+  st.doc.roundedRect(st.margin, st.y, st.maxW, boxH, 4, 4, 'F');
+  st.doc.setTextColor(...PDF_C.limeText);
+  let iy = st.y + 14;
+  lines.forEach(l => { st.doc.text(l, st.margin + 10, iy); iy += 12.5; });
+  st.y += boxH + 8;
+}
+
+function pdfBulletList(st, items){
+  // Drawn as a real filled circle, not a text glyph -- Unicode bullet characters
+  // (●, etc.) aren't in jsPDF's default font encoding any more than arrows are.
+  st.doc.setFont('helvetica', 'normal'); st.doc.setFontSize(10);
+  items.forEach(item => {
+    const lines = st.doc.splitTextToSize(item, st.maxW - 16);
+    pdfEnsureSpace(st, lines.length * 13 + 4);
+    st.doc.setFillColor(...PDF_C.limeLine);
+    st.doc.circle(st.margin + 4, st.y - 3, 2, 'F');
+    st.doc.setTextColor(...[40,42,34]);
+    lines.forEach((l, idx) => { st.doc.text(l, st.margin + 14, st.y); st.y += 13; });
+    st.y += 2;
+  });
+  st.y += 4;
+}
+
+function renderWorkflowBlock(st, block){
+  if (block.type === 'para') pdfWrapped(st, block.text, 10, { color: [40,42,34] });
+  else if (block.type === 'stageflow') pdfChipFlow(st, block.items);
+  else if (block.type === 'label-value') pdfLabelValue(st, block.label, block.value);
+  else if (block.type === 'group') pdfGroupBox(st, block.title, block.fields);
+  else if (block.type === 'callout') pdfCallout(st, block.text, block.amber);
+  else if (block.type === 'table') pdfTable(st, block.headers, block.rows);
+  else if (block.type === 'list') pdfBulletList(st, block.items);
+  else if (block.type === 'caption') pdfWrapped(st, block.label.toUpperCase(), 8.5, { bold: true, color: PDF_C.muted, spacingAfter: 4 });
+}
+
+function buildPdf(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
+  const margin = 42;
+  const st = { doc, y: margin, pageW, pageH, margin, maxW: pageW - margin * 2 };
+
   let totalQ = 0, answeredQ = 0;
   SECTION_ORDER.forEach(k => DATA.sections[k].questions.forEach(q => { totalQ++; if (STATE[q.id]) answeredQ++; }));
+  pdfCoverPage(st, answeredQ, totalQ);
 
-  const cover = `<div class="pdf-cover" style="padding:10px 4px 30px">
-    <div class="eyebrow">Zippyscale Client Portal</div>
-    <h1 style="font-size:26px;max-width:520px">EGO Premium — CRM Build Architecture</h1>
-    <p style="color:var(--muted);font-size:13.5px;margin-top:10px">Full onboarding answers plus the complete build plan for every stage — generated ${new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}.</p>
-    <div class="pillrow"><span class="pill"><b>${answeredQ}</b> of ${totalQ} questions answered</span><span class="pill">5 sections</span></div>
-  </div>`;
-
-  const sections = SECTION_ORDER.map(key => {
+  SECTION_ORDER.forEach((key, si) => {
     const S = DATA.sections[key];
+    st.doc.addPage(); st.y = st.margin;
+    pdfSectionBanner(st, si + 1, pdfSafe(S.title), pdfSafe(S.tag));
+    pdfWrapped(st, pdfSafe(S.blurb), 10.5, { color: PDF_C.muted, spacingAfter: 14 });
+    pdfHeading(st, "WHAT WE ASKED, AND WHAT WE GOT BACK", 11);
+    S.questions.forEach(q => pdfQACard(st, q.id, pdfSafe(q.prompt), q.help ? pdfSafe(q.help) : '', STATE[q.id] ? pdfSafe(STATE[q.id]) : ''));
 
-    const qaHtml = S.questions.map(q => {
-      const ans = STATE[q.id];
-      return `<div class="q" style="page-break-inside:avoid">
-        <div class="q-top"><span class="q-id">${q.id}</span><span class="q-prompt">${escapeHtml(q.prompt)}</span></div>
-        ${q.help ? `<div class="q-help">${escapeHtml(q.help)}</div>` : ''}
-        <div style="margin-top:8px;font-size:13px;color:${ans ? '#2c2e26' : '#a8a89a'};white-space:pre-wrap">${ans ? escapeHtml(ans) : 'Not answered yet'}</div>
-      </div>`;
-    }).join('');
+    st.doc.addPage(); st.y = st.margin;
+    pdfHeading(st, 'HOW WE’RE BUILDING IT', 13, { spacingAfter: 12 });
+    S.workflow.forEach((step, i) => {
+      if (i > 0){ st.doc.addPage(); st.y = st.margin; }
+      pdfStepHeader(st, i + 1, pdfSafe(step.h));
+      extractBlocks(step.html).forEach(b => renderWorkflowBlock(st, b));
+    });
+  });
 
-    const wfHtml = S.workflow.map((st, i) => `
-      <div class="step" style="page-break-inside:avoid">
-        <div class="step-rail"><div class="step-no">${String(i + 1).padStart(2, '0')}</div><div class="step-line"></div></div>
-        <div class="step-body"><h4>${st.h}</h4>${st.html}</div>
-      </div>`).join('');
-
-    return `<div class="pdf-section" style="padding:20px 4px">
-      <div class="secbar" style="page-break-after:avoid"><div class="chip ${S.chip}"></div><div><h2>${S.title}</h2></div><span class="tag ${S.tagcls}">${S.tag}</span></div>
-      <p style="color:var(--muted);max-width:640px;margin:8px 0 22px;font-size:13.5px">${S.blurb}</p>
-      <h3 style="font-family:var(--dsp);font-size:16px;margin:0 0 14px;page-break-after:avoid">What we asked, and what we got back</h3>
-      ${qaHtml}
-      <h3 style="font-family:var(--dsp);font-size:16px;margin:28px 0 14px;page-break-after:avoid">How we're building it</h3>
-      ${wfHtml}
-    </div>`;
-  }).join('');
-
-  return `<div id="pdf-export-root" style="background:#fff">${cover}${sections}</div>`;
+  return doc;
 }
 
 async function downloadPDF(){
   const btn = document.getElementById('pdfBtn');
   const original = btn.textContent;
-  const otherNavBtns = ['navHome','navExport','navLogout'].map(id => document.getElementById(id));
   btn.disabled = true; btn.textContent = 'Generating PDF…';
-  otherNavBtns.forEach(b => b.disabled = true);
-
-  const view = document.getElementById('view');
-  const savedViewHTML = view.innerHTML;
-  const savedCurrent = CURRENT;
-
-  view.innerHTML = buildExportHTML();
-  window.scrollTo(0, 0);
-  Object.keys(STATE).forEach(qid => { if (STATE[qid]) fillSlots(qid, STATE[qid]); });
-
-  // Let layout/paint settle, and make sure the webfonts are actually loaded before snapshotting --
-  // capturing too early is the classic cause of a blank or fallback-font render.
-  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
-
-  const el = document.getElementById('pdf-export-root');
-  if (!el || el.scrollHeight < 200) {
-    alert('PDF generation failed to build the page content. Nothing was downloaded -- please try again, or use "Export answers (JSON)" for now.');
-  } else {
-    try {
-      await html2pdf().from(el).set({
-        margin: [28, 26, 28, 26],
-        filename: 'EGO-Premium-CRM-Build-Architecture.pdf',
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'], before: '.pdf-section:not(:first-of-type)' },
-      }).save();
-    } catch (err) {
-      alert('PDF generation failed: ' + (err && err.message ? err.message : err) + '\n\nNothing was downloaded. Try again, or use "Export answers (JSON)" for now.');
-    }
+  try {
+    const doc = buildPdf();
+    doc.save('EGO-Premium-CRM-Build-Architecture.pdf');
+  } catch (err) {
+    alert('PDF generation failed: ' + (err && err.message ? err.message : err) + '\n\nNothing was downloaded. Try again, or use "Export answers (JSON)" for now.');
   }
-
-  view.innerHTML = savedViewHTML;
-  CURRENT = savedCurrent;
   btn.disabled = false; btn.textContent = original;
-  otherNavBtns.forEach(b => b.disabled = false);
 }
 
 /* ================= PORTAL NAVIGATION ================= */
