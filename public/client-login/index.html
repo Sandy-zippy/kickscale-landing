@@ -1067,15 +1067,17 @@ function buildExportHTML(){
   let totalQ = 0, answeredQ = 0;
   SECTION_ORDER.forEach(k => DATA.sections[k].questions.forEach(q => { totalQ++; if (STATE[q.id]) answeredQ++; }));
 
-  const cover = `<div class="pdf-section" style="padding:40px 4px 30px">
+  const cover = `<div class="pdf-cover" style="padding:10px 4px 30px">
     <div class="eyebrow">Zippyscale Client Portal</div>
     <h1 style="font-size:26px;max-width:520px">EGO Premium — CRM Build Architecture</h1>
     <p style="color:var(--muted);font-size:13.5px;margin-top:10px">Full onboarding answers plus the complete build plan for every stage — generated ${new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}.</p>
     <div class="pillrow"><span class="pill"><b>${answeredQ}</b> of ${totalQ} questions answered</span><span class="pill">5 sections</span></div>
   </div>`;
 
-  const sections = SECTION_ORDER.map(key => {
+  const sections = SECTION_ORDER.map((key, sectionIdx) => {
     const S = DATA.sections[key];
+    // Every section after the first starts on a fresh page -- the cover + Retail share page 1.
+    const sectionBreak = sectionIdx === 0 ? '' : 'page-break-before:always;';
 
     const qaHtml = S.questions.map(q => {
       const ans = STATE[q.id];
@@ -1086,18 +1088,20 @@ function buildExportHTML(){
       </div>`;
     }).join('');
 
+    // Steps force a break-BEFORE (reliably honored) rather than relying on break-inside:avoid
+    // (unreliable for these flex-laid-out blocks) -- that's what orphaned a step heading last time.
     const wfHtml = S.workflow.map((st, i) => `
-      <div class="step" style="page-break-inside:avoid">
+      <div class="step" style="${i === 0 ? '' : 'page-break-before:always;'}page-break-inside:avoid">
         <div class="step-rail"><div class="step-no">${String(i + 1).padStart(2, '0')}</div><div class="step-line"></div></div>
         <div class="step-body"><h4>${st.h}</h4>${st.html}</div>
       </div>`).join('');
 
-    return `<div class="pdf-section" style="padding:20px 4px">
+    return `<div class="pdf-section" style="padding:20px 4px;${sectionBreak}">
       <div class="secbar" style="page-break-after:avoid"><div class="chip ${S.chip}"></div><div><h2>${S.title}</h2></div><span class="tag ${S.tagcls}">${S.tag}</span></div>
       <p style="color:var(--muted);max-width:640px;margin:8px 0 22px;font-size:13.5px">${S.blurb}</p>
       <h3 style="font-family:var(--dsp);font-size:16px;margin:0 0 14px;page-break-after:avoid">What we asked, and what we got back</h3>
       ${qaHtml}
-      <h3 style="font-family:var(--dsp);font-size:16px;margin:28px 0 14px;page-break-after:avoid">How we're building it</h3>
+      <h3 style="font-family:var(--dsp);font-size:16px;margin:28px 0 14px;page-break-before:always;page-break-after:avoid">How we're building it</h3>
       ${wfHtml}
     </div>`;
   }).join('');
@@ -1136,7 +1140,7 @@ async function downloadPDF(){
         image: { type: 'jpeg', quality: 0.95 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
         jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'], before: '.pdf-section' },
+        pagebreak: { mode: 'css' }, // breaks are set per-element as inline styles above
       }).save();
     } catch (err) {
       alert('PDF generation failed: ' + (err && err.message ? err.message : err) + '\n\nNothing was downloaded. Try again, or use "Export answers (JSON)" for now.');
