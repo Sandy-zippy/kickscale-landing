@@ -480,16 +480,13 @@ DATA.sections.p1 = {
   blurb:'Get every entity captured, interconnected and reportable across both companies and both B2B/B2C -- so the first three of the five North Star questions become answerable. This is the phase this onboarding covers.',
   goal:'Goal: get every entity captured, interconnected and reportable across both companies and both B2B/B2C -- so the first three of Roshan’s five questions become answerable.',
   questions:[
-    {id:'P1-01', prompt:'Which company is which segment, and does B2B/B2C split apply equally to both EGO and Big E?'},
+    {id:'P1-01', prompt:'EGO vs Big E -- which company is retail and which is wholesale? Who handles architects & contractors, and who handles dealers?'},
     {id:'P1-02', prompt:'User list & roles (who sees what) -- names, teams, and who may see cost/GP.'},
     {id:'P1-03', prompt:'Confirm the 7 product categories & list the collections/series to load.'},
     {id:'P1-04', prompt:'Dealer grade names & the rule for each (what makes a Platinum vs A/B/C).'},
-    {id:'P1-05', prompt:'Region/zone scheme and how micro-markets are defined.'},
-    {id:'P1-06', prompt:'Which competitor brands should we track on the dealer record?'},
+    {id:'P1-05', prompt:'Share the list of areas/zones you operate in, and how micro-markets are defined within them.'},
     {id:'P1-07', prompt:'Dealer-allocation SLA + escalation + reassignment rule (how long before a lead is pulled back).'},
-    {id:'P1-08', prompt:'Lost-reason list for the consumer pipeline.'},
     {id:'P1-09', prompt:'Confirm project types (Builder / Hotel / Corporate / Retail / Other).'},
-    {id:'P1-10', prompt:'Any reorder-specific stage for repeat dealer orders?'},
     {id:'P1-11', prompt:'Confirm installation stage names + the site-readiness checklist items.'},
     {id:'P1-12', prompt:'Delay-reason list (customer / material / installer / transport / design change).'},
     {id:'P1-13', prompt:'Escalation thresholds & hierarchy -- e.g. lead untouched > X hrs -> alert to whom; ops stalled > X days -> report to whom.'},
@@ -500,7 +497,10 @@ DATA.sections.p1 = {
     {id:'P1-18', prompt:'Meta/Google lead-form access; IndiaMART/JustDial push access.'},
     {id:'P1-19', prompt:'Languages, and the qualification question set for B2B and for B2C.'},
     {id:'P1-20', prompt:'The routing matrix -- which team / dealer grade / geography gets which lead.'},
-    {id:'P1-21', prompt:'Knowledge-base sources you’ll provide (catalogue, specs, price, FAQ, warranty, objections, service areas).'}
+    {id:'P1-21', prompt:'Knowledge-base sources you’ll provide (catalogue, specs, price, FAQ, warranty, objections, service areas).'},
+    {id:'P1-22', prompt:'Share your current dealer list -- name, contact, geography, and grade if known -- so we can load it as the starting Dealer 360 dataset.'},
+    {id:'P1-23', prompt:'What dealer schemes / incentives are running right now (name, period, structure)? We load these as-is -- the full Scheme Engine build is Phase 5.'},
+    {id:'P1-24', prompt:'Does on-site installation apply to both B2B (wholesale/dealer) and B2C (retail) orders, or only to retail end-customers?'}
   ],
   modules:[
     { title:'Foundations & segment setup', where:['ghl','em'], auto:'man', ref:'setup',
@@ -508,7 +508,7 @@ DATA.sections.p1 = {
       blocks:[
         {type:'list', items:['Entity-Relationship Diagram','Data dictionary','Source-of-truth matrix','Role & permission model','Dashboard + mobile wireframes','Migration plan (pass 1)']},
         {type:'mini', text:'Segment / role confirmation'},
-        {type:'para', text:s('P1-01','Segment split') + ' &middot; ' + s('P1-02','User list & roles')}
+        {type:'para', text:s('P1-01','EGO/Big E retail-wholesale + architect vs dealer ownership') + ' &middot; ' + s('P1-02','User list & roles')}
       ]},
     { title:'Spine masters -- Contact vs Opportunity fields', where:['ghl'], auto:'mix', ref:'no duplicate masters',
       desc:'The objects everything hangs off. Split clearly: <b>Contact</b> fields describe the <i>person or firm</i> (one record, reused across deals); <b>Opportunity</b> fields describe a <i>specific deal / order / project</i>. Auto-created from ad channels, manual for walk-ins. Dealer financial fields arrive in Phase 2 from Tally -- keep, rename, reorder, add to or remove anything below.',
@@ -518,7 +518,7 @@ DATA.sections.p1 = {
         {type:'group', label:'Consumer -- on the Opportunity', oppo:true, editKey:'p1-consumer-oppo',
           items:['Product interest','Application / room','Area (sq ft)','Budget band','Project stage','With architect?','Assigned dealer','Stage · lost reason',{t:'Opportunity value (auto)',calc:true}]},
         {type:'group', label:'Dealer 360 -- on the Contact', editKey:'p1-dealer-contact',
-          items:['Trade / legal name','GST','Address · geo','Contacts','Field / telesales / specialist owner','Categories bought · missing','Showroom · displays · warehouse','Brands sold (competitors)','Priority grade','Current business · 12-mo target · 3-yr potential','FY sales · GP · outstanding · credit (Phase 2)']},
+          items:['Trade / legal name','GST','Address · geo','Contacts','Field / telesales / specialist owner','Categories bought · missing','Showroom · displays · warehouse','Priority grade','Current business · 12-mo target · 3-yr potential','FY sales · GP · outstanding · credit (Phase 2)']},
         {type:'group', label:'Dealer -- on the Opportunity', oppo:true, editKey:'p1-dealer-oppo',
           items:['Project / order name','Stage','Products (Order Details)',{t:'Opportunity value (auto)',calc:true},'Follow-up date']},
         {type:'group', label:'Architect / Designer & Firm -- on the Contact', editKey:'p1-architect-contact',
@@ -526,16 +526,18 @@ DATA.sections.p1 = {
         {type:'group', label:'Spine masters (records) -- Geography, Product, Salesperson, Installer, Supplier, Champion', editKey:'p1-spine-masters',
           items:['Geography: Country -> Region -> State -> City -> Micro-market','Product: Category -> Collection -> SKU · size · finish · colour · unit','Salesperson: territory · portfolio','Installer: coverage · skills · certs','Champion: linked dealer · role · points']},
         {type:'mini', text:'Confirmations needed'},
-        {type:'para', text:s('P1-03','Categories & collections') + ' &middot; ' + s('P1-04','Dealer grades') + ' &middot; ' + s('P1-05','Region scheme') + ' &middot; ' + s('P1-06','Competitor brands')}
+        {type:'para', text:s('P1-03','Categories & collections') + ' &middot; ' + s('P1-04','Dealer grades') + ' &middot; ' + s('P1-05','Areas / zones list')},
+        {type:'mini', text:'Data to load'},
+        {type:'para', text:s('P1-22','Current dealer list') + ' &middot; ' + s('P1-23','Current schemes')}
       ]},
     { title:'Consumer Lead Engine (B2C)', where:['ghl'], auto:'auto', ref:'~100 leads/day',
-      desc:'The ~100-leads/day pipeline. Auto-generated Meta-ad leads are auto-qualified by the AI in the background (no separate stage for it). Every stage timestamped; lost reason mandatory; source/campaign/product/city held through to sale.',
+      desc:'The ~100-leads/day pipeline. Auto-generated Meta-ad leads are auto-qualified by the AI in the background (no separate stage for it). Every stage timestamped; lost reason captured in the opportunity notes; source/campaign/product/city held through to sale.',
       blocks:[
         {type:'stageflow', editKey:'p1-stage-b2c', items:[
           {t:'New'},{t:'Contacted'},{t:'Qualified'},{t:'Dealer Allocated'},{t:'Dealer Accepted'},
           {t:'Appointment / E-Showroom'},{t:'Site Visit'},{t:'Sample'},{t:'Quote'},{t:'Won',kind:'win'},{t:'Lost',kind:'lost'}]},
         {type:'mini', text:'To confirm'},
-        {type:'para', text:s('P1-07','Allocation SLA & escalation') + ' &middot; ' + s('P1-08','Lost-reason list')}
+        {type:'para', text:s('P1-07','Allocation SLA & escalation')}
       ]},
     { title:'Dealer / Wholesale sales pipeline (B2B) & Project pipeline', where:['ghl'], auto:'mix', ref:'first stage: New Project',
       desc:'Dealer & project motion. First stage is <b>New Project</b>. Stage-change communications are automated; deal creation is manual.',
@@ -545,12 +547,14 @@ DATA.sections.p1 = {
           {t:'Negotiation'},{t:'Won',kind:'win'},{t:'Lost',kind:'lost'},{t:'Execution'},{t:'Installation'},{t:'Collection'}]},
         {type:'group', label:'On the Opportunity', oppo:true, editKey:'p1-b2b-oppo',
           items:['Name · location · type','Size · potential value · probability','Expected close','Owner · PM · architect · contractor','Project Partner dealer · EGO owner','Specification · competitors · samples','Payment terms']},
+        {type:'callout', amber:true, text:'This flow includes an Installation stage, but installation may be retail-only. ' + s('P1-24','Confirm: installation in scope for wholesale too?')},
         {type:'mini', text:'To confirm'},
-        {type:'para', text:s('P1-09','Project types') + ' &middot; ' + s('P1-10','Reorder-specific stage')}
+        {type:'para', text:s('P1-09','Project types') + ' &middot; ' + s('P1-23','Current schemes')}
       ]},
     { title:'Operations / Installation pipeline -- stages & fields', where:['ghl'], auto:'mix', ref:'single-site now',
       desc:'Installation as stages + fields (not a separate product). Single-site in Phase 1; multi-site rollup for Big E comes in Analysis. Field updates are manual; each stage move triggers an automated client WhatsApp update.',
       blocks:[
+        {type:'callout', amber:true, text:'Written for retail (B2C) end-customer installs. ' + s('P1-24','Confirm: does this also apply to B2B/wholesale orders?')},
         {type:'stageflow', editKey:'p1-stage-ops', items:[
           {t:'Survey Requested'},{t:'Survey Done'},{t:'Measurement / BOQ'},{t:'Material Dispatched'},{t:'Site Ready'},
           {t:'Installation'},{t:'Snagging'},{t:'Sign-off / Handover',kind:'win'}]},
