@@ -420,8 +420,8 @@ const WLABEL = { ghl:'GHL', em:'EGO Master', tally:'Tally + Inventory', adj:'Adj
 const ALABEL = { auto:'Automated', man:'Manual', mix:'Auto + Manual' };
 const BUNDLE = {
   fee:'₹2.8L', feeSub:'Phases 2-5 combined',
-  timeline:'10 weeks', timeSub:'4 x 2-week builds + 2 weeks testing',
-  note:'Phases 2-5 are priced and delivered as one continuous block -- ₹2.8L covering all four, built back-to-back at 2 weeks each with a final 2-week integrated testing window.'
+  timeline:'10 weeks', timeSub:'8 weeks build + 2 weeks testing',
+  note:'Phases 2-5 are scoped, priced and delivered as one continuous 10-week block -- ₹2.8L covering all four, with a 2-week integrated testing window at the end rather than separate per-phase timelines.'
 };
 const EDEFAULTS = {}; // editKey -> {kind:'group'|'stageflow', items:[{t,kind?,calc?}]}
 function edef(key, kind, items){ if(!EDEFAULTS[key]) EDEFAULTS[key] = { kind, items: items.map(x => typeof x === 'string' ? { t:x } : x) }; }
@@ -623,7 +623,7 @@ DATA.sections.p1 = {
 DATA.sections.p2 = {
   key:'p2', num:2, title:'Financial & Deep-Master Consolidation', short:'Financial & Deep-Master', tag:'Phase 2 · Consolidation', tagcls:'tag-retail', chip:'c-retail',
   badge:'road', live:false,
-  bundled:true, timeline:'2 weeks', feenote:'remote build -- the 2-week window assumes Tally access/exports are ready on your side when the phase opens',
+  bundled:true, feenote:'remote build -- assumes Tally access/exports are ready on your side when this block opens',
   scope:'Two-way Tally sync (invoices, receipts, credit limits, GP) with reconciliation; stock/inventory integration (current stock, incoming, stock-outs); the financial half of Dealer 360; and AI Layer A (dedup/merge, enquiry classification, call summaries, lead scoring, warranty-QR consumer profile).',
   blurb:'Bring in the money and stock truth, complete the Dealer 360, and let AI clean the data -- so the numbers are trustworthy and LTV gains true GP.',
   goal:'Goal: bring in the money and stock truth, complete the Dealer 360, and let AI clean the data -- so the numbers are trustworthy and LTV gains true GP.',
@@ -654,7 +654,7 @@ DATA.sections.p2 = {
 DATA.sections.p3 = {
   key:'p3', num:3, title:'Descriptive Analytics -- what’s happening & what’s winning', short:'Descriptive Analytics', tag:'Phase 3 · Analysis', tagcls:'tag-dash', chip:'c-dash',
   badge:'road', live:false,
-  bundled:true, timeline:'2 weeks',
+  bundled:true,
   scope:'The cross-entity analytics engine -- dealer penetration & dormancy, area intelligence, product movement, EGO Champion performance, marketing ROI to GP, installation KPIs -- plus role-based dashboards for every function and CEO Cockpit v1 (YTD target/actual/gap/run-rate).',
   blurb:'Answer "where are we, and what’s working?" AI reads the clean data and surfaces the winners and the leaks across every dimension.',
   goal:'Goal: answer "where are we, and what’s working?" AI reads the clean data and surfaces the winners and the leaks across every dimension.',
@@ -673,7 +673,7 @@ DATA.sections.p3 = {
 DATA.sections.p4 = {
   key:'p4', num:4, title:'Recommendation & Prioritisation -- what each person should do next', short:'Recommendation & Prioritisation', tag:'Phase 4 · Analysis', tagcls:'tag-dash', chip:'c-dash',
   badge:'road', live:false,
-  bundled:true, timeline:'2 weeks',
+  bundled:true,
   scope:'AI Layer B -- hot-lead scoring, best-dealer match for a consumer lead, daily telesales call queue, cross-sell/dormancy-risk alerts, and Project Partner recommendation.',
   blurb:'Answer question 4. AI turns insight into a prioritised action list per person -- the telesales queue, the hot leads, the dealers to call.',
   goal:'Goal: answer question 4. AI turns insight into a prioritised action list per person -- the telesales queue, the hot leads, the dealers to call.',
@@ -689,7 +689,7 @@ DATA.sections.p4 = {
 DATA.sections.p5 = {
   key:'p5', num:5, title:'Target & Program Engines -- set goals, run the programs', short:'Target & Program Engines', tag:'Phase 5 · Strategy', tagcls:'tag-call', chip:'c-call',
   badge:'road', live:false,
-  bundled:true, timeline:'2 weeks',
+  bundled:true,
   scope:'The Target Engine (Company/Product/Area/Salesperson/Dealer/Project/Consumer levels, with revision history), the Scheme Engine (slabs, achievement, settlement, effectiveness), the Priority 200 dealer-development program plus Design 500 and EGO Champions, and the configurable Approval & Authority Matrix with audit trail.',
   blurb:'Turn analysis into plans -- targets at every level, the Priority 200 development program, schemes, and approvals.',
   goal:'Goal: turn analysis into plans -- targets at every level, the Priority 200 development program, schemes, and approvals.',
@@ -749,7 +749,7 @@ function phaseCardHTML(key){
     <div class="chip"></div>
     <span class="phase-badge ${S.badge}">${S.badge==='now'?'Build now':'Roadmap'}</span>
     <h3>${meta.label}</h3><p>${meta.blurb}</p>
-    <div class="pcomm"><span class="pfee">${S.bundled ? 'In '+BUNDLE.fee+' bundle' : S.fee}</span><span class="ptime">${S.timeline}</span></div>
+    <div class="pcomm"><span class="pfee">${S.bundled ? 'In '+BUNDLE.fee+' bundle' : S.fee}</span><span class="ptime">${S.bundled ? 'Phases 2-5 &middot; '+BUNDLE.timeline : S.timeline}</span></div>
     <span class="qn">${S.live ? S.questions.length+' questions' : S.modules.length+' modules · preview'}</span>
     <span class="go">${S.live ? (done?'Review':'Open') : 'Preview'} &rarr;</span></button>`;
 }
@@ -797,7 +797,7 @@ function commercialSummaryHTML(){
       <td class="mono"><b>&#8377;7.1L</b></td><td class="mono"><b>~28 weeks</b></td></tr>
   </table>
 </div>
-<p style="color:var(--muted);font-size:12.5px;max-width:820px;margin:-6px 0 20px">Phase 1 is delivered. Phases 2&ndash;5 are quoted as a single &#8377;2.8L block, built back-to-back at 2 weeks each plus a 2-week integrated testing window. Phase 6 is billed separately and excludes e-commerce, which is priced when we reach it.</p>`;
+<p style="color:var(--muted);font-size:12.5px;max-width:820px;margin:-6px 0 20px">Phase 1 is delivered. Phases 2&ndash;5 are quoted and delivered as a single &#8377;2.8L / 10-week block (8 weeks build + 2 weeks integrated testing) rather than as four separately-timed phases. Phase 6 is billed separately and excludes e-commerce, which is priced when we reach it.</p>`;
 }
 
 function renderHome(){
@@ -991,8 +991,8 @@ function commBarHTML(S){
   if (S.bundled){
     return `<div class="commbar">
       <span class="clbl">Bundled fee</span><span class="cval">${BUNDLE.fee}</span>
-      <span class="clbl">This phase</span><span class="cval">${S.timeline}</span>
-      <span class="clbl">Bundle total</span><span class="cval">${BUNDLE.timeline}</span>
+      <span class="clbl">Timeline</span><span class="cval">${BUNDLE.timeline}</span>
+      <span class="clbl">Covers</span><span class="cval">Phases 2-5</span>
       <span class="cnote">${BUNDLE.note}${S.feenote ? ' &mdash; ' + S.feenote : ''}</span>
     </div>`;
   }
