@@ -215,6 +215,9 @@ table.spec tr.sep td{background:var(--surface-2);font-family:var(--mono);font-si
   font-family:var(--body);font-size:14px;margin-top:9px;background:var(--surface-2);resize:vertical;color:var(--ink)}
 .q input.num{width:150px;font-family:var(--mono)}
 .q textarea:focus,.q input.txt:focus,.q input.num:focus{outline:2px solid var(--lime-deep);outline-offset:1px;background:#fff}
+.q-secure{background:var(--up-bg);border:1px solid var(--up-line);border-radius:8px;padding:9px 12px;
+  margin:9px 0 2px;font-size:12px;color:var(--up-ink);line-height:1.5}
+.q-secure b{font-weight:700}
 .opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .opt{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;padding:8px 13px;
   font-size:13.5px;background:var(--surface-2);cursor:pointer;user-select:none;transition:.12s}
@@ -510,47 +513,97 @@ DATA.sections.p1 = {
   blurb:'The full Growth Engine CRM across EGO and Big E &mdash; integrations, AI call &amp; conversation agents, automations &mdash; plus EGO Master’s automated AI Analysis engine live on top.',
   goal:'Every channel captured and interconnected in GoHighLevel across both companies, the three integrations feeding it, and EGO Master turning that data into analysis — answering questions 1–4 of the North Star.',
   questions:[
+    /* --- what the system must do --- */
     {id:'P1-01', group:'Foundations & segments', prompt:'Which company is which segment, and does B2B/B2C apply to both?',
      help:'e.g. "EGO = retail (architects, contractors, end-customers); Big E = wholesale (dealers)" — and whether both run B2B and B2C.'},
     {id:'P1-02', group:'Foundations & segments', prompt:'User list & roles — who sees what, and who may see cost/GP.',
      help:'Names, teams, and which roles are allowed to see cost and gross-profit figures.'},
+
     {id:'P1-03', group:'Products, dealers & geography', prompt:'Confirm the 7 product categories & the collections/series to load.'},
     {id:'P1-04', group:'Products, dealers & geography', prompt:'Dealer grade names & the rule for each.',
      help:'What actually makes a dealer Platinum vs A / B / C — turnover, categories bought, payment behaviour?'},
     {id:'P1-05', group:'Products, dealers & geography', prompt:'Region/zone scheme & micro-market definitions.',
      help:'The list of areas/zones you operate in, and how a micro-market is defined inside them.'},
     {id:'P1-06', group:'Products, dealers & geography', prompt:'Competitor brands to track on the dealer record.'},
+
     {id:'P1-07', group:'Consumer leads (B2C)', prompt:'Dealer-allocation SLA + escalation + reassignment rule.',
      help:'How long a dealer has to accept a lead before it escalates, and who it goes to next.'},
     {id:'P1-08', group:'Consumer leads (B2C)', prompt:'Lost-reason list.',
      help:'The set of reasons a consumer lead can be marked Lost.'},
+
     {id:'P1-09', group:'Dealer & project pipeline', type:'multi', other:true,
      prompt:'Confirm the project types you handle.',
      options:['Builder','Hotel','Corporate','Retail','Other']},
     {id:'P1-10', group:'Dealer & project pipeline', prompt:'Any reorder-specific stage for repeat dealer orders?',
      help:'If repeat orders should skip stages or use their own short flow, tell us how.'},
+
     {id:'P1-11', group:'Operations & installation', prompt:'Confirm installation stages + site-readiness checklist.'},
     {id:'P1-12', group:'Operations & installation', prompt:'Delay-reason list.',
      help:'e.g. customer / material / installer / transport / design change.'},
+
     {id:'P1-13', group:'Communication & escalation', prompt:'Escalation thresholds & hierarchy.',
      help:'Untouched-lead hours, ops-stall days, and who each alert goes to.'},
-    {id:'P1-14', group:'Communication & escalation', prompt:'WhatsApp number / BSP to provision.',
-     help:'AiSensy is removed — this runs on GHL-native WhatsApp.'},
-    {id:'P1-15', group:'Communication & escalation', prompt:'Owner → follower map (who cross-checks whom).'},
-    {id:'P1-16', group:'Quotation', prompt:'How many quotation slots to allow (default 5), and the product list for the dropdown.'},
-    {id:'P1-17', group:'Integrations & access', prompt:'One full-access API key each for Runo & Sales Diary, and confirm what data flows.',
-     help:'Leads, dispositions, schemes, contacts — tell us which of these should move.'},
-    {id:'P1-18', group:'Integrations & access', prompt:'Tally edition & access method; which fields are Tally-owned vs CRM-owned.'},
-    {id:'P1-19', group:'Integrations & access', prompt:'Meta/Google lead-form access; IndiaMART/JustDial push access.'},
-    {id:'P1-20', group:'AI agents', prompt:'Languages + the qualification question set for B2B and B2C.'},
-    {id:'P1-21', group:'AI agents', prompt:'Routing matrix — which team / dealer grade / geography gets which lead.'},
-    {id:'P1-22', group:'AI agents', prompt:'Knowledge-base sources for the AI agents.',
+    {id:'P1-14', group:'Communication & escalation', prompt:'Owner → follower map (who cross-checks whom).'},
+
+    {id:'P1-15', group:'Quotation', prompt:'How many quotation slots to allow (default 5), and the product list for the dropdown.'},
+
+    {id:'P1-16', group:'AI agents', prompt:'Languages + the qualification question set for B2B and B2C.'},
+    {id:'P1-17', group:'AI agents', prompt:'Routing matrix — which team / dealer grade / geography gets which lead.'},
+    {id:'P1-18', group:'AI agents', prompt:'Knowledge-base sources for the AI agents.',
      help:'Catalogue, specs, price, FAQ, warranty, objection handling, service areas.'},
-    {id:'P1-23', group:'EGO Master access', prompt:'Where should EGO Master live, and who gets Admin vs Employee access?',
-     help:'It sits on your own website behind its own login — e.g. a subdomain like master.egopremium.com. Admin sees everything including cost and GP; Employee sees only their own scope.'}
+
+    {id:'P1-19', group:'EGO Master access', prompt:'Where should EGO Master live, and who gets Admin vs Employee access?',
+     help:'It sits on your own website behind its own login — e.g. a subdomain like master.egopremium.com. Admin sees everything including cost and GP; Employee sees only their own scope.'},
+
+    /* --- accounts & credentials: deliberately ONE system per question, so no
+       two keys can be pasted into the same box and get mixed up --- */
+    {id:'P1-20', group:'Access · GoHighLevel & AI', secure:true,
+     prompt:'GoHighLevel — who holds the subscription, and admin access for both sub-accounts.',
+     help:'The plan must be live in EGO’s own name before we start. We need admin-level user access on the EGO and Big E sub-accounts.'},
+    {id:'P1-21', group:'Access · GoHighLevel & AI', secure:true,
+     prompt:'Gemini (or GPT) API key — the LLM that powers AI Analysis.',
+     help:'Created on your own Google AI Studio / OpenAI account so the usage bills to you and the data stays yours.'},
+
+    {id:'P1-22', group:'Access · Runo & Sales Diary', secure:true,
+     prompt:'Runo — full-access API key, and the Runo account it belongs to.',
+     help:'Runo only. Please don’t combine this with the Sales Diary key — they are different systems and get mixed up easily.'},
+    {id:'P1-23', group:'Access · Runo & Sales Diary', secure:true,
+     prompt:'Sales Diary — full-access API key, and the Sales Diary account it belongs to.',
+     help:'Sales Diary only, kept separate from the Runo key above.'},
+
+    {id:'P1-24', group:'Access · Tally', prompt:'Tally — which edition and version are you running?',
+     help:'e.g. TallyPrime 4.x, Tally.ERP 9, Silver or Gold licence. This decides how we connect.'},
+    {id:'P1-25', group:'Access · Tally', prompt:'Tally — where does it run, and how can we reach it?',
+     help:'On one office PC, a server, or cloud-hosted? Tally’s connector needs that machine reachable — static IP, VPN, or a hosted Tally URL. This is usually the longest lead-time item.'},
+    {id:'P1-26', group:'Access · Tally', prompt:'Tally — which company (or companies) should we sync?',
+     help:'The exact company names as they appear in Tally, and whether EGO and Big E are separate books.'},
+    {id:'P1-27', group:'Access · Tally', prompt:'Tally — who administers it? Name, role and contact.',
+     help:'Your accountant or IT person. They’ll need to enable the connector and keep Tally running for the sync.'},
+
+    {id:'P1-28', group:'Access · Messaging & lead sources',
+     prompt:'WhatsApp — the number to provision, and your BSP.',
+     help:'GHL-native WhatsApp; AiSensy is removed. The number must not already be active on another WhatsApp Business account.'},
+    {id:'P1-29', group:'Access · Messaging & lead sources',
+     prompt:'Meta — Business Manager access for lead ads.',
+     help:'Add us as a partner/admin on the Business Manager, and name the Page and ad account the lead forms sit on.'},
+    {id:'P1-30', group:'Access · Messaging & lead sources',
+     prompt:'Google Ads — account access for lead-form extensions.',
+     help:'The Google Ads customer ID, with access granted to our email.'},
+    {id:'P1-31', group:'Access · Messaging & lead sources', secure:true,
+     prompt:'IndiaMART — lead/CRM API key.',
+     help:'From your IndiaMART seller panel (Lead Manager → CRM integration).'},
+    {id:'P1-32', group:'Access · Messaging & lead sources',
+     prompt:'JustDial — lead push access.',
+     help:'Whether your JustDial plan includes lead push/API, and your JD account manager’s contact if we need it enabled.'},
+    {id:'P1-33', group:'Access · Messaging & lead sources',
+     prompt:'Social handles to connect — Instagram, Facebook, LinkedIn.'},
+
+    {id:'P1-34', group:'Access · Website', secure:true,
+     prompt:'Website — admin and DNS access.',
+     help:'Needed to embed the AI chatbot and to point the EGO Master subdomain. Tell us who hosts the site and who can add a DNS record.'}
   ],
   modules:[
-    { title:'Foundations & segment setup', where:['ghl','em'], auto:'manone', qids:['P1-01','P1-02'],
+    { title:'Foundations & segment setup', where:['ghl','em'], auto:'manone', qids:['P1-01','P1-02','P1-20'],
       desc:'Two white-labelled segments &mdash; <b>EGO</b> and <b>Big E</b> &mdash; with company-level data separation and a unified founder view. B2B (wholesale) and B2C (retail) run as divisions/pipelines inside each.',
       blocks:[
         {type:'list', items:['Entity-Relationship Diagram','Data dictionary','Source-of-truth matrix','Role &amp; permission model','Dashboard + mobile wireframes']}
@@ -619,7 +672,7 @@ DATA.sections.p1 = {
           items:[{t:'Recipient type (dealer / architect / consumer / project)',k:'oppo'},{t:'Product',k:'oppo'},{t:'Date',k:'oppo'},{t:'Quantity',k:'oppo'},{t:'Cost',k:'oppo'},{t:'Reason',k:'oppo'},{t:'Related opportunity',k:'oppo'},{t:'Follow-up date',k:'oppo'},{t:'Return status',k:'oppo'},{t:'Result',k:'oppo'},{t:'⤒ Sample upload button',k:'up'}]}
       ]},
 
-    { title:'Engines — communication, task/escalation, mobile', where:['ghl'], auto:'auto', qids:['P1-13','P1-14','P1-15'],
+    { title:'Engines — communication, task/escalation, mobile', where:['ghl'], auto:'auto', qids:['P1-13','P1-14','P1-28'],
       desc:'Every interaction can set Next Action + Owner + Follower + Due Date; overdue items escalate automatically, so no one keeps separate Excel follow-up lists.',
       blocks:[
         {type:'group', label:'Communication templates', editKey:'p1-comm',
@@ -630,14 +683,14 @@ DATA.sections.p1 = {
           items:[{t:'Untouched-lead alert',k:'autof'},{t:'Ops-stall report',k:'autof'},{t:'Overdue-task escalation',k:'autof'},{t:'AM &amp; PM digest',k:'autof'}]}
       ]},
 
-    { title:'Quotation — multiple slots', where:['ghl'], auto:'manup', qids:['P1-16'],
+    { title:'Quotation — multiple slots', where:['ghl'], auto:'manup', qids:['P1-15'],
       desc:'Quotations are made in Excel and uploaded. To track the number of revisions per deal, this is <b>multiple document fields</b>, not one. The multi-SKU order value is captured separately in Order Details and computed automatically.',
       blocks:[
         {type:'group', label:'Fields', editKey:'p1-quote',
           items:[{t:'Quotation 1 (document)',k:'up'},{t:'Quotation 2',k:'up'},{t:'Quotation 3',k:'up'},{t:'Quotation 4',k:'up'},{t:'Quotation 5',k:'up'},'Latest quote value']}
       ]},
 
-    { title:'Integrations — Tally, Runo, Sales Diary, omni-channel', where:['ghl','tally'], auto:'auto', qids:['P1-17','P1-18','P1-19'],
+    { title:'Integrations — Tally, Runo, Sales Diary, omni-channel', where:['ghl','tally'], auto:'auto', qids:['P1-22','P1-23','P1-24','P1-25','P1-26','P1-27','P1-29','P1-30','P1-31','P1-32','P1-33'],
       desc:'All sources normalise into one deduped contact record with source held for attribution. QR &rarr; WhatsApp captures dealer orders and consumer warranty data.',
       blocks:[
         {type:'group', label:'Channels & systems', editKey:'p1-channels',
@@ -645,10 +698,10 @@ DATA.sections.p1 = {
         {type:'callout', text:'<b>Tally in Phase 1:</b> we sync the financial truth so LTV and product performance carry real GP, not just CRM revenue. Orders won in GHL post to Tally; invoices, receipts and outstanding read back for reconciliation. Where a live feed isn’t ready, a weekly upload bridges until it is.'}
       ]},
 
-    { title:'AI front line — call + conversation agents', where:['ghl'], auto:'auto', qids:['P1-20','P1-21','P1-22'],
+    { title:'AI front line — call + conversation agents', where:['ghl'], auto:'auto', qids:['P1-16','P1-17','P1-18','P1-21'],
       desc:'<b>AI Call Agent &mdash; inbound only:</b> answers, qualifies and routes internally (B2B vs B2C team; consumer leads to Platinum/A-grade dealers by grade + geography). <b>AI Conversion Agent:</b> a website chatbot trained on a knowledge base (vector DB). Plus AI product/colour selection.'},
 
-    { title:'AI Analysis layer — EGO Master’s automated engine', where:['em'], auto:'fauto',
+    { title:'AI Analysis layer — EGO Master’s automated engine', where:['em'], auto:'fauto', qids:['P1-19','P1-21','P1-34'],
       desc:'The new capability, and the heart of Phase 1 for you. Once data is consolidated, EGO Master’s engine reads it and answers "what’s working and what to do next" &mdash; with no one pulling reports.',
       blocks:[
         {type:'group', label:'What the engine analyses',
@@ -723,6 +776,7 @@ function renderQuestion(q){
   const wrap=document.createElement('div'); wrap.className='q'; wrap.id='wrap-'+q.id;
   let inner=`<div class="q-top"><span class="q-id">${q.id}</span><span class="q-prompt">${q.prompt}</span></div>`;
   if(q.help) inner+=`<div class="q-help">${q.help}</div>`;
+  if(q.secure) inner+=`<div class="q-secure"><b>Don't paste a live key or password here.</b> This box is fine for the account name, who owns it and where to find it &mdash; but send the secret value itself to us over a secure channel (a password manager share, or direct to your Zippyscale contact). Answers on this page are stored in plain text.</div>`;
   wrap.innerHTML=inner;
   const body=document.createElement('div');
 
