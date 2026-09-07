@@ -152,6 +152,15 @@ table.spec tr.sep td{background:var(--surface-2);font-family:var(--mono);font-si
   letter-spacing:.07em;color:var(--muted);padding:7px 14px;font-weight:600}
 .costnote{color:var(--muted);font-size:12.5px;margin:12px 2px 0;max-width:70ch}
 
+/* what the client must arrange */
+.needs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.need{display:flex;gap:13px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);
+  border-radius:11px;padding:16px 18px}
+.need .needn{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--lime-ink-d);background:var(--lime);
+  border-radius:6px;padding:3px 8px;flex:none;margin-top:2px}
+.need b{display:block;font-family:var(--dsp);font-size:14.5px;margin-bottom:4px}
+.need span{display:block;font-size:12.8px;color:var(--muted);line-height:1.5}
+
 /* timeline */
 .tl{display:flex;gap:14px;flex-wrap:wrap}
 .tlcard{flex:1;min-width:260px;border:1px solid var(--line);border-radius:11px;padding:18px 20px;background:var(--surface)}
@@ -417,12 +426,21 @@ const EDEFAULTS = {}; // editKey -> {kind, items}
 function edef(key, kind, items){ if(!EDEFAULTS[key]) EDEFAULTS[key] = { kind, items: items.map(x => typeof x === 'string' ? { t:x } : x) }; }
 
 const COMMERCIALS = {
-  p1:{ fee:'₹2,80,000', timeline:'10 weeks' },
-  p2:{ fee:'₹1,20,000', timeline:'6-8 weeks' },
-  optional:{ label:'E-commerce + E-showroom', fee:'₹2,50,000',
-    desc:'Dealer live-stock/SKU e-commerce platform + immersive e-showroom experience' },
-  note:'Third-party platform &amp; usage costs (GHL subscription, WhatsApp, AI/LLM usage, hosting) are billed at actuals, separate from the build.'
+  p1:{ timeline:'10 weeks' },
+  p2:{ timeline:'6-8 weeks' }
 };
+
+/* What the client has to arrange in their own name. Named, not priced --
+   these are third-party costs that move, and none of them bill through us. */
+const CLIENT_NEEDS = [
+  {t:'GoHighLevel subscription', d:'The CRM platform licence, taken in EGO’s own name. Both segments — EGO and Big E — run inside it.'},
+  {t:'API keys &amp; account access', d:'One full-access key each for Runo, Sales Diary and Tally, plus Meta &amp; Google lead-form access and IndiaMART / JustDial push access.'},
+  {t:'Gemini / LLM API access', d:'The reasoning engine behind AI Analysis. Runs on your own API account so the data and the billing stay yours.'},
+  {t:'WhatsApp Business number &amp; BSP', d:'GHL-native WhatsApp — AiSensy is removed. Meta charges per conversation.'},
+  {t:'AI Voice Agent', d:'The inbound call agent, provisioned on your account and charged for the minutes it handles.'},
+  {t:'AI call &amp; usage charges', d:'Ongoing voice minutes and LLM tokens as the system runs day to day — these scale with how much you use it.'}
+];
+const CLIENT_NEEDS_NOTE = 'All six sit in <b>EGO’s own accounts</b> and are billed at actuals by those providers — they are platform and usage costs, not part of the Zippyscale build. We set each one up with you, and nothing here is charged through us.';
 
 function fldSpan(item){
   const t = typeof item === 'string' ? item : item.t;
@@ -527,7 +545,9 @@ DATA.sections.p1 = {
     {id:'P1-20', group:'AI agents', prompt:'Languages + the qualification question set for B2B and B2C.'},
     {id:'P1-21', group:'AI agents', prompt:'Routing matrix — which team / dealer grade / geography gets which lead.'},
     {id:'P1-22', group:'AI agents', prompt:'Knowledge-base sources for the AI agents.',
-     help:'Catalogue, specs, price, FAQ, warranty, objection handling, service areas.'}
+     help:'Catalogue, specs, price, FAQ, warranty, objection handling, service areas.'},
+    {id:'P1-23', group:'EGO Master access', prompt:'Where should EGO Master live, and who gets Admin vs Employee access?',
+     help:'It sits on your own website behind its own login — e.g. a subdomain like master.egopremium.com. Admin sees everything including cost and GP; Employee sees only their own scope.'}
   ],
   modules:[
     { title:'Foundations & segment setup', where:['ghl','em'], auto:'manone', qids:['P1-01','P1-02'],
@@ -637,7 +657,9 @@ DATA.sections.p1 = {
           items:[{t:'1 · Auto data pipe — GHL + Tally + channels sync into EGO Master',k:'autof'},{t:'2 · Scheduled n8n workflows trigger nightly + on-demand',k:'autof'},{t:'3 · LLM engine (Gemini / GPT) reasons over the data + knowledge base',k:'autof'},{t:'4 · Insights written to EGO Master dashboards',k:'autof'},{t:'5 · Actions pushed back into GHL as tasks / WhatsApp alerts',k:'autof'}]},
         {type:'para', text:'No manual step in the loop: data flows in, the LLM engine analyses on a schedule, dashboards refresh themselves, and the resulting priorities land on the right person’s screen automatically.'},
         {type:'group', label:'GHL reports (consolidation, no AI)',
-          items:['Sales-wise','Salesperson-wise','Dealer-wise revenue','Source-wise','Pipeline value by stage','AM &amp; PM digests']}
+          items:['Sales-wise','Salesperson-wise','Dealer-wise revenue','Source-wise','Pipeline value by stage','AM &amp; PM digests']},
+        {type:'group', label:'Access — a portal of its own', editKey:'p1-em-access',
+          items:['Hosted on the EGO Premium website, under your domain','Own login, separate from GHL',{t:'Admin login — full view incl. cost / GP',k:'calc'},{t:'Employee login — scoped to their own role &amp; data',k:'calc'}]}
       ]}
   ]
 };
@@ -671,7 +693,7 @@ DATA.sections.p2 = {
       blocks:[{type:'group', label:'What it delivers', items:[{t:'Why-behind explainer',k:'calc'},{t:'Management exceptions',k:'calc'},{t:'Next-best-actions',k:'calc'},{t:'Natural-language queries',k:'calc'},{t:'Drill-down cockpit',k:'calc'}]}]},
 
     { title:'Adjacent — dealer portal & training', where:['adj'], auto:'mix',
-      desc:'Dealer Portal / EGO Exclusive (stock, colour, ageing, targets, schemes, orders, outstanding, certificates) and Training &amp; Certification tracking. <b>E-commerce &amp; E-showroom are a separate scope</b> &mdash; see the investment table on the overview.'}
+      desc:'Dealer Portal / EGO Exclusive (stock, colour, ageing, targets, schemes, orders, outstanding, certificates) and Training &amp; Certification tracking. <b>E-commerce &amp; E-showroom are a separate scope</b>, quoted separately from these two phases.'}
   ]
 };
 
@@ -838,9 +860,9 @@ function phaseCardHTML(key){
     <h3>${S.title}</h3>
     <p>${S.blurb}</p>
     <div class="pmeta">
-      <div><span class="k">Investment</span><span class="v">${C.fee}</span></div>
       <div><span class="k">Timeline</span><span class="v">${C.timeline}</span></div>
       <div><span class="k">Modules</span><span class="v">${S.modules.length}</span></div>
+      <div><span class="k">Questions</span><span class="v">${S.questions.length}</span></div>
     </div>
     ${S.live
       ? `<div class="prog"><span class="progbar"><i data-prog-bar style="width:${total?Math.round(done/total*100):0}%"></i></span><span class="pnums">${done} of ${total} answered</span></div>`
@@ -900,21 +922,11 @@ ${ALL_SUBMITTED_AT ? `<div class="submitbar done">
   <div class="groupbox"><div class="flds">${DASH.p2.map(d=>`<span class="fld">${d}</span>`).join('')}</div></div>
 </div>
 
-<div class="sec-title">Investment</div>
-<div class="tblwrap">
-  <table class="spec">
-    <tr><th>Phase</th><th>What you get</th><th style="text-align:right">Investment</th></tr>
-    <tr><td><b>Phase 1</b><br><span style="color:var(--muted);font-size:12px">CRM Building + AI Analysis &middot; ${COMMERCIALS.p1.timeline}</span></td>
-        <td>The full Growth Engine CRM across EGO &amp; Big E &mdash; integrations, AI call &amp; conversation agents, automations &mdash; plus EGO Master's automated AI Analysis engine live</td>
-        <td class="amt">${COMMERCIALS.p1.fee}</td></tr>
-    <tr><td><b>Phase 2</b><br><span style="color:var(--muted);font-size:12px">AI Strategy &middot; ${COMMERCIALS.p2.timeline}</span></td>
-        <td>Targets, schemes, Priority 200, approval matrix and AI management intelligence + CEO cockpit on the same EGO Master</td>
-        <td class="amt">${COMMERCIALS.p2.fee}</td></tr>
-    <tr class="sep"><td colspan="3">Optional &middot; separate track</td></tr>
-    <tr class="opt"><td>${COMMERCIALS.optional.label}</td><td>${COMMERCIALS.optional.desc}</td><td class="amt">${COMMERCIALS.optional.fee}</td></tr>
-  </table>
+<div class="sec-title">What you'll need to arrange</div>
+<div class="needs">
+  ${CLIENT_NEEDS.map((n,i)=>`<div class="need"><span class="needn">${String(i+1).padStart(2,'0')}</span><div><b>${n.t}</b><span>${n.d}</span></div></div>`).join('')}
 </div>
-<p class="costnote">${COMMERCIALS.note}</p>
+<div class="callout" style="margin-top:14px">${CLIENT_NEEDS_NOTE}</div>
 
 <div class="sec-title">Action plan &amp; timeline</div>
 <div class="tl">
