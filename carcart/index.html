@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Car Cart — Zippyscale Workspace</title>
+<link rel="icon" href="img/brand/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap">
+<style>
+:root{
+  --ink:#0B0B0C; --panel:#121214; --raise:#191A1C;
+  --hair:#232427; --hair2:#313337;
+  --tx:#F2F3F0; --mut:#9A9D98; --dim:#6A6D69;
+  --lime:#D9EA66; --lime-dk:#B9CC48;
+  --orange:#FF6A00; --amber:#FFB020; --bad:#FF5B3D; --ok:#5BC17A;
+  --d:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --b:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--tx);font-family:var(--b);font-size:14px;line-height:1.6;
+  -webkit-font-smoothing:antialiased}
+a{color:inherit}
+img{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--lime);outline-offset:3px;border-radius:2px}
+h1,h2,h3{letter-spacing:-.02em}
+
+header{border-bottom:1px solid var(--hair);background:var(--panel);position:sticky;top:0;z-index:20}
+.hrow{max-width:1080px;margin:0 auto;padding:12px 22px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.mark{width:29px;height:29px;border-radius:6px;background:var(--lime);display:flex;align-items:center;
+  justify-content:center;font-family:var(--d);font-weight:800;font-size:16px;color:#0B0B0C;flex:none}
+.brand .nm{font-family:var(--d);font-weight:800;font-size:15px;line-height:1}
+.brand .sub{font-size:9.5px;color:var(--dim);letter-spacing:.13em;text-transform:uppercase;margin-top:3px;display:block}
+.sp{flex:1}
+.out{font-family:var(--d);font-weight:500;font-size:11.5px;color:var(--mut);text-decoration:none;
+  border:1px solid var(--hair2);padding:0 13px;height:30px;display:inline-flex;align-items:center;border-radius:6px}
+.out:hover{color:var(--tx);border-color:var(--lime)}
+.jump{display:flex;gap:16px;overflow-x:auto;max-width:1080px;margin:0 auto;padding:0 22px 9px;
+  font-size:11.5px;letter-spacing:.06em}
+.jump a{color:var(--dim);text-decoration:none;white-space:nowrap;padding-bottom:3px;border-bottom:1px solid transparent}
+.jump a:hover{color:var(--lime);border-bottom-color:var(--lime)}
+
+main{max-width:1080px;margin:0 auto;padding:30px 22px 70px}
+.top{display:flex;align-items:center;gap:15px}
+.top img{width:50px;height:50px;border-radius:50%;flex:none;box-shadow:0 0 14px rgba(255,106,0,.4)}
+h1{font-family:var(--d);font-weight:800;font-size:27px;margin:0}
+.where{color:var(--dim);font-size:12.5px;margin:3px 0 0}
+.lead{color:var(--mut);max-width:66ch;margin:15px 0 30px;font-size:15px}
+
+section{scroll-margin-top:96px}
+h2.sec{font-family:var(--d);font-weight:700;font-size:12px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--dim);margin:44px 0 15px;padding-bottom:9px;border-bottom:1px solid var(--hair)}
+h2.sec:first-of-type{margin-top:0}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(286px,1fr));gap:15px}
+.tile{display:block;text-decoration:none;border:1px solid var(--hair);background:var(--panel);border-radius:10px;
+  overflow:hidden;transition:border-color .18s,transform .18s}
+.tile:hover{border-color:var(--lime);transform:translateY(-2px)}
+.tile .shot{aspect-ratio:16/9;background:var(--raise);overflow:hidden;border-bottom:1px solid var(--hair)}
+.tile .shot img{width:100%;height:100%;object-fit:cover}
+.tile .body{padding:16px 18px 18px}
+.tile h3{font-family:var(--d);font-weight:600;font-size:16px;margin:0 0 5px}
+.tile p{color:var(--mut);margin:0;font-size:12.5px}
+.tile .cta{display:inline-block;margin-top:12px;font-family:var(--d);font-weight:600;font-size:12px;color:var(--lime)}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px}
+.stat{border:1px solid var(--hair);background:var(--panel);border-radius:8px;padding:14px 16px}
+.stat b{display:block;font-family:var(--d);font-weight:800;font-size:23px;line-height:1.1}
+.stat span{display:block;color:var(--mut);font-size:12px;margin-top:5px}
+.stat.warn b{color:var(--amber)} .stat.bad b{color:var(--bad)} .stat.ok b{color:var(--ok)}
+
+.bars{border:1px solid var(--hair);background:var(--panel);border-radius:8px;padding:6px 18px}
+.bar{display:grid;grid-template-columns:132px 1fr 46px;align-items:center;gap:12px;padding:9px 0;
+  border-bottom:1px solid var(--hair);font-size:13px}
+.bar:last-child{border-bottom:0}
+.bar .t{background:var(--raise);height:7px;border-radius:4px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--lime);border-radius:4px}
+.bar .t i.o{background:var(--orange)}
+.bar .n{text-align:right;font-family:var(--d);font-weight:600;color:var(--mut);font-size:12.5px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:15px}
+.colhead{font-family:var(--d);font-weight:600;font-size:12.5px;color:var(--mut);margin:0 0 9px;padding-left:2px}
+
+.alert{border:1px solid #5A2413;background:#180C06;border-radius:9px;padding:19px 21px}
+.alert b{display:block;font-family:var(--d);font-weight:700;font-size:16px;color:#FFB79E;margin-bottom:8px}
+.alert p{margin:0 0 10px;color:#E7C8BB;font-size:13.5px;max-width:72ch}
+.alert p:last-child{margin:0}
+.alert code{background:#2A1108;border:1px solid #4A2011;padding:1px 6px;border-radius:4px;font-size:12px}
+.steps{margin:12px 0 0;padding-left:19px;color:#E7C8BB;font-size:13.5px}
+.steps li{margin-bottom:5px}
+
+.faults{border:1px solid var(--hair);background:var(--panel);border-radius:8px;overflow:hidden}
+.fault{display:flex;gap:13px;align-items:flex-start;padding:13px 18px;border-bottom:1px solid var(--hair);font-size:13.5px}
+.fault:last-child{border-bottom:0}
+.fault .id{font-family:var(--d);font-weight:600;color:var(--amber);flex:none;width:74px;font-size:12.5px}
+.fault span{color:var(--mut)}
+.fault b{color:var(--tx);font-weight:500}
+
+.note{border:1px solid var(--hair);background:var(--panel);border-radius:8px;padding:16px 19px}
+.note p{margin:0 0 9px;color:var(--mut);font-size:13px;max-width:74ch}
+.note p:last-child{margin:0}
+.note b{color:var(--tx)}
+footer{border-top:1px solid var(--hair);padding:20px 22px 46px;text-align:center}
+footer p{font-size:11px;color:var(--dim);margin:0}
+@media(max-width:560px){.bar{grid-template-columns:100px 1fr 40px;gap:9px;font-size:12px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <a class="brand" href="../client-login/">
+      <span class="mark">Z</span>
+      <span><span class="nm">Zippyscale</span><span class="sub">Client workspace</span></span>
+    </a>
+    <div class="sp"></div>
+    <a class="out" href="../client-login/">Sign out</a>
+  </div>
+  <nav class="jump">
+    <a href="#builds">What we built</a>
+    <a href="#stock">Your stock</a>
+    <a href="#categories">Categories</a>
+    <a href="#blocked">Website blocked</a>
+    <a href="#audit">Data audit</a>
+    <a href="#about">About this demo</a>
+  </nav>
+</header>
+
+<main>
+  <div class="top">
+    <img src="img/brand/logo.jpg" alt="Car Cart">
+    <div><h1>Car Cart</h1><p class="where">Pre-owned luxury cars · Kavuri Hills, Madhapur, Hyderabad</p></div>
+  </div>
+  <p class="lead">A working concept of the catalogue and stock system we have built for you, using your own
+    25 cars and your own 270 photographs, read from your website on 9 September 2026. Everything below is live —
+    filter it, open a car, save one, share one with a customer.</p>
+
+  <section id="builds">
+    <h2 class="sec">What we built for you</h2>
+    <div class="tiles">
+      <a class="tile" href="catalogue.html">
+        <div class="shot"><img src="img/cover/CC-358_00.jpg" alt=""></div>
+        <div class="body">
+          <h3>Product catalogue</h3>
+          <p>What a buyer sees. Search, narrow by make, model, variant and year, set a budget or a monthly EMI,
+             open any car, save it, enquire on WhatsApp.</p>
+          <span class="cta">Open the catalogue →</span>
+        </div>
+      </a>
+      <a class="tile" href="console.html">
+        <div class="shot"><img src="img/cover/CC-374_00.jpg" alt=""></div>
+        <div class="body">
+          <h3>Internal console</h3>
+          <p>What your team sees. Cost, minimum sell price, live margin, days unsold, documents,
+             and every customer who saved a car — with call and WhatsApp buttons.</p>
+          <span class="cta">Open the console →</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <section id="stock">
+    <h2 class="sec">Your stock at a glance</h2>
+    <div class="stats">
+      <div class="stat"><b>25</b><span>Cars on your website</span></div>
+      <div class="stat"><b>₹20.82 Cr</b><span>Total value at asking price</span></div>
+      <div class="stat"><b>270</b><span>Photographs on file</span></div>
+      <div class="stat bad"><b>25 of 25</b><span>Unsold more than 90 days</span></div>
+      <div class="stat warn"><b>31%</b><span>Average car information filled</span></div>
+      <div class="stat bad"><b>0</b><span>Videos or written descriptions</span></div>
+    </div>
+  </section>
+
+  <section id="categories">
+    <h2 class="sec">What your inventory is made of</h2>
+    <div class="cols">
+      <div>
+        <p class="colhead">By make</p>
+        <div class="bars">
+          <div class="bar"><span>Toyota</span><span class="t"><i style="width:100%"></i></span><span class="n">6</span></div>
+          <div class="bar"><span>Mercedes-Benz</span><span class="t"><i style="width:50%"></i></span><span class="n">3</span></div>
+          <div class="bar"><span>BMW</span><span class="t"><i style="width:50%"></i></span><span class="n">3</span></div>
+          <div class="bar"><span>Mahindra</span><span class="t"><i style="width:50%"></i></span><span class="n">3</span></div>
+          <div class="bar"><span>Land Rover</span><span class="t"><i style="width:33%"></i></span><span class="n">2</span></div>
+          <div class="bar"><span>Volvo</span><span class="t"><i style="width:33%"></i></span><span class="n">2</span></div>
+          <div class="bar"><span>Lexus · Porsche · MG<br>Skoda · Kia · Hyundai</span><span class="t"><i style="width:17%"></i></span><span class="n">1 ea</span></div>
+        </div>
+      </div>
+      <div>
+        <p class="colhead">By price band</p>
+        <div class="bars">
+          <div class="bar"><span>Above ₹1 Cr</span><span class="t"><i class="o" style="width:50%"></i></span><span class="n">4</span></div>
+          <div class="bar"><span>₹70 L – ₹1 Cr</span><span class="t"><i class="o" style="width:25%"></i></span><span class="n">2</span></div>
+          <div class="bar"><span>₹40 – 70 L</span><span class="t"><i class="o" style="width:100%"></i></span><span class="n">8</span></div>
+          <div class="bar"><span>₹20 – 40 L</span><span class="t"><i class="o" style="width:75%"></i></span><span class="n">6</span></div>
+          <div class="bar"><span>Under ₹20 L</span><span class="t"><i class="o" style="width:63%"></i></span><span class="n">5</span></div>
+        </div>
+      </div>
+      <div>
+        <p class="colhead">By body style</p>
+        <div class="bars">
+          <div class="bar"><span>SUV</span><span class="t"><i style="width:100%"></i></span><span class="n">17</span></div>
+          <div class="bar"><span>Sedan</span><span class="t"><i style="width:35%"></i></span><span class="n">6</span></div>
+          <div class="bar"><span>MUV</span><span class="t"><i style="width:6%"></i></span><span class="n">1</span></div>
+          <div class="bar"><span>Hatchback</span><span class="t"><i style="width:6%"></i></span><span class="n">1</span></div>
+        </div>
+      </div>
+      <div>
+        <p class="colhead">By fuel, gearbox and age</p>
+        <div class="bars">
+          <div class="bar"><span>Diesel</span><span class="t"><i style="width:100%"></i></span><span class="n">15</span></div>
+          <div class="bar"><span>Petrol</span><span class="t"><i style="width:67%"></i></span><span class="n">10</span></div>
+          <div class="bar"><span>Automatic</span><span class="t"><i style="width:100%"></i></span><span class="n">24</span></div>
+          <div class="bar"><span>Manual</span><span class="t"><i style="width:4%"></i></span><span class="n">1</span></div>
+          <div class="bar"><span>2023 &amp; newer</span><span class="t"><i style="width:89%"></i></span><span class="n">8</span></div>
+          <div class="bar"><span>2020 – 2022</span><span class="t"><i style="width:100%"></i></span><span class="n">9</span></div>
+          <div class="bar"><span>2017 – 2019</span><span class="t"><i style="width:78%"></i></span><span class="n">7</span></div>
+          <div class="bar"><span>2016 &amp; older</span><span class="t"><i style="width:11%"></i></span><span class="n">1</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:15px">
+      <p><b>What this says about the business.</b> Two thirds of your yard is SUVs, and Toyota alone carries
+        ₹7.1 Cr of it. Almost everything is automatic, and more than half sits between ₹20 L and ₹70 L —
+        so that band is where your buyers are, and where the catalogue should push hardest.</p>
+    </div>
+  </section>
+
+  <section id="blocked">
+    <h2 class="sec">Your website is being blocked</h2>
+    <div class="alert">
+      <b>Airtel is showing your customers a scam warning instead of your cars</b>
+      <p>On Airtel broadband and mobile, <code>carcartonline.com</code> does not load. Airtel's DNS redirects it to
+        an <b>“Airtel found this site dangerous”</b> page that says the site was blocked to protect the visitor
+        from a suspected online scam. A large share of Hyderabad is on Airtel, and every one of them who taps
+        your link sees that instead of ₹20.82 Cr of inventory.</p>
+      <p>Your SSL certificate is completely valid — it expires 16 October 2026 and is correctly issued.
+        This is not a security fault on your site. It is a <b>reputation flag on the domain</b>, and it is fixable.</p>
+      <ol class="steps">
+        <li>Write to <code>spam.grievance@airtel.com</code> from your company email, asking for a review and delisting of carcartonline.com.</li>
+        <li>Give them the domain, your business name, GST number and showroom address so they can confirm it is a real business.</li>
+        <li>Check the same domain against Google Safe Browsing and the other ISP blocklists at the same time.</li>
+        <li>Once cleared, keep the domain clean — no cracked plugins, no unknown redirects.</li>
+      </ol>
+      <p style="margin-top:11px">We will draft the delisting request for you.</p>
+    </div>
+  </section>
+
+  <section id="audit">
+    <h2 class="sec">Errors we found in your listings</h2>
+    <div class="faults">
+      <div class="fault"><span class="id">CC-318</span><span>Range Rover Sport — the make is recorded as <b>“RANGE ROVER”</b>, a separate make from Land Rover, so anyone filtering for Land Rover never sees this car. Its fuel type is spelt <b>“DEISEL”</b>, so it also disappears from every diesel search.</span></div>
+      <div class="fault"><span class="id">CC-390</span><span>Toyota Hilux — the make is recorded as <b>“HILUX”</b> and the model as <b>“HIGH”</b>, so it shows on your site as a Toyota called “High” and never appears under Toyota.</span></div>
+      <div class="fault"><span class="id">CC-358</span><span>Mercedes G 63 AMG, your most expensive car at ₹3.80 Cr — it has <b>no kilometre reading at all</b>. That is the first question every buyer asks.</span></div>
+      <div class="fault"><span class="id">CC-2019</span><span>Skoda Superb — the year <b>2019 has been typed into the stock-number field</b>, so the car has no real stock number.</span></div>
+    </div>
+    <div class="note" style="margin-top:14px">
+      <p>Beyond these four, the bigger issue is what is simply not recorded. Across all 25 cars there is
+        <b>no owner count, no service history, no insurance status, no warranty, no tyre condition, no emission norm,
+        no power or torque figure, no EMI, and no availability status</b> — and not one video or written description.
+        That is why your listings cannot answer a buyer's questions, and why customers phone to ask things a website
+        should have told them.</p>
+      <p>Your own inventory also has more cars on CarWale than on your website. The marketplace you pay for is
+        carrying stock your own site has never heard of.</p>
+    </div>
+  </section>
+
+  <section id="about">
+    <h2 class="sec">Please read before you look</h2>
+    <div class="note">
+      <p><b>Your real data:</b> every car, price, photograph, specification and feature list here comes straight
+        from carcartonline.com, read on 9 September 2026.</p>
+      <p><b>Placeholder data:</b> purchase cost, reconditioning spend, margin, minimum sell price, tyre condition,
+        owners, service history, insurance, documents and the sample customers are invented figures, used only to
+        show how those screens work. They are marked <b>“Illustrative”</b> wherever they appear.
+        Your real numbers replace them on day one.</p>
+      <p><b>This is a concept build,</b> not your live website, and it is not connected to carcartonline.com in any way.</p>
+    </div>
+  </section>
+</main>
+
+<footer><p>Zippyscale · prepared for Car Cart · 9 September 2026 · please do not share this link</p></footer>
+</body>
+</html>

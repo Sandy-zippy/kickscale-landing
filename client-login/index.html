@@ -7,7 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+['ccu','ccp'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); tryCarCart(); }});
+});
+</script>
 <style>
 :root{
   --ink:#111111; --ink-2:#33362d; --paper:#f5f5ef; --surface:#ffffff; --surface-2:#f0f0e8;
@@ -351,7 +356,27 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
       <span class="btext"><b>EGO Premium</b><span>CRM Building + AI &middot; 2-Phase Build Plan</span></span>
       <span class="bgo">&rarr;</span>
     </button>
+    <button class="badge" onclick="goClientLogin('carcart')">
+      <span class="bicon">CC</span>
+      <span class="btext"><b>Car Cart</b><span>Pre-owned luxury cars &middot; Catalogue + Stock Console</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
     <div class="dir-note"><span>&#9679;</span><span>More client workspaces appear here as Zippyscale builds them out.</span></div>
+  </div>
+</div>
+
+<!-- CAR CART LOGIN -->
+<div id="cclogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Car Cart &times; Zippyscale</div>
+    <h1>Car Cart</h1>
+    <p class="sub">Your product catalogue and internal stock console, built on your own 25 cars.</p>
+    <div class="lf"><label for="ccu">Username</label><input id="ccu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="carcart"></div>
+    <div class="lf"><label for="ccp">Password</label><input id="ccp" type="password" autocomplete="current-password" placeholder="Password"></div>
+    <p class="lerr" id="ccerr" role="alert"></p>
+    <button class="portal-cta" onclick="tryCarCart()">Enter workspace<span class="arrow">&rarr;</span></button>
+    <p class="portal-foot">This is a front-end gate for demo hosting, not bank-grade security.</p>
   </div>
 </div>
 
@@ -1549,7 +1574,25 @@ async function downloadPDF(){
 function hideGates(){['portal','directory','clientlogin'].forEach(id=>document.getElementById(id).classList.add('hidden'));}
 function goPortal(){hideGates();document.getElementById('portal').classList.remove('hidden');}
 function goDirectory(){hideGates();document.getElementById('directory').classList.remove('hidden');}
-function goClientLogin(key){hideGates();document.getElementById('clientlogin').classList.remove('hidden');document.getElementById('lerr').textContent='';document.getElementById('u').focus();}
+function goClientLogin(key){
+  hideGates();
+  if(key==='carcart'){
+    document.getElementById('cclogin').classList.remove('hidden');
+    document.getElementById('ccerr').textContent='';
+    document.getElementById('ccu').focus();
+    return;
+  }
+  document.getElementById('clientlogin').classList.remove('hidden');
+  document.getElementById('lerr').textContent='';
+  document.getElementById('u').focus();
+}
+const CARCART = { user:"carcart", pass:"CarCart@Hyd26" };
+function tryCarCart(){
+  const u=document.getElementById('ccu').value.trim().toLowerCase();
+  const p=document.getElementById('ccp').value;
+  if(u===CARCART.user && p===CARCART.pass){ location.href='../carcart/'; return; }
+  document.getElementById('ccerr').textContent='Wrong username or password.';
+}
 
 async function tryLogin(){
   const u=document.getElementById('u').value.trim(), p=document.getElementById('p').value;

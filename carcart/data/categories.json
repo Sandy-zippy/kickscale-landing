@@ -1,0 +1,146 @@
+{
+ "makes": [
+  [
+   "Toyota",
+   6
+  ],
+  [
+   "Mercedes-Benz",
+   3
+  ],
+  [
+   "BMW",
+   3
+  ],
+  [
+   "Mahindra",
+   3
+  ],
+  [
+   "Land Rover",
+   2
+  ],
+  [
+   "Volvo",
+   2
+  ],
+  [
+   "Lexus",
+   1
+  ],
+  [
+   "Porsche",
+   1
+  ],
+  [
+   "MG",
+   1
+  ],
+  [
+   "Skoda",
+   1
+  ],
+  [
+   "Kia",
+   1
+  ],
+  [
+   "Hyundai",
+   1
+  ]
+ ],
+ "body": [
+  [
+   "SUV",
+   17
+  ],
+  [
+   "Sedan",
+   6
+  ],
+  [
+   "MUV",
+   1
+  ],
+  [
+   "Hatchback",
+   1
+  ]
+ ],
+ "fuel": [
+  [
+   "Diesel",
+   15
+  ],
+  [
+   "Petrol",
+   10
+  ]
+ ],
+ "tx": [
+  [
+   "Automatic",
+   24
+  ],
+  [
+   "Manual",
+   1
+  ]
+ ],
+ "makeValue": {
+  "Mercedes-Benz": 51650000,
+  "Land Rover": 39350000,
+  "Toyota": 70975000,
+  "BMW": 15000000,
+  "Lexus": 6000000,
+  "Porsche": 4949000,
+  "MG": 4050000,
+  "Volvo": 7000000,
+  "Skoda": 2250000,
+  "Kia": 1699000,
+  "Hyundai": 1550000,
+  "Mahindra": 3774000
+ },
+ "bands": [
+  [
+   "Under ₹20 L",
+   5
+  ],
+  [
+   "₹20–40 L",
+   6
+  ],
+  [
+   "₹40–70 L",
+   8
+  ],
+  [
+   "₹70 L – ₹1 Cr",
+   2
+  ],
+  [
+   "Above ₹1 Cr",
+   4
+  ]
+ ],
+ "years": [
+  [
+   "2020–2022",
+   9
+  ],
+  [
+   "2023 & newer",
+   8
+  ],
+  [
+   "2017–2019",
+   7
+  ],
+  [
+   "2016 & older",
+   1
+  ]
+ ],
+ "total": 25,
+ "value": 208247000
+}

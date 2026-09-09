@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Car Cart — Concept Catalogue</title>
+<link rel="icon" href="img/brand/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@1,600;1,700&family=Jost:wght@200;300;400;500;600&family=Manrope:wght@300;400;500;600;700&display=swap">
+<style>
+:root{
+  --ink:#050506; --panel:#0A0A0C; --raise:#101013; --raise2:#17171B;
+  --hair:#1D1D22; --hair2:#2C2C33;
+  --tx:#EFEFF1; --mut:#9B9BA4; --dim:#6B6B75;
+  --amber:#FFB020; --orange:#FF6A00; --ember:#FF2E00; --chrome:#D9DEE5;
+  --fire:linear-gradient(90deg,#FFB020 0%,#FF6A00 48%,#FF2E00 100%);
+  --glow:0 0 12px rgba(255,106,0,.42), 0 0 34px rgba(255,46,0,.14);
+  --glow-soft:0 0 8px rgba(255,106,0,.22);
+  --ok:#5BC17A; --bad:#FF5B3D;
+  --d:"Jost",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --b:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --logo:"Chakra Petch",var(--d);
+  --side:232px;
+  --z-head:60; --z-bar:55; --z-side:80; --z-scrim:70;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ink);color:var(--tx);font-family:var(--b);font-size:14px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+body.locked{overflow:hidden}
+img{display:block;max-width:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--orange);outline-offset:3px;border-radius:2px}
+.lbl{font-family:var(--d);font-weight:400;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ============ header ============ */
+.ribbon{background:#160A05;border-bottom:1px solid #33170A;color:#E8C4AE;font-family:var(--d);font-weight:300;
+  font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;padding:5px 16px;text-align:center}
+.ribbon b{color:var(--amber);font-weight:500}
+header{position:sticky;top:0;z-index:var(--z-head);background:rgba(5,5,6,.94);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--hair)}
+header::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--fire);
+  opacity:.55;box-shadow:var(--glow)}
+.hrow{max-width:1680px;margin:0 auto;padding:9px 20px;display:flex;align-items:center;gap:12px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;min-width:0}
+.logo img{width:34px;height:34px;border-radius:50%;box-shadow:var(--glow);flex:none}
+.logo .wm{font-family:var(--logo);font-style:italic;font-weight:700;font-size:19px;letter-spacing:.11em;
+  text-transform:uppercase;line-height:1;padding-right:.2em;display:inline-block;
+  background:linear-gradient(178deg,#FFF 4%,#C6CDD6 34%,#8C949F 54%,#EDF1F5 74%,#AEB6C0 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--chrome);
+  filter:drop-shadow(0 1px 0 rgba(0,0,0,.65))}
+.logo .sub{font-family:var(--d);font-weight:300;font-size:8px;letter-spacing:.17em;text-transform:uppercase;
+  color:var(--dim);margin-top:3px;display:block}
+.hspacer{flex:1}
+.hnav{display:flex;gap:7px;align-items:center}
+.btn{font-family:var(--d);font-weight:400;font-size:10px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--mut);background:none;border:1px solid var(--hair2);padding:0 13px;height:32px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:2px;
+  text-decoration:none;white-space:nowrap;transition:color .18s,border-color .18s,box-shadow .18s}
+.btn:hover{color:var(--tx);border-color:var(--orange);box-shadow:var(--glow-soft)}
+.btn.go{color:var(--ink);background:var(--fire);border-color:transparent;font-weight:600;box-shadow:var(--glow)}
+.btn.go:hover{color:var(--ink)}
+.btn .n{font-family:var(--b);font-size:10px;font-weight:700;background:var(--ember);color:#fff;
+  min-width:17px;height:17px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.hi{font-family:var(--d);font-weight:300;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+.hi b{color:var(--amber);font-weight:400}
+.only-lg{display:inline-flex}
+
+/* ============ shell ============ */
+.shell{max-width:1680px;margin:0 auto;display:grid;grid-template-columns:var(--side) minmax(0,1fr);
+  gap:22px;padding:16px 20px 44px;align-items:start}
+
+/* ============ sidebar ============ */
+.side{position:sticky;top:70px;max-height:calc(100dvh - 86px);overflow-y:auto;overscroll-behavior:contain;
+  border:1px solid var(--hair);background:var(--panel);border-radius:2px;scrollbar-width:thin}
+.side::-webkit-scrollbar{width:6px}
+.side::-webkit-scrollbar-thumb{background:var(--hair2)}
+.side-top{display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid var(--hair);
+  position:sticky;top:0;background:var(--panel);z-index:2}
+.side-top h2{font-family:var(--d);font-weight:400;font-size:11px;letter-spacing:.19em;text-transform:uppercase;margin:0;flex:1}
+.cnt{font-family:var(--b);font-size:10px;font-weight:700;background:var(--ember);color:#fff;
+  min-width:17px;height:17px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+.xbtn{width:32px;height:32px;border:1px solid var(--hair2);background:none;color:var(--mut);border-radius:2px;
+  display:none;align-items:center;justify-content:center;flex:none}
+.xbtn:hover{border-color:var(--ember);color:var(--ember)}
+
+details.grp{border-bottom:1px solid var(--hair)}
+details.grp>summary{list-style:none;cursor:pointer;padding:10px 14px;min-height:38px;display:flex;
+  align-items:center;gap:9px;font-family:var(--d);font-weight:400;font-size:10.5px;letter-spacing:.17em;
+  text-transform:uppercase;color:var(--mut);transition:color .18s}
+details.grp>summary::-webkit-details-marker{display:none}
+details.grp>summary:hover{color:var(--tx)}
+details.grp>summary .caret{margin-left:auto;width:6px;height:6px;flex:none;
+  border-right:1.5px solid var(--orange);border-bottom:1.5px solid var(--orange);
+  transform:rotate(45deg) translate(-2px,-2px);transition:transform .2s}
+details.grp[open]>summary .caret{transform:rotate(-135deg) translate(-2px,-2px)}
+details.grp>summary .on{width:5px;height:5px;border-radius:50%;background:var(--orange);
+  box-shadow:var(--glow-soft);flex:none;display:none}
+details.grp.active>summary .on{display:block}
+details.grp.active>summary{color:var(--tx)}
+.grp-body{padding:2px 14px 14px;display:flex;flex-direction:column;gap:11px}
+
+.sel{position:relative}
+.sel select{width:100%;height:34px;background:var(--raise);border:1px solid var(--hair2);color:var(--tx);
+  font-family:var(--d);font-weight:400;font-size:12.5px;letter-spacing:.02em;padding:0 28px 0 10px;
+  border-radius:2px;-webkit-appearance:none;appearance:none;cursor:pointer}
+.sel select:disabled{color:var(--dim);background:var(--panel);cursor:not-allowed;border-color:var(--hair)}
+.sel::after{content:"";position:absolute;right:12px;top:50%;width:6px;height:6px;pointer-events:none;
+  border-right:1.5px solid var(--orange);border-bottom:1.5px solid var(--orange);transform:translateY(-70%) rotate(45deg)}
+.sel.off::after{border-color:var(--dim)}
+.fld>.lbl{display:block;margin-bottom:5px}
+
+.sl .top{display:flex;justify-content:space-between;align-items:baseline;gap:9px;margin-bottom:2px}
+.sl .val{font-family:var(--d);font-weight:500;font-size:12.5px;
+  background:var(--fire);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.sl .val.any{background:none;-webkit-text-fill-color:var(--mut);color:var(--mut);font-weight:300}
+.sl .ends{display:flex;justify-content:space-between;font-family:var(--d);font-weight:300;font-size:9px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-top:0}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;background:transparent;height:22px;margin:0;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--hair2)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--orange);margin-top:-6px;box-shadow:var(--glow);border:0}
+input[type=range]::-moz-range-track{height:2px;background:var(--hair2)}
+input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--orange);border:0;box-shadow:var(--glow)}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--d);font-weight:400;font-size:10px;letter-spacing:.11em;text-transform:uppercase;
+  background:transparent;border:1px solid var(--hair2);color:var(--mut);padding:0 10px;height:29px;
+  display:inline-flex;align-items:center;border-radius:2px;transition:color .18s,border-color .18s,box-shadow .18s}
+.chip:hover{color:var(--tx);border-color:var(--orange);box-shadow:var(--glow-soft)}
+.chip[aria-pressed="true"]{color:var(--ink);background:var(--fire);border-color:transparent;font-weight:600;box-shadow:var(--glow)}
+.side-foot{padding:12px 14px 16px}
+.side-foot .btn{width:100%}
+
+/* ============ results column ============ */
+.resbar{position:sticky;top:62px;z-index:var(--z-bar);background:rgba(5,5,6,.94);backdrop-filter:blur(12px);
+  padding:4px 0 12px;display:flex;flex-direction:column;gap:10px}
+.search{position:relative}
+.search input{width:100%;height:42px;background:var(--raise);border:1px solid var(--hair2);border-radius:2px;
+  font-family:var(--d);font-weight:300;font-size:14px;letter-spacing:.02em;color:var(--tx);padding:0 104px 0 40px}
+.search input::placeholder{color:var(--dim);font-weight:200}
+.search input:focus{outline:none;border-color:var(--orange);box-shadow:var(--glow)}
+.search .mag{position:absolute;left:15px;top:50%;transform:translateY(-50%);width:14px;height:14px;
+  border:1.7px solid var(--orange);border-radius:50%;pointer-events:none}
+.search .mag::after{content:"";position:absolute;right:-6px;bottom:-3px;width:7px;height:1.6px;background:var(--orange);transform:rotate(45deg)}
+.search .live{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-family:var(--d);font-weight:400;
+  font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);border:1px solid #3A2409;
+  background:#160E04;padding:5px 8px;pointer-events:none;white-space:nowrap}
+.resrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.showing{font-family:var(--d);font-weight:300;font-size:12.5px;letter-spacing:.04em;color:var(--mut);flex:1;min-width:140px;margin:0}
+.showing b{font-weight:500;font-size:16px;color:var(--tx)}
+.sortsel{width:auto;min-width:186px}
+.filterbtn{display:none}
+
+/* ============ grid ============ */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(246px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:2px;overflow:hidden;cursor:pointer;
+  display:flex;flex-direction:column;transition:border-color .22s,box-shadow .22s,transform .22s;text-align:left;padding:0}
+.card:hover,.card:focus-visible{border-color:var(--orange);box-shadow:var(--glow);transform:translateY(-3px)}
+.c-img{position:relative;aspect-ratio:4/3;background:var(--raise2);overflow:hidden}
+.c-img img{width:100%;height:100%;object-fit:cover;transition:transform .55s ease}
+.card:hover .c-img img{transform:scale(1.045)}
+.c-tags{position:absolute;top:9px;left:9px;display:flex;flex-direction:column;gap:5px;align-items:flex-start}
+.tag{font-family:var(--d);font-weight:400;font-size:8.5px;letter-spacing:.13em;text-transform:uppercase;
+  padding:4px 7px;line-height:1;background:rgba(5,5,6,.82);border:1px solid var(--hair2);color:var(--mut);backdrop-filter:blur(4px)}
+.tag.sold{background:var(--ember);border-color:var(--ember);color:#fff}
+.tag.booked{background:var(--amber);border-color:var(--amber);color:#1A1000}
+.c-count{position:absolute;bottom:9px;right:9px;font-family:var(--d);font-weight:400;font-size:8.5px;
+  letter-spacing:.11em;padding:4px 7px;background:rgba(5,5,6,.82);border:1px solid var(--hair2);color:var(--mut)}
+.c-count::after{content:" PHOTOS"}
+.heart{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;
+  background:rgba(5,5,6,.72);border:1px solid var(--hair2);backdrop-filter:blur(5px);
+  display:flex;align-items:center;justify-content:center;padding:0;z-index:2;transition:border-color .18s,box-shadow .18s}
+.heart svg{width:15px;height:15px;fill:none;stroke:var(--mut);stroke-width:1.7;transition:fill .18s,stroke .18s}
+.heart:hover{border-color:var(--ember);box-shadow:var(--glow-soft)}
+.heart:hover svg{stroke:var(--ember)}
+.heart[aria-pressed="true"]{border-color:var(--ember);box-shadow:var(--glow)}
+.heart[aria-pressed="true"] svg{fill:var(--ember);stroke:var(--ember)}
+.c-body{padding:12px 13px 14px;display:flex;flex-direction:column;gap:5px;flex:1}
+.c-name{font-family:var(--d);font-weight:400;font-size:14px;letter-spacing:.045em;text-transform:uppercase;margin:0;line-height:1.25}
+.c-var{margin:-1px 0 0;font-size:11px;color:var(--dim)}
+.c-price{font-family:var(--d);font-weight:500;font-size:19px;margin:4px 0 0;line-height:1;font-variant-numeric:tabular-nums}
+.c-emi{margin:0;font-size:11px;color:var(--amber);font-weight:500}
+.c-spec{list-style:none;display:flex;flex-wrap:wrap;margin:10px 0 0;padding:9px 0 0;border-top:1px solid var(--hair);
+  gap:3px 0;font-size:11px;color:var(--mut);margin-top:auto}
+.c-spec li{padding:0 8px;border-right:1px solid var(--hair2);line-height:1.15;white-space:nowrap}
+.c-spec li:first-child{padding-left:0}
+.c-spec li:last-child{border-right:0}
+
+.none{grid-column:1/-1;text-align:center;padding:56px 24px;border:1px solid var(--hair);background:var(--panel)}
+.none h3{font-family:var(--d);font-weight:300;font-size:20px;letter-spacing:.05em;margin:0 0 10px}
+.none p{color:var(--mut);margin:0}
+#err{display:none;margin:16px 20px;padding:18px;border:1px solid var(--bad);background:#1E0803;color:#FFC7BA;
+  font-size:13px;white-space:pre-wrap}
+
+footer{border-top:1px solid var(--hair);padding:22px 20px 40px;text-align:center}
+footer p{font-family:var(--d);font-weight:300;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:6px 0}
+
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);z-index:var(--z-scrim);
+  opacity:0;pointer-events:none;transition:opacity .24s}
+body.drawer .scrim{opacity:1;pointer-events:auto}
+
+/* ============ dialogs ============ */
+dialog{background:var(--ink);color:var(--tx);border:1px solid var(--hair2);border-radius:2px;padding:0;
+  max-width:1200px;width:95vw;max-height:92dvh;overflow:hidden;box-shadow:0 0 0 1px rgba(255,106,0,.18),0 30px 90px rgba(0,0,0,.8)}
+dialog::backdrop{background:rgba(0,0,0,.86)}
+.dw{display:flex;flex-direction:column;max-height:92dvh}
+.dh{display:flex;align-items:flex-start;gap:14px;padding:15px 20px;border-bottom:1px solid var(--hair);position:relative}
+.dh::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--fire);opacity:.5}
+.dh h2{font-family:var(--d);font-weight:400;font-size:20px;letter-spacing:.06em;text-transform:uppercase;margin:0;line-height:1.15}
+.dh .sub{font-size:11.5px;color:var(--dim);margin-top:4px}
+.dx{margin-left:auto;background:none;border:1px solid var(--hair2);color:var(--mut);width:32px;height:32px;
+  font-size:15px;line-height:1;flex:none;border-radius:2px}
+.dx:hover{border-color:var(--ember);color:var(--ember)}
+.db{overflow-y:auto;padding:0 20px 22px;overscroll-behavior:contain}
+.dtop{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:18px;padding-top:16px}
+.gmain{aspect-ratio:4/3;background:var(--raise2);overflow:hidden;border:1px solid var(--hair)}
+.gmain img{width:100%;height:100%;object-fit:cover}
+.gthumbs{display:flex;gap:6px;overflow-x:auto;padding-top:6px;scrollbar-width:thin}
+.gthumbs img{width:64px;height:48px;object-fit:cover;opacity:.42;border:1px solid transparent;flex:none;cursor:pointer}
+.gthumbs img.on,.gthumbs img:hover{opacity:1;border-color:var(--orange);box-shadow:var(--glow-soft)}
+.pbox{border:1px solid var(--hair2);background:var(--panel);padding:16px;border-radius:2px}
+.pbox .big{font-family:var(--d);font-weight:500;font-size:28px;line-height:1;font-variant-numeric:tabular-nums}
+.pbox .emi{font-size:12px;color:var(--amber);margin-top:8px;font-weight:500}
+.pbox .fine{font-size:10px;color:var(--dim);margin-top:3px}
+.acts{display:flex;flex-direction:column;gap:7px;margin-top:14px}
+.act{font-family:var(--d);font-weight:400;font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;
+  min-height:36px;display:flex;align-items:center;justify-content:center;text-align:center;
+  border:1px solid var(--hair2);background:none;text-decoration:none;color:var(--tx);border-radius:2px}
+.act:hover{border-color:var(--orange);box-shadow:var(--glow-soft)}
+.act.go{background:var(--fire);border-color:transparent;color:var(--ink);font-weight:600;box-shadow:var(--glow)}
+.act.wish[aria-pressed="true"]{border-color:var(--ember);color:var(--ember)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hair);border:1px solid var(--hair);margin-top:12px}
+.kv>div{background:var(--panel);padding:9px 12px}
+.kv dt{font-family:var(--d);font-weight:300;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.kv dd{margin:3px 0 0;font-family:var(--d);font-weight:400;font-size:14px}
+h3.sec{font-family:var(--d);font-weight:400;font-size:10.5px;letter-spacing:.21em;text-transform:uppercase;
+  color:var(--mut);margin:22px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--hair)}
+h3.sec em{font-style:normal;font-size:8.5px;letter-spacing:.13em;color:var(--amber);border:1px solid #4A3006;
+  background:#171003;padding:4px 8px;margin-left:10px;vertical-align:2px}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:1px;background:var(--hair);border:1px solid var(--hair)}
+.sg>div{background:var(--panel);padding:8px 12px;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.sg dt{font-size:11.5px;color:var(--mut)}
+.sg dd{margin:0;font-family:var(--d);font-weight:400;font-size:12.5px;text-align:right}
+.fl{display:flex;flex-wrap:wrap;gap:6px}
+.fl span{font-size:11px;background:var(--raise);border:1px solid var(--hair2);padding:5px 10px;color:var(--mut);border-radius:2px}
+.ty{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair)}
+.ty>div{background:var(--panel);padding:10px 8px;text-align:center}
+.ty dt{font-family:var(--d);font-weight:300;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.ty dd{margin:5px 0 0;font-family:var(--d);font-weight:500;font-size:17px}
+.ty .t{height:3px;background:var(--hair2);margin-top:9px}
+.ty .t i{display:block;height:100%}
+
+#auth{max-width:440px}
+#auth .ah{padding:22px 24px 0;text-align:center}
+#auth .ah img{width:58px;height:58px;border-radius:50%;box-shadow:var(--glow);margin:0 auto 16px}
+#auth h2{font-family:var(--d);font-weight:300;font-size:20px;letter-spacing:.09em;text-transform:uppercase;margin:0}
+#auth p.lead{color:var(--mut);font-size:12.5px;margin:9px 0 0}
+#auth form{padding:20px 24px 24px;display:flex;flex-direction:column;gap:13px}
+#auth label{display:block;margin-bottom:7px}
+#auth input{width:100%;height:42px;background:var(--raise);border:1px solid var(--hair2);border-radius:2px;
+  color:var(--tx);font-family:var(--d);font-weight:300;font-size:15px;padding:0 12px}
+#auth input:focus{outline:none;border-color:var(--orange);box-shadow:var(--glow)}
+#auth .err{color:var(--ember);font-size:12px;min-height:18px;margin:0}
+#auth .fine{color:var(--dim);font-size:11px;text-align:center;margin:0}
+#auth .btn{width:100%;height:40px}
+
+/* ============ responsive ============ */
+@media (pointer:coarse){
+  .chip{height:38px;padding:0 13px}
+  .btn{height:38px;padding:0 15px}
+  .sel select{height:42px;font-size:14px}
+  .search input{height:48px;font-size:16px}
+  .heart{width:40px;height:40px}
+  .dx,.xbtn{width:40px;height:40px}
+  .act{min-height:44px}
+  details.grp>summary{min-height:46px;padding:13px 14px}
+  input[type=range]{height:34px}
+  input[type=range]::-webkit-slider-thumb{width:18px;height:18px;margin-top:-8px}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px}
+}
+@media (max-width:1023px){
+  .shell{grid-template-columns:minmax(0,1fr);gap:0;padding:14px 16px 48px}
+  .side{position:fixed;top:0;left:0;bottom:0;width:min(88vw,340px);max-height:none;z-index:var(--z-side);
+    border:0;border-right:1px solid var(--hair2);transform:translateX(-102%);transition:transform .28s ease;
+    padding-bottom:env(safe-area-inset-bottom);border-radius:0}
+  body.drawer .side{transform:none;box-shadow:12px 0 44px rgba(0,0,0,.7)}
+  .xbtn{display:inline-flex}
+  .filterbtn{display:inline-flex}
+  .only-lg{display:none}
+  .resbar{top:56px;padding-top:8px}
+  .search input{height:48px;font-size:16px;padding:0 14px 0 40px}
+  .search .live{display:none}
+  .hrow{padding:10px 16px;gap:10px}
+  .logo .sub{display:none}
+  .logo img{width:32px;height:32px}
+  .logo .wm{font-size:17px}
+  .dtop{grid-template-columns:1fr}
+  .dh{padding:16px}
+  .dh h2{font-size:18px}
+  .db{padding:0 16px 24px}
+  .ty{grid-template-columns:repeat(2,1fr)}
+  .kv{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  .grid{grid-template-columns:1fr;gap:12px}
+  .showing{font-size:12px}
+  .showing b{font-size:15px}
+  .sortsel{min-width:0;flex:1}
+  .c-price{font-size:20px}
+  .pbox .big{font-size:26px}
+  .ribbon{font-size:9.5px;letter-spacing:.06em}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="ribbon">Concept demo by <b>Zippyscale</b> — not an official Car Cart website</div>
+
+<header><div class="hrow">
+  <a class="logo" href="index.html" title="Back to your Car Cart workspace">
+    <img src="img/brand/logo.jpg" alt="Car Cart">
+    <span><span class="wm">Car Cart</span><span class="sub">Pre-owned luxury · Kavuri Hills, Hyderabad</span></span>
+  </a>
+  <div class="hspacer"></div>
+  <div class="hnav" id="acct"></div>
+  <a class="btn only-lg" href="console.html">Console</a>
+  <a class="btn only-lg" href="index.html">Workspace</a>
+</div></header>
+
+<div id="err"></div>
+<div class="scrim" id="scrim"></div>
+
+<div class="shell">
+
+  <aside class="side" id="side" aria-label="Filter the catalogue">
+    <div class="side-top">
+      <h2>Filters</h2>
+      <span class="cnt" id="fcount" hidden>0</span>
+      <button class="xbtn" id="sideclose" type="button" aria-label="Close filters">✕</button>
+    </div>
+
+    <details class="grp" id="g-veh" open>
+      <summary>Make &amp; model<span class="on"></span><span class="caret"></span></summary>
+      <div class="grp-body">
+        <div class="fld"><label class="lbl" for="f-make">Make</label><div class="sel"><select id="f-make"></select></div></div>
+        <div class="fld"><label class="lbl" for="f-model">Model</label><div class="sel off"><select id="f-model" disabled></select></div></div>
+        <div class="fld"><label class="lbl" for="f-variant">Variant</label><div class="sel off"><select id="f-variant" disabled></select></div></div>
+        <div class="fld"><label class="lbl" for="f-year">Year</label><div class="sel"><select id="f-year"></select></div></div>
+      </div>
+    </details>
+
+    <details class="grp" id="g-budget" open>
+      <summary>Budget<span class="on"></span><span class="caret"></span></summary>
+      <div class="grp-body">
+        <div class="sl">
+          <div class="top"><span class="lbl">Price</span><span class="val" id="v-price"></span></div>
+          <input type="range" id="f-price" min="900000" max="38000000" step="100000" value="38000000" aria-label="Maximum price">
+          <div class="ends"><span>₹9.50 L</span><span>₹3.80 Cr</span></div>
+        </div>
+        <div class="sl">
+          <div class="top"><span class="lbl">EMI / month</span><span class="val" id="v-emi"></span></div>
+          <input type="range" id="f-emi" min="15000" max="700000" step="2500" value="700000" aria-label="Maximum monthly EMI">
+          <div class="ends"><span>₹15,000</span><span>₹7,00,000</span></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="grp" id="g-km" open>
+      <summary>Kms driven<span class="on"></span><span class="caret"></span></summary>
+      <div class="grp-body">
+        <div class="sl">
+          <div class="top"><span class="lbl">Kms driven</span><span class="val" id="v-km"></span></div>
+          <input type="range" id="f-km" min="5000" max="160000" step="1000" value="160000" aria-label="Maximum kilometres driven">
+          <div class="ends"><span>5,000</span><span>1,60,000 km</span></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="grp" id="g-fuel" open>
+      <summary>Fuel<span class="on"></span><span class="caret"></span></summary>
+      <div class="grp-body"><div class="chips" id="c-fuel"></div></div>
+    </details>
+
+    <details class="grp" id="g-tx" open>
+      <summary>Transmission<span class="on"></span><span class="caret"></span></summary>
+      <div class="grp-body"><div class="chips" id="c-tx"></div></div>
+    </details>
+
+    <details class="grp" id="g-body">
+      <summary>Body style<span class="on"></span><span class="caret"></span></summary>
+      <div class="grp-body"><div class="chips" id="c-body"></div></div>
+    </details>
+
+    <details class="grp" id="g-more" open>
+      <summary>Availability<span class="on"></span><span class="caret"></span></summary>
+      <div class="grp-body"><div class="chips" id="c-more"></div></div>
+    </details>
+
+    <div class="side-foot"><button class="btn" id="clear" type="button">Clear all filters</button></div>
+  </aside>
+
+  <main>
+    <div class="resbar">
+      <div class="search">
+        <span class="mag"></span>
+        <input type="search" id="f-q" placeholder="Search — try “land cruiser” or “bmw 2024”" autocomplete="off" spellcheck="false">
+        <span class="live" id="livecount"></span>
+      </div>
+      <div class="resrow">
+        <button class="btn filterbtn" id="openfilters" type="button">Filters<span class="n" id="fcount2" hidden>0</span></button>
+        <p class="showing"><b id="n-show">—</b> <span id="n-of"></span></p>
+        <div class="sel sortsel"><label class="sr" for="f-sort">Sort by</label><select id="f-sort">
+          <option value="price-desc">Price — high to low</option>
+          <option value="price-asc">Price — low to high</option>
+          <option value="year-desc">Year — newest first</option>
+          <option value="km-asc">Kilometres — lowest first</option>
+          <option value="new-first">Recently listed</option>
+        </select></div>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<footer>
+  <p>25 cars · 270 photographs · Kavuri Hills, Madhapur, Hyderabad</p>
+  <p>Condition figures are illustrative placeholders — not Car Cart's real data</p>
+</footer>
+
+<dialog id="auth">
+  <div class="ah">
+    <img src="img/brand/logo.jpg" alt="">
+    <h2>Sign in</h2>
+    <p class="lead">Save cars to your wishlist and we will tell you the moment the price moves.</p>
+  </div>
+  <form id="authform" novalidate>
+    <div><label class="lbl" for="a-name">Full name</label><input id="a-name" type="text" autocomplete="name" placeholder="Ravi Kumar"></div>
+    <div><label class="lbl" for="a-mob">Mobile number</label><input id="a-mob" type="tel" inputmode="numeric" autocomplete="tel" placeholder="98480 12345"></div>
+    <p class="err" id="a-err" role="alert"></p>
+    <button class="btn go" type="submit">Continue</button>
+    <p class="fine">No password. Your number is how we find your wishlist again.</p>
+    <button class="btn" type="button" id="a-cancel">Cancel</button>
+  </form>
+</dialog>
+
+<dialog id="dlg"><div class="dw">
+  <div class="dh">
+    <div><h2 id="d-name"></h2><div class="sub" id="d-sub"></div></div>
+    <button class="dx" id="d-close" type="button" aria-label="Close">✕</button>
+  </div>
+  <div class="db" id="d-body"></div>
+</div></dialog>
+
+<script src="core.js"></script>
+<script>
+(function(){
+'use strict';
+var CARS=[], S=CC.DEFAULTS(), STORE=null, pendingWish=null;
+var $=function(id){return document.getElementById(id);};
+function boom(e){var el=$('err');el.style.display='block';el.textContent='Something broke while rendering:\n\n'+(e&&e.stack?e.stack:e);}
+window.onerror=function(m,s,l,c,e){boom(e||m);};
+
+fetch('data/cars.json').then(function(r){return r.json();}).then(function(d){
+  CARS=d.map(CC.prepare);
+  STORE=CC.seedStore(CC.loadStore(window.localStorage));
+  S=readURL(); buildChips(); paintAccount(); render();
+  var want=new URLSearchParams(location.search).get('car');
+  if(want) openCar(want);
+}).catch(boom);
+
+/* ---------- url ---------- */
+function readURL(){
+  var p=new URLSearchParams(location.search), s=CC.DEFAULTS();
+  ['make','model','variant','year','q','sort'].forEach(function(k){ if(p.get(k)) s[k]=p.get(k); });
+  ['price','emi','km'].forEach(function(k){ if(p.get(k)) s[k]=+p.get(k); });
+  ['fuel','tx','body'].forEach(function(k){ if(p.get(k)) s[k]=p.get(k).split(','); });
+  if(p.get('sold')==='1') s.hideSold=false;
+  if(p.get('wish')==='1') s.onlyWish=true;
+  return s;
+}
+function writeURL(){
+  var p=new URLSearchParams(), D=CC.DEFAULTS();
+  ['make','model','variant','year','q'].forEach(function(k){ if(S[k]) p.set(k,S[k]); });
+  if(S.sort!==D.sort) p.set('sort',S.sort);
+  ['price','emi','km'].forEach(function(k){ if(S[k]!==D[k]) p.set(k,S[k]); });
+  ['fuel','tx','body'].forEach(function(k){ if(S[k].length) p.set(k,S[k].join(',')); });
+  if(!S.hideSold) p.set('sold','1');
+  if(S.onlyWish) p.set('wish','1');
+  var car=new URLSearchParams(location.search).get('car');
+  if(car && $('dlg').open) p.set('car',car);
+  var qs=p.toString();
+  history.replaceState(null,'',location.pathname+(qs?'?'+qs:''));
+}
+
+/* how many filters are actually applied — drives both badges */
+function activeCount(){
+  var D=CC.DEFAULTS(), n=0;
+  ['make','model','variant','year','q'].forEach(function(k){ if(S[k]) n++; });
+  ['price','emi','km'].forEach(function(k){ if(S[k]!==D[k]) n++; });
+  ['fuel','tx','body'].forEach(function(k){ n+=S[k].length; });
+  if(!S.hideSold) n++;
+  if(S.onlyWish) n++;
+  return n;
+}
+
+/* ---------- controls ---------- */
+function fillSelect(id,label,opts,cur,disabled){
+  var el=$(id);
+  el.disabled=!!disabled;
+  el.parentNode.classList.toggle('off',!!disabled);
+  var html='<option value="">'+(disabled?'Choose a '+label.toLowerCase()+' above':'All '+label.toLowerCase()+'s')+'</option>';
+  opts.forEach(function(o){
+    var v=String(o[0]);
+    html+='<option value="'+CC.esc(v)+'"'+(v===String(cur)?' selected':'')+'>'+CC.esc(v)+'  ('+o[1]+')</option>';
+  });
+  el.innerHTML=html;
+  el.value=cur?String(cur):'';
+}
+function setVal(id,isAny,anyText,text){
+  var el=$(id); el.textContent=isAny?anyText:text; el.classList.toggle('any',isAny);
+}
+function mark(id,on){ $(id).classList.toggle('active',!!on); }
+
+function syncControls(){
+  fillSelect('f-make','Make',CC.cascadeOptions(CARS,S,0),S.make,false);
+  fillSelect('f-model','Model',CC.cascadeOptions(CARS,S,1),S.model,!S.make);
+  fillSelect('f-variant','Variant',CC.cascadeOptions(CARS,S,2),S.variant,!S.model);
+  fillSelect('f-year','Year',CC.cascadeOptions(CARS,S,3),S.year,false);
+  $('f-sort').value=S.sort;
+  if($('f-q').value!==S.q) $('f-q').value=S.q;
+
+  var L=CC.LIMITS;
+  $('f-price').value=S.price; $('f-emi').value=S.emi; $('f-km').value=S.km;
+  setVal('v-price', S.price>=L.price, 'Any price',   'Up to '+CC.money(S.price));
+  setVal('v-emi',   S.emi>=L.emi,     'Any EMI',     'Up to ₹'+CC.fmt(S.emi));
+  setVal('v-km',    S.km>=L.km,       'Any', 'Under '+CC.fmt(S.km)+' km');
+
+  mark('g-veh',    !!(S.make||S.model||S.variant||S.year));
+  mark('g-budget', S.price<L.price || S.emi<L.emi);
+  mark('g-km',     S.km<L.km);
+  mark('g-fuel',   S.fuel.length>0);
+  mark('g-tx',     S.tx.length>0);
+  mark('g-body',   S.body.length>0);
+  mark('g-more',   !S.hideSold || !!S.onlyWish);
+
+  var n=activeCount();
+  ['fcount','fcount2'].forEach(function(id){
+    var el=$(id); el.textContent=n; el.hidden = n===0;
+  });
+}
+
+function buildChips(){
+  [['fuel','fuel','c-fuel'],['tx','transmission','c-tx'],['body','body_type','c-body']].forEach(function(g){
+    var seen={};
+    CARS.forEach(function(c){ if(c[g[1]]) seen[c[g[1]]]=1; });
+    $(g[2]).innerHTML=Object.keys(seen).sort().map(function(v){
+      return '<button class="chip" type="button" data-k="'+g[0]+'" data-v="'+CC.esc(v)+'" aria-pressed="false">'+CC.esc(v)+'</button>';
+    }).join('');
+  });
+  $('c-more').innerHTML=
+    '<button class="chip" type="button" data-k="hideSold" aria-pressed="true">Hide sold &amp; booked</button>'+
+    '<button class="chip" type="button" data-k="onlyWish" aria-pressed="false">My wishlist</button>';
+}
+
+/* ---------- render ---------- */
+function render(){
+  try{
+    syncControls(); writeURL();
+    var chips=document.querySelectorAll('.chip'), i;
+    for(i=0;i<chips.length;i++){
+      var b=chips[i], k=b.getAttribute('data-k');
+      var on = k==='hideSold' ? S.hideSold : k==='onlyWish' ? !!S.onlyWish
+             : (S[k]||[]).indexOf(b.getAttribute('data-v'))>=0;
+      b.setAttribute('aria-pressed', on?'true':'false');
+    }
+    var list=CARS.filter(function(c){
+      if(S.onlyWish && !CC.isWished(STORE,c.stock_id)) return false;
+      return CC.matches(c,S);
+    }).sort(CC.SORTS[S.sort]||CC.SORTS['price-desc']);
+
+    $('n-show').textContent=list.length;
+    $('n-of').textContent=list.length===1?'car available':'cars available';
+    $('livecount').textContent=list.length+(list.length===1?' result':' results');
+
+    var g=$('grid');
+    if(!list.length){
+      var near=CARS.filter(function(c){return !S.make||c.make===S.make;}).length;
+      g.innerHTML = S.onlyWish
+        ? '<div class="none"><h3>Your wishlist is empty</h3><p>Tap the heart on any car to save it here.</p></div>'
+        : '<div class="none"><h3>Nothing matches that combination</h3><p>There are '+near+' '+
+          (S.make?CC.esc(S.make):'cars')+' in stock — try widening the year or the price.</p></div>';
+      return;
+    }
+    var out='';
+    for(i=0;i<list.length;i++) out+=CC.cardHTML(list[i],CC.isWished(STORE,list[i].stock_id));
+    g.innerHTML=out;
+    $('err').style.display='none';
+  }catch(e){ boom(e); }
+}
+
+/* ---------- drawer ---------- */
+function drawer(open){
+  document.body.classList.toggle('drawer',open);
+  document.body.classList.toggle('locked',open);
+  if(open) setTimeout(function(){ $('sideclose').focus(); },60);
+}
+$('openfilters').onclick=function(){ drawer(true); };
+$('sideclose').onclick=function(){ drawer(false); };
+$('scrim').onclick=function(){ drawer(false); };
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape' && document.body.classList.contains('drawer')) drawer(false);
+});
+
+/* ---------- events ---------- */
+document.addEventListener('change',function(e){
+  var id=e.target.id;
+  if(id==='f-make'){S.make=e.target.value;S.model='';S.variant='';S.year='';}
+  else if(id==='f-model'){S.model=e.target.value;S.variant='';S.year='';}
+  else if(id==='f-variant'){S.variant=e.target.value;S.year='';}
+  else if(id==='f-year'){S.year=e.target.value;}
+  else if(id==='f-sort'){S.sort=e.target.value;}
+  else return;
+  render();
+});
+document.addEventListener('input',function(e){
+  var id=e.target.id;
+  if(id==='f-price'){S.price=+e.target.value;render();}
+  else if(id==='f-emi'){S.emi=+e.target.value;render();}
+  else if(id==='f-km'){S.km=+e.target.value;render();}
+  else if(id==='f-q'){S.q=e.target.value;render();}
+});
+document.addEventListener('click',function(e){
+  var h=e.target.closest('[data-wish]');
+  if(h){
+    e.stopPropagation(); e.preventDefault();
+    var wid=h.getAttribute('data-wish');
+    var res=CC.toggleWish(STORE,wid);
+    if(res.error==='signin'){ pendingWish=wid; openAuth(); return; }
+    CC.saveStore(window.localStorage,STORE); paintAccount(); render();
+    if($('dlg').open) openCar(wid);
+    return;
+  }
+  var chip=e.target.closest('.chip');
+  if(chip){
+    var k=chip.getAttribute('data-k');
+    if(k==='hideSold') S.hideSold=!S.hideSold;
+    else if(k==='onlyWish'){ S.onlyWish=!S.onlyWish; if(S.onlyWish&&!CC.currentUser(STORE)){ S.onlyWish=false; openAuth(); } }
+    else{
+      var v=chip.getAttribute('data-v'), a=S[k].slice(), i=a.indexOf(v);
+      if(i<0) a.push(v); else a.splice(i,1);
+      S[k]=a;
+    }
+    render(); return;
+  }
+  if(e.target.id==='clear'){ S=CC.DEFAULTS(); $('f-q').value=''; render(); return; }
+  if(e.target.id==='signin'){ openAuth(); return; }
+  if(e.target.id==='signout'){ CC.signOut(STORE); CC.saveStore(window.localStorage,STORE); S.onlyWish=false; paintAccount(); render(); return; }
+  if(e.target.id==='mywish'){ S.onlyWish=true; drawer(false); render(); window.scrollTo({top:0,behavior:'smooth'}); return; }
+  if(e.target.id==='a-cancel'){ $('auth').close(); return; }
+  var card=e.target.closest('.card');
+  if(card) openCar(card.getAttribute('data-id'));
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter'&&e.key!==' ') return;
+  var card=e.target.closest && e.target.closest('.card');
+  if(card){ e.preventDefault(); openCar(card.getAttribute('data-id')); }
+});
+
+/* ---------- account ---------- */
+function paintAccount(){
+  var u=CC.currentUser(STORE), el=$('acct');
+  if(!u){ el.innerHTML='<button class="btn go" id="signin" type="button">Sign in</button>'; return; }
+  el.innerHTML='<span class="hi only-lg">Hello <b>'+CC.esc(u.name.split(/\s+/)[0])+'</b></span>'+
+    '<button class="btn" id="mywish" type="button">Wishlist<span class="n">'+u.wishlist.length+'</span></button>'+
+    '<button class="btn only-lg" id="signout" type="button">Sign out</button>';
+}
+function openAuth(){ $('a-err').textContent=''; $('auth').showModal(); setTimeout(function(){$('a-name').focus();},40); }
+$('authform').addEventListener('submit',function(e){
+  e.preventDefault();
+  var r=CC.signIn(STORE,$('a-name').value,$('a-mob').value,new Date().toISOString().slice(0,10));
+  if(r.error){ $('a-err').textContent=r.error; return; }
+  if(pendingWish){ CC.toggleWish(STORE,pendingWish); pendingWish=null; }
+  CC.saveStore(window.localStorage,STORE);
+  $('auth').close(); $('a-name').value=''; $('a-mob').value='';
+  paintAccount(); render();
+});
+
+/* ---------- car dialog ---------- */
+$('d-close').onclick=function(){ $('dlg').close(); };
+$('dlg').addEventListener('close',function(){
+  var u=new URL(location.href); u.searchParams.delete('car');
+  history.replaceState(null,'',u.pathname+u.search);
+});
+
+function openCar(id){
+  try{
+    var c=null,i;
+    for(i=0;i<CARS.length;i++) if(CARS[i].stock_id===id) c=CARS[i];
+    if(!c) return;
+    var d=c.demo, E=CC.esc, M=CC.money, F=CC.fmt, wished=CC.isWished(STORE,c.stock_id);
+
+    function sg(title,rows,illus){
+      var body='';
+      rows.forEach(function(r){
+        if(r[1]===null||r[1]===undefined||r[1]==='') return;
+        body+='<div><dt>'+E(r[0])+'</dt><dd>'+r[1]+'</dd></div>';
+      });
+      return '<h3 class="sec">'+title+(illus?'<em>Illustrative</em>':'')+'</h3><div class="sg">'+body+'</div>';
+    }
+    var msg='Hi Car Cart, I am interested in '+c.name+' (Stock '+c.stock_id+')';
+    var thumbs=c.photos.map(function(p,k){
+      return '<img src="img/gallery/'+E(p)+'" data-i="'+k+'" class="'+(k?'':'on')+'" alt="View '+(k+1)+'">';
+    }).join('');
+    var tyres=['Front left','Front right','Rear left','Rear right'].map(function(l,k){
+      var v=d.tyres[k];
+      return '<div><dt>'+l+'</dt><dd>'+v+'%</dd><div class="t"><i style="width:'+v+'%;background:'+(v<65?'var(--amber)':'var(--ok)')+'"></i></div></div>';
+    }).join('');
+
+    $('d-name').textContent=c.name;
+    $('d-sub').textContent=(c.variant?c.variant+' · ':'')+'Stock '+c.stock_id;
+    $('d-body').innerHTML=
+      '<div class="dtop"><div>'+
+        '<div class="gmain"><img id="gmain" src="img/gallery/'+E(c.photos[0])+'" alt="'+E(c.name)+'"></div>'+
+        '<div class="gthumbs">'+thumbs+'</div></div>'+
+      '<div><div class="pbox"><div class="big">'+M(c.price)+'</div>'+
+          '<div class="emi">EMI from ₹'+F(c.emi)+' per month</div>'+
+          '<div class="fine">20% down · 60 months · 11.4% p.a. — illustrative</div>'+
+          '<div class="acts">'+
+            '<a class="act go" href="https://wa.me/916269898989?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener">Enquire on WhatsApp</a>'+
+            '<a class="act" href="tel:+916269898989">Call 62698 98989</a>'+
+            '<button class="act wish" type="button" data-wish="'+E(c.stock_id)+'" aria-pressed="'+(wished?'true':'false')+'">'+
+              (wished?'Saved to wishlist':'Add to wishlist')+'</button>'+
+          '</div></div>'+
+        '<div class="kv">'+
+          '<div><dt>Year</dt><dd>'+(c.year||'—')+'</dd></div>'+
+          '<div><dt>Kilometres</dt><dd>'+(c.km!=null?F(c.km)+' km':'On request')+'</dd></div>'+
+          '<div><dt>Fuel</dt><dd>'+E(c.fuel||'—')+'</dd></div>'+
+          '<div><dt>Transmission</dt><dd>'+E(c.transmission||'—')+'</dd></div>'+
+          '<div><dt>Owners</dt><dd>'+E(d.owners)+'</dd></div>'+
+          '<div><dt>Inspection</dt><dd>'+d.inspection+' / 10</dd></div>'+
+        '</div></div></div>'+
+      sg('Engine &amp; drivetrain',[['Engine',c.engine_cc?F(c.engine_cc)+' cc':null],['Cylinders',E(c.cylinders)],
+          ['Fuel',E(c.fuel)],['Transmission',E(c.transmission)],['Drive type',E(c.drivetrain)],
+          ['Body style',E(c.body_type)],['Doors',E(c.doors)],['Colour',E(c.colour)]])+
+      sg('Condition &amp; history',[['Kilometres',c.km!=null?F(c.km)+' km':'On request'],['Owners',E(d.owners)],
+          ['Inspection score',d.inspection+' / 10'],['Service history',E(d.service_history)],
+          ['Insurance',E(d.insurance)],['Warranty',E(d.warranty)],['Keys supplied',d.keys],
+          ['Availability',E(c.availability)],['Showroom',E(d.branch)]],true)+
+      '<h3 class="sec">Tyre condition<em>Illustrative</em></h3><div class="ty">'+tyres+'</div>'+
+      (c.features.length?'<h3 class="sec">Features · '+c.features.length+'</h3><div class="fl"><span>'+c.features.map(E).join('</span><span>')+'</span></div>':'')+
+      '';
+
+    var ts=document.querySelectorAll('.gthumbs img');
+    for(var t=0;t<ts.length;t++){
+      ts[t].onclick=function(){
+        $('gmain').src=this.src;
+        for(var x=0;x<ts.length;x++) ts[x].classList.toggle('on',ts[x]===this);
+      };
+    }
+    if(!$('dlg').open) $('dlg').showModal();
+    $('d-body').scrollTop=0;
+    var u2=new URL(location.href); u2.searchParams.set('car',c.stock_id);
+    history.replaceState(null,'',u2.pathname+u2.search);
+  }catch(e){ boom(e); }
+}
+})();
+</script>
+</body>
+</html>
