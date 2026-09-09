@@ -371,12 +371,18 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
     <div class="gate-eyebrow">Car Cart &times; Zippyscale</div>
     <h1>Car Cart</h1>
-    <p class="sub">Your product catalogue and internal stock console, built on your own 25 cars.</p>
-    <div class="lf"><label for="ccu">Username</label><input id="ccu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="carcart"></div>
-    <div class="lf"><label for="ccp">Password</label><input id="ccp" type="password" autocomplete="current-password" placeholder="Password"></div>
-    <p class="lerr" id="ccerr" role="alert"></p>
-    <button class="portal-cta" onclick="tryCarCart()">Enter workspace<span class="arrow">&rarr;</span></button>
-    <p class="portal-foot">This is a front-end gate for demo hosting, not bank-grade security.</p>
+    <p class="sub">Your product catalogue and internal stock console, built on your own 25 cars and 270 photographs.</p>
+    <div class="field">
+      <label for="ccu">Username</label>
+      <input id="ccu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. carcart">
+    </div>
+    <div class="field">
+      <label for="ccp">Password</label>
+      <input id="ccp" type="password" autocomplete="current-password" placeholder="Enter password">
+    </div>
+    <div class="login-err" id="ccerr"></div>
+    <button class="btn-primary" onclick="tryCarCart()">Enter workspace</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
   </div>
 </div>
 
@@ -1586,7 +1592,7 @@ function goClientLogin(key){
   document.getElementById('lerr').textContent='';
   document.getElementById('u').focus();
 }
-const CARCART = { user:"carcart", pass:"CarCart@Hyd26" };
+const CARCART = { user:"carcart", pass:"Carcart@hyd26" };
 function tryCarCart(){
   const u=document.getElementById('ccu').value.trim().toLowerCase();
   const p=document.getElementById('ccp').value;
