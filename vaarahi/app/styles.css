@@ -47,13 +47,14 @@ h3 { font-size: 19px; }
 /* advisor = phone */
 .shell.phone-mode { grid-template-columns: 1fr; place-items: start center; padding: var(--s8) 0; background: color-mix(in srgb, var(--ge-bg) 80%, var(--ge-text) 6%); }
 .phone { width: 390px; height: 820px; border: 10px solid #121212; border-radius: 46px; overflow: hidden; background: var(--ge-bg); display: flex; flex-direction: column; box-shadow: 0 30px 60px rgba(0, 0, 0, .18); }
-.ph-head { background: linear-gradient(165deg, var(--brand-deep), var(--brand-green)); padding: 18px 20px 14px; display: flex; justify-content: center; }
+.ph-head { background: linear-gradient(165deg, var(--brand-deep), var(--brand-green)); padding: 18px 20px 14px; display: flex; justify-content: center; align-items: center; gap: var(--s3); }
 .ph-head img { height: 30px; }
+.ph-who { color: #e8dcc0; font-size: 11px; text-align: right; margin-left: auto; max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ph-body { flex: 1; overflow: auto; padding: var(--s4); }
 .ph-body h1 { font-size: 28px; }
 .ph-tabs { display: flex; border-top: 1px solid var(--ge-border); background: var(--ge-surface); }
-.ph-tabs a { flex: 1; text-align: center; padding: 10px 2px 12px; font-size: 11px; color: var(--ge-text-muted); display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 44px; }
-.ph-tabs a.on { color: var(--ge-primary); font-weight: 600; box-shadow: inset 0 2px 0 var(--ge-accent); }
+.ph-tabs a, .ph-tabs button { flex: 1; text-align: center; padding: 10px 2px 12px; font-size: 11px; color: var(--ge-text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 44px; position: relative; background: none; border: 0; font-family: inherit; font-weight: 500; cursor: pointer; }
+.ph-tabs a.on, .ph-tabs button.on { color: var(--ge-primary); font-weight: 600; box-shadow: inset 0 2px 0 var(--ge-accent); }
 
 /* ---------- primitives ---------- */
 .card { background: var(--ge-surface); border: 1px solid var(--ge-border); border-radius: var(--r); padding: var(--s5); }
@@ -236,18 +237,55 @@ textarea.in { padding: 10px 12px; min-height: 80px; resize: vertical; }
 
 .ph-tabs .n { top: 2px; right: 4%; font-size: 10px; min-width: 16px; padding: 0 5px; }
 
-/* phone: action buttons drop under the row text */
+/* phone: action buttons drop under the row text.
+   A bare .btn child (actionItem's Call/WhatsApp, "Send offer", grievance "Open") would otherwise
+   sit in the bottom-right corner — directly under the floating + button — and get covered. */
 .phone .list .row { flex-wrap: wrap; }
 .phone .list .row > .actbar { flex-basis: 100%; justify-content: flex-end; }
+.phone .list .row > .btn { flex-basis: 100%; justify-content: center; }
 
-/* ---------- real phones (a shared demo link is opened on a phone) ---------- */
+/* thumb-zone primary action — phones only (the media query switches it on) */
+.fab { display: none; position: fixed; right: 16px; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); z-index: 21;
+  width: 56px; height: 56px; border-radius: 18px; border: 0; cursor: pointer; place-items: center;
+  background: var(--ge-primary-fill); color: var(--ge-on-primary); font-size: 28px; line-height: 1;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .24); }
+
+/* "More" navigation sheet — reuses the existing .sheet bottom-sheet pattern */
+.sheet-grab { width: 40px; height: 4px; border-radius: 999px; background: var(--ge-border); margin: 0 auto var(--s3); }
+.sheet-nav .who-row { display: flex; flex-direction: column; padding: 0 var(--s3) var(--s3); }
+.sheet-nav .who-row span { font-size: 12px; color: var(--ge-text-muted); }
+.sheet-nav nav { display: grid; gap: 2px; }
+.sheet-nav nav a { display: flex; align-items: center; justify-content: space-between; min-height: 52px; padding: 0 var(--s3); border-radius: 12px; color: var(--ge-text); font-weight: 600; }
+.sheet-nav nav a.on { background: var(--ge-surface-2); color: var(--ge-primary); }
+.sheet-nav nav .n { background: var(--brand-gold); color: #161d17; border-radius: 999px; min-width: 20px; text-align: center; font-size: 11px; padding: 0 6px; }
+
+/* ---------- real phones: every role gets the app shell ---------- */
 @media (max-width: 760px) {
   .shell.phone-mode { padding: 0; background: var(--ge-bg); place-items: stretch; }
-  .phone { width: 100%; height: auto; min-height: calc(100vh - 92px); border: 0; border-radius: 0; box-shadow: none; }
-  .ph-body { padding: var(--s4) var(--s3); }
-  .ph-tabs { position: sticky; bottom: 0; }
-  .db { gap: 8px; padding: 6px 10px; }
-  .db .stories { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; padding-bottom: 2px; }
+  /* 100dvh, not 100vh: Safari's URL bar shrinks the viewport and clips a vh-sized shell */
+  .phone { width: 100%; height: auto; min-height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
+  .ph-head { justify-content: space-between; align-items: center; padding: 12px var(--s4); }
+  .ph-head img { height: 24px; }
+  /* leave room for the fixed tab bar + the iPhone home indicator */
+  .ph-body { padding: var(--s4) var(--s3) calc(80px + env(safe-area-inset-bottom, 0px)); }
+  .ph-tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -1px 0 var(--ge-border), 0 -10px 24px rgba(0, 0, 0, .07); }
+  .ph-tabs a, .ph-tabs button { min-height: 56px; font-size: 11px; }
+  .fab { display: grid; }
+  /* stat cards two-up rather than four giant stacked blocks */
+  .grid.g3, .grid.g4 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s3); }
+  .card { padding: var(--s4); }
+  /* branch bars: label above the bar, value visible (no hover on touch) */
+  .hbars .hb { grid-template-columns: 1fr; gap: 4px; padding: 10px 0; }
+  .hb-v { text-align: left; }
+  /* demo chrome collapses to one scrollable line — it was eating a third of the screen
+     before any product content, which made an app look like a web page */
+  .db { gap: 6px; padding: 6px 10px; flex-wrap: nowrap; overflow-x: auto; align-items: center; }
+  .db > * { flex: none; }
+  .db .pill, .db label { white-space: nowrap; font-size: 12px; }
+  .db select { max-width: 48vw; }
+  .db .stories { flex-wrap: nowrap; overflow-x: visible; padding-bottom: 2px; }
   .db .stories button { white-space: nowrap; }
   .main { padding: var(--s5) var(--s4); }
   table.t { display: block; overflow-x: auto; white-space: nowrap; }

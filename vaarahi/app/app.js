@@ -84,6 +84,7 @@ let apptDay = 'today', catQ = '', catColl = 'all', tgtMonth = MONTH, allocStore 
 const me = () => E[ROLES[role].user], kind = () => ROLES[role].kind;
 const acc = () => SETTINGS.access[me().role] || NO_ACCESS;
 const isDirector = () => me().role === 'role_owner';
+const isPhone = () => window.matchMedia('(max-width: 760px)').matches;
 const myStore = () => me().store || 'JBH';
 const active = () => D.employees.filter(e => e.status !== 'left');
 const advisorsAt = st => active().filter(e => e.role === 'role_advisor' && e.store === st);
@@ -183,7 +184,7 @@ function advisorHome() {
   const matches = D.demand.filter(d => d.status === 'notified' && d._fresh && C[d.customer_id].advisor === u.id);
   return `<div class="stack">
     <div class="row-flex" style="justify-content:space-between;align-items:flex-end"><div><div class="kicker">${esc(storeName(u.store))} · ${dFmt(TODAY)}</div><h1>Good afternoon, ${esc(first)}</h1></div>
-      <button class="btn sm primary" data-act="add-client">+ Add client</button></div>
+      ${isPhone() ? '' : '<button class="btn sm primary" data-act="add-client">+ Add client</button>'}</div>
     <div class="card">${targetStrip('advisor', u.id, 'My')}</div>
     ${pending.length ? `<a class="card" href="#/inbox/${pending.find(m => m.customer_id === D.story.capture_customer_id)?.customer_id || pending[0].customer_id}" style="display:block;border-color:var(--ge-accent)">
       <div class="kicker">New on WhatsApp</div><b>${pending.length} messages captured by AI</b><div class="why">Details already filled in — approve with one tap</div></a>` : ''}
@@ -201,14 +202,17 @@ function managerHome() {
   const missed = fus.filter(f => f.status === 'missed').length, escd = fus.filter(f => f.status === 'escalated');
   const gs = D.grievances.filter(g => code(g.store_id) === st && isOpen(g));
   return `<div class="stack">
-    <div class="page-h"><div><div class="kicker">${esc(storeName(st))} · ${dFmt(TODAY)}</div><h1>Store today</h1></div><button class="btn primary" data-act="add-client">+ Add client</button></div>
+    <div class="page-h"><div><div class="kicker">${esc(storeName(st))} · ${dFmt(TODAY)}</div><h1>Store today</h1></div>${isPhone() ? '' : '<button class="btn primary" data-act="add-client">+ Add client</button>'}</div>
     <div class="grid g2"><div class="card">${targetStrip('store', 'sto_' + st, storeName(st))}</div>
       <div class="card grid g3" style="align-items:start">
         <div class="stat"><div class="kicker">Follow-ups due today</div><div class="v">${dueToday}</div></div>
         <div class="stat"><div class="kicker">Missed</div><div class="v">${missed}</div></div>
         <div class="stat"><div class="kicker">Escalated to you</div><div class="v">${escd.length}</div><div class="d">auto-escalated after 24 h</div></div></div></div>
     <div class="grid g2">
-      ${section('Advisor leaderboard', `<table class="t"><tr><th>Advisor</th><th>Achieved</th><th>Target</th><th style="width:34%">Progress</th></tr>${board.map(({ a, p }) =>
+      ${section('Advisor leaderboard', isPhone()
+        // a 4-column table is unreadable on a phone — one card per advisor instead
+        ? `<div class="list">${board.map(({ a, p }) => `<div class="row"><div class="grow"><b>${esc(a.name)}</b>${D.trained.includes(a.id) ? '' : ' <span class="chip warn">training due</span>'}<div class="why">${inr(p.a)} of ${inr(p.t)}</div><div class="bar green" style="margin-top:6px"><i style="width:${Math.min(100, p.pct * 100)}%"></i></div></div><span class="small muted">${Math.round(p.pct * 100)}%</span></div>`).join('')}</div>`
+        : `<table class="t"><tr><th>Advisor</th><th>Achieved</th><th>Target</th><th style="width:34%">Progress</th></tr>${board.map(({ a, p }) =>
         `<tr><td>${esc(a.name)}${D.trained.includes(a.id) ? '' : ' <span class="chip warn" title="Has not completed the new-line training">training due</span>'}</td><td>${inr(p.a)}</td><td>${inr(p.t)}</td><td><div class="bar green"><i style="width:${Math.min(100, p.pct * 100)}%"></i></div><span class="small muted">${Math.round(p.pct * 100)}%</span></td></tr>`).join('')}</table>`)}
       ${section(`Open complaints <span class="muted small">(${gs.length})</span>`, gs.length ? `<div class="list">${gs.map(g => `<div class="row"><div class="grow"><a class="name" href="#/grievances/${g.id}">${esc(C[g.customer_id].name)}</a> ${tier(C[g.customer_id])}<div class="why">${chBadges(g)} ${esc(CAT[g.category])}</div></div>${slaText(g)}</div>`).join('')}</div>` : '<div class="empty">No open complaints.</div>', '<a class="btn sm" href="#/grievances">Open queue</a>')}
     </div>
@@ -216,9 +220,10 @@ function managerHome() {
   </div>`;
 }
 
-function hbars(rows) {
+// mark = draw the "100% of target" line; meaningless when the values are rupees, not percentages
+function hbars(rows, mark = true) {
   const max = Math.max(1.15, ...rows.map(r => r.value));
-  return `<div class="hbars">${rows.map(r => `<div class="hb" title="${esc(r.tip)}"><span>${esc(r.label)}</span><span class="hb-t"><i style="width:${(r.value / max) * 100}%"></i><em style="left:${100 / max}%" title="Target"></em></span><span class="hb-v">${r.text}</span></div>`).join('')}</div>`;
+  return `<div class="hbars">${rows.map(r => `<div class="hb" title="${esc(r.tip)}"><span>${esc(r.label)}</span><span class="hb-t"><i style="width:${(r.value / max) * 100}%"></i>${mark ? `<em style="left:${100 / max}%" title="Target"></em>` : ''}</span><span class="hb-v">${r.text}</span></div>`).join('')}</div>`;
 }
 function vbars(items) {
   const W = 720, H = 190, pad = 8, bw = (W - pad * 2) / items.length, max = Math.max(...items.map(i => i.value));
@@ -259,7 +264,10 @@ function ownerHome() {
         <div class="row"><div class="grow"><b>${esc(worst.s.name)} is furthest behind</b><div class="why">Why: ${Math.round(worst.p.pct * 100)}% of target with ${DAYS_LEFT} days left — needs ${inr(worst.p.pace)}/day</div></div><a class="btn sm" href="#/targets">Open</a></div>
       </div><div class="small muted" style="margin-top:10px">Rule-based in Phase 1. The AI Owner Copilot arrives in Phase 3.</div>`)}
     </div>
-    ${section('Revenue by month', vbars(months.map(m => ({ label: new Date(m + '-15').toLocaleDateString('en-IN', { month: 'short' }), value: monthRev(m), note: m.endsWith('-06') || m.endsWith('-07') ? 'Ashadam' : '' }))) + '<div class="small muted" style="margin-top:8px">June–July dip = Ashadam, traditionally the quiet month for weddings. Hover a bar for exact figures.</div>', '<span class="small muted">Sep 2025 – Aug 2026 · all branches</span>')}
+    ${section('Revenue by month', (isPhone()
+      // a phone has no hover, and vbars keeps each figure in an SVG <title> — so show the numbers
+      ? hbars(months.map(m => ({ label: new Date(m + '-15').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }), value: monthRev(m), text: inr(monthRev(m)), tip: '' })), false)
+      : vbars(months.map(m => ({ label: new Date(m + '-15').toLocaleDateString('en-IN', { month: 'short' }), value: monthRev(m), note: m.endsWith('-06') || m.endsWith('-07') ? 'Ashadam' : '' })))) + `<div class="small muted" style="margin-top:8px">June–July dip = Ashadam, traditionally the quiet month for weddings.${isPhone() ? '' : ' Hover a bar for exact figures.'}</div>`, '<span class="small muted">Sep 2025 – Aug 2026 · all branches</span>')}
   </div>`;
 }
 
@@ -1181,6 +1189,7 @@ const ACTIONS = {
   'ok-pref': key => { const [cid, i] = key.split('|'); D.prefs[cid][i][3] = true; render(); },
   share: pid => toast('Shared', [`${P[pid].name} sent with photos and price (demo)`]),
   reserve: pid => toast('Reserved', [`${P[pid].name} held for 48 h (demo)`]),
+  more: () => moreSheet(), 'more-close': () => { document.getElementById('overlay').innerHTML = ''; },
   'add-client': () => clientForm(), 'edit-client': cid => clientForm(cid), 'save-new-client': saveNewClient, 'save-client': saveClient,
   'add-opp': cid => oppForm(cid), 'save-opp': saveOpp, 'fill-title': t => { document.querySelector('#f [name=title]').value = t; },
   'add-stock': stockForm, 'stock-mode': m => { stockMode = m; stockForm(); }, 'save-stock': saveStock, 'import-csv': importCsv,
@@ -1293,27 +1302,57 @@ function navFor() {
   return items;
 }
 const VIEWS = { home: () => ({ advisor: advisorHome, manager: managerHome, owner: ownerHome })[kind()](), inbox, appointments, customers, customer, pipeline, targets, inventory, product, grievances, team, settings };
-function badge(r) {
-  const n = r === 'inbox' ? D.whatsapp.filter(m => m.card && m.card.status === 'pending' && inScope(C[m.customer_id])).length
+function badgeCount(r) {
+  return r === 'inbox' ? D.whatsapp.filter(m => m.card && m.card.status === 'pending' && inScope(C[m.customer_id])).length
     : r === 'grievances' ? D.grievances.filter(g => isOpen(g) && inScope(C[g.customer_id])).length : 0;
-  return n ? `<span class="n">${n}</span>` : '';
+}
+function badge(r) { const n = badgeCount(r); return n ? `<span class="n">${n}</span>` : ''; }
+
+// One navigation frame for every role. Apple HIG: "about five or fewer" tabs; Material 3: 3-5.
+// Advisors, managers and the director share these four plus More — only the contents differ,
+// because teaching two mental models in one app costs more than it saves.
+const PH_PRIMARY = [['home', 'Home'], ['inbox', 'WhatsApp'], ['customers', 'Clients'], ['appointments', 'Diary']];
+function moreItems() {
+  const primary = PH_PRIMARY.map(([h]) => h);
+  const items = navFor().filter(([h]) => !primary.includes(h));
+  if (isDirector()) items.push(['settings', 'Settings']);
+  return items;
+}
+// Overflow lives in a bottom sheet, not a hamburger: hidden nav costs >20% discoverability (NN/g),
+// so anything urgent in here still surfaces as a count on the More tab.
+function moreSheet() {
+  const r = location.hash.replace(/^#\/?/, '').split('/')[0];
+  document.getElementById('overlay').innerHTML = `<div class="ov" data-act="more-close"><div class="sheet sheet-nav">
+    <div class="sheet-grab"></div>
+    <div class="who-row"><b>${esc(me().name)}</b><span>${esc(ROLES[role].label)}</span></div>
+    <nav>${moreItems().map(([h, l]) => `<a href="#/${h}" class="${r === h ? 'on' : ''}">${esc(l)}${badge(h)}</a>`).join('')}</nav>
+  </div></div>`;
 }
 let lastRoute = '';
 function render() {
   const [r = 'home', arg] = location.hash.replace(/^#\/?/, '').split('/');
   if (r !== 'customer' && lastRoute.startsWith('customer')) tabState = 'owns';
   if (r !== 'grievances') replyOpen = null;
+  const ov = document.getElementById('overlay');
+  if (ov.querySelector('.sheet-nav')) ov.innerHTML = '';  // picking a destination closes the sheet
   const view = (VIEWS[r] || VIEWS.home)(arg && decodeURIComponent(arg));
   const link = ([h, l]) => `<a href="#/${h}" class="${r === h || (r === 'customer' && h === 'customers') ? 'on' : ''}">${l}${badge(h)}</a>`;
   const shell = document.getElementById('shell');
-  shell.className = 'shell' + (kind() === 'advisor' ? ' phone-mode' : '');
-  shell.innerHTML = kind() === 'advisor'
-    ? `<div class="phone"><div class="ph-head"><img src="${LOGO}" alt="${esc(D.tenant.name)}"></div><div class="ph-body">${view}</div><nav class="ph-tabs">${navFor().map(link).join('')}</nav></div>`
+  const phone = isPhone() || kind() === 'advisor';  // real phone, or the advisor's on-screen handset
+  shell.className = 'shell' + (phone ? ' phone-mode' : '');
+  const moreN = moreItems().reduce((n, [h]) => n + badgeCount(h), 0);
+  const moreOn = !PH_PRIMARY.some(([h]) => h === r || (r === 'customer' && h === 'customers'));
+  shell.innerHTML = phone
+    ? `<div class="phone"><div class="ph-head"><img src="${LOGO}" alt="${esc(D.tenant.name)}"><span class="ph-who">${esc(ROLES[role].label)}</span></div>
+       <div class="ph-body">${view}</div>
+       <button class="fab" data-act="add-client" aria-label="Add a client">+</button>
+       <nav class="ph-tabs">${PH_PRIMARY.map(link).join('')}<button class="${moreOn ? 'on' : ''}" data-act="more">More${moreN ? `<span class="n">${moreN}</span>` : ''}</button></nav></div>`
     : `<aside class="side"><img class="logo" src="${LOGO}" alt="${esc(D.tenant.name)}"><div class="who"><b>${esc(me().name)}</b><span>${esc(ROLES[role].label)}</span></div><nav>${navFor().map(link).join('')}</nav>
        ${isDirector() ? `<nav class="navb">${link(['settings', 'Settings'])}</nav>` : ''}</aside><main class="main">${view}</main>`;
   if (location.hash.replace(/^#\/?/, '') !== lastRoute) { window.scrollTo(0, 0); lastRoute = location.hash.replace(/^#\/?/, ''); }
   demoBar();
 }
 window.addEventListener('hashchange', render);
+matchMedia('(max-width: 760px)').addEventListener('change', render);  // rotate / resize across the breakpoint
 window.GE = { moveEmployee, D, SETTINGS };  // used by demo/check_demo.js
 render();
