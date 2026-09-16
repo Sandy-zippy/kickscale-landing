@@ -35,7 +35,7 @@ const CAT = { colour_bleed: 'Colour bleeding after wash', zari_tarnish: 'Zari ta
 const INTENT = { product_enquiry: 'Product enquiry', store_info: 'Store question', complaint: 'Complaint', appointment_request: 'Appointment request', feedback: 'Feedback', care_info: 'Care question', promo_enquiry: 'Offers question' };
 const CH = { whatsapp: 'WhatsApp', google_review: 'Google review ★', instagram: 'Instagram', call: 'Phone call', in_store: 'In store', email: 'Email', web_form: 'Website form' };
 const TIER = { vip: 'VIP', premium: 'Premium', regular: 'Regular', prospect: 'Prospect' };
-const ACT = { call: 'Call', whatsapp: 'WhatsApp', visit: 'Invite in', send_product: 'Send picks', invite: 'Invite' };
+const ACT = { call: 'Call', whatsapp: 'WhatsApp', visit: 'Invite in', send_product: 'Share designs', invite: 'Invite' };
 const STAGE = { enquiry: 'Enquiry', shortlisted: 'Shortlisted', trial_viewing: 'Trial / viewing', negotiation: 'Negotiation', won: 'Won', lost: 'Lost' };
 const SCOPE = { own: 'Only their own clients', branch: 'Their branch', region: 'Their region', company: 'All branches' };
 const LEAF_ROLES = ['role_advisor', 'role_front_desk', 'role_finance', 'role_inventory', 'role_marketing', 'role_service'];
@@ -266,7 +266,7 @@ function ownerHome() {
 // ---------------------------------------------------------------- WhatsApp inbox + capture
 const cardOpened = {};
 const draftFor = (x, c) => x.draft_reply || ({
-  product_enquiry: `Namaste ${c.first} garu! Sharing a few picks that match what you asked for — photos coming right up. Shall I keep them aside for you?`,
+  product_enquiry: `Namaste ${c.first} garu! Sharing a few designs that match what you asked for — photos coming right up. Shall I keep them aside for you?`,
   appointment_request: `Namaste ${c.first} garu! Saturday 4 pm is booked for the bridal trial at Jubilee Hills. We'll have a curated selection ready for you 🌸`,
   promo_enquiry: `Namaste ${c.first} garu! Our Dasara preview opens this week — may I reserve a private viewing slot for you?`,
   store_info: `Yes, we're open till 10 pm today — see you soon!`,
