@@ -361,6 +361,11 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
       <span class="btext"><b>Car Cart</b><span>Pre-owned luxury cars &middot; Catalogue + Stock Console</span></span>
       <span class="bgo">&rarr;</span>
     </button>
+    <button class="badge" onclick="goClientLogin('vaarahi')">
+      <span class="bicon">VS</span>
+      <span class="btext"><b>Vaarahi Silks</b><span>Luxury silks &middot; Growth Engine demo workspace</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
     <div class="dir-note"><span>&#9679;</span><span>More client workspaces appear here as Zippyscale builds them out.</span></div>
   </div>
 </div>
@@ -382,6 +387,27 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     </div>
     <div class="login-err" id="ccerr"></div>
     <button class="btn-primary" onclick="tryCarCart()">Enter workspace</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+  </div>
+</div>
+
+<!-- VAARAHI SILKS LOGIN -->
+<div id="valogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Vaarahi Silks &times; Zippyscale</div>
+    <h1>Growth Engine</h1>
+    <p class="sub">A clickable walkthrough of the Growth Engine, set up for Vaarahi Silks across six branches &mdash; sign in as an advisor, a store manager or a director. Every client, sale and message inside is sample data created by Zippyscale, not Vaarahi's own records.</p>
+    <div class="field">
+      <label for="vau">Username</label>
+      <input id="vau" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. vaarahi" onkeydown="if(event.key==='Enter')tryVaarahi()">
+    </div>
+    <div class="field">
+      <label for="vap">Password</label>
+      <input id="vap" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryVaarahi()">
+    </div>
+    <div class="login-err" id="vaerr"></div>
+    <button class="btn-primary" onclick="tryVaarahi()">Enter workspace</button>
     <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
   </div>
 </div>
@@ -1577,20 +1603,16 @@ async function downloadPDF(){
 }
 
 /* ================= PORTAL NAVIGATION ================= */
-function hideGates(){['portal','directory','clientlogin'].forEach(id=>document.getElementById(id).classList.add('hidden'));}
+function hideGates(){document.querySelectorAll('.gatewrap').forEach(el=>el.classList.add('hidden'));}
 function goPortal(){hideGates();document.getElementById('portal').classList.remove('hidden');}
 function goDirectory(){hideGates();document.getElementById('directory').classList.remove('hidden');}
+const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'] };
 function goClientLogin(key){
   hideGates();
-  if(key==='carcart'){
-    document.getElementById('cclogin').classList.remove('hidden');
-    document.getElementById('ccerr').textContent='';
-    document.getElementById('ccu').focus();
-    return;
-  }
-  document.getElementById('clientlogin').classList.remove('hidden');
-  document.getElementById('lerr').textContent='';
-  document.getElementById('u').focus();
+  const [gate,err,first] = GATES[key] || ['clientlogin','lerr','u'];
+  document.getElementById(gate).classList.remove('hidden');
+  document.getElementById(err).textContent='';
+  document.getElementById(first).focus();
 }
 const CARCART = { user:"carcart", pass:"Carcart@hyd26" };
 function tryCarCart(){
@@ -1598,6 +1620,14 @@ function tryCarCart(){
   const p=document.getElementById('ccp').value;
   if(u===CARCART.user && p===CARCART.pass){ location.href='../carcart/'; return; }
   document.getElementById('ccerr').textContent='Wrong username or password.';
+}
+
+const VAARAHI = { user:"vaarahi", pass:"Vaarahi@silks26" };
+function tryVaarahi(){
+  const u=document.getElementById('vau').value.trim().toLowerCase();
+  const p=document.getElementById('vap').value;
+  if(u===VAARAHI.user && p===VAARAHI.pass){ location.href='../vaarahi/'; return; }
+  document.getElementById('vaerr').textContent='Wrong username or password.';
 }
 
 async function tryLogin(){
