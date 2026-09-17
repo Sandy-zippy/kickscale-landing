@@ -1,7 +1,7 @@
 'use strict';
 /* Vaarahi Silks — clickable demo on sample data (D20). Plain JS, no build step.
    Data: data.js → window.DEMO (demo/build_bundle.py). Every change is in memory; reload resets the demo.
-   URL options: ?as=advisor|advisor_kph|manager|owner  &theme=light|dark */
+   URL options: ?as=advisor|advisor_kph|allocation|consultant|billing|manager|owner  &theme=light|dark */
 const D = window.DEMO;
 const NOW = new Date(D.now), TODAY = D.now.slice(0, 10), MONTH = D.now.slice(0, 7);
 const byId = a => Object.fromEntries(a.map(x => [x.id, x]));
@@ -38,7 +38,7 @@ const TIER = { vip: 'VIP', premium: 'Premium', regular: 'Regular', prospect: 'Pr
 const ACT = { call: 'Call', whatsapp: 'WhatsApp', visit: 'Invite in', send_product: 'Share designs', invite: 'Invite' };
 const STAGE = { enquiry: 'Enquiry', shortlisted: 'Shortlisted', trial_viewing: 'Trial / viewing', negotiation: 'Negotiation', won: 'Won', lost: 'Lost' };
 const SCOPE = { own: 'Only their own clients', branch: 'Their branch', region: 'Their region', company: 'All branches' };
-const LEAF_ROLES = ['role_advisor', 'role_front_desk', 'role_finance', 'role_inventory', 'role_marketing', 'role_service'];
+const LEAF_ROLES = ['role_advisor', 'role_front_desk', 'role_consultant', 'role_billing', 'role_finance', 'role_inventory', 'role_marketing', 'role_service'];
 const tier = c => `<span class="chip ${c.tier}">${TIER[c.tier]}</span>`;
 const avatar = (c, cls = '') => `<span class="avatar ${c.tier === 'vip' ? 'vip' : ''} ${cls}">${esc(initials(c.name))}</span>`;
 const storeName = k => S[k] ? S[k].name : (k || 'All branches');
@@ -47,7 +47,7 @@ const advName = c => c.advisor && E[c.advisor] ? E[c.advisor].name : 'Unassigned
 const WA_NUMBER = '+91 90004 54411';  // the brand's one WhatsApp Business number (from vaarahisilks.com)
 const lastIn = cid => D.whatsapp.filter(m => m.customer_id === cid && m.direction === 'in').reduce((a, m) => (m.at > a ? m.at : a), '');
 const windowLeft = cid => { const l = lastIn(cid); return l ? 24 - (NOW - dt(l)) / 36e5 : -1; };  // hours left in WhatsApp's 24-hour reply window
-const notifyAdvisor = c => c.advisor && c.advisor !== me().id ? `${advName(c)} (their advisor) is notified` : null;
+const notifyAdvisor = c => c.advisor && c.advisor !== me().id ? `${advName(c)} (their Sales staff) is notified` : null;
 
 // ---------------------------------------------------------------- settings (director-controlled)
 const ACCESS_DEFAULT = {
@@ -67,14 +67,17 @@ const SETTINGS = {
   tiers: { vip: 1000000, premium: 250000 },
   sla: { ...D.tenant.settings.grievance_sla_hours },
   ladder: ['role_store_manager', 'role_regional_head', 'role_business_head'],
-  access: Object.fromEntries(D.roles.map(r => [r.id, { ...(ACCESS_DEFAULT[r.id] || NO_ACCESS), ...(r.id === 'role_front_desk' || r.id === 'role_service' ? { scope: 'branch' } : {}) }])),
+  access: Object.fromEntries(D.roles.map(r => [r.id, { ...(ACCESS_DEFAULT[r.id] || NO_ACCESS), ...(['role_front_desk', 'role_service', 'role_consultant', 'role_billing'].includes(r.id) ? { scope: 'branch' } : {}) }])),
 };
 
 // ---------------------------------------------------------------- roles & scope
 const fourPm = D.appointments.find(a => a.id === D.story.four_pm_appointment_id);
 const ROLES = {
-  advisor: { label: 'Client Advisor · Jubilee Hills', user: D.story.hero_advisor_id, kind: 'advisor' },
-  advisor_kph: { label: 'Client Advisor · Kukatpally', user: fourPm.advisor_id, kind: 'advisor' },
+  advisor: { label: 'Sales Staff · Jubilee Hills', user: D.story.hero_advisor_id, kind: 'advisor' },
+  advisor_kph: { label: 'Sales Staff · Kukatpally', user: fourPm.advisor_id, kind: 'advisor' },
+  allocation: { label: 'Allocation Staff · Jubilee Hills', user: D.story.allocation_id, kind: 'allocation' },
+  consultant: { label: 'Consultant · Jubilee Hills', user: D.story.consultant_id, kind: 'consultant' },
+  billing: { label: 'Billing · Jubilee Hills', user: D.story.billing_id, kind: 'billing' },
   manager: { label: 'Store Manager · Jubilee Hills', user: S.JBH.manager_id, kind: 'manager' },
   owner: { label: 'Director', user: D.story.directors[0], kind: 'owner' },
 };
@@ -209,10 +212,10 @@ function managerHome() {
         <div class="stat"><div class="kicker">Missed</div><div class="v">${missed}</div></div>
         <div class="stat"><div class="kicker">Escalated to you</div><div class="v">${escd.length}</div><div class="d">auto-escalated after 24 h</div></div></div></div>
     <div class="grid g2">
-      ${section('Advisor leaderboard', isPhone()
-        // a 4-column table is unreadable on a phone — one card per advisor instead
+      ${section('Sales staff leaderboard', isPhone()
+        // a 4-column table is unreadable on a phone — one card per person instead
         ? `<div class="list">${board.map(({ a, p }) => `<div class="row"><div class="grow"><b>${esc(a.name)}</b>${D.trained.includes(a.id) ? '' : ' <span class="chip warn">training due</span>'}<div class="why">${inr(p.a)} of ${inr(p.t)}</div><div class="bar green" style="margin-top:6px"><i style="width:${Math.min(100, p.pct * 100)}%"></i></div></div><span class="small muted">${Math.round(p.pct * 100)}%</span></div>`).join('')}</div>`
-        : `<table class="t"><tr><th>Advisor</th><th>Achieved</th><th>Target</th><th style="width:34%">Progress</th></tr>${board.map(({ a, p }) =>
+        : `<table class="t"><tr><th>Sales staff</th><th>Achieved</th><th>Target</th><th style="width:34%">Progress</th></tr>${board.map(({ a, p }) =>
         `<tr><td>${esc(a.name)}${D.trained.includes(a.id) ? '' : ' <span class="chip warn" title="Has not completed the new-line training">training due</span>'}</td><td>${inr(p.a)}</td><td>${inr(p.t)}</td><td><div class="bar green"><i style="width:${Math.min(100, p.pct * 100)}%"></i></div><span class="small muted">${Math.round(p.pct * 100)}%</span></td></tr>`).join('')}</table>`)}
       ${section(`Open complaints <span class="muted small">(${gs.length})</span>`, gs.length ? `<div class="list">${gs.map(g => `<div class="row"><div class="grow"><a class="name" href="#/grievances/${g.id}">${esc(C[g.customer_id].name)}</a> ${tier(C[g.customer_id])}<div class="why">${chBadges(g)} ${esc(CAT[g.category])}</div></div>${slaText(g)}</div>`).join('')}</div>` : '<div class="empty">No open complaints.</div>', '<a class="btn sm" href="#/grievances">Open queue</a>')}
     </div>
@@ -334,8 +337,8 @@ function inbox(arg) {
     return `<a class="row" href="#/inbox/${t.c.id}" style="${arg === t.c.id ? 'background:var(--ge-surface-2);' : ''}">${avatar(t.c)}<div class="grow"><span class="name">${esc(t.c.name)}</span> ${pend ? '<span class="chip vip">AI captured</span>' : ''}${t.c.advisor ? '' : ' <span class="chip bad">Unassigned</span>'}${missed(t.c.id) ? ' <span class="chip bad">Missed 24 h+</span>' : ''}${paused(t.c.id) ? ' <span class="chip bad">complaint open</span>' : ''}<div class="why" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.last.body)}</div></div><span class="small muted" style="text-align:right;white-space:nowrap">${ago(t.last.at)}${t.c.advisor ? '<br>' + esc(advName(t.c).split(' ')[0]) : ''}</span></a>`; }).join('')}</div>`;
   const cur = threads.find(t => t.c.id === arg), openG = cur && D.grievances.find(g => g.customer_id === cur.c.id && isOpen(g));
   const left = cur ? windowLeft(cur.c.id) : 0;
-  const assign = !cur ? '' : kind() === 'advisor' ? `<span class="help">${cur.c.advisor === me().id ? 'Your client' : 'Advisor: ' + esc(advName(cur.c))}</span>`
-    : `<label class="row-flex small" style="gap:8px">Advisor <select class="in" style="min-height:36px;width:auto" data-assign="${cur.c.id}">${cur.c.advisor ? '' : '<option value="">— Unassigned: pick an advisor —</option>'}${advisorsAt(cur.c.store).map(a => `<option value="${a.id}" ${a.id === cur.c.advisor ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label>`;
+  const assign = !cur ? '' : kind() === 'advisor' ? `<span class="help">${cur.c.advisor === me().id ? 'Your client' : 'Sales staff: ' + esc(advName(cur.c))}</span>`
+    : `<label class="row-flex small" style="gap:8px">Sales staff <select class="in" style="min-height:36px;width:auto" data-assign="${cur.c.id}">${cur.c.advisor ? '' : '<option value="">— Unassigned: pick Sales staff —</option>'}${advisorsAt(cur.c.store).map(a => `<option value="${a.id}" ${a.id === cur.c.advisor ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></label>`;
   const composer = !cur ? '' : left > 0
     ? `<div class="help">Sends from the Vaarahi Silks WhatsApp number (${WA_NUMBER}) — the one the client wrote to. Free-text replies allowed for ${Math.floor(left)} h ${Math.round((left % 1) * 60)} m more (WhatsApp's 24-hour rule).</div>
        <div class="row-flex"><textarea class="draft" id="wa-new" style="min-height:44px;flex:1" placeholder="Type a message…"></textarea><button class="btn primary" data-act="wa-send" data-id="${cur.c.id}">Send</button></div>`
@@ -345,13 +348,13 @@ function inbox(arg) {
        <div class="tp-out small" id="tpl-prev" style="margin-top:8px">${esc(fillTpl(def, cur.c))}</div>
        <div class="row-flex" style="margin-top:8px;justify-content:space-between">${isDirector() ? '<a class="small" href="#/settings/templates"><u>Manage templates</u></a>' : '<span></span>'}<button class="btn primary" data-act="tpl-send" data-id="${cur.c.id}">Send template</button></div>`; })();
   const thread = cur ? `<div class="stack"><div class="row-flex">${avatar(cur.c)}<div class="grow"><a class="name" href="#/customer/${cur.c.id}">${esc(cur.c.name)}</a> ${tier(cur.c)}<div class="why">${esc(storeName(cur.c.store))} · LTV ${inr(cur.c.ltv)}</div></div>${assign}</div>
-    ${!cur.c.advisor ? '<div class="banner paused"><b>New number</b><span>WhatsApp created this client automatically. Pick an advisor above — they own the chat from now on and are notified of new messages.</span></div>' : ''}
+    ${!cur.c.advisor ? '<div class="banner paused"><b>New number</b><span>WhatsApp created this client automatically. Pick their Sales staff above — they own the chat from now on and are notified of new messages.</span></div>' : ''}
     ${openG ? `<div class="banner paused"><b>Complaint open</b><span>${esc(openG.code)} — ${esc(CAT[openG.category])}. Marketing to this client is paused; service replies are fine. <a href="#/grievances/${openG.id}"><u>Open case</u></a></span></div>` : ''}
     <div class="thread">${cur.ms.map(m => `<div class="msg ${m.direction}">${esc(m.body)}<time>${when(m.at)}${m.direction === 'out' ? ' · ' + esc(m.by || advName(cur.c)) : ''}</time></div>${m.card ? captureCard(m) : ''}`).join('')}</div>
     ${composer}</div>` : '';
   if (kind() === 'advisor') return cur ? `<a class="small muted" href="#/inbox">← All chats</a><div style="margin-top:12px">${thread}</div>` : `<h2>WhatsApp</h2><p class="why">Every message is read by AI first — you only approve.</p>${list}`;
   return `<div class="page-h"><h1>WhatsApp inbox</h1><span class="muted small">One number for the whole brand: ${WA_NUMBER}</span></div>
-    <p class="help" style="margin:-10px 0 14px">Every message to Vaarahi's WhatsApp lands here and is read by AI first. Each chat belongs to the client's advisor — managers can assign or reassign it right here. Anyone allowed can reply; it always goes out from the brand number, and the advisor is told.</p>
+    <p class="help" style="margin:-10px 0 14px">Every message to Vaarahi's WhatsApp lands here and is read by AI first. Each chat belongs to the client's Sales staff — managers can assign or reassign it right here. Anyone allowed can reply; it always goes out from the brand number, and their Sales staff are told.</p>
     <div class="inbox2"><div class="card">${list}</div><div class="card">${thread || '<div class="empty">Pick a conversation.</div>'}</div></div>`;
 }
 
@@ -360,14 +363,21 @@ function customers() {
   const q = query.toLowerCase().replace(/\s+/g, '');
   const mine = D.customers.filter(inScope);
   const counts = group(mine, c => c.tier);
-  const rows = mine.filter(c => tierFilter === 'all' || c.tier === tierFilter)
+  // campaign audience (D28): liked in store, never bought
+  const likes = Object.fromEntries(mine.map(c => [c.id, interestOf(c.id)]).filter(([, l]) => l.length));
+  const aud = tierFilter === 'instore', collsOf = cid => [...new Set(likes[cid].map(pid => P[pid].collection))];
+  const collCount = aud ? Object.entries(group(Object.keys(likes).flatMap(cid => collsOf(cid).map(k => [k, cid])), ([k]) => k)).map(([k, xs]) => [k, xs.length]).sort((a, b) => b[1] - a[1]) : [];
+  const rows = mine.filter(c => aud ? likes[c.id] && (audColl === 'all' || collsOf(c.id).includes(audColl)) : tierFilter === 'all' || c.tier === tierFilter)
     .filter(c => !q || c.name.toLowerCase().replace(/\s+/g, '').includes(q) || c.phone.includes(q) || c.code.toLowerCase().includes(q))
-    .sort((a, b) => (b.created || '').localeCompare(a.created || '') || b.spend12 - a.spend12 || b.ltv - a.ltv).slice(0, 60);
+    .sort((a, b) => aud ? likes[b.id].length - likes[a.id].length : (b.created || '').localeCompare(a.created || '') || b.spend12 - a.spend12 || b.ltv - a.ltv);
+  const reachable = rows.filter(c => !mktBlock(c) && !c.dnc).length;
   return `<div class="page-h"><div><div class="kicker">${mine.length.toLocaleString('en-IN')} clients</div><h1>Clients</h1></div>
-      <div class="row-flex"><input id="q" class="in" style="width:300px" placeholder="Search name, phone or client code" value="${esc(query)}"><button class="btn primary" data-act="add-client">+ Add client</button></div></div>
-    <div class="tabs-inline">${['all', 'vip', 'premium', 'regular', 'prospect'].map(t => `<button class="${tierFilter === t ? 'on' : ''}" data-act="tier-filter" data-id="${t}">${t === 'all' ? 'All' : TIER[t]} <span class="muted small">${t === 'all' ? mine.length : (counts[t] || []).length}</span></button>`).join('')}</div>
-    <p class="help" style="margin:-6px 0 12px">Tiers are automatic: VIP from ${inr(SETTINGS.tiers.vip)} and Premium from ${inr(SETTINGS.tiers.premium)} spent in the last 12 months.${isDirector() ? ' <a href="#/settings/tiers"><u>Change</u></a>' : ''}</p>
-    <div class="card"><div class="list" id="clist">${rows.map(c => `<a class="row" href="#/customer/${c.id}">${avatar(c)}<div class="grow"><span class="name">${esc(c.name)}</span> ${tier(c)}${c.created ? ' <span class="chip good">new</span>' : ''}<div class="why">${esc(storeName(c.store))} · ${c.n} purchases · last ${c.last_buy ? dFmt(c.last_buy) : '—'}${paused(c.id) ? ' · <span class="sev-high">marketing paused</span>' : ''}</div></div><b>${inr(c.spend12)}</b></a>`).join('') || '<div class="empty">No matches.</div>'}</div></div>`;
+      <div class="row-flex"><input id="q" class="in" style="width:300px" placeholder="Search name, phone or client code" value="${esc(query)}">${FLOOR.includes(kind()) ? '' : '<button class="btn primary" data-act="add-client">+ Add client</button>'}</div></div>
+    <div class="tabs-inline">${['all', 'vip', 'premium', 'regular', 'prospect'].map(t => `<button class="${tierFilter === t ? 'on' : ''}" data-act="tier-filter" data-id="${t}">${t === 'all' ? 'All' : TIER[t]} <span class="muted small">${t === 'all' ? mine.length : (counts[t] || []).length}</span></button>`).join('')}<button class="${aud ? 'on' : ''}" data-act="tier-filter" data-id="instore">Liked in store, not bought <span class="muted small">${Object.keys(likes).length}</span></button></div>
+    ${aud ? `<p class="help" style="margin:-6px 0 10px">Clients who liked pieces in store and haven't bought them — the audience for a collection campaign. Marketing only reaches clients who agreed to WhatsApp updates and have no open complaint: <b>${reachable} of ${rows.length}</b> here can receive it now.</p>
+      <div class="chips" style="margin-bottom:14px"><button class="chip ${audColl === 'all' ? 'vip' : 'on'}" data-act="aud-coll" data-id="all">All collections</button>${collCount.map(([k, n]) => `<button class="chip ${audColl === k ? 'vip' : 'on'}" data-act="aud-coll" data-id="${esc(k)}">${esc(k)} · ${n}</button>`).join('')}</div>`
+    : `<p class="help" style="margin:-6px 0 12px">Tiers are automatic: VIP from ${inr(SETTINGS.tiers.vip)} and Premium from ${inr(SETTINGS.tiers.premium)} spent in the last 12 months.${isDirector() ? ' <a href="#/settings/tiers"><u>Change</u></a>' : ''}</p>`}
+    <div class="card"><div class="list" id="clist">${rows.slice(0, 60).map(c => `<a class="row" href="#/customer/${c.id}">${avatar(c)}<div class="grow"><span class="name">${esc(c.name)}</span> ${tier(c)}${c.created ? ' <span class="chip good">new</span>' : ''}<div class="why">${aud ? `Liked ${likes[c.id].length}: ${esc(collsOf(c.id).join(', '))}${mktBlock(c) ? ` · <span class="sev-high">${mktBlock(c)}</span>` : ''}` : `${esc(storeName(c.store))} · ${c.n} purchases · last ${c.last_buy ? dFmt(c.last_buy) : '—'}${paused(c.id) ? ' · <span class="sev-high">marketing paused</span>' : ''}`}</div></div><b>${inr(c.spend12)}</b></a>`).join('') || '<div class="empty">No matches.</div>'}</div></div>`;
 }
 const advOptions = (st, sel) => advisorsAt(st).map(a => `<option value="${a.id}" ${a.id === sel ? 'selected' : ''}>${esc(a.name)}</option>`).join('');
 function clientForm(cid) {
@@ -382,7 +392,7 @@ function clientForm(cid) {
       <div class="field"><label>Mobile *</label><input class="in" id="f-phone" name="phone" inputmode="tel" value="${c ? esc(digits10(c.phone)) : ''}" placeholder="10-digit mobile" data-self="${c ? c.id : ''}"><div id="dup"></div></div>
       ${c ? '' : `<div class="field"><label>How did they come to us?</label><div class="chips">${chipRadio('source', ['Walk-in', 'Referral', 'WhatsApp', 'Instagram', 'Event', 'Google'], 'Walk-in')}</div></div>`}
       <div class="two"><div class="field"><label>Branch</label><select class="in" name="store" ${assign ? '' : 'disabled'}>${D.stores.map(s => `<option value="${s.code}" ${s.code === st ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>
-        <div class="field"><label>Advisor</label><select class="in" name="advisor" id="f-adv" ${assign ? '' : 'disabled'}>${advOptions(st, c ? c.advisor : kind() === 'advisor' ? me().id : '')}</select></div></div>
+        <div class="field"><label>Sales staff</label><select class="in" name="advisor" id="f-adv" ${assign ? '' : 'disabled'}>${advOptions(st, c ? c.advisor : kind() === 'advisor' ? me().id : '')}</select></div></div>
       <details ${c ? 'open' : ''}><summary class="small muted" style="cursor:pointer">More details (optional)</summary>
         <div class="form"><div class="two"><div class="field"><label>Birthday</label><input class="in" type="date" name="dob" value="${c && c.dob ? c.dob : ''}"></div>
           <div class="field"><label>Anniversary</label><input class="in" type="date" name="anniv" value="${anniv}"></div></div>
@@ -422,7 +432,7 @@ function saveClient(cid) {
   if (digits10(c.phone) !== d10) changes.push('Mobile updated');
   Object.assign(c, { name: `${f.get('sal')} ${name}`, first, last: rest.join(' '), phone: '+91' + d10, email: f.get('email') || null, dob: f.get('dob') || null });
   if (f.get('store') && f.get('store') !== c.store) { c.store = f.get('store'); changes.push(`Branch → ${storeName(c.store)}`); }
-  if (f.get('advisor') && f.get('advisor') !== c.advisor) { c.advisor = f.get('advisor'); changes.push(`Advisor → ${E[c.advisor].name}`); }
+  if (f.get('advisor') && f.get('advisor') !== c.advisor) { c.advisor = f.get('advisor'); changes.push(`Sales staff → ${E[c.advisor].name}`); }
   const ds = (D.dates[cid] ||= []), an = ds.find(d => d[0] === 'anniversary');
   if (f.get('anniv')) { if (an) an[2] = f.get('anniv'); else ds.push(['anniversary', 'self', f.get('anniv')]); }
   const mode = f.get('tier_mode');
@@ -437,19 +447,29 @@ function saveClient(cid) {
 function customer(id) {
   const c = C[id];
   if (!c) return '<div class="empty">Client not found.</div>';
-  if (!canOpen(c)) return `<div class="card"><h3>Not in your view</h3><p class="why">This client belongs to another advisor. Access follows each role's data scope (set by the director).</p></div>`;
+  if (!canOpen(c)) return `<div class="card"><h3>Not in your view</h3><p class="why">This client belongs to another Sales staff member. Access follows each role's data scope (set by the director).</p></div>`;
   const orders = (ORD_C[id] || []).slice().sort((a, b) => b.at.localeCompare(a.at));
   const todayElsewhere = orders.find(o => o.at.startsWith(TODAY) && o.store !== myStore());
   const openG = D.grievances.find(g => g.customer_id === id && isOpen(g));
   const next = D.followups.filter(f => f.customer_id === id && f.status !== 'done').sort((a, b) => a.due_at.localeCompare(b.due_at))[0];
   const owned = D.owned[id] || [], prefs = D.prefs[id] || [], wants = D.demand.filter(d => d.customer_id === id && ['waiting', 'notified'].includes(d.status));
   const opps = D.opps.filter(o => o.customer_id === id);
-  const tabs = [['owns', `Owns (${owned.length})`], ['opps', `Opportunities (${opps.length})`], ['wants', 'Wants'], ['timeline', 'Timeline'], ['family', 'Family'], ['dates', 'Dates']];
+  const visits = VISITS.filter(v => v.customer_id === id).sort((a, b) => b.arrived_at.localeCompare(a.arrived_at));
+  const tabs = [['owns', `Owns (${owned.length})`], ['store', `In store (${visits.length})`], ['opps', `Opportunities (${opps.length})`], ['wants', 'Wants'], ['timeline', 'Timeline'], ['family', 'Family'], ['dates', 'Dates']];
   let body = '';
   if (tabState === 'owns') body = owned.length ? `<div class="pgrid">${owned.slice().reverse().slice(0, 24).map(([aid, pid, from, st, sm]) => pcard(P[pid], `<div class="small muted">Silk Mark ${esc(sm)}<br>${dFmt(from)} · ${esc(storeName(st))}<br>Warranty till ${dFmt(new Date(dt(from).getTime() + 365 * 864e5).toISOString().slice(0, 10))}</div>`)).join('')}</div>` : '<div class="empty">No pieces yet.</div>';
+  if (tabState === 'store') {
+    const marked = k => new Set(visits.flatMap(v => v.items.filter(i => i.mark === k).map(i => i.product_id))).size, likes = interestOf(id);
+    body = visits.length ? `<div class="kv" style="margin-bottom:18px">${[['Interested, not bought', likes.length], ['Already has', marked('owns')], ['Bought in store', marked('bought')], ['Said no', marked('no')]].map(([l, n]) => `<div><span>${l}</span><b>${n}</b></div>`).join('')}</div>
+      ${likes.length ? `<div class="kicker">Interested, not bought — for follow-ups and campaigns</div><div class="pgrid" style="margin:10px 0 20px">${likes.slice(0, 12).map(pid => pcard(P[pid], `<div class="small muted">${esc(P[pid].collection)}</div>`)).join('')}</div>` : ''}
+      <div class="kicker">Visits</div><div class="list">${visits.map(v => `<div class="row"><div class="grow"><a class="name" href="#/visit/${v.id}">${when(v.arrived_at)} · ${esc(storeName(v.store))}</a> <span class="chip ${v.order_id ? 'good' : ''}">${v.order_id ? 'Bought ' + inr(orderOf(v).total) : v.status === 'done' ? 'Left without buying' : VSTATUS[v.status]}</span>
+        <div class="why">Allocated by ${esc((E[v.allocated_by] || {}).name || '—')}${v.consultant_id ? ' · consultant ' + esc(E[v.consultant_id].name) : ''} · looking for ${esc(v.looking_for.join(', ') || '—')}${v.budget ? ' · ' + esc(v.budget) : ''}</div>
+        <div class="chips" style="margin-top:6px">${v.items.map(i => `<span class="chip ${MARK_CHIP[i.mark]}">${esc(pname(i.product_id))} · ${MARK[i.mark]}</span>`).join('')}</div></div></div>`).join('')}</div>`
+      : '<div class="empty">No in-store visits yet.</div>';
+  }
   if (tabState === 'opps') body = `<div class="row-flex" style="justify-content:flex-end;margin-bottom:8px"><button class="btn sm primary" data-act="add-opp" data-id="${id}">+ New opportunity</button></div>${opps.length ? `<div class="list">${opps.map(o => `<div class="row"><div class="grow"><b>${esc(o.title)}</b><div class="why">${esc(STAGE[o.stage] || o.stage)} · expected ${dFmt(o.expected_close_on)} · ${esc(E[o.advisor_id].name)}</div></div><b>${inr(o.value)}</b></div>`).join('')}</div>` : '<div class="empty">No opportunities yet.</div>'}`;
-  if (tabState === 'wants') body = `${wants.length ? `<div class="kicker">Waiting list</div><div class="list">${wants.map(d => `<div class="row">${P[d.product_id] ? miniProduct(P[d.product_id]) : ''}<span class="chip ${d.status === 'notified' ? 'good' : ''}">${d.status === 'notified' ? 'In stock — advisor alerted' : 'Waiting since ' + dFmt(d.requested_on)}</span></div>`).join('')}</div>` : ''}
-    <div class="kicker" style="margin-top:14px">Preferences</div><div class="list">${prefs.map(([k, v, src, ok], i) => `<div class="row"><div class="grow"><b>${esc(k.replace('size_', 'Size · ').replace('_', ' '))}</b>: ${esc(v)}<div class="why">${src === 'purchase' ? 'From purchases' : src === 'stated' ? 'Said by client' : 'Suggested by AI'}</div></div>${ok ? '<span class="chip good">Approved</span>' : `<button class="btn sm" data-act="ok-pref" data-id="${id}|${i}">Approve</button>`}</div>`).join('') || '<div class="empty">None yet.</div>'}</div>`;
+  if (tabState === 'wants') body = `${wants.length ? `<div class="kicker">Waiting list</div><div class="list">${wants.map(d => `<div class="row">${P[d.product_id] ? miniProduct(P[d.product_id]) : ''}<span class="chip ${d.status === 'notified' ? 'good' : ''}">${d.status === 'notified' ? 'In stock — Sales staff alerted' : 'Waiting since ' + dFmt(d.requested_on)}</span></div>`).join('')}</div>` : ''}
+    <div class="kicker" style="margin-top:14px">Preferences</div><div class="list">${prefs.map(([k, v, src, ok], i) => `<div class="row"><div class="grow"><b>${esc(k.replace('size_', 'Size · ').replace('_', ' '))}</b>: ${esc(v)}<div class="why">${src === 'purchase' ? 'From purchases' : src === 'stated' ? 'Said by client' : src === 'in_store' ? 'Liked in store' : 'Suggested by AI'}</div></div>${ok ? '<span class="chip good">Approved</span>' : `<button class="btn sm" data-act="ok-pref" data-id="${id}|${i}">Approve</button>`}</div>`).join('') || '<div class="empty">None yet.</div>'}</div>`;
   if (tabState === 'timeline') {
     const items = [...orders.map(o => ({ at: o.at, html: `<b>Bought</b> ${o.prods.map(p => esc(P[p].name)).join(', ')} · ${esc(storeName(o.store))} · <b>${inr(o.total)}</b><div class="why">Invoice ${esc(o.inv)} · ${o.tally ? 'Tally ✓ synced' : 'Tally: syncing (bridge runs every 1–2 min)'}</div>` })),
       ...D.whatsapp.filter(m => m.customer_id === id).map(m => ({ at: m.at, html: `<b>WhatsApp ${m.direction === 'in' ? 'from client' : 'reply'}</b> — ${esc(m.body)}` })),
@@ -464,8 +484,8 @@ function customer(id) {
     ${kind() === 'advisor' ? '' : '<a class="small muted" href="#/customers">← Clients</a>'}
     ${todayElsewhere ? `<div class="banner live"><b>Live</b><span>Bought today at <b>${esc(storeName(todayElsewhere.store))}, ${tFmt(todayElsewhere.at)}</b> — ${todayElsewhere.prods.map(p => esc(P[p].name)).join(', ')} (${inr(todayElsewhere.total)}). Visible here within seconds of the sale; no end-of-day sync.</span></div>` : ''}
     ${openG ? `<div class="banner paused"><b>Marketing paused</b><span>Open complaint ${esc(openG.code)} — ${esc(CAT[openG.category])}. Campaigns resume automatically once it's resolved; service messages still go out. <a href="#/grievances/${openG.id}"><u>Open case</u></a></span></div>` : ''}
-    <div class="c360-h">${avatar(c, 'lg')}<div class="grow"><h2>${esc(c.name)}</h2><div class="row-flex">${tier(c)}<span class="small muted">${esc(c.code)} · ${esc(storeName(c.store))} · advisor ${esc(advName(c))}</span></div><div class="help" style="margin-top:4px">${tierWhy(c)}</div></div></div>
-    <div class="actbar"><button class="btn primary" data-act="quick" data-id="${id}">Quick update</button><button class="btn" data-act="edit-client" data-id="${id}">Edit details</button><button class="btn" data-act="add-opp" data-id="${id}">+ Opportunity</button><button class="btn" data-act="book-appt" data-id="${id}">Book appointment</button><a class="btn" href="#/inbox/${id}">WhatsApp</a></div>
+    <div class="c360-h">${avatar(c, 'lg')}<div class="grow"><h2>${esc(c.name)}</h2><div class="row-flex">${tier(c)}<span class="small muted">${esc(c.code)} · ${esc(storeName(c.store))} · Sales staff ${esc(advName(c))}</span></div><div class="help" style="margin-top:4px">${tierWhy(c)}</div></div></div>
+    ${FLOOR.includes(kind()) ? (() => { const open = visits.find(v => v.status !== 'done'); return open ? `<div class="actbar"><a class="btn primary" href="#/visit/${open.id}">Open today's visit</a></div>` : ''; })() : `<div class="actbar"><button class="btn primary" data-act="quick" data-id="${id}">Quick update</button><button class="btn" data-act="edit-client" data-id="${id}">Edit details</button><button class="btn" data-act="add-opp" data-id="${id}">+ Opportunity</button><button class="btn" data-act="book-appt" data-id="${id}">Book appointment</button><a class="btn" href="#/inbox/${id}">WhatsApp</a></div>`}
     <div class="card kv"><div><span>Last 12 months</span><b>${inr(c.spend12)}</b></div><div><span>Lifetime value</span><b>${inr(c.ltv)}</b></div><div><span>Purchases</span><b>${c.n}</b></div><div><span>Mobile</span><b>${esc(c.phone.replace('+91', '+91 '))}</b></div></div>
     ${next ? `<div class="card" style="border-color:var(--ge-accent)"><div class="kicker">Next step</div><div class="row-flex" style="justify-content:space-between"><div><b>${ACT[next.action] || 'Follow up'}</b> — ${dFmt(next.due_at)}<div class="why">Why: ${esc(next.reason_text)}</div></div><button class="btn primary sm" data-act="done-fu" data-id="${next.id}">Done</button></div></div>` : ''}
     <div class="card"><div class="tabs-inline">${tabs.map(([k, l]) => `<button class="${tabState === k ? 'on' : ''}" data-act="tab" data-id="${k}">${l}</button>`).join('')}</div>${body}</div>
@@ -560,14 +580,14 @@ function inventory(arg) {
   const st = arg || invStore || (kind() === 'owner' ? 'JBH' : myStore()); invStore = st;
   const items = D.products.filter(p => ((D.stock[p.id] || {})[st] || 0) > 0).sort((a, b) => (b.added || '').localeCompare(a.added || '') || b.price - a.price);
   const pos = D.po.filter(p => code(p.store_id) === st && p.status !== 'received');
-  return `<div class="page-h"><div><div class="kicker">Inventory</div><h1>${esc(storeName(st))}</h1></div><div class="row-flex"><span class="muted small">${items.length} designs in stock</span><button class="btn" data-act="add-design">+ New design</button><button class="btn primary" data-act="add-stock">+ Add stock</button></div></div>
+  return `<div class="page-h"><div><div class="kicker">Inventory</div><h1>${esc(storeName(st))}</h1></div><div class="row-flex"><span class="muted small">${items.length} designs in stock</span>${kind() === 'consultant' ? '' : '<button class="btn" data-act="add-design">+ New design</button><button class="btn primary" data-act="add-stock">+ Add stock</button>'}</div></div>
     <p class="help" style="margin:-10px 0 14px">Stock counts arrive automatically from your POS. Use <b>Add stock</b> for new arrivals or anything the POS doesn't have — pure silk is tagged piece by piece.</p>
     <div class="tabs-inline"><a href="#/inventory/catalogue">All designs</a>${D.stores.map(s => `<a class="${s.code === st ? 'on' : ''}" href="#/inventory/${s.code}">${esc(s.name)}</a>`).join('')}</div>
     ${pos.map(po => { const lines = D.po_lines.filter(l => l.po_id === po.id); const waiting = lines.reduce((n, l) => n + D.demand.filter(d => d.product_id === l.product_id && d.status === 'waiting').length, 0);
       return `<div class="card" style="border-color:var(--ge-accent);margin-bottom:20px"><div class="row-flex" style="justify-content:space-between"><div><div class="kicker">Delivery expected today · ${esc(po.po_no)} · ${esc((D.vendors[0] || {}).name || '')}</div>
         ${lines.map(l => `<div class="mini" style="margin-top:8px">${pimg(P[l.product_id], 160)}<span><b>${l.qty} × ${esc(P[l.product_id].name)}</b><br><span class="small muted">${waiting} clients are waiting for this saree</span></span></div>`).join('')}</div>
         <button class="btn primary" data-act="rx-open" data-id="${po.id}">Receive shipment</button></div>
-        <p class="help" style="margin-top:10px">When the parcel arrives: count it, scan each piece's Silk Mark tag, confirm. Stock updates and waiting clients' advisors are alerted.</p></div>`; }).join('')}
+        <p class="help" style="margin-top:10px">When the parcel arrives: count it, scan each piece's Silk Mark tag, confirm. Stock updates and waiting clients' Sales staff are alerted.</p></div>`; }).join('')}
     <div class="pgrid">${items.slice(0, 48).map(p => pcard(p, `<div class="small muted">${(D.stock[p.id] || {})[st]} in stock${p.added ? ' · <b>just added</b>' : ''}</div>`)).join('')}</div>`;
 }
 function catalogue() {
@@ -652,7 +672,7 @@ function saveStock() {
   const before = (D.stock[p.id] || {})[st] || 0, woken = addPieces(p, st, qty);
   closeModal(); location.hash = '#/inventory/' + st;
   toast('Stock added', [`${qty} × ${p.name} at ${storeName(st)} — stock ${before} → ${before + qty}`, isNew ? 'New design added to the catalogue (add a photo later)' : null,
-    tags.length ? `${tags.length} Silk Mark tags recorded — each piece tracked` : 'Counted by quantity', woken.length ? `${woken.length} clients were waiting — their advisors are alerted` : 'No clients were waiting for this design']);
+    tags.length ? `${tags.length} Silk Mark tags recorded — each piece tracked` : 'Counted by quantity', woken.length ? `${woken.length} clients were waiting — their Sales staff are alerted` : 'No clients were waiting for this design']);
   render();
 }
 function parseCsv(text) {
@@ -689,8 +709,8 @@ function rxRender() {
     const waiting = lines.flatMap(l => D.demand.filter(d => d.product_id === l.product_id && d.status === 'waiting'));
     body = `<h2>3 · Confirm</h2><div class="list">${lines.map(l => { const now = (D.stock[l.product_id] || {})[st] || 0;
       return `<div class="row"><div class="grow"><b>${esc(P[l.product_id].name)}</b><div class="why">${esc(storeName(st))} stock: ${now} → <b>${now + rx.got[l.id]}</b> · tags ${rx.tags[l.id].join(', ')}</div></div></div>`; }).join('')}</div>
-      ${waiting.length ? `<div class="kicker" style="margin-top:14px">${waiting.length} clients are waiting for this — their advisors will be alerted</div><div class="list">${waiting.map(d => { const c = C[d.customer_id];
-        return `<div class="row">${avatar(c)}<div class="grow"><b>${esc(c.name)}</b><div class="why">${esc(storeName(c.store))} · advisor ${esc(advName(c))} · waiting since ${dFmt(d.requested_on)}</div></div></div>`; }).join('')}</div>` : ''}
+      ${waiting.length ? `<div class="kicker" style="margin-top:14px">${waiting.length} clients are waiting for this — their Sales staff will be alerted</div><div class="list">${waiting.map(d => { const c = C[d.customer_id];
+        return `<div class="row">${avatar(c)}<div class="grow"><b>${esc(c.name)}</b><div class="why">${esc(storeName(c.store))} · Sales staff ${esc(advName(c))} · waiting since ${dFmt(d.requested_on)}</div></div></div>`; }).join('')}</div>` : ''}
       <div class="row-flex" style="margin-top:16px"><button class="btn ghost" data-act="rx-back">Back</button><button class="btn primary" data-act="rx-confirm">Confirm — add to stock</button></div>`;
   }
   openModal(bar + body, false);
@@ -702,7 +722,7 @@ function rxConfirm() {
   rx.po.status = 'received'; closeModal();
   toast(`Delivery received at ${storeName(st)}`, [...lines.map(l => `${rx.got[l.id]} × ${P[l.product_id].name} added — each with its Silk Mark tag`),
     woken.length ? `${woken.length} waiting clients — at ${[...new Set(woken.map(d => storeName(C[d.customer_id].store)))].join(', ')}` : 'Nobody was waiting for these',
-    woken.length ? 'Their advisors see a "Wishlist match" on their home screen, offer ready to send' : null, 'Phase 2 adds AI ranking of who gets first choice']);
+    woken.length ? 'Their Sales staff see a "Wishlist match" on their home screen, offer ready to send' : null, 'Phase 2 adds AI ranking of who gets first choice']);
   render();
 }
 
@@ -733,10 +753,10 @@ function advisorAlloc(st) {
   const stT = targetOf('store', 'sto_' + st, tgtMonth), advs = advisorsAt(st);
   if (!stT) return `<div class="empty">The director hasn't set ${esc(storeName(st))}'s target for ${monthLabel(tgtMonth)} yet.</div>`;
   const sum = advs.reduce((s, a) => s + ((targetOf('advisor', a.id, tgtMonth) || {}).target_value || 0), 0);
-  return `<table class="t"><tr><th>Advisor</th><th>Target (₹ lakh)</th><th>Achieved</th><th>Progress</th><th>Set by</th></tr>${advs.map(a => { const x = targetOf('advisor', a.id, tgtMonth), ach = achieved('advisor', a.id, tgtMonth);
+  return `<table class="t"><tr><th>Sales staff</th><th>Target (₹ lakh)</th><th>Achieved</th><th>Progress</th><th>Set by</th></tr>${advs.map(a => { const x = targetOf('advisor', a.id, tgtMonth), ach = achieved('advisor', a.id, tgtMonth);
       return `<tr><td>${esc(a.name)}</td><td style="width:140px"><input class="in" style="min-height:36px" inputmode="decimal" data-alloc="${a.id}" value="${x ? lakh(x.target_value) : ''}"></td><td>${inr(ach)}</td><td style="width:20%"><div class="bar green"><i style="width:${x && x.target_value ? Math.min(100, ach / x.target_value * 100) : 0}%"></i></div></td><td class="small muted">${setBy(x)}</td></tr>`; }).join('')}</table>
     <div class="row-flex" style="justify-content:space-between;margin-top:12px"><span id="alloc-sum" class="help" data-total="${stT.target_value}">${allocText(sum, stT.target_value)}</span>
-      <div class="actbar"><button class="btn" data-act="split-even" data-id="${st}">Split evenly</button><button class="btn primary" data-act="save-alloc" data-id="${st}">Save advisor targets</button></div></div>`;
+      <div class="actbar"><button class="btn" data-act="split-even" data-id="${st}">Split evenly</button><button class="btn primary" data-act="save-alloc" data-id="${st}">Save Sales staff targets</button></div></div>`;
 }
 function updateAlloc() {
   const el = document.getElementById('alloc-sum'), sum = [...document.querySelectorAll('[data-alloc]')].reduce((s, i) => s + (parseFloat(i.value) || 0) * 1e5, 0);
@@ -753,8 +773,8 @@ function targets() {
   if (kind() === 'manager') { const st = myStore(), stT = targetOf('store', 'sto_' + st, tgtMonth);
     return `<div class="stack"><div class="page-h"><div><div class="kicker">Targets · ${esc(storeName(st))}</div><h1>${monthLabel(tgtMonth)}</h1></div></div>${monthTabs()}
       <div class="card">${tgtMonth === MONTH ? targetStrip('store', 'sto_' + st, storeName(st)) : stT ? `<div class="kicker">${esc(storeName(st))} target</div><h2>${inr(stT.target_value)}</h2><div class="help">Set by ${setBy(stT)}</div>` : '<div class="empty">Not set yet by the director.</div>'}</div>
-      ${section('Split the branch target between advisors', advisorAlloc(st))}
-      <p class="help">The director sets the branch target. Each advisor sees the target you give them on their home screen, with your name as who set it.</p></div>`; }
+      ${section('Split the branch target between Sales staff', advisorAlloc(st))}
+      <p class="help">The director sets the branch target. Each Sales staff member sees the target you give them on their home screen, with your name as who set it.</p></div>`; }
   const brandT = D.stores.reduce((s, x) => s + ((targetOf('store', x.id, tgtMonth) || {}).target_value || 0), 0);
   const rows = D.stores.map(s => { const x = targetOf('store', s.id, tgtMonth), ach = achieved('store', s.id, tgtMonth);
     return `<tr><td><b>${esc(s.name)}</b></td><td style="width:150px"><input class="in" style="min-height:36px" inputmode="decimal" data-btgt="${s.id}" value="${x ? lakh(x.target_value) : ''}"></td><td>${inr(ach)}</td><td style="width:20%"><div class="bar green"><i style="width:${x && x.target_value ? Math.min(100, ach / x.target_value * 100) : 0}%"></i></div></td><td class="small muted">${setBy(x)}</td></tr>`; }).join('');
@@ -762,7 +782,7 @@ function targets() {
     ${tgtMonth === MONTH ? `<div class="card">${targetStrip('brand', 'ten_vaarahi', 'Vaarahi Silks')}</div>` : ''}
     ${section('Branch targets', `<table class="t"><tr><th>Branch</th><th>Target (₹ lakh)</th><th>Achieved</th><th>Progress</th><th>Set by</th></tr>${rows}</table>
       <div class="row-flex" style="justify-content:space-between;margin-top:12px"><span class="help">Brand target = sum of branches: <b>${inr(brandT)}</b>. Regions roll up automatically.</span><button class="btn primary" data-act="save-branch-tgts">Save branch targets</button></div>`)}
-    ${section('Advisor targets', `<div class="row-flex" style="margin-bottom:10px"><span class="small muted">Branch</span><select class="in" style="width:auto;min-height:36px" id="alloc-store">${D.stores.map(s => `<option value="${s.code}" ${s.code === allocStore ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>${advisorAlloc(allocStore)}`, '<span class="small muted">Usually done by each store manager</span>')}</div>`;
+    ${section('Sales staff targets', `<div class="row-flex" style="margin-bottom:10px"><span class="small muted">Branch</span><select class="in" style="width:auto;min-height:36px" id="alloc-store">${D.stores.map(s => `<option value="${s.code}" ${s.code === allocStore ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>${advisorAlloc(allocStore)}`, '<span class="small muted">Usually done by each store manager</span>')}</div>`;
 }
 
 // ---------------------------------------------------------------- complaints (Grievance Cell)
@@ -905,7 +925,7 @@ function apptForm(key) {
       ${pre ? `<div class="field"><label>Client</label><div><b>${esc(pre.name)}</b> ${tier(pre)}</div><input type="hidden" name="cid" value="${pre.id}"></div>` : clientPicker()}
       <div class="two"><div class="field"><label>Date *</label><input class="in" type="date" name="date" value="${ap ? saturday : plus(1)}"></div><div class="field"><label>Time *</label><input class="in" type="time" name="time" value="${ap ? ap.time : '12:00'}"></div></div>
       <div class="field"><label>What for? *</label><div class="chips">${chipRadio('purpose', ['Bridal trial', 'Engagement saree selection', 'Festive shopping', 'Blouse fitting', 'Collection preview'], ap ? 'Bridal trial' : 'Festive shopping')}</div></div>
-      <div class="two"><div class="field"><label>Branch</label>${branchSelect('store', st)}</div><div class="field"><label>With advisor</label><select class="in" name="advisor" id="f-adv">${advOptions(st, pre && pre.advisor ? pre.advisor : kind() === 'advisor' ? me().id : '')}</select></div></div>
+      <div class="two"><div class="field"><label>Branch</label>${branchSelect('store', st)}</div><div class="field"><label>With Sales staff</label><select class="in" name="advisor" id="f-adv">${advOptions(st, pre && pre.advisor ? pre.advisor : kind() === 'advisor' ? me().id : '')}</select></div></div>
       <div class="two"><div class="field"><label>How was it booked?</label><select class="in" name="source">${Object.entries(SRC).map(([k, l]) => `<option value="${k}" ${(m ? 'whatsapp' : 'in_store') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         <div class="field"><label>Expected value (₹, optional)</label><input class="in" name="value" inputmode="numeric" placeholder="adds it to the pipeline"></div></div>
       <label class="row-flex small"><input type="checkbox" name="confirm" checked> Send the client a WhatsApp confirmation (service message)</label>
@@ -1128,7 +1148,7 @@ function tplForm() {
       <div class="field"><label>Type *</label><div class="chips">${chipRadio('cat', ['Service', 'Marketing'], 'Service')}</div><div class="hint">Service = follows up on something the client did or asked. Marketing = anything promotional.</div></div>
       <div class="two"><div class="field"><label>Title *</label><input class="in" name="title" placeholder="e.g. Blouse ready for trial"></div><div class="field"><label>Language</label><select class="in" name="lang"><option>English</option><option>Telugu</option><option>Hindi</option></select></div></div>
       <div class="field"><label>Message *</label><textarea class="in" id="tpl-body" name="body" placeholder="Namaste {{1}}, …"></textarea>
-        <div class="chips" style="margin-top:6px">${[['client', 'Client name'], ['advisor', 'Advisor'], ['branch', 'Branch'], ['product', 'Saree'], ['date', 'Date'], ['time', 'Time'], ['order', 'Order no.']].map(([k, l]) => `<button type="button" class="chip on" data-act="tpl-var" data-id="${k}">+ ${l}</button>`).join('')}</div>
+        <div class="chips" style="margin-top:6px">${[['client', 'Client name'], ['advisor', 'Sales staff'], ['branch', 'Branch'], ['product', 'Saree'], ['date', 'Date'], ['time', 'Time'], ['order', 'Order no.']].map(([k, l]) => `<button type="button" class="chip on" data-act="tpl-var" data-id="${k}">+ ${l}</button>`).join('')}</div>
         <div id="tpl-warn"></div></div>
       <div class="field"><label>Quick-reply buttons (optional)</label><input class="in" name="buttons" placeholder="e.g. Confirm, Reschedule"></div>
       ${formBtns('save-tpl', 'Submit to Meta for approval')}</form>`);
@@ -1206,17 +1226,17 @@ const ACTIONS = {
     closeModal(); tplFilter = 'all';
     toast('Submitted to Meta for approval', [`"${title}" · ${cat === 'utility' ? 'Service' : 'Marketing'} · ${f.get('lang')}`, 'Meta usually approves within minutes (at most 24–48 h) — it appears in the chat picker once approved', promo ? 'Heads-up: it sounds promotional, so Meta may approve it as Marketing' : null]); render(); },
   'book-appt': key => apptForm(key), 'save-appt': saveAppt,
-  'appt-status': key => { const [id, s] = key.split('|'), a = D.appointments.find(x => x.id === id); a.status = s; toast(s === 'completed' ? 'Marked as came in' : 'Marked as no-show', [`${C[a.customer_id].name} · ${tFmt(a.starts_at)}`, s === 'completed' ? 'Follow-up after the visit is drafted for the advisor' : 'Advisor reminded to reschedule']); render(); },
+  'appt-status': key => { const [id, s] = key.split('|'), a = D.appointments.find(x => x.id === id); a.status = s; toast(s === 'completed' ? 'Marked as came in' : 'Marked as no-show', [`${C[a.customer_id].name} · ${tFmt(a.starts_at)}`, s === 'completed' ? 'Follow-up after the visit is drafted for the advisor' : 'Sales staff reminded to reschedule']); render(); },
   'add-design': () => designForm(), 'save-design': saveDesign, 'log-complaint': complaintForm, 'save-complaint': saveComplaint,
   'tgt-month': m => { tgtMonth = m; render(); },
   'split-even': () => { const el = document.getElementById('alloc-sum'), ins = [...document.querySelectorAll('[data-alloc]')]; ins.forEach(i => { i.value = lakh(Number(el.dataset.total) / ins.length); }); updateAlloc(); },
   'save-alloc': st => { const stT = targetOf('store', 'sto_' + st, tgtMonth); let n = 0, sum = 0;
     document.querySelectorAll('[data-alloc]').forEach(i => { const v = parseFloat(i.value); if (v > 0) { setTarget('advisor', i.dataset.alloc, v * 1e5, stT.id); n++; sum += v * 1e5; } });
-    toast(`${n} advisor targets saved`, [`${storeName(st)} · ${monthLabel(tgtMonth)}`, `Each advisor now sees their target on their home screen — set by ${me().name}`, sum > stT.target_value ? `${inr(sum - stT.target_value)} more than the branch target (stretch)` : `${inr(stT.target_value - sum)} of the branch target not yet allocated`]); render(); },
+    toast(`${n} Sales staff targets saved`, [`${storeName(st)} · ${monthLabel(tgtMonth)}`, `Each Sales staff member now sees their target on their home screen — set by ${me().name}`, sum > stT.target_value ? `${inr(sum - stT.target_value)} more than the branch target (stretch)` : `${inr(stT.target_value - sum)} of the branch target not yet allocated`]); render(); },
   'save-branch-tgts': () => { let n = 0; document.querySelectorAll('[data-btgt]').forEach(i => { const v = parseFloat(i.value); if (v > 0) { setTarget('store', i.dataset.btgt, v * 1e5); n++; } });
     const sumOf = ss => ss.reduce((s, x) => s + ((targetOf('store', x.id, tgtMonth) || {}).target_value || 0), 0);
     D.regions.forEach(r => setTarget('region', r.id, sumOf(D.stores.filter(s => s.region_id === r.id)))); const total = sumOf(D.stores); setTarget('brand', 'ten_vaarahi', total);
-    toast(`${n} branch targets saved`, [`${monthLabel(tgtMonth)} · brand total ${inr(total)} (sum of branches)`, 'Region targets updated automatically', 'Each store manager is notified to split theirs between advisors']); render(); },
+    toast(`${n} branch targets saved`, [`${monthLabel(tgtMonth)} · brand total ${inr(total)} (sum of branches)`, 'Region targets updated automatically', 'Each store manager is notified to split theirs between Sales staff']); render(); },
   'wa-send': cid => { const x = document.getElementById('wa-new'), c = C[cid]; if (!x.value.trim()) return; D.whatsapp.push({ id: 'wa-' + Date.now(), customer_id: cid, channel: 'whatsapp', direction: 'out', at: D.now, body: x.value.trim(), by: me().name });
     toast('Sent on WhatsApp', [`From the Vaarahi Silks number (${WA_NUMBER}), signed ${me().name.split(' ')[0]}`, notifyAdvisor(c), 'Saved on the client timeline']); render(); },
   'tpl-send': cid => { const c = C[cid], tp = tplById(document.getElementById('wa-tpl').value);
@@ -1240,9 +1260,11 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (t.id === 'q') { query = t.value; const pos = t.selectionStart; render(); const q = document.getElementById('q'); q.focus(); q.setSelectionRange(pos, pos); }
   if (t.id === 'f-phone') { const d10 = digits10(t.value), dup = d10.length === 10 && findByPhone(d10, t.dataset.self);
-    document.getElementById('dup').innerHTML = dup ? `<div class="warnbox">Already a client: <a href="#/customer/${dup.id}" data-act="close-modal"><u>${esc(dup.name)}</u></a> · ${esc(storeName(dup.store))} · advisor ${esc(advName(dup))}</div>` : ''; }
+    document.getElementById('dup').innerHTML = dup ? `<div class="warnbox">Already a client: <a href="#/customer/${dup.id}" data-act="close-modal"><u>${esc(dup.name)}</u></a> · ${esc(storeName(dup.store))} · Sales staff ${esc(advName(dup))}</div>` : ''; }
   if (t.id === 'catq') { catQ = t.value; const pos = t.selectionStart; render(); const q = document.getElementById('catq'); q.focus(); q.setSelectionRange(pos, pos); }
   if (t.id === 'tpl-body') tplWarn();
+  if (t.id === 'f-wphone') walkinLookup(t);
+  if (t.id === 'vq') { visitQ = t.value; const pos = t.selectionStart; render(); const q = document.getElementById('vq'); q.focus(); q.setSelectionRange(pos, pos); }
   if (t.dataset.alloc) updateAlloc();
   if (t.dataset.rxGot) rx.got[t.dataset.rxGot] = Math.max(0, parseInt(t.value, 10) || 0);
   if (t.dataset.rxTag) { const [l, i] = t.dataset.rxTag.split('|'); rx.tags[l][i] = t.value; }
@@ -1272,13 +1294,289 @@ document.addEventListener('dragover', e => { const t = e.target.closest && e.tar
 document.addEventListener('dragleave', e => { const t = e.target.closest && e.target.closest('[data-drop]'); if (t) t.classList.remove('over'); });
 document.addEventListener('drop', e => { const t = e.target.closest && e.target.closest('[data-drop]'); if (!t) return; e.preventDefault(); moveEmployee(e.dataTransfer.getData('text/plain'), t.dataset.drop); });
 
+// ---------------------------------------------------------------- walk-in floor (D28): allocation → consultant → billing
+// Sales staff (back office) work WhatsApp and follow-ups; these three teams work the shop floor.
+// Every visit keeps its shortlist, so what a client liked but didn't buy lands on their profile.
+const VISITS = D.visits;
+let audColl = 'all';
+const FLOOR = ['allocation', 'consultant', 'billing'];
+const MARK = { liked: 'Liked', owns: 'Already has', buying: 'Buying', no: 'Said no', bought: 'Bought' };
+const MARK_CHIP = { bought: 'good', buying: 'good', liked: 'premium', no: 'bad', owns: '' };
+const VSTATUS = { waiting: 'Waiting', with_consultant: 'With consultant', at_billing: 'At billing', done: 'Done' };
+const LOOKING = ['Kanchi Pattu', 'Banarasi', 'Paithani', 'Tussar', 'Patola', 'Fancy / Designer', 'Tissue', 'Khadi', 'Organza', 'Georgette'];
+const BUDGET_RANGE = { 'Up to ₹25K': [0, 25000], '₹25–50K': [25000, 50000], '₹50–80K': [50000, 80000], '₹80K–1.5L': [80000, 150000], '₹1.5L+': [150000, 1e7] };
+const rs = n => '₹' + Math.round(n).toLocaleString('en-IN');  // exact rupees for bills
+const withGst = n => Math.round(n * 1.05);  // GST 5% on sarees, as on every order in the sample data
+const pname = pid => P[pid].name.replace(/ Saree.*$/i, '');
+const visitById = id => VISITS.find(v => v.id === id);
+const orderOf = v => ORD.find(o => o.id === v.order_id);
+const buying = v => v.items.filter(i => i.mark === 'buying');
+const sumPrice = items => items.reduce((s, i) => s + P[i.product_id].price, 0);
+const consultantsAt = st => active().filter(e => e.role === 'role_consultant' && e.store === st);
+const busyWith = eid => VISITS.filter(v => v.consultant_id === eid && v.status === 'with_consultant').length;
+const lastVisit = cid => VISITS.filter(v => v.customer_id === cid).reduce((a, v) => (!a || v.arrived_at > a.arrived_at ? v : a), null);
+const paidToday = st => VISITS.filter(v => v.store === st && v.order_id && (v.closed_at || '').startsWith(TODAY));
+const goHome = () => { if (location.hash === '#/home') render(); else location.hash = '#/home'; };
+// liked in store and never bought — the audience for follow-ups and campaigns
+function interestOf(cid) {
+  const vs = VISITS.filter(v => v.customer_id === cid);
+  if (!vs.length) return [];
+  const got = new Set([...vs.flatMap(v => v.items.filter(i => i.mark === 'bought').map(i => i.product_id)), ...(D.owned[cid] || []).map(o => o[1])]);
+  return [...new Set(vs.flatMap(v => v.items.filter(i => i.mark === 'liked').map(i => i.product_id)))].filter(p => !got.has(p));
+}
+
+function visitRow(v, action = '') {
+  const c = C[v.customer_id], b = buying(v);
+  const meta = [v.looking_for.join(', ') || 'Browsing', v.budget, v.occasion, v.party > 1 ? `${v.party} people` : ''].filter(Boolean).join(' · ');
+  const state = v.status === 'waiting' ? `Arrived ${ago(v.arrived_at)}`
+    : v.status === 'with_consultant' ? `${esc(E[v.consultant_id].name)} · ${v.items.length} shortlisted`
+    : v.status === 'at_billing' ? `${esc(E[v.consultant_id].name)} · ${b.length} to bill · ${rs(withGst(sumPrice(b)))}`
+    : v.order_id ? `Bought ${rs(orderOf(v).total)} · ${tFmt(v.closed_at)}` : `Left without buying · liked ${v.items.filter(i => i.mark === 'liked').length}`;
+  return `<div class="row">${avatar(C[v.customer_id])}<div class="grow"><a class="name" href="#/visit/${v.id}">${esc(c.name)}</a> ${tier(c)}<div class="why">${esc(meta)}</div><div class="small muted">${state}</div></div>${action}</div>`;
+}
+const visitList = (vs, action) => vs.length ? `<div class="list">${vs.map(v => visitRow(v, action ? action(v) : '')).join('')}</div>` : '<div class="empty">No one.</div>';
+
+// ---- allocation staff: take the details, hand over to a consultant
+function floorHome() {
+  const st = myStore(), today = VISITS.filter(v => v.store === st && v.arrived_at.startsWith(TODAY)).sort((a, b) => b.arrived_at.localeCompare(a.arrived_at));
+  const col = s => today.filter(v => v.status === s), cs = consultantsAt(st);
+  return `<div class="stack">
+    <div class="page-h" style="margin-bottom:0"><div><div class="kicker">${esc(storeName(st))} · ${dFmt(TODAY)}</div><h1>Walk-ins today</h1></div>${isPhone() ? '' : '<button class="btn primary" data-act="new-walkin">+ New walk-in</button>'}</div>
+    <div class="card kv"><div><span>Waiting</span><b>${col('waiting').length}</b></div><div><span>With consultant</span><b>${col('with_consultant').length}</b></div><div><span>At billing</span><b>${col('at_billing').length}</b></div><div><span>Consultants free</span><b>${cs.filter(e => !busyWith(e.id)).length} of ${cs.length}</b></div></div>
+    ${section(`Waiting <span class="muted small">(${col('waiting').length})</span>`, visitList(col('waiting'), v => `<button class="btn sm primary" data-act="allocate" data-id="${v.id}">Allocate</button>`))}
+    ${section('With a consultant', visitList(col('with_consultant')))}
+    ${section('At billing', visitList(col('at_billing')))}
+    ${section('Done today', visitList(col('done')))}
+  </div>`;
+}
+function consultantPick(st, cid, allowWait) {
+  const last = cid && (VISITS.filter(v => v.customer_id === cid && v.consultant_id).sort((a, b) => b.arrived_at.localeCompare(a.arrived_at))[0] || {}).consultant_id;
+  const list = consultantsAt(st).sort((a, b) => (b.id === last) - (a.id === last) || busyWith(a.id) - busyWith(b.id));
+  return `<div class="field"><label>Hand over to</label><div class="list">${list.map((e, i) => `<label class="row" style="cursor:pointer"><input type="radio" name="cons" value="${e.id}" ${i === 0 ? 'checked' : ''}><div class="grow"><b>${esc(e.name)}</b>${e.id === last ? ' <span class="chip vip">Served them last time</span>' : ''}<div class="why">${busyWith(e.id) ? `With ${busyWith(e.id)} client now` : 'Free now'}</div></div></label>`).join('')}
+    ${allowWait ? '<label class="row" style="cursor:pointer"><input type="radio" name="cons" value=""><div class="grow"><b>No one free — keep waiting</b></div></label>' : ''}</div>
+    <div class="hint">Suggested order: whoever served them last time, then whoever is free. You decide.</div></div>`;
+}
+function walkinForm() {
+  openModal(`<h2>New walk-in</h2><p class="why">Mobile first — a returning client's details fill in by themselves. Then hand over to a consultant.</p>
+    <form id="f" class="form" onsubmit="return false">
+      <div class="field"><label>Mobile *</label><input class="in" id="f-wphone" name="phone" inputmode="tel" placeholder="10-digit mobile"><div id="wfound"></div></div>
+      <div class="two"><div class="field"><label>Title</label><select class="in" name="sal">${['Mrs.', 'Ms.', 'Mr.', 'Dr.'].map(s => `<option>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>Name *</label><input class="in" id="f-wname" name="name" placeholder="e.g. Lakshmi Reddy"></div></div>
+      <div class="field"><label>Looking for</label><div class="chips">${chipChecks('looking', LOOKING)}</div></div>
+      <div class="field"><label>Budget</label><div class="chips">${chipRadio('budget', Object.keys(BUDGET_RANGE), '')}</div></div>
+      <div class="field"><label>Occasion</label><div class="chips">${chipRadio('occasion', ['Wedding', 'Festival', 'Anniversary', 'Birthday', 'Gift', 'Just browsing'], '')}</div></div>
+      <div class="two"><div class="field"><label>Buying for</label><select class="in" name="for_whom">${['Self', 'Daughter', 'Daughter-in-law', 'Mother', 'Sister', 'Someone else'].map(s => `<option>${s}</option>`).join('')}</select></div>
+        <div class="field"><label>People with them</label><input class="in" type="number" name="party" min="1" value="1"></div></div>
+      <div class="field"><label class="chip on" style="width:max-content"><input type="checkbox" name="consent"> Agreed to WhatsApp updates from Vaarahi</label><div class="hint">Ask first — campaigns only go to clients who said yes.</div></div>
+      <div id="wcons">${consultantPick(myStore(), null, true)}</div>
+      ${formBtns('save-walkin', 'Save & hand over')}
+    </form>`);
+}
+function walkinLookup(t) {
+  const d10 = digits10(t.value), c = d10.length === 10 && findByPhone(d10), box = document.getElementById('wfound'), f = document.getElementById('f');
+  if (c) {
+    const last = lastVisit(c.id), hh = D.households[c.id], likes = interestOf(c.id).length, open = VISITS.find(v => v.customer_id === c.id && v.status !== 'done');
+    box.innerHTML = open ? `<div class="warnbox"><b>${esc(c.name)} is already on the floor</b> — ${VSTATUS[open.status].toLowerCase()}${open.consultant_id ? ' · ' + esc(E[open.consultant_id].name) : ''} since ${tFmt(open.arrived_at)}. <a href="#/visit/${open.id}" data-act="close-modal"><u>Open their visit</u></a></div>` : `<div class="okbox"><b>Returning client: ${esc(c.name)}</b> ${tier(c)}<br>${hh ? esc(hh.name) + ' · ' : ''}Sales staff ${esc(advName(c))}${last ? ` · last visit ${dFmt(last.arrived_at)}` : ''}${likes ? ` · liked ${likes} piece${likes > 1 ? 's' : ''} before` : ''}</div>`;
+    f.elements.name.value = (c.first + ' ' + c.last).trim(); f.elements.sal.value = c.name.split(' ')[0]; f.elements.consent.checked = !!c.consent_wa;
+  } else box.innerHTML = d10.length === 10 ? '<div class="help" style="margin-top:4px">New client — add their name below.</div>' : '';
+  document.getElementById('wcons').innerHTML = consultantPick(myStore(), c ? c.id : null, true);
+}
+function saveWalkin() {
+  const f = fd(), d10 = digits10(f.get('phone')), name = (f.get('name') || '').trim(), st = myStore();
+  if (d10.length !== 10) return formError('Please enter a 10-digit mobile number.');
+  let c = findByPhone(d10);
+  const isNew = !c, open = c && VISITS.find(v => v.customer_id === c.id && v.status !== 'done');
+  if (open) return formError(`${c.name} is already on the floor (${VSTATUS[open.status].toLowerCase()}) — open their visit instead of logging them twice.`);
+  if (isNew) {
+    if (!name) return formError('New client — please add their name.');
+    const [first, ...rest] = name.split(/\s+/);
+    c = { id: 'cus_new' + Date.now(), code: 'VS-C' + String(D.customers.length + 1).padStart(5, '0'), name: `${f.get('sal')} ${name}`, first, last: rest.join(' '),
+      phone: '+91' + d10, email: null, tier: 'prospect', store: st, advisor: null, channel: 'in_store', lang: 'Telugu', dob: null, status: 'active',
+      consent_wa: false, dnc: false, source: 'walk-in', ltv: 0, n: 0, first_buy: null, last_buy: null, spend12: 0, created: D.now };
+    D.customers.push(c); C[c.id] = c;
+  }
+  if (f.get('consent')) c.consent_wa = true;
+  const cons = f.get('cons') || null, looking = f.getAll('looking');
+  VISITS.push({ id: 'vis_new' + Date.now(), customer_id: c.id, store: st, arrived_at: D.now, allocated_by: me().id, consultant_id: cons, status: cons ? 'with_consultant' : 'waiting',
+    looking_for: looking, budget: f.get('budget') || null, occasion: f.get('occasion') || null, for_whom: f.get('for_whom'), party: Math.max(1, parseInt(f.get('party'), 10) || 1),
+    order_id: null, sent_at: null, closed_at: null, items: [] });
+  const took = secs(); closeModal();
+  toast(`Walk-in logged in ${took} s`, [isNew ? `New client ${c.name} — Prospect` : `Returning client ${c.name} — history attached`, looking.length ? `Looking for ${looking.join(', ')}${f.get('budget') ? ' · ' + f.get('budget') : ''}` : null,
+    cons ? `Handed to ${E[cons].name} — notified on their phone` : 'Waiting — allocate when a consultant is free', D.households[c.id] ? `Family: ${D.households[c.id].name}` : null]);
+  render();
+}
+function allocateForm(vid) {
+  const v = visitById(vid), c = C[v.customer_id];
+  openModal(`<h2>Allocate ${esc(c.first)}</h2><p class="why">${esc([v.looking_for.join(', '), v.budget].filter(Boolean).join(' · ') || 'Browsing')} · arrived ${ago(v.arrived_at)}</p>
+    <form id="f" class="form" onsubmit="return false">${consultantPick(v.store, c.id, false)}${formBtns('save-allocate', 'Hand over', vid)}</form>`, false);
+}
+function saveAllocate(vid) {
+  const v = visitById(vid), cons = fd().get('cons');
+  if (!cons) return formError('Pick a consultant.');
+  Object.assign(v, { consultant_id: cons, status: 'with_consultant' });
+  closeModal(); toast('Handed over', [`${C[v.customer_id].name} → ${E[cons].name}`, `${E[cons].name} is notified with what they're looking for${v.budget ? ' and the budget' : ''}`]); render();
+}
+
+// ---- consultant staff: family, shortlist, mark each piece, send to billing
+function consultantHome() {
+  const u = me(), now = VISITS.filter(v => v.consultant_id === u.id && v.status === 'with_consultant');
+  const earlier = VISITS.filter(v => v.consultant_id === u.id && v.arrived_at.startsWith(TODAY) && v.status !== 'with_consultant');
+  const waiting = VISITS.filter(v => v.store === myStore() && v.status === 'waiting');
+  return `<div class="stack">
+    <div><div class="kicker">${esc(storeName(u.store))} · ${dFmt(TODAY)}</div><h1>Good afternoon, ${esc(u.name.split(' ')[0])}</h1></div>
+    ${section(`With you now <span class="muted small">(${now.length})</span>`, visitList(now, v => `<a class="btn sm primary" href="#/visit/${v.id}">Open</a>`))}
+    ${section('Earlier today', visitList(earlier))}
+    ${section(`Waiting at the door <span class="muted small">(${waiting.length})</span>`, visitList(waiting) + '<div class="help" style="margin-top:8px">Allocation staff hand these over — tell them when you are free.</div>')}
+  </div>`;
+}
+let visitQ = '';
+function visitView(id) {
+  const v = visitById(id);
+  if (!v) return '<div class="empty">Visit not found.</div>';
+  const c = C[v.customer_id], hh = D.households[c.id], edit = kind() === 'consultant' && v.status === 'with_consultant', b = buying(v);
+  const earlier = VISITS.filter(x => x.customer_id === c.id && x.id !== v.id && x.arrived_at < v.arrived_at);
+  const inList = new Set(v.items.map(i => i.product_id)), owned = D.owned[c.id] || [];
+  const saidNo = [...new Set(earlier.flatMap(x => x.items.filter(i => i.mark === 'no').map(i => i.product_id)))].filter(p => !inList.has(p));
+  const [lo, hi] = BUDGET_RANGE[v.budget] || [0, 1e7], q = visitQ.toLowerCase();
+  const avail = p => !inList.has(p.id) && !saidNo.includes(p.id) && ((D.stock[p.id] || {})[v.store] || 0) > 0;
+  const want = p => !v.looking_for.length || v.looking_for.includes(p.collection);
+  let ideas = D.products.filter(p => avail(p) && (q ? (p.name + ' ' + p.collection).toLowerCase().includes(q) : want(p) && p.price >= lo * .8 && p.price <= hi * 1.2));
+  if (!ideas.length && !q) ideas = D.products.filter(p => avail(p) && want(p));
+  const back = kind() === 'consultant' ? ['#/home', 'My clients'] : FLOOR.includes(kind()) ? ['#/home', 'Walk-ins'] : [`#/customer/${c.id}`, c.first];
+  return `<div class="stack">
+    <a class="small muted" href="${back[0]}">← ${esc(back[1])}</a>
+    <div class="c360-h">${avatar(c, 'lg')}<div class="grow"><h2>${esc(c.name)}</h2><div class="row-flex">${tier(c)}<span class="chip ${v.status === 'done' ? 'good' : v.status === 'waiting' ? 'warn' : ''}">${VSTATUS[v.status]}</span></div>
+      <div class="help" style="margin-top:4px">${v.arrived_at.startsWith(TODAY) ? 'Arrived ' + tFmt(v.arrived_at) : dFmt(v.arrived_at)} · allocated by ${esc((E[v.allocated_by] || {}).name || '—')}${v.consultant_id ? ' · consultant ' + esc(E[v.consultant_id].name) : ''} · <a href="#/customer/${c.id}"><u>Full profile</u></a></div></div></div>
+    <div class="card kv"><div><span>Looking for</span><b>${esc(v.looking_for.join(', ') || 'Browsing')}</b></div><div><span>Budget</span><b>${esc(v.budget || '—')}</b></div>
+      <div><span>Occasion</span><b>${esc([v.occasion, v.for_whom && v.for_whom !== 'Self' ? 'for ' + v.for_whom.toLowerCase() : ''].filter(Boolean).join(' ') || '—')}</b></div><div><span>With them</span><b>${v.party > 1 ? v.party + ' people' : 'Alone'}</b></div></div>
+    <div class="card"><div class="row-flex" style="justify-content:space-between"><div class="grow"><div class="kicker">Family</div>${hh ? `<b>${esc(hh.name)}</b><div class="why">${hh.members.filter(([m]) => m !== c.id).map(([m, rel]) => `${esc(C[m].name)} (${esc(rel)})`).join(' · ') || 'No other members yet'}</div>`
+      : '<div class="why">Not linked to a family yet — link them so the whole household\'s purchases and likes show together.</div>'}</div>
+      ${edit ? `<button class="btn sm${hh ? '' : ' primary'}" data-act="family-open" data-id="${v.id}">${hh ? 'Change family' : 'Attach to a family'}</button>` : ''}</div></div>
+    ${owned.length || saidNo.length ? `<div class="card"><div class="kicker">Before you show anything</div>
+      ${owned.length ? `<div class="why" style="margin:6px 0">Already owns ${owned.length} piece${owned.length > 1 ? 's' : ''} from us — ${esc([...new Set(owned.map(o => P[o[1]].collection))].slice(0, 3).join(', '))}</div>` : ''}
+      ${saidNo.length ? `<div class="why" style="margin:6px 0"><b>Don't show again</b> — said no on an earlier visit:</div><div class="cap-prods">${saidNo.slice(0, 4).map(pid => `<div class="mini">${pimg(P[pid], 160)}<span class="small">${esc(P[pid].name)}<br><b>${inr(P[pid].price)}</b></span></div>`).join('')}</div>` : ''}</div>` : ''}
+    ${section(`Shortlist <span class="muted small">(${v.items.length} shown · ${b.length} buying)</span>`, v.items.length ? `<div class="list">${v.items.map(i => { const p = P[i.product_id];
+      return `<div class="row"><a class="mini grow" href="#/product/${p.id}">${pimg(p, 160)}<span class="grow"><span class="small">${esc(p.name)}</span><br><b>${inr(p.price)}</b> <span class="small muted">· ${esc(p.collection)}</span></span></a>
+        ${edit ? `<div class="seg">${['liked', 'owns', 'buying', 'no'].map(k => `<button class="${i.mark === k ? 'on' : ''}" data-act="mark" data-id="${v.id}|${p.id}|${k}">${MARK[k]}</button>`).join('')}</div>` : `<span class="chip ${MARK_CHIP[i.mark]}">${MARK[i.mark]}</span>`}</div>`; }).join('')}</div>`
+      : '<div class="empty">Nothing shortlisted yet — add pieces below or scan a tag.</div>')}
+    ${edit ? `<div class="card" style="border-color:var(--ge-accent)"><div class="why" style="margin-bottom:10px">${b.length ? `Billing charges only the ${b.length} piece${b.length > 1 ? 's' : ''} marked Buying — ${rs(withGst(sumPrice(b)))} incl. GST. Everything else stays on their profile.` : 'Mark what they are taking as <b>Buying</b>, then send them to billing.'}</div>
+      <div class="row-flex"><button class="btn primary" data-act="to-billing" data-id="${v.id}" ${b.length ? '' : 'disabled'}>Send to billing${b.length ? ` · ${b.length} piece${b.length > 1 ? 's' : ''}` : ''}</button><button class="btn ghost" data-act="left-visit" data-id="${v.id}">Left without buying</button></div></div>` : ''}
+    ${edit ? section('Add pieces', `<div class="row-flex" style="margin-bottom:10px"><input id="vq" class="in grow" placeholder="Search any design or collection" value="${esc(visitQ)}"><button class="btn" data-act="scan-tag" data-id="${v.id}">Scan tag</button></div>
+      <div class="help" style="margin-bottom:12px">${q ? 'Search results, in stock here' : `Suggested: ${esc(v.looking_for.join(', ') || 'all collections')} in stock here${v.budget ? ', around ' + esc(v.budget) : ''}`}${saidNo.length ? ' · pieces they said no to are hidden' : ''}</div>
+      <div class="pgrid">${ideas.slice(0, 12).map(p => `<div class="pcard">${pimg(p, 480)}<div class="pn">${esc(p.name)}</div><div class="pp">${inr(p.price)}</div><button class="btn sm" style="margin-top:6px;width:100%;justify-content:center" data-act="shortlist" data-id="${v.id}|${p.id}">+ Shortlist</button></div>`).join('') || '<div class="empty">Nothing matches.</div>'}</div>`) : ''}
+  </div>`;
+}
+function scanTag(vid) {
+  const v = visitById(vid), inList = new Set(v.items.map(i => i.product_id));
+  const pool = D.products.filter(p => p.serial && !inList.has(p.id) && ((D.stock[p.id] || {})[v.store] || 0) > 0 && (!v.looking_for.length || v.looking_for.includes(p.collection)));
+  const p = pool[Math.floor(Math.random() * pool.length)] || D.products.find(x => !inList.has(x.id));
+  v.items.push({ product_id: p.id, mark: 'liked' });
+  toast('Tag scanned', [`SM${Math.floor(1e7 + Math.random() * 9e7)} → ${p.name}`, `${inr(p.price)} · added to the shortlist as Liked`]); render();
+}
+function familyForm(vid) {
+  const c = C[visitById(vid).customer_id];
+  openModal(`<h2>Attach ${esc(c.first)} to a family</h2><p class="why">Link them to a family member who is already a client — or start a new family. Everyone's purchases and likes then show together.</p>
+    <form id="f" class="form" onsubmit="return false">
+      <div class="field"><label>Family member (name or mobile)</label><input class="in" name="cname" list="cdl" placeholder="Start typing"><datalist id="cdl">${D.customers.filter(x => x.store === c.store && x.id !== c.id).map(x => `<option value="${esc(x.name)} · ${digits10(x.phone)}">`).join('')}</datalist></div>
+      <div class="field"><label>${esc(c.first)} is their…</label><div class="chips">${chipRadio('rel', ['spouse', 'daughter', 'son', 'daughter-in-law', 'mother', 'sister', 'family'], 'family')}</div></div>
+      <div class="field"><label>…or start a new family</label><input class="in" name="newfam" placeholder="e.g. ${esc(c.last || c.first)} family"></div>
+      ${formBtns('save-family', 'Link family', vid)}</form>`);
+}
+function saveFamily(vid) {
+  const c = C[visitById(vid).customer_id], f = fd(), m = pickedClient(f), fresh = (f.get('newfam') || '').trim(), rel = f.get('rel') || 'family';
+  if (!m && !fresh) return formError('Pick a family member from the list, or name a new family.');
+  if (m && m.id === c.id) return formError('Pick someone other than the client.');
+  const setFamily = h => h.members.forEach(([x]) => { D.households[x] = h; });
+  const old = D.households[c.id];
+  if (old) { delete D.households[c.id]; const rest = { name: old.name, members: old.members.filter(([x]) => x !== c.id) }; if (rest.members.length) setFamily(rest); }
+  const mh = m && D.households[m.id];
+  const h = !m ? { name: fresh, members: [[c.id, 'self']] } : mh ? { name: mh.name, members: [...mh.members, [c.id, rel]] } : { name: `${m.last || m.first} family`, members: [[m.id, 'self'], [c.id, rel]] };
+  setFamily(h);
+  closeModal();
+  toast(`Linked to ${h.name}`, [m ? `${c.name} — ${rel} of ${m.name}` : 'New family started — link members as they visit', `${h.members.length} member${h.members.length > 1 ? 's' : ''} · family lifetime value ${inr(h.members.reduce((s, [x]) => s + C[x].ltv, 0))}`, "Shows on every member's Family tab"]);
+  render();
+}
+// closing a visit, bought or not: likes go to the profile, the client's Sales staff get the follow-up
+function closeVisit(v, order) {
+  const c = C[v.customer_id], up = [];
+  Object.assign(v, { status: 'done', closed_at: D.now, order_id: order ? order.id : null });
+  v.items.forEach(i => { if (i.mark === 'buying') i.mark = order ? 'bought' : 'liked'; });
+  const liked = v.items.filter(i => i.mark === 'liked'), bought = v.items.filter(i => i.mark === 'bought').length;
+  const colls = [...new Set(liked.map(i => P[i.product_id].collection))], prefs = (D.prefs[c.id] ||= []);
+  colls.forEach(coll => { if (!prefs.some(p => p[0] === 'weave' && p[1] === coll)) prefs.push(['weave', coll, 'in_store', true]); });
+  if (liked.length) up.push(`Saved to ${c.first}'s profile: liked ${liked.length} piece${liked.length > 1 ? 's' : ''} (${colls.join(', ')})`);
+  if (!liked.length && !bought) return up;
+  const owner = c.advisor || S[v.store].manager_id;
+  D.followups.push({ id: 'fu-v' + Date.now(), customer_id: c.id, trigger: 'in_store_visit', action: liked.length ? 'send_product' : 'whatsapp', due_at: TODAY + 'T18:00:00+05:30', owner_id: owner, status: 'open',
+    reason_text: liked.length ? `In store today: liked ${liked.length}, bought ${bought} — follow up on ${liked.slice(0, 2).map(i => pname(i.product_id)).join(' and ')}` : 'Bought in store today — send a thank-you and the silk care guide' });
+  up.push(c.advisor ? `Follow-up on ${E[c.advisor].name}'s list today (Sales staff)` : `No Sales staff yet — ${E[owner].name} (store manager) is asked to assign one`);
+  return up;
+}
+
+// ---- billing staff: charge only what was marked Buying
+function billingHome() {
+  const st = myStore(), queue = VISITS.filter(v => v.store === st && v.status === 'at_billing').sort((a, b) => (a.sent_at || '').localeCompare(b.sent_at || ''));
+  const paid = paidToday(st);
+  return `<div class="stack">
+    <div class="page-h" style="margin-bottom:0"><div><div class="kicker">${esc(storeName(st))} · ${dFmt(TODAY)}</div><h1>Billing desk</h1></div></div>
+    <div class="grid g3"><div class="card stat"><div class="kicker">Waiting to pay</div><div class="v">${queue.length}</div></div>
+      <div class="card stat"><div class="kicker">Walk-in bills today</div><div class="v">${inr(paid.reduce((s, v) => s + orderOf(v).total, 0))}</div><div class="d">${paid.length} bill${paid.length === 1 ? '' : 's'}</div></div>
+      <div class="card stat"><div class="kicker">The rule</div><div class="d" style="margin-top:6px">Bill only what the consultant marked <b>Buying</b>. Everything else they liked stays on the client profile for Sales staff.</div></div></div>
+    ${queue.map(billCard).join('') || '<div class="card empty">No one waiting to pay.</div>'}
+  </div>`;
+}
+function billCard(v) {
+  const c = C[v.customer_id], b = buying(v), sub = sumPrice(b), others = v.items.length - b.length;
+  return `<section class="card"><div class="row-flex">${avatar(c)}<div class="grow"><a class="name" href="#/customer/${c.id}">${esc(c.name)}</a> ${tier(c)}<div class="why">${esc(c.phone.replace('+91', '+91 '))} · consultant ${esc(E[v.consultant_id].name)} · sent ${ago(v.sent_at || v.arrived_at)}</div></div></div>
+    <div style="overflow-x:auto"><table class="t" style="margin-top:12px"><tr><th>Piece</th><th>Price</th><th></th></tr>${b.map(i => { const p = P[i.product_id];
+      return `<tr><td><div class="mini">${pimg(p, 160)}<span>${esc(p.name)}<br><span class="small muted">${esc(p.collection)}${p.serial ? ' · Silk Mark tagged' : ''}</span></span></div></td><td>${rs(p.price)}</td><td style="text-align:right"><button class="btn sm ghost" data-act="bill-drop" data-id="${v.id}|${p.id}">Not taking</button></td></tr>`; }).join('')}
+      <tr><td class="muted">GST 5%</td><td>${rs(withGst(sub) - sub)}</td><td></td></tr><tr><td><b>Total</b></td><td><b>${rs(withGst(sub))}</b></td><td></td></tr></table></div>
+    ${others ? `<div class="help" style="margin:8px 0 12px">${others} other shortlisted piece${others > 1 ? 's are' : ' is'} not billed — kept on the profile as interests.</div>` : ''}
+    ${b.length ? `<div class="row-flex" style="justify-content:space-between;margin-top:12px"><div class="chips">${chipRadio('pay-' + v.id, ['UPI', 'Card', 'Cash', 'Bank transfer'], 'UPI')}</div><button class="btn primary" data-act="bill-collect" data-id="${v.id}">Collect ${rs(withGst(sub))}</button></div>`
+      : `<div class="row-flex" style="margin-top:12px"><span class="why grow">Nothing left to bill.</span><button class="btn" data-act="left-visit" data-id="${v.id}">Close — nothing bought</button></div>`}
+  </section>`;
+}
+function collect(vid) {
+  const v = visitById(vid), c = C[v.customer_id], b = buying(v);
+  if (!b.length) return;
+  const pay = (document.querySelector(`[name="pay-${vid}"]:checked`) || {}).value || 'UPI';
+  const total = withGst(sumPrice(b)), before = c.tier, n = ORD.length + 1;
+  const o = { id: 'ord-v' + n, no: `${v.store}/2609/${String(n).padStart(5, '0')}`, at: D.now, store: v.store, adv: v.consultant_id, cust: c.id, total, prods: b.map(i => i.product_id), inv: `VS/2026-${String(n).padStart(6, '0')}`, tally: null };
+  ORD.push(o); ORD_C = group(ORD.filter(x => x.cust), x => x.cust);
+  b.forEach(i => { const s = (D.stock[i.product_id] ||= {}); if (s[v.store] > 0) s[v.store] -= 1;
+    if (P[i.product_id].serial) (D.owned[c.id] ||= []).push(['ast-v' + n + i.product_id, i.product_id, TODAY, v.store, 'SM' + Math.floor(1e7 + Math.random() * 9e7), 'VS-V' + n]); });
+  c.ltv += total; c.n += 1; c.last_buy = TODAY; c.first_buy ||= TODAY; retier();
+  const up = closeVisit(v, o);
+  toast(`Paid ${rs(total)} by ${pay}`, [`${c.name} · invoice ${o.inv} → Tally (syncs within 2 min)`, `Billed only the ${b.length} piece${b.length > 1 ? 's' : ''} marked Buying`,
+    `Stock at ${storeName(v.store)} updated · added to ${c.first}'s collection with warranty`, c.tier !== before ? `Tier: ${TIER[before]} → ${TIER[c.tier]}` : null, `Sale credited to ${E[v.consultant_id].name}`, ...up]);
+  render();
+}
+function paidView() {
+  const rows = paidToday(myStore()).sort((a, b) => b.closed_at.localeCompare(a.closed_at));
+  return `<div class="page-h"><div><div class="kicker">${esc(storeName(myStore()))} · ${dFmt(TODAY)}</div><h1>Paid today</h1></div></div>
+    <div class="card" style="overflow-x:auto">${rows.length ? `<table class="t"><tr><th>Time</th><th>Client</th><th>Pieces</th><th>Consultant</th><th>Invoice</th><th>Amount</th></tr>${rows.map(v => { const o = orderOf(v), c = C[v.customer_id];
+      return `<tr><td>${tFmt(v.closed_at)}</td><td><a class="name" href="#/customer/${c.id}">${esc(c.name)}</a></td><td>${o.prods.map(p => esc(pname(p))).join(', ')}</td><td>${esc(E[v.consultant_id].name)}</td><td>${esc(o.inv)}<div class="small muted">${o.tally ? 'Tally ✓' : 'Tally: syncing'}</div></td><td><b>${rs(o.total)}</b></td></tr>`; }).join('')}</table>` : '<div class="empty">No bills yet today.</div>'}</div>`;
+}
+Object.assign(ACTIONS, {
+  'new-walkin': walkinForm, 'save-walkin': saveWalkin, allocate: allocateForm, 'save-allocate': saveAllocate,
+  mark: key => { const [vid, pid, m] = key.split('|'); visitById(vid).items.find(i => i.product_id === pid).mark = m; render(); },
+  shortlist: key => { const [vid, pid] = key.split('|'); visitById(vid).items.push({ product_id: pid, mark: 'liked' }); render(); },
+  'scan-tag': scanTag, 'family-open': familyForm, 'save-family': saveFamily,
+  'to-billing': vid => { const v = visitById(vid), b = buying(v); if (!b.length) return; Object.assign(v, { status: 'at_billing', sent_at: D.now });
+    toast('Sent to billing', [`${C[v.customer_id].name} · ${b.length} piece${b.length > 1 ? 's' : ''} · ${rs(withGst(sumPrice(b)))} incl. GST`, 'Billing sees only the pieces marked Buying', `${v.items.length - b.length} other shortlisted pieces stay on the client profile`]); goHome(); },
+  'left-visit': vid => { const v = visitById(vid), up = closeVisit(v, null); toast(`${C[v.customer_id].first} left without buying`, [...up, 'Nothing billed']); goHome(); },
+  'bill-drop': key => { const [vid, pid] = key.split('|'); visitById(vid).items.find(i => i.product_id === pid).mark = 'liked'; toast('Taken off the bill', [`${P[pid].name} — kept on the profile as Liked`]); render(); },
+  'bill-collect': collect, 'aud-coll': k => { audColl = k; render(); },
+});
+
 // ---------------------------------------------------------------- stories + chrome + router
 const STORIES = [
   { t: 'WhatsApp → captured in one tap', role: 'advisor', go: `#/inbox/${D.story.capture_customer_id}`, steps: ['A client asks for a peacock-blue Kanchi pattu on WhatsApp', 'AI has already matched real sarees, checked stock in 6 branches and drafted the reply', 'Tap “Approve & send” — see everything that gets logged, with no forms'] },
-  { t: 'Bought at 2 pm, visits another branch at 4 pm', role: 'advisor_kph', go: `#/customer/${D.story.two_pm_customer_id}`, steps: ['You are a Kukatpally advisor with a 4 pm walk-in', 'She bought at Jubilee Hills at 2:05 pm today', 'It is already on her profile here — no end-of-day sync'] },
-  { t: 'Waiting list → stock arrives', role: 'manager', go: '#/inventory/VJA', steps: [`${D.demand.filter(d => d.product_id === D.story.demand_product_id).length} clients wait for the ${P[D.story.demand_product_id].name} — out of stock everywhere`, 'Tap “Receive shipment”: count it, scan the Silk Mark tags, confirm', 'Every waiting client\'s advisor is alerted, offer ready to send'] },
+  { t: 'Bought at 2 pm, visits another branch at 4 pm', role: 'advisor_kph', go: `#/customer/${D.story.two_pm_customer_id}`, steps: ['You are Kukatpally Sales staff with a 4 pm walk-in', 'She bought at Jubilee Hills at 2:05 pm today', 'It is already on her profile here — no end-of-day sync'] },
+  { t: 'Waiting list → stock arrives', role: 'manager', go: '#/inventory/VJA', steps: [`${D.demand.filter(d => d.product_id === D.story.demand_product_id).length} clients wait for the ${P[D.story.demand_product_id].name} — out of stock everywhere`, 'Tap “Receive shipment”: count it, scan the Silk Mark tags, confirm', 'Every waiting client\'s Sales staff are alerted, offer ready to send'] },
   { t: 'One complaint, many channels', role: 'manager', go: `#/grievances/${D.story.grievance_id}`, steps: ['A client complained on WhatsApp and left a 1-star Google review — merged into one case', 'Reply on each channel right from the case; the deadline passed so it went to the Regional Head', 'Tap “Mark resolved” — her paused marketing resumes on its own'] },
-  { t: 'Targets at every level', role: 'owner', go: '#/home', steps: ['Brand, region, branch and advisor targets roll up automatically', 'See who is behind and the daily pace needed', 'Switch roles above — same data, shaped for each person'] },
+  { t: 'Targets at every level', role: 'owner', go: '#/home', steps: ['Brand, region, branch and Sales staff targets roll up automatically', 'See who is behind and the daily pace needed', 'Switch roles above — same data, shaped for each person'] },
+  { t: 'Walk-in → consultant → billing', role: 'allocation', go: '#/home', steps: ['Allocation staff: tap “+ New walk-in”, type the mobile (returning clients fill in by themselves), note what they want, hand over to a consultant', 'Switch to Consultant: open the client, attach a family, shortlist pieces and mark each Liked · Already has · Buying · Said no, then send to billing', "Switch to Billing: only the Buying pieces are charged — everything else lands on the client profile (In store tab) and on their Sales staff's follow-up list"] },
   { t: 'One sale → many updates', role: 'owner', go: '#/settings/connections', steps: ['Tap “Simulate a POS sale”', 'One real-time event updates stock, client value and tier, warranty, invoice → Tally, targets and the manager'] },
 ];
 function demoBar() {
@@ -1297,11 +1595,14 @@ function navFor() {
   const k = kind();
   const items = { advisor: [['home', 'Home'], ['inbox', 'Chats'], ['appointments', 'Diary'], ['customers', 'Clients'], ['pipeline', 'Pipeline'], ['targets', 'Targets']],
     manager: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['customers', 'Clients'], ['pipeline', 'Pipeline'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['grievances', 'Complaints']],
-    owner: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['grievances', 'Complaints'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['pipeline', 'Pipeline'], ['customers', 'Clients']] }[k].slice();
+    owner: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['grievances', 'Complaints'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['pipeline', 'Pipeline'], ['customers', 'Clients']],
+    allocation: [['home', 'Walk-ins'], ['customers', 'Clients']],
+    consultant: [['home', 'My clients'], ['inventory', 'Catalogue'], ['customers', 'Clients']],
+    billing: [['home', 'Billing desk'], ['paid', 'Paid today'], ['customers', 'Clients']] }[k].slice();
   if (acc().team) items.push(['team', 'Team']);
   return items;
 }
-const VIEWS = { home: () => ({ advisor: advisorHome, manager: managerHome, owner: ownerHome })[kind()](), inbox, appointments, customers, customer, pipeline, targets, inventory, product, grievances, team, settings };
+const VIEWS = { home: () => ({ advisor: advisorHome, manager: managerHome, owner: ownerHome, allocation: floorHome, consultant: consultantHome, billing: billingHome })[kind()](), visit: id => visitView(id), paid: paidView, inbox, appointments, customers, customer, pipeline, targets, inventory, product, grievances, team, settings };
 function badgeCount(r) {
   return r === 'inbox' ? D.whatsapp.filter(m => m.card && m.card.status === 'pending' && inScope(C[m.customer_id])).length
     : r === 'grievances' ? D.grievances.filter(g => isOpen(g) && inScope(C[g.customer_id])).length : 0;
@@ -1312,8 +1613,10 @@ function badge(r) { const n = badgeCount(r); return n ? `<span class="n">${n}</s
 // Advisors, managers and the director share these four plus More — only the contents differ,
 // because teaching two mental models in one app costs more than it saves.
 const PH_PRIMARY = [['home', 'Home'], ['inbox', 'WhatsApp'], ['customers', 'Clients'], ['appointments', 'Diary']];
+// the floor teams have three screens or fewer, so their tabs are simply their own nav
+const phPrimary = () => FLOOR.includes(kind()) ? navFor() : PH_PRIMARY;
 function moreItems() {
-  const primary = PH_PRIMARY.map(([h]) => h);
+  const primary = phPrimary().map(([h]) => h);
   const items = navFor().filter(([h]) => !primary.includes(h));
   if (isDirector()) items.push(['settings', 'Settings']);
   return items;
@@ -1333,20 +1636,22 @@ function render() {
   const [r = 'home', arg] = location.hash.replace(/^#\/?/, '').split('/');
   if (r !== 'customer' && lastRoute.startsWith('customer')) tabState = 'owns';
   if (r !== 'grievances') replyOpen = null;
+  if (r !== 'visit') visitQ = '';
   const ov = document.getElementById('overlay');
   if (ov.querySelector('.sheet-nav')) ov.innerHTML = '';  // picking a destination closes the sheet
   const view = (VIEWS[r] || VIEWS.home)(arg && decodeURIComponent(arg));
-  const link = ([h, l]) => `<a href="#/${h}" class="${r === h || (r === 'customer' && h === 'customers') ? 'on' : ''}">${l}${badge(h)}</a>`;
+  const link = ([h, l]) => `<a href="#/${h}" class="${r === h || (r === 'customer' && h === 'customers') || (r === 'visit' && h === 'home') ? 'on' : ''}">${l}${badge(h)}</a>`;
   const shell = document.getElementById('shell');
-  const phone = isPhone() || kind() === 'advisor';  // real phone, or the advisor's on-screen handset
+  const phone = isPhone() || ['advisor', 'allocation', 'consultant'].includes(kind());  // real phone, or an on-screen handset for staff on their feet
   shell.className = 'shell' + (phone ? ' phone-mode' : '');
   const moreN = moreItems().reduce((n, [h]) => n + badgeCount(h), 0);
-  const moreOn = !PH_PRIMARY.some(([h]) => h === r || (r === 'customer' && h === 'customers'));
+  const moreOn = !phPrimary().some(([h]) => h === r || (r === 'customer' && h === 'customers') || (r === 'visit' && h === 'home'));
+  const fab = kind() === 'allocation' ? '<button class="fab" data-act="new-walkin" aria-label="New walk-in">+</button>' : FLOOR.includes(kind()) ? '' : '<button class="fab" data-act="add-client" aria-label="Add a client">+</button>';
   shell.innerHTML = phone
     ? `<div class="phone"><div class="ph-head"><img src="${LOGO}" alt="${esc(D.tenant.name)}"><span class="ph-who">${esc(ROLES[role].label)}</span></div>
        <div class="ph-body">${view}</div>
-       <button class="fab" data-act="add-client" aria-label="Add a client">+</button>
-       <nav class="ph-tabs">${PH_PRIMARY.map(link).join('')}<button class="${moreOn ? 'on' : ''}" data-act="more">More${moreN ? `<span class="n">${moreN}</span>` : ''}</button></nav></div>`
+       ${fab}
+       <nav class="ph-tabs">${phPrimary().map(link).join('')}${moreItems().length ? `<button class="${moreOn ? 'on' : ''}" data-act="more">More${moreN ? `<span class="n">${moreN}</span>` : ''}</button>` : ''}</nav></div>`
     : `<aside class="side"><img class="logo" src="${LOGO}" alt="${esc(D.tenant.name)}"><div class="who"><b>${esc(me().name)}</b><span>${esc(ROLES[role].label)}</span></div><nav>${navFor().map(link).join('')}</nav>
        ${isDirector() ? `<nav class="navb">${link(['settings', 'Settings'])}</nav>` : ''}</aside><main class="main">${view}</main>`;
   if (location.hash.replace(/^#\/?/, '') !== lastRoute) { window.scrollTo(0, 0); lastRoute = location.hash.replace(/^#\/?/, ''); }
