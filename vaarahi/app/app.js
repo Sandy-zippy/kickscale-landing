@@ -1636,8 +1636,8 @@ document.addEventListener('click', e => {
 function navFor() {
   const k = kind();
   const items = { advisor: [['home', 'Home'], ['inbox', 'Chats'], ['appointments', 'Diary'], ['customers', 'Clients'], ['pipeline', 'Pipeline'], ['targets', 'Targets']],
-    manager: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['customers', 'Clients'], ['pipeline', 'Pipeline'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['grievances', 'Complaints']],
-    owner: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['grievances', 'Complaints'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['pipeline', 'Pipeline'], ['customers', 'Clients']],
+    manager: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['customers', 'Clients'], ['pipeline', 'Pipeline'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['grievances', 'Complaints'], ['map', 'System map']],
+    owner: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['grievances', 'Complaints'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['pipeline', 'Pipeline'], ['customers', 'Clients'], ['map', 'System map']],
     allocation: [['home', 'Walk-ins'], ['customers', 'Clients']],
     consultant: [['home', 'Today'], ['inventory', 'Catalogue'], ['customers', 'Clients']],
     billing: [['home', 'Billing desk'], ['paid', 'Paid today'], ['customers', 'Clients']] }[k].slice();
@@ -1711,5 +1711,5 @@ function render() {
 }
 window.addEventListener('hashchange', render);
 matchMedia('(max-width: 760px)').addEventListener('change', render);  // rotate / resize across the breakpoint
-window.GE = { moveEmployee, D, SETTINGS, setRole, setLayout: l => { layoutBy[role] = l; render(); } };  // used by demo/check_demo.js
+window.GE = { moveEmployee, D, SETTINGS, setRole, VIEWS, ACTIONS, render, setLayout: l => { layoutBy[role] = l; render(); } };  // used by demo/check_demo.js
 render();
