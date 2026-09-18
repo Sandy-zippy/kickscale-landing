@@ -87,6 +87,7 @@ h3 { font-size: 17px; }
 .phone { width: 390px; height: 824px; border: 10px solid #101614; border-radius: 46px; overflow: hidden; background: var(--bg); display: flex; flex-direction: column; box-shadow: 0 40px 80px -30px rgba(12, 42, 33, .6); position: relative; }
 .ph-head { display: flex; align-items: center; gap: var(--s3); padding: 16px 18px 10px; background: var(--glass); backdrop-filter: blur(18px); border-bottom: 1px solid var(--line); }
 .ph-head img { height: 26px; }
+.demo-chip { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; font-weight: 700; color: var(--gold-ink); background: var(--gold-soft); border: 1px solid rgba(210, 166, 71, .4); border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
 .ph-head .tog button { padding: 6px 10px; font-size: 11.5px; min-height: 32px; }
 .ph-body { flex: 1; overflow: auto; padding: var(--s4) var(--s4) 108px; }
 .ph-body h1 { font-size: 26px; }
@@ -314,8 +315,19 @@ textarea.in { padding: 12px 14px; min-height: 80px; resize: vertical; }
 .phone table.t { font-size: 12px; }
 @media (max-width: 760px) {
   .shell.phone-mode { padding: 0; background: var(--bg); place-items: stretch; }
-  .phone { width: 100%; height: auto; min-height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
-  .ph-body { padding-bottom: 120px; }
+  /* On a real phone the PAGE scrolls, not an inner box: overflow/height here would trap the
+     header and the tab bar inside a box that never scrolls, so they slide away with the content.
+     The frame goes transparent, the header sticks to the viewport and the tab bar is fixed. */
+  .phone { width: 100%; height: auto; min-height: 100dvh; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+  .ph-body { overflow: visible; padding-bottom: 132px; }
+  #demobar { position: static; }
+  .ph-head { position: sticky; top: 0; z-index: 8; gap: 8px; padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 10px; }
+  .ph-head img { height: 21px; }
+  .ph-head .demo-chip { font-size: 9px; padding: 2px 7px; }
+  .ph-head .tog { padding: 2px; }
+  .ph-head .tog button { padding: 5px 10px; font-size: 11px; min-height: 30px; }
+  .ph-head .avatar.sm { width: 30px; height: 30px; font-size: 11px; border-radius: 10px; }
+  .ph-tabs { position: fixed; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
   .toast { right: 12px; left: 12px; width: auto; bottom: 96px; }
   .modal { padding: var(--s5); }
 }

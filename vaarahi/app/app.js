@@ -1751,7 +1751,7 @@ function render() {
   // the primary action rides in the middle of the tab bar (BizLink pattern) — a floating button covered row actions
   const plus = kind() === 'allocation' ? ['new-walkin', 'New walk-in'] : FLOOR.includes(kind()) ? null : ['add-client', 'Add a client'];
   shell.innerHTML = phone
-    ? `<div class="phone"><div class="ph-head"><img src="${LOGO}" alt="${esc(D.tenant.name)}"><span class="grow"></span>${layoutTog()}<button class="ph-avatar" data-act="profile" aria-label="Switch profile">${empAvatar(me(), 'sm')}</button></div>
+    ? `<div class="phone"><div class="ph-head"><img src="${LOGO}" alt="${esc(D.tenant.name)}">${isPhone() ? '<span class="demo-chip">Sample data</span>' : ''}<span class="grow"></span>${layoutTog()}<button class="ph-avatar" data-act="profile" aria-label="Switch profile">${empAvatar(me(), 'sm')}</button></div>
        <div class="ph-body">${view}</div>
        <nav class="ph-tabs">${tabBar(plus, moreOn, moreN)}</nav></div>`
     : `<aside class="side"><img class="logo" src="${LOGO}" alt="${esc(D.tenant.name)}"><nav>${navFor().map(link).join('')}</nav>
