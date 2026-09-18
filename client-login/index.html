@@ -440,6 +440,7 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     <nav>
       <button class="navbtn ghost" id="navHome" onclick="goHome()">&larr; Overview</button>
       <button class="navbtn" id="navExport" onclick="exportAnswers()">Export answers (JSON)</button>
+      <button class="navbtn ghost" id="navArch" onclick="window.open('../ego-master/','_blank')">Sample architecture</button>
       <button class="navbtn" id="pdfBtn" onclick="downloadPDF()">Download PDF</button>
       <button class="navbtn ghost" id="navLogout" onclick="logout()">Log out</button>
     </nav>
@@ -493,10 +494,10 @@ const COMMERCIALS = {
 /* What the client has to arrange in their own name. Named, not priced --
    these are third-party costs that move, and none of them bill through us. */
 const CLIENT_NEEDS = [
-  {t:'GoHighLevel subscription', d:'The CRM platform licence, taken in EGO’s own name. Both segments — EGO and Big E — run inside it.'},
+  {t:'Hosting for EGO Master', d:'A small cloud server and database in EGO’s own name — the system and its data stay yours.'},
   {t:'API keys &amp; account access', d:'One full-access key each for Runo, Sales Diary and Tally, plus Meta &amp; Google lead-form access and IndiaMART / JustDial push access.'},
   {t:'Gemini / LLM API access', d:'The reasoning engine behind AI Analysis. Runs on your own API account so the data and the billing stay yours.'},
-  {t:'WhatsApp Business number &amp; BSP', d:'GHL-native WhatsApp — AiSensy is removed. Meta charges per conversation.'},
+  {t:'WhatsApp Business number &amp; BSP', d:'A WhatsApp Business number on Meta’s Cloud API. Meta charges per conversation.'},
   {t:'AI Voice Agent', d:'The inbound call agent, provisioned on your account and charged for the minutes it handles.'},
   {t:'AI call &amp; usage charges', d:'Ongoing voice minutes and LLM tokens as the system runs day to day — these scale with how much you use it.'}
 ];
@@ -568,96 +569,85 @@ DATA.sections.p1 = {
   short:'CRM Building + AI Analysis',
   tag:'Phase 1 · Build now',
   blurb:'The full Growth Engine CRM across EGO and Big E &mdash; integrations, AI call &amp; conversation agents, automations &mdash; plus EGO Master’s automated AI Analysis engine live on top.',
-  goal:'Every channel captured and interconnected in GoHighLevel across both companies, the three integrations feeding it, and EGO Master turning that data into analysis — answering questions 1–4 of the North Star.',
+  goal:'One system across both companies — every dealer, client, order, site and complaint in one place, with the team, the permissions and the automations set up the way EGO actually works.',
   questions:[
-    /* --- what the system must do --- */
-    {id:'P1-01', group:'Foundations & segments', prompt:'Which company is which segment, and does B2B/B2C apply to both?',
-     help:'e.g. "EGO = retail (architects, contractors, end-customers); Big E = wholesale (dealers)" — and whether both run B2B and B2C.'},
-    {id:'P1-02', group:'Foundations & segments', prompt:'User list & roles — who sees what, and who may see cost/GP.',
-     help:'Names, teams, and which roles are allowed to see cost and gross-profit figures.'},
+    {id:'P1-01', group:'Your two businesses', prompt:'Confirm which company is which side of the business.',
+     help:'We have built it as Wholesale = EGO Premium (distributors and dealers) and Retail = Big E (direct clients and architects). Tell us if that is wrong, or if either company does both.'},
+    {id:'P1-02', group:'Your two businesses', prompt:'Which product categories does each company sell?',
+     help:'LVT, SPC, Laminate, Engineered, WPC Tile Deck, WPC Plank / Outdoor, PVC Soffit &amp; Cladding — and whether any are wholesale-only or retail-only.'},
+    {id:'P1-03', group:'Your two businesses', type:'multi', other:true, prompt:'Which locations should the system know about?',
+     options:['Chembur office','Bhiwandi warehouse','Bengaluru hub','NCR hub','Showroom / experience centre','Other']},
 
-    {id:'P1-03', group:'Products, dealers & geography', prompt:'Confirm the 7 product categories & the collections/series to load.'},
-    {id:'P1-04', group:'Products, dealers & geography', prompt:'Dealer grade names & the rule for each.',
-     help:'What actually makes a dealer Platinum vs A / B / C — turnover, categories bought, payment behaviour?'},
-    {id:'P1-05', group:'Products, dealers & geography', prompt:'Region/zone scheme & micro-market definitions.',
-     help:'The list of areas/zones you operate in, and how a micro-market is defined inside them.'},
-    {id:'P1-06', group:'Products, dealers & geography', prompt:'Competitor brands to track on the dealer record.'},
+    {id:'P1-04', group:'People &amp; roles', prompt:'List everyone who will use the system in the WHOLESALE business — full names.',
+     help:'Name, mobile and what they do. Include field sales, telecalling, warehouse, accounts and management.'},
+    {id:'P1-05', group:'People &amp; roles', prompt:'List everyone who will use the system in the RETAIL business — full names.',
+     help:'The same for Big E: telecallers, architect relationship staff, site supervisors, marketing.'},
+    {id:'P1-06', group:'People &amp; roles', prompt:'What is each person responsible for, in one line each?'},
+    {id:'P1-07', group:'People &amp; roles', prompt:'Who reports to whom?',
+     help:'The full reporting line, from the newest field executive up to you — who controls whom.'},
+    {id:'P1-08', group:'People &amp; roles', prompt:'Who may act on someone else’s behalf?',
+     help:'For example, can a regional manager raise an order for a field executive, or reassign their dealers?'},
 
-    {id:'P1-07', group:'Consumer leads (B2C)', prompt:'Dealer-allocation SLA + escalation + reassignment rule.',
-     help:'How long a dealer has to accept a lead before it escalates, and who it goes to next.'},
-    {id:'P1-08', group:'Consumer leads (B2C)', prompt:'Lost-reason list.',
-     help:'The set of reasons a consumer lead can be marked Lost.'},
+    {id:'P1-09', group:'What each person sees &amp; can do', prompt:'For each role, how much data should they see?',
+     help:'Only their own records · their region · their whole division · everything. Tell us role by role.'},
+    {id:'P1-10', group:'What each person sees &amp; can do', prompt:'Who may see cost price and margin?'},
+    {id:'P1-11', group:'What each person sees &amp; can do', prompt:'Who may see outstanding and overdue money?'},
+    {id:'P1-12', group:'What each person sees &amp; can do', prompt:'What should each role be able to DO, not just see?',
+     help:'Raise an order, add a dealer, change a price, approve above the credit limit, close a complaint, export data.'},
+    {id:'P1-13', group:'What each person sees &amp; can do', prompt:'What must nobody do without approval, and whose approval?'},
 
-    {id:'P1-09', group:'Dealer & project pipeline', type:'multi', other:true,
-     prompt:'Confirm the project types you handle.',
-     options:['Builder','Hotel','Corporate','Retail','Other']},
-    {id:'P1-10', group:'Dealer & project pipeline', prompt:'Any reorder-specific stage for repeat dealer orders?',
-     help:'If repeat orders should skip stages or use their own short flow, tell us how.'},
+    {id:'P1-14', group:'Distributors, dealers &amp; sub-dealers', prompt:'What is the difference between a distributor, a dealer and a sub-dealer in your business?',
+     help:'Who buys direct from EGO, who buys from whom, and who sets the price at each step.'},
+    {id:'P1-15', group:'Distributors, dealers &amp; sub-dealers', prompt:'What makes a dealer Platinum, A, B or C?'},
+    {id:'P1-16', group:'Distributors, dealers &amp; sub-dealers', prompt:'Who owns a dealer relationship, and can more than one person own it?',
+     help:'Field sales, telecalling, a specialist, management — and what happens to that dealer when someone leaves.'},
+    {id:'P1-17', group:'Distributors, dealers &amp; sub-dealers', prompt:'How are regions and micro-markets defined?'},
 
-    {id:'P1-11', group:'Operations & installation', prompt:'Confirm installation stages + site-readiness checklist.'},
-    {id:'P1-12', group:'Operations & installation', prompt:'Delay-reason list.',
-     help:'e.g. customer / material / installer / transport / design change.'},
+    {id:'P1-18', group:'Retail clients &amp; architects', type:'multi', other:true, prompt:'Which types of retail client do you deal with?',
+     options:['Homeowner','Builder','Hotel','Corporate','Retail chain','Institution','Other']},
+    {id:'P1-19', group:'Retail clients &amp; architects', prompt:'How does an architect or design firm relate to a client and a project?'},
+    {id:'P1-20', group:'Retail clients &amp; architects', prompt:'Where do retail leads come from today, and who touches them first?'},
 
-    {id:'P1-13', group:'Communication & escalation', prompt:'Escalation thresholds & hierarchy.',
-     help:'Untouched-lead hours, ops-stall days, and who each alert goes to.'},
-    {id:'P1-14', group:'Communication & escalation', prompt:'Owner → follower map (who cross-checks whom).'},
+    {id:'P1-21', group:'Fields on each record', prompt:'What must we record about a DEALER?',
+     help:'Beyond name, owner, phone, GST, city, grade and credit limit — what else does your team need on that screen?'},
+    {id:'P1-22', group:'Fields on each record', prompt:'What must we record about a RETAIL CLIENT?'},
+    {id:'P1-23', group:'Fields on each record', prompt:'What must we record about an ORDER?'},
+    {id:'P1-24', group:'Fields on each record', prompt:'What must we record about a SITE or INSTALLATION?'},
+    {id:'P1-25', group:'Fields on each record', prompt:'Which fields are compulsory — the record cannot be saved without them?'},
 
-    {id:'P1-15', group:'Quotation', prompt:'How many quotation slots to allow (default 5), and the product list for the dropdown.'},
+    {id:'P1-26', group:'Pipelines &amp; stages', prompt:'Confirm the wholesale order stages.',
+     help:'Built today as Requirement received → Stock checked → Allocated → Dispatched → Delivered → Invoiced → Collected, with a separate MOQ / production path for what is not in stock.'},
+    {id:'P1-27', group:'Pipelines &amp; stages', prompt:'Confirm the retail lead stages, from first enquiry to won.'},
+    {id:'P1-28', group:'Pipelines &amp; stages', prompt:'Confirm the installation steps, and what should block progress.',
+     help:'For example: no crew allocated → cannot schedule; site not ready → cannot mobilise; open snags → cannot sign off.'},
+    {id:'P1-29', group:'Pipelines &amp; stages', prompt:'What are the valid reasons for losing an order or a lead?'},
 
-    {id:'P1-16', group:'AI agents', prompt:'Languages + the qualification question set for B2B and B2C.'},
-    {id:'P1-17', group:'AI agents', prompt:'Routing matrix — which team / dealer grade / geography gets which lead.'},
-    {id:'P1-18', group:'AI agents', prompt:'Knowledge-base sources for the AI agents.',
-     help:'Catalogue, specs, price, FAQ, warranty, objection handling, service areas.'},
+    {id:'P1-30', group:'Automations inside your team', prompt:'What should the system tell your own people automatically, without anyone asking?',
+     help:'For example: order stuck before dispatch, dealer with no order for 45 days, payment overdue, complaint past its deadline, site running late.'},
+    {id:'P1-31', group:'Automations inside your team', prompt:'Who should each of those alerts go to, and after how long?'},
+    {id:'P1-32', group:'Automations inside your team', prompt:'What should escalate to you personally, and at what point?'},
 
-    {id:'P1-19', group:'EGO Master access', prompt:'Where should EGO Master live, and who gets Admin vs Employee access?',
-     help:'It sits on your own website behind its own login — e.g. a subdomain like master.egopremium.com. Admin sees everything including cost and GP; Employee sees only their own scope.'},
+    {id:'P1-33', group:'Automations to dealers &amp; customers', prompt:'What should go out automatically to a dealer or a client?',
+     help:'Order confirmed, dispatched, delivered, payment reminder, complaint acknowledged, welcome to a new lead.'},
+    {id:'P1-34', group:'Automations to dealers &amp; customers', prompt:'What must NEVER be sent automatically?'},
 
-    /* --- accounts & credentials: deliberately ONE system per question, so no
-       two keys can be pasted into the same box and get mixed up --- */
-    {id:'P1-20', group:'Access · GoHighLevel & AI', secure:true,
-     prompt:'GoHighLevel — who holds the subscription, and admin access for both sub-accounts.',
-     help:'The plan must be live in EGO’s own name before we start. We need admin-level user access on the EGO and Big E sub-accounts.'},
-    {id:'P1-21', group:'Access · GoHighLevel & AI', secure:true,
-     prompt:'Gemini (or GPT) API key — the LLM that powers AI Analysis.',
-     help:'Created on your own Google AI Studio / OpenAI account so the usage bills to you and the data stays yours.'},
+    {id:'P1-35', group:'Reporting', prompt:'Which reports do you want, and who receives each one?'},
+    {id:'P1-36', group:'Reporting', prompt:'How often should each one arrive — daily, weekly, monthly?'},
+    {id:'P1-37', group:'Reporting', prompt:'What is the one number you check first every morning?'},
 
-    {id:'P1-22', group:'Access · Runo & Sales Diary', secure:true,
-     prompt:'Runo — full-access API key, and the Runo account it belongs to.',
-     help:'Runo only. Please don’t combine this with the Sales Diary key — they are different systems and get mixed up easily.'},
-    {id:'P1-23', group:'Access · Runo & Sales Diary', secure:true,
-     prompt:'Sales Diary — full-access API key, and the Sales Diary account it belongs to.',
-     help:'Sales Diary only, kept separate from the Runo key above.'},
+    {id:'P1-38', group:'Systems &amp; access', secure:true, prompt:'Tally — which edition, which version, and which company files should we sync?'},
+    {id:'P1-39', group:'Systems &amp; access', prompt:'Which PC runs Tally, who owns it, and is it left switched on?',
+     help:'The sync only runs while that machine is on with the company open, so we need to know whose desk it sits on and who can restart it.'},
+    {id:'P1-40', group:'Systems &amp; access', secure:true, prompt:'Which WhatsApp number should the system send from?',
+     help:'It must not already be active on another WhatsApp Business account.'},
+    {id:'P1-41', group:'Systems &amp; access', type:'multi', other:true, prompt:'Which of these are you using today?',
+     options:['IndiaMART','JustDial','Runo','Sales Diary','Meta / Instagram lead ads','Google Ads','Website enquiry form','Other']},
 
-    {id:'P1-24', group:'Access · Tally', prompt:'Tally — which edition and version are you running?',
-     help:'e.g. TallyPrime 4.x, Tally.ERP 9, Silver or Gold licence. This decides how we connect.'},
-    {id:'P1-25', group:'Access · Tally', prompt:'Tally — where does it run, and how can we reach it?',
-     help:'On one office PC, a server, or cloud-hosted? Tally’s connector needs that machine reachable — static IP, VPN, or a hosted Tally URL. This is usually the longest lead-time item.'},
-    {id:'P1-26', group:'Access · Tally', prompt:'Tally — which company (or companies) should we sync?',
-     help:'The exact company names as they appear in Tally, and whether EGO and Big E are separate books.'},
-    {id:'P1-27', group:'Access · Tally', prompt:'Tally — who administers it? Name, role and contact.',
-     help:'Your accountant or IT person. They’ll need to enable the connector and keep Tally running for the sync.'},
-
-    {id:'P1-28', group:'Access · Messaging & lead sources',
-     prompt:'WhatsApp — the number to provision, and your BSP.',
-     help:'GHL-native WhatsApp; AiSensy is removed. The number must not already be active on another WhatsApp Business account.'},
-    {id:'P1-29', group:'Access · Messaging & lead sources',
-     prompt:'Meta — Business Manager access for lead ads.',
-     help:'Add us as a partner/admin on the Business Manager, and name the Page and ad account the lead forms sit on.'},
-    {id:'P1-30', group:'Access · Messaging & lead sources',
-     prompt:'Google Ads — account access for lead-form extensions.',
-     help:'The Google Ads customer ID, with access granted to our email.'},
-    {id:'P1-31', group:'Access · Messaging & lead sources', secure:true,
-     prompt:'IndiaMART — lead/CRM API key.',
-     help:'From your IndiaMART seller panel (Lead Manager → CRM integration).'},
-    {id:'P1-32', group:'Access · Messaging & lead sources',
-     prompt:'JustDial — lead push access.',
-     help:'Whether your JustDial plan includes lead push/API, and your JD account manager’s contact if we need it enabled.'},
-    {id:'P1-33', group:'Access · Messaging & lead sources',
-     prompt:'Social handles to connect — Instagram, Facebook, LinkedIn.'},
-
-    {id:'P1-34', group:'Access · Website', secure:true,
-     prompt:'Website — admin and DNS access.',
-     help:'Needed to embed the AI chatbot and to point the EGO Master subdomain. Tell us who hosts the site and who can add a DNS record.'}
+    {id:'P1-42', group:'Rollout &amp; practicalities', prompt:'Should dealers get their own login, or stay on WhatsApp only?',
+     help:'This changes the build a lot — a dealer portal is far more work than a WhatsApp Accept button.'},
+    {id:'P1-43', group:'Rollout &amp; practicalities', prompt:'Do your site staff have network at site?',
+     help:'If not, the phone app has to work offline and sync later. Tell us what actually happens on a typical site.'},
+    {id:'P1-44', group:'Rollout &amp; practicalities', prompt:'How much old data should we bring in, and where does it live today?'},
   ],
   modules:[
     { title:'Foundations & segment setup', where:['ghl','em'], auto:'manone', qids:['P1-01','P1-02','P1-20'],
@@ -917,6 +907,60 @@ function saveEItems(key,items){
   STATE[key]=JSON.stringify(items);
   saveAnswerDebounced(CURRENT,key,STATE[key]);
 }
+/* ================= ADDITIONAL REQUESTS =================
+   Repeatable rows stored as ONE json array under a single key, saved through the
+   same path as any answer -- the backend needs no new action type. */
+const CR_KEY='P1-CR';
+const CR_COMPANIES=['Wholesale \u00b7 EGO Premium','Retail \u00b7 Big E','Both'];
+const CR_AREAS=['This client portal','Dealers & distributors','Orders & order flow','Stock','Production & allocation','Dealer development','Complaints','Retail clients','Architect firms','Leads','Projects','Installation','Pipelines & stages','Automations','AI Analysis','Integrations','Phone app','Team & access','System map','Something else'];
+function loadCRs(){ const s=STATE[CR_KEY]; if(s){ try{ const p=JSON.parse(s); if(Array.isArray(p)) return p; }catch(e){} } return []; }
+function saveCRs(l){ STATE[CR_KEY]=JSON.stringify(l); saveAnswerDebounced(CURRENT,CR_KEY,STATE[CR_KEY]); }
+function esc2(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function renderCRs(host){
+  const list=loadCRs();
+  host.innerHTML='';
+  const wrap=document.createElement('div'); wrap.className='qgroup';
+  wrap.innerHTML=`<div class="qgroup-h"><h3>Anything else you want changed</h3><span class="qgn">${list.length} request${list.length===1?'':'s'}</span></div>
+    <div class="tabintro" style="margin:0 0 16px">Anything not covered above &mdash; a screen you want different, a field to add, a rule that works another way in your business. Choose which company it is for and which part of the system, then describe it. Add as many as you like; they are saved with your answers and appear in the PDF and the JSON.</div>`;
+  list.forEach((cr,i)=>{
+    const card=document.createElement('div'); card.className='q'+((cr.text||'').trim()?' answered':'');
+    card.innerHTML=`<div class="q-top"><span class="q-id">#${i+1}</span><span class="q-prompt">Request ${i+1}</span>
+        <button type="button" class="erm" data-cr-del="${i}" title="Remove this request" style="margin-left:auto">&times;</button></div>
+      <div class="q-help">Which company is this for?</div>
+      <div class="opts">${CR_COMPANIES.map(c=>`<label class="opt${cr.company===c?' sel':''}"><input type="radio" name="crc${i}" value="${esc2(c)}" ${cr.company===c?'checked':''} data-cr-company="${i}"><span>${c}</span></label>`).join('')}</div>
+      <div class="q-help" style="margin-top:14px">Which part of the system?</div>
+      <div class="opts">${CR_AREAS.map(a=>`<label class="opt${cr.area===a?' sel':''}"><input type="radio" name="cra${i}" value="${esc2(a)}" ${cr.area===a?'checked':''} data-cr-area="${i}"><span>${a}</span></label>`).join('')}</div>
+      <textarea rows="3" data-cr-text="${i}" placeholder="Describe the change you want\u2026">${esc2(cr.text)}</textarea>`;
+    wrap.appendChild(card);
+  });
+  const add=document.createElement('button');
+  add.type='button'; add.className='eadd'; add.style.marginTop='6px'; add.textContent='+ Add another request';
+  add.addEventListener('click',()=>{ const l=loadCRs(); l.push({company:CR_COMPANIES[0],area:CR_AREAS[0],text:''}); saveCRs(l); renderCRs(host); });
+  wrap.appendChild(add);
+  host.appendChild(wrap);
+}
+function crSync(input){
+  const grp=input.closest('.opts'); if(!grp) return;
+  grp.querySelectorAll('.opt').forEach(l=>l.classList.toggle('sel', l.querySelector('input').checked));
+}
+document.addEventListener('change',e=>{
+  const t=e.target; if(!t.dataset) return;
+  if(!document.getElementById('crhost')) return;
+  /* Update this row in place. A full renderCRs() here would rebuild the textarea,
+     dropping the caret to position 0 -- the next thing typed lands in FRONT of
+     what the client already wrote. Re-render only on add/remove. */
+  if(t.dataset.crCompany!==undefined){ const l=loadCRs(); l[+t.dataset.crCompany].company=t.value; saveCRs(l); crSync(t); }
+  if(t.dataset.crArea!==undefined){ const l=loadCRs(); l[+t.dataset.crArea].area=t.value; saveCRs(l); crSync(t); }
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset && t.dataset.crText!==undefined){ const l=loadCRs(); l[+t.dataset.crText].text=t.value; saveCRs(l);
+    const card=t.closest('.q'); if(card) card.classList.toggle('answered', !!t.value.trim()); }
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest && e.target.closest('[data-cr-del]'); if(!b) return;
+  const host=document.getElementById('crhost'); const l=loadCRs(); l.splice(+b.dataset.crDel,1); saveCRs(l); renderCRs(host);
+});
 function mountEChips(container,key){
   const def=EDEFAULTS[key]; if(!def) return;
   const items=loadEItems(key);
@@ -989,7 +1033,7 @@ function renderHome(){
 <section class="hero">
   <div class="eyebrow">EGO Premium &times; Big E &middot; prepared by Zippyscale</div>
   <h1>Your operating system, delivered in two focused phases.</h1>
-  <p>Your priority is AI &mdash; analysis, strategy and positioning &mdash; so we've compressed the roadmap into two phases that get you there fast. <b>Phase 1</b> consolidates every channel into GoHighLevel, wires in Tally, Runo and Sales Diary, and turns on <b>AI Analysis</b> in EGO Master. <b>Phase 2</b> adds the <b>AI Strategy</b> layer on top.</p>
+  <p>Your priority is AI &mdash; analysis, strategy and positioning &mdash; so we've compressed the roadmap into two phases that get you there fast. <b>Phase 1</b> builds EGO Master itself — one system across both companies — wires in Tally, Runo and Sales Diary, and turns on <b>AI Analysis</b> on top. <b>Phase 2</b> adds the <b>AI Strategy</b> layer on top.</p>
   <div class="pillrow">
     <span class="pill"><b>2</b> phases</span>
     <span class="pill">Phase 1 &middot; CRM Building <b>+ AI Analysis</b></span>
@@ -1132,6 +1176,8 @@ function renderTab(){
     });
     S.questions.forEach(restore);
 
+    const crhost=document.createElement('div'); crhost.id='crhost'; body.appendChild(crhost); renderCRs(crhost);
+
     const submitted=!!ALL_SUBMITTED_AT;
     body.appendChild(el(submitted
       ? `<div class="submitbar done"><div style="display:flex;align-items:center;gap:15px">
@@ -1191,6 +1237,7 @@ function exportAnswers(){
       });
     });
   });
+  out.changeRequests = loadCRs();
   const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='ego-premium-build-plan-answers.json'; a.click();
@@ -1577,6 +1624,14 @@ function buildPdf(){
     pdfWrapped(st, pdfSafe(S.blurb), 10.5, { color: PDF_C.muted, spacingAfter: 14 });
     pdfHeading(st, "WHAT WE ASKED, AND WHAT WE GOT BACK", 11);
     S.questions.forEach(q => pdfQACard(st, q.id, pdfSafe(q.prompt), q.help ? pdfSafe(q.help) : '', STATE[q.id] ? pdfSafe(STATE[q.id]) : ''));
+    if (key === 'p1'){
+      const crs = loadCRs();
+      if (crs.length){
+        st.doc.addPage(); st.y = st.margin;
+        pdfHeading(st, 'ADDITIONAL REQUESTS', 13, { spacingAfter: 12 });
+        crs.forEach((cr, i) => pdfQACard(st, '#' + (i + 1), pdfSafe((cr.company || '') + '  \u00b7  ' + (cr.area || '')), '', pdfSafe(cr.text || '')));
+      }
+    }
 
     st.doc.addPage(); st.y = st.margin;
     pdfHeading(st, 'HOW WE’RE BUILDING IT', 13, { spacingAfter: 12 });
