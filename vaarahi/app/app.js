@@ -51,18 +51,18 @@ const notifyAdvisor = c => c.advisor && c.advisor !== me().id ? `${advName(c)} (
 
 // ---------------------------------------------------------------- settings (director-controlled)
 const ACCESS_DEFAULT = {
-  role_owner: { scope: 'company', cost: true, reports: true, export: true, team: true },
-  role_business_head: { scope: 'company', cost: true, reports: true, export: true, team: true },
-  role_regional_head: { scope: 'region', cost: true, reports: true, export: false, team: false },
-  role_store_manager: { scope: 'branch', cost: true, reports: true, export: false, team: false },
+  role_owner: { scope: 'company', cost: true, reports: true, export: true, team: true, automations: true },
+  role_business_head: { scope: 'company', cost: true, reports: true, export: true, team: true, automations: true },
+  role_regional_head: { scope: 'region', cost: true, reports: true, export: false, team: false, automations: false },
+  role_store_manager: { scope: 'branch', cost: true, reports: true, export: false, team: false, automations: true },
   role_assistant_manager: { scope: 'branch', cost: false, reports: true, export: false, team: false },
   role_department_head: { scope: 'company', cost: true, reports: true, export: true, team: false },
   role_finance: { scope: 'company', cost: true, reports: true, export: true, team: false },
   role_inventory: { scope: 'company', cost: true, reports: false, export: true, team: false },
-  role_marketing: { scope: 'company', cost: false, reports: true, export: true, team: false },
+  role_marketing: { scope: 'company', cost: false, reports: true, export: true, team: false, automations: true },
   role_admin: { scope: 'company', cost: false, reports: false, export: false, team: true },
 };
-const NO_ACCESS = { scope: 'own', cost: false, reports: false, export: false, team: false };
+const NO_ACCESS = { scope: 'own', cost: false, reports: false, export: false, team: false, automations: false };
 const SETTINGS = {
   tiers: { vip: 1000000, premium: 250000 },
   sla: { ...D.tenant.settings.grievance_sla_hours },
@@ -120,6 +120,28 @@ function tierWhy(c) {
 
 // ---------------------------------------------------------------- targets (Phase 1 calcs)
 const DAYS_LEFT = 30 - Number(TODAY.slice(8));
+// ---------------------------------------------------------------- date filter (dashboard)
+const RANGES = { today: 'Today', week: 'This week', month: 'This month', q: 'Last 3 months', year: 'Last 12 months', custom: 'Custom' };
+let range = 'month', rangeFrom = MONTH + '-01', rangeTo = TODAY;
+const iso = d => new Date(d).toISOString().slice(0, 10);
+function rangeDates() {
+  const now = dt(TODAY);
+  if (range === 'today') return [TODAY, TODAY];
+  if (range === 'week') return [iso(now - ((now.getDay() + 6) % 7) * 864e5), TODAY];
+  if (range === 'month') return [MONTH + '-01', TODAY];
+  if (range === 'q') return [iso(now - 89 * 864e5), TODAY];
+  if (range === 'year') return [iso(now - 364 * 864e5), TODAY];
+  return [rangeFrom, rangeTo].sort();
+}
+const rangeLabel = () => { const [a, b] = rangeDates(); return range === 'custom' ? `${dFmt(a)} – ${dFmt(b)}` : RANGES[range]; };
+const ordersInRange = () => { const [a, b] = rangeDates(); return ORD.filter(o => o.at.slice(0, 10) >= a && o.at.slice(0, 10) <= b); };
+const rangeDays = () => { const [a, b] = rangeDates(); return Math.round((dt(b) - dt(a)) / 864e5) + 1; };
+function rangeBar() {
+  const [a, b] = rangeDates();
+  return `<div class="filterbar"><div class="tabs-inline" style="margin:0">${Object.entries(RANGES).map(([k, l]) => `<button class="${range === k ? 'on' : ''}" data-act="range" data-id="${k}">${l}</button>`).join('')}</div>
+    ${range === 'custom' ? `<div class="row-flex" style="gap:8px"><input class="in" type="date" id="r-from" value="${a}" max="${TODAY}"><span class="muted small">to</span><input class="in" type="date" id="r-to" value="${b}" max="${TODAY}"></div>` : ''}
+    <span class="help">${rangeDays()} day${rangeDays() > 1 ? 's' : ''} · ${esc(rangeLabel())}</span></div>`;
+}
 const inLevel = (o, level, ref) => level === 'brand' || (level === 'store' && o.store === code(ref)) || (level === 'advisor' && o.adv === ref) || (level === 'region' && SID['sto_' + o.store].region_id === ref);
 const achieved = (level, ref, month = MONTH) => ORD.reduce((s, o) => s + (o.at.startsWith(month) && inLevel(o, level, ref) ? o.total : 0), 0);
 const targetOf = (level, ref, month = MONTH) => D.targets.find(t => t.level === level && t.level_ref_id === ref && t.period_start.startsWith(month));
@@ -242,37 +264,47 @@ function vbars(items) {
 }
 
 function ownerHome() {
-  const months = [];
-  for (let i = 12; i >= 1; i--) { const d = new Date(2026, 8 - i, 1); months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); }
-  const monthRev = m => Object.values(D.rev).reduce((s, r) => s + (r[m] || 0), 0);
-  const y12 = ORD.filter(o => o.at.slice(0, 7) >= months[0] && o.at.slice(0, 7) <= months[11]);
-  const tot = y12.reduce((s, o) => s + o.total, 0);
-  const vip = y12.reduce((s, o) => s + (o.cust && C[o.cust].tier === 'vip' ? o.total : 0), 0);
+  const sel = ordersInRange(), [from, to] = rangeDates();
+  const tot = sel.reduce((s, o) => s + o.total, 0);
+  const vip = sel.reduce((s, o) => s + (o.cust && C[o.cust].tier === 'vip' ? o.total : 0), 0);
+  const linked = sel.filter(o => o.cust).length;
+  const newClients = D.customers.filter(c => (c.first_buy || '') >= from && (c.first_buy || '') <= to).length;
   const open = D.grievances.filter(isOpen), breached = open.filter(g => dt(g.sla_due_at) < NOW).length;
-  const stores = D.stores.map(s => ({ s, p: progress('store', s.id) })).sort((a, b) => b.p.pct - a.p.pct);
-  const worst = stores[stores.length - 1], heroG = D.grievances.find(g => g.id === D.story.grievance_id), hc = C[heroG.customer_id];
+  const byStore = D.stores.map(s => ({ s, v: sel.reduce((n, o) => n + (o.store === s.code ? o.total : 0), 0), p: progress('store', s.id) })).sort((a, b) => b.v - a.v);
+  const worst = D.stores.map(s => ({ s, p: progress('store', s.id) })).sort((a, b) => a.p.pct - b.p.pct)[0];
+  const heroG = D.grievances.find(g => g.id === D.story.grievance_id), hc = C[heroG.customer_id];
   const waiting = D.demand.filter(d => d.product_id === D.story.demand_product_id && d.status === 'waiting').length;
   const brand = progress('brand', 'ten_vaarahi');
+  // under about two months the interesting unit is a day, above it a month
+  const daily = rangeDays() <= 62;
+  const buckets = {};
+  sel.forEach(o => { const k = daily ? o.at.slice(0, 10) : o.at.slice(0, 7); buckets[k] = (buckets[k] || 0) + o.total; });
+  const keys = Object.keys(buckets).sort();
+  const chartLabel = k => daily ? dt(k).toLocaleDateString('en-IN', { ...TZ, day: 'numeric', month: 'short' }) : new Date(k + '-15').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+  const items = keys.map(k => ({ label: chartLabel(k), value: buckets[k] }));
   return `<div class="stack">
-    <div class="page-h"><div><div class="kicker">All branches · ${dFmt(TODAY)}</div><h1>The business today</h1></div><span class="muted small">Sample data · figures are illustrative</span></div>
+    <div class="page-h" style="margin-bottom:0"><div><div class="kicker">All branches · ${dFmt(TODAY)}</div><h1>The business today</h1></div><span class="muted small">Sample data · figures are illustrative</span></div>
+    ${rangeBar()}
     <div class="grid g4">
-      <div class="card stat"><div class="kicker">September so far</div><div class="v">${inr(brand.a)}</div><div class="d">${Math.round(brand.pct * 100)}% of ${inr(brand.t)} target · ${inr(brand.pace)}/day needed</div></div>
-      <div class="card stat"><div class="kicker">Last 12 months</div><div class="v">${inr(tot)}</div><div class="d">${y12.length.toLocaleString('en-IN')} sales, ${Math.round(y12.filter(o => o.cust).length / y12.length * 100)}% linked to a client</div></div>
-      <div class="card stat"><div class="kicker">VIP share of revenue</div><div class="v">${Math.round(vip / tot * 100)}%</div><div class="d">from ${D.customers.filter(c => c.tier === 'vip').length} VIP clients</div></div>
+      <div class="card wash stat"><div class="kicker">${esc(rangeLabel())}</div><div class="v">${inr(tot)}</div><div class="d">${sel.length.toLocaleString('en-IN')} sales · ${sel.length ? Math.round(linked / sel.length * 100) : 0}% linked to a client</div></div>
+      <div class="card stat"><div class="kicker">September target</div><div class="v">${Math.round(brand.pct * 100)}%</div><div class="d">${inr(brand.a)} of ${inr(brand.t)} · ${inr(brand.pace)}/day needed</div></div>
+      <div class="card stat"><div class="kicker">VIP share</div><div class="v">${tot ? Math.round(vip / tot * 100) : 0}%</div><div class="d">${newClients} new client${newClients === 1 ? '' : 's'} in this period</div></div>
       <div class="card stat"><div class="kicker">Open complaints</div><div class="v">${open.length}</div><div class="d">${breached} past deadline</div></div>
     </div>
     <div class="grid g2">
-      ${section('Branches vs September target', hbars(stores.map(({ s, p }) => ({ label: s.name, value: p.pct, text: `${Math.round(p.pct * 100)}% · ${inr(p.a)}`, tip: `${s.name}: ${inr(p.a)} of ${inr(p.t)}` }))) + '<div class="small muted" style="margin-top:8px">Line = 100% of target. Vanasthalipuram opened in August.</div>')}
+      ${section(`Branches · ${esc(rangeLabel().toLowerCase())}`, hbars(byStore.map(({ s, v, p }) => ({ label: s.name, value: tot ? v / Math.max(...byStore.map(x => x.v)) : 0, text: `${inr(v)}${range === 'month' ? ` · ${Math.round(p.pct * 100)}%` : ''}`, tip: `${s.name}: ${inr(v)}` })), false)
+        + `<div class="small muted" style="margin-top:8px">${range === 'month' ? 'Percentages are against this month\'s branch targets. ' : ''}Vanasthalipuram opened in August.</div>`)}
       ${section('Needs your attention', `<div class="list">
         ${isOpen(heroG) ? `<div class="row"><div class="grow"><b>${TIER[hc.tier]} client's complaint escalated to Regional Head</b><div class="why">Why: ${esc(hc.name)} — ${esc(CAT[heroG.category])}, WhatsApp + 1-star Google review, deadline passed</div></div><a class="btn sm" href="#/grievances/${heroG.id}">Open</a></div>` : ''}
         ${waiting ? `<div class="row"><div class="grow"><b>${esc(P[D.story.demand_product_id].name)} lands at Vijayawada today</b><div class="why">Why: ${waiting} clients across branches are waiting for it — out of stock everywhere</div></div><a class="btn sm" href="#/inventory/VJA">Open</a></div>` : ''}
         <div class="row"><div class="grow"><b>${esc(worst.s.name)} is furthest behind</b><div class="why">Why: ${Math.round(worst.p.pct * 100)}% of target with ${DAYS_LEFT} days left — needs ${inr(worst.p.pace)}/day</div></div><a class="btn sm" href="#/targets">Open</a></div>
       </div><div class="small muted" style="margin-top:10px">Rule-based in Phase 1. The AI Owner Copilot arrives in Phase 3.</div>`)}
     </div>
-    ${section('Revenue by month', (isPhone()
-      // a phone has no hover, and vbars keeps each figure in an SVG <title> — so show the numbers
-      ? hbars(months.map(m => ({ label: new Date(m + '-15').toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }), value: monthRev(m), text: inr(monthRev(m)), tip: '' })), false)
-      : vbars(months.map(m => ({ label: new Date(m + '-15').toLocaleDateString('en-IN', { month: 'short' }), value: monthRev(m), note: m.endsWith('-06') || m.endsWith('-07') ? 'Ashadam' : '' })))) + `<div class="small muted" style="margin-top:8px">June–July dip = Ashadam, traditionally the quiet month for weddings.${isPhone() ? '' : ' Hover a bar for exact figures.'}</div>`, '<span class="small muted">Sep 2025 – Aug 2026 · all branches</span>')}
+    ${section(daily ? 'Revenue by day' : 'Revenue by month', items.length
+      ? (isPhone() || items.length > 16 || !daily
+        ? hbars(items.map(i => ({ label: i.label, value: i.value / Math.max(...items.map(x => x.value)), text: inr(i.value), tip: '' })), false)
+        : vbars(items)) + `<div class="small muted" style="margin-top:8px">${esc(rangeLabel())} · all branches${daily ? '' : ' · June–July dip = Ashadam, the quiet month for weddings'}.</div>`
+      : '<div class="empty">No sales in this period.</div>', `<span class="small muted">${esc(rangeLabel())}</span>`)}
   </div>`;
 }
 
@@ -751,13 +783,23 @@ function setTarget(level, ref, value, parentId) {
   return Object.assign(x, { target_value: Math.round(value), set_by: me().id, set_at: TODAY });
 }
 const monthTabs = () => `<div class="tabs-inline">${[MONTH, NEXT_MONTH].map(m => `<button class="${tgtMonth === m ? 'on' : ''}" data-act="tgt-month" data-id="${m}">${monthLabel(m)}</button>`).join('')}</div>`;
+// one row per person: a table on a wide screen, a card on a phone (a 5-column table is unreadable there)
+function tgtRows(head, rows) {
+  if (appView()) return `<div class="list">${rows.map(r => `<div class="row" style="align-items:flex-start"><div class="grow"><b>${r.name}</b>
+    <div class="row-flex" style="margin:8px 0 6px;gap:10px"><label class="row-flex small" style="gap:6px">₹ lakh <input class="in" style="min-height:40px;width:96px" inputmode="decimal" ${r.attr} value="${r.value}"></label>
+      <span class="small muted">achieved <b>${r.achieved}</b></span></div>
+    <div class="bar green"><i style="width:${r.pct}%"></i></div><div class="small muted" style="margin-top:4px">${r.by}</div></div></div>`).join('')}</div>`;
+  return `<div style="overflow-x:auto"><table class="t"><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr>${rows.map(r => `<tr><td><b>${r.name}</b></td>
+    <td style="width:150px"><input class="in" style="min-height:36px" inputmode="decimal" ${r.attr} value="${r.value}"></td><td>${r.achieved}</td>
+    <td style="width:22%"><div class="bar green"><i style="width:${r.pct}%"></i></div></td><td class="small muted">${r.by}</td></tr>`).join('')}</table></div>`;
+}
 function advisorAlloc(st) {
   const stT = targetOf('store', 'sto_' + st, tgtMonth), advs = advisorsAt(st);
   if (!stT) return `<div class="empty">The director hasn't set ${esc(storeName(st))}'s target for ${monthLabel(tgtMonth)} yet.</div>`;
   const sum = advs.reduce((s, a) => s + ((targetOf('advisor', a.id, tgtMonth) || {}).target_value || 0), 0);
-  return `<table class="t"><tr><th>Sales staff</th><th>Target (₹ lakh)</th><th>Achieved</th><th>Progress</th><th>Set by</th></tr>${advs.map(a => { const x = targetOf('advisor', a.id, tgtMonth), ach = achieved('advisor', a.id, tgtMonth);
-      return `<tr><td>${esc(a.name)}</td><td style="width:140px"><input class="in" style="min-height:36px" inputmode="decimal" data-alloc="${a.id}" value="${x ? lakh(x.target_value) : ''}"></td><td>${inr(ach)}</td><td style="width:20%"><div class="bar green"><i style="width:${x && x.target_value ? Math.min(100, ach / x.target_value * 100) : 0}%"></i></div></td><td class="small muted">${setBy(x)}</td></tr>`; }).join('')}</table>
-    <div class="row-flex" style="justify-content:space-between;margin-top:12px"><span id="alloc-sum" class="help" data-total="${stT.target_value}">${allocText(sum, stT.target_value)}</span>
+  return tgtRows(['Sales staff', 'Target (₹ lakh)', 'Achieved', 'Progress', 'Set by'], advs.map(a => { const x = targetOf('advisor', a.id, tgtMonth), ach = achieved('advisor', a.id, tgtMonth);
+      return { name: esc(a.name), attr: `data-alloc="${a.id}"`, value: x ? lakh(x.target_value) : '', achieved: inr(ach), pct: x && x.target_value ? Math.min(100, ach / x.target_value * 100) : 0, by: setBy(x) }; }))
+    + `<div class="row-flex" style="justify-content:space-between;margin-top:12px"><span id="alloc-sum" class="help" data-total="${stT.target_value}">${allocText(sum, stT.target_value)}</span>
       <div class="actbar"><button class="btn" data-act="split-even" data-id="${st}">Split evenly</button><button class="btn primary" data-act="save-alloc" data-id="${st}">Save Sales staff targets</button></div></div>`;
 }
 function updateAlloc() {
@@ -778,11 +820,11 @@ function targets() {
       ${section('Split the branch target between Sales staff', advisorAlloc(st))}
       <p class="help">The director sets the branch target. Each Sales staff member sees the target you give them on their home screen, with your name as who set it.</p></div>`; }
   const brandT = D.stores.reduce((s, x) => s + ((targetOf('store', x.id, tgtMonth) || {}).target_value || 0), 0);
-  const rows = D.stores.map(s => { const x = targetOf('store', s.id, tgtMonth), ach = achieved('store', s.id, tgtMonth);
-    return `<tr><td><b>${esc(s.name)}</b></td><td style="width:150px"><input class="in" style="min-height:36px" inputmode="decimal" data-btgt="${s.id}" value="${x ? lakh(x.target_value) : ''}"></td><td>${inr(ach)}</td><td style="width:20%"><div class="bar green"><i style="width:${x && x.target_value ? Math.min(100, ach / x.target_value * 100) : 0}%"></i></div></td><td class="small muted">${setBy(x)}</td></tr>`; }).join('');
+  const branchRows = tgtRows(['Branch', 'Target (₹ lakh)', 'Achieved', 'Progress', 'Set by'], D.stores.map(s => { const x = targetOf('store', s.id, tgtMonth), ach = achieved('store', s.id, tgtMonth);
+    return { name: esc(s.name), attr: `data-btgt="${s.id}"`, value: x ? lakh(x.target_value) : '', achieved: inr(ach), pct: x && x.target_value ? Math.min(100, ach / x.target_value * 100) : 0, by: setBy(x) }; }));
   return `<div class="stack"><div class="page-h"><div><div class="kicker">Targets · all branches</div><h1>${monthLabel(tgtMonth)}</h1></div></div>${monthTabs()}
     ${tgtMonth === MONTH ? `<div class="card">${targetStrip('brand', 'ten_vaarahi', 'Vaarahi Silks')}</div>` : ''}
-    ${section('Branch targets', `<table class="t"><tr><th>Branch</th><th>Target (₹ lakh)</th><th>Achieved</th><th>Progress</th><th>Set by</th></tr>${rows}</table>
+    ${section('Branch targets', branchRows + `
       <div class="row-flex" style="justify-content:space-between;margin-top:12px"><span class="help">Brand target = sum of branches: <b>${inr(brandT)}</b>. Regions roll up automatically.</span><button class="btn primary" data-act="save-branch-tgts">Save branch targets</button></div>`)}
     ${section('Sales staff targets', `<div class="row-flex" style="margin-bottom:10px"><span class="small muted">Branch</span><select class="in" style="width:auto;min-height:36px" id="alloc-store">${D.stores.map(s => `<option value="${s.code}" ${s.code === allocStore ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>${advisorAlloc(allocStore)}`, '<span class="small muted">Usually done by each store manager</span>')}</div>`;
 }
@@ -905,17 +947,21 @@ function openGrievance(mid) {
 const SRC = { in_store: 'Booked in store', phone: 'Phone call', whatsapp: 'WhatsApp', website: 'Website' };
 function appointments(arg) {
   const day = arg || apptDay; apptDay = day;
-  const [from, to] = { today: [TODAY, TODAY], tomorrow: [plus(1), plus(1)], week: [TODAY, plus(6)] }[day];
+  const monthEnd = MONTH + '-30';
+  const [from, to] = day.startsWith('d:') ? [day.slice(2), day.slice(2)]
+    : { today: [TODAY, TODAY], tomorrow: [plus(1), plus(1)], week: [TODAY, plus(6)], month: [TODAY, monthEnd] }[day] || [TODAY, TODAY];
   const list = D.appointments.filter(a => a.starts_at.slice(0, 10) >= from && a.starts_at.slice(0, 10) <= to)
     .filter(a => kind() === 'owner' || (kind() === 'manager' ? code(a.store_id) === myStore() : a.advisor_id === me().id))
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
   const row = a => { const c = C[a.customer_id];
-    return `<div class="row">${avatar(c)}<div class="grow"><b>${when(a.starts_at)}</b> · <a class="name" href="#/customer/${c.id}">${esc(c.name)}</a> ${tier(c)}<div class="why">${esc(a.purpose)}${a.value ? ' · expected ' + inr(a.value) : ''} · with ${esc(E[a.advisor_id] ? E[a.advisor_id].name : '—')}${kind() === 'owner' ? '' : ''} · <span class="ch">${SRC[a.booked_via] || SRC.in_store}</span></div></div>
+    return `<div class="row">${avatar(c)}<div class="grow"><b>${when(a.starts_at)}</b> · <a class="name" href="#/customer/${c.id}">${esc(c.name)}</a> ${tier(c)}<div class="why">${esc(a.purpose)}${a.value ? ' · expected ' + inr(a.value) : ''} · with ${esc(E[a.advisor_id] ? E[a.advisor_id].name : '—')} · <span class="ch">${SRC[a.booked_via] || SRC.in_store}</span></div></div>
       ${a.status === 'booked' ? `<div class="actbar"><button class="btn sm" data-act="appt-status" data-id="${a.id}|completed">Came in</button><button class="btn sm ghost" data-act="appt-status" data-id="${a.id}|no_show">No-show</button></div>` : `<span class="chip ${a.status === 'completed' ? 'good' : 'warn'}">${a.status === 'completed' ? 'Came in' : 'No-show'}</span>`}</div>`; };
   const groups = kind() === 'owner' ? Object.entries(group(list, a => code(a.store_id))) : [[null, list]];
-  return `<div class="page-h"><div><div class="kicker">${kind() === 'advisor' ? 'My diary' : 'Appointments'}</div><h1>${list.length} ${day === 'today' ? 'today' : day === 'tomorrow' ? 'tomorrow' : 'in the next 7 days'}</h1></div><button class="btn primary" data-act="book-appt">+ Book appointment</button></div>
+  const heading = day.startsWith('d:') ? `on ${dFmt(from)}` : { today: 'today', tomorrow: 'tomorrow', week: 'in the next 7 days', month: 'left this month' }[day];
+  return `<div class="page-h"><div><div class="kicker">${kind() === 'advisor' ? 'My diary' : 'Appointments'}</div><h1>${list.length} ${heading}</h1></div><button class="btn primary" data-act="book-appt">+ Book appointment</button></div>
     <p class="help" style="margin:-10px 0 14px">Appointments come from staff booking in store or on a call, from clients asking on WhatsApp (AI turns the message into a booking you confirm), and — once connected — your website's booking link. Clients get a WhatsApp confirmation and a reminder the day before.</p>
-    <div class="tabs-inline">${[['today', 'Today'], ['tomorrow', 'Tomorrow'], ['week', 'Next 7 days']].map(([k, l]) => `<a class="${day === k ? 'on' : ''}" href="#/appointments/${k}">${l}</a>`).join('')}</div>
+    <div class="filterbar"><div class="tabs-inline" style="margin:0">${[['today', 'Today'], ['tomorrow', 'Tomorrow'], ['week', 'Next 7 days'], ['month', 'Rest of the month']].map(([k, l]) => `<a class="${day === k ? 'on' : ''}" href="#/appointments/${k}">${l}</a>`).join('')}</div>
+      <label class="row-flex" style="gap:8px"><span class="help">Pick a date</span><input class="in" type="date" id="appt-date" value="${day.startsWith('d:') ? from : ''}"></label></div>
     ${list.length ? groups.map(([st, as]) => `<div class="card" style="margin-bottom:16px">${st ? `<h3 style="margin-bottom:8px">${esc(storeName(st))} <span class="muted small">(${as.length})</span></h3>` : ''}<div class="list">${as.map(row).join('')}</div></div>`).join('') : '<div class="card empty">No appointments in this window.</div>'}`;
 }
 function apptForm(key) {
@@ -1095,10 +1141,10 @@ function settings(arg) {
   if (tab === 'access') {
     const count = group(active(), e => e.role);
     body = `<div class="page-h" style="margin-bottom:10px"><p class="help">Decide what each role can see and do. Changes apply instantly — in screens, exports and the AI assistant.</p><button class="btn primary" data-act="add-role">+ New role</button></div>
-      <table class="t"><tr><th>Role</th><th>People</th><th>Can see which clients</th><th>Cost & margins</th><th>Sales reports</th><th>Export data</th><th>Manage team</th></tr>
+      <table class="t"><tr><th>Role</th><th>People</th><th>Can see which clients</th><th>Cost & margins</th><th>Sales reports</th><th>Export data</th><th>Manage team</th><th>Build automations</th></tr>
       ${D.roles.filter(r => r.id !== 'role_admin').map(r => { const a = SETTINGS.access[r.id], lock = r.id === 'role_owner';
         const box = k => `<input type="checkbox" class="tog" data-acc="${r.id}|${k}" ${a[k] ? 'checked' : ''} ${lock ? 'disabled' : ''} aria-label="${esc(r.name)} ${k}">`;
-        return `<tr><td><b>${esc(r.name)}</b></td><td>${(count[r.id] || []).length}</td><td><select class="in" style="min-height:36px" data-acc="${r.id}|scope" ${lock ? 'disabled' : ''}>${Object.entries(SCOPE).map(([k, l]) => `<option value="${k}" ${a.scope === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td><td>${box('cost')}</td><td>${box('reports')}</td><td>${box('export')}</td><td>${box('team')}</td></tr>`; }).join('')}</table>`;
+        return `<tr><td><b>${esc(r.name)}</b></td><td>${(count[r.id] || []).length}</td><td><select class="in" style="min-height:36px" data-acc="${r.id}|scope" ${lock ? 'disabled' : ''}>${Object.entries(SCOPE).map(([k, l]) => `<option value="${k}" ${a.scope === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td><td>${box('cost')}</td><td>${box('reports')}</td><td>${box('export')}</td><td>${box('team')}</td><td>${box('automations')}</td></tr>`; }).join('')}</table>`;
   }
   if (tab === 'tiers') {
     const t = group(D.customers, c => c.tier), y = D.customers.reduce((s, c) => s + c.spend12, 0);
@@ -1230,6 +1276,7 @@ const ACTIONS = {
   'appt-status': key => { const [id, s] = key.split('|'), a = D.appointments.find(x => x.id === id); a.status = s; toast(s === 'completed' ? 'Marked as came in' : 'Marked as no-show', [`${C[a.customer_id].name} · ${tFmt(a.starts_at)}`, s === 'completed' ? 'Follow-up after the visit is drafted for the advisor' : 'Sales staff reminded to reschedule']); render(); },
   'add-design': () => designForm(), 'save-design': saveDesign, 'log-complaint': complaintForm, 'save-complaint': saveComplaint,
   'tgt-month': m => { tgtMonth = m; render(); },
+  range: k => { range = k; render(); },
   'split-even': () => { const el = document.getElementById('alloc-sum'), ins = [...document.querySelectorAll('[data-alloc]')]; ins.forEach(i => { i.value = lakh(Number(el.dataset.total) / ins.length); }); updateAlloc(); },
   'save-alloc': st => { const stT = targetOf('store', 'sto_' + st, tgtMonth); let n = 0, sum = 0;
     document.querySelectorAll('[data-alloc]').forEach(i => { const v = parseFloat(i.value); if (v > 0) { setTarget('advisor', i.dataset.alloc, v * 1e5, stT.id); n++; sum += v * 1e5; } });
@@ -1273,7 +1320,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.dataset.acc) { const [rid, k] = t.dataset.acc.split('|'); SETTINGS.access[rid][k] = t.type === 'checkbox' ? t.checked : t.value;
-    toast('Saved — applies immediately', [`${roleName(rid)}: ${k === 'scope' ? 'sees ' + SCOPE[t.value].toLowerCase() : `${{ cost: 'cost & margins', reports: 'sales reports', export: 'export', team: 'manage team' }[k]} ${t.checked ? 'on' : 'off'}`}`]); }
+    toast('Saved — applies immediately', [`${roleName(rid)}: ${k === 'scope' ? 'sees ' + SCOPE[t.value].toLowerCase() : `${{ cost: 'cost & margins', reports: 'sales reports', export: 'export', team: 'manage team', automations: 'building automations' }[k]} ${t.checked ? 'on' : 'off'}`}`]); }
   if (t.name === 'store' && t.closest('#f') && document.getElementById('f-adv')) document.getElementById('f-adv').innerHTML = advOptions(t.value, '');
   if (t.dataset.assign) { const c = C[t.dataset.assign], before = c.advisor; c.advisor = t.value || null;
     D.followups.filter(x => x.customer_id === c.id && x.status !== 'done').forEach(x => { x.owner_id = c.advisor; });
@@ -1281,6 +1328,9 @@ document.addEventListener('change', e => {
   if (t.id === 'wa-tpl') document.getElementById('tpl-prev').textContent = fillTpl(t.value, C[t.dataset.cid]);
   if (t.name === 'cat' && t.closest('#f')) tplWarn();
   if (t.id === 'alloc-store') { allocStore = t.value; render(); }
+  if (t.id === 'r-from') { rangeFrom = t.value; render(); }
+  if (t.id === 'r-to') { rangeTo = t.value; render(); }
+  if (t.id === 'appt-date' && t.value) location.hash = '#/appointments/d:' + t.value;
   if (t.id === 'cat-coll') { catColl = t.value; render(); }
   if (t.id === 'f-coll') document.getElementById('f-newcoll').style.display = t.value === '__new' ? '' : 'none';
   if (t.id === 'f-photos') [...t.files].slice(0, 4).forEach(file => { const r = new FileReader(); r.onload = () => { newImgs.push(String(r.result)); document.getElementById('photoprev').innerHTML = newImgs.map(u => `<img src="${u}" alt="" style="width:56px;height:74px;object-fit:cover;border-radius:8px">`).join(''); }; r.readAsDataURL(file); });
@@ -1582,6 +1632,7 @@ const ICON = {  // 24px stroke icons, one per destination
   team: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0',
   settings: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM4 12l-1.5-1 1.2-2.8 1.8.3a7 7 0 0 1 2-1.2l.7-1.7h3.6l.7 1.7a7 7 0 0 1 2 1.2l1.8-.3L19.5 11 18 12l1.5 1-1.2 2.8-1.8-.3a7 7 0 0 1-2 1.2l-.7 1.7h-3.6l-.7-1.7a7 7 0 0 1-2-1.2l-1.8.3L2.5 13z',
   paid: 'M4 5h16v14H4zM8 10h8M8 14h5',
+  automations: 'M13 2.5 5.5 13.2a.6.6 0 0 0 .5.95h4.3l-1.3 7.35 7.5-10.7a.6.6 0 0 0-.5-.95h-4.3z',
   more: 'M6 12h.01M12 12h.01M18 12h.01',
 };
 const icon = k => ICON[k] ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[k]}"/></svg>` : '';
@@ -1636,8 +1687,8 @@ document.addEventListener('click', e => {
 function navFor() {
   const k = kind();
   const items = { advisor: [['home', 'Home'], ['inbox', 'Chats'], ['appointments', 'Diary'], ['customers', 'Clients'], ['pipeline', 'Pipeline'], ['targets', 'Targets']],
-    manager: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['customers', 'Clients'], ['pipeline', 'Pipeline'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['grievances', 'Complaints'], ['map', 'System map']],
-    owner: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['grievances', 'Complaints'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['pipeline', 'Pipeline'], ['customers', 'Clients'], ['map', 'System map']],
+    manager: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['customers', 'Clients'], ['pipeline', 'Pipeline'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['grievances', 'Complaints'], ['automations', 'Automations'], ['map', 'System map']],
+    owner: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['grievances', 'Complaints'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['pipeline', 'Pipeline'], ['customers', 'Clients'], ['automations', 'Automations'], ['map', 'System map']],
     allocation: [['home', 'Walk-ins'], ['customers', 'Clients']],
     consultant: [['home', 'Today'], ['inventory', 'Catalogue'], ['customers', 'Clients']],
     billing: [['home', 'Billing desk'], ['paid', 'Paid today'], ['customers', 'Clients']] }[k].slice();

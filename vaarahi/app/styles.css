@@ -123,11 +123,12 @@ h3 { font-size: 17px; }
 button.chip { font: inherit; font-size: 12px; cursor: pointer; }
 .chips { display: flex; flex-wrap: wrap; gap: 7px; }
 
-.btn { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow); }
-.btn:hover { border-color: rgba(3, 82, 62, .3); }
+.btn { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid transparent; background: linear-gradient(135deg, var(--gold), #C09434); color: #22200E; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: var(--shadow); }
+.btn:hover { filter: brightness(1.06); }
 .btn.primary { background: linear-gradient(135deg, var(--green), var(--green-2)); color: var(--gold-on-green); border-color: transparent; }
 .btn.primary:hover { filter: brightness(1.08); }
-.btn.ghost { background: transparent; box-shadow: none; }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); box-shadow: none; }
+.btn.ghost:hover { border-color: rgba(3, 82, 62, .35); filter: none; }
 .btn.sm { min-height: 36px; padding: 0 14px; font-size: 12px; }
 .btn[disabled] { opacity: .45; cursor: not-allowed; }
 .actbar { display: flex; gap: var(--s2); flex-wrap: wrap; }
@@ -358,3 +359,13 @@ a.card.comp { display: block; }
 a.card.comp:hover { border-color: rgba(3, 82, 62, .35); }
 .phone .kvl { grid-template-columns: 1fr; gap: 2px 0; }
 .phone .kvl dd { margin-bottom: 6px; }
+
+/* filter rows (dashboard date range, appointments) */
+.filterbar { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; justify-content: space-between; background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; }
+.filterbar .in[type=date] { min-height: 38px; width: auto; }
+.phone .filterbar { border-radius: var(--r); }
+
+/* automations */
+.card.auto { display: block; }
+.card.auto.off { opacity: .62; }
+.card.auto.off:hover { opacity: 1; }
