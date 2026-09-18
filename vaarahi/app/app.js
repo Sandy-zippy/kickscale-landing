@@ -1,7 +1,7 @@
 'use strict';
 /* Vaarahi Silks — clickable demo on sample data (D20). Plain JS, no build step.
    Data: data.js → window.DEMO (demo/build_bundle.py). Every change is in memory; reload resets the demo.
-   URL options: ?as=advisor|advisor_kph|allocation|consultant|billing|manager|owner  &theme=light|dark */
+   URL options: ?as=advisor|advisor_kph|allocation|consultant|billing|manager|owner|owner2  &theme=light|dark */
 const D = window.DEMO;
 const NOW = new Date(D.now), TODAY = D.now.slice(0, 10), MONTH = D.now.slice(0, 7);
 const byId = a => Object.fromEntries(a.map(x => [x.id, x]));
@@ -16,7 +16,7 @@ document.documentElement.style.setProperty('--brand-gold', br.accent);
 document.documentElement.style.setProperty('--brand-green', br.primary);
 document.documentElement.style.setProperty('--brand-deep', br.secondary);
 const params = new URLSearchParams(location.search);
-if (params.get('theme')) document.documentElement.dataset.theme = params.get('theme');
+document.documentElement.dataset.theme = 'light';  // one palette: light ground, glass chrome (D29)
 
 // ---------------------------------------------------------------- format
 const TZ = { timeZone: 'Asia/Kolkata' };
@@ -80,6 +80,7 @@ const ROLES = {
   billing: { label: 'Billing · Jubilee Hills', user: D.story.billing_id, kind: 'billing' },
   manager: { label: 'Store Manager · Jubilee Hills', user: S.JBH.manager_id, kind: 'manager' },
   owner: { label: 'Director', user: D.story.directors[0], kind: 'owner' },
+  owner2: { label: 'Director', user: D.story.directors[1], kind: 'owner' },  // Vaarahi has two directors
 };
 let role = ROLES[params.get('as')] ? params.get('as') : 'advisor';
 let storyOn = null, tabState = 'owns', query = '', invStore = null, tierFilter = 'all', replyOpen = null, lastMove = null, stockMode = 'one';
@@ -88,6 +89,7 @@ const me = () => E[ROLES[role].user], kind = () => ROLES[role].kind;
 const acc = () => SETTINGS.access[me().role] || NO_ACCESS;
 const isDirector = () => me().role === 'role_owner';
 const isPhone = () => window.matchMedia('(max-width: 760px)').matches;
+const appView = () => isPhone() || layout() === 'app';  // the + lives in the tab bar there
 const myStore = () => me().store || 'JBH';
 const active = () => D.employees.filter(e => e.status !== 'left');
 const advisorsAt = st => active().filter(e => e.role === 'role_advisor' && e.store === st);
@@ -187,7 +189,7 @@ function advisorHome() {
   const matches = D.demand.filter(d => d.status === 'notified' && d._fresh && C[d.customer_id].advisor === u.id);
   return `<div class="stack">
     <div class="row-flex" style="justify-content:space-between;align-items:flex-end"><div><div class="kicker">${esc(storeName(u.store))} · ${dFmt(TODAY)}</div><h1>Good afternoon, ${esc(first)}</h1></div>
-      ${isPhone() ? '' : '<button class="btn sm primary" data-act="add-client">+ Add client</button>'}</div>
+      ${appView() ? '' : '<button class="btn sm primary" data-act="add-client">+ Add client</button>'}</div>
     <div class="card">${targetStrip('advisor', u.id, 'My')}</div>
     ${pending.length ? `<a class="card" href="#/inbox/${pending.find(m => m.customer_id === D.story.capture_customer_id)?.customer_id || pending[0].customer_id}" style="display:block;border-color:var(--ge-accent)">
       <div class="kicker">New on WhatsApp</div><b>${pending.length} messages captured by AI</b><div class="why">Details already filled in — approve with one tap</div></a>` : ''}
@@ -205,7 +207,7 @@ function managerHome() {
   const missed = fus.filter(f => f.status === 'missed').length, escd = fus.filter(f => f.status === 'escalated');
   const gs = D.grievances.filter(g => code(g.store_id) === st && isOpen(g));
   return `<div class="stack">
-    <div class="page-h"><div><div class="kicker">${esc(storeName(st))} · ${dFmt(TODAY)}</div><h1>Store today</h1></div>${isPhone() ? '' : '<button class="btn primary" data-act="add-client">+ Add client</button>'}</div>
+    <div class="page-h"><div><div class="kicker">${esc(storeName(st))} · ${dFmt(TODAY)}</div><h1>Store today</h1></div>${appView() ? '' : '<button class="btn primary" data-act="add-client">+ Add client</button>'}</div>
     <div class="grid g2"><div class="card">${targetStrip('store', 'sto_' + st, storeName(st))}</div>
       <div class="card grid g3" style="align-items:start">
         <div class="stat"><div class="kicker">Follow-ups due today</div><div class="v">${dueToday}</div></div>
@@ -372,7 +374,7 @@ function customers() {
     .sort((a, b) => aud ? likes[b.id].length - likes[a.id].length : (b.created || '').localeCompare(a.created || '') || b.spend12 - a.spend12 || b.ltv - a.ltv);
   const reachable = rows.filter(c => !mktBlock(c) && !c.dnc).length;
   return `<div class="page-h"><div><div class="kicker">${mine.length.toLocaleString('en-IN')} clients</div><h1>Clients</h1></div>
-      <div class="row-flex"><input id="q" class="in" style="width:300px" placeholder="Search name, phone or client code" value="${esc(query)}">${FLOOR.includes(kind()) ? '' : '<button class="btn primary" data-act="add-client">+ Add client</button>'}</div></div>
+      <div class="row-flex"><input id="q" class="in" style="width:300px" placeholder="Search name, phone or client code" value="${esc(query)}">${FLOOR.includes(kind()) || appView() ? '' : '<button class="btn primary" data-act="add-client">+ Add client</button>'}</div></div>
     <div class="tabs-inline">${['all', 'vip', 'premium', 'regular', 'prospect'].map(t => `<button class="${tierFilter === t ? 'on' : ''}" data-act="tier-filter" data-id="${t}">${t === 'all' ? 'All' : TIER[t]} <span class="muted small">${t === 'all' ? mine.length : (counts[t] || []).length}</span></button>`).join('')}<button class="${aud ? 'on' : ''}" data-act="tier-filter" data-id="instore">Liked in store, not bought <span class="muted small">${Object.keys(likes).length}</span></button></div>
     ${aud ? `<p class="help" style="margin:-6px 0 10px">Clients who liked pieces in store and haven't bought them — the audience for a collection campaign. Marketing only reaches clients who agreed to WhatsApp updates and have no open complaint: <b>${reachable} of ${rows.length}</b> here can receive it now.</p>
       <div class="chips" style="margin-bottom:14px"><button class="chip ${audColl === 'all' ? 'vip' : 'on'}" data-act="aud-coll" data-id="all">All collections</button>${collCount.map(([k, n]) => `<button class="chip ${audColl === k ? 'vip' : 'on'}" data-act="aud-coll" data-id="${esc(k)}">${esc(k)} · ${n}</button>`).join('')}</div>`
@@ -1202,7 +1204,6 @@ function approve(mid) {
 const ACTIONS = {
   approve, 'open-grv': openGrievance, resolve, sim: simulateSale, voice, 'q-save': qSave, 'q-close': closeModal, quick: quickSheet,
   'close-modal': closeModal, tab: id => { tabState = id; render(); }, 'tier-filter': id => { tierFilter = id; render(); },
-  theme: () => { const r = document.documentElement, cur = r.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); r.dataset.theme = cur === 'dark' ? 'light' : 'dark'; },
   dismiss: mid => { D.whatsapp.find(x => x.id === mid).card.status = 'dismissed'; render(); },
   'done-fu': fid => { const f = D.followups.find(x => x.id === fid); f.status = 'done'; toast('Done', [`${ACT[f.action] || 'Follow-up'} with ${C[f.customer_id].name} logged`, 'Removed from today\'s list · manager compliance updated']); render(); },
   'send-offer': did => { const d = D.demand.find(x => x.id === did); d.status = 'reserved'; d._fresh = false; toast('Offer sent', [`${C[d.customer_id].name} offered the ${P[d.product_id].name}`, 'Piece held for 48 h']); render(); },
@@ -1271,7 +1272,6 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const t = e.target;
-  if (t.id === 'role') { role = t.value; storyOn = null; tabState = 'owns'; replyOpen = null; location.hash = '#/home'; render(); }
   if (t.dataset.acc) { const [rid, k] = t.dataset.acc.split('|'); SETTINGS.access[rid][k] = t.type === 'checkbox' ? t.checked : t.value;
     toast('Saved — applies immediately', [`${roleName(rid)}: ${k === 'scope' ? 'sees ' + SCOPE[t.value].toLowerCase() : `${{ cost: 'cost & margins', reports: 'sales reports', export: 'export', team: 'manage team' }[k]} ${t.checked ? 'on' : 'off'}`}`]); }
   if (t.name === 'store' && t.closest('#f') && document.getElementById('f-adv')) document.getElementById('f-adv').innerHTML = advOptions(t.value, '');
@@ -1300,7 +1300,7 @@ document.addEventListener('drop', e => { const t = e.target.closest && e.target.
 const VISITS = D.visits;
 let audColl = 'all';
 const FLOOR = ['allocation', 'consultant', 'billing'];
-const MARK = { liked: 'Liked', owns: 'Already has', buying: 'Buying', no: 'Said no', bought: 'Bought' };
+const MARK = { liked: 'Liked', owns: 'Owns it', buying: 'Buying', no: 'Said no', bought: 'Bought' };
 const MARK_CHIP = { bought: 'good', buying: 'good', liked: 'premium', no: 'bad', owns: '' };
 const VSTATUS = { waiting: 'Waiting', with_consultant: 'With consultant', at_billing: 'At billing', done: 'Done' };
 const LOOKING = ['Kanchi Pattu', 'Banarasi', 'Paithani', 'Tussar', 'Patola', 'Fancy / Designer', 'Tissue', 'Khadi', 'Organza', 'Georgette'];
@@ -1341,7 +1341,7 @@ function floorHome() {
   const st = myStore(), today = VISITS.filter(v => v.store === st && v.arrived_at.startsWith(TODAY)).sort((a, b) => b.arrived_at.localeCompare(a.arrived_at));
   const col = s => today.filter(v => v.status === s), cs = consultantsAt(st);
   return `<div class="stack">
-    <div class="page-h" style="margin-bottom:0"><div><div class="kicker">${esc(storeName(st))} · ${dFmt(TODAY)}</div><h1>Walk-ins today</h1></div>${isPhone() ? '' : '<button class="btn primary" data-act="new-walkin">+ New walk-in</button>'}</div>
+    <div class="page-h" style="margin-bottom:0"><div><div class="kicker">${esc(storeName(st))} · ${dFmt(TODAY)}</div><h1>Walk-ins today</h1></div>${appView() ? '' : '<button class="btn primary" data-act="new-walkin">+ New walk-in</button>'}</div>
     <div class="card kv"><div><span>Waiting</span><b>${col('waiting').length}</b></div><div><span>With consultant</span><b>${col('with_consultant').length}</b></div><div><span>At billing</span><b>${col('at_billing').length}</b></div><div><span>Consultants free</span><b>${cs.filter(e => !busyWith(e.id)).length} of ${cs.length}</b></div></div>
     ${section(`Waiting <span class="muted small">(${col('waiting').length})</span>`, visitList(col('waiting'), v => `<button class="btn sm primary" data-act="allocate" data-id="${v.id}">Allocate</button>`))}
     ${section('With a consultant', visitList(col('with_consultant')))}
@@ -1442,7 +1442,7 @@ function visitView(id) {
   const want = p => !v.looking_for.length || v.looking_for.includes(p.collection);
   let ideas = D.products.filter(p => avail(p) && (q ? (p.name + ' ' + p.collection).toLowerCase().includes(q) : want(p) && p.price >= lo * .8 && p.price <= hi * 1.2));
   if (!ideas.length && !q) ideas = D.products.filter(p => avail(p) && want(p));
-  const back = kind() === 'consultant' ? ['#/home', 'My clients'] : FLOOR.includes(kind()) ? ['#/home', 'Walk-ins'] : [`#/customer/${c.id}`, c.first];
+  const back = kind() === 'consultant' ? ['#/home', 'Today'] : FLOOR.includes(kind()) ? ['#/home', 'Walk-ins'] : [`#/customer/${c.id}`, c.first];
   return `<div class="stack">
     <a class="small muted" href="${back[0]}">← ${esc(back[1])}</a>
     <div class="c360-h">${avatar(c, 'lg')}<div class="grow"><h2>${esc(c.name)}</h2><div class="row-flex">${tier(c)}<span class="chip ${v.status === 'done' ? 'good' : v.status === 'waiting' ? 'warn' : ''}">${VSTATUS[v.status]}</span></div>
@@ -1569,6 +1569,49 @@ Object.assign(ACTIONS, {
   'bill-collect': collect, 'aud-coll': k => { audColl = k; render(); },
 });
 
+// ---------------------------------------------------------------- shell: icons, layout switch, profile switcher
+const ICON = {  // 24px stroke icons, one per destination
+  home: 'M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z',
+  inbox: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z',
+  customers: 'M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 7.5a3 3 0 1 0 0 .01M21 19v-1a4 4 0 0 0-3-3.9M16 4.1a3 3 0 0 1 0 5.8',
+  appointments: 'M7 3v3M17 3v3M4 9h16M5 6h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z',
+  pipeline: 'M4 6h16M7 12h10M10 18h4',
+  targets: 'M12 3v18M3 12h18M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z',
+  inventory: 'M3 8 12 4l9 4-9 4zM3 8v8l9 4 9-4V8',
+  grievances: 'M12 4 2.5 20h19zM12 10v4M12 17.5v.01',
+  team: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0',
+  settings: 'M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM4 12l-1.5-1 1.2-2.8 1.8.3a7 7 0 0 1 2-1.2l.7-1.7h3.6l.7 1.7a7 7 0 0 1 2 1.2l1.8-.3L19.5 11 18 12l1.5 1-1.2 2.8-1.8-.3a7 7 0 0 1-2 1.2l-.7 1.7h-3.6l-.7-1.7a7 7 0 0 1-2-1.2l-1.8.3L2.5 13z',
+  paid: 'M4 5h16v14H4zM8 10h8M8 14h5',
+  more: 'M6 12h.01M12 12h.01M18 12h.01',
+};
+const icon = k => ICON[k] ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[k]}"/></svg>` : '';
+const empAvatar = (e, cls = '') => `<span class="avatar ${cls}">${esc(initials(e.name))}</span>`;
+
+// App ↔ Web is a layout switch, not a different product: same screens, same data.
+const DEFAULT_LAYOUT = k => ['manager', 'owner', 'billing'].includes(k) ? 'web' : 'app';
+const layoutBy = {};
+const layout = () => layoutBy[role] || DEFAULT_LAYOUT(kind());
+const layoutTog = () => `<div class="tog" role="group" aria-label="Layout">
+  ${['app', 'web'].map(l => `<button class="${layout() === l ? 'on' : ''}" data-act="layout" data-id="${l}">${l === 'app' ? 'App' : 'Web'}</button>`).join('')}</div>`;
+const whoChip = () => `<button class="who-chip" data-act="profile">${empAvatar(me(), 'sm')}<span><b>${esc(me().name)}</b><span class="r">${esc(ROLES[role].label)}</span></span></button>`;
+const PEOPLE = [['Directors', ['owner', 'owner2']], ['Branch', ['manager', 'advisor', 'advisor_kph']], ['Shop floor', ['allocation', 'consultant', 'billing']]];
+function profileSheet() {
+  document.getElementById('overlay').innerHTML = `<div class="ov" data-act="more-close"><div class="sheet">
+    <div class="sheet-grab"></div><div class="who-row"><b>Switch profile</b><span>Same data, shaped for each person</span></div>
+    <div class="people">${PEOPLE.map(([hd, keys]) => `<div class="hd">${hd}</div>` + keys.map(k => { const e = E[ROLES[k].user];
+      return `<button class="${k === role ? 'on' : ''}" data-act="set-role" data-id="${k}">${empAvatar(e)}<span class="grow"><b>${esc(e.name)}</b><span class="r">${esc(ROLES[k].label)}</span></span>${k === role ? '<span class="chip vip">Viewing</span>' : ''}</button>`; }).join('')).join('')}</div>
+  </div></div>`;
+}
+function setRole(k) {
+  if (!ROLES[k]) return;
+  role = k; storyOn = null; tabState = 'owns'; replyOpen = null; closeModal();
+  if (location.hash === '#/home') render(); else location.hash = '#/home';
+}
+Object.assign(ACTIONS, {
+  profile: profileSheet, 'set-role': setRole,
+  layout: l => { layoutBy[role] = l; render(); },
+});
+
 // ---------------------------------------------------------------- stories + chrome + router
 const STORIES = [
   { t: 'WhatsApp → captured in one tap', role: 'advisor', go: `#/inbox/${D.story.capture_customer_id}`, steps: ['A client asks for a peacock-blue Kanchi pattu on WhatsApp', 'AI has already matched real sarees, checked stock in 6 branches and drafted the reply', 'Tap “Approve & send” — see everything that gets logged, with no forms'] },
@@ -1580,8 +1623,7 @@ const STORIES = [
   { t: 'One sale → many updates', role: 'owner', go: '#/settings/connections', steps: ['Tap “Simulate a POS sale”', 'One real-time event updates stock, client value and tier, warranty, invoice → Tally, targets and the manager'] },
 ];
 function demoBar() {
-  document.getElementById('demobar').innerHTML = `<div class="db"><span class="pill">Demo · sample data, not Vaarahi's real data · built by ZippyScale</span><button class="pill" data-act="theme">Light / dark</button>
-    <label>Viewing as <select id="role">${Object.entries(ROLES).map(([k, r]) => `<option value="${k}" ${k === role ? 'selected' : ''}>${esc(E[r.user].name)} — ${esc(r.label)}</option>`).join('')}</select></label>
+  document.getElementById('demobar').innerHTML = `<div class="db"><span class="pill">Demo · sample data, not Vaarahi's real data · built by ZippyScale</span>
     <span class="stories">${STORIES.map((s, i) => `<button class="${storyOn === i ? 'on' : ''}" data-story="${i}">${i + 1}. ${esc(s.t)}</button>`).join('')}</span></div>
     ${storyOn !== null ? `<div class="hint"><b>Story ${storyOn + 1}</b><ol>${STORIES[storyOn].steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol><button class="btn sm ghost" style="color:#ccc;border-color:#444" data-story="x">Close</button></div>` : ''}`;
 }
@@ -1597,7 +1639,7 @@ function navFor() {
     manager: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['customers', 'Clients'], ['pipeline', 'Pipeline'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['grievances', 'Complaints']],
     owner: [['home', 'Home'], ['inbox', 'WhatsApp'], ['appointments', 'Appointments'], ['grievances', 'Complaints'], ['targets', 'Targets'], ['inventory', 'Inventory'], ['pipeline', 'Pipeline'], ['customers', 'Clients']],
     allocation: [['home', 'Walk-ins'], ['customers', 'Clients']],
-    consultant: [['home', 'My clients'], ['inventory', 'Catalogue'], ['customers', 'Clients']],
+    consultant: [['home', 'Today'], ['inventory', 'Catalogue'], ['customers', 'Clients']],
     billing: [['home', 'Billing desk'], ['paid', 'Paid today'], ['customers', 'Clients']] }[k].slice();
   if (acc().team) items.push(['team', 'Team']);
   return items;
@@ -1623,6 +1665,15 @@ function moreItems() {
 }
 // Overflow lives in a bottom sheet, not a hamburger: hidden nav costs >20% discoverability (NN/g),
 // so anything urgent in here still surfaces as a count on the More tab.
+// tabs + the raised primary action in the middle
+function tabBar(plus, moreOn, moreN) {
+  const r = location.hash.replace(/^#\/?/, '').split('/')[0];
+  const link = ([h, l]) => `<a href="#/${h}" class="${h === r || (r === 'customer' && h === 'customers') || (r === 'visit' && h === 'home') ? 'on' : ''}">${icon(h)}<span>${l}</span>${badge(h)}</a>`;
+  const items = phPrimary().map(link);
+  if (moreItems().length) items.push(`<button class="${moreOn ? 'on' : ''}" data-act="more">${icon('more')}<span>More</span>${moreN ? `<span class="n">${moreN}</span>` : ''}</button>`);
+  if (plus) items.splice(Math.floor(items.length / 2), 0, `<button class="ph-plus" data-act="${plus[0]}" aria-label="${plus[1]}">+</button>`);
+  return items.join('');
+}
 function moreSheet() {
   const r = location.hash.replace(/^#\/?/, '').split('/')[0];
   document.getElementById('overlay').innerHTML = `<div class="ov" data-act="more-close"><div class="sheet sheet-nav">
@@ -1640,24 +1691,25 @@ function render() {
   const ov = document.getElementById('overlay');
   if (ov.querySelector('.sheet-nav')) ov.innerHTML = '';  // picking a destination closes the sheet
   const view = (VIEWS[r] || VIEWS.home)(arg && decodeURIComponent(arg));
-  const link = ([h, l]) => `<a href="#/${h}" class="${r === h || (r === 'customer' && h === 'customers') || (r === 'visit' && h === 'home') ? 'on' : ''}">${l}${badge(h)}</a>`;
+  const link = ([h, l]) => `<a href="#/${h}" class="${r === h || (r === 'customer' && h === 'customers') || (r === 'visit' && h === 'home') ? 'on' : ''}">${icon(h)}<span>${l}</span>${badge(h)}</a>`;
   const shell = document.getElementById('shell');
-  const phone = isPhone() || ['advisor', 'allocation', 'consultant'].includes(kind());  // real phone, or an on-screen handset for staff on their feet
+  const phone = isPhone() || layout() === 'app';  // a real phone, or the app layout shown in an on-screen handset
   shell.className = 'shell' + (phone ? ' phone-mode' : '');
   const moreN = moreItems().reduce((n, [h]) => n + badgeCount(h), 0);
   const moreOn = !phPrimary().some(([h]) => h === r || (r === 'customer' && h === 'customers') || (r === 'visit' && h === 'home'));
-  const fab = kind() === 'allocation' ? '<button class="fab" data-act="new-walkin" aria-label="New walk-in">+</button>' : FLOOR.includes(kind()) ? '' : '<button class="fab" data-act="add-client" aria-label="Add a client">+</button>';
+  // the primary action rides in the middle of the tab bar (BizLink pattern) — a floating button covered row actions
+  const plus = kind() === 'allocation' ? ['new-walkin', 'New walk-in'] : FLOOR.includes(kind()) ? null : ['add-client', 'Add a client'];
   shell.innerHTML = phone
-    ? `<div class="phone"><div class="ph-head"><img src="${LOGO}" alt="${esc(D.tenant.name)}"><span class="ph-who">${esc(ROLES[role].label)}</span></div>
+    ? `<div class="phone"><div class="ph-head"><img src="${LOGO}" alt="${esc(D.tenant.name)}"><span class="grow"></span>${layoutTog()}<button class="ph-avatar" data-act="profile" aria-label="Switch profile">${empAvatar(me(), 'sm')}</button></div>
        <div class="ph-body">${view}</div>
-       ${fab}
-       <nav class="ph-tabs">${phPrimary().map(link).join('')}${moreItems().length ? `<button class="${moreOn ? 'on' : ''}" data-act="more">More${moreN ? `<span class="n">${moreN}</span>` : ''}</button>` : ''}</nav></div>`
-    : `<aside class="side"><img class="logo" src="${LOGO}" alt="${esc(D.tenant.name)}"><div class="who"><b>${esc(me().name)}</b><span>${esc(ROLES[role].label)}</span></div><nav>${navFor().map(link).join('')}</nav>
-       ${isDirector() ? `<nav class="navb">${link(['settings', 'Settings'])}</nav>` : ''}</aside><main class="main">${view}</main>`;
+       <nav class="ph-tabs">${tabBar(plus, moreOn, moreN)}</nav></div>`
+    : `<aside class="side"><img class="logo" src="${LOGO}" alt="${esc(D.tenant.name)}"><nav>${navFor().map(link).join('')}</nav>
+       ${isDirector() ? `<nav class="navb">${link(['settings', 'Settings'])}</nav>` : ''}</aside>
+       <main class="main"><div class="topbar">${layoutTog()}${whoChip()}</div>${view}</main>`;
   if (location.hash.replace(/^#\/?/, '') !== lastRoute) { window.scrollTo(0, 0); lastRoute = location.hash.replace(/^#\/?/, ''); }
   demoBar();
 }
 window.addEventListener('hashchange', render);
 matchMedia('(max-width: 760px)').addEventListener('change', render);  // rotate / resize across the breakpoint
-window.GE = { moveEmployee, D, SETTINGS };  // used by demo/check_demo.js
+window.GE = { moveEmployee, D, SETTINGS, setRole, setLayout: l => { layoutBy[role] = l; render(); } };  // used by demo/check_demo.js
 render();
