@@ -266,7 +266,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 
 // ---------- login ----------
 try { if (sessionStorage.getItem('royaleIn')) $('#login').hidden = true; } catch (e) {}
-$('#loginForm').onsubmit = e => { e.preventDefault(); if ($('#lu').value.trim() && $('#lu').value.trim().toLowerCase() === 'royale' && $('#lp').value === 'Royale@mum26') { $('#login').hidden = true; try { sessionStorage.setItem('royaleIn', 1); } catch (e) {} } else $('#lerr').textContent = 'Wrong username or password'; };
+$('#loginForm').onsubmit = e => { e.preventDefault(); if ($('#lu').value.trim() && $('#lu').value.trim().toLowerCase() === 'royale' && $('#lp').value === 'Royale@26') { $('#login').hidden = true; try { sessionStorage.setItem('royaleIn', 1); } catch (e) {} } else $('#lerr').textContent = 'Wrong username or password'; };
 
 $('#hdrCount').textContent = `Internal · ${db.items.length.toLocaleString('en-IN')} SKUs across ${db.vendors.length} vendors`;
 $('#sync').textContent = 'Last catalogue sync: today, ' + new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
