@@ -366,6 +366,11 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
       <span class="btext"><b>Vaarahi Silks</b><span>Luxury silks &middot; Growth Engine demo workspace</span></span>
       <span class="bgo">&rarr;</span>
     </button>
+    <button class="badge" onclick="goClientLogin('royale')">
+      <span class="bicon">RC</span>
+      <span class="btext"><b>Royale Collections</b><span>Corporate gifting &middot; Product Discovery Portal</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
     <div class="dir-note"><span>&#9679;</span><span>More client workspaces appear here as Zippyscale builds them out.</span></div>
   </div>
 </div>
@@ -387,6 +392,27 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     </div>
     <div class="login-err" id="ccerr"></div>
     <button class="btn-primary" onclick="tryCarCart()">Enter workspace</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+  </div>
+</div>
+
+<!-- ROYALE COLLECTIONS LOGIN -->
+<div id="rclogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Royale Collections &times; Zippyscale</div>
+    <h1>Product Discovery Portal</h1>
+    <p class="sub">Search the gifting catalogue, turn a client brief into a shortlist, and send it on WhatsApp. Every product and vendor inside is sample data created by Zippyscale, not Royale's own records.</p>
+    <div class="field">
+      <label for="rcu">Username</label>
+      <input id="rcu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. royale" onkeydown="if(event.key==='Enter')tryRoyale()">
+    </div>
+    <div class="field">
+      <label for="rcp">Password</label>
+      <input id="rcp" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryRoyale()">
+    </div>
+    <div class="login-err" id="rcerr"></div>
+    <button class="btn-primary" onclick="tryRoyale()">Enter workspace</button>
     <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
   </div>
 </div>
@@ -1661,7 +1687,7 @@ async function downloadPDF(){
 function hideGates(){document.querySelectorAll('.gatewrap').forEach(el=>el.classList.add('hidden'));}
 function goPortal(){hideGates();document.getElementById('portal').classList.remove('hidden');}
 function goDirectory(){hideGates();document.getElementById('directory').classList.remove('hidden');}
-const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'] };
+const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'] };
 function goClientLogin(key){
   hideGates();
   const [gate,err,first] = GATES[key] || ['clientlogin','lerr','u'];
@@ -1683,6 +1709,14 @@ function tryVaarahi(){
   const p=document.getElementById('vap').value;
   if(u===VAARAHI.user && p===VAARAHI.pass){ location.href='../vaarahi/'; return; }
   document.getElementById('vaerr').textContent='Wrong username or password.';
+}
+
+const ROYALE = { user:"royale", pass:"Royale@mum26" };
+function tryRoyale(){
+  const u=document.getElementById('rcu').value.trim().toLowerCase();
+  const p=document.getElementById('rcp').value;
+  if(u===ROYALE.user && p===ROYALE.pass){ try{ sessionStorage.setItem('royaleIn',1); }catch(e){} location.href='../royale/'; return; }
+  document.getElementById('rcerr').textContent='Wrong username or password.';
 }
 
 async function tryLogin(){
