@@ -344,13 +344,64 @@
     return D.messages.filter(function (m) { return m.card && m.card.status === 'pending'; });
   }
 
-  /* ---------------- render ---------------- */
+  /* ---------------- render ----------------
+
+     Every edit in this app re-renders the whole screen, which is fine — it is
+     one innerHTML and it keeps the state in one place. What is NOT fine is
+     throwing the reader back to the top of the page each time, which is what
+     an unconditional scrollTo(0, 0) did: save a target, sort a column or type
+     a letter in the stock search and the page jumped.
+
+     So: scroll to the top only on a real navigation, and on a re-render of the
+     screen you are already on, put the scroll and the caret back where they
+     were. Same for focus — the input you were typing in is destroyed and
+     rebuilt, so it has to be found and re-focused by id. */
+
+  var LAST_HASH = null;
+
+  /* Not every control has an id — the target tables key their inputs on
+     data-ptarget, one per person per column — so focus is found again by
+     whichever of these identifies it. A `change` fires as you tab out, which
+     means the element to restore is usually the NEXT field, and keeping your
+     tab progression is exactly what should happen. */
+  var FOCUS_BY = ['id', 'data-ptarget', 'data-btarget', 'data-person', 'data-field', 'name'];
+
+  function focusState() {
+    var a = document.activeElement;
+    if (!a || !a.getAttribute) return null;
+    var st = null;
+    for (var i = 0; i < FOCUS_BY.length; i++) {
+      var v = a.getAttribute(FOCUS_BY[i]);
+      if (v) { st = { sel: '[' + FOCUS_BY[i] + '="' + v.replace(/"/g, '\\"') + '"]' }; break; }
+    }
+    if (!st) return null;
+    /* a number input throws on selectionStart in some browsers; it has no
+       caret worth restoring anyway */
+    try { st.start = a.selectionStart; st.end = a.selectionEnd; } catch (e) {}
+    return st;
+  }
+
+  function restoreFocus(st) {
+    if (!st) return;
+    var node = null;
+    try { node = document.querySelector(st.sel); } catch (e) {}
+    if (!node || typeof node.focus !== 'function') return;
+    node.focus();
+    if (st.start == null) return;
+    try { node.setSelectionRange(st.start, st.end); } catch (e) {}
+  }
 
   function render() {
     if (!D.session) { $('#login').hidden = false; $('#app').hidden = true; return; }
     $('#login').hidden = true; $('#app').hidden = false;
 
-    var parts = (location.hash || '#/home').replace(/^#\//, '').split('/');
+    var hash = location.hash || '#/home';
+    var sameScreen = (hash === LAST_HASH);
+    var keepY = window.scrollY || 0;
+    var keepFocus = sameScreen ? focusState() : null;
+    LAST_HASH = hash;
+
+    var parts = hash.replace(/^#\//, '').split('/');
     var route = parts[0] || 'home';
     var arg = parts.slice(1).join('/');
     var view = VIEWS[route];
@@ -369,7 +420,9 @@
     }
     try { $('#shell').innerHTML = view(arg); }
     catch (e) { $('#shell').innerHTML = crashCard(e, route); console.error(e); }
-    window.scrollTo(0, 0);
+
+    if (sameScreen) { window.scrollTo(0, keepY); restoreFocus(keepFocus); }
+    else window.scrollTo(0, 0);
   }
 
   /* A blank "undefined is not a function" tells nobody anything. Name the file
