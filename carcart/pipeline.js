@@ -10,6 +10,8 @@
   var G = window.GE, V = G.VIEWS, A = G.ACTIONS;
   var esc = function (s) { return CC.esc(s); };
   var MINE = false, BRANCH = '';
+  var FQ = '';                      // floor search: name or mobile
+  var PICK = [], OQ = '', BRIEF = '';   // the shortlist being built on a new opportunity
 
   function D() { return G.D(); }
   function staffName(id) { var u = CC.staffById(id); return u ? u.name : 'Unassigned'; }
@@ -19,7 +21,21 @@
     if (CC.acc(me, D().access).scope !== 'company' && o.assigned_to !== me.id) return false;
     if (MINE && o.assigned_to !== me.id) return false;
     if (BRANCH && o.branch !== BRANCH) return false;
+    if (FQ && !matchesSearch(o)) return false;
     return true;
+  }
+
+  /* Name or mobile. A number is what somebody has in their hand when they ring,
+     so digits are matched against the digits of the mobile and nothing else. */
+  function matchesSearch(o) {
+    var q = FQ.toLowerCase().trim();
+    if (!q) return true;
+    var c = G.clientById(o.client);
+    if (!c) return false;
+    var digits = q.replace(/\D/g, '');
+    if (digits.length >= 3 && CC.normMobile(c.mobile).indexOf(digits) >= 0) return true;
+    var hay = [c.name, c.mobile, o.title].join(' ').toLowerCase();
+    return q.split(/\s+/).every(function (w) { return hay.indexOf(w) >= 0; });
   }
 
   /* ---------------- the floor: one board, one ladder ---------------- */
@@ -46,6 +62,10 @@
       ' lost in this window · the board itself always shows live deals only');
 
     h += '<div class="chips" style="margin-bottom:16px">' +
+      '<input id="fq" type="search" placeholder="Search name or number&hellip;" value="' + esc(FQ) + '" ' +
+      'style="background:var(--coal);border:1px solid var(--line);padding:8px 12px;min-width:210px" autocomplete="off">' +
+      (FQ ? '<button class="chip" data-act="floorClear" aria-pressed="true">Clear &ldquo;' +
+            esc(FQ) + '&rdquo;</button>' : '') +
       '<button class="chip" data-act="pipeMine" aria-pressed="' + (MINE ? 'true' : 'false') + '">Only mine</button>' +
       '<button class="chip" data-act="pipeBranch" data-id="" aria-pressed="' + (BRANCH ? 'false' : 'true') + '">All showrooms</button>' +
       D().branches.map(function (b) {
@@ -372,7 +392,8 @@
       '<form id="oppform" data-cid="' + esc(c.id) + '">' +
       '<div class="fgroup"><h4>What they are after this time</h4><div class="fbody">' +
       '<div class="f wide"><label for="o-title">Name it</label>' +
-      '<input id="o-title" name="title" placeholder="e.g. Second car — BMW X5" required></div>' +
+      '<input id="o-title" name="title" value="' + esc(BRIEF) + '" ' +
+      'placeholder="e.g. Second car — BMW X5" required></div>' +
       '<div class="f"><label for="o-bmin">Budget from</label><input id="o-bmin" name="budget_min" type="number"></div>' +
       '<div class="f"><label for="o-bmax">Budget to</label><input id="o-bmax" name="budget_max" type="number"></div>' +
       '<div class="f"><label for="o-body">Body type</label><select id="o-body" name="body"><option value="">Any</option>' +
@@ -380,8 +401,17 @@
       '<div class="f"><label for="o-make">Make</label><select id="o-make" name="make"><option value="">Any</option>' +
         CC.tally(cars, 'make').map(function (m) { return '<option>' + esc(m[0]) + '</option>'; }).join('') + '</select></div>' +
       '<div class="f"><label for="o-src">Came from</label><select id="o-src" name="source">' +
-        Object.keys(CC.SOURCES).map(function (k) { return '<option value="' + k + '">' + CC.SOURCES[k] + '</option>'; }).join('') +
+        Object.keys(CC.SOURCES).map(function (k) {
+          return '<option value="' + k + '"' + (BRIEF && k === 'walkin' ? ' selected' : '') + '>' +
+            CC.SOURCES[k] + '</option>';
+        }).join('') +
       '</select></div>' +
+      '<div class="f"><label for="o-stage">Starting stage</label><select id="o-stage" name="stage">' +
+        CC.OPEN_STAGES.map(function (st) {
+          /* somebody who has just walked in IS in the showroom */
+          var pre = BRIEF ? 'In showroom' : 'New lead';
+          return '<option value="' + esc(st) + '"' + (st === pre ? ' selected' : '') + '>' + esc(st) + '</option>';
+        }).join('') + '</select></div>' +
       '<div class="f"><label for="o-own">Salesperson</label><select id="o-own" name="assigned_to">' +
         CC.staffList().filter(function (u) { return u.role === 'sales' || u.role === 'manager'; })
           .map(function (u) {
@@ -395,6 +425,7 @@
       '<div class="f wide"><label for="o-trade">Trade-in</label><input id="o-trade" name="trade_in" value="' +
         esc(c.trade_in || '') + '"></div>' +
       '</div></div>' +
+      carPicker(cars, c) +
       '<p class="err" id="o-err"></p><button class="btn" type="submit">Open this opportunity</button></form></div>';
 
     /* the history panel he asked for: what they bought, what they want, what is in play */
@@ -437,13 +468,78 @@
     return h;
   };
 
+  /* The shortlist, built off the real inventory.
+
+     A walk-in says "something like a Fortuner, around 45". You need to search
+     the floor while they are standing there, not go away and come back — so
+     this is the whole stock, searchable, with one tap to put a car on their
+     list. What lands here becomes the opportunity's shortlist, and the cars
+     they actually want get promoted to in-play later. */
+  function carPicker(cars, c) {
+    var q = OQ.toLowerCase().trim();
+    var pool = cars.filter(function (x) { return x.availability !== 'Sold'; });
+    var hits = !q ? pool : pool.filter(function (x) {
+      var hay = [x.make, x.model, x.variant, x.year, x.fuel, x.transmission,
+                 x.body_type, x.stock_id].join(' ').toLowerCase();
+      return q.split(/\s+/).every(function (w) { return hay.indexOf(w) >= 0; });
+    });
+
+    var h = '<div class="fgroup"><h4>Which cars are they looking at?' +
+      (PICK.length ? ' <span class="pill em">' + PICK.length + ' on the list</span>' : '') +
+      '</h4><div class="fbody"><div class="f wide">' +
+      '<label for="oq">Search the inventory</label>' +
+      '<input id="oq" type="search" autocomplete="off" value="' + esc(OQ) + '" ' +
+      'placeholder="Fortuner, or diesel SUV, or CC-383&hellip;"></div>' +
+      '<p class="hint wide">' + hits.length + ' of ' + pool.length + ' available cars' +
+      (q ? ' match' : '') + '. Tap one to put it on their list.</p>';
+
+    if (PICK.length) {
+      h += '<div class="wide"><p class="eyebrow">On their list</p><div class="picked">' +
+        PICK.map(function (sid) {
+          var car = cars.filter(function (x) { return x.stock_id === sid; })[0];
+          if (!car) return '';
+          return '<button type="button" class="pickchip" data-act="unpickCar" data-id="' + esc(sid) + '">' +
+            esc(car.make + ' ' + car.model) + ' <i>&times;</i></button>';
+        }).join('') + '</div></div>';
+    }
+
+    h += '<div class="wide"><div class="scroller" style="max-height:300px">' +
+      (hits.length
+        ? hits.slice(0, 40).map(function (car) {
+            var on = PICK.indexOf(car.stock_id) >= 0;
+            return '<div class="pickrow"><img src="' + CC.coverSrc(car) + '" alt="">' +
+              '<div class="t"><b>' + esc(car.make + ' ' + car.model) + '</b>' +
+              '<span>' + esc(car.year) + ' &middot; ' + esc(car.variant || car.body_type) +
+              (car.km != null ? ' &middot; ' + CC.fmt(car.km) + ' km' : '') +
+              ' &middot; ' + CC.money(car.price) + ' &middot; ' + esc(car.stock_id) + '</span></div>' +
+              '<button type="button" class="minibtn" data-act="' + (on ? 'unpickCar' : 'pickCar') +
+              '" data-id="' + esc(car.stock_id) + '">' + (on ? 'Remove' : '+ Add') + '</button></div>';
+          }).join('')
+        : '<div class="empty" style="padding:20px">Nothing on the floor matches that.</div>') +
+      '</div></div>';
+
+    if (hits.length > 40) h += '<p class="hint wide">Showing the first 40 — narrow the search.</p>';
+    return h + '</div></div>';
+  }
+
+  G.setOppBrief = function (t) { BRIEF = String(t || ''); PICK = []; OQ = ''; };
+
   /* ---------------- actions ---------------- */
 
   Object.assign(A, {
     pipeMine: function () { MINE = !MINE; G.render(); },
     pipeBranch: function (id) { BRANCH = id || ''; G.render(); },
     openOpp: function (id) { G.go('#/opp/' + id); },
-    startOpp: function (id) { G.go('#/oppnew/' + id); },
+    startOpp: function (id) { PICK = []; OQ = ''; G.go('#/oppnew/' + id); },
+    floorClear: function () { FQ = ''; G.render(); },
+    pickCar: function (id) {
+      if (PICK.indexOf(id) < 0) PICK.push(id);
+      G.render();
+    },
+    unpickCar: function (id) {
+      PICK = PICK.filter(function (x) { return x !== id; });
+      G.render();
+    },
 
     setStage: function (arg) {
       var p = arg.split('|');
@@ -634,6 +730,13 @@
     }
   });
 
+  /* The two search boxes: the inventory on a new opportunity, and the floor.
+     Re-rendering keeps the caret, because render() restores focus by id. */
+  document.addEventListener('input', function (e) {
+    if (e.target.id === 'oq') { OQ = e.target.value; G.render(); return; }
+    if (e.target.id === 'fq') { FQ = e.target.value; G.render(); }
+  });
+
   /* score the note as it is typed, so the standard is obvious before saving */
   document.addEventListener('input', function (e) {
     if (!e.target.dataset || !e.target.dataset.scored) return;
@@ -684,14 +787,24 @@
         budget_max: d.get('budget_max') ? Number(d.get('budget_max')) : null,
         trade_in: d.get('trade_in') || null,
         wants: { bodies: d.get('body') ? [d.get('body')] : [],
-                 makes: d.get('make') ? [d.get('make')] : [], fuels: [] }
+                 makes: d.get('make') ? [d.get('make')] : [], fuels: [] },
+        stage: d.get('stage') || 'New lead',
+        cars: PICK.filter(function (sid) { return !!G.carById(sid); })
       });
       D().opportunities.push(o);
+      /* What they were shown is also what they have saved — one list, so the
+         wishlist on their record and the shortlist on the deal cannot drift. */
+      o.cars.forEach(function (sid) {
+        if ((c.wishlist || []).indexOf(sid) < 0) c.wishlist = (c.wishlist || []).concat([sid]);
+      });
       c.last_touch = CC.today();
       if (!c.assigned_to) c.assigned_to = o.assigned_to;
       G.save();
-      G.log('opp_new', 'Opened "' + o.title + '" for ' + c.name, { client: c.id, opp: o.id });
+      G.log('opp_new', 'Opened "' + o.title + '" for ' + c.name +
+            (o.cars.length ? ' with ' + o.cars.length + ' car' + (o.cars.length === 1 ? '' : 's') +
+             ' shortlisted' : ' with nothing shortlisted yet'), { client: c.id, opp: o.id });
       G.toast('Opened for ' + c.name + '. Their history is untouched.');
+      PICK = []; OQ = ''; BRIEF = '';
       G.go('#/opp/' + o.id);
       return;
     }

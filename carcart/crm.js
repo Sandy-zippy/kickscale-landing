@@ -442,21 +442,42 @@
     },
     assignClient: function (id) {
       var c = G.clientById(id);
+      var open = CC.openOppsFor(D().opportunities, c.id);
       G.modal('Assign ' + c.name, 'Whoever owns this customer sees them on their list.',
-        CC.STAFF.filter(function (u) { return u.role === 'sales' || u.role === 'manager'; })
+        (open.length
+          ? '<p class="m" style="margin-bottom:12px">Their ' + open.length + ' open deal' +
+            (open.length === 1 ? '' : 's') + ' move' + (open.length === 1 ? 's' : '') +
+            ' across too, so the customer and the work on the floor stay together. ' +
+            'Anything already won or lost keeps the name of whoever closed it.</p>'
+          : '') +
+        CC.staffList().filter(function (u) { return u.role === 'sales' || u.role === 'manager'; })
           .map(function (u) {
             return '<div class="pickrow"><div class="t"><b>' + esc(u.name) + '</b><span>' +
               esc(CC.ROLES[u.role].label) + '</span></div>' +
               '<button class="minibtn" data-act="doAssign" data-id="' + esc(id + '|' + u.id) + '">Assign</button></div>';
           }).join(''));
     },
+    /* Assigning the customer has to carry their live work with them.
+
+       It did not, and the effect was silent: the customer appeared on the new
+       salesperson's list while the opportunity kept its old owner (usually
+       nobody), so it never showed on their floor and nobody was chasing it.
+       A CLOSED opportunity is history and keeps the name of whoever actually
+       closed it — reassigning those would rewrite who sold what. */
     doAssign: function (arg) {
       var p = arg.split('|'), c = G.clientById(p[0]);
+      if (!c) return;
       c.assigned_to = p[1];
-      G.log('client_assign', c.name + ' assigned to ' + staffName(p[1]), { client: c.id });
+      var moved = CC.openOppsFor(D().opportunities, c.id);
+      moved.forEach(function (o) { o.assigned_to = p[1]; o.updated = CC.today(); });
+      G.log('client_assign', c.name + ' assigned to ' + staffName(p[1]) +
+            (moved.length ? ' — ' + moved.length + ' open deal' + (moved.length === 1 ? '' : 's') +
+             ' moved with them' : ''), { client: c.id });
       G.save();
       document.getElementById('modal').close();
-      G.toast('Assigned to ' + staffName(p[1]) + '.'); G.render();
+      G.toast('Assigned to ' + staffName(p[1]) +
+              (moved.length ? ', with ' + moved.length + ' open deal' + (moved.length === 1 ? '' : 's') + '.' : '.'));
+      G.render();
     },
 
     newWalkin: function () {
@@ -476,9 +497,14 @@
           return '<option value="' + u.id + '">' + esc(u.name) + (busy ? ' — with someone' : ' — free') + '</option>';
         }).join('') + '</select>' +
         '<p class="hint">The list suggests who is free. The pick stays yours.</p></div>' +
-        '<p class="hint" style="margin-bottom:12px">This creates the customer and opens an opportunity ' +
-        'for them at <b>In showroom</b>, so the walk-in lands straight on the floor.</p>' +
-        '<p class="err" id="w-err"></p><button class="btn" type="submit">Log the walk-in</button></form>');
+        '<p class="hint" style="margin-bottom:12px">Saving takes you straight to a new opportunity ' +
+        'for them, where you pick the cars off the inventory. <b>Nothing lands on the floor until ' +
+        'that opportunity exists</b> — a name and a number on their own are just a contact.</p>' +
+        '<p class="err" id="w-err"></p>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+        '<button class="btn" type="submit" name="then" value="opp">Save &amp; pick their cars</button>' +
+        '<button class="btn alt" type="submit" name="then" value="contact">Save the contact only</button>' +
+        '</div></form>');
     },
 
     approveMsg: function (id) {
@@ -615,29 +641,42 @@
       var sp = w.get('salesperson') || null;
       if (!c.assigned_to && sp) c.assigned_to = sp;
 
-      /* One walk-in, one opportunity, landing on the floor at In showroom. */
-      var existing = CC.openOppsFor(D().opportunities, c.id)[0];
-      var o;
-      if (existing) {
-        o = existing;
-        CC.moveOpp(o, 'In showroom');
-        if (sp) o.assigned_to = sp;
-      } else {
-        o = CC.newOpp({
-          client: c.id, assigned_to: sp || c.assigned_to, branch: c.branch || 'b1',
-          source: 'walkin', stage: sp ? 'In showroom' : 'New lead',
-          title: w.get('brief') || 'Walk-in',
-          budget_min: c.budget_min, budget_max: c.budget_max, wants: c.wants
-        });
-        D().opportunities.push(o);
-      }
-      G.log('visit_new', c.name + ' walked in' + (sp ? ' — with ' + staffName(sp) : ' — waiting at the door'),
-            { client: c.id, opp: o.id });
+      /* A walk-in used to mint an opportunity on the spot, which put an empty
+         card on the floor with no cars and no brief against it. A name and a
+         number are a CONTACT; the floor is for deals. So this saves the person
+         and hands over to the opportunity screen, where the cars get picked. */
+      var brief = String(w.get('brief') || '').trim();
+      if (brief) c.notes = (c.notes || []).concat([{ at: CC.today(), by: D().session, t: brief }]);
+      G.log('client_add', c.name + ' walked in' +
+            (sp ? ' — with ' + staffName(sp) : ' — nobody assigned yet') +
+            (brief ? ' — ' + brief : ''), { client: c.id });
       G.save();
       document.getElementById('modal').close();
-      G.toast(existing ? 'Already had an open deal — moved it to In showroom.'
-                       : (res.created ? 'New customer, opportunity opened.' : 'Returning customer — opportunity opened.'));
-      G.go('#/opp/' + o.id);
+
+      /* A returning customer already on the floor does not need a second card. */
+      var existing = CC.openOppsFor(D().opportunities, c.id)[0];
+      if (existing) {
+        if (sp) existing.assigned_to = sp;
+        CC.moveOpp(existing, 'In showroom');
+        G.save();
+        G.toast(c.name + ' is already on the floor — moved to In showroom.');
+        G.go('#/opp/' + existing.id);
+        return;
+      }
+
+      /* Which button was pressed — a submit button's value is NOT in FormData. */
+      var then = (e.submitter && e.submitter.value) || 'opp';
+      if (then === 'contact') {
+        G.toast(res.created ? 'Contact saved. No deal on the floor yet.'
+                            : 'We already had them. Nothing opened on the floor.');
+        G.go('#/client/' + c.id);
+        return;
+      }
+      G.toast(res.created ? 'Contact saved — now pick their cars.' : 'Returning customer — pick their cars.');
+      /* The brief rides in a variable, not the hash — the router splits the
+         hash on '/' and would hand "c123?brief=..." straight to clientById. */
+      if (G.setOppBrief) G.setOppBrief(brief);
+      G.go('#/oppnew/' + c.id);
     }
   };
 })();
