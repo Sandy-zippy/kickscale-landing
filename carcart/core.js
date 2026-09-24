@@ -176,11 +176,12 @@
      fields mask, nav hides. Denial is a polite card, never a 403. */
 
   var ROLES = {
-    owner:      { label: 'Owner',                  short: 'Owner' },
-    manager:    { label: 'Sales Manager',          short: 'Manager' },
-    sales:      { label: 'Sales Floor',            short: 'Sales' },
-    telecaller: { label: 'Telecaller',             short: 'Telecaller' },
-    inventory:  { label: 'Inventory & Photography', short: 'Inventory' }
+    owner:       { label: 'Owner',                  short: 'Owner' },
+    storemanager:{ label: 'Store Manager',          short: 'Store Mgr' },
+    manager:     { label: 'Sales Manager',          short: 'Manager' },
+    sales:       { label: 'Sales Floor',            short: 'Sales' },
+    telecaller:  { label: 'Telecaller',             short: 'Telecaller' },
+    inventory:   { label: 'Inventory & Photography', short: 'Inventory' }
   };
 
   var CAPS = [
@@ -194,22 +195,27 @@
     ['exportData', 'Export data',      'Download customer or stock data as a file.'],
     ['targets',    'Set targets',      'Set and change the monthly targets each salesperson carries.'],
     ['reports',    'Team reports',     'See every salesperson\'s numbers, not just their own.'],
-    ['settings',   'Settings',         'Roles, access and connections. The owner\'s controls.']
+    ['settings',   'Settings',         'Roles, access and connections. The owner\'s controls.'],
+    ['passwords',  'Passwords',        'See and reset other people\'s sign-in passwords, and set one when adding somebody.']
   ];
 
   var SCOPES = { own: 'Only their own', branch: 'Their showroom', company: 'Everyone' };
 
+  /* The store manager starts level with the owner on purpose — the owner then
+     switches individual capabilities off on the Roles tab if they want to. The
+     one thing that is not a capability is the owner's own row: see canSetPass(). */
   var ACCESS_DEFAULT = {
-    owner:      { scope: 'company', cost: true,  clients: true,  seeMobile: true,  editStock: true,  addStock: true,  publish: true,  automations: true,  exportData: true,  targets: true,  reports: true,  settings: true },
-    manager:    { scope: 'company', cost: true,  clients: true,  seeMobile: true,  editStock: true,  addStock: true,  publish: true,  automations: true,  exportData: true,  targets: true,  reports: true,  settings: false },
-    sales:      { scope: 'own',     cost: false, clients: true,  seeMobile: true,  editStock: false, addStock: false, publish: false, automations: false, exportData: false, targets: false, reports: false, settings: false },
-    telecaller: { scope: 'company', cost: false, clients: true,  seeMobile: true,  editStock: false, addStock: false, publish: false, automations: false, exportData: false, targets: false, reports: false, settings: false },
-    inventory:  { scope: 'company', cost: true,  clients: false, seeMobile: false, editStock: true,  addStock: true,  publish: true,  automations: false, exportData: false, targets: false, reports: false, settings: false }
+    owner:       { scope: 'company', cost: true,  clients: true,  seeMobile: true,  editStock: true,  addStock: true,  publish: true,  automations: true,  exportData: true,  targets: true,  reports: true,  settings: true,  passwords: true },
+    storemanager:{ scope: 'company', cost: true,  clients: true,  seeMobile: true,  editStock: true,  addStock: true,  publish: true,  automations: true,  exportData: true,  targets: true,  reports: true,  settings: true,  passwords: true },
+    manager:     { scope: 'company', cost: true,  clients: true,  seeMobile: true,  editStock: true,  addStock: true,  publish: true,  automations: true,  exportData: true,  targets: true,  reports: true,  settings: false, passwords: false },
+    sales:       { scope: 'own',     cost: false, clients: true,  seeMobile: true,  editStock: false, addStock: false, publish: false, automations: false, exportData: false, targets: false, reports: false, settings: false, passwords: false },
+    telecaller:  { scope: 'company', cost: false, clients: true,  seeMobile: true,  editStock: false, addStock: false, publish: false, automations: false, exportData: false, targets: false, reports: false, settings: false, passwords: false },
+    inventory:   { scope: 'company', cost: true,  clients: false, seeMobile: false, editStock: true,  addStock: true,  publish: true,  automations: false, exportData: false, targets: false, reports: false, settings: false, passwords: false }
   };
 
   var NO_ACCESS = { scope: 'own', cost: false, clients: false, seeMobile: false, editStock: false,
                     addStock: false, publish: false, automations: false, exportData: false,
-                    targets: false, reports: false, settings: false };
+                    targets: false, reports: false, settings: false, passwords: false };
 
   function defaultAccess() {
     var out = {};
@@ -248,13 +254,54 @@
   }
 
   var STAFF = [
-    { id: 'u1', login: 'owner',   pass: 'carcart26', name: 'Owner',         role: 'owner',      branch: 'b1', joined: '2018-06-01' },
-    { id: 'u2', login: 'naveen',  pass: 'carcart26', name: 'Naveen Rao',    role: 'manager',    branch: 'b1', joined: '2021-03-08' },
-    { id: 'u3', login: 'rahul',   pass: 'carcart26', name: 'Rahul Varma',   role: 'sales',      branch: 'b1', joined: '2022-11-01' },
-    { id: 'u4', login: 'imran',   pass: 'carcart26', name: 'Imran Ali',     role: 'sales',      branch: 'b2', joined: '2024-05-20' },
-    { id: 'u5', login: 'kavya',   pass: 'carcart26', name: 'Kavya Reddy',   role: 'telecaller', branch: 'b1', joined: '2024-09-16' },
-    { id: 'u6', login: 'ravi',    pass: 'carcart26', name: 'Ravi Kumar',    role: 'inventory',  branch: 'b1', joined: '2025-02-03' }
+    { id: 'u1', login: 'owner',  pass: 'carcart26', name: 'Owner',        role: 'owner',        branch: 'b1', mobile: '6269898989', email: 'owner@carcartonline.com',   joined: '2018-06-01' },
+    { id: 'u7', login: 'vijay',  pass: 'vijay26', name: 'Vijay Menon',  role: 'storemanager', branch: 'b1', mobile: '9848076512', email: 'vijay@carcartonline.com',   joined: '2020-01-20' },
+    { id: 'u2', login: 'naveen', pass: 'naveen26', name: 'Naveen Rao',   role: 'manager',      branch: 'b1', mobile: '9885543210', email: 'naveen@carcartonline.com',  joined: '2021-03-08' },
+    { id: 'u3', login: 'rahul',  pass: 'rahul26', name: 'Rahul Varma',  role: 'sales',        branch: 'b1', mobile: '9701123344', email: 'rahul@carcartonline.com',   joined: '2022-11-01' },
+    { id: 'u4', login: 'imran',  pass: 'imran26', name: 'Imran Ali',    role: 'sales',        branch: 'b2', mobile: '7075390099', email: 'imran@carcartonline.com',   joined: '2024-05-20' },
+    { id: 'u5', login: 'kavya',  pass: 'kavya26', name: 'Kavya Reddy',  role: 'telecaller',   branch: 'b1', mobile: '9391556677', email: 'kavya@carcartonline.com',   joined: '2024-09-16' },
+    { id: 'u6', login: 'ravi',   pass: 'ravi26', name: 'Ravi Kumar',   role: 'inventory',    branch: 'b1', mobile: '6302118899', email: 'ravi@carcartonline.com',    joined: '2025-02-03' }
   ];
+
+  /* Who may set whose password.
+
+     Two rules, and they are deliberately not capabilities:
+       * nobody sets their own — a password is issued to you, not chosen by you,
+         which is the whole point of the owner being able to read them;
+       * only the owner touches the owner's row, however senior the other person.
+     Everything else is the `passwords` capability, which the owner can switch
+     off for the store manager on the Roles tab. */
+  function canSetPass(actor, target, access) {
+    if (!actor || !target) return false;
+    if (actor.role === 'owner') return true;          // including their own
+    if (!acc(actor, access).passwords) return false;
+    if (target.role === 'owner') return false;
+    return target.id !== actor.id;
+  }
+
+  /* Changing a role is how you would hand yourself back a capability the owner
+     just took away, so it carries its own rules rather than riding on
+     `settings`: never your own row, and the two senior roles are the owner's
+     to give. Without this, "the owner can switch things off for the store
+     manager" is not true for five seconds. */
+  var SENIOR_ROLES = ['owner', 'storemanager'];
+
+  function canSetRole(actor, target, role, access) {
+    if (!actor || !target) return false;
+    if (!acc(actor, access).settings) return false;
+    if (actor.role === 'owner') return true;
+    if (target.id === actor.id) return false;                 // not your own
+    if (target.role === 'owner') return false;                // not the owner's
+    if (role && SENIOR_ROLES.indexOf(role) >= 0) return false; // not a promotion into the top two
+    return true;
+  }
+
+  /* Reading one is the same question as setting one — if you may reset it you
+     may as well be told what it is, and the owner asked to see them in clear. */
+  function canSeePass(actor, target, access) { return canSetPass(actor, target, access); }
+
+  function validEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim()); }
+  function validPass(p) { return String(p || '').trim().length >= 6; }
 
   /* Staff live in the store once the app boots, so new people can be added to
      new branches. core.js keeps a pointer so its pure helpers still resolve a name. */
@@ -1243,6 +1290,7 @@
 
     ROLES: ROLES, CAPS: CAPS, SCOPES: SCOPES, ACCESS_DEFAULT: ACCESS_DEFAULT, NO_ACCESS: NO_ACCESS,
     defaultAccess: defaultAccess, acc: acc, inScope: inScope, canOpen: canOpen,
+    canSetPass: canSetPass, canSeePass: canSeePass, canSetRole: canSetRole, SENIOR_ROLES: SENIOR_ROLES, validEmail: validEmail, validPass: validPass,
     maskMobile: maskMobile, maskCost: maskCost,
     STAFF: STAFF, authenticate: authenticate, staffById: staffById, staffByRole: staffByRole,
     setStaff: setStaff, staffList: staffList,

@@ -97,6 +97,22 @@
         if (d.access[role][cap] === undefined) d.access[role][cap] = base[cap];
       });
     });
+    /* The role list the People and Roles tabs render from is stored, so a role
+       added to core since this store was written has to be appended to it too —
+       without disturbing a role the owner created or renamed. */
+    d.roles = Array.isArray(d.roles) ? d.roles : [];
+    Object.keys(CC.ROLES).forEach(function (r) {
+      if (!d.roles.some(function (x) { return x.id === r; })) {
+        d.roles.push({ id: r, name: CC.ROLES[r].label, custom: false });
+      }
+    });
+    /* staff written before people had a mobile or an email */
+    (d.staff || []).forEach(function (u) {
+      var seed = CC.STAFF.filter(function (x) { return x.id === u.id || x.login === u.login; })[0];
+      if (u.mobile === undefined) u.mobile = (seed && seed.mobile) || '';
+      if (u.email === undefined) u.email = (seed && seed.email) || '';
+      if (!u.pass) u.pass = (seed && seed.pass) || 'carcart26';
+    });
     Object.keys(CC.ACCESS_DEFAULT).forEach(function (role) {
       if (!d.access[role]) d.access[role] = Object.assign({}, CC.ACCESS_DEFAULT[role]);
     });
@@ -121,6 +137,12 @@
   }
 
   function me() { return D.session ? CC.staffById(D.session) : null; }
+  /* A role's display name comes from the store, not core, so a renamed or
+     owner-created role still reads correctly. */
+  function roleName(id) {
+    var r = (D.roles || []).filter(function (x) { return x.id === id; })[0];
+    return (r && r.name) || (CC.ROLES[id] && CC.ROLES[id].label) || id;
+  }
   function syncStaff() { CC.setStaff(D.staff && D.staff.length ? D.staff : CC.STAFF); }
   function acc() { return CC.acc(me(), D.access); }
   function can(cap) { return !!acc()[cap]; }
@@ -640,7 +662,9 @@
   VIEWS.team = function () {
     var cars = CARS, r = range(), a = acc();
     var h = '<div class="ph"><div><h1>Team</h1>' +
-      '<p>Six people across five roles. Open anyone to see their customers, their sales and where they are against target.</p></div>' +
+      '<p>' + D.staff.length + ' people across ' +
+        (new Set(D.staff.map(function (u) { return u.role; }))).size +
+        ' roles. Open anyone to see their customers, their sales and where they are against target.</p></div>' +
       (a.reports ? '<div class="right"><a class="btn alt" href="#/reports">Team reports</a></div>' : '') + '</div>';
     h += rangeBar();
 
@@ -1133,16 +1157,35 @@
   }
 
   function peopleTab() {
+    var actor = me(), mayPass = can('passwords');
     var h = '<p class="hint" style="margin-bottom:12px">Everyone who can sign in. ' +
-      'A new person gets the access their role carries, which you can change on the Roles tab.</p>';
+      'A new person gets the access their role carries, which you can change on the Roles tab.' +
+      (mayPass
+        ? ' Passwords are issued here \u2014 nobody can set their own.'
+        : ' Passwords are hidden from your role.') + '</p>';
+
     h += '<div class="scroller" style="max-height:none"><table class="matrix"><thead><tr>' +
-      '<th>Person</th><th>Username</th><th>Role</th><th>Showroom</th><th>Customers</th><th></th>' +
+      '<th>Person</th><th>Username</th><th>Password</th><th>Role</th><th>Showroom</th>' +
+      '<th>Customers</th><th></th>' +
       '</tr></thead><tbody>' + D.staff.map(function (u) {
         var n = D.clients.filter(function (c) { return c.assigned_to === u.id; }).length;
-        return '<tr><td class="rn">' + esc(u.name) + '<span>joined ' + esc(u.joined || '—') + '</span></td>' +
+        var seePass = CC.canSeePass(actor, u, D.access);
+        var setPass = CC.canSetPass(actor, u, D.access);
+        return '<tr><td class="rn">' + esc(u.name) +
+            '<span>' + (u.mobile ? esc(CC.maskMobile(u.mobile, actor, D.access)) : 'no mobile') +
+              (u.email ? ' &middot; ' + esc(u.email) : '') + '</span>' +
+            '<span>joined ' + esc(u.joined || '\u2014') + '</span></td>' +
           '<td>' + esc(u.login) + '</td>' +
-          '<td><select data-person="' + esc(u.id) + '|role"' + (u.id === 'u1' ? ' disabled' : '') + '>' +
-            D.roles.map(function (r) {
+          '<td class="passcell">' +
+            (seePass ? '<code>' + esc(u.pass) + '</code>' : '<span class="dim">\u2022\u2022\u2022\u2022\u2022\u2022</span>') +
+            (setPass ? ' <button class="minibtn" data-act="resetPass" data-id="' + esc(u.id) + '">Reset</button>' : '') +
+          '</td>' +
+          '<td><select data-person="' + esc(u.id) + '|role"' +
+              (CC.canSetRole(actor, u, null, D.access) ? '' : ' disabled') + '>' +
+            D.roles.filter(function (r) {
+              if (u.role === r.id) return true;   // always show what they are now
+              return CC.canSetRole(actor, u, r.id, D.access);
+            }).map(function (r) {
               return '<option value="' + esc(r.id) + '"' + (u.role === r.id ? ' selected' : '') + '>' +
                 esc(r.name) + '</option>';
             }).join('') + '</select></td>' +
@@ -1156,11 +1199,23 @@
           '</td></tr>';
       }).join('') + '</tbody></table></div>';
 
+    /* Creating a sign-in means issuing a password, so the form belongs to
+       whoever may issue one. */
+    if (!mayPass) {
+      h += '<div class="note" style="margin-top:16px">Adding a team member means issuing them a ' +
+        'password, which your role cannot do. Ask the owner or the store manager.</div>';
+      return h;
+    }
+
     h += '<div class="card" style="margin-top:16px"><h3>Add a team member</h3>' +
-      '<p class="m">They can sign in straight away with the password <b>carcart26</b>.</p>' +
-      '<form id="staffform" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:13px;align-items:end">' +
-      '<div class="f"><label for="s-name">Full name</label><input id="s-name" name="name" required></div>' +
-      '<div class="f"><label for="s-login">Username</label><input id="s-login" name="login" required></div>' +
+      '<p class="m">Their name, mobile and email are how you reach them; the username and password ' +
+      'are how they sign in. They cannot change the password themselves \u2014 you reset it for them.</p>' +
+      '<form id="staffform" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:13px;align-items:end">' +
+      '<div class="f"><label for="s-name">Full name</label><input id="s-name" name="name" autocomplete="off" required></div>' +
+      '<div class="f"><label for="s-mobile">Mobile number</label><input id="s-mobile" name="mobile" inputmode="numeric" placeholder="10 digits" autocomplete="off" required></div>' +
+      '<div class="f"><label for="s-email">Email address</label><input id="s-email" name="email" type="email" autocomplete="off" required></div>' +
+      '<div class="f"><label for="s-login">Username</label><input id="s-login" name="login" autocomplete="off" required></div>' +
+      '<div class="f"><label for="s-pass">Password</label><input id="s-pass" name="pass" autocomplete="off" placeholder="at least 6 characters" required></div>' +
       '<div class="f"><label for="s-role">Role</label><select id="s-role" name="role">' +
         D.roles.map(function (r) { return '<option value="' + esc(r.id) + '">' + esc(r.name) + '</option>'; }).join('') +
       '</select></div>' +
@@ -1231,6 +1286,25 @@
 
   Object.assign(ACTIONS, {
     closeModal: function () { document.getElementById('modal').close(); },
+    resetPass: function (id) {
+      var u = CC.staffById(id);
+      if (!u || !CC.canSetPass(me(), u, D.access)) {
+        toast(u && u.role === 'owner' ? 'Only the owner can change the owner\'s password.'
+                                      : 'That is not yours to change.', true);
+        return;
+      }
+      modal('Reset password', u.name + ' \u2014 signs in as ' + u.login,
+        '<form id="passform" data-uid="' + esc(u.id) + '">' +
+        '<p class="m">They cannot change this themselves. Tell them the new one, ' +
+        'and it stays readable here.</p>' +
+        '<div class="f" style="margin-top:14px"><label for="p-new">New password</label>' +
+        '<input id="p-new" value="' + esc(u.pass) + '" autocomplete="off" ' +
+        'placeholder="at least 6 characters"></div>' +
+        '<p class="err" id="p-err"></p>' +
+        '<div style="display:flex;gap:10px;margin-top:16px">' +
+        '<button class="btn" type="submit">Set password</button>' +
+        '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
+    },
     signout: function () { D.session = null; save(); location.hash = '#/home'; render(); },
     openClient: function (id) { go('#/client/' + id); },
     openCar: function (id) { go('#/car/' + id); },
@@ -1286,7 +1360,7 @@
       render();
     },
     switchUser: function () {
-      modal('Switch user', 'Every password is carcart26.',
+      modal('Switch user', 'Tap a name to sign in as them.',
         '<div class="creds">' + CC.STAFF.map(function (u) {
           return '<button type="button" data-act="beUser" data-id="' + u.id + '">' +
             '<b>' + esc(u.name) + '</b> <em>' + esc(CC.ROLES[u.role].label) + '</em>' +
@@ -1353,7 +1427,14 @@
 
     document.addEventListener('click', function (e) {
       var fill = e.target.closest('[data-login]');
-      if (fill) { $('#lg-u').value = fill.dataset.login; $('#lg-p').value = 'carcart26'; $('#lg-p').focus(); return; }
+      if (fill) {
+        /* whatever their password is NOW — one of them may have been reset */
+        var who = (D.staff || CC.STAFF).filter(function (u) { return u.login === fill.dataset.login; })[0];
+        $('#lg-u').value = fill.dataset.login;
+        $('#lg-p').value = (who && who.pass) || '';
+        $('#lg-p').focus();
+        return;
+      }
 
       if (e.target.closest('#uchip')) { ACTIONS.switchUser(); return; }
 
@@ -1405,9 +1486,18 @@
       if (pe) {
         var pk = pe.dataset.person.split('|');
         var who = D.staff.filter(function (u) { return u.id === pk[0]; })[0];
-        if (who) { who[pk[1]] = pe.value; syncStaff();
-          log('staff_edit', who.name + ' — ' + pk[1] + ' changed');
-          save(); toast(who.name + ' updated.'); render(); }
+        if (!who) return;
+        if (!can('settings')) { render(); return; }
+        if (pk[1] === 'role' && !CC.canSetRole(me(), who, pe.value, D.access)) {
+          toast('Only the owner can set that role.', true);
+          render();                      // put the dropdown back where it was
+          return;
+        }
+        who[pk[1]] = pe.value; syncStaff();
+        log('staff_edit', who.name + ' \u2014 ' +
+            (pk[1] === 'role' ? 'role changed to ' + roleName(pe.value)
+                              : 'showroom changed to ' + CC.branchName(D.branches, pe.value)));
+        save(); toast(who.name + ' updated.'); render();
         return;
       }
       if (e.target.id === 'r-from') { RANGE.from = e.target.value; render(); return; }
@@ -1430,20 +1520,57 @@
       }
       if (e.target.id === 'staffform') {
         e.preventDefault();
+        if (!can('passwords')) return;          // the form is not rendered, but never trust that
         var fd = new FormData(e.target);
-        var login = String(fd.get('login') || '').trim().toLowerCase();
         var err = document.getElementById('s-err');
-        if (!login || D.staff.some(function (u) { return u.login === login; })) {
+        var nm = String(fd.get('name') || '').trim();
+        var login = String(fd.get('login') || '').trim().toLowerCase();
+        var mob = CC.normMobile(fd.get('mobile'));
+        var mail = String(fd.get('email') || '').trim();
+        var pass = String(fd.get('pass') || '').trim();
+
+        /* Checked in the order somebody fills the form in, so the message
+           always points at the field they are looking at. */
+        if (!CC.validName(nm)) { err.textContent = 'Enter their full name.'; return; }
+        if (!CC.validMobile(mob)) { err.textContent = 'Enter a 10-digit Indian mobile number.'; return; }
+        if (D.staff.some(function (u) { return u.mobile === mob; })) {
+          err.textContent = 'Somebody on the team already has that mobile number.'; return;
+        }
+        if (!CC.validEmail(mail)) { err.textContent = 'Enter a valid email address.'; return; }
+        if (!login) { err.textContent = 'Give them a username to sign in with.'; return; }
+        if (D.staff.some(function (u) { return u.login === login; })) {
           err.textContent = 'That username is taken. Pick another.'; return;
         }
-        D.staff.push({ id: 'u' + Date.now(), login: login, pass: 'carcart26',
-          name: String(fd.get('name')).trim(), role: fd.get('role'),
+        if (!CC.validPass(pass)) { err.textContent = 'The password needs at least 6 characters.'; return; }
+
+        D.staff.push({ id: 'u' + Date.now(), login: login, pass: pass,
+          name: nm, mobile: mob, email: mail, role: fd.get('role'),
           branch: fd.get('branch'), joined: CC.today() });
         syncStaff();
-        log('staff_add', fd.get('name') + ' added as ' + fd.get('role') + ' at ' +
+        log('staff_add', nm + ' added as ' + roleName(fd.get('role')) + ' at ' +
             CC.branchName(D.branches, fd.get('branch')));
         save();
-        toast(fd.get('name') + ' can sign in as ' + login + '.');
+        toast(nm + ' can sign in as ' + login + '.');
+        render();
+        return;
+      }
+      if (e.target.id === 'passform') {
+        e.preventDefault();
+        var who = CC.staffById(e.target.dataset.uid);
+        var pf = document.getElementById('p-new').value.trim();
+        var perr = document.getElementById('p-err');
+        if (!who || !CC.canSetPass(me(), who, D.access)) {
+          perr.textContent = 'That is not yours to change.'; return;
+        }
+        if (!CC.validPass(pf)) { perr.textContent = 'At least 6 characters, please.'; return; }
+        who.pass = pf;
+        syncStaff();
+        /* The new password is never written into the log — the log is readable
+           by more people than the People tab is. */
+        log('staff_pass', 'Password reset for ' + who.name);
+        save();
+        document.getElementById('modal').close();
+        toast('New password set for ' + who.name + '.');
         render();
         return;
       }
