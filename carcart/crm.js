@@ -115,7 +115,8 @@
       '</div>';
 
     var tabs = [['opps', 'Opportunities'], ['wants', 'Wants'], ['shown', 'Shown'],
-                ['wishlist', 'Wishlist'], ['owned', 'Bought'], ['timeline', 'Timeline']];
+                ['wishlist', 'Wishlist'], ['owned', 'Bought'], ['papers', 'Papers'],
+                ['timeline', 'Timeline']];
     h += '<div class="tabs">' + tabs.map(function (t) {
       return '<button class="tab ' + (TAB === t[0] ? 'on' : '') + '" data-act="clientTab" data-id="' + t[0] + '">' + t[1] + '</button>';
     }).join('') + '</div>';
@@ -183,11 +184,58 @@
       h += (c.purchased || []).length
         ? '<div class="card" style="padding:0">' + c.purchased.map(function (p) {
             var car = byId[p.stock_id];
+            var o = (D().opportunities || []).filter(function (x) { return x.id === p.opp; })[0];
+            var st = o && o.proc ? o.proc.stage : null;
             return '<div class="pickrow">' + (car ? '<img src="' + CC.coverSrc(car) + '" alt="">' : '') +
-              '<div class="t"><b>' + esc(car ? car.make + ' ' + car.model : p.stock_id) + '</b>' +
-              '<span>Bought ' + esc(p.when) + ' for ' + CC.money(p.price) + '</span></div></div>';
+              '<div class="t"><b>' + esc(car ? car.make + ' ' + car.model : (p.stock_id || 'Earlier stock')) + '</b>' +
+              '<span>Bought ' + esc(p.when) + ' for ' + CC.money(p.price) + '</span></div>' +
+              (st ? '<span class="pill ' + (st === 'Completed' ? 'ok' : 'warn') + '">' +
+                    (st === 'Completed' ? 'transferred' : st) + '</span>' : '') +
+              (o ? '<button class="minibtn" data-act="openOpp" data-id="' + esc(o.id) + '">Open</button>' : '') +
+              '</div>';
           }).join('') + '</div>'
         : '<div class="card"><p class="m">No purchase yet.</p></div>';
+    }
+
+    /* "The customer rings up wanting their RC." Every document this person has,
+       across every car they have bought, in one place — because hunting through
+       three opportunities for one PDF is how it gets lost. */
+    if (TAB === 'papers') {
+      var papers = [];
+      CC.oppsFor(D().opportunities, c.id).forEach(function (o) {
+        CC.docsOf(o.proc).forEach(function (d) {
+          papers.push({ doc: d, opp: o, car: byId[o.won_car] });
+        });
+      });
+      papers.sort(function (a2, b2) { return String(b2.doc.when).localeCompare(String(a2.doc.when)); });
+
+      var pending = CC.oppsFor(D().opportunities, c.id).filter(CC.isProcessing);
+      if (pending.length) {
+        h += '<div class="card" style="border-color:var(--warn);margin-bottom:14px">' +
+          '<h3 style="color:var(--warn)">' + pending.length + ' transfer' +
+          (pending.length === 1 ? '' : 's') + ' still open</h3>' +
+          pending.map(function (o) {
+            var car2 = byId[o.won_car];
+            return '<p class="m">' + esc(car2 ? car2.make + ' ' + car2.model : 'A car') +
+              ' — at <b>' + esc(o.proc.stage) + '</b>, due ' + esc(CC.procDue(o) || '—') + '. ' +
+              '<button class="minibtn" data-act="openOpp" data-id="' + esc(o.id) + '">Open the file</button></p>';
+          }).join('') + '</div>';
+      }
+
+      h += papers.length
+        ? '<div class="card" style="padding:0">' + papers.map(function (x) {
+            return '<div class="pickrow"><div class="t">' +
+              '<b>' + esc(CC.docLabel('deal', x.doc.type)) + '</b>' +
+              '<span>' + esc(x.car ? x.car.make + ' ' + x.car.model : 'Earlier stock') +
+                ' &middot; ' + esc(x.doc.when) + '</span></div>' +
+              (x.doc.data
+                ? '<a class="minibtn" href="' + x.doc.data + '" target="_blank" rel="noopener">View</a>'
+                : '<span class="pill dim">not stored</span>') +
+              '<button class="minibtn" data-act="openOpp" data-id="' + esc(x.opp.id) + '">Deal</button>' +
+              '</div>';
+          }).join('') + '</div>'
+        : '<div class="card"><p class="m">Nothing filed against this customer yet. ' +
+          'Documents uploaded on a transfer file show up here.</p></div>';
     }
 
     if (TAB === 'timeline') {

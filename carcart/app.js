@@ -106,6 +106,11 @@
         d.roles.push({ id: r, name: CC.ROLES[r].label, custom: false });
       }
     });
+    /* A deal won before processing existed has no transfer file. Open one, so
+       the car does not simply vanish between "sold" and "theirs". */
+    (d.opportunities || []).forEach(function (o) {
+      if (o.outcome === 'won' && !o.proc) CC.startProc(o, o.closed);
+    });
     /* staff written before people had a mobile or an email */
     (d.staff || []).forEach(function (u) {
       var seed = CC.STAFF.filter(function (x) { return x.id === u.id || x.login === u.login; })[0];
@@ -134,6 +139,48 @@
   function save() {
     try { localStorage.setItem(CC.APP_KEY, JSON.stringify(D)); }
     catch (e) { toast('Storage is full — remove a photo-heavy car.', true); }
+  }
+
+  /* Taking a document in.
+
+     A photographed document — which is how an RC or an insurance copy actually
+     arrives, over WhatsApp — is downscaled and kept, so it can be shown back.
+     A PDF cannot be downscaled and a few of them would fill localStorage, so
+     the file is recorded by name, size and date and NOT stored. The UI says
+     that rather than pretending, the same as it already does for video. */
+  function takeDoc(file, kind, type, cb) {
+    var base = { type: type, name: file.name, size: file.size, mime: file.type || '',
+                 by: D.session };
+    if (!/^image\//.test(file.type || '')) { cb(CC.newDoc(base)); return; }
+    shrinkImage(file, function (url) {
+      base.data = url || null;
+      cb(CC.newDoc(base));
+    });
+  }
+
+  /* Downscale before storing — full-size data URLs would blow localStorage. */
+  function shrinkImage(file, cb) {
+    var r = new FileReader();
+    r.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var max = 1400, w = img.width, h2 = img.height;
+        if (w > max || h2 > max) { var sc = max / Math.max(w, h2); w = Math.round(w * sc); h2 = Math.round(h2 * sc); }
+        var cv = document.createElement('canvas');
+        cv.width = w; cv.height = h2;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h2);
+        cb(cv.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = function () { cb(null); };
+      img.src = r.result;
+    };
+    r.onerror = function () { cb(null); };
+    r.readAsDataURL(file);
+  }
+
+  function fileSize(n) {
+    if (!n) return '';
+    return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
   }
 
   function me() { return D.session ? CC.staffById(D.session) : null; }
@@ -333,6 +380,7 @@
     ['sheet',       'Sheet',       'editStock'],
     ['clients',     'Customers',   'clients'],
     ['floor',       'Floor',       'clients'],
+    ['processing',  'Processing',  'clients'],
     ['inbox',       'Inbox',       'clients'],
     ['automations', 'Automations', 'automations'],
     ['reports',     'Reports',     null],
@@ -1617,6 +1665,22 @@
     sheet: function () { return SHEET; },
     syncLog: function () { return SYNCLOG; },
     setSheet: function (t) { SHEET = t; },
-    addCar: function (car) { D.newCars.push(car); save(); applyEdits(); }
+    addCar: function (car) { D.newCars.push(car); save(); applyEdits(); },
+    takeDoc: takeDoc, fileSize: fileSize,
+    /* Documents against a car ride in the edits map, so they survive a reload
+       and a re-scrape the same way every other car edit does. */
+    carDocs: function (id) { return ((D.edits[id] || {}).docs) || []; },
+    addCarDoc: function (id, doc) {
+      D.edits[id] = D.edits[id] || {};
+      D.edits[id].docs = (D.edits[id].docs || []).concat([doc]);
+      save(); applyEdits();
+      return doc;
+    },
+    dropCarDoc: function (id, docId) {
+      var e = D.edits[id];
+      if (!e || !e.docs) return;
+      e.docs = e.docs.filter(function (d) { return d.id !== docId; });
+      save(); applyEdits();
+    }
   };
 })();

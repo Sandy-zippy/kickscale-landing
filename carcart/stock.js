@@ -165,6 +165,19 @@
       c.photos.slice(0, 12).map(function (p) {
         return '<img loading="lazy" src="' + CC.photoSrc(p) + '" alt="">';
       }).join('') + '</div>';
+
+    /* The papers that came in with the car. A buyer asks for these before they
+       pay, and the transfer cannot be filed without the RC and the NOC. */
+    if (G.docSection) {
+      var cdocs = G.carDocs(c.stock_id);
+      var gaps = CC.missingDocs({ docs: cdocs }, ['rc_old', 'insurance_old', 'inspection']);
+      h += G.docSection('car', c.stock_id, cdocs, G.can('editStock'),
+        gaps.length
+          ? 'What came in with the car. Still missing: ' +
+            gaps.map(function (g) { return CC.docLabel('car', g).toLowerCase(); }).join(', ') + '.'
+          : 'What came in with the car. The file is complete.',
+        gaps);
+    }
     h += '</div>';
 
     /* right: what the buyer is told — the editable panel */

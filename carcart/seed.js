@@ -384,6 +384,58 @@
       };
     });
 
+    /* ---- transfer files ----
+       Selling the car is half the job. Three of the recent sales are still
+       moving through the RTO, at different stages and with different amounts
+       of paperwork in, and one of them has run past the fourteen days with the
+       insurance endorsement still missing — which is the case the screen
+       exists to catch. Documents are seeded as records without a file, the
+       same way an uploaded PDF is treated. */
+    function doc(type, name, dayOffset) {
+      return CC.newDoc({ type: type, name: name, size: 180000 + (name.length * 977),
+                         mime: 'application/pdf', when: d(dayOffset), by: 'u6' });
+    }
+
+    [['Sandeep Goud', 'Insurance', -96, ['invoice', 'kyc_id', 'kyc_address', 'form2930', 'delivery_note', 'new_rc']],
+     ['Deepak Sharma', 'Completed', -40, ['invoice', 'loan_docs', 'kyc_id', 'kyc_address', 'form2930',
+                                          'delivery_note', 'new_rc', 'new_insurance']]
+    ].forEach(function (x) {
+      var cl = byId[x[0]];
+      if (!cl) return;
+      var o = D.opportunities.filter(function (y) { return y.client === cl.id && y.outcome === 'won'; })[0];
+      if (!o) return;
+      CC.startProc(o, o.closed);
+      o.proc.stage = x[1];
+      x[3].forEach(function (t, i) {
+        o.proc.docs.push(doc(t, CC.docLabel('deal', t).replace(/[^A-Za-z0-9]+/g, '-').toLowerCase() +
+                              '-' + cl.name.split(' ')[0].toLowerCase() + '.pdf', x[2] + 2 + i));
+      });
+      if (x[1] === 'Completed') { o.proc.done = d(x[2] + 22); o.proc.handed_over = d(x[2] + 3); }
+      else o.proc.handed_over = d(x[2] + 4);
+    });
+
+    /* Sandeep's sale is 96 days old and the insurance endorsement never went
+       in — deliberately the worst case on the board. */
+
+    /* The papers that came in with each car. Two carry a complete file, one is
+       missing its inspection report, and the hypothecated one has no NOC yet. */
+    D.edits = D.edits || {};
+    [['CC-358', ['rc_old', 'insurance_old', 'puc', 'inspection', 'service_book']],
+     ['CC-374', ['rc_old', 'insurance_old', 'puc', 'inspection']],
+     ['CC-383', ['rc_old', 'insurance_old', 'puc']],
+     ['CC-318', ['rc_old', 'puc', 'inspection', 'service_book']],
+     ['CC-2019', ['rc_old', 'insurance_old', 'inspection', 'service_book', 'noc_form35']]
+    ].forEach(function (x, n) {
+      if (!ids[x[0]]) return;
+      D.edits[x[0]] = D.edits[x[0]] || {};
+      D.edits[x[0]].docs = x[1].map(function (t, i) {
+        return CC.newDoc({ type: t, name: x[0].toLowerCase() + '-' +
+                             t.replace(/_/g, '-') + '.pdf',
+                           size: 210000 + (i * 40311), mime: 'application/pdf',
+                           when: d(-(40 + n * 9 + i)), by: 'u6' });
+      });
+    });
+
     /* Monthly targets, which the owner and the manager can change in the console. */
     D.targets = JSON.parse(JSON.stringify(CC.DEFAULT_TARGETS));
   };

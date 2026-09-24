@@ -67,6 +67,28 @@ h1,h2,h3,h4{font-family:var(--d);margin:0;line-height:1.12;letter-spacing:-.01em
 .passcell .dim{color:var(--dim);letter-spacing:.14em}
 .matrix .rn span{display:block;font-size:11px;color:var(--dim);font-weight:400}
 
+/* ---- documents, on a car record and on a transfer file ---- */
+.docs{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.docgroup{border:1px solid var(--line);background:var(--coal)}
+.docgroup .eyebrow{padding:9px 12px;border-bottom:1px solid var(--line);margin:0}
+.docrow{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid var(--line)}
+.docrow:last-child{border-bottom:0}
+.docrow.need{background:rgba(255,91,61,.06);box-shadow:inset 2px 0 0 0 var(--bad)}
+.docrow .dl{flex:1;min-width:0}
+.docrow .dl b{display:block;font-size:12.5px;font-weight:600}
+.docrow .dl>span{display:block;font-size:11px;color:var(--dim);margin-top:2px}
+.docrow .needline{color:var(--bad)}
+.docfile{display:block;font-size:11.5px;color:var(--tx);margin-top:5px;word-break:break-word}
+.docfile a{color:var(--ember);text-decoration:underline}
+.docfile i{font-style:normal;color:var(--dim)}
+.docfile i.nostore{color:var(--warn)}
+.upl{flex:none;cursor:pointer;font-family:var(--d);font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--mut);border:1px solid var(--line2);border-radius:2px;
+  padding:5px 10px;white-space:nowrap}
+.upl:hover{color:var(--tx);border-color:var(--ember)}
+.bar{display:block;height:6px;background:var(--char2);border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--fire)}
+
 .demo-note{background:var(--ember);color:#fff;text-align:center;font-size:12px;padding:7px var(--pad);font-weight:500}
 
 /* ---- login ---- */
@@ -559,13 +581,14 @@ dialog::backdrop{background:rgba(0,0,0,.8)}
 
 <div id="toast" hidden></div>
 
-<script src="core.js?b=1790250348"></script>
-<script src="seed.js?b=1790250348"></script>
-<script src="app.js?b=1790250348"></script>
-<script src="stock.js?b=1790250348"></script>
-<script src="crm.js?b=1790250348"></script>
-<script src="pipeline.js?b=1790250348"></script>
-<script src="autos.js?b=1790250348"></script>
+<script src="core.js?b=1790252492"></script>
+<script src="seed.js?b=1790252492"></script>
+<script src="app.js?b=1790252492"></script>
+<script src="stock.js?b=1790252492"></script>
+<script src="crm.js?b=1790252492"></script>
+<script src="pipeline.js?b=1790252492"></script>
+<script src="autos.js?b=1790252492"></script>
+<script src="processing.js?b=1790252492"></script>
 <script>window.GE && window.GE.boot();</script>
 </body>
 </html>

@@ -173,6 +173,10 @@
         ' Move the stage above to put it back on the floor.</p></div>';
     }
 
+    /* Selling it is half the job; transferring it is the other half. The
+       processing file renders itself here when there is one. */
+    if (G.procPanel) h += G.procPanel(o, c, byId[o.won_car]);
+
     /* ---- the cars actually in play, and the follow-ups against them ---- */
     var play = (o.inplay || []).map(function (s2) { return byId[s2]; }).filter(Boolean);
     var short = (o.cars || []).filter(function (s2) { return (o.inplay || []).indexOf(s2) < 0; })

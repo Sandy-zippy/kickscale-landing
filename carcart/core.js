@@ -491,6 +491,197 @@
       client.purchased.push({ stock_id: stockId, price: price || null, when: opp.closed, opp: opp.id });
       client.last_touch = opp.closed;
     }
+    /* Winning it opens the transfer file. Nobody has to remember to start one,
+       and the fourteen-day clock starts ticking from this date. */
+    startProc(opp, opp.closed);
+    return { opp: opp };
+  }
+
+  /* ================= PROCESSING =================
+     Selling the car is half the job. The other half is the paperwork that moves
+     the car into the buyer's name, and it runs on two statutory clocks:
+
+       * Forms 29 and 30 go to the RTO within 14 days of the sale;
+       * the insurance is endorsed to the new owner within 14 days too. Miss it
+         and only third-party cover carries over — an own-damage claim on the
+         car they just bought is refused. That is the one that bites.
+
+     So processing is not a checklist, it is a deadline. It is also NOT a second
+     record: it is a later phase of the same opportunity, so the customer's file,
+     the car and the salesperson all stay attached without being copied. */
+
+  var PROC_STAGES = ['Payment', 'Papers', 'Handover', 'RC transfer', 'Insurance', 'Completed'];
+
+  var PROC_HELP = {
+    'Payment':    'Paid in full, or the financier has disbursed.',
+    'Papers':     'Forms 29 and 30 signed, old RC and the loan NOC in hand.',
+    'Handover':   'Car, keys and papers given to the customer.',
+    'RC transfer':'Filed at the RTO and waiting for the new registration certificate.',
+    'Insurance':  'Policy endorsed into the new owner\'s name.',
+    'Completed':  'Smart card received and handed over. Nothing outstanding.'
+  };
+
+  /* What a stage cannot be left without. The paperwork and the stage are the
+     same fact, so the upload is what moves the deal — not a tick box beside it. */
+  var PROC_NEEDS = {
+    'Payment':     ['invoice'],
+    'Papers':      ['kyc_id', 'form2930'],
+    'Handover':    ['delivery_note'],
+    'RC transfer': ['new_rc'],
+    'Insurance':   ['new_insurance'],
+    'Completed':   []
+  };
+
+  var STATUTORY_DAYS = 14;
+
+  /* Documents against the DEAL — the buyer's side of the transfer. */
+  var DEAL_DOCS = [
+    { key: 'invoice',       label: 'Sale invoice or agreement', group: 'Money' },
+    { key: 'loan_docs',     label: 'Finance documents',         group: 'Money', when: 'Only if they are financing.' },
+    { key: 'kyc_id',        label: 'Buyer ID — Aadhaar or PAN',  group: 'The buyer' },
+    { key: 'kyc_address',   label: 'Buyer address proof',        group: 'The buyer' },
+    { key: 'form2930',      label: 'Signed Form 29 & Form 30',   group: 'Transfer', when: 'Both, within 14 days of the sale.' },
+    { key: 'delivery_note', label: 'Delivery note, signed',      group: 'Transfer' },
+    { key: 'new_rc',        label: 'New RC — buyer\'s name',      group: 'Transfer' },
+    { key: 'new_insurance', label: 'New insurance policy',       group: 'Transfer' }
+  ];
+
+  /* Documents against the CAR — what came in with it, and what a buyer will ask
+     to see before they hand over money. */
+  var CAR_DOCS = [
+    { key: 'rc_old',        label: 'Registration certificate',   group: 'Ownership' },
+    { key: 'noc_form35',    label: 'Loan NOC / Form 35',         group: 'Ownership', when: 'Only if the car was hypothecated.' },
+    { key: 'insurance_old', label: 'Insurance policy',           group: 'Ownership' },
+    { key: 'puc',           label: 'PUC certificate',            group: 'Ownership' },
+    { key: 'inspection',    label: 'Inspection report',          group: 'Condition' },
+    { key: 'service_book',  label: 'Service history',            group: 'Condition' }
+  ];
+
+  function docTypes(kind) { return kind === 'car' ? CAR_DOCS : DEAL_DOCS; }
+  function docLabel(kind, key) {
+    var d = docTypes(kind).filter(function (x) { return x.key === key; })[0];
+    return (d && d.label) || key;
+  }
+
+  /* One uploaded file. A photographed document is kept and shown; anything else
+     is recorded by name and size and NOT stored — the demo says so rather than
+     pretending, exactly as it does for a walkaround video. */
+  function newDoc(o) {
+    o = o || {};
+    return {
+      id: o.id || 'doc' + Date.now() + Math.floor(Math.random() * 1000),
+      type: o.type || null,
+      name: o.name || '',
+      size: o.size || 0,
+      mime: o.mime || '',
+      data: o.data || null,          // a data URL for an image, null otherwise
+      by: o.by || null,
+      when: o.when || today(),
+      note: o.note || ''
+    };
+  }
+
+  function docsOf(holder) { return (holder && holder.docs) || []; }
+  function hasDoc(holder, type) {
+    return docsOf(holder).some(function (d) { return d.type === type; });
+  }
+  function missingDocs(holder, types) {
+    return (types || []).filter(function (t) { return !hasDoc(holder, t); });
+  }
+
+  function newProc(o) {
+    o = o || {};
+    return {
+      stage: o.stage || PROC_STAGES[0],
+      started: o.started || today(),
+      docs: o.docs || [],
+      handed_over: o.handed_over || null,
+      rc_no: o.rc_no || null,
+      done: o.done || null
+    };
+  }
+
+  function isProcessing(opp) {
+    return !!(opp && opp.proc && opp.proc.stage !== 'Completed');
+  }
+  function procDeals(opps) { return (opps || []).filter(isProcessing); }
+
+  /* Both clocks run from the sale, not from the stage. */
+  function procDue(opp) {
+    if (!opp || !opp.proc) return null;
+    var from = opp.closed || opp.proc.started;
+    return addDays(from, STATUTORY_DAYS);
+  }
+  /* Date arithmetic in UTC, deliberately.
+
+     Parsing '2026-09-01T00:00:00' gives LOCAL midnight; toISOString() then
+     converts back to UTC, and in IST that lands on the previous day. A sale on
+     the 1st came out due on the 14th rather than the 15th — every deadline in
+     the country a day early. Both ends stay in UTC so the arithmetic is on
+     calendar days and nothing else. */
+  function addDays(iso, n) {
+    var t = new Date(String(iso) + 'T00:00:00Z');
+    if (isNaN(t.getTime())) return null;
+    t.setUTCDate(t.getUTCDate() + n);
+    return t.toISOString().slice(0, 10);
+  }
+  function daysLeft(iso, from) {
+    if (!iso) return null;
+    var a = new Date(String(from || today()) + 'T00:00:00Z');
+    var b = new Date(String(iso) + 'T00:00:00Z');
+    if (isNaN(a.getTime()) || isNaN(b.getTime())) return null;
+    return Math.round((b - a) / 86400000);
+  }
+
+  /* Red only where it is actually a problem: the two statutory steps, once the
+     fourteen days have run out and the document still is not in. */
+  function procOverdue(opp, today_) {
+    if (!isProcessing(opp)) return false;
+    var left = daysLeft(procDue(opp), today_);
+    if (left === null || left >= 0) return false;
+    return missingDocs(opp.proc, ['new_rc', 'new_insurance']).length > 0;
+  }
+
+  function procProgress(opp) {
+    if (!opp || !opp.proc) return { done: 0, total: PROC_STAGES.length - 1, pct: 0 };
+    var i = PROC_STAGES.indexOf(opp.proc.stage);
+    var total = PROC_STAGES.length - 1;
+    var done = i < 0 ? 0 : i;
+    return { done: done, total: total, pct: Math.round(100 * done / total) };
+  }
+
+  /* Opening the processing file is what winning a deal does now. */
+  function startProc(opp, when) {
+    if (!opp || opp.outcome !== 'won') return { error: 'Only a won deal goes into processing.' };
+    if (opp.proc) return { proc: opp.proc };
+    opp.proc = newProc({ started: when || opp.closed || today() });
+    return { proc: opp.proc };
+  }
+
+  /* The paperwork gates the stage. Refusing with the name of the missing
+     document is the whole point — "you cannot hand the car over without a
+     signed delivery note" is a sentence, not an error code. */
+  function moveProc(opp, stage) {
+    if (!opp || !opp.proc) return { error: 'This deal has no processing file.' };
+    var from = PROC_STAGES.indexOf(opp.proc.stage);
+    var to = PROC_STAGES.indexOf(stage);
+    if (to < 0) return { error: 'There is no ' + stage + ' stage.' };
+    if (to === from) return { opp: opp };
+    if (to > from) {
+      /* everything up to the stage being left must be in */
+      for (var i = from; i < to; i++) {
+        var miss = missingDocs(opp.proc, PROC_NEEDS[PROC_STAGES[i]]);
+        if (miss.length) {
+          return { error: PROC_STAGES[i] + ' still needs ' + miss.map(function (m) {
+            return docLabel('deal', m).toLowerCase();
+          }).join(' and ') + '.' };
+        }
+      }
+    }
+    opp.proc.stage = stage;
+    opp.updated = today();
+    if (stage === 'Handover' && !opp.proc.handed_over) opp.proc.handed_over = today();
+    if (stage === 'Completed') opp.proc.done = today();
     return { opp: opp };
   }
 
@@ -1303,6 +1494,13 @@
     NOTE_RULES: NOTE_RULES, scoreNote: scoreNote, noteAverage: noteAverage,
     pipelineByStage: pipelineByStage, moveOpp: moveOpp, winOpp: winOpp, loseOpp: loseOpp,
     clientSummary: clientSummary, clientTier: clientTier,
+    PROC_STAGES: PROC_STAGES, PROC_HELP: PROC_HELP, PROC_NEEDS: PROC_NEEDS,
+    STATUTORY_DAYS: STATUTORY_DAYS, DEAL_DOCS: DEAL_DOCS, CAR_DOCS: CAR_DOCS,
+    docTypes: docTypes, docLabel: docLabel, newDoc: newDoc, docsOf: docsOf,
+    hasDoc: hasDoc, missingDocs: missingDocs, newProc: newProc,
+    isProcessing: isProcessing, procDeals: procDeals, procDue: procDue,
+    addDays: addDays, daysLeft: daysLeft, procOverdue: procOverdue,
+    procProgress: procProgress, startProc: startProc, moveProc: moveProc,
     FOLLOW_METHODS: FOLLOW_METHODS, FOLLOW_OUTCOMES: FOLLOW_OUTCOMES, AT_RISK: AT_RISK,
     newFollow: newFollow, followsFor: followsFor, openFollows: openFollows,
     isOverdue: isOverdue, isDueToday: isDueToday, nextFollow: nextFollow,
