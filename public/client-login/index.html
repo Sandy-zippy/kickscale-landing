@@ -7,7 +7,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+['ccu','ccp'].forEach(function(id){
+  var el=document.getElementById(id);
+  if(el) el.addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); tryCarCart(); }});
+});
+</script>
 <style>
 :root{
   --ink:#111111; --ink-2:#33362d; --paper:#f5f5ef; --surface:#ffffff; --surface-2:#f0f0e8;
@@ -250,7 +255,8 @@ table.spec tr.sep td{background:var(--surface-2);font-family:var(--mono);font-si
 .w-ghl{background:var(--lime-soft);color:var(--lime-ink)}
 .w-em{background:var(--em-bg);color:var(--em-ink)}
 .w-tally{background:var(--tally-bg);color:var(--tally-ink)}
-.w-adj{background:#efe6f6;color:#5a2f80}
+.w-app{background:var(--lime-soft);color:var(--lime-ink)}
+.w-wa{background:#e3f4e8;color:#1f6b3a}
 .auto{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:100px;
   display:inline-flex;align-items:center;gap:5px}
 .auto::before{content:"";width:6px;height:6px;border-radius:50%;flex:none}
@@ -348,10 +354,88 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     <p class="sub">Select the client build you're signing in to.</p>
     <button class="badge" onclick="goClientLogin('ego')">
       <span class="bicon">EP</span>
-      <span class="btext"><b>EGO Premium</b><span>CRM Building + AI &middot; 2-Phase Build Plan</span></span>
+      <span class="btext"><b>EGO Premium</b><span>EGO Master &middot; Complete Build Plan</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
+    <button class="badge" onclick="goClientLogin('carcart')">
+      <span class="bicon">CC</span>
+      <span class="btext"><b>Car Cart</b><span>Pre-owned luxury cars &middot; Catalogue + Stock Console</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
+    <button class="badge" onclick="goClientLogin('vaarahi')">
+      <span class="bicon">VS</span>
+      <span class="btext"><b>Vaarahi Silks</b><span>Luxury silks &middot; Growth Engine demo workspace</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
+    <button class="badge" onclick="goClientLogin('royale')">
+      <span class="bicon">RC</span>
+      <span class="btext"><b>Royale Collections</b><span>Corporate gifting &middot; Product Discovery Portal</span></span>
       <span class="bgo">&rarr;</span>
     </button>
     <div class="dir-note"><span>&#9679;</span><span>More client workspaces appear here as Zippyscale builds them out.</span></div>
+  </div>
+</div>
+
+<!-- CAR CART LOGIN -->
+<div id="cclogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Car Cart &times; Zippyscale</div>
+    <h1>Car Cart</h1>
+    <p class="sub">Your product catalogue and internal stock console, built on your own 25 cars and 270 photographs.</p>
+    <div class="field">
+      <label for="ccu">Username</label>
+      <input id="ccu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. carcart">
+    </div>
+    <div class="field">
+      <label for="ccp">Password</label>
+      <input id="ccp" type="password" autocomplete="current-password" placeholder="Enter password">
+    </div>
+    <div class="login-err" id="ccerr"></div>
+    <button class="btn-primary" onclick="tryCarCart()">Enter workspace</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+  </div>
+</div>
+
+<!-- ROYALE COLLECTIONS LOGIN -->
+<div id="rclogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Royale Collections &times; Zippyscale</div>
+    <h1>Product Discovery Portal</h1>
+    <p class="sub">Search the gifting catalogue, turn a client brief into a shortlist, and send it on WhatsApp. Every product and vendor inside is sample data created by Zippyscale, not Royale's own records.</p>
+    <div class="field">
+      <label for="rcu">Username</label>
+      <input id="rcu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. royale" onkeydown="if(event.key==='Enter')tryRoyale()">
+    </div>
+    <div class="field">
+      <label for="rcp">Password</label>
+      <input id="rcp" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryRoyale()">
+    </div>
+    <div class="login-err" id="rcerr"></div>
+    <button class="btn-primary" onclick="tryRoyale()">Enter workspace</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+  </div>
+</div>
+
+<!-- VAARAHI SILKS LOGIN -->
+<div id="valogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Vaarahi Silks &times; Zippyscale</div>
+    <h1>Growth Engine</h1>
+    <p class="sub">A clickable walkthrough of the Growth Engine, set up for Vaarahi Silks across six branches &mdash; sign in as an advisor, a store manager or a director. Every client, sale and message inside is sample data created by Zippyscale, not Vaarahi's own records.</p>
+    <div class="field">
+      <label for="vau">Username</label>
+      <input id="vau" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. vaarahi" onkeydown="if(event.key==='Enter')tryVaarahi()">
+    </div>
+    <div class="field">
+      <label for="vap">Password</label>
+      <input id="vap" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryVaarahi()">
+    </div>
+    <div class="login-err" id="vaerr"></div>
+    <button class="btn-primary" onclick="tryVaarahi()">Enter workspace</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
   </div>
 </div>
 
@@ -361,7 +445,7 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
     <div class="gate-eyebrow">EGO Premium &times; Big E &middot; powered by Zippyscale</div>
     <h1>Your Build Plan</h1>
-    <p class="sub">Two phases: the CRM and AI Analysis now, AI Strategy next. Answer Phase 1's questions and shape the spec &mdash; it all saves as you go.</p>
+    <p class="sub">One complete build: the CRM, the growth programmes and the AI layer together. Answer the questions and shape the spec. It all saves as you go.</p>
     <div class="field">
       <label for="u">Username</label>
       <input id="u" type="text" autocomplete="username" placeholder="e.g. ego-admin">
@@ -372,7 +456,7 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     </div>
     <div class="login-err" id="lerr"></div>
     <button class="btn-primary" onclick="tryLogin()">Enter workspace</button>
-    <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes. Credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
   </div>
 </div>
 
@@ -383,6 +467,7 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     <nav>
       <button class="navbtn ghost" id="navHome" onclick="goHome()">&larr; Overview</button>
       <button class="navbtn" id="navExport" onclick="exportAnswers()">Export answers (JSON)</button>
+      <button class="navbtn ghost" id="navArch" onclick="window.open('../ego-master/','_blank')">Sample architecture</button>
       <button class="navbtn" id="pdfBtn" onclick="downloadPDF()">Download PDF</button>
       <button class="navbtn ghost" id="navLogout" onclick="logout()">Log out</button>
     </nav>
@@ -418,32 +503,41 @@ const saveAnswerDebounced = debounce((section, qid, value) => {
   apiPost({ action: 'saveAnswer', section, qid, value });
 }, 700);
 
-/* ================= DATA MODEL (2-phase EGO Master build plan) =================
+/* ================= DATA MODEL (one complete EGO Master build) =================
    Shapes kept deliberately stable so the PDF engine below (extractBlocks) keeps
    parsing module HTML unchanged: groups/stageflows/callouts/lists all emit the
    same class names it already understands. */
 const DATA = { sections:{} };
-const WLABEL = { ghl:'GHL', em:'EGO Master', tally:'Tally + Inventory', adj:'Adjacent' };
+const WLABEL = { em:'EGO Master', tally:'Tally + stock', app:'Phone app', wa:'WhatsApp' };
 const ALABEL = { auto:'Automated', man:'Manual', mix:'Auto + Manual', fauto:'Fully automated', aroute:'Automated routing', manone:'Manual · one-time', manup:'Manual · upload' };
 const EDEFAULTS = {}; // editKey -> {kind, items}
-function edef(key, kind, items){ if(!EDEFAULTS[key]) EDEFAULTS[key] = { kind, items: items.map(x => typeof x === 'string' ? { t:x } : x) }; }
+/* Content is written with HTML entities (&amp;, &#8377;). Editable chips and the PDF
+   use plain text, so decode once there or the client sees "&amp;" literally. */
+function decodeEnt(str){ const t=document.createElement('textarea'); t.innerHTML=String(str); return t.value; }
+function edef(key, kind, items){ if(!EDEFAULTS[key]) EDEFAULTS[key] = { kind, items: items.map(x => typeof x === 'string' ? { t:decodeEnt(x) } : { ...x, t:decodeEnt(x.t) }) }; }
 
-const COMMERCIALS = {
-  p1:{ timeline:'10 weeks' },
-  p2:{ timeline:'6-8 weeks' }
+/* One build, indicative. 12 weeks of build, then 4 weeks of testing on EGO's own data. */
+const TIMELINE = [
+  { wk:'Weeks 1 to 4',   h:'Foundation',  stage:'foundation', p:'Both companies, people and access, every record and its fields, and the live links to Tally, Runo, Sales Diary, WhatsApp and the lead sources.' },
+  { wk:'Weeks 5 to 8',   h:'Operations and growth programmes', stage:'operations', p:'Leads, orders, projects, installation, complaints and stock, plus targets, schemes, Priority 200, Design 500, EGO Champions, approvals and training.' },
+  { wk:'Weeks 9 to 12',  h:'Intelligence and the dealer portal', stage:'intel', p:'AI Analysis, AI Strategy and the CEO cockpit for Mission &#8377;25 cr, installation AI, the AI call and chat agents, and the dealer portal.' },
+  { wk:'Weeks 13 to 16', h:'Testing and go-live', stage:'test', p:'Your team uses it on real data next to today’s tools. We fix what they find, train every role, then switch over.' }
+];
+const STAGES = {
+  foundation:'Foundation', operations:'Operations', growth:'Growth programmes', intel:'Intelligence'
 };
 
-/* What the client has to arrange in their own name. Named, not priced --
+/* What the client has to arrange in their own name. Named, not priced:
    these are third-party costs that move, and none of them bill through us. */
 const CLIENT_NEEDS = [
-  {t:'GoHighLevel subscription', d:'The CRM platform licence, taken in EGO’s own name. Both segments — EGO and Big E — run inside it.'},
+  {t:'Hosting for EGO Master', d:'A small cloud server and database in EGO’s own name. The system and its data stay yours.'},
   {t:'API keys &amp; account access', d:'One full-access key each for Runo, Sales Diary and Tally, plus Meta &amp; Google lead-form access and IndiaMART / JustDial push access.'},
-  {t:'Gemini / LLM API access', d:'The reasoning engine behind AI Analysis. Runs on your own API account so the data and the billing stay yours.'},
-  {t:'WhatsApp Business number &amp; BSP', d:'GHL-native WhatsApp — AiSensy is removed. Meta charges per conversation.'},
-  {t:'AI Voice Agent', d:'The inbound call agent, provisioned on your account and charged for the minutes it handles.'},
-  {t:'AI call &amp; usage charges', d:'Ongoing voice minutes and LLM tokens as the system runs day to day — these scale with how much you use it.'}
+  {t:'Gemini / LLM API access', d:'The reasoning engine behind AI Analysis and AI Strategy. It runs on your own API account, so the data and the billing stay yours.'},
+  {t:'WhatsApp Business number &amp; BSP', d:'A WhatsApp Business number on Meta’s Cloud API. Meta charges per conversation.'},
+  {t:'AI Voice Agent', d:'The inbound call agent, set up on your account and charged for the minutes it handles.'},
+  {t:'AI call &amp; usage charges', d:'Ongoing voice minutes and LLM usage as the system runs day to day. These grow with how much you use it.'}
 ];
-const CLIENT_NEEDS_NOTE = 'All six sit in <b>EGO’s own accounts</b> and are billed at actuals by those providers — they are platform and usage costs, not part of the Zippyscale build. We set each one up with you, and nothing here is charged through us.';
+const CLIENT_NEEDS_NOTE = 'All six sit in <b>EGO’s own accounts</b> and are billed at actuals by those providers. They are platform and usage costs, not part of the Zippyscale build. We set each one up with you, and nothing here is charged through us.';
 
 function fldSpan(item){
   const t = typeof item === 'string' ? item : item.t;
@@ -464,7 +558,7 @@ function stageflowHTML(items){
 }
 
 /* live=true renders the editable chip controls; live=false renders static chips
-   (used for the read-only Phase 2 preview and for the PDF). */
+   (used for the PDF). */
 function renderModuleHTML(m, live){
   let out = '';
   const badges = (m.where||[]).map(w=>`<span class="where w-${w}">${WLABEL[w]}</span>`).join('') +
@@ -499,264 +593,448 @@ function renderModuleHTML(m, live){
     }
   });
   if (m.qids && m.qids.length){
-    out += `<div class="modq"><b>We'll need from you</b><span>: ${m.qids.join(' &middot; ')}${live?' &mdash; answer these on the <b>Questions</b> tab':''}</span></div>`;
+    out += `<div class="modq"><b>We'll need from you</b><span>: ${m.qids.join(' &middot; ')}${live?'. Answer these on the <b>Questions</b> tab':''}</span></div>`;
   }
   return out;
 }
 
-/* ---------------- PHASE 1 ---------------- */
-DATA.sections.p1 = {
-  key:'p1', num:1, live:true, badge:'now',
-  title:'CRM Building + AI Analysis',
-  short:'CRM Building + AI Analysis',
-  tag:'Phase 1 · Build now',
-  blurb:'The full Growth Engine CRM across EGO and Big E &mdash; integrations, AI call &amp; conversation agents, automations &mdash; plus EGO Master’s automated AI Analysis engine live on top.',
-  goal:'Every channel captured and interconnected in GoHighLevel across both companies, the three integrations feeding it, and EGO Master turning that data into analysis — answering questions 1–4 of the North Star.',
+/* The 26 dealer-development interventions, in the words of EGO's own spec (section 6). */
+const P200_INTERVENTIONS = ['Schemes &amp; annual targets','Sampling','Displays','Product training','Dealer certification','Gifts','Area growth planning','Digital leads','Dealer-local digital marketing','Architect promotion','EGO Champions','Consulting, videos &amp; Zoom','Field visits','Competitions &amp; games','Installation support','Trips','End-user feedback','Installer training','Management involvement','Priority service','Product stories','Site images','Monthly feedback on figures','Product &amp; process updates','Extra marketing','Testimonials'];
+
+/* ---------------- THE BUILD ---------------- */
+DATA.sections.build = {
+  key:'build', num:1, live:true, badge:'now',
+  title:'The complete EGO Master build',
+  short:'The complete EGO Master build',
+  tag:'One build · 12 weeks + 4 weeks testing',
+  blurb:'Everything in one build: the CRM across EGO and Big E, integrations, the AI call and chat agents and automations, plus targets, schemes, Priority 200, approvals, the dealer portal, AI Analysis, AI Strategy and the CEO cockpit.',
+  goal:'One system across both companies. Every dealer, client, order, site, scheme and complaint in one place, the team and permissions set up the way EGO actually works, and the five North Star questions answered every morning.',
   questions:[
-    /* --- what the system must do --- */
-    {id:'P1-01', group:'Foundations & segments', prompt:'Which company is which segment, and does B2B/B2C apply to both?',
-     help:'e.g. "EGO = retail (architects, contractors, end-customers); Big E = wholesale (dealers)" — and whether both run B2B and B2C.'},
-    {id:'P1-02', group:'Foundations & segments', prompt:'User list & roles — who sees what, and who may see cost/GP.',
-     help:'Names, teams, and which roles are allowed to see cost and gross-profit figures.'},
+    {id:'Q-01', group:'Your two businesses', prompt:'Confirm which company is which side of the business.',
+     help:'We have built it as Wholesale = EGO Premium (distributors and dealers) and Retail = Big E (direct clients and architects). Tell us if that is wrong, or if either company does both.'},
+    {id:'Q-02', group:'Your two businesses', prompt:'Which product categories does each company sell?',
+     help:'LVT, SPC, Laminate, Engineered, WPC Tile Deck, WPC Plank / Outdoor, PVC Soffit &amp; Cladding, and whether any are wholesale-only or retail-only.'},
+    {id:'Q-03', group:'Your two businesses', type:'multi', other:true, prompt:'Which locations should the system know about?',
+     options:['Chembur office','Bhiwandi warehouse','Bengaluru hub','NCR hub','Showroom / experience centre','Other']},
 
-    {id:'P1-03', group:'Products, dealers & geography', prompt:'Confirm the 7 product categories & the collections/series to load.'},
-    {id:'P1-04', group:'Products, dealers & geography', prompt:'Dealer grade names & the rule for each.',
-     help:'What actually makes a dealer Platinum vs A / B / C — turnover, categories bought, payment behaviour?'},
-    {id:'P1-05', group:'Products, dealers & geography', prompt:'Region/zone scheme & micro-market definitions.',
-     help:'The list of areas/zones you operate in, and how a micro-market is defined inside them.'},
-    {id:'P1-06', group:'Products, dealers & geography', prompt:'Competitor brands to track on the dealer record.'},
+    {id:'Q-04', group:'People &amp; roles', prompt:'List everyone who will use the system in the WHOLESALE business, with full names.',
+     help:'Name, mobile and what they do. Include field sales, telecalling, warehouse, accounts and management.'},
+    {id:'Q-05', group:'People &amp; roles', prompt:'List everyone who will use the system in the RETAIL business, with full names.',
+     help:'The same for Big E: telecallers, architect relationship staff, site supervisors, marketing.'},
+    {id:'Q-06', group:'People &amp; roles', prompt:'What is each person responsible for, in one line each?'},
+    {id:'Q-07', group:'People &amp; roles', prompt:'Who reports to whom?',
+     help:'The full reporting line, from the newest field executive up to you. Who controls whom.'},
+    {id:'Q-08', group:'People &amp; roles', prompt:'Who may act on someone else’s behalf?',
+     help:'For example, can a regional manager raise an order for a field executive, or reassign their dealers?'},
 
-    {id:'P1-07', group:'Consumer leads (B2C)', prompt:'Dealer-allocation SLA + escalation + reassignment rule.',
-     help:'How long a dealer has to accept a lead before it escalates, and who it goes to next.'},
-    {id:'P1-08', group:'Consumer leads (B2C)', prompt:'Lost-reason list.',
-     help:'The set of reasons a consumer lead can be marked Lost.'},
+    {id:'Q-09', group:'What each person sees &amp; can do', prompt:'For each role, how much data should they see?',
+     help:'Only their own records, their region, their whole division, or everything. Tell us role by role.'},
+    {id:'Q-10', group:'What each person sees &amp; can do', prompt:'Who may see cost price and margin?'},
+    {id:'Q-11', group:'What each person sees &amp; can do', prompt:'Who may see outstanding and overdue money?'},
+    {id:'Q-12', group:'What each person sees &amp; can do', prompt:'What should each role be able to DO, not just see?',
+     help:'Raise an order, add a dealer, change a price, approve above the credit limit, close a complaint, export data.'},
+    {id:'Q-13', group:'What each person sees &amp; can do', prompt:'What must nobody do without approval, and whose approval?',
+     help:'The detailed limits come later, under Approvals &amp; authority. Here, just the things that must never happen unchecked.'},
 
-    {id:'P1-09', group:'Dealer & project pipeline', type:'multi', other:true,
-     prompt:'Confirm the project types you handle.',
-     options:['Builder','Hotel','Corporate','Retail','Other']},
-    {id:'P1-10', group:'Dealer & project pipeline', prompt:'Any reorder-specific stage for repeat dealer orders?',
-     help:'If repeat orders should skip stages or use their own short flow, tell us how.'},
+    {id:'Q-14', group:'Distributors, dealers &amp; sub-dealers', prompt:'What is the difference between a distributor, a dealer and a sub-dealer in your business?',
+     help:'Who buys direct from EGO, who buys from whom, and who sets the price at each step.'},
+    {id:'Q-15', group:'Distributors, dealers &amp; sub-dealers', prompt:'What makes a dealer Platinum, A, B or C?'},
+    {id:'Q-16', group:'Distributors, dealers &amp; sub-dealers', prompt:'Who owns a dealer relationship, and can more than one person own it?',
+     help:'Field sales, telecalling, a specialist, management. And what happens to that dealer when someone leaves.'},
+    {id:'Q-17', group:'Distributors, dealers &amp; sub-dealers', prompt:'How are regions and micro-markets defined?'},
 
-    {id:'P1-11', group:'Operations & installation', prompt:'Confirm installation stages + site-readiness checklist.'},
-    {id:'P1-12', group:'Operations & installation', prompt:'Delay-reason list.',
-     help:'e.g. customer / material / installer / transport / design change.'},
+    {id:'Q-18', group:'Retail clients &amp; architects', type:'multi', other:true, prompt:'Which types of retail client do you deal with?',
+     options:['Homeowner','Builder','Hotel','Corporate','Retail chain','Institution','Other']},
+    {id:'Q-19', group:'Retail clients &amp; architects', prompt:'How does an architect or design firm relate to a client and a project?'},
+    {id:'Q-20', group:'Retail clients &amp; architects', prompt:'Where do retail leads come from today, and who touches them first?'},
 
-    {id:'P1-13', group:'Communication & escalation', prompt:'Escalation thresholds & hierarchy.',
-     help:'Untouched-lead hours, ops-stall days, and who each alert goes to.'},
-    {id:'P1-14', group:'Communication & escalation', prompt:'Owner → follower map (who cross-checks whom).'},
+    {id:'Q-21', group:'Fields on each record', prompt:'What must we record about a DEALER?',
+     help:'Beyond name, owner, phone, GST, city, grade and credit limit. What else does your team need on that screen?'},
+    {id:'Q-22', group:'Fields on each record', prompt:'What must we record about a RETAIL CLIENT?'},
+    {id:'Q-23', group:'Fields on each record', prompt:'What must we record about an ORDER or a QUOTATION?'},
+    {id:'Q-24', group:'Fields on each record', prompt:'What must we record about a SITE or INSTALLATION?'},
+    {id:'Q-25', group:'Fields on each record', prompt:'Which fields are compulsory, so the record cannot be saved without them?'},
 
-    {id:'P1-15', group:'Quotation', prompt:'How many quotation slots to allow (default 5), and the product list for the dropdown.'},
+    {id:'Q-26', group:'Pipelines &amp; stages', prompt:'Confirm the wholesale order stages.',
+     help:'Built today as Requirement received &rarr; Stock checked &rarr; Allocated &rarr; Dispatched &rarr; Delivered &rarr; Invoiced &rarr; Collected, with a separate MOQ / production path for what is not in stock.'},
+    {id:'Q-27', group:'Pipelines &amp; stages', prompt:'Confirm the retail lead stages, from first enquiry to won.'},
+    {id:'Q-28', group:'Pipelines &amp; stages', prompt:'Confirm the installation steps, and what should block progress.',
+     help:'For example: no crew allocated, so it cannot be scheduled. Site not ready, so the crew cannot go. Open snags, so it cannot be signed off.'},
+    {id:'Q-29', group:'Pipelines &amp; stages', prompt:'What are the valid reasons for losing an order or a lead?'},
 
-    {id:'P1-16', group:'AI agents', prompt:'Languages + the qualification question set for B2B and B2C.'},
-    {id:'P1-17', group:'AI agents', prompt:'Routing matrix — which team / dealer grade / geography gets which lead.'},
-    {id:'P1-18', group:'AI agents', prompt:'Knowledge-base sources for the AI agents.',
-     help:'Catalogue, specs, price, FAQ, warranty, objection handling, service areas.'},
+    {id:'Q-30', group:'Automations inside your team', prompt:'What should the system tell your own people automatically, without anyone asking?',
+     help:'For example: order stuck before dispatch, dealer with no order for 45 days, payment overdue, complaint past its deadline, site running late.'},
+    {id:'Q-31', group:'Automations inside your team', prompt:'Who should each of those alerts go to, and after how long?'},
+    {id:'Q-32', group:'Automations inside your team', prompt:'What should escalate to you personally, and at what point?'},
 
-    {id:'P1-19', group:'EGO Master access', prompt:'Where should EGO Master live, and who gets Admin vs Employee access?',
-     help:'It sits on your own website behind its own login — e.g. a subdomain like master.egopremium.com. Admin sees everything including cost and GP; Employee sees only their own scope.'},
+    {id:'Q-33', group:'Automations to dealers &amp; customers', prompt:'What should go out automatically to a dealer or a client?',
+     help:'Order confirmed, dispatched, delivered, payment reminder, complaint acknowledged, welcome to a new lead.'},
+    {id:'Q-34', group:'Automations to dealers &amp; customers', prompt:'What must NEVER be sent automatically?'},
 
-    /* --- accounts & credentials: deliberately ONE system per question, so no
-       two keys can be pasted into the same box and get mixed up --- */
-    {id:'P1-20', group:'Access · GoHighLevel & AI', secure:true,
-     prompt:'GoHighLevel — who holds the subscription, and admin access for both sub-accounts.',
-     help:'The plan must be live in EGO’s own name before we start. We need admin-level user access on the EGO and Big E sub-accounts.'},
-    {id:'P1-21', group:'Access · GoHighLevel & AI', secure:true,
-     prompt:'Gemini (or GPT) API key — the LLM that powers AI Analysis.',
-     help:'Created on your own Google AI Studio / OpenAI account so the usage bills to you and the data stays yours.'},
+    {id:'Q-35', group:'Reporting', prompt:'Which reports do you want, and who receives each one?'},
+    {id:'Q-36', group:'Reporting', prompt:'How often should each one arrive: daily, weekly or monthly?'},
+    {id:'Q-37', group:'Reporting', prompt:'What is the one number you check first every morning?'},
 
-    {id:'P1-22', group:'Access · Runo & Sales Diary', secure:true,
-     prompt:'Runo — full-access API key, and the Runo account it belongs to.',
-     help:'Runo only. Please don’t combine this with the Sales Diary key — they are different systems and get mixed up easily.'},
-    {id:'P1-23', group:'Access · Runo & Sales Diary', secure:true,
-     prompt:'Sales Diary — full-access API key, and the Sales Diary account it belongs to.',
-     help:'Sales Diary only, kept separate from the Runo key above.'},
+    {id:'Q-38', group:'Systems &amp; access', secure:true, prompt:'Tally: which edition, which version, and which company files should we sync?'},
+    {id:'Q-39', group:'Systems &amp; access', prompt:'Which PC runs Tally, who owns it, and is it left switched on?',
+     help:'The sync only runs while that machine is on with the company open, so we need to know whose desk it sits on and who can restart it.'},
+    {id:'Q-40', group:'Systems &amp; access', secure:true, prompt:'Which WhatsApp number should the system send from?',
+     help:'It must not already be active on another WhatsApp Business account.'},
+    {id:'Q-41', group:'Systems &amp; access', type:'multi', other:true, prompt:'Which of these are you using today?',
+     options:['IndiaMART','JustDial','Runo','Sales Diary','Meta / Instagram lead ads','Google Ads','Website enquiry form','Other']},
 
-    {id:'P1-24', group:'Access · Tally', prompt:'Tally — which edition and version are you running?',
-     help:'e.g. TallyPrime 4.x, Tally.ERP 9, Silver or Gold licence. This decides how we connect.'},
-    {id:'P1-25', group:'Access · Tally', prompt:'Tally — where does it run, and how can we reach it?',
-     help:'On one office PC, a server, or cloud-hosted? Tally’s connector needs that machine reachable — static IP, VPN, or a hosted Tally URL. This is usually the longest lead-time item.'},
-    {id:'P1-26', group:'Access · Tally', prompt:'Tally — which company (or companies) should we sync?',
-     help:'The exact company names as they appear in Tally, and whether EGO and Big E are separate books.'},
-    {id:'P1-27', group:'Access · Tally', prompt:'Tally — who administers it? Name, role and contact.',
-     help:'Your accountant or IT person. They’ll need to enable the connector and keep Tally running for the sync.'},
+    {id:'Q-42', group:'Rollout &amp; practicalities', prompt:'Do your site staff have network at site?',
+     help:'If not, the phone app has to work offline and sync later. Tell us what actually happens on a typical site.'},
+    {id:'Q-43', group:'Rollout &amp; practicalities', prompt:'How much old data should we bring in, and where does it live today?',
+     help:'Dealer lists, past orders, open quotations, running sites, complaints. Excel, Tally, Runo, phones.'},
 
-    {id:'P1-28', group:'Access · Messaging & lead sources',
-     prompt:'WhatsApp — the number to provision, and your BSP.',
-     help:'GHL-native WhatsApp; AiSensy is removed. The number must not already be active on another WhatsApp Business account.'},
-    {id:'P1-29', group:'Access · Messaging & lead sources',
-     prompt:'Meta — Business Manager access for lead ads.',
-     help:'Add us as a partner/admin on the Business Manager, and name the Page and ad account the lead forms sit on.'},
-    {id:'P1-30', group:'Access · Messaging & lead sources',
-     prompt:'Google Ads — account access for lead-form extensions.',
-     help:'The Google Ads customer ID, with access granted to our email.'},
-    {id:'P1-31', group:'Access · Messaging & lead sources', secure:true,
-     prompt:'IndiaMART — lead/CRM API key.',
-     help:'From your IndiaMART seller panel (Lead Manager → CRM integration).'},
-    {id:'P1-32', group:'Access · Messaging & lead sources',
-     prompt:'JustDial — lead push access.',
-     help:'Whether your JustDial plan includes lead push/API, and your JD account manager’s contact if we need it enabled.'},
-    {id:'P1-33', group:'Access · Messaging & lead sources',
-     prompt:'Social handles to connect — Instagram, Facebook, LinkedIn.'},
+    {id:'Q-44', group:'Mission &#8377;25 crore &amp; targets', prompt:'What exactly does the &#8377;25 crore Mission cover?',
+     help:'EGO only, or EGO and Big E together? Gross sales, or net of GST and returns? Which financial year does it run to?'},
+    {id:'Q-45', group:'Mission &#8377;25 crore &amp; targets', prompt:'How does the &#8377;25 crore split, and how far down?',
+     help:'By month, by product category, by area, by salesperson, by dealer. Share whatever split exists today, even if it is rough.'},
+    {id:'Q-46', group:'Mission &#8377;25 crore &amp; targets', type:'multi', other:true, prompt:'Which target levels do you actually use?',
+     options:['Company','Product category','Area','Salesperson','Dealer','Priority 200','Project team','Consumer channel','Dealer × Product','Area × Product','Other']},
+    {id:'Q-47', group:'Mission &#8377;25 crore &amp; targets', prompt:'Are targets set in rupees, square feet or gross profit, and who sets them?',
+     help:'Top-down from you, or built up from what each salesperson and dealer commits to? Monthly, quarterly or annual?'},
+    {id:'Q-48', group:'Mission &#8377;25 crore &amp; targets', prompt:'Who can change a target mid-year, and which number counts for incentives?',
+     help:'The system keeps the original target and every revision. We need to know whose approval a revision needs.'},
 
-    {id:'P1-34', group:'Access · Website', secure:true,
-     prompt:'Website — admin and DNS access.',
-     help:'Needed to embed the AI chatbot and to point the EGO Master subdomain. Tell us who hosts the site and who can add a DNS record.'}
+    {id:'Q-49', group:'Schemes', prompt:'List the schemes running today.',
+     help:'For each one: the period, which dealers qualify, which products, the slabs (in rupees or square feet) and the reward (cash, credit note, gift, trip).'},
+    {id:'Q-50', group:'Schemes', prompt:'Who approves a new scheme, and who settles it at the end?',
+     help:'Is the reward settled as a credit note in Tally, a payment, or something else?'},
+    {id:'Q-51', group:'Schemes', prompt:'Should dealers see their own scheme progress, and where?',
+     help:'For example: "you need 1,200 sq ft more to reach the next slab", sent on WhatsApp or shown in the dealer portal.'},
+    {id:'Q-52', group:'Schemes', prompt:'How do you judge whether a scheme worked?',
+     help:'Extra sales, extra gross profit, new dealers activated, a product pushed. The system will measure it against dealers who were not in the scheme.'},
+
+    {id:'Q-53', group:'Priority 200 dealer development', prompt:'Please share the current Priority 200 list with each dealer’s grade.',
+     help:'A, B, C or Watchlist. A spreadsheet is fine. Send it to your Zippyscale contact and write here that it is sent.'},
+    {id:'Q-54', group:'Priority 200 dealer development', prompt:'What puts a dealer in each grade, and what gets a dealer promoted, demoted or dropped?',
+     help:'Who decides, and how often the list is reviewed.'},
+    {id:'Q-55', group:'Priority 200 dealer development', prompt:'Which of the 26 development interventions do you use today, and is there a usual order?',
+     help:'The 26 from your spec are listed in the Priority 200 module on the What we’ll build tab. For example: display first, then product training, then a scheme.'},
+    {id:'Q-56', group:'Priority 200 dealer development', prompt:'What does each paid intervention usually cost?',
+     help:'A display, a trip, a gift, local digital marketing. Rough figures are fine. They let the system compare investment in a dealer with the extra sales and GP it brings.'},
+    {id:'Q-57', group:'Priority 200 dealer development', prompt:'Who reviews each dealer’s monthly scorecard, and what matters most on it?',
+     help:'The scorecard covers sales vs target, growth, product penetration, lead handling, display, designer activity, payments and engagement. Tell us what should weigh most.'},
+    {id:'Q-58', group:'Priority 200 dealer development', prompt:'When is money spent on a dealer "worth it"?',
+     help:'For example: extra GP of 3 times the investment within 12 months. This is the line the system will flag dealers against.'},
+
+    {id:'Q-59', group:'EGO Champions', prompt:'How many dealer counter salespeople should be Champions, and in which cities?',
+     help:'And how do we get their names and mobile numbers today: from the dealer, from training sessions, or somewhere else?'},
+    {id:'Q-60', group:'EGO Champions', prompt:'What should a Champion earn points for?',
+     help:'For example: every square foot sold, attending a training, passing a certification, passing on a lead.'},
+    {id:'Q-61', group:'EGO Champions', prompt:'What are the rewards, and who pays for them?',
+     help:'Gift vouchers, products, trips, recognition. EGO, the dealer, or shared?'},
+    {id:'Q-62', group:'EGO Champions', prompt:'Should Champions get WhatsApp messages or a login, and have they agreed to be contacted?',
+     help:'Under India’s data protection law we need their consent before messaging them.'},
+
+    {id:'Q-63', group:'Design 500 &amp; architects', prompt:'Please share the current Design 500 list, and tell us what gets an architect in or out.',
+     help:'A spreadsheet is fine. Send it to your Zippyscale contact and write here that it is sent.'},
+    {id:'Q-64', group:'Design 500 &amp; architects', prompt:'Does an architect belong to EGO directly, to a dealer, or both?',
+     help:'Who owns the relationship, and which dealer gets the order when an architect specifies EGO.'},
+    {id:'Q-65', group:'Design 500 &amp; architects', prompt:'Do architects receive a commission or fee, and at what rate?'},
+    {id:'Q-66', group:'Design 500 &amp; architects', prompt:'What do you expect from each Design 500 architect?',
+     help:'For example: a meeting every quarter, samples presented, at least one specification a year.'},
+
+    {id:'Q-67', group:'Approvals &amp; authority', prompt:'For each approval type, who can approve, and up to what limit?',
+     help:'The eight types from your spec: project pricing, discounts, credit, high-value samples, displays, marketing support, scheme exceptions, complaint settlements. For example: "discount up to 5% the RM, up to 10% the Wholesale Head, above that Mr. Roshan".'},
+    {id:'Q-68', group:'Approvals &amp; authority', prompt:'Who approves when the usual approver is away?'},
+    {id:'Q-69', group:'Approvals &amp; authority', prompt:'How long can an approval wait before it moves up automatically?',
+     help:'For example: 4 working hours for a price, 24 hours for a display.'},
+    {id:'Q-70', group:'Approvals &amp; authority', prompt:'Which decisions do you want to stop approving yourself?',
+     help:'The aim is that routine decisions never reach you, and only real exceptions do.'},
+
+    {id:'Q-71', group:'CEO cockpit &amp; AI Strategy', prompt:'What are the 10 to 15 things you want flagged every morning, and at what point?',
+     help:'Each one with a threshold. For example: a Priority 200 dealer down 30% on last year, an architect not met in 60 days, a site 5 days late, stock of a fast seller below 2 weeks.'},
+    {id:'Q-72', group:'CEO cockpit &amp; AI Strategy', prompt:'What 10 questions would you ask the system in plain words?',
+     help:'For example: "Why is Pune behind this month?" or "Which dealers stopped buying SPC?" Every answer shows the records behind it.'},
+    {id:'Q-73', group:'CEO cockpit &amp; AI Strategy', prompt:'Who else may ask the system questions, and what must they never see?',
+     help:'Gross profit, cost price, outstanding, another person’s numbers.'},
+    {id:'Q-74', group:'CEO cockpit &amp; AI Strategy', type:'multi', other:true, prompt:'How should the daily summary reach you, and at what time?',
+     options:['WhatsApp','Email','Only inside the app','Morning, before 9 am','Evening','Other']},
+    {id:'Q-75', group:'CEO cockpit &amp; AI Strategy', prompt:'In a 10-minute company review, what do you want to see first?',
+     help:'For example: Mission &#8377;25 cr run-rate, collections, the top exceptions, Priority 200 movement.'},
+
+    {id:'Q-76', group:'Installation AI', prompt:'List your installers and contractors.',
+     help:'For each: city, skills (SPC, Engineered, WPC deck and so on), certifications, how many square feet they can do in a day, and their rate.'},
+    {id:'Q-77', group:'Installation AI', prompt:'What counts as a delay?',
+     help:'For example: survey not done in 2 days, installation not started 3 days after site-ready, handover later than promised.'},
+    {id:'Q-78', group:'Installation AI', prompt:'What makes a good installer?',
+     help:'On time, low wastage, few snags, few complaints after handover. Tell us what matters most, so the system recommends the right crew for each site.'},
+
+    {id:'Q-79', group:'Complaints &amp; warranty', prompt:'What are the warranty terms, product by product?',
+     help:'How many years, what is covered, and what cancels the warranty (for example wet areas, wrong installation, no sign-off).'},
+    {id:'Q-80', group:'Complaints &amp; warranty', prompt:'What types of complaint do you get, and how serious is each?',
+     help:'For example: gaps, swelling, colour mismatch, damaged in transit, installation fault. With a severity for each: low, medium, high.'},
+    {id:'Q-81', group:'Complaints &amp; warranty', prompt:'How quickly do you promise to acknowledge and resolve each type?'},
+    {id:'Q-82', group:'Complaints &amp; warranty', prompt:'Who can approve a complaint settlement, up to what amount, and do you have supplier batch numbers?',
+     help:'Batch numbers let the system spot a bad lot across many complaints.'},
+
+    {id:'Q-83', group:'Stock &amp; lost sales', prompt:'Where does live stock sit today?',
+     help:'Which Tally company, which godowns, and whether Bhiwandi stock and hub stock are kept separately.'},
+    {id:'Q-84', group:'Stock &amp; lost sales', prompt:'Is incoming stock recorded anywhere, with an expected arrival date?',
+     help:'Containers on the water, production orders, supplier dispatches.'},
+    {id:'Q-85', group:'Stock &amp; lost sales', prompt:'When an order is lost because stock was not there, who should record it, and when?',
+     help:'The system logs the SKU, quantity, value and dealer, so purchasing can see what running out actually costs.'},
+
+    {id:'Q-86', group:'Training &amp; certification', prompt:'What trainings and certifications do you run, and who runs them?',
+     help:'For dealers, dealer staff, installers, your own team and architects. For example: product specialist, certified installer.'},
+    {id:'Q-87', group:'Training &amp; certification', prompt:'Is there a test, and what is the pass mark?'},
+    {id:'Q-88', group:'Training &amp; certification', prompt:'How long does a certificate last, and is it linked to a dealer’s grade?',
+     help:'The system reminds people before a certificate expires and can require one for a grade.'},
+
+    {id:'Q-89', group:'Dealer portal / EGO Exclusive', prompt:'Should every dealer get a login, or only some, with the rest on WhatsApp?',
+     help:'For example: Priority 200 dealers get the portal, everyone else gets WhatsApp updates and an Accept button.'},
+    {id:'Q-90', group:'Dealer portal / EGO Exclusive', type:'multi', other:true, prompt:'What should a dealer see in the portal on day one?',
+     options:['Target achievement','Scheme progress','Leads passed to them','Quotations','Orders','Outstanding','Stock, colours &amp; ageing (EGO Exclusive)','Launches','Training &amp; certificates','Samples','Marketing material','Support tickets','Other']},
+    {id:'Q-91', group:'Dealer portal / EGO Exclusive', prompt:'Can a dealer see their outstanding and their own price list?'},
+    {id:'Q-92', group:'Dealer portal / EGO Exclusive', prompt:'Can dealers place orders in the portal, or only view?',
+     help:'If they can order, tell us whether an order needs your team to confirm it before it reaches Tally.'},
+
+    {id:'Q-93', group:'Marketing &amp; areas', prompt:'How do you judge the potential of an area?',
+     help:'For example: new construction, number of dealers, population, past sales. The system combines potential, dealer strength and EGO’s share into one score per area.'},
+    {id:'Q-94', group:'Marketing &amp; areas', prompt:'What do you spend on marketing each month, by area and product, and where is it recorded?'},
+    {id:'Q-95', group:'Marketing &amp; areas', prompt:'Which campaigns do you want tracked all the way to gross profit?',
+     help:'Meta, Google, IndiaMART, exhibitions, architect events. Each is followed from spend to lead to order to GP.'}
   ],
   modules:[
-    { title:'Foundations & segment setup', where:['ghl','em'], auto:'manone', qids:['P1-01','P1-02','P1-20'],
-      desc:'Two white-labelled segments &mdash; <b>EGO</b> and <b>Big E</b> &mdash; with company-level data separation and a unified founder view. B2B (wholesale) and B2C (retail) run as divisions/pipelines inside each.',
+    /* ---------- FOUNDATION ---------- */
+    { stage:'foundation', title:'Foundations: two companies, one system', where:['em'], auto:'manone', qids:['Q-01','Q-02','Q-03'],
+      desc:'Two companies, <b>EGO Premium</b> (wholesale) and <b>Big E</b> (retail), kept apart at company level, with one founder view across both. Built as your own system, EGO Master, not a rented CRM.',
       blocks:[
-        {type:'list', items:['Entity-Relationship Diagram','Data dictionary','Source-of-truth matrix','Role &amp; permission model','Dashboard + mobile wireframes']}
+        {type:'list', items:['How every record connects','Data dictionary','Which system is the source of truth for what','Role &amp; permission model','Dashboard and phone-app screens']}
       ]},
 
-    { title:'Spine masters — Contact vs Opportunity fields', where:['ghl'], auto:'mix', qids:['P1-03','P1-04','P1-05','P1-06'],
-      desc:'<b>Contact</b> fields describe the person or firm (one reusable record); <b>Opportunity</b> fields describe a specific deal, order or project.',
+    { stage:'foundation', title:'People, roles &amp; access', where:['em','app'], auto:'manone', qids:['Q-04','Q-05','Q-06','Q-07','Q-08','Q-09','Q-10','Q-11','Q-12','Q-13'],
+      desc:'Every person gets a login and a role. The role decides what they see (own records, region, division, everything), whether cost and margin are visible, and what they may do without approval.',
       blocks:[
-        {type:'group', label:'Consumer — on the Contact', editKey:'p1-consumer-contact',
+        {type:'group', label:'What a role controls', editKey:'b-role',
+          items:['Records visible: own · region · division · all','Cost price &amp; margin','Outstanding &amp; overdue','Raise orders','Change prices','Approve','Export data','Manage users']}
+      ]},
+
+    { stage:'foundation', title:'Core records: the person or firm, and each deal', where:['em'], auto:'mix', qids:['Q-21','Q-22','Q-23','Q-24','Q-25'],
+      desc:'The <b>person or firm record</b> is kept once and reused. Each <b>deal record</b> (an order, a project, a lead) sits under it. Nothing is typed twice.',
+      blocks:[
+        {type:'group', label:'Consumer: on the person record', editKey:'b-consumer-person',
           items:['First / last name','Mobile · alt · WhatsApp','Email','City · pincode','Source · campaign','Condition tag']},
-        {type:'group', label:'Consumer — on the Opportunity', oppo:true, editKey:'p1-consumer-oppo',
-          items:[{t:'Product interest',k:'oppo'},{t:'Application / room',k:'oppo'},{t:'Area (sq ft)',k:'oppo'},{t:'Budget band',k:'oppo'},{t:'With architect?',k:'oppo'},{t:'Assigned dealer',k:'oppo'},{t:'Stage · lost reason',k:'oppo'},{t:'Opportunity value (auto)',k:'calc'}]},
-        {type:'group', label:'Dealer / Vendor — on the Contact', editKey:'p1-dealer-contact',
-          items:['Trade / legal name','GST','Address · geo','Contacts','Field / telesales / specialist owner','Categories bought · missing','Showroom · warehouse','Brands sold','Priority grade','Current business · 12-mo target · 3-yr potential',{t:'FY sales · GP · outstanding · credit',k:'tally'}]},
-        {type:'group', label:'Dealer — on the Opportunity', oppo:true, editKey:'p1-dealer-oppo',
-          items:[{t:'Project / order name',k:'oppo'},{t:'Stage',k:'oppo'},{t:'Order Details (products)',k:'oppo'},{t:'Opportunity value (auto)',k:'calc'},{t:'Follow-up date',k:'oppo'}]},
-        {type:'group', label:'Architect / Designer & Firm — on the Contact', editKey:'p1-architect-contact',
-          items:['Name · firm','City','Specialisation · focus','Potential','Relationship owner (dealer vs EGO-direct)','Connected dealers','Last / next contact']},
-        {type:'group', label:'Spine records — Geography · Product · Salesperson · Installer · Champion', editKey:'p1-spine',
-          items:['Geography: Country → … → Micro-market','Product: Category → Collection → SKU · finish · colour · unit','Salesperson: territory · portfolio','Installer: coverage · skills · certs','Champion: dealer · role · points']}
+        {type:'group', label:'Consumer: on the deal', oppo:true, editKey:'b-consumer-deal',
+          items:[{t:'Product interest',k:'oppo'},{t:'Application / room',k:'oppo'},{t:'Area (sq ft)',k:'oppo'},{t:'Budget band',k:'oppo'},{t:'With architect?',k:'oppo'},{t:'Assigned dealer',k:'oppo'},{t:'Stage · lost reason',k:'oppo'},{t:'Deal value (auto)',k:'calc'}]},
+        {type:'group', label:'Dealer / distributor: on the firm record', editKey:'b-dealer-firm',
+          items:['Trade / legal name','GST','Address · location','Contacts','Field / telesales / specialist owner','Categories bought · missing','Showroom · warehouse','Brands sold','Grade · Priority 200 status','Current business · 12-month target · 3-year potential',{t:'FY sales · GP · outstanding · credit',k:'tally'}]},
+        {type:'group', label:'Dealer: on each order or project', oppo:true, editKey:'b-dealer-deal',
+          items:[{t:'Project / order name',k:'oppo'},{t:'Stage',k:'oppo'},{t:'Order lines (products)',k:'oppo'},{t:'Order value (auto)',k:'calc'},{t:'Follow-up date',k:'oppo'}]},
+        {type:'group', label:'Architect / designer &amp; firm', editKey:'b-architect',
+          items:['Name · firm','City','Specialisation · focus','Potential','Design 500 status','Relationship owner (dealer or EGO direct)','Connected dealers','Last / next contact']},
+        {type:'group', label:'Shared lists: geography, product, salesperson, installer, Champion', editKey:'b-spine',
+          items:['Geography: Country &rarr; State &rarr; City &rarr; Micro-market','Product: Category &rarr; Collection &rarr; SKU · finish · colour · unit','Salesperson: territory · portfolio','Installer: coverage · skills · certificates','Champion: dealer · role · points']}
       ]},
 
-    { title:'Display Management — on the Vendor contact', where:['ghl'], auto:'mix',
-      desc:'A display group on the vendor/dealer contact. The <b>replacement-due date</b> fires an <b>automated reminder</b> to the display owner so obsolete displays get refreshed.',
+    { stage:'foundation', title:'Integrations: Tally, Runo, Sales Diary and every lead source', where:['em','tally','wa'], auto:'auto', qids:['Q-38','Q-39','Q-40','Q-41','Q-43'],
+      desc:'Every source lands in one de-duplicated record, with the source kept for attribution. QR &rarr; WhatsApp captures dealer orders and consumer warranty details.',
       blocks:[
-        {type:'group', label:'Fields', editKey:'p1-display',
-          items:['Installation date','Inspection date',{t:'Photos (image/doc)',k:'up'},{t:'Truck photo (image)',k:'up'},'Replacement due date',{t:'↺ Reminder automation on replacement-due',k:'autof'}]}
+        {type:'group', label:'Channels &amp; systems', editKey:'b-channels',
+          items:['Meta / Google lead ads','Website · WhatsApp','IndiaMART · JustDial',{t:'Runo: calls, dispositions, stage moves (two-way)',k:'autof'},{t:'Sales Diary: field leads &amp; visits',k:'autof'},{t:'Tally: invoices · receipts · outstanding · GP',k:'tally'},'Social (IG · FB · LinkedIn)',{t:'QR &rarr; WhatsApp capture',k:'up'}]},
+        {type:'callout', text:'<b>Tally stays the financial truth.</b> Orders confirmed in EGO Master post to Tally; invoices, receipts and outstanding read back, so dealer value and product performance carry real GP. Where a live feed is not ready, a weekly upload bridges until it is. Old data (Q-43) is brought in during the foundation weeks.'}
       ]},
 
-    { title:'Consumer Lead Engine (B2C)', where:['ghl'], auto:'auto', qids:['P1-07','P1-08'],
-      desc:'The ~100-leads/day pipeline. Auto-generated Meta-ad leads are auto-qualified by AI in the background (no separate stage). Every stage timestamped; lost reason mandatory.',
+    /* ---------- OPERATIONS ---------- */
+    { stage:'operations', title:'Consumer lead engine (Big E and dealer leads)', where:['em','wa'], auto:'auto', qids:['Q-18','Q-19','Q-20','Q-27','Q-29'],
+      desc:'The ~100-leads-a-day pipeline. Ad leads are checked by AI in the background, then routed to the right team or to a Platinum / A dealer by grade and area. Every stage is time-stamped and a lost reason is compulsory.',
       blocks:[
-        {type:'stageflow', label:'Pipeline stages', editKey:'p1-stage-b2c', items:[
-          {t:'New'},{t:'Contacted'},{t:'Qualified'},{t:'Dealer Allocated'},{t:'Dealer Accepted'},
-          {t:'Appointment / E-Showroom'},{t:'Site Visit'},{t:'Sample'},{t:'Quote'},{t:'Won',k:'win'},{t:'Lost',k:'lost'}]},
-        {type:'group', label:'Automations', editKey:'p1-auto-b2c',
-          items:[{t:'Auto-qualify Meta-ad leads',k:'autof'},{t:'Stage-change WhatsApp',k:'autof'},{t:'Dealer-allocation SLA alert',k:'autof'},{t:'Reassignment on no-accept',k:'autof'},{t:'Lost-reason capture',k:'autof'}]}
+        {type:'stageflow', label:'Pipeline stages', editKey:'b-stage-leads', items:[
+          {t:'New'},{t:'Contacted'},{t:'Qualified'},{t:'Dealer allocated'},{t:'Dealer accepted'},
+          {t:'Appointment'},{t:'Site visit'},{t:'Sample'},{t:'Quote'},{t:'Won',k:'win'},{t:'Lost',k:'lost'}]},
+        {type:'group', label:'Automations', editKey:'b-auto-leads',
+          items:[{t:'AI check on ad leads',k:'autof'},{t:'WhatsApp on stage change',k:'autof'},{t:'Dealer-allocation time limit alert',k:'autof'},{t:'Re-assign if the dealer does not accept',k:'autof'},{t:'Lost-reason capture',k:'autof'}]}
       ]},
 
-    { title:'Dealer / Wholesale & Project pipeline', where:['ghl'], auto:'mix', qids:['P1-09','P1-10'],
-      desc:'First stage is <b>New Project</b>. Stage-change communications automated; deal creation manual.',
+    { stage:'operations', title:'Wholesale orders, stock allocation &amp; projects', where:['em','tally'], auto:'mix', qids:['Q-14','Q-15','Q-16','Q-17','Q-26'],
+      desc:'Dealer orders move from requirement to collection, against live stock, with a separate MOQ / production path for what is not in stock. Large projects run as their own pipeline, starting at <b>New project</b>.',
       blocks:[
-        {type:'stageflow', label:'Pipeline stages', editKey:'p1-stage-b2b', items:[
-          {t:'New Project'},{t:'Qualified'},{t:'Sample'},{t:'Specification'},{t:'Approval'},{t:'Quotation'},
+        {type:'stageflow', label:'Wholesale order stages', editKey:'b-stage-order', items:[
+          {t:'Requirement received'},{t:'Stock checked'},{t:'Allocated'},{t:'Dispatched'},{t:'Delivered'},{t:'Invoiced'},{t:'Collected',k:'win'}]},
+        {type:'stageflow', label:'Project stages', editKey:'b-stage-project', items:[
+          {t:'New project'},{t:'Qualified'},{t:'Sample'},{t:'Specification'},{t:'Approval'},{t:'Quotation'},
           {t:'Negotiation'},{t:'Won',k:'win'},{t:'Lost',k:'lost'},{t:'Execution'},{t:'Installation'},{t:'Collection'}]},
-        {type:'group', label:'On the Opportunity', oppo:true, editKey:'p1-b2b-oppo',
-          items:[{t:'Name · location · type',k:'oppo'},{t:'Potential value · probability',k:'oppo'},{t:'Owner · PM · architect · contractor',k:'oppo'},{t:'Project Partner dealer',k:'oppo'},{t:'Specification · competitors',k:'oppo'},{t:'Payment terms',k:'oppo'}]}
+        {type:'group', label:'On each project', oppo:true, editKey:'b-project',
+          items:[{t:'Name · location · type',k:'oppo'},{t:'Potential value · probability',k:'oppo'},{t:'Owner · PM · architect · contractor',k:'oppo'},{t:'Project partner dealer',k:'oppo'},{t:'Specification · competitors',k:'oppo'},{t:'Payment terms',k:'oppo'}]}
       ]},
 
-    { title:'Operations / Installation pipeline', where:['ghl'], auto:'mix', qids:['P1-11','P1-12'],
-      desc:'Installation as stages + fields. Field updates manual; each stage move triggers an automated client WhatsApp update.',
+    { stage:'operations', title:'Quotations: every revision kept', where:['em'], auto:'manup', qids:['Q-23'],
+      desc:'Quotations are uploaded against the deal, and every revision is kept, so you can see how many rounds a deal took. The order value is worked out from the order lines.',
       blocks:[
-        {type:'stageflow', label:'Pipeline stages', editKey:'p1-stage-ops', items:[
-          {t:'Survey Requested'},{t:'Survey Done'},{t:'Measurement / BOQ'},{t:'Material Dispatched'},{t:'Site Ready'},
-          {t:'Installation'},{t:'Snagging'},{t:'Sign-off / Handover',k:'win'}]},
-        {type:'group', label:'Fields (on the Opportunity)', oppo:true, editKey:'p1-ops-oppo',
+        {type:'group', label:'Fields', editKey:'b-quote',
+          items:[{t:'Quotation 1 (document)',k:'up'},{t:'Quotation 2',k:'up'},{t:'Quotation 3',k:'up'},{t:'Quotation 4',k:'up'},{t:'Quotation 5',k:'up'},'Latest quote value','Special price requested? (goes to Approvals)']}
+      ]},
+
+    { stage:'operations', title:'Installation: survey to handover', where:['em','app','wa'], auto:'mix', qids:['Q-24','Q-28','Q-42'],
+      desc:'Installation as stages and fields, updated from the phone app on site (offline if there is no network). Each stage move sends the client a WhatsApp update.',
+      blocks:[
+        {type:'stageflow', label:'Stages', editKey:'b-stage-install', items:[
+          {t:'Survey requested'},{t:'Survey done'},{t:'Measurement / BOQ'},{t:'Material dispatched'},{t:'Site ready'},
+          {t:'Installation'},{t:'Snagging'},{t:'Sign-off / handover',k:'win'}]},
+        {type:'group', label:'Fields', oppo:true, editKey:'b-install',
           items:[{t:'Survey date · surveyor',k:'oppo'},{t:'Measurement / area / qty',k:'oppo'},{t:'BOQ (qty · wastage · labour)',k:'oppo'},{t:'Installer allocated',k:'oppo'},{t:'Material planned vs received',k:'oppo'},{t:'Installed qty · % complete',k:'oppo'},{t:'Snag (category · severity · photo)',k:'oppo'},{t:'Sign-off · warranty start',k:'oppo'}]},
-        {type:'group', label:'Automations', editKey:'p1-auto-ops',
+        {type:'group', label:'Automations', editKey:'b-auto-install',
           items:[{t:'Stage-move WhatsApp to client',k:'autof'},{t:'Delay-reason capture',k:'autof'}]}
       ]},
 
-    { title:'Samples Info — a category on the Opportunity', where:['ghl'], auto:'mix',
-      desc:'Samples sit as a group on the opportunity, with a <b>sample upload button</b>. The caller sees "sample given, follow-up due", and AI Analysis can later tie samples to conversion.',
+    { stage:'operations', title:'Complaints &amp; warranty', where:['em','app','wa'], auto:'mix', qids:['Q-79','Q-80','Q-81','Q-82'],
+      desc:'Every complaint is linked to the consumer, dealer, product, SKU and batch, invoice, installer and supplier. It carries a severity, an owner and a deadline, and the cost and time to close are recorded, so patterns show up by product, supplier, installer and dealer.',
       blocks:[
-        {type:'group', label:'Samples Info (on the Opportunity)', oppo:true, editKey:'p1-samples',
-          items:[{t:'Recipient type (dealer / architect / consumer / project)',k:'oppo'},{t:'Product',k:'oppo'},{t:'Date',k:'oppo'},{t:'Quantity',k:'oppo'},{t:'Cost',k:'oppo'},{t:'Reason',k:'oppo'},{t:'Related opportunity',k:'oppo'},{t:'Follow-up date',k:'oppo'},{t:'Return status',k:'oppo'},{t:'Result',k:'oppo'},{t:'⤒ Sample upload button',k:'up'}]}
+        {type:'group', label:'Complaint types', editKey:'b-complaint-types',
+          items:['Gaps / joints','Swelling / moisture','Colour or shade mismatch','Damaged in transit','Installation fault','Wrong material supplied']},
+        {type:'group', label:'On each complaint', oppo:true, editKey:'b-complaint',
+          items:[{t:'Product · SKU · batch',k:'oppo'},{t:'Invoice',k:'tally'},{t:'Installer · supplier',k:'oppo'},{t:'Photos / video',k:'up'},{t:'Severity · owner · deadline',k:'oppo'},{t:'Resolution · cost',k:'oppo'},{t:'Time to close (auto)',k:'calc'},{t:'Settlement over limit goes to Approvals',k:'autof'}]}
       ]},
 
-    { title:'Engines — communication, task/escalation, mobile', where:['ghl'], auto:'auto', qids:['P1-13','P1-14','P1-28'],
-      desc:'Every interaction can set Next Action + Owner + Follower + Due Date; overdue items escalate automatically, so no one keeps separate Excel follow-up lists.',
+    { stage:'operations', title:'Stock &amp; lost sales', where:['em','tally'], auto:'auto', qids:['Q-83','Q-84','Q-85'],
+      desc:'Stock is read from Tally: current, committed, available and incoming with its expected date. Every order lost because stock was not there is logged, so purchasing and buffer stock are decided on what running out actually cost.',
       blocks:[
-        {type:'group', label:'Communication templates', editKey:'p1-comm',
+        {type:'group', label:'What it shows',
+          items:[{t:'Current · committed · available',k:'tally'},{t:'Incoming stock &amp; ETA',k:'tally'},{t:'Stock-outs',k:'calc'},{t:'Lost-sales log: SKU · qty · value · dealer · date',k:'oppo'},{t:'Most-lost SKUs',k:'calc'}]}
+      ]},
+
+    { stage:'operations', title:'Samples &amp; displays', where:['em','app'], auto:'mix',
+      desc:'Samples sit on the deal, with an upload button, so a caller sees "sample given, follow-up due". Displays sit on the dealer, and the replacement-due date sends a reminder to the display owner. AI Analysis links both to what they sold.',
+      blocks:[
+        {type:'group', label:'Samples (on the deal)', oppo:true, editKey:'b-samples',
+          items:[{t:'Recipient type (dealer / architect / consumer / project)',k:'oppo'},{t:'Product',k:'oppo'},{t:'Date',k:'oppo'},{t:'Quantity',k:'oppo'},{t:'Cost',k:'oppo'},{t:'Reason',k:'oppo'},{t:'Related deal',k:'oppo'},{t:'Follow-up date',k:'oppo'},{t:'Return status',k:'oppo'},{t:'Result',k:'oppo'},{t:'&#10514; Sample upload button',k:'up'}]},
+        {type:'group', label:'Displays (on the dealer)', editKey:'b-display',
+          items:['Display type · cost','Installation date','Inspection date',{t:'Photos',k:'up'},'Replacement due date',{t:'Sales before vs after the display',k:'calc'},{t:'&#8634; Reminder when replacement is due',k:'autof'}]}
+      ]},
+
+    { stage:'operations', title:'Follow-ups, alerts &amp; messages', where:['em','wa','app'], auto:'auto', qids:['Q-30','Q-31','Q-32','Q-33','Q-34'],
+      desc:'Every interaction can set a next action, an owner and a due date. Overdue items escalate on their own, so no one keeps separate Excel follow-up lists.',
+      blocks:[
+        {type:'group', label:'Message templates', editKey:'b-comm',
           items:['Launches','Schemes','Training','Appointments','Lead follow-up','Payment reminders','Events','Feedback']},
-        {type:'group', label:'Mobile field capture', editKey:'p1-mobile',
-          items:['Notes',{t:'Showroom / display photos (image or document)',k:'up'}]},
-        {type:'group', label:'Escalation & report automations', editKey:'p1-auto-esc',
-          items:[{t:'Untouched-lead alert',k:'autof'},{t:'Ops-stall report',k:'autof'},{t:'Overdue-task escalation',k:'autof'},{t:'AM &amp; PM digest',k:'autof'}]}
+        {type:'group', label:'Phone-app capture', editKey:'b-mobile',
+          items:['Notes','Visit check-in',{t:'Showroom / display photos',k:'up'}]},
+        {type:'group', label:'Alerts &amp; digests', editKey:'b-auto-esc',
+          items:[{t:'Untouched-lead alert',k:'autof'},{t:'Stalled-order report',k:'autof'},{t:'Overdue-task escalation',k:'autof'},{t:'Morning &amp; evening digest',k:'autof'}]}
       ]},
 
-    { title:'Quotation — multiple slots', where:['ghl'], auto:'manup', qids:['P1-15'],
-      desc:'Quotations are made in Excel and uploaded. To track the number of revisions per deal, this is <b>multiple document fields</b>, not one. The multi-SKU order value is captured separately in Order Details and computed automatically.',
+    /* ---------- GROWTH PROGRAMMES ---------- */
+    { stage:'growth', title:'Target Engine', where:['em'], auto:'mix', qids:['Q-44','Q-45','Q-46','Q-47','Q-48'],
+      desc:'Mission &#8377;25 cr broken down into targets at every level you use, and across levels (a dealer’s target for one product, an area’s target for one category). Monthly, quarterly and annual. A revision never overwrites: the original and every change stay, with who approved it.',
       blocks:[
-        {type:'group', label:'Fields', editKey:'p1-quote',
-          items:[{t:'Quotation 1 (document)',k:'up'},{t:'Quotation 2',k:'up'},{t:'Quotation 3',k:'up'},{t:'Quotation 4',k:'up'},{t:'Quotation 5',k:'up'},'Latest quote value']}
+        {type:'group', label:'Target levels', editKey:'b-target-levels',
+          items:['Company','Product category','Area','Salesperson','Dealer','Priority 200','Project team','Consumer channel',{t:'Dealer × Product',k:'calc'},{t:'Area × Product',k:'calc'},{t:'Salesperson × Product',k:'calc'}]},
+        {type:'group', label:'On every target',
+          items:['Level · period · value (&#8377; / sq ft / GP)',{t:'Achieved · gap · required run-rate',k:'calc'},'Revision history with approver']}
       ]},
 
-    { title:'Integrations — Tally, Runo, Sales Diary, omni-channel', where:['ghl','tally'], auto:'auto', qids:['P1-22','P1-23','P1-24','P1-25','P1-26','P1-27','P1-29','P1-30','P1-31','P1-32','P1-33'],
-      desc:'All sources normalise into one deduped contact record with source held for attribution. QR &rarr; WhatsApp captures dealer orders and consumer warranty data.',
+    { stage:'growth', title:'Scheme Engine', where:['em','wa','tally'], auto:'mix', qids:['Q-49','Q-50','Q-51','Q-52'],
+      desc:'Each scheme holds its period, eligible dealers, products, slabs and reward. Progress is tracked from real invoices, dealers can see how far they are from the next slab, and settlement follows approval. The system then measures what the scheme actually added.',
       blocks:[
-        {type:'group', label:'Channels & systems', editKey:'p1-channels',
-          items:['Meta / Google lead ads','Website · WhatsApp','IndiaMART · JustDial',{t:'Runo — calls, dispositions, stage moves (two-way)',k:'autof'},{t:'Sales Diary — field leads &amp; visits',k:'autof'},{t:'Tally — invoices · receipts · outstanding · GP',k:'tally'},'Social (IG · FB · LinkedIn)',{t:'QR → WhatsApp capture',k:'up'}]},
-        {type:'callout', text:'<b>Tally in Phase 1:</b> we sync the financial truth so LTV and product performance carry real GP, not just CRM revenue. Orders won in GHL post to Tally; invoices, receipts and outstanding read back for reconciliation. Where a live feed isn’t ready, a weekly upload bridges until it is.'}
+        {type:'group', label:'On each scheme', editKey:'b-scheme',
+          items:['Period','Eligible dealers','Products','Slabs (&#8377; or sq ft)','Reward: cash · credit note · gift · trip','Approver',{t:'Achievement per dealer',k:'calc'},{t:'Settlement (credit note in Tally)',k:'tally'}]},
+        {type:'group', label:'What it measures',
+          items:[{t:'Distance to next slab, per dealer',k:'calc'},{t:'Extra sales &amp; GP vs dealers not in the scheme',k:'calc'},{t:'Progress message to the dealer',k:'autof'}]}
       ]},
 
-    { title:'AI front line — call + conversation agents', where:['ghl'], auto:'auto', qids:['P1-16','P1-17','P1-18','P1-21'],
-      desc:'<b>AI Call Agent &mdash; inbound only:</b> answers, qualifies and routes internally (B2B vs B2C team; consumer leads to Platinum/A-grade dealers by grade + geography). <b>AI Conversion Agent:</b> a website chatbot trained on a knowledge base (vector DB). Plus AI product/colour selection.'},
-
-    { title:'AI Analysis layer — EGO Master’s automated engine', where:['em'], auto:'fauto', qids:['P1-19','P1-21','P1-34'],
-      desc:'The new capability, and the heart of Phase 1 for you. Once data is consolidated, EGO Master’s engine reads it and answers "what’s working and what to do next" &mdash; with no one pulling reports.',
+    { stage:'growth', title:'Priority 200 dealer development', where:['em','app'], auto:'mix', qids:['Q-53','Q-54','Q-55','Q-56','Q-57','Q-58'],
+      desc:'Priority 200 as a managed programme running to March 2027, not a tag. Every dealer on it has a development plan, a monthly scorecard, a log of what EGO invested and what it returned, and moves up or down the league as the evidence changes.',
       blocks:[
-        {type:'group', label:'What the engine analyses',
-          items:[{t:'Client &amp; Dealer LTV (primary + secondary)',k:'calc'},{t:'Product-wise performance — winning / slow SKUs, stockout impact',k:'calc'},{t:'Dealer performance &amp; dormancy',k:'calc'},{t:'Winning customers &amp; consumer funnel — where leads leak',k:'calc'},{t:'Area intelligence — best / weak markets, product mix',k:'calc'},{t:'EGO Champion performance',k:'calc'},{t:'Architect / Design 500 engagement',k:'calc'},{t:'Marketing ROI — spend → lead → order → GP',k:'calc'},{t:'Sample &amp; display effectiveness',k:'calc'},{t:'Hot-lead prioritisation &amp; best-dealer match',k:'calc'},{t:'Telesales priority queue',k:'calc'},{t:'Cross-sell &amp; dormancy-risk alerts',k:'calc'}]},
-        {type:'group', label:'How it runs — automated end to end',
-          items:[{t:'1 · Auto data pipe — GHL + Tally + channels sync into EGO Master',k:'autof'},{t:'2 · Scheduled n8n workflows trigger nightly + on-demand',k:'autof'},{t:'3 · LLM engine (Gemini / GPT) reasons over the data + knowledge base',k:'autof'},{t:'4 · Insights written to EGO Master dashboards',k:'autof'},{t:'5 · Actions pushed back into GHL as tasks / WhatsApp alerts',k:'autof'}]},
-        {type:'para', text:'No manual step in the loop: data flows in, the LLM engine analyses on a schedule, dashboards refresh themselves, and the resulting priorities land on the right person’s screen automatically.'},
-        {type:'group', label:'GHL reports (consolidation, no AI)',
-          items:['Sales-wise','Salesperson-wise','Dealer-wise revenue','Source-wise','Pipeline value by stage','AM &amp; PM digests']},
-        {type:'group', label:'Access — a portal of its own', editKey:'p1-em-access',
-          items:['Hosted on the EGO Premium website, under your domain','Own login, separate from GHL',{t:'Admin login — full view incl. cost / GP',k:'calc'},{t:'Employee login — scoped to their own role &amp; data',k:'calc'}]}
+        {type:'stageflow', label:'Development plan', items:[
+          {t:'Current business'},{t:'Target'},{t:'Gap'},{t:'Product gaps'},{t:'Area opportunity'},{t:'Actions'},{t:'Owner &amp; deadline'},{t:'Investment'},{t:'Result',k:'win'}]},
+        {type:'group', label:'The 26 interventions (from your spec)', editKey:'b-p200-interventions',
+          items:P200_INTERVENTIONS},
+        {type:'group', label:'Tracked on every intervention',
+          items:['Dealer · date · owner','Cost','Expected outcome','Linked product / deal','Follow-up',{t:'Actual outcome',k:'calc'}]},
+        {type:'group', label:'Grades &amp; scorecard', editKey:'b-p200-scorecard',
+          items:['A','B','C','Watchlist',{t:'Monthly scorecard: sales vs target · growth · product penetration · lead handling · display · designer activity · payments · engagement',k:'calc'},{t:'Investment vs extra sales &amp; GP',k:'calc'},{t:'Promotion / demotion',k:'calc'}]}
+      ]},
+
+    { stage:'growth', title:'Design 500 &amp; architects', where:['em'], auto:'mix', qids:['Q-63','Q-64','Q-65','Q-66'],
+      desc:'Architects and design firms are separate records, with Design 500 status, the relationship owner, the dealers they work with, and every sample, specification, meeting and project with EGO products in it.',
+      blocks:[
+        {type:'group', label:'On each architect', editKey:'b-d500',
+          items:['Design 500: in · out · candidate','Relationship owner','Connected dealers','Samples presented','Specifications','Meetings &amp; events','Active projects with EGO products',{t:'Engagement score',k:'calc'},'Commission / fee']}
+      ]},
+
+    { stage:'growth', title:'EGO Champions &amp; rewards', where:['em','wa'], auto:'mix', qids:['Q-59','Q-60','Q-61','Q-62'],
+      desc:'The dealer counter salespeople (around 800) as their own records, linked to their dealer. They earn points, redeem rewards, climb a league table, and receive messages and training by product and city.',
+      blocks:[
+        {type:'group', label:'On each Champion', editKey:'b-champion',
+          items:['Name · WhatsApp · role · city','Dealer','Products trained','Certification',{t:'Points',k:'calc'},'Rewards redeemed',{t:'League position',k:'calc'},'Consent to message','Last interaction']},
+        {type:'group', label:'Points for', editKey:'b-champion-points',
+          items:['Square feet sold','Training attended','Certification passed','Lead passed on']}
+      ]},
+
+    { stage:'growth', title:'Approval &amp; Authority Matrix', where:['em','wa','app'], auto:'aroute', qids:['Q-67','Q-68','Q-69','Q-70'],
+      desc:'Every approval routes by type, value and role, with a backup approver and a time limit before it moves up. Approvals can be given from the phone. Every decision is logged. The aim: routine decisions never reach Mr. Roshan, only real exceptions do.',
+      blocks:[
+        {type:'group', label:'Approval types', editKey:'b-approval-types',
+          items:['Project pricing','Discounts','Credit above limit','High-value samples','Displays','Marketing support','Scheme exceptions','Complaint settlements']},
+        {type:'group', label:'On every rule',
+          items:['Type','Limit per role (&#8377; / %)','Backup approver',{t:'Time before it moves up',k:'autof'},{t:'Full audit trail',k:'calc'}]}
+      ]},
+
+    { stage:'growth', title:'Training &amp; certification', where:['em','app','wa'], auto:'mix', qids:['Q-86','Q-87','Q-88'],
+      desc:'Trainings and certifications for dealers, dealer staff, installers, your own team and architects: course, product, trainer, score, certificate and expiry, with a reminder before it lapses.',
+      blocks:[
+        {type:'group', label:'Certifications', editKey:'b-certs',
+          items:['Product specialist','Certified installer','Dealer tier certification','EGO Champion']},
+        {type:'group', label:'On each training record',
+          items:['Audience','Course · product','Date · trainer','Score',{t:'Certificate · expiry',k:'calc'},{t:'Retraining reminder',k:'autof'}]}
+      ]},
+
+    { stage:'growth', title:'Dealer portal / EGO Exclusive', where:['em','app','wa'], auto:'mix', qids:['Q-89','Q-90','Q-91','Q-92'],
+      desc:'A dealer’s own login, showing only their own records: targets, schemes, orders, outstanding, and EGO Exclusive views of stock, colours and ageing. Dealers without a login keep WhatsApp updates and an Accept button.',
+      blocks:[
+        {type:'group', label:'What a dealer sees', editKey:'b-dealer-portal',
+          items:['Target achievement','Scheme progress','Leads passed to them','Quotations','Orders','Outstanding','Stock · colours · ageing (EGO Exclusive)','Launches','Training &amp; certificates','Samples','Marketing material','Support tickets']},
+        {type:'callout', amber:true, text:'<b>A separate track, not in this build:</b> the e-showroom (guided product, colour and room selection for consumers) and vendor e-commerce. They are quoted on their own. The "Appointment" stage in the lead pipeline covers showroom and video-call visits in the meantime.'}
+      ]},
+
+    /* ---------- INTELLIGENCE ---------- */
+    { stage:'intel', title:'AI front line: call and chat agents', where:['em','wa'], auto:'auto', qids:['Q-20','Q-41'],
+      desc:'<b>AI call agent, inbound only:</b> answers, qualifies and routes (wholesale or retail team; consumer leads to Platinum / A dealers by grade and area). <b>AI chat agent:</b> on the website and WhatsApp, trained on your product knowledge. Plus AI help with product and colour choice.'},
+
+    { stage:'intel', title:'AI Analysis: what is working', where:['em'], auto:'fauto', qids:['Q-35','Q-36','Q-37'],
+      desc:'Once the data sits in one place, EGO Master reads it every night and answers "what is working and what should we do next", without anyone pulling reports.',
+      blocks:[
+        {type:'group', label:'What it analyses',
+          items:[{t:'Client &amp; dealer lifetime value (primary + secondary)',k:'calc'},{t:'Product performance: winning / slow SKUs, stock-out impact',k:'calc'},{t:'Dealer performance &amp; dormancy',k:'calc'},{t:'Consumer funnel: where leads leak',k:'calc'},{t:'Area intelligence: best / weak markets, product mix',k:'calc'},{t:'EGO Champion performance',k:'calc'},{t:'Architect / Design 500 engagement',k:'calc'},{t:'Sample &amp; display effectiveness',k:'calc'},{t:'Hot-lead priority &amp; best-dealer match',k:'calc'},{t:'Telesales priority queue',k:'calc'},{t:'Cross-sell &amp; dormancy-risk alerts',k:'calc'}]},
+        {type:'group', label:'How it runs, automated end to end',
+          items:[{t:'1 · Data syncs in from EGO Master, Tally and the channels',k:'autof'},{t:'2 · Scheduled runs every night and on demand',k:'autof'},{t:'3 · The LLM engine (Gemini / GPT) reasons over the data',k:'autof'},{t:'4 · Insights written to the dashboards',k:'autof'},{t:'5 · Actions land as tasks and WhatsApp alerts for the right person',k:'autof'}]},
+        {type:'group', label:'Standard reports (no AI needed)',
+          items:['Sales','Salesperson','Dealer revenue','Lead source','Pipeline value by stage','Morning &amp; evening digests']}
+      ]},
+
+    { stage:'intel', title:'AI Strategy &amp; the CEO cockpit (Mission &#8377;25 cr)', where:['em','wa'], auto:'fauto', qids:['Q-71','Q-72','Q-73','Q-74','Q-75'],
+      desc:'Where AI Analysis explains, AI Strategy prescribes. It watches every target, explains each gap, lists the 10 to 15 things that need you today, recommends the highest-impact next actions, and answers questions in plain words, always showing the records behind the answer and respecting each person’s access. The cockpit is built for a full company review in 10 to 15 minutes.',
+      blocks:[
+        {type:'group', label:'The cockpit', editKey:'b-cockpit',
+          items:[{t:'Mission &#8377;25 cr: target · actual · gap · required run-rate',k:'calc'},'Sales · GP · collections','Product &amp; area performance','Priority 200 movement','Salespeople','Project pipeline','Design 500','Consumer funnel','Marketing return','Stock · stock-outs · lost sales',{t:'Top exceptions, each linked to its records',k:'calc'}]},
+        {type:'group', label:'What AI Strategy delivers',
+          items:[{t:'Why we are behind: by product · area · dealer · salesperson · stock · pipeline',k:'calc'},{t:'Management exceptions',k:'calc'},{t:'Next-best actions for the day, week, month',k:'calc'},{t:'Plain-language questions',k:'calc'},{t:'Daily summary on WhatsApp',k:'autof'}]}
+      ]},
+
+    { stage:'intel', title:'Installation AI', where:['em','app'], auto:'fauto', qids:['Q-76','Q-77','Q-78'],
+      desc:'Predicts which sites will run late from material and site readiness, recommends the right crew by location, certification, capacity and track record, summarises daily site reports, and finds complaint and rework patterns by product, installer and site type.',
+      blocks:[
+        {type:'group', label:'What it tracks', editKey:'b-install-kpi',
+          items:[{t:'Survey turnaround',k:'calc'},{t:'Site-ready to start',k:'calc'},{t:'On-time start &amp; completion %',k:'calc'},{t:'Planned vs actual duration &amp; quantity',k:'calc'},{t:'Wastage',k:'calc'},{t:'Snag rate · time to close',k:'calc'},{t:'Cost vs budget',k:'calc'},{t:'Installer score',k:'calc'},{t:'Complaints after handover',k:'calc'}]}
+      ]},
+
+    { stage:'intel', title:'Marketing return &amp; area intelligence', where:['em'], auto:'fauto', qids:['Q-93','Q-94','Q-95'],
+      desc:'Every campaign followed from spend to lead, appointment, quotation, order, revenue and GP, so budget moves to the areas and products that return it. Each area gets one opportunity score from market potential, dealer strength and EGO’s share.',
+      blocks:[
+        {type:'group', label:'What it shows',
+          items:[{t:'Spend &rarr; lead &rarr; order &rarr; GP, per campaign',k:'calc'},{t:'Area opportunity score',k:'calc'},{t:'Where to move budget',k:'calc'}]}
       ]}
   ]
 };
 
-/* ---------------- PHASE 2 ---------------- */
-DATA.sections.p2 = {
-  key:'p2', num:2, live:false, badge:'next',
-  title:'AI Strategy',
-  short:'AI Strategy',
-  tag:'Phase 2 · Next',
-  blurb:'Targets, schemes, Priority 200, the approval matrix and AI management intelligence + CEO cockpit &mdash; an independent engine on the same EGO Master.',
-  goal:'Answer question 5 — turn the analysis into plans and let management run by exception. Built on the same EGO Master, so nothing is rebuilt.',
-  questions:[
-    {id:'P2-01', group:'Programs & approvals', prompt:'The 20–26 Priority-200 intervention types & sequence.'},
-    {id:'P2-02', group:'Programs & approvals', prompt:'Approval limits & routing (who signs off what value).'}
-  ],
-  modules:[
-    { title:'Target Engine & Scheme Engine', where:['em','ghl'], auto:'mix',
-      desc:'Targets at Company / Product / Area / Salesperson / Dealer / Priority-200 / Project levels, plus cross-dimensional (Dealer&times;Product, Area&times;Product); revisions preserve history. Scheme engine covers period, eligible dealers, slabs, achievement, reward, approval, settlement and effectiveness. Setup manual; tracking automated.',
-      blocks:[{type:'group', label:'What it holds', items:['Target: level · period · value · revision history','Scheme: slabs · achievement · reward · settlement',{t:'Scheme effectiveness (incremental GP)',k:'calc'}]}]},
+const SECTION_ORDER = ['build'];
 
-    { title:'Priority 200, Design 500 & EGO Champions', where:['ghl','em'], auto:'mix', qids:['P2-01','P2-02'],
-      desc:'Priority 200 as a managed, company-wide development program &mdash; a dedicated Dealer Development pipeline where each dealer moves through a plan, with ~20&ndash;26 interventions tracking dealer, date, cost, owner and expected + actual outcome, and development investment against incremental sales &amp; GP. Design 500 and the ~800-strong EGO Champions program sit alongside.',
-      blocks:[{type:'group', label:'What it tracks', items:['Dev plan: current → target → gap → product gaps → owner → deadline → investment',{t:'Investment vs incremental sales/GP',k:'calc'},'League movement','Champion points / rewards']}]},
-
-    { title:'Approval & Authority Matrix', where:['em'], auto:'aroute',
-      desc:'Configurable approvals (pricing, discount, credit, high-value samples, display, marketing support, scheme exceptions, complaint settlement) with routing by value, type and role, and a full audit trail.'},
-
-    { title:'AI Strategy engine — management intelligence & CEO cockpit', where:['em'], auto:'fauto',
-      desc:'An independent functional body built on the same LLM engine (Gemini / GPT) that powers the analysis layer &mdash; but prescriptive, not just descriptive. It sets and monitors targets, explains gaps by product/area/dealer/salesperson/stock/pipeline, surfaces the "10&ndash;15 things needing attention", recommends the highest-impact next actions, and answers natural-language questions over authorised data. Drives the full CEO cockpit &mdash; Mission &#8377;25 cr, drill-down, review-by-exception. Installation AI (delay prediction, installer recommendation) rides here.',
-      blocks:[{type:'group', label:'What it delivers', items:[{t:'Why-behind explainer',k:'calc'},{t:'Management exceptions',k:'calc'},{t:'Next-best-actions',k:'calc'},{t:'Natural-language queries',k:'calc'},{t:'Drill-down cockpit',k:'calc'}]}]},
-
-    { title:'Adjacent — dealer portal & training', where:['adj'], auto:'mix',
-      desc:'Dealer Portal / EGO Exclusive (stock, colour, ageing, targets, schemes, orders, outstanding, certificates) and Training &amp; Certification tracking. <b>E-commerce &amp; E-showroom are a separate scope</b>, quoted separately from these two phases.'}
-  ]
-};
-
-const SECTION_ORDER = ['p1','p2'];
-
-/* EGO Master dashboards, by phase */
-const DASH = {
-  p1:['Client &amp; Dealer LTV','Product-wise Performance','Consolidated Revenue &amp; Pipeline','Lead &amp; Money Ratio','Dealer Performance &amp; Dormancy','Area Intelligence','Consumer Funnel','Architect / Design 500 Engagement','Marketing ROI','Hot-Lead &amp; Best-Dealer Match','Telesales Priority Queue','Dormancy &amp; Cross-sell Alerts'],
-  p2:['Target Engine','Scheme Engine','Priority 200 Development','Approval &amp; Authority Matrix','CEO Cockpit — Mission &#8377;25 cr','Management Exceptions &amp; "Why behind"','Natural-language queries']
-};
+/* EGO Master dashboards */
+const DASH = ['CEO Cockpit: Mission &#8377;25 cr','Management exceptions &amp; "why behind"','Target Engine','Scheme Engine','Priority 200 development','Approvals','Client &amp; dealer lifetime value','Product performance','Revenue &amp; pipeline','Dealer performance &amp; dormancy','Area intelligence','Consumer funnel','Design 500 engagement','EGO Champions','Marketing return','Hot leads &amp; best-dealer match','Telesales priority queue','Installation &amp; installers','Complaints','Stock &amp; lost sales','Dealer portal'];
 
 /* ================= STATE ================= */
 const STATE = {};      // qid (or editKey) -> value
@@ -776,7 +1054,7 @@ function renderQuestion(q){
   const wrap=document.createElement('div'); wrap.className='q'; wrap.id='wrap-'+q.id;
   let inner=`<div class="q-top"><span class="q-id">${q.id}</span><span class="q-prompt">${q.prompt}</span></div>`;
   if(q.help) inner+=`<div class="q-help">${q.help}</div>`;
-  if(q.secure) inner+=`<div class="q-secure"><b>Don't paste a live key or password here.</b> This box is fine for the account name, who owns it and where to find it &mdash; but send the secret value itself to us over a secure channel (a password manager share, or direct to your Zippyscale contact). Answers on this page are stored in plain text.</div>`;
+  if(q.secure) inner+=`<div class="q-secure"><b>Don't paste a live key or password here.</b> This box is fine for the account name, who owns it and where to find it. Send the secret value itself to us over a secure channel (a password manager share, or direct to your Zippyscale contact). Answers on this page are stored in plain text.</div>`;
   wrap.innerHTML=inner;
   const body=document.createElement('div');
 
@@ -799,7 +1077,7 @@ function renderQuestion(q){
     const inp=document.createElement('input'); inp.className='num'; inp.type='number'; inp.placeholder='0';
     inp.addEventListener('input',()=>onAnswer(q)); body.appendChild(inp);
   } else {
-    const ta=document.createElement('textarea'); ta.rows=3; ta.placeholder='Type your answer — as much detail as you like. It saves automatically.';
+    const ta=document.createElement('textarea'); ta.rows=3; ta.placeholder='Type your answer, with as much detail as you like. It saves automatically.';
     ta.addEventListener('input',()=>onAnswer(q)); body.appendChild(ta);
   }
   wrap.appendChild(body);
@@ -860,6 +1138,60 @@ function saveEItems(key,items){
   STATE[key]=JSON.stringify(items);
   saveAnswerDebounced(CURRENT,key,STATE[key]);
 }
+/* ================= ADDITIONAL REQUESTS =================
+   Repeatable rows stored as ONE json array under a single key, saved through the
+   same path as any answer -- the backend needs no new action type. */
+const CR_KEY='CR';
+const CR_COMPANIES=['Wholesale \u00b7 EGO Premium','Retail \u00b7 Big E','Both'];
+const CR_AREAS=['This client portal','Dealers & distributors','Orders & order flow','Stock & lost sales','Production & allocation','Targets','Schemes','Priority 200','Design 500 & architects','EGO Champions','Approvals','CEO cockpit & AI Strategy','Dealer portal','Training','Complaints & warranty','Retail clients','Architect firms','Leads','Projects','Installation','Pipelines & stages','Automations','AI Analysis','Integrations','Phone app','Team & access','System map','Something else'];
+function loadCRs(){ const s=STATE[CR_KEY]; if(s){ try{ const p=JSON.parse(s); if(Array.isArray(p)) return p; }catch(e){} } return []; }
+function saveCRs(l){ STATE[CR_KEY]=JSON.stringify(l); saveAnswerDebounced(CURRENT,CR_KEY,STATE[CR_KEY]); }
+function esc2(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function renderCRs(host){
+  const list=loadCRs();
+  host.innerHTML='';
+  const wrap=document.createElement('div'); wrap.className='qgroup';
+  wrap.innerHTML=`<div class="qgroup-h"><h3>Anything else you want changed</h3><span class="qgn">${list.length} request${list.length===1?'':'s'}</span></div>
+    <div class="tabintro" style="margin:0 0 16px">Anything not covered above: a screen you want different, a field to add, a rule that works another way in your business. Choose which company it is for and which part of the system, then describe it. Add as many as you like; they are saved with your answers and appear in the PDF and the JSON.</div>`;
+  list.forEach((cr,i)=>{
+    const card=document.createElement('div'); card.className='q'+((cr.text||'').trim()?' answered':'');
+    card.innerHTML=`<div class="q-top"><span class="q-id">#${i+1}</span><span class="q-prompt">Request ${i+1}</span>
+        <button type="button" class="erm" data-cr-del="${i}" title="Remove this request" style="margin-left:auto">&times;</button></div>
+      <div class="q-help">Which company is this for?</div>
+      <div class="opts">${CR_COMPANIES.map(c=>`<label class="opt${cr.company===c?' sel':''}"><input type="radio" name="crc${i}" value="${esc2(c)}" ${cr.company===c?'checked':''} data-cr-company="${i}"><span>${c}</span></label>`).join('')}</div>
+      <div class="q-help" style="margin-top:14px">Which part of the system?</div>
+      <div class="opts">${CR_AREAS.map(a=>`<label class="opt${cr.area===a?' sel':''}"><input type="radio" name="cra${i}" value="${esc2(a)}" ${cr.area===a?'checked':''} data-cr-area="${i}"><span>${a}</span></label>`).join('')}</div>
+      <textarea rows="3" data-cr-text="${i}" placeholder="Describe the change you want\u2026">${esc2(cr.text)}</textarea>`;
+    wrap.appendChild(card);
+  });
+  const add=document.createElement('button');
+  add.type='button'; add.className='eadd'; add.style.marginTop='6px'; add.textContent='+ Add another request';
+  add.addEventListener('click',()=>{ const l=loadCRs(); l.push({company:CR_COMPANIES[0],area:CR_AREAS[0],text:''}); saveCRs(l); renderCRs(host); });
+  wrap.appendChild(add);
+  host.appendChild(wrap);
+}
+function crSync(input){
+  const grp=input.closest('.opts'); if(!grp) return;
+  grp.querySelectorAll('.opt').forEach(l=>l.classList.toggle('sel', l.querySelector('input').checked));
+}
+document.addEventListener('change',e=>{
+  const t=e.target; if(!t.dataset) return;
+  if(!document.getElementById('crhost')) return;
+  /* Update this row in place. A full renderCRs() here would rebuild the textarea,
+     dropping the caret to position 0 -- the next thing typed lands in FRONT of
+     what the client already wrote. Re-render only on add/remove. */
+  if(t.dataset.crCompany!==undefined){ const l=loadCRs(); l[+t.dataset.crCompany].company=t.value; saveCRs(l); crSync(t); }
+  if(t.dataset.crArea!==undefined){ const l=loadCRs(); l[+t.dataset.crArea].area=t.value; saveCRs(l); crSync(t); }
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset && t.dataset.crText!==undefined){ const l=loadCRs(); l[+t.dataset.crText].text=t.value; saveCRs(l);
+    const card=t.closest('.q'); if(card) card.classList.toggle('answered', !!t.value.trim()); }
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest && e.target.closest('[data-cr-del]'); if(!b) return;
+  const host=document.getElementById('crhost'); const l=loadCRs(); l.splice(+b.dataset.crDel,1); saveCRs(l); renderCRs(host);
+});
 function mountEChips(container,key){
   const def=EDEFAULTS[key]; if(!def) return;
   const items=loadEItems(key);
@@ -904,39 +1236,24 @@ function mountEChips(container,key){
 }
 
 /* ================= HOME ================= */
-function phaseCardHTML(key){
-  const S=DATA.sections[key], C=COMMERCIALS[key];
-  const done=answeredCount(key), total=S.questions.length;
-  const submitted=!!ALL_SUBMITTED_AT && key==='p1';
-  return `<button class="pcard ${S.live?'':'next'}" onclick="openSection('${key}')">
-    <span class="pstatus ${S.badge}">${S.live?(submitted?'Submitted':'Build now'):'Next'}</span>
-    <div class="pnum">${S.num}</div>
-    <h3>${S.title}</h3>
-    <p>${S.blurb}</p>
-    <div class="pmeta">
-      <div><span class="k">Timeline</span><span class="v">${C.timeline}</span></div>
-      <div><span class="k">Modules</span><span class="v">${S.modules.length}</span></div>
-      <div><span class="k">Questions</span><span class="v">${S.questions.length}</span></div>
-    </div>
-    ${S.live
-      ? `<div class="prog"><span class="progbar"><i data-prog-bar style="width:${total?Math.round(done/total*100):0}%"></i></span><span class="pnums">${done} of ${total} answered</span></div>`
-      : `<div class="prog"><span style="font-size:12.5px">Preview only &mdash; nothing to answer yet</span></div>`}
-    <span class="go">${S.live?'Open Phase 1':'Preview Phase 2'} &rarr;</span>
-  </button>`;
-}
-
 function renderHome(){
   CURRENT=null;
-  const S1=DATA.sections.p1, done=answeredCount('p1'), total=S1.questions.length;
+  const S=DATA.sections.build, done=answeredCount('build'), total=S.questions.length;
+  const stageBlock=(k,i)=>{
+    const mods=S.modules.filter(m=>m.stage===k);
+    return `<div class="mod">
+      <div class="mod-h"><span class="mod-n">${String(i+1).padStart(2,'0')}</span><h4>${STAGES[k]}</h4></div>
+      <div class="groupbox"><div class="flds">${mods.map(m=>`<span class="fld">${m.title}</span>`).join('')}</div></div></div>`;
+  };
   document.getElementById('view').innerHTML = `
 <section class="hero">
   <div class="eyebrow">EGO Premium &times; Big E &middot; prepared by Zippyscale</div>
-  <h1>Your operating system, delivered in two focused phases.</h1>
-  <p>Your priority is AI &mdash; analysis, strategy and positioning &mdash; so we've compressed the roadmap into two phases that get you there fast. <b>Phase 1</b> consolidates every channel into GoHighLevel, wires in Tally, Runo and Sales Diary, and turns on <b>AI Analysis</b> in EGO Master. <b>Phase 2</b> adds the <b>AI Strategy</b> layer on top.</p>
+  <h1>Your complete operating system, built in one go.</h1>
+  <p>Mr. Roshan, we are building EGO Master in full, in one build: one system across EGO and Big E, wired to Tally, Runo and Sales Diary, with targets, schemes, Priority 200, approvals and the dealer portal, and <b>AI Analysis</b> and <b>AI Strategy</b> on top, driving the CEO cockpit for Mission &#8377;25 cr.</p>
   <div class="pillrow">
-    <span class="pill"><b>2</b> phases</span>
-    <span class="pill">Phase 1 &middot; CRM Building <b>+ AI Analysis</b></span>
-    <span class="pill">Phase 2 &middot; <b>AI Strategy</b></span>
+    <span class="pill"><b>1</b> complete build</span>
+    <span class="pill"><b>${S.modules.length}</b> modules</span>
+    <span class="pill"><b>12</b> weeks build + <b>4</b> weeks testing</span>
     <span class="pill">Powered by an LLM engine (Gemini / GPT)</span>
   </div>
 </section>
@@ -944,36 +1261,34 @@ function renderHome(){
 ${ALL_SUBMITTED_AT ? `<div class="submitbar done">
   <div style="display:flex;align-items:center;gap:15px">
     <div class="finish-check">&#10003;</div>
-    <div><b>Phase 1 submitted &mdash; thank you.</b><span class="sub">Sent to Zippyscale on ${new Date(ALL_SUBMITTED_AT).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}. You can still open Phase 1 to review or update anything.</span></div>
+    <div><b>Answers submitted. Thank you.</b><span class="sub">Sent to Zippyscale on ${new Date(ALL_SUBMITTED_AT).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}. You can still open the build to review or update anything.</span></div>
   </div>
+  <button class="btn-finish" onclick="openSection('build')">Open the build &rarr;</button>
 </div>` : `<div class="submitbar${done>0?' ready':''}">
-  <div><b>${done===0?'Start with Phase 1':`Phase 1 &mdash; ${done} of ${total} questions answered`}</b>
-  <span class="sub">Answer the questions and shape the field lists to match how EGO actually works. Everything saves as you type &mdash; you can leave and come back.</span></div>
-  <button class="btn-finish" onclick="openSection('p1')">${done===0?'Begin Phase 1':'Continue'} &rarr;</button>
+  <div><b>${done===0?'Start with the questions':`${done} of ${total} questions answered`}</b>
+  <span class="sub">Answer the questions and shape the field lists to match how EGO actually works. Everything saves as you type, so you can leave and come back.</span></div>
+  <button class="btn-finish" onclick="openSection('build')">${done===0?'Begin':'Continue'} &rarr;</button>
 </div>`}
 
-<div class="sec-title">The two phases</div>
-<div class="phasecards">${SECTION_ORDER.map(phaseCardHTML).join('')}</div>
+<div class="sec-title">What's in the build</div>
+${Object.keys(STAGES).map(stageBlock).join('')}
 
 <div class="northbox">
-  <h2>The North Star &mdash; the five questions the system must answer</h2>
+  <h2>The North Star: the five questions the system must answer</h2>
   <ol>
-    <li>Where are we today? <span class="tag">Phase 1</span></li>
-    <li>Where are we behind target? <span class="tag">Phase 1</span></li>
-    <li>Why are we behind? <span class="tag">Phase 1 &middot; AI Analysis</span></li>
-    <li>What should each person do next? <span class="tag">Phase 1 &middot; AI Analysis</span></li>
-    <li>Which issues require management intervention? <span class="tag">Phase 2 &middot; AI Strategy</span></li>
+    <li>Where are we today? <span class="tag">In the build</span></li>
+    <li>Where are we behind target? <span class="tag">In the build &middot; Target Engine</span></li>
+    <li>Why are we behind? <span class="tag">In the build &middot; AI Analysis</span></li>
+    <li>What should each person do next? <span class="tag">In the build &middot; AI Analysis</span></li>
+    <li>Which issues require management intervention? <span class="tag">In the build &middot; AI Strategy</span></li>
   </ol>
-  <div class="note">"80% brain, 20% AI" &mdash; the 80% (consolidation) and the first cut of the 20% (analysis) both land in Phase 1. Everything must return insight, never become a data-entry toy.</div>
+  <div class="note">"80% brain, 20% AI": the consolidation and the intelligence arrive together. Everything must return insight, never become a data-entry toy.</div>
 </div>
 
-<div class="sec-title">EGO Master &mdash; your command centre</div>
+<div class="sec-title">EGO Master: your command centre</div>
 <div class="mod">
-  <p class="d">A working engine with its own founder login, pulling live data from the CRM, Tally, inventory and the ad channels across EGO and Big E. AI Analysis goes live in Phase 1; AI Strategy in Phase 2.</p>
-  <p class="mini">Live in Phase 1</p>
-  <div class="groupbox"><div class="flds">${DASH.p1.map(d=>`<span class="fld calc">${d}</span>`).join('')}</div></div>
-  <p class="mini">Added in Phase 2</p>
-  <div class="groupbox"><div class="flds">${DASH.p2.map(d=>`<span class="fld">${d}</span>`).join('')}</div></div>
+  <p class="d">One founder login, pulling live data from the CRM, Tally, stock and the ad channels across EGO and Big E. Every dashboard below is part of the build.</p>
+  <div class="groupbox"><div class="flds">${DASH.map(d=>`<span class="fld calc">${d}</span>`).join('')}</div></div>
 </div>
 
 <div class="sec-title">What you'll need to arrange</div>
@@ -984,43 +1299,17 @@ ${ALL_SUBMITTED_AT ? `<div class="submitbar done">
 
 <div class="sec-title">Action plan &amp; timeline</div>
 <div class="tl">
-  <div class="tlcard"><div class="wk">PHASE 1 &middot; INDICATIVE ${COMMERCIALS.p1.timeline.toUpperCase()}</div>
-    <h4>CRM Building + AI Analysis</h4>
-    <p>The original Growth Engine (GHL, Tally/Runo/Sales Diary, AI call + conversation agents, automations) <b>plus</b> the new AI Analysis engine in EGO Master. The AI Analysis add-on extends the build from 8 to 10 weeks.</p></div>
-  <div class="tlcard"><div class="wk">PHASE 2 &middot; INDICATIVE ${COMMERCIALS.p2.timeline.toUpperCase()}</div>
-    <h4>AI Strategy (independent engine)</h4>
-    <p>Target &amp; scheme engines, Priority 200 / Design 500 / Champions, approval matrix, and the AI management-intelligence + CEO cockpit &mdash; an independent functional body on the same EGO Master.</p></div>
-</div>`;
+  ${TIMELINE.map(t=>`<div class="tlcard"><div class="wk">${t.wk.toUpperCase()} &middot; INDICATIVE</div><h4>${t.h}</h4><p>${t.p}</p></div>`).join('')}
+</div>
+<div class="callout amber" style="margin-top:14px"><b>A separate track, not in this build:</b> the e-showroom and vendor e-commerce. They are quoted on their own and can start whenever you choose.</div>`;
   window.scrollTo(0,0);
 }
 
-/* ================= PHASE VIEW ================= */
+/* ================= BUILD VIEW ================= */
 function openSection(key){
   CURRENT=key; CURRENT_TAB='questions';
   const S=DATA.sections[key];
   window.scrollTo(0,0);
-
-  if(!S.live){
-    document.getElementById('view').innerHTML=`
-      <div class="secbar">
-        <div class="pnum" style="background:var(--surface-2);color:var(--muted)">${S.num}</div>
-        <div><h2>${S.title}</h2></div>
-        <span class="tag next">${S.tag}</span>
-      </div>
-      <p class="seclead">${S.blurb}</p>
-      <div class="goalbar" style="background:var(--surface-2);border-color:var(--line);color:var(--muted)"><b>Goal:</b> ${S.goal}</div>
-      <div class="roadnote"><span>&#9679;</span><span>This phase is shown so you can see the whole system &mdash; there's nothing to fill in yet. Its two questions open once Phase 1 is delivered and Phase 2 is scoped.</span></div>
-      <div class="sec-title" style="margin-top:0">What we'll build &mdash; ${S.modules.length} modules</div>
-      <div id="modcol"></div>`;
-    const col=document.getElementById('modcol');
-    S.modules.forEach((m,i)=>{
-      col.appendChild(el(`<div class="mod">
-        <div class="mod-h"><span class="mod-n">${String(i+1).padStart(2,'0')}</span><h4>${m.title}</h4></div>
-        ${renderModuleHTML(m,false)}</div>`));
-    });
-    return;
-  }
-
   const done=answeredCount(key), total=S.questions.length;
   document.getElementById('view').innerHTML=`
     <div class="secbar">
@@ -1053,7 +1342,7 @@ function renderTab(){
   if(CURRENT_TAB==='questions'){
     const done=answeredCount(CURRENT), total=S.questions.length;
     body.appendChild(el(`<div class="tabintro">
-      <b>Everything we need from you, in one place.</b> ${total} questions, grouped by topic. Answer what you can &mdash; each one saves the moment you type it, so you can stop and come back. Nothing here is a test; if something doesn't apply to how EGO works, just say so.
+      <b>Everything we need from you, in one place.</b> ${total} questions, grouped by topic. Answer what you can. Each one saves the moment you type it, so you can stop and come back. Nothing here is a test; if something doesn't apply to how EGO works, just say so.
     </div>`));
     body.appendChild(el(`<div class="prog" style="margin:0 2px 22px">
       <span class="progbar"><i data-prog-bar style="width:${total?Math.round(done/total*100):0}%"></i></span>
@@ -1075,19 +1364,21 @@ function renderTab(){
     });
     S.questions.forEach(restore);
 
+    const crhost=document.createElement('div'); crhost.id='crhost'; body.appendChild(crhost); renderCRs(crhost);
+
     const submitted=!!ALL_SUBMITTED_AT;
     body.appendChild(el(submitted
       ? `<div class="submitbar done"><div style="display:flex;align-items:center;gap:15px">
            <div class="finish-check">&#10003;</div>
-           <div><b>Submitted</b><span class="sub">We have your answers. Edit anything above and hit resubmit if something changes.</span></div></div>
-         <button class="btn-finish" id="submitBtn" onclick="submitPhase1(this)">Resubmit</button></div>`
+           <div><b>Submitted</b><span class="sub">We have your answers. Edit anything above and resubmit if something changes.</span></div></div>
+         <button class="btn-finish" id="submitBtn" onclick="submitBuild(this)">Resubmit</button></div>`
       : `<div class="submitbar${done>0?' ready':''}">
-           <div><b>Done for now?</b><span class="sub">Send your answers to Zippyscale. You can still edit and resubmit afterwards &mdash; nothing locks.</span></div>
-         <button class="btn-finish" id="submitBtn" ${done===0?'disabled':''} onclick="submitPhase1(this)">Submit to Zippyscale</button></div>`));
+           <div><b>Done for now?</b><span class="sub">Send your answers to Zippyscale. You can still edit and resubmit afterwards. Nothing locks.</span></div>
+         <button class="btn-finish" id="submitBtn" ${done===0?'disabled':''} onclick="submitBuild(this)">Submit to Zippyscale</button></div>`));
     updateProgress();
   } else {
     body.appendChild(el(`<div class="tabintro">
-      <b>This is the spec we'll build &mdash; and it's yours to change.</b> Every list marked <span class="mono" style="font-size:11px">&#9671; edit &middot; add &middot; remove</span> is a proposal, not a decision. Click any chip to rename it, drag to reorder, press &times; to remove, or <b>+ Add</b> for your own. Your edits save automatically and become the spec we build from.
+      <b>This is the spec we'll build, and it's yours to change.</b> Every list marked <span class="mono" style="font-size:11px">&#9671; edit &middot; add &middot; remove</span> is a proposal, not a decision. Click any chip to rename it, drag to reorder, press &times; to remove, or <b>+ Add</b> for your own. Your edits save automatically and become the spec we build from.
     </div>`));
     S.modules.forEach((m,i)=>{
       body.appendChild(el(`<div class="mod">
@@ -1100,10 +1391,10 @@ function renderTab(){
 
 function goHome(){ renderHome(); }
 
-async function submitPhase1(btn){
+async function submitBuild(btn){
   if(btn){ btn.disabled=true; btn.textContent='Submitting…'; }
-  await apiPost({action:'submitSection', section:'p1'});
-  SECTIONS.p1='submitted';
+  await apiPost({action:'submitSection', section:'build'});
+  SECTIONS.build='submitted';
   ALL_SUBMITTED_AT=new Date().toISOString();
   await apiPost({action:'submitAll'});
   renderThankYou();
@@ -1114,8 +1405,8 @@ function renderThankYou(){
   document.getElementById('view').innerHTML=`
     <section class="hero thanks">
       <div class="eyebrow">EGO Premium &times; Big E</div>
-      <h1>Phase 1 is in &mdash; thank you.</h1>
-      <p>Zippyscale now has everything needed to start building: your segment setup, field architecture, pipelines, automations, integrations and the AI agents. We'll be in touch as the build progresses.</p>
+      <h1>Your answers are in. Thank you, Mr. Roshan.</h1>
+      <p>Zippyscale now has what it needs to build: your two companies, people and access, records and pipelines, automations and integrations, the growth programmes and the AI layer. We'll be in touch as the build progresses.</p>
       <div class="pillrow"><span class="pill">Submitted ${new Date(ALL_SUBMITTED_AT).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}</span></div>
       <button class="portal-cta" style="max-width:300px;margin:24px auto 0" onclick="goHome()">Back to overview<span class="arrow">&rarr;</span></button>
     </section>`;
@@ -1123,17 +1414,18 @@ function renderThankYou(){
 
 /* ================= EXPORT ================= */
 function exportAnswers(){
-  const out={brand:'EGO Premium × Big E — 2-Phase Build Plan',generated:new Date().toISOString(),answers:{}};
+  const out={brand:'EGO Premium × Big E: Complete Build Plan',generated:new Date().toISOString(),answers:{}};
   SECTION_ORDER.forEach(k=>{
     const S=DATA.sections[k];
     out.answers[k]={};
-    S.questions.forEach(q=>{ out.answers[k][q.id]={q:q.prompt,a:STATE[q.id]||''}; });
+    S.questions.forEach(q=>{ out.answers[k][q.id]={q:decodeEnt(q.prompt),a:STATE[q.id]||''}; });
     (S.modules||[]).forEach(m=>{
       (m.blocks||[]).forEach(b=>{
         if(b.editKey) out.answers[k][b.editKey]={q:(b.label||m.title)+' (edited list)',a:STATE[b.editKey]||JSON.stringify(b.items)};
       });
     });
   });
+  out.changeRequests = loadCRs();
   const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='ego-premium-build-plan-answers.json'; a.click();
@@ -1159,8 +1451,8 @@ const PDF_C = {
 // middle dot render fine as-is, but arrows/rupee/sigma do not exist in it and
 // come out as garbage glyphs -- swap those for plain-ASCII equivalents.
 function pdfSafe(str){
-  return String(str)
-    .replace(/→/g, '->').replace(/←/g, '<-')
+  return decodeEnt(str)
+    .replace(/[⤒↺]\s?/g, '').replace(/→/g, '->').replace(/←/g, '<-')
     .replace(/₹/g, 'Rs ').replace(/Σ/g, 'Sum of ');
 }
 
@@ -1261,10 +1553,10 @@ function pdfCoverPage(st, answeredQ, totalQ){
   st.doc.setTextColor(...PDF_C.limeText);
   st.doc.text('ZIPPYSCALE CLIENT PORTAL', st.margin, st.y);
   st.y += 30;
-  pdfWrapped(st, 'EGO Premium × Big E — 2-Phase Build Plan', 25, { bold: true, spacingAfter: 10 });
-  pdfWrapped(st, `Full onboarding answers plus the complete build plan for every stage — generated ${new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}.`, 12, { color: PDF_C.muted, spacingAfter: 16 });
+  pdfWrapped(st, 'EGO Master: Complete Build Plan', 25, { bold: true, spacingAfter: 10 });
+  pdfWrapped(st, `EGO Premium × Big E. Full onboarding answers plus the complete build plan, generated ${new Date().toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}.`, 12, { color: PDF_C.muted, spacingAfter: 16 });
 
-  const chip1 = `${answeredQ} of ${totalQ} questions answered`, chip2 = '2 phases';
+  const chip1 = `${answeredQ} of ${totalQ} questions answered`, chip2 = '1 complete build';
   st.doc.setFont('helvetica', 'bold'); st.doc.setFontSize(11);
   let cx = st.margin;
   [chip1, chip2].forEach(txt => {
@@ -1520,6 +1812,14 @@ function buildPdf(){
     pdfWrapped(st, pdfSafe(S.blurb), 10.5, { color: PDF_C.muted, spacingAfter: 14 });
     pdfHeading(st, "WHAT WE ASKED, AND WHAT WE GOT BACK", 11);
     S.questions.forEach(q => pdfQACard(st, q.id, pdfSafe(q.prompt), q.help ? pdfSafe(q.help) : '', STATE[q.id] ? pdfSafe(STATE[q.id]) : ''));
+    if (key === 'build'){
+      const crs = loadCRs();
+      if (crs.length){
+        st.doc.addPage(); st.y = st.margin;
+        pdfHeading(st, 'ADDITIONAL REQUESTS', 13, { spacingAfter: 12 });
+        crs.forEach((cr, i) => pdfQACard(st, '#' + (i + 1), pdfSafe((cr.company || '') + '  \u00b7  ' + (cr.area || '')), '', pdfSafe(cr.text || '')));
+      }
+    }
 
     st.doc.addPage(); st.y = st.margin;
     pdfHeading(st, 'HOW WE’RE BUILDING IT', 13, { spacingAfter: 12 });
@@ -1538,7 +1838,7 @@ async function downloadPDF(){
   const original = btn.textContent;
   btn.disabled = true; btn.textContent = 'Generating PDF…';
   try {
-    buildPdf().save('EGO-Premium-2-Phase-Build-Plan.pdf');
+    buildPdf().save('EGO-Premium-Complete-Build-Plan.pdf');
   } catch (err) {
     alert('PDF generation failed: ' + (err && err.message ? err.message : err) + '\n\nNothing was downloaded. Try again, or use "Export answers (JSON)" for now.');
   }
@@ -1546,10 +1846,40 @@ async function downloadPDF(){
 }
 
 /* ================= PORTAL NAVIGATION ================= */
-function hideGates(){['portal','directory','clientlogin'].forEach(id=>document.getElementById(id).classList.add('hidden'));}
+function hideGates(){document.querySelectorAll('.gatewrap').forEach(el=>el.classList.add('hidden'));}
 function goPortal(){hideGates();document.getElementById('portal').classList.remove('hidden');}
 function goDirectory(){hideGates();document.getElementById('directory').classList.remove('hidden');}
-function goClientLogin(key){hideGates();document.getElementById('clientlogin').classList.remove('hidden');document.getElementById('lerr').textContent='';document.getElementById('u').focus();}
+const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'] };
+function goClientLogin(key){
+  hideGates();
+  const [gate,err,first] = GATES[key] || ['clientlogin','lerr','u'];
+  document.getElementById(gate).classList.remove('hidden');
+  document.getElementById(err).textContent='';
+  document.getElementById(first).focus();
+}
+const CARCART = { user:"carcart", pass:"Carcart@hyd26" };
+function tryCarCart(){
+  const u=document.getElementById('ccu').value.trim().toLowerCase();
+  const p=document.getElementById('ccp').value;
+  if(u===CARCART.user && p===CARCART.pass){ location.href='../carcart/'; return; }
+  document.getElementById('ccerr').textContent='Wrong username or password.';
+}
+
+const VAARAHI = { user:"vaarahi", pass:"Vaarahi@silks26" };
+function tryVaarahi(){
+  const u=document.getElementById('vau').value.trim().toLowerCase();
+  const p=document.getElementById('vap').value;
+  if(u===VAARAHI.user && p===VAARAHI.pass){ location.href='../vaarahi/'; return; }
+  document.getElementById('vaerr').textContent='Wrong username or password.';
+}
+
+const ROYALE = { user:"royale", pass:"Royale@26" };
+function tryRoyale(){
+  const u=document.getElementById('rcu').value.trim().toLowerCase();
+  const p=document.getElementById('rcp').value;
+  if(u===ROYALE.user && p===ROYALE.pass){ try{ sessionStorage.setItem('royaleIn',1); }catch(e){} location.href='../royale/'; return; }
+  document.getElementById('rcerr').textContent='Wrong username or password.';
+}
 
 async function tryLogin(){
   const u=document.getElementById('u').value.trim(), p=document.getElementById('p').value;
