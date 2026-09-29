@@ -924,7 +924,12 @@
       if (note) note.textContent = 'Reading ' + files.length + ' file' + (files.length === 1 ? '' : 's') + '…';
       var left = files.length, text = '';
       files.forEach(function (f) {
-        G.takeDoc(f, 'client', 'scan', function (doc) { PENDING_DOCS.push(doc); });
+        /* same as the engagement's scan box: read first, name properly when
+           filing it out of Dropped in. A tidied name beats the camera's. */
+        G.takeDoc(f, 'client', 'scan', function (doc) {
+          if (G.tidyDocName) doc.name = G.tidyDocName(doc.name);
+          PENDING_DOCS.push(doc);
+        });
         if (/^text\/|\.(txt|csv)$/i.test(f.type + f.name)) {
           var r = new FileReader();
           r.onload = function () { text += '\n' + r.result; done(); };

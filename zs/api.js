@@ -251,12 +251,15 @@
 
   /* ---------------- documents ---------------- */
 
-  async function uploadDoc(file, holderKind, holderId, type) {
+  async function uploadDoc(file, holderKind, holderId, type, name) {
     var form = new FormData();
     form.append('file', file, file.name);
     form.append('holder_kind', holderKind);
     form.append('holder_id', holderId);
     form.append('type', type || 'scan');
+    /* what somebody typed when they uploaded it. Without this the server keeps
+       the camera's filename and the next sync overwrites the name they gave. */
+    if (name) form.append('name', name);
     return call('POST', '/api/documents', { form: form });
   }
   function docUrl(id) {

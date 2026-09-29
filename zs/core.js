@@ -837,6 +837,13 @@
      one of these holds as many files as it needs, and each file can be opened,
      replaced or removed on its own. */
   var ENGAGEMENT_DOCS = [
+    /* ⚠️ MINUTES BEFORE THE MOU, and in that order on the screen, because that is
+       the order they happen in. What was agreed in a meeting is what the MOU is
+       supposed to say; when the two disagree six weeks later, the minutes are the
+       only thing that settles it. Every dispute in this business has started with
+       somebody remembering a call differently. */
+    { key: 'mom',                label: 'Minutes of meeting (MOM)', group: 'Terms',
+      when: 'What was agreed on each call, dated. The thing that settles an argument later.' },
     { key: 'mou',                label: 'MOU',                     group: 'Terms', when: 'Every version, signed or not.' },
     { key: 'proposal',           label: 'Proposal & scope',        group: 'Terms' },
     { key: 'invoices',           label: 'Invoices raised',         group: 'Terms', when: 'The PDFs as they were sent.' },

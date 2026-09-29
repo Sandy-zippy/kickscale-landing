@@ -414,6 +414,13 @@
   where: [['Clients', '#/clients'], ['The sales board', '#/floor']], text:
 "Anything can be uploaded against a client or against an engagement: an MOU, an " +
 "invoice, a brief, a screenshot of a payment. Several at once.\n\n" +
+"YOU NAME EACH ONE AS YOU UPLOAD IT. Drop three files in and you are asked " +
+"what each is before anything is filed, with the boxes already filled in from " +
+"the filenames so pressing Save is a fine answer. A phone calls a photograph " +
+"IMG_4471.jpg and a laptop calls a download document(3).pdf; three of those " +
+"under one heading cannot be told apart without opening all three. The two " +
+"'drop it in and let it read' boxes skip that step on purpose and still give " +
+"the file a readable name.\n\n" +
 "Every document is viewable, renamable, replaceable and deletable, from wherever " +
 "it was uploaded. A photographed document, which is how a signed MOU actually " +
 "arrives over WhatsApp, is downscaled and kept.\n\n" +
@@ -541,6 +548,19 @@
 "marking one cleared. It never clears one itself. Everything it read, and how " +
 "sure it was, is kept on the invoice so the figure can be argued with later " +
 "rather than simply believed."
+},
+
+/* ---------------------------------------------------------------- */
+{ id: 'mom', title: 'Minutes of meeting, and why they come before the MOU',
+  where: [['The sales board', '#/floor'], ['Clients', '#/clients']], text:
+"MINUTES OF MEETING (MOM) is the first slot under Terms on an engagement, above " +
+"the MOU, because that is the order things happen in. What was agreed on a call " +
+"is what the MOU is then supposed to say.\n\n" +
+"Upload one per meeting and name it for the date, so the list reads as a " +
+"history. When a client remembers a call differently six weeks later, dated " +
+"minutes are the only thing that settles it, and every dispute in this business " +
+"has started with two people remembering one conversation two ways.\n\n" +
+"It takes as many files as you like, like every other slot."
 },
 
 /* ---------------------------------------------------------------- */

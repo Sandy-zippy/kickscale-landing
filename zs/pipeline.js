@@ -911,6 +911,12 @@
         /* every file dropped here is filed against the engagement too, so it is
            never a thing you uploaded that then vanished */
         G.takeDoc(f, 'deal', 'scan', function (doc) {
+          /* ⚠️ NO NAMING MODAL HERE, DELIBERATELY. This box is "drop the
+             paperwork and let it read", and stopping to name three files in the
+             middle of that would break the one flow that is meant to be
+             thoughtless. It still gets a readable name rather than IMG_4471.jpg,
+             and it lands in Dropped in, where filing it is already a rename. */
+          if (G.tidyDocName) doc.name = G.tidyDocName(doc.name);
           o.docs = o.docs || [];
           o.docs.push(doc);
           G.log('doc_add', doc.name + ' filed against the engagement', { opp: o.id, client: o.client });

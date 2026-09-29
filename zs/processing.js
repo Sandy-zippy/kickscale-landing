@@ -801,20 +801,97 @@
     if (dp) G.onDocPicked(dp);
   };
 
-  /* A file arriving, from either place. */
+  /* ---------------- naming what you just uploaded ----------------
+
+     ⚠️ EVERY UPLOAD IN THE COCKPIT COMES THROUGH HERE, which is the only reason
+     this is one change and not eleven. Drop three files in and you are asked what
+     each one is, before anything is filed.
+
+     WHY IT IS WORTH A STEP. A phone calls a photograph IMG_4471.jpg and a laptop
+     calls a download document(3).pdf. Three of those under one slot are three
+     files nobody can tell apart without opening all three, and the moment that
+     happens the folder stops being useful and somebody starts keeping the real
+     copies on their desktop. Ten seconds now against that.
+
+     It is a step, not a wall: the boxes are pre-filled with a tidied version of
+     the filename, so Enter is a perfectly good answer. */
+
+  var PICKED = null;    /* { files, kind, holder, type } waiting to be named */
+
+  /* IMG_4471.jpg -> "IMG 4471". A tidied filename beats an empty box: an empty
+     box is a decision, and a decision at upload time gets skipped. */
+  function tidyName(n) {
+    return String(n || '')
+      .replace(/\.[a-z0-9]{1,5}$/i, '')       /* the extension is not the name */
+      .replace(/[_+]+/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .replace(/^\s+|\s+$/g, '')
+      .slice(0, 80) || 'Untitled';
+  }
+
   G.onDocPicked = function (input) {
     var spec = input.getAttribute('data-doc');
     if (!spec || !input.files || !input.files.length) return;
     var p = spec.split('|'), kind = p[0], holder = p[1], type = p[2];
     if (!G.acc().clients) return;
     var files = Array.prototype.slice.call(input.files);
+
+    PICKED = { files: files, kind: kind, holder: holder, type: type };
+    /* the input keeps its FileList; clearing it lets the same file be picked
+       again after a cancel, which otherwise silently does nothing */
+    try { input.value = ''; } catch (e) {}
+
+    G.modal('Name ' + (files.length === 1 ? 'this file' : 'these ' + files.length + ' files'),
+      'Filed under ' + ZS.docLabel(kind, type) + '. What each one is, in words you ' +
+      'would search for. The names are filled in from the filenames, so you can just ' +
+      'press Save.',
+      '<form id="nameform">' +
+      files.map(function (f, i) {
+        return '<div class="f" style="margin-bottom:12px">' +
+          '<label for="nm-' + i + '">' + esc(f.name) + ' &middot; ' +
+          esc(G.fileSize(f.size)) + '</label>' +
+          '<input id="nm-' + i + '" name="n' + i + '" value="' + esc(tidyName(f.name)) + '" ' +
+          'autocomplete="off" maxlength="80"></div>';
+      }).join('') +
+      '<div style="display:flex;gap:10px;margin-top:14px">' +
+      '<button class="btn" type="submit">Save ' +
+        (files.length === 1 ? 'it' : 'them') + '</button>' +
+      '<button class="btn alt" type="button" data-act="cancelUpload">Cancel</button></div></form>');
+  };
+
+  A.cancelUpload = function () {
+    PICKED = null;
+    var m = document.getElementById('modal'); if (m && m.open) m.close();
+  };
+
+  document.addEventListener('submit', function (e) {
+    if (!e.target || e.target.id !== 'nameform') return;
+    e.preventDefault();
+    if (!PICKED) return;
+    var names = PICKED.files.map(function (f, i) {
+      var box = document.getElementById('nm-' + i);
+      return (box && String(box.value || '').trim()) || tidyName(f.name);
+    });
+    var job = PICKED;
+    PICKED = null;
+    var m = document.getElementById('modal'); if (m && m.open) m.close();
+    fileThem(job, names);
+  });
+
+  function fileThem(job, names) {
+    var kind = job.kind, holder = job.holder, type = job.type;
+    var files = job.files;
     var left = files.length;
-    files.forEach(function (f) { G.takeDoc(f, kind, type, function (doc) {
+    files.forEach(function (f, i) { G.takeDoc(f, kind, type, function (doc) {
+      /* ⚠️ THE NAME THEY TYPED, NOT THE FILENAME. takeDoc fills in file.name by
+         default, so this has to overwrite it or the whole step was theatre. */
+      doc.name = names[i] || doc.name;
       if (kind === 'client') {
         var cl2 = G.clientById(holder);
         if (!cl2) return;
         cl2.docs = (cl2.docs || []).concat([doc]);
-        G.log('doc_add', ZS.docLabel('client', type) + ' uploaded for ' + cl2.name, { client: cl2.id });
+        G.log('doc_add', ZS.docLabel('client', type) + ': "' + doc.name + '" uploaded for ' +
+              cl2.name, { client: cl2.id });
         G.save();
       } else {
         var o = (D().opportunities || []).filter(function (x) { return x.id === holder; })[0];
@@ -823,7 +900,7 @@
            put an unsold deal on the delivery board. The engagement holds them. */
         if (o.proc) o.proc.docs.push(doc);
         else o.docs = (o.docs || []).concat([doc]);
-        G.log('doc_add', ZS.docLabel('deal', type) + ' uploaded',
+        G.log('doc_add', ZS.docLabel('deal', type) + ': "' + doc.name + '" uploaded',
               { client: o.client, opp: o.id });
         G.save();
       }
@@ -837,7 +914,7 @@
          the document is already saved here, and the Share button then says
          plainly that there is nothing for anybody else to fetch. */
       if (window.API && API.signedIn() && f.size <= 25 * 1024 * 1024) {
-        API.uploadDoc(f, kind === 'client' ? 'client' : 'deal', holder, type)
+        API.uploadDoc(f, kind === 'client' ? 'client' : 'deal', holder, type, doc.name)
           .then(function (r) {
             if (!r || !r.id) return;
             doc.remote = r.id;
@@ -860,5 +937,8 @@
               ' added to ' + ZS.docLabel(kind, type) + '.');
       G.render();
     }); });
-  };
+  }
+
+  /* used by the naming modal's pre-fill, and worth having in one place */
+  G.tidyDocName = tidyName;
 })();
