@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Vendor portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Poppins:wght@600&family=Great+Vibes&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal.css?b=1790331377">
+</head>
+<body>
+<header><span class="logo" data-t="logoText"></span><span><b data-t="name"></b><small>Vendor portal</small></span></header>
+<main id="main"></main>
+<script src="tenant.js?b=1790331377"></script>
+<script src="engine.js?b=1790331377"></script>
+<script src="core.js?b=1790331377"></script>
+<script src="agents.js?b=1790331377"></script>
+<script src="portal.js?b=1790331377"></script>
+<script>
+(function () {
+  var D = PT.D, esc = PT.esc, main = document.getElementById('main');
+  PT.paint();
+  if (!D) return PT.noStore(main);
+  var db = RoyaleEngine.build(), byId = {};
+  db.items.forEach(function (it) { byId[it.id] = it; });
+
+  function render() {
+    var vi = parseInt(location.hash.replace('#', ''), 10);
+    var v = db.vendors[vi];
+    if (!v) {
+      var invited = {};
+      (D.proposals || []).forEach(function (p) { if (p.agent === 'sourcing' && p.status === 'pending') p.payload.bids.forEach(function (b) { invited[b.vi] = 1; }); });
+      main.innerHTML = '<div class="card"><h2>Vendor sign-in</h2><p class="muted">Each vendor has a private link. For the demo, vendors with an open RFQ:</p>' +
+        (Object.keys(invited).length ? Object.keys(invited).map(function (i) { return '<p><a href="#' + i + '">' + esc(db.vendors[i].name) + '</a></p>'; }).join('') : '<p class="muted small">None right now — ask the Sourcing agent for prices on any product in the cockpit.</p>') +
+        '<p class="muted small">Or any vendor, e.g. <a href="#0">' + esc(db.vendors[0].name) + '</a></p></div>';
+      return;
+    }
+    var open = (D.proposals || []).filter(function (p) { return p.agent === 'sourcing' && p.status === 'pending' && p.payload.bids.some(function (b) { return b.vi === vi; }); });
+    var h = '<div class="card"><h1>' + esc(v.name) + '</h1><p class="muted">Requests for quotation from ' + esc(PT.T.name) + ', and a place to send your latest price list.</p></div>';
+    h += open.length ? open.map(function (p) {
+      var it = byId[p.payload.pid], b = p.payload.bids.filter(function (x) { return x.vi === vi; })[0];
+      return '<div class="card"><h3>' + esc(it ? it.name : p.payload.pid) + ' × ' + GC.fmt(p.payload.qty) + ' pcs</h3><p class="muted small">' + (p.payload.mode === 'auction' ? 'Reverse auction — you can improve your price while it is open.' : 'Sealed quotation — one price.') + (p.payload.deadline ? ' Needed by ' + esc(p.payload.deadline) + '.' : '') + '</p>' +
+        (b.real ? '<p><span class="pill ok">Your quote: ₹' + GC.fmt(b.price) + ' / pc, ' + b.lead + ' days</span></p>' : '') +
+        '<label><span>Price per piece (₹, before GST)</span><input type="number" id="pr_' + p.id + '" value="' + (b.real ? b.price : '') + '"></label><label><span>Lead time (days)</span><input type="number" id="ld_' + p.id + '" value="' + (b.real ? b.lead : '') + '"></label>' +
+        '<button class="btn" data-bid="' + p.id + '">' + (b.real ? 'Update my quote' : 'Send my quote') + '</button> <button class="btn ghost" data-decline="' + p.id + '">Cannot supply</button></div>';
+    }).join('') : '<div class="card"><p class="muted">No open requests for you right now.</p></div>';
+    h += '<div class="card"><h3>Send your price list</h3><p class="muted small">Paste it straight from Excel — any columns. Our intake agent reads it and our team checks anything it is unsure of.</p><textarea id="csv" placeholder="Product, Rate, MOQ, Delivery days…"></textarea><button class="btn" id="up">Send price list</button></div>';
+    h += '<p class="note">Sample data — a demo of the vendor portal.</p>';
+    main.innerHTML = h;
+    main.querySelectorAll('[data-bid]').forEach(function (btn) {
+      btn.onclick = function () {
+        var p = D.proposals.filter(function (x) { return x.id === btn.dataset.bid; })[0], b = p.payload.bids.filter(function (x) { return x.vi === vi; })[0];
+        var pr = +document.getElementById('pr_' + p.id).value, ld = +document.getElementById('ld_' + p.id).value;
+        if (!(pr > 0) || !(ld > 0)) return alert('A price and a lead time, please.');
+        b.status = 'quoted'; b.price = Math.round(pr); b.lead = Math.round(ld); b.real = true; delete b.note;
+        AG.scoreBids(p.payload.bids, p.payload.deadline ? GC.daysBetween(GC.today(), p.payload.deadline) - GC.T.rules.bufferDays : null);
+        var best = p.payload.bids.filter(function (x) { return x.status === 'quoted'; }).sort(function (a, c) { return c.score - a.score; })[0];
+        p.payload.winner = best ? best.vi : null;
+        p.steps.push({ t: v.name + ' quoted on the vendor portal', d: '₹' + GC.fmt(b.price) + '/pc, ' + b.lead + ' days — scores re-ranked.' });
+        PT.log('rfq', v.name + ' quoted ₹' + GC.fmt(b.price) + '/pc on the vendor portal', { product: p.payload.pid });
+        PT.save(); render();
+      };
+    });
+    main.querySelectorAll('[data-decline]').forEach(function (btn) {
+      btn.onclick = function () {
+        var p = D.proposals.filter(function (x) { return x.id === btn.dataset.decline; })[0], b = p.payload.bids.filter(function (x) { return x.vi === vi; })[0];
+        b.status = 'declined'; b.note = 'Declined on the vendor portal'; b.score = null;
+        PT.log('rfq', v.name + ' declined an RFQ on the vendor portal', { product: p.payload.pid }); PT.save(); render();
+      };
+    });
+    document.getElementById('up').onclick = function () {
+      var t = document.getElementById('csv').value.trim(); if (t.split('\n').length < 2) return alert('A header row and at least one product, please.');
+      D.vendorUploads = D.vendorUploads || []; D.vendorUploads.push({ vendor: vi, csv: t, at: GC.today(), done: false });
+      PT.log('intake', v.name + ' sent a price list on the vendor portal'); PT.save();
+      alert('Received. The intake agent will read it next time the cockpit is opened.'); document.getElementById('csv').value = '';
+    };
+  }
+  window.addEventListener('hashchange', render);
+  render();
+})();
+</script>
+</body>
+</html>

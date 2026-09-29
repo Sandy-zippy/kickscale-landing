@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Your order</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Poppins:wght@600&family=Great+Vibes&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal.css?b=1790331377">
+<style>
+.proof{border:1px dashed #CDBDF0;border-radius:12px;padding:14px;background:#FAF8FF;margin:10px 0}
+</style>
+</head>
+<body>
+<header><span class="logo" data-t="logoText"></span><span><b data-t="name"></b><small>Order status</small></span></header>
+<main id="main"></main>
+<script src="tenant.js?b=1790331377"></script>
+<script src="core.js?b=1790331377"></script>
+<script src="portal.js?b=1790331377"></script>
+<script>
+(function () {
+  var D = PT.D, T = PT.T, esc = PT.esc, main = document.getElementById('main');
+  PT.paint();
+  if (!D) return PT.noStore(main);
+
+  function render() {
+    var token = location.hash.replace('#', '');
+    var o = (D.orders || []).filter(function (x) { return x.token === token; })[0];
+    if (!o) {
+      main.innerHTML = '<div class="card"><h2>Which order?</h2><p class="muted">Each client gets a private link to their own order. For the demo, pick one:</p>' +
+        (D.orders || []).filter(GC.orderOpen).map(function (x) { var c = co(x); return '<p><a href="#' + esc(x.token) + '">' + esc(x.no + ' — ' + (c ? c.name : '') + ' — ' + x.title) + '</a></p>'; }).join('') + '</div>';
+      return;
+    }
+    var c = co(o), cur = T.orderStages.indexOf(o.stage);
+    var days = o.deadline ? GC.daysBetween(GC.today(), o.deadline) : null;
+    var h = '<div class="card"><p class="muted small">' + esc(c ? c.name : '') + ' · PO ' + esc(o.po_no || '—') + '</p><h1>' + esc(o.title) + '</h1>' +
+      '<p>Order <b>' + esc(o.no) + '</b> · ' + (o.deadline ? 'delivery by <b>' + esc(o.deadline) + '</b>' + (days >= 0 ? ' (' + days + ' days)' : '') : '') + '</p>' +
+      '<ul class="steps">' + T.orderStages.map(function (s, i) { return '<li class="' + (i < cur ? 'done' : i === cur ? 'now' : '') + '">' + esc(s) + '</li>'; }).join('') + '</ul></div>';
+    var aw = o.artwork || {};
+    h += '<div class="card"><h3>Artwork proof</h3>';
+    if (aw.status === 'sent') h += '<div class="proof"><b>' + esc(aw.file || 'Proof') + '</b><p class="muted small">Your logo as it will be printed, engraved or embroidered. Branding starts the moment you approve.</p></div>' +
+      '<button class="btn" id="approve">Approve artwork</button> <button class="btn ghost" id="change">Request a change</button>';
+    else if (aw.status === 'approved') h += '<p><span class="pill ok">Approved</span> on ' + esc(aw.approved || '') + '. Thank you.</p>';
+    else h += '<p class="muted">We will put the proof here for your approval.</p>';
+    h += '</div>';
+    h += '<div class="card"><h3>What is in it</h3><table>' + o.lines.map(function (l) { return '<tr><td>' + esc(l.name) + (l.branding ? '<br><span class="muted small">' + esc(l.branding) + '</span>' : '') + '</td><td style="text-align:right">' + GC.fmt(l.qty) + ' pcs</td></tr>'; }).join('') + '</table></div>';
+    if ((o.dispatches || []).length) h += '<div class="card"><h3>Deliveries</h3><table>' + o.dispatches.map(function (d) { return '<tr><td>' + esc(d.city) + '</td><td>' + GC.fmt(d.qty) + ' pcs</td><td>' + esc(d.awb || '') + '</td><td><span class="pill ' + (d.status === 'delivered' ? 'ok' : 'warn') + '">' + esc(d.status) + '</span></td></tr>'; }).join('') + '</table></div>';
+    if (o.invoice) h += '<div class="card"><h3>Invoice</h3><p>' + esc(o.invoice.no) + ' · ' + esc(o.invoice.at) + ' · ₹' + GC.fmt(o.invoice.amount) + ' ' + (o.paid ? '<span class="pill ok">paid</span>' : '<span class="pill warn">due</span>') + '</p></div>';
+    h += '<div class="card"><h3>Something wrong?</h3><p class="muted small">Damaged, short, or the logo is not right — tell us here and your account manager is on it straight away.</p>' +
+      '<select id="ik">' + GC.ISSUE_KINDS.map(function (k) { return '<option>' + k + '</option>'; }).join('') + '</select><textarea id="it" placeholder="What happened?"></textarea><button class="btn ghost" id="report">Report it</button></div>';
+    h += '<p class="note">Sample data — a demo of the client portal. Nothing here leaves this browser.</p>';
+    main.innerHTML = h;
+    bind('approve', function () { aw.status = 'approved'; aw.approved = GC.today(); o.history.push({ stage: o.stage, at: GC.today(), by: null, note: 'Client approved the artwork on the portal' }); PT.log('order_edit', o.no + ': client approved the artwork on the portal', { order: o.id }); PT.save(); render(); });
+    bind('change', function () { var n = prompt('What should change?'); if (!n) return; aw.status = 'pending'; o.history.push({ stage: o.stage, at: GC.today(), by: null, note: 'Client asked for an artwork change: ' + n }); PT.log('order_edit', o.no + ': client asked for an artwork change — ' + n, { order: o.id }); PT.save(); render(); });
+    bind('report', function () {
+      var t = document.getElementById('it').value.trim(); if (!t) return alert('Tell us what happened.');
+      D.issues.unshift(GC.newIssue({ company: o.company, order: o.id, kind: document.getElementById('ik').value, severity: 'high', text: t, assigned_to: o.assigned_to, log: [{ at: GC.today(), by: null, text: 'Reported by the client on the portal' }] }));
+      PT.log('issue', o.no + ': client reported a problem on the portal', { order: o.id, company: o.company }); PT.save();
+      alert('Thank you — your account manager has it now.'); render();
+    });
+  }
+  function co(o) { return (D.companies || []).filter(function (c) { return c.id === o.company; })[0]; }
+  function bind(id, fn) { var b = document.getElementById(id); if (b) b.onclick = fn; }
+  window.addEventListener('hashchange', render);
+  render();
+})();
+</script>
+</body>
+</html>

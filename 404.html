@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>ZippyScale</title>
+    <script>
+      // SPA fallback for GitHub Pages.
+      // Capture the intended path + query + hash into sessionStorage,
+      // redirect to root, and let main.tsx rehydrate history.
+      (function () {
+        var l = window.location;
+        var spaPath = l.pathname + l.search + l.hash;
+        try {
+          sessionStorage.setItem("zippy_spa_path", spaPath);
+        } catch (e) {}
+        l.replace(l.origin + "/");
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

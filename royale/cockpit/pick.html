@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Choose your gift</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Poppins:wght@600&family=Great+Vibes&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="portal.css?b=1790331377">
+</head>
+<body>
+<header><span class="logo" data-t="logoText"></span><span><b data-t="name"></b><small>Choose your gift</small></span></header>
+<main id="main"></main>
+<script src="tenant.js?b=1790331377"></script>
+<script src="engine.js?b=1790331377"></script>
+<script src="core.js?b=1790331377"></script>
+<script src="portal.js?b=1790331377"></script>
+<script>
+(function () {
+  var D = PT.D, esc = PT.esc, main = document.getElementById('main');
+  PT.paint();
+  if (!D) return PT.noStore(main);
+  var db = RoyaleEngine.build(), byId = {};
+  db.items.forEach(function (it) { byId[it.id] = it; });
+  (D.newProducts || []).forEach(function (it) { byId[it.id] = it; });
+  var chosen = null;
+
+  function render() {
+    var code = location.hash.replace('#', '').toUpperCase();
+    var o = (D.orders || []).filter(function (x) { return x.picks && x.picks.code === code; })[0];
+    if (!o) {
+      main.innerHTML = '<div class="card"><h2>Enter your company code</h2><p class="muted">Your HR team shared it with you.</p><input id="code" placeholder="e.g. HORIZON26"><button class="btn" id="go">Continue</button>' +
+        '<p class="muted small" style="margin-top:12px">Demo code: <a href="#HORIZON26">HORIZON26</a></p></div>';
+      document.getElementById('go').onclick = function () { location.hash = document.getElementById('code').value.trim(); };
+      return;
+    }
+    var pk = o.picks, co = (D.companies || []).filter(function (c) { return c.id === o.company; })[0];
+    var h = '<div class="card"><p class="muted small">' + esc(co ? co.name : '') + '</p><h1>Pick your gift</h1><p>Choose one. Your company\'s logo goes on it, and it is delivered to your office. Choices close on <b>' + esc(pk.closes) + '</b>.</p>' +
+      '<p class="muted small">' + pk.entries.length + ' of ' + pk.employees + ' colleagues have chosen.</p></div>';
+    h += '<div class="opts">' + pk.options.map(function (pid, i) {
+      var it = byId[pid], p = it ? GC.product(it, db, (D.productEdits || {})[pid]) : null;
+      if (!p) return '';
+      return '<div class="opt' + (chosen === pid ? ' on' : '') + '" data-pid="' + esc(pid) + '"><div class="im" style="background:linear-gradient(135deg,hsl(' + p.hue + ',42%,52%),hsl(' + ((p.hue + 40) % 360) + ',50%,36%))">' + esc(p.category.charAt(0)) + '</div><div class="b"><b>' + esc(p.name.split(',')[0]) + '</b><br><span class="muted small">' + esc(p.name.split(',').slice(1).join(',').trim()) + '</span></div></div>';
+    }).join('') + '</div>';
+    h += '<div class="card" style="margin-top:14px"><label><span>Your name</span><input id="nm"></label><label><span>Employee ID</span><input id="emp"></label>' +
+      '<label><span>Office</span><select id="city"><option>Mumbai</option><option>Pune</option><option>Bengaluru</option><option>Delhi NCR</option></select></label>' +
+      '<button class="btn" id="save">Confirm my choice</button><p class="muted small" id="msg"></p></div><p class="note">Sample data — a demo of the employee gift picker.</p>';
+    main.innerHTML = h;
+    main.querySelectorAll('.opt').forEach(function (el) { el.onclick = function () { chosen = el.dataset.pid; render(); }; });
+    document.getElementById('save').onclick = function () {
+      var nm = document.getElementById('nm').value.trim(), emp = document.getElementById('emp').value.trim().toUpperCase();
+      if (!chosen) return msg('Pick a gift first.');
+      if (nm.length < 2 || emp.length < 3) return msg('Your name and employee ID, please.');
+      var had = pk.entries.filter(function (e) { return e.emp === emp; })[0];
+      if (had) { had.pid = chosen; had.at = GC.today(); } else pk.entries.push({ name: nm, emp: emp, pid: chosen, city: document.getElementById('city').value, at: GC.today() });
+      PT.log('order_edit', o.no + ': an employee ' + (had ? 'changed their' : 'made a') + ' gift choice on the picker', { order: o.id });
+      PT.save(); chosen = null; render(); alert(had ? 'Updated — your new choice is saved.' : 'Thank you! Your choice is saved.');
+    };
+  }
+  function msg(t) { document.getElementById('msg').textContent = t; }
+  window.addEventListener('hashchange', render);
+  render();
+})();
+</script>
+</body>
+</html>
