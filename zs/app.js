@@ -1243,13 +1243,18 @@
      It renders the SAME view as the full page rather than a second, thinner
      copy of it. Two renderings of one record drift apart, and then a field gets
      fixed in one of them. The route still changes, so a drawer is still a URL
-     somebody can send you. */
+     somebody can send you.
+
+     It renders it in BRIEF mode: a decision surface, not a record dump. What
+     needs an action and what is already filled; the documents, the blanks and
+     everything you can type into wait on the full page. Still one renderer with
+     a flag, for the same reason as above. */
   var DRAWER = null;
 
   function drawerHTML() {
     if (!DRAWER) return '';
     var body;
-    try { body = (VIEWS.opp ? VIEWS.opp(DRAWER) : ''); }
+    try { body = (VIEWS.opp ? VIEWS.opp(DRAWER, true) : ''); }
     catch (e) { body = crashCard(e, 'opp'); }
     return '<div class="scrim" data-act="closeDrawer" aria-hidden="true"></div>' +
       '<aside class="drawer" role="dialog" aria-modal="true" aria-label="Engagement detail">' +

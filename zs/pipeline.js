@@ -214,7 +214,18 @@
 
   /* ---------------- one opportunity ---------------- */
 
-  V.opp = function (id) {
+  /* ---- one renderer, two depths ----
+
+     `brief` is the quick-look drawer. Bhargav's rule for it: show what needs a
+     decision (follow-ups due, appointments, money not cleared, a stage that is
+     blocked) and what we already HOLD, and nothing that is only there to be
+     typed into. So the drawer drops the sixty-box editing grid, the document
+     slots and the paperwork reader, and shows the registry read-only with the
+     blanks left out. Open full page is one button above it.
+
+     A FLAG, NOT A SECOND RENDERER. Two renderings of one record drift apart,
+     and then a field gets fixed in only one of them. */
+  V.opp = function (id, brief) {
     var o = (D().opportunities || []).filter(function (x) { return x.id === id; })[0];
     if (!o) return G.deny('No such opportunity', 'That one is not on the board.');
     var c = G.clientById(o.client);
@@ -369,13 +380,13 @@
     /* Documents belong to the engagement from the MOU onwards, not only once
        it reaches delivery — the MOU is the first thing uploaded and it happens
        long before there is a build. */
-    if (G.docSection) {
+    if (G.docSection && !brief) {
       h += '<div class="card pad" style="margin-top:18px">' +
         G.docSection('deal', o.id, ZS.docsOf(o.proc) .concat(o.docs || []), G.acc().clients,
           'Everything filed against this engagement. A slot takes as many files as it needs.',
           o.proc ? (ZS.PROC_NEEDS[o.proc.stage] || []) : []) + '</div>';
     }
-    if (G.procPanel) h += G.procPanel(o, c, byId[o.won_line]);
+    if (G.procPanel) h += G.procPanel(o, c, byId[o.won_line], brief);
 
     /* ---------------- the deal itself ----------------
 
@@ -395,10 +406,14 @@
          (o.campaign ? ' · ' + esc((ZS.campaignById(D(), o.campaign) || {}).name || '') : '')) +
       li('Opened', o.created) +
       li('Last moved', o.updated) +
+      /* a date picker is a box to type into, so the drawer reads the date back
+         instead of offering to change it */
+      (brief && o.expected ? li('Expected to close', o.expected) : '') +
       '</ul>' +
-      '<div class="inlinef"><label for="exp-' + esc(o.id) + '">Expected to close</label>' +
-      '<input id="exp-' + esc(o.id) + '" type="date" data-expected="' + esc(o.id) + '" ' +
-      'value="' + esc(o.expected || '') + '"></div>' +
+      (brief ? ''
+        : '<div class="inlinef"><label for="exp-' + esc(o.id) + '">Expected to close</label>' +
+          '<input id="exp-' + esc(o.id) + '" type="date" data-expected="' + esc(o.id) + '" ' +
+          'value="' + esc(o.expected || '') + '"></div>') +
       (o.scope
         ? '<h4 class="sec" style="margin-top:16px">Scope</h4><p class="m">' + esc(o.scope) + '</p>'
         : '') +
@@ -416,66 +431,92 @@
     var sc = ZS.scoreRecord(rec);
     var mayEdit = G.acc().editStock && live !== false;
 
-    h += '<p class="eyebrow" style="margin-top:20px">On file' +
-      ' <span class="pill ' + (sc.pct >= 80 ? 'ok' : sc.pct >= 50 ? 'warn' : 'bad') + '">' +
-      sc.present + ' of ' + sc.total + '</span></p>' +
-      '<div class="card pad">' +
-      /* ⚠️ THE SAVE BUTTON WAS ONLY AT THE FOOT OF THIS PANEL, and the panel is
-         sixty fields long. Bhargav looked at the top of the engagement, saw no
-         button, and reasonably concluded there was none. A control you have to
-         scroll past forty boxes to find is a control that does not exist. It is
-         now at BOTH ends: the top one appears as soon as something is typed and
-         stays in view, the bottom one is where your hands already are. */
-      (mayEdit ? recBar(o, 'top') : '') +
-      '<p class="m" style="margin-top:0">Everything this engagement should carry. Type it in ' +
-      'here, or drop the paperwork in at the bottom and let it fill what it recognises. ' +
-      'Anything still blank is a thing we would have to ask them for at the worst moment.</p>';
+    /* ---- the quick look shows what we HOLD, never sixty empty boxes ----
 
-    ZS.FIELD_GROUPS.forEach(function (g) {
-      var inGroup = ZS.FIELDS.filter(function (fd) { return fd.group === g; });
-      if (!inGroup.length) return;
-      var done = inGroup.filter(function (fd) { return ZS.hasField(rec, fd); }).length;
-      h += '<h4 class="sec" style="margin-top:16px">' + esc(g) +
-        ' <span class="hint" style="font-weight:400">' + done + ' of ' + inGroup.length + '</span></h4>' +
-        '<div class="recgrid">' + inGroup.map(function (fd) {
-          return recField(o, fd, rec, mayEdit);
-        }).join('') + '</div>';
-    });
-
-    /* ---- the submit button ----
-       Sticky at the foot of the panel, because the fields run past a screenful
-       and a button you have to scroll to find is a button nobody presses. */
-    if (mayEdit) h += recBar(o);
-
-    /* ---- consolidate from the paperwork ----
-       The same reader the client form uses, pointed at this engagement. It fills
-       only what is blank and only what validates, so a wrong GSTIN in a scanned
-       PDF leaves the field empty rather than filling it in wrong. */
-    if (mayEdit) {
-      h += '<div class="scanbox" style="margin-top:18px">' +
-        '<div class="cardhead"><h3>Fill it from the paperwork</h3>' +
-        '<span class="hint">MOU, invoice, handover note, a credentials sheet</span></div>' +
-        '<p class="m">Drop in as many files as you like. Anything recognisable across all of ' +
-        'them &mdash; company name, GSTIN, PAN, IFSC, account number, fee, payment split, ' +
-        'build length, signing date, repository, login and password &mdash; is read out and ' +
-        'written into the blanks above. Numbers are checked first, so a bad one is left blank ' +
-        'rather than filled in wrong. Nothing already filled gets overwritten.</p>' +
-        '<div class="scanrow">' +
-          '<label class="btn alt">Upload documents' +
-            '<input type="file" id="rec-scan" multiple hidden ' +
-            'accept="image/*,.pdf,.txt,.csv,.doc,.docx"></label>' +
-          '<button type="button" class="btn alt" data-act="pasteRecScan" data-id="' + esc(o.id) +
-            '">Paste the text instead</button>' +
-          '<span class="hint" id="rec-scan-note">Nothing read yet.</span>' +
-        '</div>' +
-        '<p class="hint" style="margin-top:8px">Every file you drop here is also filed against ' +
-        'this engagement, under Documents above, where you can open, rename, re-file or ' +
-        'remove it.</p>' +
+       Bhargav, on the drawer: only the details that are filled up, or the ones
+       that need an action. The full grid is a filing job with a save button, and
+       a filing job is not why anybody opened a card on the board. So in here the
+       registry is read back, filled fields only, no controls, no reader. The
+       score pill stays because "11 of 60" IS the thing that needs an action, and
+       it is the one line that says the rest exists. */
+    if (brief) {
+      var filled = ZS.FIELDS.filter(function (fd) { return ZS.hasField(rec, fd); });
+      h += '<p class="eyebrow" style="margin-top:20px">On file' +
+        ' <span class="pill ' + (sc.pct >= 80 ? 'ok' : sc.pct >= 50 ? 'warn' : 'bad') + '">' +
+        sc.present + ' of ' + sc.total + '</span></p><div class="card pad">' +
+        (filled.length
+          ? '<ul class="ledger">' + filled.map(function (fd) {
+              return li(esc(fd.label),
+                fd.type === 'derived' ? 'yes' : String(ZS.fieldValue(rec, fd)));
+            }).join('') + '</ul>'
+          : '<p class="m" style="margin:0">Nothing on file against this one yet.</p>') +
         '</div>';
-    }
-    h += '</div>';
+    } else {
+      h += '<p class="eyebrow" style="margin-top:20px">On file' +
+        ' <span class="pill ' + (sc.pct >= 80 ? 'ok' : sc.pct >= 50 ? 'warn' : 'bad') + '">' +
+        sc.present + ' of ' + sc.total + '</span></p>' +
+        '<div class="card pad">' +
+        /* ⚠️ THE SAVE BUTTON WAS ONLY AT THE FOOT OF THIS PANEL, and the panel is
+           sixty fields long. Bhargav looked at the top of the engagement, saw no
+           button, and reasonably concluded there was none. A control you have to
+           scroll past forty boxes to find is a control that does not exist. It is
+           now at BOTH ends: the top one appears as soon as something is typed and
+           stays in view, the bottom one is where your hands already are. */
+        (mayEdit ? recBar(o, 'top') : '') +
+        '<p class="m" style="margin-top:0">Everything this engagement should carry. Type it in ' +
+        'here, or drop the paperwork in at the bottom and let it fill what it recognises. ' +
+        'Anything still blank is a thing we would have to ask them for at the worst moment.</p>';
 
-    /* what they asked for, as it changes */
+      ZS.FIELD_GROUPS.forEach(function (g) {
+        var inGroup = ZS.FIELDS.filter(function (fd) { return fd.group === g; });
+        if (!inGroup.length) return;
+        var done = inGroup.filter(function (fd) { return ZS.hasField(rec, fd); }).length;
+        h += '<h4 class="sec" style="margin-top:16px">' + esc(g) +
+          ' <span class="hint" style="font-weight:400">' + done + ' of ' + inGroup.length + '</span></h4>' +
+          '<div class="recgrid">' + inGroup.map(function (fd) {
+            return recField(o, fd, rec, mayEdit);
+          }).join('') + '</div>';
+      });
+
+      /* ---- the submit button ----
+         Sticky at the foot of the panel, because the fields run past a screenful
+         and a button you have to scroll to find is a button nobody presses. */
+      if (mayEdit) h += recBar(o);
+
+      /* ---- consolidate from the paperwork ----
+         The same reader the client form uses, pointed at this engagement. It fills
+         only what is blank and only what validates, so a wrong GSTIN in a scanned
+         PDF leaves the field empty rather than filling it in wrong. */
+      if (mayEdit) {
+        h += '<div class="scanbox" style="margin-top:18px">' +
+          '<div class="cardhead"><h3>Fill it from the paperwork</h3>' +
+          '<span class="hint">MOU, invoice, handover note, a credentials sheet</span></div>' +
+          '<p class="m">Drop in as many files as you like. Anything recognisable across all of ' +
+          'them &mdash; company name, GSTIN, PAN, IFSC, account number, fee, payment split, ' +
+          'build length, signing date, repository, login and password &mdash; is read out and ' +
+          'written into the blanks above. Numbers are checked first, so a bad one is left blank ' +
+          'rather than filled in wrong. Nothing already filled gets overwritten.</p>' +
+          '<div class="scanrow">' +
+            '<label class="btn alt">Upload documents' +
+              '<input type="file" id="rec-scan" multiple hidden ' +
+              'accept="image/*,.pdf,.txt,.csv,.doc,.docx"></label>' +
+            '<button type="button" class="btn alt" data-act="pasteRecScan" data-id="' + esc(o.id) +
+              '">Paste the text instead</button>' +
+            '<span class="hint" id="rec-scan-note">Nothing read yet.</span>' +
+          '</div>' +
+          '<p class="hint" style="margin-top:8px">Every file you drop here is also filed against ' +
+          'this engagement, under Documents above, where you can open, rename, re-file or ' +
+          'remove it.</p>' +
+          '</div>';
+      }
+      h += '</div>';
+    }
+
+    /* what they asked for, as it changes.
+       An empty list in the drawer is an invitation to type, so it is left out of
+       the quick look entirely; with something in it, it is a record of what they
+       asked for and it stays. */
+    if (!brief || (o.requirements || []).length)
     h += '<p class="eyebrow" style="margin-top:20px">Requirements</p><div class="card" style="padding:0">' +
       ((o.requirements || []).length
         ? o.requirements.slice().reverse().map(function (r) {
@@ -487,12 +528,13 @@
           }).join('')
         : '<p class="m pad">Nothing recorded yet. Add what they ask for as it comes up.</p>') +
       '</div>' +
-      (live ? '<div class="invadd"><button class="btn alt" data-act="addReq" data-id="' + esc(o.id) +
+      (live && !brief ? '<div class="invadd"><button class="btn alt" data-act="addReq" data-id="' + esc(o.id) +
               '">+ Add a requirement</button></div>' : '');
 
     h += '</div><div>';
 
     /* what we handed over */
+    if (!brief || (o.deliverables || []).length)
     h += '<p class="eyebrow">What we delivered</p><div class="card" style="padding:0">' +
       ((o.deliverables || []).length
         ? o.deliverables.slice().reverse().map(function (dl) {
@@ -506,10 +548,20 @@
           }).join('')
         : '<p class="m pad">Nothing handed over yet. Demo links, documents, credentials go here.</p>') +
       '</div>' +
-      '<div class="invadd"><button class="btn alt" data-act="addDeliv" data-id="' + esc(o.id) +
-      '">+ Add a link or file</button></div>';
+      (brief ? '' : '<div class="invadd"><button class="btn alt" data-act="addDeliv" data-id="' + esc(o.id) +
+      '">+ Add a link or file</button></div>');
 
     h += '</div></div>';
+
+    /* ---- and say out loud that there is more ----
+       A screen that quietly leaves things out is a screen somebody stops
+       trusting. This names what was left out and where it is. */
+    if (brief) {
+      h += '<p class="hint" style="margin-top:20px;padding-top:14px;border-top:1px solid var(--line)">' +
+        'That is the quick look: what needs doing, and what we already hold. The documents, ' +
+        'every blank still to fill and anything you can type into are on the full page. ' +
+        'Press Open full page at the top.</p>';
+    }
     return h;
   };
 

@@ -134,7 +134,10 @@
 
   /* ---------------- the transfer file, inside an opportunity ---------------- */
 
-  G.procPanel = function (o, c, line) {
+  /* `brief` is the quick-look drawer: the clock, the stage and the progress bar
+     are the reasons somebody opens a transfer file in a hurry. The document grid
+     underneath is a filing job, and a filing job belongs on the full page. */
+  G.procPanel = function (o, c, line, brief) {
     if (!o || !o.proc) return '';
     var ck = clock(o), pr = ZS.procProgress(o);
     var may = G.acc().clients;
@@ -156,9 +159,11 @@
         ' &middot; handover promised <b>' + esc(ZS.procDue(o) || '—') + '</b>' +
         (o.proc.handed_over ? ' &middot; line handed over ' + esc(o.proc.handed_over) : '') + '</p>';
 
-    h += docSection('deal', o.id, ZS.docsOf(o.proc), may,
-      'Everything this build runs on. What is missing here is what is holding the stage.',
-      ZS.PROC_NEEDS[o.proc.stage] || []);
+    if (!brief) {
+      h += docSection('deal', o.id, ZS.docsOf(o.proc), may,
+        'Everything this build runs on. What is missing here is what is holding the stage.',
+        ZS.PROC_NEEDS[o.proc.stage] || []);
+    }
     h += '</div>';
     return h;
   };
@@ -432,6 +437,31 @@
   }
   G.docFileRow = docFileRow;
 
+  /* ---- a slot that holds thirty files ----
+
+     Every file is written out, because a name that is not in the page is a name
+     nobody can search for and nothing can assert on. Only the first few are on
+     SCREEN: a card that grows to thirty rows pushes every slot below it off the
+     bottom, and it does that again on every upload, which is the "it adjusts
+     while the documents are getting uploaded" Bhargav described.
+
+     <details> and not a toggle in state, because a toggle would need an id per
+     slot and the 20-second pulse re-render would shut it anyway. */
+  var SHOW_FIRST = 3;
+  function docFileList(mine, kind, holderId, may) {
+    var h = mine.slice(0, SHOW_FIRST).map(function (d) {
+      return docFileRow(d, kind, holderId, may);
+    }).join('');
+    var rest = mine.slice(SHOW_FIRST);
+    if (rest.length) {
+      h += '<details class="dmore"><summary>Show the other ' + rest.length +
+        (rest.length === 1 ? ' file' : ' files') + '</summary>' +
+        rest.map(function (d) { return docFileRow(d, kind, holderId, may); }).join('') +
+        '</details>';
+    }
+    return h;
+  }
+
   G.docSection = docSection;
   function docSection(kind, holderId, docs, may, blurb, blocking) {
     var types = ZS.docTypes(kind);
@@ -479,9 +509,7 @@
             (t.when ? '<span class="dwhen">' + esc(t.when) + '</span>' : '') +
             (need ? '<span class="needline">Needed before this stage can move on.</span>' : '') +
             (mine.length
-              ? '<div class="dfiles">' + mine.map(function (d) {
-                  return docFileRow(d, kind, holderId, may);
-                }).join('') + '</div>'
+              ? '<div class="dfiles">' + docFileList(mine, kind, holderId, may) + '</div>'
               : '') +
             '</div>';
         }).join('') + '</div>';
