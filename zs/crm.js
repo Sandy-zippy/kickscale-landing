@@ -444,11 +444,73 @@
 
   /* Re-rendering rebuilds the <select>, so the value just added has to be put
      back into it — otherwise adding a sector silently clears the field. */
+  /* ---- the model reads what the text parser cannot ----
+
+     A GST certificate arrives as a photograph or a PDF far more often than as
+     selectable text, and both are exactly what the server's reader is for. It
+     proposes; nothing is overwritten; anything it could not read is left blank
+     rather than guessed at. */
+  function readOnTheServer(files, note) {
+    var can = files.filter(function (f) {
+      return /^image\//.test(f.type || '') || /pdf$/i.test(f.name || '') ||
+             /pdf$/i.test(f.type || '');
+    });
+    if (!can.length) {
+      if (note) note.textContent = files.length + ' file' + (files.length === 1 ? '' : 's') +
+        ' attached, and they will be filed against the client. Nothing recognisable in them.';
+      return;
+    }
+    if (!window.API || !API.signedIn()) {
+      if (note) note.textContent = 'Attached. Reading a photo or a PDF happens on the ' +
+        'server, and this browser is not signed in to one \u2014 sign in, or use ' +
+        '\u201cPaste the text instead\u201d.';
+      return;
+    }
+
+    if (note) note.textContent = 'Reading ' + can[0].name + '\u2026';
+    var r = new FileReader();
+    r.onload = function () {
+      API.readDoc('billing', String(r.result || ''), can[0].type || 'application/pdf', {})
+        .then(function (out) {
+          var read = out && out.read;
+          if (!read) { if (note) note.textContent = 'Nothing came back from the reading.'; return; }
+          /* the reader's names are not the form's; only what this form has a box
+             for is carried across */
+          var fields = {};
+          if (read.gst) fields.gst = read.gst;
+          if (read.pan) fields.pan = read.pan;
+          if (read.ifsc) fields.ifsc = read.ifsc;
+          if (read.bank_account) fields.bank_account = read.bank_account;
+          if (read.city) fields.city = read.city;
+          if (read.state) fields.state = read.state;
+
+          SCANNED = { fields: fields, notes: [
+            'Read by the model, ' + (read.confidence || 'low') + ' confidence. ' +
+            (read.note || '') + ' Check anything it filled before you save.'
+          ] };
+          G.render();
+          applyScan();
+        })
+        .catch(function (e) {
+          if (note) note.textContent = 'Attached, but it could not be read: ' +
+            (e.message || 'no reason given') + ' Use \u201cPaste the text instead\u201d.';
+        });
+    };
+    r.onerror = function () {
+      if (note) note.textContent = 'That file could not be opened.';
+    };
+    r.readAsDataURL(can[0]);
+  }
+
   /* Fill what was read, without stamping on anything already typed. */
   function applyScan() {
     if (!SCANNED) return;
     var map = { gst: 'cl-gst', pan: 'cl-pan', ifsc: 'cl-bifsc', bank_account: 'cl-bacc',
-                pin: 'cl-pin', email: 'cl-email', website: 'cl-web', instagram: 'cl-insta' };
+                pin: 'cl-pin', email: 'cl-email', website: 'cl-web', instagram: 'cl-insta',
+                /* what the model reads that the text parser never did. No box for
+                   the legal name on this form: it lives on the engagement's
+                   registry, so it is not offered here rather than half-filled. */
+                city: 'cl-city', state: 'cl-state' };
     var filled = [];
     Object.keys(SCANNED.fields).forEach(function (k) {
       var el2 = document.getElementById(map[k]);
@@ -943,17 +1005,16 @@
           if (Object.keys(res.fields).length) {
             SCANNED = res;
             G.render();
-          } else if (note) {
-            /* say what actually happened rather than implying it failed */
-            var img = files.filter(function (x) { return /^image\//.test(x.type); }).length;
-            var pdf = files.filter(function (x) { return /pdf$/i.test(x.name); }).length;
-            note.textContent = files.length + ' file' + (files.length === 1 ? '' : 's') +
-              ' attached — they will be filed against the client.' +
-              ((img || pdf)
-                ? ' Reading ' + (img ? 'a photo' : 'a PDF') + ' needs OCR, which needs a server; ' +
-                  'use “Paste the text instead” and the fields fill themselves.'
-                : ' Nothing recognisable in them.');
+            renderPendingDocs();
+            return;
           }
+          /* ⚠️ THE SERVER CAN READ A PHOTOGRAPH AND A PDF, AND THIS DID NOT ASK IT.
+             This box only ever ran the local text parser, so a GST certificate as
+             a PDF or a photo produced nothing and the note said OCR "needs a
+             server" — while the server had been reading exactly these documents
+             for the engagement's own slots for a fortnight. The message was true
+             when it was written and had been stale ever since. */
+          readOnTheServer(files, note);
           renderPendingDocs();
         }
       });

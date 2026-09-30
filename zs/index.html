@@ -315,6 +315,18 @@ body{display:block}
   border:1px solid var(--line2);padding:3px 7px;vertical-align:middle;white-space:nowrap}
 .scanbox{border-style:dashed;border-color:var(--line2);border-width:1px;border-radius:2px;padding:14px}
 
+/* ---- the banner that says the cockpit is not saving anywhere ----
+   Top of every screen, because four clicks into Settings is where a warning goes
+   to be missed, and this one cost a real client record. */
+.wbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px;
+  padding:11px 14px;border:1px solid var(--line2);border-left-width:3px;border-radius:2px;
+  background:var(--char);font-size:13px;line-height:1.5;color:var(--tx2)}
+.wbar b{color:var(--tx)}
+.wbar.bad{border-left-color:var(--bad);background:var(--note-bg)}
+.wbar.warn{border-left-color:var(--warn);background:var(--note-bg)}
+.wbar a{color:var(--accent)}
+.wbar .minibtn{margin-left:auto}
+
 /* ---- the inbox: a list of conversations and one of them, open ----
    Two panes on a desktop, one at a time on a phone, because a chat list and a
    chat side by side on a 375px screen is two useless columns. */
@@ -404,6 +416,9 @@ body{display:block}
   flex-wrap:wrap;margin-top:18px;padding:12px 14px;border:1px solid var(--line2);
   border-radius:2px;background:var(--char)}
 .recbar.armed{border-color:var(--accent)}
+/* the same bar at the top of the panel, stuck under the rail rather than to the
+   foot of the page, so it is the first thing you see once something is typed */
+.recbar.top{position:sticky;top:0;bottom:auto;margin:0 0 14px;z-index:6}
 .recbarsay{flex:1;min-width:200px;font-size:12.5px;color:var(--mut);line-height:1.45}
 .recbar.armed .recbarsay b{color:var(--tx)}
 .recbar .btn.ghost{opacity:.45}
@@ -1126,25 +1141,25 @@ dialog::backdrop{background:rgba(0,0,0,.8)}
 
 <div id="toast" hidden></div>
 
-<script src="vocab.js?b=1790754765"></script>
-<script src="api.js?b=1790754765"></script>
-<script src="core.js?b=1790754765"></script>
-<script src="app.js?b=1790754765"></script>
-<script src="stock.js?b=1790754765"></script>
-<script src="crm.js?b=1790754765"></script>
-<script src="pipeline.js?b=1790754765"></script>
-<script src="autos.js?b=1790754765"></script>
-<script src="processing.js?b=1790754765"></script>
-<script src="whatsapp.js?b=1790754765"></script>
-<script src="campaigns.js?b=1790754765"></script>
-<script src="bin.js?b=1790754765"></script>
-<script src="inbox.js?b=1790754765"></script>
-<script src="chatbot.js?b=1790754765"></script>
-<script src="diary.js?b=1790754765"></script>
-<script src="handbook.js?b=1790754765"></script>
-<script src="jarvis.js?b=1790754765"></script>
-<script src="jarvis-desk.js?b=1790754765"></script>
-<script src="jarvis-view.js?b=1790754765"></script>
+<script src="vocab.js?b=1790755943"></script>
+<script src="api.js?b=1790755943"></script>
+<script src="core.js?b=1790755943"></script>
+<script src="app.js?b=1790755943"></script>
+<script src="stock.js?b=1790755943"></script>
+<script src="crm.js?b=1790755943"></script>
+<script src="pipeline.js?b=1790755943"></script>
+<script src="autos.js?b=1790755943"></script>
+<script src="processing.js?b=1790755943"></script>
+<script src="whatsapp.js?b=1790755943"></script>
+<script src="campaigns.js?b=1790755943"></script>
+<script src="bin.js?b=1790755943"></script>
+<script src="inbox.js?b=1790755943"></script>
+<script src="chatbot.js?b=1790755943"></script>
+<script src="diary.js?b=1790755943"></script>
+<script src="handbook.js?b=1790755943"></script>
+<script src="jarvis.js?b=1790755943"></script>
+<script src="jarvis-desk.js?b=1790755943"></script>
+<script src="jarvis-view.js?b=1790755943"></script>
 <script>window.GE && window.GE.boot();</script>
 </body>
 </html>

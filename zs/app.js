@@ -1139,7 +1139,7 @@
         '. What each role can reach is set by the owner in Settings.');
       return;
     }
-    try { $('#shell').innerHTML = view(arg); }
+    try { $('#shell').innerHTML = savingBanner() + view(arg); }
     catch (e) { $('#shell').innerHTML = crashCard(e, route); console.error(e); }
 
     if (sameScreen) { window.scrollTo(0, keepY); restoreFocus(keepFocus); }
@@ -1147,6 +1147,45 @@
     /* the button that said "Listening" was just thrown away with the rest of the
        screen; tell its replacement what is going on */
     paintMic();
+  }
+
+  /* ⚠️ THE COCKPIT GOING LOCAL-ONLY USED TO BE SILENT, AND IT COST A REAL RECORD.
+
+     A session expires. The next call comes back 401, the token is cleared, and
+     `signedIn()` turns false. From that moment nothing is queued and nothing is
+     sent, and the ONLY sign of it was a small pill four clicks away in Settings.
+     So you carry on adding clients, engagements, follow-ups and invoices into a
+     cockpit that is quietly writing to nothing but this browser.
+
+     Nothing is lost now — `_synced` sees to that, and it all goes up the moment
+     you sign in again — but finding out an hour later is not good enough when
+     the fix is ten seconds. This says so at the top of every screen, until it is
+     no longer true. */
+  function savingBanner() {
+    var api = window.API;
+    if (!api || !api.configured()) return '';
+    var only = unsyncedCount();
+
+    if (!api.signedIn()) {
+      return '<div class="wbar bad">' +
+        '<b>Signed out of the server.</b> Everything you add is being kept in this ' +
+        'browser only' + (only ? ' \u2014 ' + only + ' record' + (only === 1 ? '' : 's') +
+        ' so far' : '') + '. Nothing is lost, and it all goes up the moment you sign in. ' +
+        '<button class="minibtn" data-act="signInAgain">Sign in again</button></div>';
+    }
+    if (!api.state().online) {
+      return '<div class="wbar warn">' +
+        '<b>Offline.</b> ' + (only ? only + ' record' + (only === 1 ? '' : 's') + ' waiting. ' : '') +
+        'They go up on their own when the connection returns.</div>';
+    }
+    /* Signed in, online, and still holding work the server has not taken. That
+       is a refusal rather than a delay, and the reason is worth showing. */
+    if (only > 0 && api.state().lastError) {
+      return '<div class="wbar warn"><b>' + only + ' record' + (only === 1 ? '' : 's') +
+        ' not saved to the server.</b> ' + esc(api.state().lastError) +
+        ' <a href="#/settings/data">Look at it</a></div>';
+    }
+    return '';
   }
 
   /* A blank "undefined is not a function" tells nobody anything. Name the file
@@ -2878,6 +2917,13 @@
     resetApiUrl: function () {
       API.resetUrl();
       toast('Back to the built-in address.');
+      render();
+    },
+
+    /* Straight back to the sign-in, keeping everything that is in this browser. */
+    signInAgain: function () {
+      D.session = null;
+      try { localStorage.setItem(ZS.APP_KEY, JSON.stringify(D)); } catch (e) {}
       render();
     },
 

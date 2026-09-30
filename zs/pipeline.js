@@ -420,6 +420,13 @@
       ' <span class="pill ' + (sc.pct >= 80 ? 'ok' : sc.pct >= 50 ? 'warn' : 'bad') + '">' +
       sc.present + ' of ' + sc.total + '</span></p>' +
       '<div class="card pad">' +
+      /* ⚠️ THE SAVE BUTTON WAS ONLY AT THE FOOT OF THIS PANEL, and the panel is
+         sixty fields long. Bhargav looked at the top of the engagement, saw no
+         button, and reasonably concluded there was none. A control you have to
+         scroll past forty boxes to find is a control that does not exist. It is
+         now at BOTH ends: the top one appears as soon as something is typed and
+         stays in view, the bottom one is where your hands already are. */
+      (mayEdit ? recBar(o, 'top') : '') +
       '<p class="m" style="margin-top:0">Everything this engagement should carry. Type it in ' +
       'here, or drop the paperwork in at the bottom and let it fill what it recognises. ' +
       'Anything still blank is a thing we would have to ask them for at the worst moment.</p>';
@@ -755,9 +762,12 @@
   var REC_SCAN = null;
 
   /* The bar. It says what is waiting and offers the two ways out of it. */
-  function recBar(o) {
+  function recBar(o, where) {
     var n = PENDING_OPP === o.id ? pendingCount() : 0;
-    return '<div class="recbar' + (n ? ' armed' : '') + '" id="rec-bar">' +
+    /* the top one is only worth the space when there is something to save */
+    if (where === 'top' && !n) return '';
+    return '<div class="recbar' + (n ? ' armed' : '') + (where === 'top' ? ' top' : '') +
+      '" id="rec-bar' + (where === 'top' ? '-top' : '') + '">' +
       '<span class="recbarsay">' +
         (n ? '<b>' + n + (n === 1 ? ' change' : ' changes') + ' typed in and not saved.</b> ' +
              'Nothing is written until you press save.'
@@ -801,11 +811,20 @@
         }
       } else if (hint) { hint.parentNode.removeChild(hint); }
     }
-    var bar = document.getElementById('rec-bar');
-    if (bar && bar.parentNode && o) {
-      var wrap = document.createElement('div');
-      wrap.innerHTML = recBar(o);
-      if (wrap.firstChild) bar.parentNode.replaceChild(wrap.firstChild, bar);
+    /* ⚠️ BOTH BARS, or the top one shows a stale count while the bottom one is
+       right, which is worse than having only one. A re-render is avoided here on
+       purpose: it would throw away the box somebody is still typing in. */
+    if (o) {
+      ['', '-top'].forEach(function (suffix) {
+        var bar = document.getElementById('rec-bar' + suffix);
+        if (!bar || !bar.parentNode) return;
+        var wrap = document.createElement('div');
+        wrap.innerHTML = recBar(o, suffix ? 'top' : '');
+        if (wrap.firstChild) bar.parentNode.replaceChild(wrap.firstChild, bar);
+        else bar.parentNode.removeChild(bar);
+      });
+      /* nothing armed yet and no top bar in the page: the next render adds it */
+      if (pendingCount() && !document.getElementById('rec-bar-top')) G.render();
     }
   }
 
@@ -937,15 +956,12 @@
           if (Object.keys(res.fields).length) {
             REC_SCAN = { opp: o.id, fields: res.fields, notes: res.notes };
             applyRecScan();
-          } else if (note) {
-            var img = files.filter(function (x) { return /^image\//.test(x.type); }).length;
-            var pdf = files.filter(function (x) { return /pdf$/i.test(x.name); }).length;
-            note.textContent = files.length + ' file' + (files.length === 1 ? '' : 's') +
-              ' filed against this engagement.' +
-              ((img || pdf)
-                ? ' Reading ' + (img ? 'a photo' : 'a PDF') + ' needs OCR, which needs a server — ' +
-                  'use "Paste the text instead" and the fields fill themselves.'
-                : ' Nothing recognisable in them.');
+          } else {
+            /* ⚠️ THE SERVER READS PHOTOGRAPHS AND PDFs, and this box never asked
+               it. It only ran the local text parser, so a GST certificate as a
+               photo produced nothing and the note blamed a missing server that
+               has been reading exactly these documents for a fortnight. */
+            readOnServer(o, files, note);
           }
           G.render();
         }
@@ -953,6 +969,53 @@
       return;
     }
   });
+
+  /* What the text parser could not read, the model can. It proposes into blanks
+     only, never over anything already filled, exactly like the local reader. */
+  function readOnServer(o, files, note) {
+    var can = files.filter(function (f) {
+      return /^image\//.test(f.type || '') || /pdf$/i.test(f.name || '') || /pdf$/i.test(f.type || '');
+    });
+    if (!can.length) {
+      if (note) note.textContent = files.length + ' file' + (files.length === 1 ? '' : 's') +
+        ' filed against this engagement. Nothing recognisable in them.';
+      return;
+    }
+    if (!window.API || !API.signedIn()) {
+      if (note) note.textContent = 'Filed. Reading a photo or a PDF happens on the server, ' +
+        'and this browser is not signed in to one \u2014 sign in, or paste the text instead.';
+      return;
+    }
+
+    if (note) note.textContent = 'Reading ' + can[0].name + '\u2026';
+    var r = new FileReader();
+    r.onload = function () {
+      API.readDoc('billing', String(r.result || ''), can[0].type || 'application/pdf', { opp: o.id })
+        .then(function (out) {
+          var read = out && out.read;
+          if (!read) { if (note) note.textContent = 'Nothing came back from the reading.'; return; }
+          var f = {};
+          ['gst', 'pan', 'ifsc', 'legal_name', 'address', 'city', 'state',
+           'bank_name', 'account_holder'].forEach(function (k) { if (read[k]) f[k] = read[k]; });
+          if (read.bank_account) f.bank_acc = read.bank_account;
+          if (!Object.keys(f).length) {
+            if (note) note.textContent = 'Read it, and found nothing this engagement has a ' +
+              'field for. ' + (read.note || '');
+            return;
+          }
+          REC_SCAN = { opp: o.id, fields: f, notes: [
+            'Read by the model, ' + (read.confidence || 'low') + ' confidence. ' + (read.note || '')
+          ] };
+          applyRecScan();
+        })
+        .catch(function (e) {
+          if (note) note.textContent = 'Filed, but it could not be read: ' +
+            (e.message || 'no reason given');
+        });
+    };
+    r.onerror = function () { if (note) note.textContent = 'That file could not be opened.'; };
+    r.readAsDataURL(can[0]);
+  }
 
   Object.assign(A, {
     recSave: function (oppId) { saveRecFields(oppId); },
