@@ -2367,6 +2367,12 @@
        allowed to go. Losing somebody's typing must be impossible; resurrecting a
        deleted row is merely untidy, so the doubt goes that way on purpose. */
     var mine = unsynced();
+    /* everything this browser holds right now, so a record the server has lost
+       can be told apart from one it never had */
+    var was = {};
+    ['clients', 'opportunities', 'invoices', 'followups'].forEach(function (k) {
+      was[k] = (D[k] || []).slice();
+    });
 
     var b = blank();
     D = Object.assign(b, {
@@ -2421,18 +2427,52 @@
     /* syncStaff() also republishes the product list, so what we sell comes from
        the server rather than from whatever this browser last had. */
     syncStaff();
+    var rescued = [];
+
     /* everything that came down IS on the server, by definition */
     ['clients', 'opportunities', 'invoices', 'followups'].forEach(function (k) {
       (D[k] || []).forEach(function (r) { r._synced = true; });
     });
 
-    /* and everything that was only here is put back, and queued to go up */
-    var rescued = [];
+    /* ⚠️ A RECORD MISSING FROM THE SERVER IS NOT PROOF IT WAS DELETED.
+
+       The old rule was: something the server once had and no longer has was
+       deleted on purpose, so let it go. That is only true if nothing else can
+       remove a row. On 30 September I ran a cleanup over the clients table to
+       remove my own test records and took a real client with it. The browser
+       still had it, correctly marked as saved, and the very next pull would have
+       obeyed the server and destroyed the last copy.
+
+       A deletion made through the cockpit is recorded in the BIN, so that is
+       what a deletion looks like. Anything else missing from the server is
+       treated as something the server lost, kept, and sent back up. The cost of
+       being wrong is a record that reappears; the cost of the old rule is a
+       record that is gone. */
+    var deleted = {};
+    (remote.bin || []).forEach(function (b) {
+      if (b && b.record) deleted[b.record] = true;
+      ((b && b.carried && b.carried.ids) || []).forEach(function (i) { deleted[i] = true; });
+    });
+    ['clients', 'opportunities', 'invoices', 'followups'].forEach(function (k) {
+      var have = {};
+      (D[k] || []).forEach(function (r) { have[r.id] = true; });
+      (was[k] || []).forEach(function (r) {
+        if (have[r.id] || deleted[r.id]) return;
+        /* the server lost it. Keep it, and send it back. */
+        delete r._synced;
+        D[k] = (D[k] || []).concat([r]);
+        rescued.push([k, r]);
+      });
+    });
+
+    /* and everything that was only here is put back, and queued to go up.
+       ⚠️ The bin still wins. Without this, a record rescued once is unsynced for
+       ever after, so a later real deletion would find it here and resurrect it. */
     ['clients', 'opportunities', 'invoices', 'followups'].forEach(function (k) {
       var have = {};
       (D[k] || []).forEach(function (r) { have[r.id] = true; });
       mine[k].forEach(function (r) {
-        if (have[r.id]) return;
+        if (have[r.id] || deleted[r.id]) return;
         D[k] = (D[k] || []).concat([r]);
         rescued.push([k, r]);
       });

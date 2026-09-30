@@ -255,12 +255,37 @@
     state.pending = count();
   }
 
+  /* Somebody asked for a push while one was already running. */
+  var askedAgain = false;
+
   async function push() {
-    if (state.pushing || !signedIn()) return;
-    sweepUnsent();
+    if (!signedIn()) return;
+
+    /* ⚠️ A SECOND PUSH USED TO GIVE UP SILENTLY AND NEVER COME BACK.
+
+       `if (state.pushing) return;` looks like ordinary mutual exclusion and is
+       not: the change that triggered it is dropped on the floor. On a cold
+       Worker the first push after sign-in takes about ten seconds, and the timer
+       for the client you just typed fires inside that window, sees the lock,
+       returns, and nothing reschedules. Type one client, change nothing else,
+       and it waits for ever.
+
+       That is why records sat in the browser while the panel said everything was
+       saved. It was, right up until the moment you added something. */
+    if (state.pushing) { askedAgain = true; return; }
+
+    try { sweepUnsent(); } catch (e) { /* the app may not be up yet */ }
     if (!count()) return;
+
+    /* ⚠️ AND THE LOCK IS TAKEN ONLY ONCE WE CAN GUARANTEE RELEASING IT.
+       `var D = G.D()` used to sit between `state.pushing = true` and the try, so
+       anything it threw left the lock held for the life of the page and every
+       later push returned at the first line. One throw, no more saving, no
+       message. */
+    var D = G.D && G.D();
+    if (!D) { schedule(); return; }
+
     state.pushing = true;
-    var D = G.D();
     var sent = 0, failed = 0;
 
     try {
@@ -268,7 +293,15 @@
         var c = (D.clients || []).filter(function (x) { return x.id === id; })[0];
         delete queue.clients[id];
         if (!c) continue;
-        try { await call('POST', '/api/clients', { body: forWire('clients', c) }); sent++; c._synced = true; }
+        try {
+          var rc = await call('POST', '/api/clients', { body: forWire('clients', c) });
+          /* ⚠️ ADOPT THE REFERENCE THE SERVER GAVE IT. `ref` is UNIQUE there and
+             this browser mints one from what it alone can see, so the server has
+             the last word. Ignoring the answer means the two disagree about what
+             the record is called and every later save collides again. */
+          if (rc && rc.ref) c.ref = rc.ref;
+          sent++; c._synced = true;
+        }
         catch (e) {
           /* ⚠️ PUT IT BACK WHATEVER WENT WRONG. This only restored the id when
              the failure was "offline", so a 400, a 403 or a 500 deleted it from
@@ -284,7 +317,15 @@
         var o = (D.opportunities || []).filter(function (x) { return x.id === oid; })[0];
         delete queue.opportunities[oid];
         if (!o) continue;
-        try { await call('POST', '/api/opportunities', { body: forWire('opportunities', o) }); sent++; o._synced = true; }
+        try {
+          var ro = await call('POST', '/api/opportunities', { body: forWire('opportunities', o) });
+          /* ⚠️ ADOPT THE REFERENCE THE SERVER GAVE IT. `ref` is UNIQUE there and
+             this browser mints one from what it alone can see, so the server has
+             the last word. Ignoring the answer means the two disagree about what
+             the record is called and every later save collides again. */
+          if (ro && ro.ref) o.ref = ro.ref;
+          sent++; o._synced = true;
+        }
         catch (e) {
           /* ⚠️ PUT IT BACK WHATEVER WENT WRONG. This only restored the id when
              the failure was "offline", so a 400, a 403 or a 500 deleted it from
@@ -325,6 +366,9 @@
     } finally {
       state.pushing = false;
       state.pending = count();
+      /* anything that arrived while this was in flight, and anything still
+         queued, gets another go rather than waiting for an unrelated change */
+      if (askedAgain || count()) { askedAgain = false; schedule(); }
       /* ⚠️ THE `_synced` MARKS HAVE TO REACH localStorage, or a reload forgets
          which records the server already has and the whole book is sent up
          again — and worse, the "only in this browser" count reads as though
@@ -344,6 +388,19 @@
       if (sent && G.render) G.render();
     }
     return { sent: sent, failed: failed };
+  }
+
+  /* ---- for callers that must actually WAIT for the book to be up ----
+
+     `flush` used to be push itself, so a caller awaiting it got `undefined` the
+     moment another push held the lock and carried on as though everything had
+     been sent. A pull then replaced the store. Waits for the lock, then pushes,
+     and only then answers. */
+  async function flush() {
+    for (var i = 0; i < 60 && state.pushing; i++) {
+      await new Promise(function (r) { setTimeout(r, 250); });
+    }
+    return push();
   }
 
   /* The client's field names are not all the server's. Map them once, here,
@@ -586,7 +643,7 @@
     /* data */
     pull: pull,
     fromWire: fromWire,
-    flush: push,
+    flush: flush,
     push: push,
     touch: touch,
     touchSetting: touchSetting,
