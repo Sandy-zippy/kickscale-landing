@@ -204,8 +204,31 @@
      is work that exists in this browser and nowhere else, and adoptRemote() is
      forbidden from throwing it away. See the comment there; the two belong
      together and neither works alone. */
+  /* ⚠️ THE QUEUE IS A HINT, NOT THE TRUTH.
+
+     It was the truth, and that was the bug behind every "it says saved and the
+     count will not move". The queue is filled by noticing a change; anything
+     that stops the noticing — a record rescued after a pull, a push that failed
+     for a reason other than being offline, a path that forgot to call save() —
+     leaves a record out of it FOR EVER, with nothing to put it back.
+
+     So before every push, the store itself is swept: any record the server has
+     not confirmed goes into the queue whether anything noticed it or not. The
+     store is the truth and the queue is only an optimisation over it, which
+     makes this self-healing rather than dependent on every path remembering. */
+  function sweepUnsent() {
+    if (!G.unsyncedRecords) return;
+    var u = G.unsyncedRecords();
+    ['clients', 'opportunities', 'invoices', 'followups'].forEach(function (k) {
+      (u[k] || []).forEach(function (r) { if (r && r.id) queue[k][r.id] = true; });
+    });
+    state.pending = count();
+  }
+
   async function push() {
-    if (state.pushing || !signedIn() || !count()) return;
+    if (state.pushing || !signedIn()) return;
+    sweepUnsent();
+    if (!count()) return;
     state.pushing = true;
     var D = G.D();
     var sent = 0, failed = 0;
@@ -216,14 +239,32 @@
         delete queue.clients[id];
         if (!c) continue;
         try { await call('POST', '/api/clients', { body: forWire('clients', c) }); sent++; c._synced = true; }
-        catch (e) { failed++; if (e.offline) { queue.clients[id] = true; throw e; } }
+        catch (e) {
+          /* ⚠️ PUT IT BACK WHATEVER WENT WRONG. This only restored the id when
+             the failure was "offline", so a 400, a 403 or a 500 deleted it from
+             the queue and nothing ever tried again. The record sat unsent for
+             ever while the panel said there was nothing waiting. The sweep above
+             would find it anyway now; this keeps the error visible in the
+             meantime. */
+          failed++; queue.clients[id] = true;
+          if (e.offline) throw e;
+        }
       }
       for (var oid of Object.keys(queue.opportunities)) {
         var o = (D.opportunities || []).filter(function (x) { return x.id === oid; })[0];
         delete queue.opportunities[oid];
         if (!o) continue;
         try { await call('POST', '/api/opportunities', { body: forWire('opportunities', o) }); sent++; o._synced = true; }
-        catch (e) { failed++; if (e.offline) { queue.opportunities[oid] = true; throw e; } }
+        catch (e) {
+          /* ⚠️ PUT IT BACK WHATEVER WENT WRONG. This only restored the id when
+             the failure was "offline", so a 400, a 403 or a 500 deleted it from
+             the queue and nothing ever tried again. The record sat unsent for
+             ever while the panel said there was nothing waiting. The sweep above
+             would find it anyway now; this keeps the error visible in the
+             meantime. */
+          failed++; queue.opportunities[oid] = true;
+          if (e.offline) throw e;
+        }
       }
       /* Money and chases go up AFTER the engagements they hang off, or the
          server refuses them for belonging to an engagement it has not heard of
@@ -233,14 +274,14 @@
         delete queue.invoices[iid];
         if (!inv) { try { await call('DELETE', '/api/invoices/' + iid); sent++; } catch (e) {} continue; }
         try { await call('POST', '/api/invoices', { body: forWire('invoices', inv) }); sent++; inv._synced = true; }
-        catch (e) { failed++; if (e.offline) { queue.invoices[iid] = true; throw e; } }
+        catch (e) { failed++; queue.invoices[iid] = true; if (e.offline) throw e; }
       }
       for (var fid of Object.keys(queue.followups)) {
         var fu = (D.followups || []).filter(function (x) { return x.id === fid; })[0];
         delete queue.followups[fid];
         if (!fu) { try { await call('DELETE', '/api/followups/' + fid); sent++; } catch (e) {} continue; }
         try { await call('POST', '/api/followups', { body: forWire('followups', fu) }); sent++; fu._synced = true; }
-        catch (e) { failed++; if (e.offline) { queue.followups[fid] = true; throw e; } }
+        catch (e) { failed++; queue.followups[fid] = true; if (e.offline) throw e; }
       }
       for (var key of Object.keys(queue.settings)) {
         delete queue.settings[key];
@@ -254,8 +295,15 @@
     } finally {
       state.pushing = false;
       state.pending = count();
+      /* ⚠️ THE `_synced` MARKS HAVE TO REACH localStorage, or a reload forgets
+         which records the server already has and the whole book is sent up
+         again — and worse, the "only in this browser" count reads as though
+         nothing had ever saved. */
+      if (sent && G.saveLocal) G.saveLocal();
       if (count()) schedule();
       if (G.paintSync) G.paintSync();
+      /* the count on screen is now wrong until something repaints it */
+      if (sent && G.render) G.render();
     }
     return { sent: sent, failed: failed };
   }
@@ -331,6 +379,33 @@
   }
   function docUrl(id) {
     return state.url.replace(/\/+$/, '') + '/api/documents/' + id;
+  }
+
+  /* ⚠️ THE FILE ENDPOINT WANTS A TOKEN AND A LINK CARRIES NONE, which is why
+     every Open button used to be gated on the browser's own copy and a file over
+     1.4 MB could not be opened at all. Fetched with the token and handed to the
+     browser as a blob instead. The alternative — a token in the query string —
+     puts a session key in browser history and in every referrer header. */
+  async function docBlob(id) {
+    if (!state.url) throw new Error('No server is configured.');
+    var res = await fetch(docUrl(id), {
+      headers: state.token ? { authorization: 'Bearer ' + state.token } : {}
+    });
+    if (!res.ok) {
+      var why = 'HTTP ' + res.status;
+      try { why = (await res.json()).error || why; } catch (e) {}
+      throw new Error(why);
+    }
+    return URL.createObjectURL(await res.blob());
+  }
+
+  /* Re-sending a file we only hold as a data URL, because the original File
+     object is long gone by the time somebody presses "Send it up". */
+  async function uploadDataUrl(dataUrl, name, mime, holderKind, holderId, type) {
+    var res = await fetch(dataUrl);
+    var blob = await res.blob();
+    return uploadDoc(new File([blob], name || 'document', { type: mime || blob.type }),
+                     holderKind, holderId, type, name);
   }
   async function fetchDoc(id) {
     var res = await call('GET', '/api/documents/' + id);
@@ -484,6 +559,7 @@
     fetchDoc: fetchDoc,
     editDoc: editDoc,
     dropDoc: dropDoc,
+    docBlob: docBlob, uploadDataUrl: uploadDataUrl,
 
     /* people */
     addStaff: addStaff,

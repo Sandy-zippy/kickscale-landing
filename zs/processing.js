@@ -382,9 +382,28 @@
     G.modal('The link', 'Copy it from here', '<p class="body">' + esc(text) + '</p>');
   }
 
+  /* ⚠️ A FILE THE SERVER HAS IS A FILE YOU CAN OPEN, even with no copy in the
+     browser. Every Open and Download on this row used to be gated on `d.data`,
+     the browser's own copy, which is only kept for files under about 1.4 MB. So
+     a 1.4 MB set of minutes uploaded perfectly, sat safely in storage, and the
+     row offered no way whatsoever to look at it: "too large to keep in the
+     browser, recorded only", as though the file had been thrown away. It had
+     not. Nothing asked the server for it.
+
+     The server copy cannot be a plain href because that endpoint wants a token
+     and a link carries none, so it is fetched and handed to the browser as a
+     blob. Same two buttons, either source. */
+  /* ⚠️ DO NOT HIDE IT WHEN THE FILE IS ON THE SERVER AND YOU ARE SIGNED OUT.
+     A missing button is exactly what made a perfectly safe file look lost. The
+     button is offered whenever the file exists ANYWHERE, and if it cannot be
+     fetched right now the action says why in a sentence. A control that explains
+     itself beats a gap somebody has to interpret. */
+  function canOpen(d) { return !!(d.data || d.remote); }
+
   function docFileRow(d, kind, holderId, may) {
     var id = kind + '|' + holderId + '|' + d.id;
     var isImg = d.data && /^data:image\//.test(d.data);
+    var open = canOpen(d);
     var thumb = isImg
       ? '<a class="dthumb" href="' + d.data + '" target="_blank" rel="noopener" ' +
         'title="Open ' + esc(d.name) + '"><img src="' + d.data + '" alt=""></a>'
@@ -393,27 +412,36 @@
 
     return '<div class="dfile">' + thumb +
       '<span class="dmeta">' +
-        (d.data
-          ? '<a href="' + d.data + '" target="_blank" rel="noopener" download="' + esc(d.name) + '">' +
-            esc(d.name) + '</a>'
+        (open
+          ? '<a href="#" data-act="openDoc" data-id="' + esc(id) + '">' + esc(d.name) + '</a>'
           : '<b>' + esc(d.name) + '</b>') +
         '<i>' + esc(G.fileSize(d.size)) + ' &middot; ' + esc(d.when) +
-        (d.data ? '' : (d.too_big
-          ? ' &middot; too large to keep in the browser, recorded only'
-          : ' &middot; recorded, file not stored')) + '</i>' +
+        (d.remote ? ' &middot; on the server'
+          : d.upload_error ? ' &middot; <b style="color:var(--bad-ink)">not sent up: ' +
+              esc(d.upload_error) + '</b>'
+          : d.data ? ' &middot; in this browser only'
+          : d.too_big ? ' &middot; too large for the browser, and not on the server either'
+          : ' &middot; recorded, file not stored') + '</i>' +
       '</span>' +
       '<span class="dacts">' +
-        (d.data
-          ? '<a class="minibtn" href="' + d.data + '" target="_blank" rel="noopener" ' +
-            'aria-label="Open ' + esc(d.name) + '">Open</a>'
-          : '') +
         /* ---- keep a copy, and give somebody else a copy ----
            The point of putting a file in here is not having to keep it on a
            laptop. That only holds if it can come back out again. */
-        (d.data
-          ? '<a class="minibtn" href="' + d.data + '" download="' + esc(d.name) + '" ' +
-            'aria-label="Download ' + esc(d.name) + '">Download</a>'
+        (open
+          ? '<button class="minibtn" data-act="openDoc" data-id="' + esc(id) + '" ' +
+            'aria-label="Open ' + esc(d.name) + '">Open</button>' +
+            '<button class="minibtn" data-act="saveDoc" data-id="' + esc(id) + '" ' +
+            'aria-label="Download ' + esc(d.name) + '">Download</button>'
           : '') +
+        /* it never reached the server, so say so and offer the one thing that
+           fixes it rather than leaving somebody to guess */
+        (!d.remote && d.data && may
+          ? '<button class="minibtn" data-act="sendDocUp" data-id="' + esc(id) + '" ' +
+            'aria-label="Send ' + esc(d.name) + ' to the server">Send it up</button>'
+          : '') +
+        /* Share stays visible even when the file is not on the server yet. It
+           cannot work, and the action says so precisely and offers the retry —
+           which is more use than a button that quietly is not there. */
         (d.share
           ? '<button class="minibtn on" data-act="copyShare" data-id="' + esc(id) + '" ' +
             'aria-label="Copy the link to ' + esc(d.name) + '">Copy link</button>' +
@@ -435,6 +463,68 @@
         : '') +
       '</div>';
   }
+  /* ---- the file itself, from the browser or from the server ---- */
+  function withFile(key, download) {
+    var p = String(key).split('|'), kind = p[0], holder = p[1], docId = p[2];
+    var own = docOwner(kind, holder, docId);
+    var d = own && (own.docs || []).filter(function (x) { return x.id === docId; })[0];
+    if (!d) return G.toast('That document is no longer here.', true);
+
+    if (d.data) return handOver(d.data, d.name, download);
+    if (!d.remote || !window.API || !API.signedIn()) {
+      return G.toast('There is no copy of this file to open. It is recorded here, ' +
+                     'and the file itself never reached the server.', true);
+    }
+
+    G.toast('Fetching ' + d.name + '\u2026');
+    API.docBlob(d.remote).then(function (url) {
+      handOver(url, d.name, download);
+      /* the blob url is only needed long enough for the browser to take it */
+      setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) {} }, 60000);
+    }).catch(function (e) {
+      G.toast('The server would not hand it over: ' + (e.message || 'no reason given'), true);
+    });
+  }
+
+  function handOver(url, name, download) {
+    if (!download) {
+      var w = window.open(url, '_blank');
+      if (!w) G.toast('Your browser blocked the new tab. Allow pop-ups for this site.', true);
+      return;
+    }
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name || 'document';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  /* One place that puts a file on the server, so the upload path and the retry
+     cannot drift apart. */
+  function sendUp(doc, kind, holder, done) {
+    var f = doc._file;
+    var put = f
+      ? API.uploadDoc(f, kind === 'client' ? 'client' : 'deal', holder, doc.type, doc.name)
+      : API.uploadDataUrl(doc.data, doc.name, doc.mime,
+                          kind === 'client' ? 'client' : 'deal', holder, doc.type);
+    return put.then(function (r) {
+      if (!r || !r.id) throw new Error('the server took it and named nothing');
+      doc.remote = r.id;
+      delete doc.upload_error;
+      G.save();
+      if (done) done(null);
+    }).catch(function (e) {
+      /* ⚠️ RECORDED, NOT SWALLOWED. This was an empty catch, so an upload that
+         failed left a document that looked filed, could not be opened, could not
+         be shared, and gave no reason for any of it. */
+      doc.upload_error = (e && e.message) || 'no reason given';
+      G.save();
+      if (done) done(doc.upload_error);
+    });
+  }
+  G.sendDocUp = sendUp;
+
   G.docFileRow = docFileRow;
 
   /* ---- a slot that holds thirty files ----
@@ -577,6 +667,35 @@
 
        The link is a revocable row rather than a signature, so "stop sharing"
        works immediately and the row can say how many times it was opened. */
+    /* ---- opening a file, from wherever it actually is ----
+       The browser copy if there is one, and the server's if there is not. The
+       server's cannot be a plain link because that endpoint wants a token, so it
+       is fetched and handed over as a blob. */
+    openDoc: function (key) { withFile(key, false); },
+    saveDoc: function (key) { withFile(key, true); },
+
+    /* An upload that failed, tried again, with the reason kept either way. */
+    sendDocUp: function (key) {
+      var p = String(key).split('|'), kind = p[0], holder = p[1], docId = p[2];
+      if (!G.acc().clients) return;
+      var own = docOwner(kind, holder, docId);
+      var doc = own && (own.docs || []).filter(function (d) { return d.id === docId; })[0];
+      if (!doc) return G.toast('That document is no longer here.', true);
+      if (!doc.data) {
+        return G.toast('There is no copy of this file in the browser to send, ' +
+                       'so it has to be uploaded again from the original.', true);
+      }
+      if (!window.API || !API.signedIn()) {
+        return G.toast('Sign in to the server first.', true);
+      }
+      G.toast('Sending ' + doc.name + '\u2026');
+      sendUp(doc, kind, holder, function (err) {
+        if (err) G.toast('It would not go: ' + err, true);
+        else G.toast(doc.name + ' is on the server now.');
+        G.render();
+      });
+    },
+
     shareDoc: function (key) {
       var p = String(key).split('|'), kind = p[0], holder = p[1], docId = p[2];
       if (!G.acc().clients) return;
@@ -589,8 +708,17 @@
                        'so there is nothing for anybody else to open.', true);
       }
       if (!doc.remote) {
-        return G.toast('This one was uploaded before the server was connected. ' +
-                       'Re-upload it and the Share button will work.', true);
+        /* ⚠️ THIS USED TO GUESS, AND THE GUESS WAS WRONG. It said "uploaded
+           before the server was connected", so Bhargav re-uploaded, got the same
+           message, and reasonably concluded sharing was broken. The server was
+           connected the whole time and the upload had failed for some other
+           reason that nobody had recorded. Now the reason is kept on the
+           document, said here, and there is a button that tries again. */
+        return G.toast(doc.upload_error
+          ? 'This file never reached the server: ' + doc.upload_error +
+            ' Press "Send it up" on the row and it will try again.'
+          : 'This file is not on the server yet, so there is nothing for anybody ' +
+            'else to open. Press "Send it up" on the row.', true);
       }
 
       G.toast('Making a link…');
@@ -941,15 +1069,25 @@
          This never blocks the upload. If the server refuses or is unreachable
          the document is already saved here, and the Share button then says
          plainly that there is nothing for anybody else to fetch. */
-      if (window.API && API.signedIn() && f.size <= 25 * 1024 * 1024) {
-        API.uploadDoc(f, kind === 'client' ? 'client' : 'deal', holder, type, doc.name)
-          .then(function (r) {
-            if (!r || !r.id) return;
-            doc.remote = r.id;
-            G.save();
-            G.render();
-          })
-          .catch(function () { /* the local copy stands */ });
+      /* ⚠️ THE CATCH HERE WAS EMPTY, and that one line produced three symptoms
+         that looked like three different bugs: a file that could not be opened,
+         a Share button that refused with a made-up reason, and an upload that
+         reported success while the server had never heard of it. Whatever goes
+         wrong is now written on the document and said out loud. */
+      if (!window.API || !API.signedIn()) {
+        doc.upload_error = 'not signed in to the server when it was uploaded';
+      } else if (f.size > 25 * 1024 * 1024) {
+        doc.upload_error = 'over the 25 MB limit';
+        G.toast(doc.name + ' is over 25 MB, so it is recorded here and not stored.', true);
+      } else {
+        doc._file = f;                     /* for a retry, until the page reloads */
+        sendUp(doc, kind, holder, function (err) {
+          if (err) {
+            G.toast(doc.name + ' did not reach the server: ' + err +
+                    ' Press "Send it up" on the row to try again.', true);
+          }
+          G.render();
+        });
       }
 
       /* ---- and if it is worth reading, read it ----

@@ -389,6 +389,13 @@
     });
   }
 
+  /* Just the cache, with none of the queueing. The push loop calls this after a
+     successful send so the `_synced` marks survive a reload; calling save() there
+     would re-enter the very queue that is mid-flight. */
+  function saveLocal() {
+    try { localStorage.setItem(ZS.APP_KEY, JSON.stringify(D)); } catch (e) {}
+  }
+
   function save() {
     /* Anything new gets its reference here, so no creation path has to remember
        to mint one and none can be missed. */
@@ -2321,6 +2328,8 @@
      is short because the database returned few rows, not because this function
      filtered anything. That is the whole difference between a permission and a
      paint job. */
+  var G_unsynced = null;
+
   /* Work that exists in this browser and nowhere else. */
   function unsynced() {
     var out = { clients: [], opportunities: [], invoices: [], followups: [] };
@@ -2333,6 +2342,8 @@
     var u = unsynced();
     return u.clients.length + u.opportunities.length + u.invoices.length + u.followups.length;
   }
+  /* What the push loop sweeps up before it runs. See the comment there. */
+  G_unsynced = unsynced;
 
   function adoptRemote(remote) {
     if (!remote) return;
@@ -2416,14 +2427,14 @@
     });
 
     /* and everything that was only here is put back, and queued to go up */
-    var rescued = 0;
+    var rescued = [];
     ['clients', 'opportunities', 'invoices', 'followups'].forEach(function (k) {
       var have = {};
       (D[k] || []).forEach(function (r) { have[r.id] = true; });
       mine[k].forEach(function (r) {
         if (have[r.id]) return;
         D[k] = (D[k] || []).concat([r]);
-        rescued++;
+        rescued.push([k, r]);
       });
     });
 
@@ -2432,15 +2443,27 @@
        edited all of them. */
     primeChanges();
 
-    /* ⚠️ AFTER priming, so the rescued ones are the only things queued. Priming
-       first and queueing second is the order that makes this work; the other way
-       round marks them as already sent and they are lost on the next pull
-       instead of this one. */
-    if (rescued) {
-      queueChanges();
-      toast(rescued + ' record' + (rescued === 1 ? '' : 's') +
+    /* ⚠️ QUEUED BY NAME, NOT BY DIFFING, and the difference is the whole thing.
+
+       This used to call queueChanges() here, with a comment claiming that
+       priming first and queueing second was "the order that makes this work".
+       It was the exact opposite. primeChanges() records a stamp for EVERY record
+       in the store, rescued ones included, so queueChanges() then compared each
+       one against a stamp it had just written, found no difference, and queued
+       NOTHING.
+
+       The visible symptom was "4 records the server has not got" sitting at 4
+       for ever while the panel beside it said "Saved to the server" and "Waiting
+       to save: nothing". Both were true. Nothing was waiting because nothing was
+       ever put in the queue.
+
+       A rescued record is one we KNOW the server has not got. There is nothing
+       to work out, so nothing is worked out: it is named to the queue directly. */
+    if (rescued.length && window.API) {
+      rescued.forEach(function (pair) { API.touch(pair[0], pair[1]); });
+      toast(rescued.length + ' record' + (rescued.length === 1 ? '' : 's') +
             ' in this browser had never reached the server. Sending ' +
-            (rescued === 1 ? 'it' : 'them') + ' up now.');
+            (rescued.length === 1 ? 'it' : 'them') + ' up now.');
     }
     try { localStorage.setItem(ZS.APP_KEY, JSON.stringify(D)); } catch (e) {}
     render();
@@ -3605,7 +3628,8 @@
 
   window.GE = {
     boot: boot, render: render, go: go, toast: toast, modal: modal, deny: deny,
-    pullNow: pullNow, unsyncedCount: unsyncedCount,
+    pullNow: pullNow, unsyncedCount: unsyncedCount, unsyncedRecords: function () { return unsynced(); },
+    saveLocal: saveLocal,
     /* exposed so the suite can prove a pull does not eat unsaved work */
     adoptRemote: adoptRemote,
     VIEWS: VIEWS, ACTIONS: ACTIONS,
