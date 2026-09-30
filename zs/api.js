@@ -199,6 +199,11 @@
     timer = setTimeout(function () { push(); }, 1200);
   }
 
+  /* ⚠️ `_synced` IS THE WHOLE DEFENCE AGAINST LOSING SOMEBODY'S WORK.
+     It is set only when the server has ACCEPTED that record. Anything without it
+     is work that exists in this browser and nowhere else, and adoptRemote() is
+     forbidden from throwing it away. See the comment there; the two belong
+     together and neither works alone. */
   async function push() {
     if (state.pushing || !signedIn() || !count()) return;
     state.pushing = true;
@@ -210,14 +215,14 @@
         var c = (D.clients || []).filter(function (x) { return x.id === id; })[0];
         delete queue.clients[id];
         if (!c) continue;
-        try { await call('POST', '/api/clients', { body: forWire('clients', c) }); sent++; }
+        try { await call('POST', '/api/clients', { body: forWire('clients', c) }); sent++; c._synced = true; }
         catch (e) { failed++; if (e.offline) { queue.clients[id] = true; throw e; } }
       }
       for (var oid of Object.keys(queue.opportunities)) {
         var o = (D.opportunities || []).filter(function (x) { return x.id === oid; })[0];
         delete queue.opportunities[oid];
         if (!o) continue;
-        try { await call('POST', '/api/opportunities', { body: forWire('opportunities', o) }); sent++; }
+        try { await call('POST', '/api/opportunities', { body: forWire('opportunities', o) }); sent++; o._synced = true; }
         catch (e) { failed++; if (e.offline) { queue.opportunities[oid] = true; throw e; } }
       }
       /* Money and chases go up AFTER the engagements they hang off, or the
@@ -227,14 +232,14 @@
         var inv = (D.invoices || []).filter(function (x) { return x.id === iid; })[0];
         delete queue.invoices[iid];
         if (!inv) { try { await call('DELETE', '/api/invoices/' + iid); sent++; } catch (e) {} continue; }
-        try { await call('POST', '/api/invoices', { body: forWire('invoices', inv) }); sent++; }
+        try { await call('POST', '/api/invoices', { body: forWire('invoices', inv) }); sent++; inv._synced = true; }
         catch (e) { failed++; if (e.offline) { queue.invoices[iid] = true; throw e; } }
       }
       for (var fid of Object.keys(queue.followups)) {
         var fu = (D.followups || []).filter(function (x) { return x.id === fid; })[0];
         delete queue.followups[fid];
         if (!fu) { try { await call('DELETE', '/api/followups/' + fid); sent++; } catch (e) {} continue; }
-        try { await call('POST', '/api/followups', { body: forWire('followups', fu) }); sent++; }
+        try { await call('POST', '/api/followups', { body: forWire('followups', fu) }); sent++; fu._synced = true; }
         catch (e) { failed++; if (e.offline) { queue.followups[fid] = true; throw e; } }
       }
       for (var key of Object.keys(queue.settings)) {
@@ -285,6 +290,7 @@
       delete out.by;
     }
     delete out.score; delete out.completeness;
+    delete out._synced;          /* ours to track, not the server's to store */
     return out;
   }
 
@@ -467,6 +473,7 @@
     /* data */
     pull: pull,
     fromWire: fromWire,
+    flush: push,
     push: push,
     touch: touch,
     touchSetting: touchSetting,

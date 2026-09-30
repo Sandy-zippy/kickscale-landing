@@ -233,6 +233,30 @@
 },
 
 /* ---------------------------------------------------------------- */
+{ id: 'nothing-is-lost', title: 'Why nothing you type can disappear',
+  where: [['Your data', '#/settings/data'], ['Connections', '#/settings/connections']], text:
+"THIS WENT WRONG ONCE AND IT IS WORTH KNOWING WHY. A client was added, it never " +
+"reached the server, and the next time the cockpit fetched the book it rebuilt " +
+"everything from what the server sent. The record was gone, with no error, " +
+"because nothing on the server had ever recorded it existing.\n\n" +
+"HOW IT WORKS NOW. Every record carries a mark saying whether the server has " +
+"accepted it. Anything without that mark is work that exists in this browser and " +
+"nowhere else, and fetching the book is not allowed to remove it: it survives and " +
+"is sent up straight away. A record the server HAS accepted, which then " +
+"disappears from the server, was genuinely deleted, and is allowed to go. Losing " +
+"your typing is impossible; bringing back something deleted elsewhere is merely " +
+"untidy, so the doubt runs that way on purpose.\n\n" +
+"Fetching also sends anything waiting BEFORE it replaces anything, so the common " +
+"case never reaches the rescue at all.\n\n" +
+"Settings, Your data shows the count: 'Only in this browser'. Zero is the normal " +
+"reading. A number that will not fall means the server is refusing those records, " +
+"and the reason is on the same panel. Nothing is thrown away while you sort it " +
+"out.\n\n" +
+"YOU CAN TYPE WHILE SIGNED OUT and it still works. It waits in the browser, and " +
+"the moment you sign in it goes up."
+},
+
+/* ---------------------------------------------------------------- */
 { id: 'where-the-data-is', title: 'Where the data actually lives',
   where: [['Your data', '#/settings/data'], ['Connections', '#/settings/connections']], text:
 "There is a real server: a Cloudflare Worker with a D1 database and R2 for " +

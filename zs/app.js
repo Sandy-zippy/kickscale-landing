@@ -546,7 +546,7 @@
          seconds later, tries again. */
       if (!moved) { lastPulse = p; return; }
 
-      return API.pull().then(function (remote) {
+      return flushFirst().then(function () { return API.pull(); }).then(function (remote) {
         lastPulse = p;
         adoptRemote(remote);
         announce(newClients, newOpps);
@@ -2104,12 +2104,25 @@
         '<b>this browser</b> and nowhere else. That works, and it does not follow you to ' +
         'another machine.</p>';
     } else {
+      var only = unsyncedCount();
       h += '<ul class="ledger">' +
         li('Address', api.url()) +
         li('Signed in', api.signedIn() ? 'yes' : 'no') +
         li('Last saved up', s2.lastSync ? String(s2.lastSync).replace('T', ' ').slice(0, 16) : 'not yet') +
         li('Waiting to save', s2.pending ? String(s2.pending) + ' change(s)' : 'nothing') +
+        /* ⚠️ SAID OUT LOUD. "Only in this browser" used to be a state with no
+           symptom until the record disappeared. A number here is the difference
+           between noticing and finding out a week later. */
+        li('Only in this browser', only ? only + ' record(s) the server has not got' : 'nothing') +
         '</ul>';
+      if (only) {
+        h += '<p class="note" style="margin-top:10px;border-color:var(--warn)">' +
+          '<b>' + only + ' record' + (only === 1 ? '' : 's') + ' ' +
+          (only === 1 ? 'exists' : 'exist') + ' here and nowhere else.</b> ' +
+          'They go up on their own within a second or two of any change. If this number ' +
+          'stays put, the server is refusing them and the reason is above. Nothing is ' +
+          'thrown away in the meantime.</p>';
+      }
       if (s2.lastError) h += '<p class="err" style="margin-top:10px">' + esc(s2.lastError) + '</p>';
     }
 
@@ -2264,8 +2277,42 @@
      is short because the database returned few rows, not because this function
      filtered anything. That is the whole difference between a permission and a
      paint job. */
+  /* Work that exists in this browser and nowhere else. */
+  function unsynced() {
+    var out = { clients: [], opportunities: [], invoices: [], followups: [] };
+    Object.keys(out).forEach(function (k) {
+      (D[k] || []).forEach(function (r) { if (r && !r._synced) out[k].push(r); });
+    });
+    return out;
+  }
+  function unsyncedCount() {
+    var u = unsynced();
+    return u.clients.length + u.opportunities.length + u.invoices.length + u.followups.length;
+  }
+
   function adoptRemote(remote) {
     if (!remote) return;
+
+    /* ⚠️ THIS FUNCTION USED TO DESTROY UNSAVED WORK, SILENTLY.
+    
+       It rebuilds the store from blank() plus whatever the server sent. So a
+       client typed into this browser and not yet accepted by the server was
+       simply not in the new store, and the old one was gone. No error, no
+       warning, no trace: the record had never reached the server, so nothing
+       there recorded that it had ever existed either.
+    
+       That is what happened to EGO Premium. It was added in the console, it
+       never went up — most likely typed while this browser was not signed in,
+       in which case nothing even queued it — and the next pull replaced the
+       store with the server's, which had never heard of it.
+    
+       THE RULE NOW: a record without `_synced` is work the server has never
+       accepted, and it SURVIVES the adopt and is queued to be sent. A record
+       WITH `_synced` that the server no longer has was genuinely deleted, and is
+       allowed to go. Losing somebody's typing must be impossible; resurrecting a
+       deleted row is merely untidy, so the doubt goes that way on purpose. */
+    var mine = unsynced();
+
     var b = blank();
     D = Object.assign(b, {
       v: b.v,
@@ -2319,10 +2366,38 @@
     /* syncStaff() also republishes the product list, so what we sell comes from
        the server rather than from whatever this browser last had. */
     syncStaff();
+    /* everything that came down IS on the server, by definition */
+    ['clients', 'opportunities', 'invoices', 'followups'].forEach(function (k) {
+      (D[k] || []).forEach(function (r) { r._synced = true; });
+    });
+
+    /* and everything that was only here is put back, and queued to go up */
+    var rescued = 0;
+    ['clients', 'opportunities', 'invoices', 'followups'].forEach(function (k) {
+      var have = {};
+      (D[k] || []).forEach(function (r) { have[r.id] = true; });
+      mine[k].forEach(function (r) {
+        if (have[r.id]) return;
+        D[k] = (D[k] || []).concat([r]);
+        rescued++;
+      });
+    });
+
     /* Prime the change tracker with what just arrived. Without this the next
        save would push every record straight back at the server as though we had
        edited all of them. */
     primeChanges();
+
+    /* ⚠️ AFTER priming, so the rescued ones are the only things queued. Priming
+       first and queueing second is the order that makes this work; the other way
+       round marks them as already sent and they are lost on the next pull
+       instead of this one. */
+    if (rescued) {
+      queueChanges();
+      toast(rescued + ' record' + (rescued === 1 ? '' : 's') +
+            ' in this browser had never reached the server. Sending ' +
+            (rescued === 1 ? 'it' : 'them') + ' up now.');
+    }
     try { localStorage.setItem(ZS.APP_KEY, JSON.stringify(D)); } catch (e) {}
     render();
   }
@@ -2330,9 +2405,20 @@
   /* Pull now and adopt what comes back. Anything that changes the server's copy
      and then needs the screen to agree with it calls this rather than re-rendering
      from what the browser happened to have. */
+  /* ⚠️ SEND BEFORE YOU FETCH, EVERY TIME.
+     A pull replaces the store. Anything still sitting in the queue when that
+     happens is work the server has not got and the browser is about to forget.
+     Flushing first makes the common case correct; `_synced` in adoptRemote is
+     what catches the case where the flush itself fails. Two guards, because
+     this is the one thing that must not go wrong. */
+  function flushFirst() {
+    if (!window.API || typeof API.flush !== 'function') return Promise.resolve();
+    return API.flush().catch(function () { /* offline: _synced still protects it */ });
+  }
+
   function pullNow() {
     if (!window.API || !API.signedIn()) { render(); return Promise.resolve(false); }
-    return API.pull().then(function (remote) {
+    return flushFirst().then(function () { return API.pull(); }).then(function (remote) {
       adoptRemote(remote);
       /* the pulse baseline moves with it, or the next tick announces our own change */
       return API.pulse().then(function (p) { if (p) lastPulse = p; return true; })
@@ -2798,7 +2884,8 @@
     pullNow: function () {
       if (!window.API || !API.signedIn()) return;
       toast('Fetching…');
-      API.pull().then(adoptRemote).then(function () { toast('Up to date.'); })
+      flushFirst().then(function () { return API.pull(); }).then(adoptRemote)
+        .then(function () { toast('Up to date.'); })
         .catch(function (e) { toast(e.message || 'Could not reach the server.', true); });
     },
 
@@ -3007,7 +3094,10 @@
 
       /* An unexpired token means we were already signed in; go straight in. */
       if (API.signedIn()) {
-        API.pull().then(adoptRemote).catch(function (e) {
+        /* ⚠️ THE MOST DANGEROUS PULL OF THE LOT. This is boot, on a browser that
+           may hold an evening's typing done while signed out. Flush first, and
+           _synced catches whatever the flush could not send. */
+        flushFirst().then(function () { return API.pull(); }).then(adoptRemote).catch(function (e) {
           if (e && e.unauthorised) { paintLogin(); return; }
           /* offline: carry on with the cache rather than locking them out */
           render();
@@ -3084,6 +3174,14 @@
           ? API.createOwner(nm0, ln0, pw0)
           : API.signIn(ln0, pw0)
         ).then(function () {
+          /* ⚠️ THE MOMENT EGO PREMIUM WAS LOST. Work typed into this browser
+             while it was not signed in is not in any queue — there was nowhere to
+             queue it to — so flushing finds nothing and the pull that follows
+             used to replace it with the server's book. `_synced` in adoptRemote
+             is what saves it now. The flush is here for the other case: a token
+             that expired mid-session, leaving real entries in the queue. */
+          return flushFirst();
+        }).then(function () {
           return API.pull();
         }).then(function (remote) {
           adoptRemote(remote);
@@ -3456,7 +3554,9 @@
 
   window.GE = {
     boot: boot, render: render, go: go, toast: toast, modal: modal, deny: deny,
-    pullNow: pullNow,
+    pullNow: pullNow, unsyncedCount: unsyncedCount,
+    /* exposed so the suite can prove a pull does not eat unsaved work */
+    adoptRemote: adoptRemote,
     VIEWS: VIEWS, ACTIONS: ACTIONS,
     me: me, acc: acc, can: can, save: save,
     D: function () { return D; },
