@@ -500,14 +500,48 @@
     document.body.removeChild(a);
   }
 
+  /* ⚠️ A DOCUMENT CANNOT BE FILED AGAINST A RECORD THE SERVER HAS NEVER HEARD OF.
+
+     This is the bug behind "not sent up: No such record to file it against." The
+     two halves ran at different speeds: a document is uploaded the instant you
+     pick it, and the engagement it belongs to is pushed on a 1.2 second debounce
+     — or, if that engagement was typed while signed out, never. So the file
+     arrived at a server with no row to attach it to and was refused, correctly.
+
+     The fix is ordering, not retrying: send the holder first, then the file. */
+  function holderRecord(kind, holder) {
+    return kind === 'client'
+      ? G.clientById(holder)
+      : (D().opportunities || []).filter(function (x) { return x.id === holder; })[0];
+  }
+
+  function holderOnServer(kind, holder) {
+    var rec = holderRecord(kind, holder);
+    if (!rec) return Promise.reject(new Error('that record is no longer here'));
+    if (rec._synced) return Promise.resolve(rec);
+    if (!window.API || !API.flush) return Promise.reject(new Error('no server'));
+
+    /* flush() sweeps the store for anything unsent, so this sends the holder
+       whether or not anything had queued it. */
+    return API.flush().then(function () {
+      var again = holderRecord(kind, holder);
+      if (again && again._synced) return again;
+      throw new Error((window.API && API.state().lastError) ||
+        'the ' + (kind === 'client' ? 'client' : 'engagement') +
+        ' it belongs to has not reached the server yet');
+    });
+  }
+
   /* One place that puts a file on the server, so the upload path and the retry
      cannot drift apart. */
   function sendUp(doc, kind, holder, done) {
     var f = doc._file;
-    var put = f
-      ? API.uploadDoc(f, kind === 'client' ? 'client' : 'deal', holder, doc.type, doc.name)
-      : API.uploadDataUrl(doc.data, doc.name, doc.mime,
-                          kind === 'client' ? 'client' : 'deal', holder, doc.type);
+    var put = holderOnServer(kind, holder).then(function () {
+      return f
+        ? API.uploadDoc(f, kind === 'client' ? 'client' : 'deal', holder, doc.type, doc.name)
+        : API.uploadDataUrl(doc.data, doc.name, doc.mime,
+                            kind === 'client' ? 'client' : 'deal', holder, doc.type);
+    });
     return put.then(function (r) {
       if (!r || !r.id) throw new Error('the server took it and named nothing');
       doc.remote = r.id;
@@ -524,6 +558,46 @@
     });
   }
   G.sendDocUp = sendUp;
+
+  /* ---- files that never made it, tried again ----
+
+     A document stranded because its engagement was not on the server yet must go
+     up by itself once that engagement lands, or somebody has to notice and press
+     a button. Run after every successful push, so the order sorts itself out. */
+  var retrying = false;
+  G.retryStrandedDocs = function () {
+    if (retrying) return;                  /* the push calls this; do not re-enter */
+    if (!window.API || !API.signedIn()) return;
+    var d = D(), jobs = [];
+
+    (d.clients || []).forEach(function (c) {
+      (c.docs || []).forEach(function (doc) {
+        if (!doc.remote && doc.data && c._synced) jobs.push([doc, 'client', c.id]);
+      });
+    });
+    (d.opportunities || []).forEach(function (o) {
+      var here = (o.docs || []).concat((o.proc && o.proc.docs) || []);
+      here.forEach(function (doc) {
+        if (!doc.remote && doc.data && o._synced) jobs.push([doc, 'deal', o.id]);
+      });
+    });
+    if (!jobs.length) return;
+
+    retrying = true;
+    var left = jobs.length, went = 0;
+    jobs.forEach(function (j) {
+      sendUp(j[0], j[1], j[2], function (err) {
+        if (!err) went++;
+        left--;
+        if (left) return;
+        retrying = false;
+        if (went) {
+          G.toast(went + ' file' + (went === 1 ? '' : 's') + ' reached the server.');
+          G.render();
+        }
+      });
+    });
+  };
 
   G.docFileRow = docFileRow;
 

@@ -26,7 +26,37 @@
  */
 (function () {
   'use strict';
-  var G = window.GE;
+
+  /* ⚠️ THIS WAS `var G = window.GE;` AND IT WAS THE ROOT OF EVERYTHING.
+
+     api.js loads BEFORE app.js — it has to, because app.js asks the API where
+     the server is while it is booting. app.js creates `window.GE` on its last
+     line. So this captured `undefined`, permanently, and every single reference
+     to G in this file threw a TypeError.
+
+     WHAT THAT MEANT IN PRACTICE: push() throws on its first line, every time.
+     The console has never once saved a record to the server. Not a client, not
+     an engagement, not an invoice. And it was invisible, because every push
+     happens inside a scheduled callback with nobody awaiting it, so the
+     TypeError went to the console log and nowhere else. Meanwhile the panel
+     showed "Saved to the server" — because that reads `lastSync`, which the PULL
+     sets — and "Waiting to save: nothing", because the queue is counted without
+     touching G at all. Three true-looking readings, one dead function.
+
+     Everything else chased this: records stranded in the browser, documents
+     refused with "No such record to file it against" because the engagement had
+     never gone up, a backup sheet with nothing in it because the mirror only
+     fires on a server write.
+
+     Looked up on every access now, so the load order cannot matter. Not a
+     reassignment somebody has to remember to make. */
+  var G = {};
+  ['D', 'render', 'toast', 'save', 'saveLocal', 'paintSync',
+   'unsyncedRecords', 'retryStrandedDocs'].forEach(function (k) {
+    Object.defineProperty(G, k, {
+      get: function () { return window.GE ? window.GE[k] : undefined; }
+    });
+  });
 
   /* ⚠️ THE SERVER ADDRESS BELONGS IN THE BUILD, NOT IN ONE BROWSER.
 
@@ -302,6 +332,14 @@
       if (sent && G.saveLocal) G.saveLocal();
       if (count()) schedule();
       if (G.paintSync) G.paintSync();
+      /* ⚠️ AND NOW THE FILES THAT WERE WAITING ON THOSE RECORDS.
+         A document is refused outright if the engagement it belongs to is not on
+         the server yet ("No such record to file it against"), so the moment the
+         records land, anything stranded is tried again. Without this, ordering
+         is left to luck and to somebody noticing a red line on a row. */
+      if (sent && G.retryStrandedDocs) {
+        try { G.retryStrandedDocs(); } catch (e) {}
+      }
       /* the count on screen is now wrong until something repaints it */
       if (sent && G.render) G.render();
     }
