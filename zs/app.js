@@ -343,6 +343,8 @@
     LAST_SEEN = {};
     (D.clients || []).forEach(function (c) { LAST_SEEN['c:' + c.id] = stamp(c); });
     (D.opportunities || []).forEach(function (o) { LAST_SEEN['o:' + o.id] = stamp(o); });
+    (D.invoices || []).forEach(function (i) { LAST_SEEN['i:' + i.id] = stamp(i); });
+    (D.followups || []).forEach(function (f) { LAST_SEEN['f:' + f.id] = stamp(f); });
     ['access', 'targets', 'picklists', 'products', 'usd_rate', 'roles', 'agentModes'].forEach(function (k) {
       LAST_SEEN['s:' + k] = stamp(D[k]);
     });
@@ -357,6 +359,29 @@
     (D.opportunities || []).forEach(function (o) {
       var k = 'o:' + o.id, now = stamp(o);
       if (LAST_SEEN[k] !== now) { LAST_SEEN[k] = now; API.touch('opportunities', o); }
+    });
+    /* ⚠️ INVOICES AND FOLLOW-UPS WERE NOT ON THIS LIST, and nothing said so.
+       They were read down from the server and never sent up, so an invoice
+       raised here lived in this browser until the next pull replaced it with the
+       server's empty list. On the money layer. */
+    (D.invoices || []).forEach(function (i) {
+      var k = 'i:' + i.id, now = stamp(i);
+      if (LAST_SEEN[k] !== now) { LAST_SEEN[k] = now; API.touch('invoices', i); }
+    });
+    (D.followups || []).forEach(function (f) {
+      var k = 'f:' + f.id, now = stamp(f);
+      if (LAST_SEEN[k] !== now) { LAST_SEEN[k] = now; API.touch('followups', f); }
+    });
+    /* something deleted here has to be deleted there. Seen once and now gone
+       means exactly that; the queue turns a missing record into a DELETE. */
+    Object.keys(LAST_SEEN).forEach(function (k) {
+      var kind = k.slice(0, 2);
+      if (kind !== 'i:' && kind !== 'f:') return;
+      var id = k.slice(2);
+      var list = kind === 'i:' ? (D.invoices || []) : (D.followups || []);
+      if (list.some(function (x) { return x.id === id; })) return;
+      delete LAST_SEEN[k];
+      API.touch(kind === 'i:' ? 'invoices' : 'followups', { id: id });
     });
     ['access', 'targets', 'picklists', 'products', 'usd_rate', 'roles', 'agentModes'].forEach(function (key) {
       var k = 's:' + key, now = stamp(D[key]);
@@ -2252,8 +2277,16 @@
       opportunities: (remote.opportunities || []).map(function (o) {
         return Object.assign({}, o, { client: o.client_id, docs: docsFor(remote, 'deal', o.id) });
       }),
-      invoices: remote.invoices || [],
-      followups: remote.followups || [],
+      /* ⚠️ MAPPED BACK, not taken raw. The server calls them opp_id, client_id and
+         of_n; every screen in here reads opp, client and of. Taken raw, every
+         invoice arrives attached to nothing and the whole money layer reads as
+         empty — which is not obviously a bug, it just looks like no invoices. */
+      invoices: (remote.invoices || []).map(function (i) {
+        return window.API ? API.fromWire('invoices', i) : i;
+      }),
+      followups: (remote.followups || []).map(function (f) {
+        return window.API ? API.fromWire('followups', f) : f;
+      }),
       automations: remote.automations || [],
       staff: remote.staff || [],
       activity: (remote.activity || []).map(function (a) {

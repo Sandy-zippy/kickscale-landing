@@ -174,7 +174,7 @@
 
   /* A change is queued by id, not by value, so twenty keystrokes on one field
      become one push rather than twenty. */
-  var queue = { clients: {}, opportunities: {}, settings: {} };
+  var queue = { clients: {}, opportunities: {}, invoices: {}, followups: {}, settings: {} };
   var timer = null;
 
   function touch(kind, record) {
@@ -191,6 +191,7 @@
   }
   function count() {
     return Object.keys(queue.clients).length + Object.keys(queue.opportunities).length +
+           Object.keys(queue.invoices).length + Object.keys(queue.followups).length +
            Object.keys(queue.settings).length;
   }
   function schedule() {
@@ -219,6 +220,23 @@
         try { await call('POST', '/api/opportunities', { body: forWire('opportunities', o) }); sent++; }
         catch (e) { failed++; if (e.offline) { queue.opportunities[oid] = true; throw e; } }
       }
+      /* Money and chases go up AFTER the engagements they hang off, or the
+         server refuses them for belonging to an engagement it has not heard of
+         yet. That is also why they are separate loops rather than one. */
+      for (var iid of Object.keys(queue.invoices)) {
+        var inv = (D.invoices || []).filter(function (x) { return x.id === iid; })[0];
+        delete queue.invoices[iid];
+        if (!inv) { try { await call('DELETE', '/api/invoices/' + iid); sent++; } catch (e) {} continue; }
+        try { await call('POST', '/api/invoices', { body: forWire('invoices', inv) }); sent++; }
+        catch (e) { failed++; if (e.offline) { queue.invoices[iid] = true; throw e; } }
+      }
+      for (var fid of Object.keys(queue.followups)) {
+        var fu = (D.followups || []).filter(function (x) { return x.id === fid; })[0];
+        delete queue.followups[fid];
+        if (!fu) { try { await call('DELETE', '/api/followups/' + fid); sent++; } catch (e) {} continue; }
+        try { await call('POST', '/api/followups', { body: forWire('followups', fu) }); sent++; }
+        catch (e) { failed++; if (e.offline) { queue.followups[fid] = true; throw e; } }
+      }
       for (var key of Object.keys(queue.settings)) {
         delete queue.settings[key];
         try { await call('POST', '/api/settings', { body: { key: key, value: D[key] } }); sent++; }
@@ -239,13 +257,56 @@
 
   /* The client's field names are not all the server's. Map them once, here,
      rather than letting the difference leak into every call site. */
+  /* ⚠️ THE TWO SIDES NAME THINGS DIFFERENTLY, and the difference is exactly the
+     kind that fails silently. The console says `opp`, `client` and `of`; the
+     tables say `opp_id`, `client_id` and `of_n`. The server writes from an
+     ALLOWLIST of columns, so a field under the wrong name is not rejected — it
+     is simply not written, and nobody finds out until somebody asks where the
+     invoice went. Mapped here, and mapped back in adoptRemote. */
   function forWire(table, rec) {
     var out = Object.assign({}, rec);
     if (table === 'opportunities') {
       out.client_id = rec.client || rec.client_id;
       delete out.client;
     }
+    if (table === 'invoices' || table === 'followups') {
+      out.opp_id = rec.opp || rec.opp_id;
+      out.client_id = rec.client || rec.client_id;
+      delete out.opp; delete out.client;
+    }
+    if (table === 'invoices') {
+      out.of_n = rec.of || rec.of_n || 1;
+      delete out.of;
+      /* proof is a reading, not a fact: kept whole, as JSON */
+      if (out.proof && typeof out.proof === 'object') out.proof = JSON.stringify(out.proof);
+    }
+    if (table === 'followups') {
+      out.by_staff = rec.by || rec.by_staff || null;
+      delete out.by;
+    }
     delete out.score; delete out.completeness;
+    return out;
+  }
+
+  /* And back, for what the server sends down. */
+  function fromWire(table, row) {
+    var out = Object.assign({}, row);
+    out.opp = row.opp_id;
+    out.client = row.client_id;
+    delete out.opp_id; delete out.client_id; delete out.updated_at;
+    if (table === 'invoices') {
+      out.of = row.of_n || 1;
+      delete out.of_n;
+      out.advance = Number(row.advance) || 0;
+      if (typeof row.proof === 'string' && row.proof) {
+        try { out.proof = JSON.parse(row.proof); } catch (e) { out.proof = null; }
+      }
+    }
+    if (table === 'followups') {
+      out.by = row.by_staff || null;
+      out.done = !!row.done;
+      delete out.by_staff;
+    }
     return out;
   }
 
@@ -405,6 +466,7 @@
 
     /* data */
     pull: pull,
+    fromWire: fromWire,
     push: push,
     touch: touch,
     touchSetting: touchSetting,
