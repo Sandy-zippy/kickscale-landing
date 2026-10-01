@@ -516,7 +516,22 @@ body{display:block}
 .invrow .t{flex:1;min-width:0}
 .invrow .t b{display:block;font-size:12.5px;font-weight:500}
 .invrow .t span{font-size:11px;color:var(--dim)}
-.invamt{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px;white-space:nowrap}
+/* ⚠️ THE MONEY COLUMN WAS ONE RUN-ON STRING: "₹1.40 L₹90,000 in advance₹50,000
+   left", three different facts with nothing between them. They are three lines
+   now, and the typewriter face is gone: tabular figures on the UI font keep the
+   columns aligned without looking like a dot-matrix receipt. */
+.invamt{font-variant-numeric:tabular-nums;font-size:13.5px;font-weight:500;white-space:nowrap;
+  text-align:right;display:flex;flex-direction:column;gap:2px;align-items:flex-end;line-height:1.25}
+.invamt i{font-style:normal;font-size:10.5px;font-weight:400;color:var(--dim);letter-spacing:.01em}
+/* the running total on the invoice form, so the arithmetic is visible while it is typed */
+.invsum{border:1px solid var(--line);border-radius:10px;padding:4px 12px;background:var(--char)}
+.invsum>div{display:flex;justify-content:space-between;gap:16px;padding:7px 0;font-size:12.5px;
+  border-bottom:1px solid var(--line)}
+.invsum>div:last-child{border-bottom:0}
+.invsum span{color:var(--mut)}
+.invsum b{font-variant-numeric:tabular-nums;font-weight:500}
+.invsum .tot span{color:var(--tx);font-weight:600}
+.invsum .tot b{font-size:15px;font-weight:600}
 .invstate{background:var(--char2);border:1px solid var(--line2);color:var(--tx);border-radius:6px;
   font-size:11.5px;padding:4px 7px}
 .invadd{display:flex;align-items:center;gap:11px;margin-top:10px;flex-wrap:wrap}
@@ -1246,28 +1261,33 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 
 <div id="toast" hidden></div>
 
-<script src="places.js?b=1790851431"></script>
-<script src="vocab.js?b=1790851431"></script>
-<script src="api.js?b=1790851431"></script>
-<script src="core.js?b=1790851431"></script>
-<script src="app.js?b=1790851431"></script>
-<script src="stock.js?b=1790851431"></script>
-<script src="crm.js?b=1790851431"></script>
-<script src="pipeline.js?b=1790851431"></script>
-<script src="autos.js?b=1790851431"></script>
-<script src="processing.js?b=1790851431"></script>
-<script src="whatsapp.js?b=1790851431"></script>
-<script src="campaigns.js?b=1790851431"></script>
-<script src="bin.js?b=1790851431"></script>
-<script src="inbox.js?b=1790851431"></script>
-<script src="chatbot.js?b=1790851431"></script>
-<script src="outreach.js?b=1790851431"></script>
-<script src="diary.js?b=1790851431"></script>
-<script src="handbook.js?b=1790851431"></script>
-<script src="jarvis.js?b=1790851431"></script>
-<script src="jarvis-desk.js?b=1790851431"></script>
-<script src="dates.js?b=1790851431"></script>
-<script src="jarvis-view.js?b=1790851431"></script>
+<script src="places.js?b=1790863024"></script>
+<script src="vocab.js?b=1790863024"></script>
+<script src="api.js?b=1790863024"></script>
+<script src="core.js?b=1790863024"></script>
+<script src="app.js?b=1790863024"></script>
+<script src="stock.js?b=1790863024"></script>
+<script src="crm.js?b=1790863024"></script>
+<script src="pipeline.js?b=1790863024"></script>
+<script src="autos.js?b=1790863024"></script>
+<script src="processing.js?b=1790863024"></script>
+<script src="whatsapp.js?b=1790863024"></script>
+<script src="campaigns.js?b=1790863024"></script>
+<script src="bin.js?b=1790863024"></script>
+<script src="inbox.js?b=1790863024"></script>
+<script src="chatbot.js?b=1790863024"></script>
+<script src="outreach.js?b=1790863024"></script>
+<script src="diary.js?b=1790863024"></script>
+<script src="handbook.js?b=1790863024"></script>
+<script src="jarvis.js?b=1790863024"></script>
+<script src="jarvis-desk.js?b=1790863024"></script>
+<script src="dates.js?b=1790863024"></script>
+<!-- The invoice PDF: the drawing library, the embedded font (the rupee sign is
+     not in any PDF standard font), and the layout itself. -->
+<script src="vendor/jspdf.js?b=1790863024"></script>
+<script src="vendor/invoice-fonts.js?b=1790863024"></script>
+<script src="invoice.js?b=1790863024"></script>
+<script src="jarvis-view.js?b=1790863024"></script>
 <script>window.GE && window.GE.boot();</script>
 </body>
 </html>

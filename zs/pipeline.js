@@ -1457,6 +1457,17 @@
       G.save(); G.toast('Back on the board at ' + back + '.'); G.render();
     },
 
+    /* Shown or hidden the moment the outcome changes, so the form says what it
+       will do before it is submitted rather than afterwards. */
+    folOutcome: function () {
+      var sel = document.getElementById('f-outcome');
+      var wrap = document.getElementById('f-next-wrap');
+      if (!sel || !wrap) return;
+      wrap.hidden = !ZS.needsNextDate(sel.value);
+      var grid = document.getElementById('f-dates');
+      if (grid) grid.style.gridTemplateColumns = wrap.hidden ? '1fr' : '1fr 1fr';
+    },
+
     logFollow: function (arg) {
       /* One engagement, one thread. This used to refuse outright — "put a service
          line in play first" — and offered a dropdown of which car the call was
@@ -1487,8 +1498,13 @@
         '<div class="f" style="margin-bottom:13px"><label for="f-outcome">How did it go?</label>' +
         '<select id="f-outcome" name="outcome">' +
           ZS.FOLLOW_OUTCOMES.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></div>' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px">' +
-        '<div class="f"><label for="f-next">Next follow-up</label>' +
+        /* ⚠️ READY TO SIGN HAS NO NEXT FOLLOW-UP. There is nothing left to chase;
+           the only date that matters is when the money is expected. The field is
+           hidden rather than disabled so nobody fills in a date that is then
+           thrown away, and the submit handler ignores it regardless of what the
+           hidden input still holds. */
+        '<div id="f-dates" style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px">' +
+        '<div class="f" id="f-next-wrap"><label for="f-next">Next follow-up</label>' +
           '<input id="f-next" name="next" type="date" value="' + ZS.iso(next) + '"></div>' +
         '<div class="f"><label for="f-exp">Expected purchase date</label>' +
           '<input id="f-exp" name="expected" type="date" value="' + esc(o.expected || '') + '"></div>' +
@@ -1578,6 +1594,7 @@
     if (prevChange2) prevChange2(e);
     var st = e.target.closest ? e.target.closest('[data-stage]') : null;
     if (st) { A.setStage(st.dataset.stage + '|' + st.value); return; }
+    if (e.target.id === 'f-outcome') { A.folOutcome(); return; }
     /* The address box only exists for a meeting somebody has to travel to, and
        the hint under the mode picker says what each one will actually do. */
     if (e.target.name === 'mode') {
@@ -1923,8 +1940,13 @@
         note: note, outcome: fd.get('outcome'),
         done: true, done_at: fd.get('when') || ZS.today()
       }));
-      /* and the next one, open */
-      if (fd.get('next')) {
+      /* and the next one, open.
+         ⚠️ NOT WHEN THEY ARE READY TO SIGN. The field is hidden in that case and
+         the check is made here as well, because a hidden input still submits its
+         value and a follow-up booked against somebody about to sign is the kind
+         of nag that costs a deal. */
+      var wantsNext = ZS.needsNextDate(fd.get('outcome'));
+      if (wantsNext && fd.get('next')) {
         D().followups.unshift(ZS.newFollow({
           opp: oid, client: o.client, line: carId, owner: o.assigned_to, by: D().session,
           due: fd.get('next'), method: fd.get('method'),
@@ -1942,7 +1964,8 @@
       G.save();
       var m3 = document.getElementById('modal'); if (m3 && m3.open) m3.close();
       G.toast('Logged — note scored ' + sc.score + '/10.' +
-              (fd.get('next') ? ' Next one booked for ' + fd.get('next') + '.' : ''));
+              (wantsNext && fd.get('next') ? ' Next one booked for ' + fd.get('next') + '.'
+               : !wantsNext ? ' No follow-up booked — they are ready to sign.' : ''));
       G.render();
       return;
     }

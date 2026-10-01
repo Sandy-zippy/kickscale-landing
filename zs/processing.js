@@ -12,6 +12,8 @@
    owner stay attached without being copied anywhere. */
 (function () {
   'use strict';
+  /* the deduction lines on the invoice form being filled in right now */
+  var CUTS = [];
   var G = window.GE, V = G.VIEWS, A = G.ACTIONS;
   var esc = function (s) { return ZS.esc(s); };
   var MINE = false;
@@ -197,6 +199,8 @@
               (i.advance ? '<i>' + ZS.money(i.advance) + ' in advance</i>' : '') +
               (i.state !== 'paid' && ZS.invoiceLeft(i) !== i.amount
                 ? '<i>' + ZS.money(ZS.invoiceLeft(i)) + ' left</i>' : '') +
+              (i.order_value && i.order_value !== i.amount
+                ? '<i>of ' + ZS.money(i.order_value) + ' ordered</i>' : '') +
             '</span>' +
             /* ⚠️ CLEARED OR NOT, IN ONE WORD, NEXT TO THE MONEY. "draft / sent /
                paid / overdue" is the life of an invoice and it is not the
@@ -206,6 +210,13 @@
               (i.state === 'paid' ? 'cleared' : 'not cleared') + '</span>' +
             '<span class="pill dim">' + esc(late && i.state !== 'paid' ? 'overdue' : i.state) + '</span>' +
             (i.proof ? '<span class="pill em" title="' + esc(i.proof.note || '') + '">proof read</span>' : '') +
+            /* ⚠️ THE INVOICE ITSELF. Everything else on this row is about the
+               invoice; this is the invoice. It generates the PDF, stores it
+               against the engagement and hands it over, so the same file is the
+               one on the record and the one the client gets. */
+            (may ? '<button class="minibtn" data-act="invoicePdf" data-id="' + esc(i.id) +
+                   '">' + (ZS.docOfInvoice(ZS.docsOf(o.proc), i.id) ? 'The PDF' : 'Make the PDF') +
+                   '</button>' : '') +
             /* ⚠️ SET BY HAND, ALWAYS. The Reconciler reads a proof and proposes;
                this is the control that waits for nobody. Half the time you know
                the money landed because you looked at your bank, and a system
@@ -685,22 +696,153 @@
 
   Object.assign(A, {
     procMine: function () { MINE = !MINE; G.render(); },
+    /* ---- raising one ----
+
+       ⚠️ THE ARITHMETIC IS SHOWN WHILE IT IS BEING TYPED, because the number that
+       matters is the one at the bottom and it is the one nobody enters. The order
+       value and the deductions are the inputs; Total Due Now is computed and
+       cannot be edited, so the invoice can never disagree with its own working.
+
+       The billed-to block is filled from the client and is editable, which is the
+       whole of "I want to verify the details, and sometimes bill the parent
+       company instead". What is typed here is COPIED onto the invoice: a client
+       who moves office next year must not rewrite an invoice already sent. */
     addInvoice: function (oppId) {
       if (!G.acc().invoices) return;
       var o = (D().opportunities || []).filter(function (x) { return x.id === oppId; })[0];
       if (!o) return;
+      var c = G.clientById(o.client) || {};
+      var t = ZS.invoiceTemplate(D());
       var existing = ZS.invoicesFor(D().invoices, o.id);
-      var left = Math.max(0, ZS.oppValue(o) - existing.reduce(function (a, i) { return a + i.amount; }, 0));
-      G.modal('Raise an invoice', (G.clientById(o.client) || {}).name || '',
+      var billed = existing.reduce(function (a, i) { return a + (i.amount || 0); }, 0);
+      var order = ZS.oppValue(o) || 0;
+      var left = Math.max(0, order - billed);
+      var bt = ZS.billToFrom(c);
+      var code = ZS.codeFor(c);
+      var num = ZS.invoiceNumber(t.number_format, code, new Date().getFullYear(),
+                                 existing.length + 1);
+
+      G.modal('Raise an invoice', c.name || '',
         '<form id="invform" data-oid="' + esc(o.id) + '">' +
-        '<div class="f" style="margin-bottom:12px"><label for="i-scope">What is this one for?</label>' +
-        '<input id="i-scope" name="scope" placeholder="e.g. Phase 1 — build"></div>' +
-        '<div class="f" style="margin-bottom:12px"><label for="i-amt">Amount</label>' +
-        '<input id="i-amt" name="amount" type="number" min="0" value="' + (left || '') + '">' +
-        '<p class="hint">' + (left ? ZS.money(left) + ' of the agreed fee is not yet invoiced.'
-                                   : 'The whole fee is already invoiced.') + '</p></div>' +
+
+        '<div class="fgroup"><h4>What it is for</h4><div class="fbody">' +
+          '<div class="f wide"><label for="i-scope">Description</label>' +
+          '<input id="i-scope" name="scope" autocomplete="off" value="' +
+            esc(o.title || ZS.productName(o.product) || '') + '">' +
+          '<span class="hint">The line the client reads on the invoice.</span></div>' +
+          '<div class="f wide"><label for="i-detail">The line under it</label>' +
+          '<input id="i-detail" name="detail" autocomplete="off" placeholder="' +
+            'e.g. Build &amp; setup as per signed MOU" value="' +
+            (o.scope ? esc(String(o.scope).slice(0, 110)) : '') + '"></div>' +
+        '</div></div>' +
+
+        '<div class="fgroup"><h4>The money</h4><div class="fbody">' +
+          '<div class="f"><label for="i-order">Order value</label>' +
+          '<input id="i-order" name="order_value" type="number" min="0" data-invcalc="1" value="' +
+            (order || '') + '">' +
+          '<span class="hint">' + (order ? 'The agreed fee on this engagement.'
+                                         : 'No fee is set on the engagement yet.') + '</span></div>' +
+          '<div class="f"><label for="i-num">Invoice number</label>' +
+          '<input id="i-num" name="number" autocomplete="off" value="' + esc(num) + '">' +
+          '<span class="hint">Client code <b>' + esc(code) + '</b>. Correct it here and ' +
+          'it is remembered for ' + esc(c.name || 'this client') + '.</span></div>' +
+          '<div class="f wide"><label>Take off what is not being asked for now</label>' +
+          '<div id="i-cuts"></div>' +
+          '<button type="button" class="minibtn" data-act="invCutAdd">+ Add a line</button>' +
+          '<span class="hint">An advance already received, an amount due at handover, ' +
+          'a discount. Each one prints on the invoice as its own line.</span></div>' +
+          (billed ? '<p class="hint wide">' + ZS.money(billed) + ' is already invoiced on this ' +
+            'engagement' + (left ? ', leaving ' + ZS.money(left) + '.' : '.') + '</p>' : '') +
+          '<div class="f wide" id="i-sum"></div>' +
+        '</div></div>' +
+
+        '<div class="fgroup"><h4>Billed to <em>&mdash; check it, or bill somebody else</em></h4>' +
+        '<div class="fbody">' +
+          '<div class="f wide"><label for="i-bt-name">Company</label>' +
+          '<input id="i-bt-name" name="bt_name" autocomplete="off" value="' + esc(bt.name) + '">' +
+          '<span class="hint">Change it to a parent or holding company if that is who pays. ' +
+          'What is here is copied onto the invoice and never changes afterwards.</span></div>' +
+          '<div class="f wide"><label for="i-bt-lines">Address</label>' +
+          '<textarea id="i-bt-lines" name="bt_lines" rows="3">' + esc(bt.lines) + '</textarea></div>' +
+          '<div class="f"><label for="i-bt-attn">For the attention of</label>' +
+          '<input id="i-bt-attn" name="bt_attn" autocomplete="off" value="' + esc(bt.attn) + '"></div>' +
+          G.mobileField('i-bt-mob', 'bt_mobile', bt.dial, bt.mobile, 'Mobile') +
+          '<div class="f"><label for="i-bt-gst">GSTIN</label>' +
+          '<input id="i-bt-gst" name="bt_gst" autocomplete="off" value="' + esc(bt.gst) + '">' +
+          '<span class="hint">' + (bt.gst ? 'From their record.' : 'Not on their record.') +
+          '</span></div>' +
+        '</div></div>' +
+
+        '<div class="fgroup"><h4>When, and what to say</h4><div class="fbody">' +
+          '<div class="f"><label for="i-due">Due date</label>' +
+          '<input id="i-due" name="due" type="date" value="' +
+            esc(ZS.addDays(ZS.today(), Number(t.terms_days) || 15)) + '"></div>' +
+          '<div class="f"><label for="i-duetext">Or say it in words</label>' +
+          '<input id="i-duetext" name="due_text" autocomplete="off" placeholder="e.g. On Handover">' +
+          '<span class="hint">Fill this in and it replaces the date. Nothing with a worded ' +
+          'due date is ever called overdue.</span></div>' +
+          '<div class="f wide"><label for="i-note">Note on the invoice</label>' +
+          '<textarea id="i-note" name="note" rows="2" placeholder="' +
+          'e.g. This invoice covers the balance of the advance. The remainder is payable at handover.' +
+          '"></textarea></div>' +
+          '<div class="f wide"><label for="i-payline">Line beside the due date</label>' +
+          '<textarea id="i-payline" name="pay_line" rows="2">' +
+          esc('Please process the payment on or before the due date to the account details ' +
+              'shared alongside.') + '</textarea></div>' +
+        '</div></div>' +
+
         '<p class="err" id="i-err"></p>' +
-        '<button class="btn" type="submit">Raise it</button></form>');
+        '<div style="display:flex;gap:10px">' +
+        '<button class="btn" type="submit">Raise it</button>' +
+        '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
+      A.invCutDraw();
+    },
+
+    /* The deduction lines. Held on the form rather than in the store until it is
+       submitted, because a half-filled invoice is not an invoice. */
+    invCutAdd: function () { CUTS.push({ label: ZS.DEDUCTION_LABELS[0], amount: '' }); A.invCutDraw(); },
+    invCutDrop: function (i) { CUTS.splice(Number(i), 1); A.invCutDraw(); },
+    invCutDraw: function () {
+      var box = document.getElementById('i-cuts');
+      if (!box) return;
+      box.innerHTML = CUTS.map(function (cut, i) {
+        return '<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">' +
+          '<input list="i-cutlabels" data-cut="label" data-i="' + i + '" value="' +
+            esc(cut.label || '') + '" placeholder="What is coming off" style="flex:2">' +
+          '<input data-cut="amount" data-i="' + i + '" type="number" min="0" value="' +
+            esc(cut.amount === '' ? '' : cut.amount) + '" placeholder="Amount" style="flex:1">' +
+          '<button type="button" class="xbtn" data-act="invCutDrop" data-id="' + i +
+            '" aria-label="Remove">&times;</button></div>';
+      }).join('') +
+      '<datalist id="i-cutlabels">' +
+        ZS.DEDUCTION_LABELS.map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') +
+      '</datalist>';
+      A.invSum();
+    },
+    /* ⚠️ The total is shown, never typed. */
+    invSum: function () {
+      var box = document.getElementById('i-sum');
+      if (!box) return;
+      var t = ZS.invoiceTemplate(D());
+      var orderEl = document.getElementById('i-order');
+      var inv = { order_value: Number(orderEl && orderEl.value) || 0,
+                  deductions: CUTS.map(function (c2) {
+                    return { label: c2.label, amount: Number(c2.amount) || 0 }; }),
+                  gst: t.gst_registered, gst_rate: t.gst_rate };
+      var tot = ZS.invoiceTotals(inv, t.gst_rate);
+      box.innerHTML = '<div class="invsum">' +
+        '<div><span>Order value</span><b>' + ZS.rupees(tot.order) + '</b></div>' +
+        CUTS.filter(function (c3) { return Number(c3.amount); }).map(function (c3) {
+          return '<div><span>' + esc(c3.label || 'Less') + '</span><b>\u2013 ' +
+            ZS.rupees(Number(c3.amount)) + '</b></div>';
+        }).join('') +
+        '<div><span>GST</span><b>' + (tot.rate ? ZS.rupees(tot.gst) + ' (' + tot.rate + '%)'
+                                               : 'Not Applicable') + '</b></div>' +
+        '<div class="tot"><span>Total due now</span><b>' + ZS.rupees(tot.total) + '</b></div>' +
+        '</div>' +
+        (tot.deducted > tot.order
+          ? '<p class="err" style="margin-top:8px">That takes off more than the order value.</p>'
+          : '');
     },
     /* ---- money in before the work ----
        An advance belongs ON the invoice it is an advance against. A separate
@@ -723,6 +865,67 @@
         '<div style="display:flex;gap:10px;margin-top:14px">' +
         '<button class="btn" type="submit">Save it</button>' +
         '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
+    },
+
+    /* ---- the invoice as a file ----
+
+       ⚠️ ONE FILE, IN BOTH PLACES. It is generated once, filed under "Invoices
+       raised" on the engagement, sent to the server and handed to the browser.
+       The copy the client receives and the copy on the record are therefore the
+       same bytes, which is the only way the record is worth keeping.
+
+       Making it again replaces what the row points at, because the usual reason
+       to press it twice is that a figure was wrong. */
+    invoicePdf: function (id) {
+      if (!G.acc().invoices) return;
+      var inv = (D().invoices || []).filter(function (x) { return x.id === id; })[0];
+      if (!inv) return;
+      var o = (D().opportunities || []).filter(function (x) { return x.id === inv.opp; })[0];
+      if (!o) return G.toast('That engagement is no longer here.', true);
+      if (!G.invoicePdfReady || !G.invoicePdfReady()) {
+        return G.toast('The PDF engine did not load. Reload the page and try again.', true);
+      }
+      var c = G.clientById(inv.client || o.client);
+
+      G.toast('Drawing it…');
+      G.invoicePdf(inv, o, c).then(function (out) {
+        /* hand it over first: the file is what was asked for, and the filing
+           below must not be what decides whether he gets it */
+        var a = document.createElement('a');
+        a.href = out.dataUrl; a.download = out.name;
+        document.body.appendChild(a); a.click(); a.remove();
+
+        if (!o.proc) o.proc = ZS.newProc ? ZS.newProc() : { docs: [] };
+        o.proc.docs = o.proc.docs || [];
+        var doc = ZS.newDoc({
+          type: 'invoices', name: out.name, mime: 'application/pdf',
+          data: out.dataUrl, by: D().session, invoice: inv.id,
+          note: 'Generated from the cockpit' +
+                (inv.number ? ' — ' + inv.number : '')
+        });
+        /* an older copy of the same invoice stops being the one on the record */
+        o.proc.docs = o.proc.docs.filter(function (x) { return x.invoice !== inv.id; });
+        o.proc.docs.unshift(doc);
+        o.updated = ZS.today();
+        if (window.API) API.touch('opportunities', o);
+        G.log('invoice_add', 'Invoice PDF made — ' + (inv.number || inv.ref || out.name),
+              { client: o.client, opp: o.id });
+        G.save();
+
+        if (window.API && API.signedIn() && G.sendDocUp) {
+          G.sendDocUp(doc, 'deal', o.id, function (err) {
+            G.toast(err ? 'Downloaded, but it did not reach the server: ' + err
+                        : 'Made, filed and on the server. It is under Invoices raised.',
+                    !!err);
+            G.render();
+          });
+        } else {
+          G.toast('Made and filed under Invoices raised.');
+          G.render();
+        }
+      }).catch(function (e) {
+        G.toast((e && e.message) || 'The PDF would not draw.', true);
+      });
     },
 
     dropInvoice: function (id) {
@@ -981,19 +1184,83 @@
     var o = (D().opportunities || []).filter(function (x) { return x.id === e.target.dataset.oid; })[0];
     if (!o) return;
     var fd = new FormData(e.target);
-    /* Nothing here is mandatory either. An invoice gets raised as a placeholder
-       the moment the work is agreed and priced two days later, so it takes a
-       blank amount and sits at zero until somebody fills it in. */
-    var amt = Number(fd.get('amount')) || 0;
-    ZS.addInvoice(D().invoices, { opp: o.id, client: o.client,
-                                  scope: String(fd.get('scope') || '').trim(), amount: amt });
+    var t = ZS.invoiceTemplate(D());
+    var cuts = CUTS.map(function (c2) {
+      return { label: String(c2.label || 'Less').trim(), amount: Number(c2.amount) || 0 };
+    }).filter(function (c2) { return c2.amount > 0; });
+
+    var draft = { order_value: Number(fd.get('order_value')) || 0, deductions: cuts,
+                  gst: t.gst_registered, gst_rate: t.gst_rate };
+    var tot = ZS.invoiceTotals(draft, t.gst_rate);
+    if (tot.deducted > tot.order) {
+      var err = document.getElementById('i-err');
+      if (err) err.textContent = 'That takes off more than the order value.';
+      return;
+    }
+
+    /* ⚠️ `amount` IS THE TOTAL DUE NOW, computed. It is what this invoice asks
+       for, and it is what everything downstream already means by amount: what is
+       owed, what the Collector chases, what clears when the money lands. The
+       order value and the deductions are the working shown on the page. */
+    var amt = tot.total;
+    var dueText = String(fd.get('due_text') || '').trim();
+
+    /* the client code, corrected once and remembered */
+    var c = G.clientById(o.client);
+    var num = String(fd.get('number') || '').trim();
+    if (c && num) {
+      var guess = ZS.invoiceNumber(t.number_format, ZS.codeFor(c), new Date().getFullYear(),
+                                   ZS.invoicesFor(D().invoices, o.id).length + 1);
+      if (num !== guess) {
+        var m = num.match(/^ZS\/([A-Z0-9]{2,6})\//i) ||
+                num.match(/\b([A-Z]{2,6})\b/);
+        if (m && m[1] && m[1].toUpperCase() !== ZS.codeFor(c)) {
+          c.invoice_code = m[1].toUpperCase();
+          if (window.API) API.touch('clients', c);
+        }
+      }
+    }
+
+    ZS.addInvoice(D().invoices, {
+      opp: o.id, client: o.client,
+      scope: String(fd.get('scope') || '').trim(),
+      detail: String(fd.get('detail') || '').trim(),
+      order_value: tot.order, deductions: cuts,
+      gst: t.gst_registered, gst_rate: t.gst_rate,
+      number: num,
+      amount: amt,
+      /* ⚠️ A worded due date and a real one are exclusive. Keeping both would
+         leave an invoice that says "On Handover" and goes overdue on the 16th. */
+      due: dueText ? null : (fd.get('due') || ZS.addDays(ZS.today(), Number(t.terms_days) || 15)),
+      due_text: dueText,
+      note: String(fd.get('note') || '').trim(),
+      pay_line: String(fd.get('pay_line') || '').trim(),
+      bill_to: { name: String(fd.get('bt_name') || '').trim(),
+                 lines: String(fd.get('bt_lines') || '').trim(),
+                 attn: String(fd.get('bt_attn') || '').trim(),
+                 dial: String(fd.get('bt_mobile_dial') || ZS.DEFAULT_DIAL),
+                 mobile: String(fd.get('bt_mobile') || '').trim(),
+                 gst: String(fd.get('bt_gst') || '').trim(), email: '', note: '' }
+    });
+    CUTS = [];
     G.log('invoice_add', amt ? 'Invoice raised — ' + ZS.money(amt)
                              : 'Invoice started, no amount yet', { client: o.client, opp: o.id });
     G.save();
     document.getElementById('modal').close();
-    G.toast('Invoice raised.');
+    G.toast('Invoice raised. Press Make the PDF to send it.');
     G.render();
   };
+
+  /* the deduction rows and the order value, recalculated as they are typed */
+  document.addEventListener('input', function (e) {
+    var cut = e.target.closest ? e.target.closest('[data-cut]') : null;
+    if (cut) {
+      var row = CUTS[Number(cut.dataset.i)];
+      if (row) { row[cut.dataset.cut] = cut.value; A.invSum(); }
+      return;
+    }
+    if (e.target.id === 'i-order') A.invSum();
+  });
 
   var prevChange = A.onChange;
   A.onChange = function (e) {

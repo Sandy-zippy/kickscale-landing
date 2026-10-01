@@ -15,6 +15,16 @@
 
   var fmt = function (n) { return n == null ? '—' : Number(n).toLocaleString('en-IN'); };
 
+  /* ⚠️ THE FULL FIGURE, FOR ANYTHING A CLIENT READS. `money` below abbreviates
+     to L and Cr, which is right on a dashboard and wrong on a bill: nobody has
+     ever been invoiced "₹1.40 L". Indian grouping, two decimals, a hair space
+     after the sign so the number does not touch it. */
+  var rupees = function (n) {
+    var v = Number(n) || 0;
+    return '\u20b9 ' + v.toLocaleString('en-IN', { minimumFractionDigits: 2,
+                                                   maximumFractionDigits: 2 });
+  };
+
   var money = function (n) {
     if (n == null) return '—';
     if (n >= 10000000) return '₹' + (n / 10000000).toFixed(2) + ' Cr';
@@ -780,6 +790,42 @@
     return renumber(list, oppId);
   }
 
+  /* ---- what an invoice actually says ----
+
+     The shape below is taken from the invoices Bhargav already sends, not
+     invented: ZS/EGO/2026/003 reads
+
+        Order value                 ₹ 1,40,000.00
+        Less: advance received     – ₹   90,000.00
+        Less: due on handover      – ₹   20,000.00
+        GST                         Not Applicable
+        Total Due Now               ₹   30,000.00
+
+     ⚠️ A DEDUCTION IS NOT AN ADVANCE, and keeping them apart is the whole of the
+     money model here. `advance` has always meant *money received against THIS
+     invoice*, which is what clears it. The "Less: advance received" line above is
+     something else: it explains how an order of ₹1,40,000 comes to ask for
+     ₹30,000 today. Folding one into the other would mark this invoice cleared
+     the moment it was raised, because ₹90,000 is more than ₹30,000.
+
+     So `order_value` is the agreed total, `deductions` are the lines that
+     explain the gap, and `amount` is what this invoice asks for. Everything that
+     already reads `amount` and `advance` keeps working untouched. */
+  var DEDUCTION_LABELS = ['Less: advance received', 'Less: due on handover',
+                          'Less: already invoiced', 'Less: discount agreed'];
+
+  function invoiceTotals(inv, gstRate) {
+    var order = Number(inv && inv.order_value) || 0;
+    var cuts = ((inv && inv.deductions) || []).reduce(function (a, d) {
+      return a + (Number(d && d.amount) || 0);
+    }, 0);
+    var taxable = Math.max(0, order - cuts);
+    var rate = (inv && inv.gst) ? (Number(inv.gst_rate) || Number(gstRate) || 0) : 0;
+    var gst = Math.round(taxable * rate / 100);
+    return { order: order, deducted: cuts, taxable: taxable,
+             rate: rate, gst: gst, total: taxable + gst };
+  }
+
   function newInvoice(o) {
     o = o || {};
     return {
@@ -788,6 +834,28 @@
       opp: o.opp || null, client: o.client || null,
       n: o.n || 1, of: o.of || 2,
       scope: o.scope || '',
+      /* the line under the description on the PDF */
+      detail: o.detail || '',
+      /* the agreed total this invoice is a part of. 0 means "this invoice is the
+         whole of it", and the PDF then shows a plain Subtotal / Total Due. */
+      order_value: Number(o.order_value) || 0,
+      deductions: Array.isArray(o.deductions) ? o.deductions : [],
+      gst: !!o.gst,
+      gst_rate: Number(o.gst_rate) || 0,
+      /* The invoice number as the client reads it, which is not our internal
+         reference. ZS/EGO/2026/003 on paper, AC-001/1 in the database. */
+      number: o.number || '',
+      /* ⚠️ A due date is not always a date. "On Handover" is a real answer and it
+         is on invoices he has already sent. When this is set, `due` is null and
+         nothing can call the invoice overdue, which is correct: no date has
+         passed. */
+      due_text: o.due_text || '',
+      note: o.note || '',
+      /* the sentence beside the due-date chip, telling them how to pay */
+      pay_line: o.pay_line || '',
+      /* Who it is billed to, COPIED not referenced. A client who changes their
+         address next year must not silently rewrite an invoice already sent. */
+      bill_to: o.bill_to || null,
       amount: o.amount || 0,
       state: o.state || 'draft',
       /* An ADVANCE is money taken before the work, against this invoice. It is
@@ -803,6 +871,99 @@
     };
   }
 
+  /* ---- the invoice template ----
+
+     ⚠️ EVERY WORD BELOW IS TAKEN OFF AN INVOICE HE HAS ALREADY SENT
+     (ZS/EGO/2026/003 and ZS/BER/2026/002, both raised 1 October 2026). They are
+     not suggestions and they are not mine: the whole point of a template is that
+     the next invoice looks like the last one. Editable in Settings, which is the
+     only place they should ever be edited.
+
+     The bank details are the one block worth reading twice before changing. */
+  var DEFAULT_INVOICE_TEMPLATE = {
+    logo: '',                                   /* blank = the bundled mark */
+    legal_name: 'Zippy Scale',
+    byline: 'Co-Founder: Bhargav Naidu',
+    address: 'Lab 24, ODCWL, 3rd Floor,\nPranava Business Park, beside Toyota Showroom,\nKondapur, Hyderabad \u2013 500084',
+    email: 'bhargav@zippyscale.com',
+    bank_holder: 'Zippy Scale',
+    bank_name: 'HDFC Bank',
+    bank_account: '50200102811362',
+    bank_ifsc: 'HDFC0006334',
+    /* ⚠️ Not GST-registered. When this goes on, the rate applies and the note
+       below is replaced by the ordinary tax lines. */
+    gst_registered: false,
+    gst_rate: 18,
+    gst_note: 'This invoice does not include GST. Zippy Scale is not GST-registered and ' +
+              'GST is not applicable on this payment.',
+    terms_days: TERMS_DAYS,
+    number_format: 'ZS/{CODE}/{YYYY}/{NNN}',
+    footer: 'Zippy Scale  \u2022  bhargav@zippyscale.com  \u2022  Thank you for your business'
+  };
+
+  function invoiceTemplate(store) {
+    var t = (store && store.invoice_template) || {};
+    var out = {};
+    Object.keys(DEFAULT_INVOICE_TEMPLATE).forEach(function (k) {
+      out[k] = (t[k] === undefined || t[k] === null || t[k] === '') && k !== 'gst_registered'
+        ? DEFAULT_INVOICE_TEMPLATE[k] : t[k];
+    });
+    out.gst_registered = !!t.gst_registered;
+    return out;
+  }
+
+  /* A short code per client, the way the real ones read: EGO Premium Products
+     Private Limited is EGO, The Big E Retail is BER. Derived rather than stored,
+     and editable on the invoice itself, because a derivation is a good guess and
+     never an authority. */
+  var CODE_SKIP = /^(the|a|an|and|of|for|m\/s|messrs)$/i;
+  /* ⚠️ A GUESS, CORRECTED ONCE. "EGO Premium Products Private Limited" derives
+     as EPP and he writes EGO; "The Big E Retail" derives as BER, which is right.
+     No rule gets both, so the invoice form shows the guess, he fixes it where it
+     is wrong, and the fix is saved on the CLIENT. One correction per client,
+     ever, rather than a decision on every invoice. */
+  function codeFor(client) {
+    return (client && client.invoice_code) || clientCode(client && client.name);
+  }
+  function clientCode(name) {
+    var words = String(name || '').replace(/[^a-z0-9\s]/gi, ' ').split(/\s+/)
+      .filter(function (w) { return w && !CODE_SKIP.test(w); });
+    if (!words.length) return 'ZS';
+    if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+    return words.slice(0, 3).map(function (w) { return w[0]; }).join('').toUpperCase();
+  }
+
+  function invoiceNumber(format, code, year, n) {
+    return String(format || DEFAULT_INVOICE_TEMPLATE.number_format)
+      .replace(/\{CODE\}/g, code || 'ZS')
+      .replace(/\{YYYY\}/g, String(year || new Date().getFullYear()))
+      .replace(/\{NNN\}/g, String(n == null ? 1 : n).padStart(3, '0'))
+      .replace(/\{NN\}/g, String(n == null ? 1 : n).padStart(2, '0'));
+  }
+
+  /* Who the invoice is addressed to. Defaults to the client and can be pointed
+     at a parent company instead, which is a real thing that happens: the work is
+     for the brand and the money comes from the holding company. */
+  function billToFrom(client) {
+    var a = (client && client.address) || {};
+    var ct = client ? primaryContact(client) : null;
+    return {
+      name: (client && client.name) || '',
+      lines: [a.line1, a.area, [a.city, a.state].filter(Boolean).join(', '), a.pin,
+              a.country && a.country !== 'India' ? a.country : '']
+        .filter(Boolean).join('\n'),
+      attn: ct ? ct.name : '',
+      /* ⚠️ Split, like every other number in the cockpit. The invoice prints the
+         two joined; the form edits them apart, so the country code is a picker
+         rather than something somebody has to remember to type. */
+      dial: ct ? (ct.dial || DEFAULT_DIAL) : DEFAULT_DIAL,
+      mobile: ct ? (ct.mobile || '') : '',
+      email: ct ? (ct.email || '') : '',
+      gst: (client && client.gst) || '',
+      note: ''
+    };
+  }
+
   /* What is still owed ON ONE INVOICE, after any advance against it. The state
      says cleared or not; this says how much of it is actually outstanding. */
   function invoiceLeft(inv) {
@@ -812,6 +973,10 @@
   }
   function invoiceOverdue(inv, today_) {
     if (!inv || inv.state === 'paid' || inv.state === 'draft') return false;
+    /* "On Handover" is a due date with no day in it. Nothing has passed, so
+       nothing is overdue, and calling it overdue would put a red pill on an
+       invoice that is behaving exactly as agreed. */
+    if (inv.due_text) return false;
     var left = daysLeft(inv.due, today_);
     return left !== null && left < 0;
   }
@@ -924,11 +1089,21 @@
       data: o.data || null,          // a data URL for an image, null otherwise
       by: o.by || null,
       when: o.when || today(),
-      note: o.note || ''
+      note: o.note || '',
+      /* Set when this file IS an invoice the cockpit generated, so the row can
+         find its own PDF rather than guessing from the file name. */
+      invoice: o.invoice || null
     };
   }
 
   function docsOf(holder) { return (holder && holder.docs) || []; }
+  /* The generated PDF for one invoice, if it has been made. Newest wins: making
+     it again replaces what the row points at, which is what somebody expects
+     after correcting a figure. */
+  function docOfInvoice(docs, invoiceId) {
+    var mine = (docs || []).filter(function (d) { return d && d.invoice === invoiceId; });
+    return mine.sort(function (a, b) { return String(b.when).localeCompare(String(a.when)); })[0] || null;
+  }
   /* Every file filed under one slot, newest first. */
   function docsIn(holder, type) {
     return docsOf(holder).filter(function (d) { return d.type === type; })
@@ -1297,7 +1472,13 @@
      and when to come back. An opportunity without a next date is the one that
      goes quiet, so the board can flag it. */
 
-  var FOLLOW_METHODS = ['Call', 'WhatsApp', 'Email', 'Meeting', 'Site visit', 'Message'];
+  var FOLLOW_METHODS = ['Call', 'WhatsApp', 'Email', 'Meeting', 'Online meet', 'Site visit', 'Message'];
+  /* ⚠️ THE OUTCOME THAT ENDS THE CHASING. They are ready to sign, so there is no
+     next follow-up to book: what matters now is the day the money is expected.
+     Kept as a named list rather than a string compared in three files, because
+     the wording of an outcome is the sort of thing that gets edited. */
+  var NO_NEXT_DATE = ['Ready to sign'];
+  function needsNextDate(outcome) { return NO_NEXT_DATE.indexOf(String(outcome || '')) < 0; }
   var FOLLOW_OUTCOMES = [
     'Going well — still keen',
     'Wants time to think',
@@ -2287,6 +2468,14 @@
   /* "2026-10-01" → "1 Oct 2026". 01/10/2026 means two different days depending on
      who reads it, so no date in the cockpit is shown that way. */
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var MON_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                  'August', 'September', 'October', 'November', 'December'];
+  /* "2 October 2026", which is how his invoices print a date. The screens use
+     the short form; a document a client keeps gets the long one. */
+  function longDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+    return m ? (+m[3]) + ' ' + MON_LONG[+m[2] - 1] + ' ' + m[1] : String(iso || '');
+  }
   function niceDate(iso) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
     return m ? (+m[3]) + ' ' + MON[+m[2] - 1] + ' ' + m[1] : String(iso || '');
@@ -3808,7 +3997,7 @@
   var APP_KEY = 'zippyscale_cockpit_v2';
 
   var api = {
-    fmt: fmt, money: money, esc: esc, today: today, nonEmpty: nonEmpty,
+    fmt: fmt, money: money, rupees: rupees, esc: esc, today: today, nonEmpty: nonEmpty,
     normMobile: normMobile, validName: validName,
     prepare: prepare,
 
@@ -3853,16 +4042,22 @@
     ensureRefs: ensureRefs, productName: productName, USD: USD,
     setUsdRate: setUsdRate, usdRate: usdRate, inUsd: inUsd,
     INVOICE_STATES: INVOICE_STATES, INVOICE_WORDS: INVOICE_WORDS, TERMS_DAYS: TERMS_DAYS, newInvoice: newInvoice,
+    DEDUCTION_LABELS: DEDUCTION_LABELS, invoiceTotals: invoiceTotals,
+    DEFAULT_INVOICE_TEMPLATE: DEFAULT_INVOICE_TEMPLATE, invoiceTemplate: invoiceTemplate,
+    clientCode: clientCode, codeFor: codeFor, invoiceNumber: invoiceNumber,
+    billToFrom: billToFrom,
     invoiceOverdue: invoiceOverdue, owedOn: owedOn,
     invoiceLeft: invoiceLeft, advanceOn: advanceOn, SPLITS: SPLITS, splitFee: splitFee,
     addInvoice: addInvoice, dropInvoice: dropInvoice, invoicesFor: invoicesFor, renumber: renumber,
     ENGAGEMENT_DOCS: ENGAGEMENT_DOCS, CLIENT_DOCS: CLIENT_DOCS,
     docTypes: docTypes, docLabel: docLabel, editDoc: editDoc, newDoc: newDoc, docsOf: docsOf,
+    docOfInvoice: docOfInvoice,
     hasDoc: hasDoc, missingDocs: missingDocs, docsIn: docsIn, docCount: docCount, newProc: newProc,
     isProcessing: isProcessing, procDeals: procDeals, procDue: procDue,
     addDays: addDays, daysLeft: daysLeft, procOverdue: procOverdue,
     procProgress: procProgress, startProc: startProc, moveProc: moveProc,
     FOLLOW_METHODS: FOLLOW_METHODS, FOLLOW_OUTCOMES: FOLLOW_OUTCOMES, AT_RISK: AT_RISK,
+    NO_NEXT_DATE: NO_NEXT_DATE, needsNextDate: needsNextDate,
     newFollow: newFollow, followsFor: followsFor, openFollows: openFollows,
     isOverdue: isOverdue, isDueToday: isDueToday, nextFollow: nextFollow,
     atRisk: atRisk, needsAttention: needsAttention,
@@ -3903,7 +4098,8 @@
     primaryContact: primaryContact, contactById: contactById, oppContact: oppContact,
     addContact: addContact, dropContact: dropContact,
     makePrimary: makePrimary, newAddress: newAddress, addressLine: addressLine,
-    placeFields: placeFields, placeList: placeList, niceDate: niceDate, PLACE_OTHER: PLACE_OTHER,
+    placeFields: placeFields, placeList: placeList, niceDate: niceDate, longDate: longDate,
+    PLACE_OTHER: PLACE_OTHER,
     PICKLISTS: PICKLISTS, picklist: picklist, addToPicklist: addToPicklist,
     DESIGNATIONS: DESIGNATIONS, designationsFor: designationsFor,
     findByName: findByName,

@@ -36,6 +36,9 @@
       /* conversations: WhatsApp and Instagram, one row per person per channel */
       threads: [],
       mayAssign: false,
+      /* What every invoice says about us: our details, our bank, our wording.
+         The layout is fixed in invoice.js; these are the parts that change. */
+      invoice_template: null,
       /* Mark's board: businesses found, read and scored */
       prospects: [],
       sends: [],
@@ -2030,6 +2033,7 @@
 
   VIEWS.settings = function (tab) {
     var tabs = [['access', 'Roles & access'], ['people', 'People'], ['lines', 'What we sell'],
+                ['invoice', 'Invoice template'],
                 ['whatsapp', 'WhatsApp'],
                 ['connections', 'Connections'], ['sheet', 'Engagement sheet'],
                 ['data', 'Your data'],
@@ -2047,6 +2051,7 @@
     if (tab === 'access') h += accessMatrix();
     else if (tab === 'people') h += peopleTab();
     else if (tab === 'lines') h += linesTab();
+    else if (tab === 'invoice') h += invoiceTemplateTab();
     else if (tab === 'whatsapp') h += (window.GE.whatsappSection ? window.GE.whatsappSection() : '');
     else if (tab === 'connections') h += connections();
     else if (tab === 'sheet') h += (VIEWS.sheet ? VIEWS.sheet('panel') : '');
@@ -2061,6 +2066,74 @@
       (hasDemo() ? 'Reset everything' : 'Empty it') + '</button></p></div>';
     return h;
   };
+
+  /* ---- the invoice template ----
+
+     ⚠️ THE LAYOUT IS NOT EDITABLE HERE, AND THAT IS DELIBERATE. The invoices he
+     already sends are well designed and the design is not the thing that changes
+     between them: the bank account, the address and the wording are. So this
+     holds the DETAILS and the layout is fixed in invoice.js, drawn to match
+     ZS/EGO/2026/003 line for line. A layout editor would be a worse version of
+     the design he already has.
+
+     Everything on this screen appears on every invoice raised from now on. */
+  function invoiceTemplateTab() {
+    var t = ZS.invoiceTemplate(D);
+    var f = function (key, label, hint, type) {
+      return '<div class="f"><label for="it-' + key + '">' + esc(label) + '</label>' +
+        '<input id="it-' + key + '" data-invt="' + key + '" type="' + (type || 'text') +
+        '" value="' + esc(t[key] == null ? '' : t[key]) + '" autocomplete="off">' +
+        (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
+    };
+    var area = function (key, label, hint, rows) {
+      return '<div class="f wide"><label for="it-' + key + '">' + esc(label) + '</label>' +
+        '<textarea id="it-' + key + '" data-invt="' + key + '" rows="' + (rows || 3) + '">' +
+        esc(t[key] == null ? '' : t[key]) + '</textarea>' +
+        (hint ? '<span class="hint">' + hint + '</span>' : '') + '</div>';
+    };
+
+    return '<div class="card pad">' +
+      '<div class="cardhead"><h3>What goes on every invoice</h3>' +
+      '<button class="btn alt" data-act="invoicePreview">See a sample</button></div>' +
+      '<p class="m">These fill the invoice layout. Change one here and every invoice ' +
+      'raised afterwards follows, with nothing to redesign.</p>' +
+
+      '<div class="fgroup" style="margin-top:16px"><h4>Billed by</h4><div class="fbody">' +
+        f('legal_name', 'Legal name', 'Exactly as it should read on a bill.') +
+        f('byline', 'The line under it', 'e.g. Co-Founder: Bhargav Naidu') +
+        f('email', 'Email', '', 'email') +
+        area('address', 'Address', 'One line per line, as it should print.') +
+      '</div></div>' +
+
+      '<div class="fgroup"><h4>Payment account details</h4><div class="fbody">' +
+        f('bank_holder', 'Account name') +
+        f('bank_name', 'Bank') +
+        f('bank_account', 'Account number') +
+        f('bank_ifsc', 'IFSC') +
+        '<p class="hint wide">\u26a0\ufe0f This block is printed on every invoice and it is how ' +
+        'clients pay. Read it twice before changing it.</p>' +
+      '</div></div>' +
+
+      '<div class="fgroup"><h4>Tax</h4><div class="fbody">' +
+        '<div class="f"><label for="it-gst_registered">GST registered</label>' +
+        '<select id="it-gst_registered" data-invt="gst_registered">' +
+        '<option value="">No, GST is not applicable</option>' +
+        '<option value="1"' + (t.gst_registered ? ' selected' : '') + '>Yes, add GST</option>' +
+        '</select></div>' +
+        f('gst_rate', 'Rate %', 'Applied to the taxable amount when GST is on.', 'number') +
+        area('gst_note', 'The line that prints when GST is not applicable', '', 2) +
+      '</div></div>' +
+
+      '<div class="fgroup"><h4>Numbering and terms</h4><div class="fbody">' +
+        f('number_format', 'Invoice number', '{CODE} is the client code, {YYYY} the year, ' +
+          '{NNN} the running number. Yours reads ' +
+          esc(ZS.invoiceNumber(t.number_format, 'EGO', new Date().getFullYear(), 3)) + '.') +
+        f('terms_days', 'Payment terms, in days', 'The due date is this many days after raising.', 'number') +
+        area('footer', 'Footer line', '', 2) +
+      '</div></div>' +
+
+      '<p class="hint">Saved as you type.</p></div>';
+  }
 
   /* ---- your data, and how to carry it ----
 
@@ -2449,7 +2522,7 @@
        sheet; leaving it out meant the Open the sheet button vanished twenty
        seconds after it appeared. */
     ['targets', 'picklists', 'products', 'usd_rate', 'roles', 'agentModes',
-     'backup_sheet', 'outreach_playbook'].forEach(function (k) {
+     'backup_sheet', 'outreach_playbook', 'invoice_template'].forEach(function (k) {
       if (remote.settings && remote.settings[k]) D[k] = remote.settings[k];
     });
     /* syncStaff() also republishes the product list, so what we sell comes from
@@ -3404,6 +3477,19 @@
         e.target.value = '';
         return;
       }
+      /* the invoice template, saved as it is typed */
+      var it = e.target.closest ? e.target.closest('[data-invt]') : null;
+      if (it) {
+        D.invoice_template = Object.assign({}, ZS.invoiceTemplate(D));
+        var k = it.dataset.invt;
+        D.invoice_template[k] = k === 'gst_registered' ? !!it.value
+          : (it.type === 'number' ? Number(it.value) || 0 : it.value);
+        save();
+        if (window.API && API.signedIn()) API.touchSetting('invoice_template');
+        toast('Saved. Every invoice from now on uses it.');
+        return;
+      }
+
       var el = e.target.closest('[data-acc]');
       if (el) {
         var p = el.dataset.acc.split('|');

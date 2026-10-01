@@ -123,7 +123,17 @@
     pop.className = 'zsd-pop';
     pop.setAttribute('role', 'dialog');
     pop.setAttribute('aria-label', 'Choose a date');
-    document.body.appendChild(pop);
+    /* ⚠️ INSIDE THE DIALOG, NOT ON THE BODY.
+       A <dialog> opened with showModal() lives in the browser's TOP LAYER, which
+       sits above every z-index in the ordinary document and makes everything
+       outside it inert. So a calendar appended to document.body opened fine,
+       drew underneath the modal's backdrop, and could not be clicked at all:
+       the date fields on the follow-up form looked dead.
+
+       It has to be appended INSIDE the open dialog to join it in the top layer.
+       `position: fixed` is relative to the viewport either way, so the placing
+       arithmetic below is unchanged. */
+    (btn.closest('dialog[open]') || document.body).appendChild(pop);
     draw();
     place();
     btn.setAttribute('aria-expanded', 'true');
@@ -175,9 +185,11 @@
     draw();
   }
 
+  /* `true` so this still fires for a click inside a modal dialog, where the
+     event never reaches a bubbling listener on document. */
   document.addEventListener('mousedown', function (e) {
     if (pop && !pop.contains(e.target) && e.target !== owner && !(owner && owner.contains(e.target))) close();
-  });
+  }, true);
   window.addEventListener('resize', function () { if (pop) place(); });
   window.addEventListener('scroll', function () { if (pop) place(); }, true);
 
