@@ -2342,6 +2342,10 @@
      titles, and a worker that refers to itself in the third person reads like a
      brochure rather than a colleague. */
   var AGENTS = [
+    { id: 'mark',     name: 'Mark',          icon: '✦',
+      trigger: 'Every weekday morning, on the categories you set',
+      does: 'I find businesses in Dubai and the States, read their own website for what is actually broken, work out who to write to, score them out of 5 for each of the three things we sell, and draft the email. Nothing leaves until you say so.',
+      minutes: 45, client: true },
     { id: 'jarvis',   name: 'Jarvis',        icon: '◉',
       trigger: 'Every morning, and whenever you ask me',
       does: 'I read every engagement, plan, invoice and live build, work out what is going wrong and what is going well, and propose which of my team should do what. I dispatch nothing without your yes.',
@@ -2417,6 +2421,87 @@
 
   /* Hours saved counts APPROVED work only. A number that grows while nobody
      does anything is the number a client uses to stop believing you. */
+  /* ================= MARK'S RUBRIC =================
+
+     ⚠️ NO MODEL RUNS HERE, AND THAT IS THE POINT.
+
+     Qualification is the one part of outreach that must be auditable. A score a
+     model produced is a number with an opinion behind it: you cannot check it,
+     you cannot reproduce it, and when a client asks "why is this a 4" the honest
+     answer is "it felt like one". So scoring is a RUBRIC over named signals. The
+     signals are facts found on their own property, each with the evidence
+     stored beside it, and the score is arithmetic over the signals.
+
+     It is also free, which matters: the model allowance is twenty calls a day
+     and every one of them should go on writing, not on arithmetic a rule can do.
+
+     WEIGHTS. Each signal carries a weight. The raw total is divided by the
+     weight it would take to be a certain fit, and capped at 5. A signal that is
+     merely suggestive is 1; one that on its own makes the case is 3.
+
+     EVIDENCE OR IT DID NOT HAPPEN. `fires` returns the evidence string, not
+     true. A signal with no evidence is not counted, so a score can always be
+     read back as a sentence. */
+
+  /* What a prospect looks like once Mark has been over it. Everything optional
+     except the name, because a row half-filled is still worth working. */
+  function newProspect(o) {
+    o = o || {};
+    return {
+      id: o.id || 'p' + Date.now() + Math.floor(Math.random() * 1000),
+      country: o.country || 'AE',
+      city: o.city || '', category: o.category || '',
+      name: o.name || '', website: o.website || '', email: o.email || '',
+      phone: o.phone || '', address: o.address || '',
+      place_id: o.place_id || null,
+      rating: o.rating || null, reviews: o.reviews || 0,
+      contact_name: o.contact_name || '', contact_title: o.contact_title || '',
+      contact_level: o.contact_level || 'unknown', linkedin: o.linkedin || '',
+      needs_lookup: !!o.needs_lookup,
+      findings: o.findings || [], signals: o.signals || {},
+      score_auto: o.score_auto || 0, score_cockpit: o.score_cockpit || 0,
+      score_site: o.score_site || 0,
+      sources: o.sources || {},
+      stage: o.stage || 'found', parked_why: o.parked_why || null,
+      client_id: o.client_id || null,
+      found_at: o.found_at || today(), updated_at: o.updated_at || today()
+    };
+  }
+
+  var LEVELS = { owner: 'Owner or founder', director: 'Director or partner',
+                 manager: 'Manager', unknown: 'Not found yet' };
+
+  /* `p` is the prospect, `site` is what the reader found on their website:
+     { html, text, status, https, mobile, updated, forms, tools, pages, speed }.
+     Every `fires` returns a sentence or null. The sentence IS the evidence. */
+  /* ⚠️ THE RUBRIC ITSELF LIVES ON THE SERVER, IN server/src/rubric.js, AND
+     NOWHERE ELSE.
+
+     It was written here first and that was wrong. Scoring needs the website, and
+     only the server can fetch somebody else's website, so a copy here could
+     never be the one that ran — it would be a second implementation that drifts
+     from the real one and disagrees with the number on the screen. The cockpit
+     already carries one duplicated list (DEFAULT_PRODUCTS) and needs a check to
+     keep the halves honest; a second one is not worth the same tax.
+
+     So the browser never scores. It renders `p.signals` and `p.score_*` exactly
+     as the server computed them, and every signal arrives with the sentence that
+     earned it. */
+
+  /* Which services are worth pitching to this one, best first. Three or more is
+     the bar: below that Mark has not found enough to say anything specific, and
+     a vague email is worse than none. */
+  var PITCH_BAR = 3;
+  function worthPitching(p) {
+    var all = [
+      { key: 'automations', score: p.score_auto || 0 },
+      { key: 'cockpit', score: p.score_cockpit || 0 },
+      { key: 'website', score: p.score_site || 0 }
+    ];
+    return all.filter(function (x) { return x.score >= PITCH_BAR; })
+              .sort(function (a, b) { return b.score - a.score; });
+  }
+
   function hoursSaved(store, from, to) {
     var mins = (store.runs || []).filter(function (r) {
       if (r.status !== 'approved' && r.status !== 'auto') return false;
@@ -3158,6 +3243,9 @@
     AGENTS: AGENTS, agentById: agentById, AGENT_MODES: AGENT_MODES, agentMode: agentMode,
     newRun: newRun, step: step, runKey: runKey, recentlyDecided: recentlyDecided,
     hoursSaved: hoursSaved,
+    /* Mark's rubric: deterministic, auditable, and free */
+    newProspect: newProspect, LEVELS: LEVELS,
+    worthPitching: worthPitching, PITCH_BAR: PITCH_BAR,
     PAID_SOURCES: PAID_SOURCES, isPaid: isPaid, newCampaign: newCampaign, PLATFORMS: PLATFORMS,
     campaignsFor: campaignsFor, campaignById: campaignById, campaignResults: campaignResults,
     CLIENT_TYPES: CLIENT_TYPES, newContact: newContact, contactsOf: contactsOf,

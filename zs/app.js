@@ -36,6 +36,8 @@
       /* conversations: WhatsApp and Instagram, one row per person per channel */
       threads: [],
       mayAssign: false,
+      /* Mark's board: businesses found, read and scored */
+      prospects: [],
       targets: JSON.parse(JSON.stringify(ZS.DEFAULT_TARGETS)),
       staff: [],                 /* filled by the seed, or by first-run setup */
       products: JSON.parse(JSON.stringify(ZS.DEFAULT_PRODUCTS)),
@@ -942,6 +944,7 @@
     ['diary',       'Diary',         'clients'],
     ['stock',       'What we sell', null],
     ['inbox',       'Inbox',         'clients'],
+    ['outreach',    'Outreach',      'clients'],
     ['chatbot',     'Chatbot',       'automations'],
     ['campaigns',   'Campaigns',     'reports'],
     ['automations', 'Automations',   'automations'],
@@ -971,6 +974,7 @@
     floor:       '<path d="M4 4v16"/><rect x="8" y="5" width="5" height="6" rx="1"/><rect x="15" y="9" width="5" height="6" rx="1"/>',
     processing:  '<path d="M4 12a8 8 0 0 1 13.7-5.6M20 12a8 8 0 0 1-13.7 5.6"/><path d="M17 3v4h-4M7 21v-4h4"/>',
     inbox:       '<path d="M3 13h5l1.5 3h5L16 13h5"/><path d="M4.5 6.5 3 13v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5l-1.5-6.5a2 2 0 0 0-2-1.5H6.5a2 2 0 0 0-2 1.5Z"/>',
+    outreach:    '<path d="M3 11.5 21 4l-7.5 17-2.5-7.5Z"/><path d="M11 13.5 21 4"/>',
     chatbot:     '<rect x="3" y="6" width="18" height="12" rx="3"/><path d="M8 11h.01M12 11h.01M16 11h.01M8 18v3l4-3"/>',
     automations: '<path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9Z"/>',
     agents:      '<rect x="4" y="7" width="16" height="12" rx="2"/><path d="M12 3v4M9 12h.01M15 12h.01M9.5 16h5"/>',
@@ -2409,6 +2413,8 @@
          server scopes these, so what arrives IS what this person may read. */
       threads: remote.threads || [],
       mayAssign: !!remote.mayAssign,
+      /* ⚠️ absent from here means wiped on every sync, the trap that ate the bin */
+      prospects: remote.prospects || [],
       bin: (remote.bin || []).map(function (b) {
         return { id: b.id, kind: b.kind, record: b.record, label: b.label,
                  by: b.by, at: b.at, expires: b.expires, ref: b.ref || '',

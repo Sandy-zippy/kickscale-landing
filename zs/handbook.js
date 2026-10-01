@@ -152,6 +152,12 @@
 "out later that 'AI' meant an if-statement stops believing everything else.\n\n" +
 "Jarvis reads the whole cockpit, ranks what is going wrong, dispatches the " +
 "others and takes instructions in plain words.\n" +
+"Mark finds businesses in Dubai and the States, reads their own website for " +
+"what is actually broken, works out who to write to, and scores each one out " +
+"of 5 against the three things we sell. His scoring is a rubric over named " +
+"signals rather than a model's opinion, so every number opens into the " +
+"sentences that earned it and you can argue with any of them. He drafts, and " +
+"nothing he writes leaves without your yes.\n" +
 "The Chaser nudges deals that have gone quiet.\n" +
 "The Closer drafts outreach for work that is finished and never sent, which is " +
 "the most expensive state a build can be in.\n" +
@@ -329,7 +335,8 @@
 "The left-hand rail, top to bottom.\n\n" +
 "OVERVIEW. What is going wrong and what is going well, ranked. Start here.\n" +
 "JARVIS. Talk to him, the queue of things waiting on you, the roster of agents, " +
-"and what they did.\n" +
+"and what they did.\n" +"OUTREACH. Mark's board: businesses he found, what he found wrong with them, " +
+"and what he thinks we can sell them.\n" +
 "DIARY. Every meeting and every follow-up in one place, a day at a time, with " +
 "what is booked and already behind you at the top.\n" +
 "SALES. The pipeline board. Every open deal, by stage.\n" +
@@ -515,6 +522,36 @@
 "an answer the menu does not understand gets one nudge, then a person: a bot " +
 "that repeats its menu at somebody answering in their own words loses the " +
 "customer rather than the argument."
+},
+
+/* ---------------------------------------------------------------- */
+{ id: 'outreach', title: 'Mark, and how a prospect is scored',
+  where: [['Outreach', '#/outreach'], ['The roster', '#/jarvis']], text:
+"Mark finds businesses, reads their website, works out who runs the place and " +
+"scores them out of 5 for each of AI Automations, an Agentic Cockpit and a " +
+"website.\n\n" +
+"HOW HE FINDS THEM, AND WHY IT COSTS NOTHING. The businesses come from " +
+"OpenStreetMap, which is free and needs no account. The browser asks it, not " +
+"the server, because the map's servers refuse ours. Their website is read by " +
+"the server, because a browser is not allowed to fetch somebody else's site. " +
+"Who runs the place comes from a search engine, never from a logged-in " +
+"LinkedIn session: an account driven by a machine is an account that gets " +
+"taken away, and ours is worth more than the shortcut.\n\n" +
+"THE SCORE IS A RUBRIC, NOT AN OPINION. Each service has named signals, each " +
+"signal is a fact found on their own property, and the score is arithmetic " +
+"over the signals. Press 'Why these scores?' and every one opens into the " +
+"sentence that earned it. A number you cannot argue with is a number you " +
+"should not act on.\n\n" +
+"THREE OR MORE IS THE BAR. Below that he has not found enough to say anything " +
+"specific, and a vague email is worse than none: it spends the one chance you " +
+"get with that business.\n\n" +
+"WHAT HE WILL NOT DO. He will not say a business has no website on the word of " +
+"a source that does not record websites. He will not write a subject line from " +
+"a problem he has not verified on their own site. Both are the same rule: " +
+"everything he claims, somebody can go and check.\n\n" +
+"A row he could not put a name to says so and links to the search. One click " +
+"from you makes it workable, and it stays on the board rather than quietly " +
+"disappearing and making the market look thinner than it is."
 },
 
 /* ---------------------------------------------------------------- */

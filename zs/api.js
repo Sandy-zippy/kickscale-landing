@@ -555,6 +555,13 @@
   async function bots() { return call('GET', '/api/bots'); }
   async function saveBot(b) { return call('POST', '/api/bots', { body: b }); }
 
+  /* ---------------- Mark ----------------
+     Finding runs on the server because only the server can fetch somebody else's
+     website. The browser sends the list of names it found on OpenStreetMap,
+     which it can reach and the Worker cannot. */
+  async function findProspects(payload) { return call('POST', '/api/prospects/find', { body: payload }); }
+  async function saveProspect(patch) { return call('POST', '/api/prospects', { body: patch }); }
+
   /* ---------------- has anything happened? ----------------
      Three counts and the newest activity row. Cheap on purpose: it is asked
      every twenty seconds all day, and the full pull only follows when one of
@@ -616,6 +623,7 @@
     thread: thread, assignThread: assignThread,
     sendOnThread: sendOnThread, templates: templates,
     bots: bots, saveBot: saveBot,
+    findProspects: findProspects, saveProspect: saveProspect,
     pulse: pulse,
     readDoc: readDoc,
     /* configuration */
