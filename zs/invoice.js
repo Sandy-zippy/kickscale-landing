@@ -168,8 +168,10 @@
     var scopeLines = d.splitTextToSize(inv.scope || ('Phase ' + (inv.n || 1)), R - M - 150);
     scopeLines.forEach(function (ln, i) { d.text(ln, M + 11, ry2 + i * 13); });
     var below = ry2 + scopeLines.length * 13;
+    /* ⚠️ WHAT THIS BILL IS FOR, not what the whole engagement is worth. The
+       order value has its own line in the totals when it differs. */
     set(d, 9.5, 'normal');
-    d.text(ZS.rupees(tot.order || inv.amount), R - 11, ry2, { align: 'right' });
+    d.text(ZS.rupees(tot.value || inv.amount), R - 11, ry2, { align: 'right' });
     if (inv.detail) {
       set(d, 7.6, 'normal', GREY);
       var dl = d.splitTextToSize(inv.detail, R - M - 150);
@@ -182,7 +184,31 @@
        ⚠️ The order value and the deductions are shown even when there are none,
        because a client reading "Total Due" with no working shown is a client who
        writes back to ask what it is for. */
-    var x = M + 290, vy = below + 34;
+    /* ⚠️ THE GAPS ARE CHOSEN, NOT HARD-CODED, because the number of rows is not
+       fixed: an order-value line here, a third deduction there, and a page laid
+       out with constants tips onto a second page for no reason a reader could
+       see. Everything variable is counted first, then the three gaps are given
+       whatever room is left, down to a floor. Below the floor it really is too
+       much for one page and it takes a second one. */
+    var nRows = 1 + (tot.order && tot.order !== tot.value ? 1 : 0) +
+                (inv.deductions || []).filter(function (q) { return q && Number(q.amount); }).length +
+                1;                                  /* the GST line */
+    var noteDraft = [];
+    if (!t.gst_registered && t.gst_note) noteDraft.push(t.gst_note);
+    if (inv.note) noteDraft.push(inv.note);
+    var noteWrapped = [];
+    noteDraft.forEach(function (ln, i) {
+      if (i) noteWrapped.push('');
+      noteWrapped = noteWrapped.concat(d.splitTextToSize(ln, R - M - 36));
+    });
+    var noteH = noteWrapped.length ? noteWrapped.length * 13 + 22 : 0;
+
+    var PAY_H0 = 120;
+    var fixed = nRows * 20 + 24 + noteH + PAY_H0;   /* rows, the total line, the note, the block */
+    var room = (H - 84) - (below + 6) - fixed;      /* what is left for the three gaps */
+    var gap = Math.max(14, Math.min(34, Math.floor(room / 3)));
+
+    var x = M + 290, vy = below + gap;
     var row = function (label, value, bold) {
       set(d, 9, bold ? 'bold' : 'normal', bold ? INK : GREY);
       d.text(label, x, vy);
@@ -191,11 +217,21 @@
       vy += 20;
     };
 
+    /* ⚠️ THE ORDER VALUE IS CONTEXT, AND ONLY APPEARS WHEN IT SAYS SOMETHING.
+       On a bill for the whole engagement it is the same number as the invoice
+       value, and printing it twice invites the question "which of these am I
+       paying?". It is shown only when this invoice is part of something larger,
+       which is exactly when the client wants to know. Nothing is ever subtracted
+       from it either way. */
     var hasCuts = (inv.deductions || []).length > 0;
-    row(hasCuts ? 'Order value' : 'Subtotal', ZS.rupees(tot.order || inv.amount));
+    var partOnly = tot.order && tot.order !== tot.value;
+    if (partOnly) row('Order value', ZS.rupees(tot.order));
+    row(hasCuts || partOnly ? 'Invoice value' : 'Subtotal',
+        ZS.rupees(tot.value || inv.amount));
     (inv.deductions || []).forEach(function (cut) {
       if (!cut || !Number(cut.amount)) return;
-      row(cut.label || 'Less', '– ' + ZS.rupees(cut.amount));
+      row('Less: ' + String(cut.label || 'deduction').toLowerCase(),
+          '– ' + ZS.rupees(cut.amount));
     });
     row('GST', tot.rate ? ZS.rupees(tot.gst) + '  (' + tot.rate + '%)' : 'Not Applicable');
 
@@ -205,25 +241,15 @@
     d.text(hasCuts ? 'Total Due Now' : 'Total Due', x, vy);
     d.text(ZS.rupees(tot.total || inv.amount), R, vy, { align: 'right' });
 
-    /* ---- the note ---- */
-    var noteLines = [];
-    if (!t.gst_registered && t.gst_note) noteLines.push(t.gst_note);
-    if (inv.note) noteLines.push(inv.note);
-    var ny = vy + 28;
-    if (noteLines.length) {
-      var txt = noteLines.join('\n');
-      var wrapped = [];
-      txt.split('\n').forEach(function (ln, i) {
-        if (i) wrapped.push('');          /* his leaves a line between them */
-        wrapped = wrapped.concat(d.splitTextToSize(ln, R - M - 36));
-      });
-      var nh = wrapped.length * 13 + 22;
-      fill(d, M, ny, R - M, nh, BAND);
-      fill(d, M, ny, 3, nh, LIME);
+    /* ---- the note, already wrapped and measured above ---- */
+    var ny = vy + gap;
+    if (noteWrapped.length) {
+      fill(d, M, ny, R - M, noteH, BAND);
+      fill(d, M, ny, 3, noteH, LIME);
       set(d, 8.3, 'normal', [70, 70, 70]);
       var wy = ny + 17;
-      wrapped.forEach(function (ln) { d.text(ln, M + 20, wy); wy += 13; });
-      ny += nh;
+      noteWrapped.forEach(function (ln) { d.text(ln, M + 20, wy); wy += 13; });
+      ny += noteH;
     }
 
     /* ---- payment details and the due-date chip ----
@@ -233,9 +259,9 @@
        straight through the footer rule. It sits at the anchor when there is room
        and moves down when the note is tall; if that would run off the page it
        goes on a second page rather than printing over anything. */
-    var PAY_H = 120;              /* eyebrow, four rows at 26, and the last rule */
+    var PAY_H = PAY_H0;           /* eyebrow, four rows at 26, and the last rule */
     var ANCHOR = 632;             /* where it sits on his when there is room */
-    var py = Math.max(ANCHOR, ny + 26);
+    var py = Math.max(ANCHOR, ny + gap);
     if (py + PAY_H > H - 84) { d.addPage(); py = 90; }
     eyebrow(d, 'Payment account details', M, py);
     rule(d, py + 5, M, M + 172, LIME, 1);

@@ -717,6 +717,10 @@
       var billed = existing.reduce(function (a, i) { return a + (i.amount || 0); }, 0);
       var order = ZS.oppValue(o) || 0;
       var left = Math.max(0, order - billed);
+      /* ⚠️ A fresh form. CUTS lives at module scope so the rows can be added and
+         removed before submitting; opening the form without clearing it meant a
+         cancelled invoice left its deductions on the next one. */
+      CUTS = [];
       var bt = ZS.billToFrom(c);
       var code = ZS.codeFor(c);
       var num = ZS.invoiceNumber(t.number_format, code, new Date().getFullYear(),
@@ -737,22 +741,31 @@
         '</div></div>' +
 
         '<div class="fgroup"><h4>The money</h4><div class="fbody">' +
+          /* ⚠️ THE ORDER VALUE IS SHOWN, NOT ASKED FOR. It is the whole
+             engagement and it does not change because a bill was raised against
+             part of it. Editable, somebody would eventually type this invoice's
+             figure into it and the engagement would be worth the wrong amount. */
           '<div class="f"><label for="i-order">Order value</label>' +
-          '<input id="i-order" name="order_value" type="number" min="0" data-invcalc="1" value="' +
-            (order || '') + '">' +
-          '<span class="hint">' + (order ? 'The agreed fee on this engagement.'
+          '<input id="i-order" value="' + esc(order ? ZS.rupees(order) : 'Not set') +
+            '" readonly tabindex="-1" aria-readonly="true">' +
+          '<input type="hidden" name="order_value" value="' + (order || 0) + '">' +
+          '<span class="hint">' + (order ? 'The whole engagement. Set on the engagement, not here.'
                                          : 'No fee is set on the engagement yet.') + '</span></div>' +
+          '<div class="f"><label for="i-value">Invoice value</label>' +
+          '<input id="i-value" name="invoice_value" type="number" min="0" value="' +
+            (left || order || '') + '">' +
+          '<span class="hint">What this one bill is for.' +
+            (billed ? ' ' + ZS.money(billed) + ' of the order is already invoiced' +
+              (left ? ', leaving ' + ZS.money(left) + '.' : '.') : '') + '</span></div>' +
+          '<div class="f wide"><label>What comes off this invoice</label>' +
+          '<div id="i-cuts"></div>' +
+          '<button type="button" class="minibtn" data-act="invCutAdd">+ Add a line</button>' +
+          '<span class="hint">Each one prints on the invoice as its own line, and what ' +
+          'is left is the amount payable.</span></div>' +
           '<div class="f"><label for="i-num">Invoice number</label>' +
           '<input id="i-num" name="number" autocomplete="off" value="' + esc(num) + '">' +
           '<span class="hint">Client code <b>' + esc(code) + '</b>. Correct it here and ' +
           'it is remembered for ' + esc(c.name || 'this client') + '.</span></div>' +
-          '<div class="f wide"><label>Take off what is not being asked for now</label>' +
-          '<div id="i-cuts"></div>' +
-          '<button type="button" class="minibtn" data-act="invCutAdd">+ Add a line</button>' +
-          '<span class="hint">An advance already received, an amount due at handover, ' +
-          'a discount. Each one prints on the invoice as its own line.</span></div>' +
-          (billed ? '<p class="hint wide">' + ZS.money(billed) + ' is already invoiced on this ' +
-            'engagement' + (left ? ', leaving ' + ZS.money(left) + '.' : '.') + '</p>' : '') +
           '<div class="f wide" id="i-sum"></div>' +
         '</div></div>' +
 
@@ -800,23 +813,35 @@
 
     /* The deduction lines. Held on the form rather than in the store until it is
        submitted, because a half-filled invoice is not an invoice. */
-    invCutAdd: function () { CUTS.push({ label: ZS.DEDUCTION_LABELS[0], amount: '' }); A.invCutDraw(); },
+    invCutAdd: function () {
+      /* the first label not already on the form, so adding two lines does not
+         give two of the same thing */
+      var used = CUTS.map(function (c2) { return c2.label; });
+      var free = ZS.DEDUCTION_LABELS.filter(function (l) { return used.indexOf(l) < 0; });
+      CUTS.push({ label: free[0] || ZS.DEDUCTION_LABELS[0], amount: '' });
+      A.invCutDraw();
+    },
     invCutDrop: function (i) { CUTS.splice(Number(i), 1); A.invCutDraw(); },
     invCutDraw: function () {
       var box = document.getElementById('i-cuts');
       if (!box) return;
+      /* ⚠️ A SELECT, NOT A DATALIST. A datalist filters its options against what
+         is already in the box, so a field holding "Advance already paid" offered
+         exactly one choice: itself. It looked like a dropdown with one option in
+         it, which is precisely what he saw. There are three fixed choices here
+         and a select is what three fixed choices are. */
       box.innerHTML = CUTS.map(function (cut, i) {
         return '<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">' +
-          '<input list="i-cutlabels" data-cut="label" data-i="' + i + '" value="' +
-            esc(cut.label || '') + '" placeholder="What is coming off" style="flex:2">' +
+          '<select data-cut="label" data-i="' + i + '" style="flex:2">' +
+            ZS.DEDUCTION_LABELS.map(function (l) {
+              return '<option value="' + esc(l) + '"' + (l === cut.label ? ' selected' : '') +
+                '>' + esc(l) + '</option>';
+            }).join('') + '</select>' +
           '<input data-cut="amount" data-i="' + i + '" type="number" min="0" value="' +
             esc(cut.amount === '' ? '' : cut.amount) + '" placeholder="Amount" style="flex:1">' +
           '<button type="button" class="xbtn" data-act="invCutDrop" data-id="' + i +
             '" aria-label="Remove">&times;</button></div>';
-      }).join('') +
-      '<datalist id="i-cutlabels">' +
-        ZS.DEDUCTION_LABELS.map(function (l) { return '<option value="' + esc(l) + '">'; }).join('') +
-      '</datalist>';
+      }).join('');
       A.invSum();
     },
     /* ⚠️ The total is shown, never typed. */
@@ -824,24 +849,29 @@
       var box = document.getElementById('i-sum');
       if (!box) return;
       var t = ZS.invoiceTemplate(D());
-      var orderEl = document.getElementById('i-order');
-      var inv = { order_value: Number(orderEl && orderEl.value) || 0,
+      var valEl = document.getElementById('i-value');
+      var hidden = document.querySelector('#invform input[name="order_value"]');
+      var inv = { order_value: Number(hidden && hidden.value) || 0,
+                  invoice_value: Number(valEl && valEl.value) || 0,
                   deductions: CUTS.map(function (c2) {
                     return { label: c2.label, amount: Number(c2.amount) || 0 }; }),
                   gst: t.gst_registered, gst_rate: t.gst_rate };
       var tot = ZS.invoiceTotals(inv, t.gst_rate);
       box.innerHTML = '<div class="invsum">' +
-        '<div><span>Order value</span><b>' + ZS.rupees(tot.order) + '</b></div>' +
+        /* the order value is here for context and is visibly not part of the sum */
+        (tot.order && tot.order !== tot.value
+          ? '<div><span>Order value</span><b>' + ZS.rupees(tot.order) + '</b></div>' : '') +
+        '<div><span>Invoice value</span><b>' + ZS.rupees(tot.value) + '</b></div>' +
         CUTS.filter(function (c3) { return Number(c3.amount); }).map(function (c3) {
           return '<div><span>' + esc(c3.label || 'Less') + '</span><b>\u2013 ' +
             ZS.rupees(Number(c3.amount)) + '</b></div>';
         }).join('') +
         '<div><span>GST</span><b>' + (tot.rate ? ZS.rupees(tot.gst) + ' (' + tot.rate + '%)'
                                                : 'Not Applicable') + '</b></div>' +
-        '<div class="tot"><span>Total due now</span><b>' + ZS.rupees(tot.total) + '</b></div>' +
+        '<div class="tot"><span>Payable now</span><b>' + ZS.rupees(tot.total) + '</b></div>' +
         '</div>' +
-        (tot.deducted > tot.order
-          ? '<p class="err" style="margin-top:8px">That takes off more than the order value.</p>'
+        (tot.deducted > tot.value
+          ? '<p class="err" style="margin-top:8px">That takes off more than the invoice value.</p>'
           : '');
     },
     /* ---- money in before the work ----
@@ -1189,12 +1219,13 @@
       return { label: String(c2.label || 'Less').trim(), amount: Number(c2.amount) || 0 };
     }).filter(function (c2) { return c2.amount > 0; });
 
-    var draft = { order_value: Number(fd.get('order_value')) || 0, deductions: cuts,
-                  gst: t.gst_registered, gst_rate: t.gst_rate };
+    var draft = { order_value: Number(fd.get('order_value')) || 0,
+                  invoice_value: Number(fd.get('invoice_value')) || 0,
+                  deductions: cuts, gst: t.gst_registered, gst_rate: t.gst_rate };
     var tot = ZS.invoiceTotals(draft, t.gst_rate);
-    if (tot.deducted > tot.order) {
+    if (tot.deducted > tot.value) {
       var err = document.getElementById('i-err');
-      if (err) err.textContent = 'That takes off more than the order value.';
+      if (err) err.textContent = 'That takes off more than the invoice value.';
       return;
     }
 
@@ -1225,7 +1256,7 @@
       opp: o.id, client: o.client,
       scope: String(fd.get('scope') || '').trim(),
       detail: String(fd.get('detail') || '').trim(),
-      order_value: tot.order, deductions: cuts,
+      order_value: tot.order, invoice_value: tot.value, deductions: cuts,
       gst: t.gst_registered, gst_rate: t.gst_rate,
       number: num,
       amount: amt,
@@ -1252,15 +1283,20 @@
   };
 
   /* the deduction rows and the order value, recalculated as they are typed */
-  document.addEventListener('input', function (e) {
+  /* ⚠️ `change` as well as `input`: a <select> fires change and not input, so a
+     listener on input alone never sees the label being picked. */
+  ['input', 'change'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) { onInvForm(e); });
+  });
+  function onInvForm(e) {
     var cut = e.target.closest ? e.target.closest('[data-cut]') : null;
     if (cut) {
       var row = CUTS[Number(cut.dataset.i)];
       if (row) { row[cut.dataset.cut] = cut.value; A.invSum(); }
       return;
     }
-    if (e.target.id === 'i-order') A.invSum();
-  });
+    if (e.target.id === 'i-value') A.invSum();
+  }
 
   var prevChange = A.onChange;
   A.onChange = function (e) {

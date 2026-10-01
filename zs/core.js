@@ -811,18 +811,30 @@
      So `order_value` is the agreed total, `deductions` are the lines that
      explain the gap, and `amount` is what this invoice asks for. Everything that
      already reads `amount` and `advance` keeps working untouched. */
-  var DEDUCTION_LABELS = ['Less: advance received', 'Less: due on handover',
-                          'Less: already invoiced', 'Less: discount agreed'];
+  /* ⚠️ THREE, AND ONLY THREE. An open list of labels is an invitation to invent a
+     fourth that means the same as one of these, and then nothing can be totalled
+     by kind. Plain words: what it is, in the fewest that say it. */
+  var DEDUCTION_LABELS = ['Advance already paid', 'Discount', 'To be paid at handover'];
 
+  /* ⚠️ THE ORDER VALUE IS NOT WHAT THIS INVOICE IS FOR.
+     The order value is the whole engagement: ₹2,40,000 agreed, and it does not
+     change because one invoice was raised against part of it. The INVOICE VALUE
+     is what this one bill is for, and it is the only figure the deductions come
+     off. The first version subtracted from the order value, so an invoice for
+     one phase of a ₹2,40,000 job quietly billed against the whole job.
+
+     `invoice_value` falls back to `order_value` for invoices raised before the
+     two were told apart, where they were by definition the same number. */
   function invoiceTotals(inv, gstRate) {
     var order = Number(inv && inv.order_value) || 0;
+    var value = Number(inv && inv.invoice_value) || order;
     var cuts = ((inv && inv.deductions) || []).reduce(function (a, d) {
       return a + (Number(d && d.amount) || 0);
     }, 0);
-    var taxable = Math.max(0, order - cuts);
+    var taxable = Math.max(0, value - cuts);
     var rate = (inv && inv.gst) ? (Number(inv.gst_rate) || Number(gstRate) || 0) : 0;
     var gst = Math.round(taxable * rate / 100);
-    return { order: order, deducted: cuts, taxable: taxable,
+    return { order: order, value: value, deducted: cuts, taxable: taxable,
              rate: rate, gst: gst, total: taxable + gst };
   }
 
@@ -836,9 +848,11 @@
       scope: o.scope || '',
       /* the line under the description on the PDF */
       detail: o.detail || '',
-      /* the agreed total this invoice is a part of. 0 means "this invoice is the
-         whole of it", and the PDF then shows a plain Subtotal / Total Due. */
+      /* The whole engagement, for context only. Nothing is ever subtracted from
+         it and it is not what this invoice asks for. */
       order_value: Number(o.order_value) || 0,
+      /* What THIS bill is for. The deductions come off this. */
+      invoice_value: Number(o.invoice_value) || 0,
       deductions: Array.isArray(o.deductions) ? o.deductions : [],
       gst: !!o.gst,
       gst_rate: Number(o.gst_rate) || 0,
