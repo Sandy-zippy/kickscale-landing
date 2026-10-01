@@ -262,6 +262,100 @@
     return 'what we asked for';
   }
 
+  /* ---------------- Mark ----------------
+
+     He finds and scores on the server; this is the half that writes. One
+     proposal per prospect, each carrying the email, the WhatsApp message that is
+     held back, and the finding the subject was built from.
+
+     ⚠️ NO VERIFIED FINDING, NO DRAFT, AND THE GUARD IS A RETURN NOT A WARNING.
+     `ZS.draftEmail` hands back null when there is nothing checkable to lead
+     with, and this skips that prospect entirely. A cold email with a vague
+     subject is worse than none: it spends the one chance you get with that
+     business and teaches them we have nothing specific to say. It is also the
+     line between a subject that works and one that costs $53,088. */
+  RUN.mark = function (arg, opts) {
+    var all = arg ? [arg] : (D().prospects || []);
+    var made = [];
+    var me = G.me();
+    /* What he has been told to lead with. He reads it; he never writes it. */
+    var book = ZS.playbookOf(D());
+
+    all.forEach(function (p) {
+      if (!p || p.stage === 'parked' || p.stage === 'sent' || p.stage === 'replied') return;
+      var picks = ZS.worthPitching(p);
+      if (!picks.length) return;                    /* nothing specific to say */
+
+      var email = ZS.draftEmail(p, picks, me, book.lead);
+      if (!email) return;                           /* nothing verified to lead with */
+
+      /* ⚠️ A PLACE THE PLAYBOOK SAYS TO LEAVE ALONE IS LEFT ALONE. It got there
+         because enough went out and nothing ever came back, and the whole value
+         of learning something is not then ignoring it. */
+      var where = (p.city || '') + (p.country ? ', ' + p.country : '');
+      if (book.avoid.indexOf(where) >= 0) return;
+
+      var key = ZS.runKey({ agent: 'mark', target: { kind: 'prospect', id: p.id }, payload: {} });
+      if (!opts.manual && ZS.recentlyDecided(D(), key, 14)) return;
+
+      var run = ZS.newRun('mark', 'Write to ' + ZS.shortName(p.name),
+                          { target: { kind: 'prospect', id: p.id } });
+      ZS.step(run, 'I looked at', p.name + ' in ' + (p.city || 'the list'));
+      ZS.step(run, 'What I verified', email.finding.evidence);
+      ZS.step(run, 'What I can sell them',
+        picks.map(function (x) { return x.key + ' (' + x.score + '/5)'; }).join(', '));
+      ZS.step(run, 'Who it goes to',
+        p.contact_name ? p.contact_name + (p.email ? ' at ' + p.email : '')
+                       : 'nobody named yet, so it opens with Hello');
+      ZS.step(run, 'A guard stopped me', 'This reaches a stranger, so I queue it whatever my mode');
+
+      run.summary = 'I drafted an email to ' + ZS.shortName(p.name) + ', leading with ' +
+        email.finding.what.toLowerCase();
+      run.brief = { to: p.contact_name || p.name,
+                    about: 'what we found on their website and what we would do about it',
+                    note: email.finding.evidence };
+      run.draft = { channel: 'email', subject: email.subject, text: email.text };
+      run.payload = {
+        prospectId: p.id,
+        findingId: email.finding.id,
+        services: picks.map(function (x) { return x.key; }),
+        email: { subject: email.subject, text: email.text },
+        whatsapp: ZS.draftWhatsAppReply(p, picks, me, book.lead)
+      };
+      made.push(record(run, opts));
+    });
+
+    /* ---- and once there is enough to learn from, what he would change ----
+
+       ⚠️ A PROPOSAL, NEVER AN EDIT. The playbook is the one thing in here that
+       changes how Mark writes, so it is the one thing he is not allowed to
+       touch. It also fires at most once a week: a playbook that moves every
+       morning is not a playbook, it is noise with a filing system. */
+    var pp = ZS.playbookProposal(D());
+    /* ⚠️ `runKey` builds the key from the target and the discriminator and then
+       overwrites whatever was set by hand, so the discriminator is how this run
+       gets a key of its own. Without it, every playbook proposal collides with
+       the keyless drafts. */
+    var pkey = ZS.runKey({ agent: 'mark', target: null, payload: { discriminator: 'playbook' } });
+    if (pp && !ZS.recentlyDecided(D(), pkey, 7)) {
+      /* NOT client-facing: a playbook change reaches nobody outside, and a
+         client-facing run with no draft is rejected by record() on purpose. */
+      var lrun = ZS.newRun('mark', 'Change what I lead with',
+                           { target: null, clientFacing: false });
+      ZS.step(lrun, 'I looked at', ZS.outreachStats(D()).sent + ' message(s) that went out');
+      ZS.step(lrun, 'What the outcomes say', pp.lesson.what);
+      ZS.step(lrun, 'The evidence', pp.lesson.evidence);
+      ZS.step(lrun, 'What I would change', pp.next.lead[0] !== ZS.playbookOf(D()).lead[0]
+        ? 'Lead with ' + pp.next.lead[0] + ' first from now on'
+        : 'Stop writing to ' + (pp.next.avoid[pp.next.avoid.length - 1] || 'that city'));
+      ZS.step(lrun, 'A guard stopped me', 'This changes how I write, so I cannot apply it myself');
+      lrun.summary = pp.lesson.what + ' ' + pp.lesson.evidence;
+      lrun.payload = { playbook: pp.next, lesson: pp.lesson, discriminator: 'playbook' };
+      made.push(record(lrun, opts));
+    }
+    return made;
+  };
+
   RUN.closer = function (arg, opts) {
     var list = arg ? [arg] : unpitched();
     var made = [];
@@ -571,6 +665,10 @@
   };
 
   function sweep() {
+    /* ⚠️ MARK RUNS FIRST, and the order is load-bearing for the same reason the
+       morning brief runs last: the brief counts what the sweep has queued, so
+       anything Mark writes has to be in the queue before it looks. */
+    runAgent('mark');
     runAgent('chaser'); runAgent('closer'); runAgent('collector'); runAgent('watchman');
     runAgent('signal');
     runAgent('jarvis');

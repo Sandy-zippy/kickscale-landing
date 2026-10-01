@@ -38,6 +38,12 @@
       mayAssign: false,
       /* Mark's board: businesses found, read and scored */
       prospects: [],
+      sends: [],
+      /* ⚠️ MARK DOES NOT WRITE THIS. It is what he leads with and what he has
+         been told to leave alone, and it only moves when somebody approves a
+         proposal. null means "the order in core.js", which is the honest
+         default: no evidence yet, so no opinion yet. */
+      outreach_playbook: null,
       targets: JSON.parse(JSON.stringify(ZS.DEFAULT_TARGETS)),
       staff: [],                 /* filled by the seed, or by first-run setup */
       products: JSON.parse(JSON.stringify(ZS.DEFAULT_PRODUCTS)),
@@ -1409,6 +1415,21 @@
             foot: 'credentials, data or a signature' }) +
       '</div>';
 
+    /* ⚠️ WHAT MARK NEEDS, ON THE FIRST SCREEN. The Outreach board carries the
+       whole brief, and a brief on a screen nobody opens is a brief nobody
+       reads. Only the items he has to touch himself come here, and only when
+       there are some: a permanent panel saying "nothing for you" is a panel
+       that stops being looked at. */
+    if (a.clients) {
+      var mn = ZS.markNeeds(D);
+      if (mn.length) {
+        h += '<div class="note" style="margin-bottom:16px"><b>Mark needs you on ' +
+          mn.length + ' thing' + (mn.length === 1 ? '' : 's') + '.</b> ' +
+          esc(mn.map(function (n) { return n.what; }).join(' ')) +
+          ' <a class="minibtn" href="#/outreach">Open Outreach</a></div>';
+      }
+    }
+
     /* trend + what happened lately, side by side */
     h += '<div class="twocol">';
     h += '<section class="card pad"><div class="cardhead"><h3>Value contracted</h3>' +
@@ -2415,6 +2436,7 @@
       mayAssign: !!remote.mayAssign,
       /* ⚠️ absent from here means wiped on every sync, the trap that ate the bin */
       prospects: remote.prospects || [],
+      sends: remote.sends || [],
       bin: (remote.bin || []).map(function (b) {
         return { id: b.id, kind: b.kind, record: b.record, label: b.label,
                  by: b.by, at: b.at, expires: b.expires, ref: b.ref || '',
@@ -2427,7 +2449,7 @@
        sheet; leaving it out meant the Open the sheet button vanished twenty
        seconds after it appeared. */
     ['targets', 'picklists', 'products', 'usd_rate', 'roles', 'agentModes',
-     'backup_sheet'].forEach(function (k) {
+     'backup_sheet', 'outreach_playbook'].forEach(function (k) {
       if (remote.settings && remote.settings[k]) D[k] = remote.settings[k];
     });
     /* syncStaff() also republishes the product list, so what we sell comes from

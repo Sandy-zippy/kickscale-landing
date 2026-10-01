@@ -130,6 +130,16 @@
             esc(p.draft.channel) + ', ' +
             (p.draft.by === 'model' ? 'written by the model' : 'written from a template') +
             ', edit before approving</label>' +
+            /* ⚠️ AN EMAIL DRAFT WITH NO SUBJECT BOX. Mark's subject line is the
+               whole email: it is the verified fault, it is the reason it gets
+               opened, and it is the thing CAN-SPAM is about. It was being
+               carried in the payload and shown nowhere, so the one field
+               Bhargav would most want to tighten was the one he could not
+               reach. */
+            (p.draft.subject
+              ? '<input id="sj-' + esc(p.id) + '" value="' + esc(p.draft.subject) +
+                '" aria-label="Subject line" style="margin-bottom:8px">'
+              : '') +
             '<textarea id="dr-' + esc(p.id) + '" rows="6">' + esc(p.draft.text) + '</textarea></div>'
           : '') +
         '<div class="propacts">' +
@@ -221,7 +231,9 @@
 
   function decide(id, send) {
     var box = document.getElementById('dr-' + id);
-    G.jarvisDecide(id, 'approve', { send: send, text: box ? box.value : '' });
+    var sub = document.getElementById('sj-' + id);
+    G.jarvisDecide(id, 'approve',
+      { send: send, text: box ? box.value : '', subject: sub ? sub.value : '' });
   }
 
   /* Put a turn in the log from somewhere other than the input box, so anything

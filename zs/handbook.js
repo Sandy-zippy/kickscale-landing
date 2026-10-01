@@ -551,7 +551,36 @@
 "everything he claims, somebody can go and check.\n\n" +
 "A row he could not put a name to says so and links to the search. One click " +
 "from you makes it workable, and it stays on the board rather than quietly " +
-"disappearing and making the market look thinner than it is."
+"disappearing and making the market look thinner than it is.\n\n" +
+"HOW THE EMAIL GOES OUT. Out of your own mailbox, through the same Apps Script " +
+"that books your calls. It lands in your Sent folder and the reply comes to " +
+"your inbox, because it is your mailbox. There is no second sending domain to " +
+"warm up next to the one that carries your invoices. Approve and send, or " +
+"approve and keep: the second button changes nothing outside the building, and " +
+"the row only reads as sent once Google says it went.\n\n" +
+"THE SAME BUSINESS IS NEVER WRITTEN TO TWICE, and the server is what enforces " +
+"it, not the screen. Somebody who asks not to be contacted is parked the moment " +
+"the reply is read, with the reason on the row, and Mark will not touch them " +
+"again.\n\n" +
+"WHATSAPP IS WRITTEN AND HELD. The UAE requires documented prior consent before " +
+"any marketing message, WhatsApp included, and Meta refuses templates written " +
+"for cold outreach. So the message is drafted now and sent only after they have " +
+"written to you, when it is a reply inside the window: allowed, free and " +
+"welcome.\n\n" +
+"WHAT HE LEARNS, AND WHAT HE WILL NOT CLAIM. Eight messages in a group is the " +
+"floor for any claim about it; below that the screen says how many more are " +
+"needed rather than showing a percentage of four. Replies, meetings and the " +
+"words people wrote back are the only signal. Opens are not counted anywhere: " +
+"an open is a mail app fetching an image on delivery, not somebody reading " +
+"anything.\n\n" +
+"HE PROPOSES THE CHANGE; YOU MAKE IT. What he leads with is a playbook, and it " +
+"only moves when you approve a proposal that shows the arithmetic. An agent " +
+"that rewrites its own instructions from its own results is an agent nobody can " +
+"audit afterwards. Once you approve it, it is real: the order he leads with " +
+"actually changes, and a city you told him to leave alone he leaves alone.\n\n" +
+"AND HE SAYS WHAT HE NEEDS FROM YOU. Rows with nobody named, emails approved " +
+"and never sent, warm replies with no time in the diary. That last one is the " +
+"only item that costs money every day it waits."
 },
 
 /* ---------------------------------------------------------------- */

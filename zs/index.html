@@ -129,6 +129,77 @@ body{
 img{max-width:100%;display:block}
 a{color:inherit;text-decoration:none}
 button,select,input,textarea{font:inherit;color:inherit}
+
+/* ---- every form control, one look (2026-10-01) ----
+   Fields used to be styled only inside some containers (.f, .fld…). Anywhere
+   else, the On file registry and "Expected to close" included, the browser drew
+   its own bevelled grey-and-black box with 16px system text. This is the floor:
+   :where() gives it no specificity, so a container can still change a size, but
+   no control anywhere can fall back to the browser's look again. */
+:root{color-scheme:dark}
+:root[data-theme="light"]{color-scheme:light}
+:where(input:not([type=checkbox],[type=radio],[type=file],[type=range],[type=color],[type=hidden]),select,textarea){
+  background-color:var(--char2);border:1px solid var(--line2);color:var(--tx);
+  padding:9px 12px;min-height:40px;font-family:var(--b);font-size:14px;line-height:1.4;
+  transition:border-color .15s,box-shadow .15s,background-color .15s;
+}
+:where(textarea){min-height:76px}
+:where(input,textarea)::placeholder{color:var(--dim);opacity:1}
+:where(input,select,textarea):hover{border-color:var(--dim)}
+:where(input,select,textarea):focus{outline:none;border-color:var(--ember);box-shadow:0 0 0 3px var(--lime-wash)}
+:where(input,select,textarea):disabled{opacity:.55;cursor:not-allowed}
+:where(select){-webkit-appearance:none;appearance:none;cursor:pointer;padding-right:34px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23A8ADB4' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;background-size:12px}
+:where(input[type=checkbox],input[type=radio]){accent-color:var(--ember)}
+
+/* ---- the date picker (dates.js) ---- */
+.zsd-native{position:absolute!important;width:1px!important;height:1px!important;min-height:0!important;
+  padding:0!important;border:0!important;opacity:0;pointer-events:none;overflow:hidden;clip:rect(0 0 0 0)}
+.zsd-btn{display:inline-flex;align-items:center;justify-content:space-between;gap:10px;min-width:150px;
+  min-height:40px;padding:9px 12px;background:var(--char2);border:1px solid var(--line2);color:var(--tx);
+  font-family:var(--b);font-size:14px;line-height:1.4;cursor:pointer;text-align:left;
+  transition:border-color .15s,box-shadow .15s}
+.zsd-btn:hover{border-color:var(--dim)}
+.zsd-btn:focus-visible,.zsd-btn[aria-expanded="true"]{outline:none;border-color:var(--ember);box-shadow:0 0 0 3px var(--lime-wash)}
+.zsd-btn.zsd-empty .zsd-txt{color:var(--dim)}
+.zsd-ico{color:var(--mut);flex:none}
+.f .zsd-btn,.recrow .zsd-btn,.fld .zsd-btn{width:100%}
+.zsd-pop{position:fixed;z-index:200;width:288px;padding:12px;background:var(--coal);
+  border:1px solid var(--line2);border-radius:14px;box-shadow:0 24px 60px -20px rgba(0,0,0,.65);
+  animation:zs-rise .16s ease-out}
+.zsd-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.zsd-head b{font-family:var(--d);font-size:14px;font-weight:600}
+.zsd-nav{width:32px;height:32px;border:0;border-radius:8px;background:none;color:var(--mut);font-size:20px;line-height:1;cursor:pointer}
+.zsd-nav:hover{background:var(--char2);color:var(--tx)}
+.zsd-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.zsd-wd{font-family:var(--d);font-size:10.5px;letter-spacing:.06em;color:var(--dim);text-align:center;padding:4px 0}
+.zsd-day{height:36px;border:0;border-radius:8px;background:none;color:var(--tx);font-size:13px;cursor:pointer;font-variant-numeric:tabular-nums}
+.zsd-day:hover{background:var(--char2)}
+.zsd-day.zsd-out{color:var(--dim)}
+.zsd-day.zsd-today{box-shadow:inset 0 0 0 1px var(--ember)}
+.zsd-day.zsd-sel{background:var(--ember);color:var(--lime-ink);font-weight:700}
+.zsd-day:disabled{opacity:.3;cursor:not-allowed}
+.zsd-day:focus-visible{outline:2px solid var(--ember);outline-offset:1px}
+.zsd-foot{display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.zsd-link{background:none;border:0;border-radius:6px;color:var(--accent);font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 8px}
+.zsd-link:hover{background:var(--char2)}
+
+/* ---- motion: small, quick, and off for people who ask ---- */
+@keyframes zs-rise{from{opacity:0;transform:translateY(8px)}}
+@keyframes zs-slidein{from{opacity:.3;transform:translateX(28px)}}
+@keyframes zs-fade{from{opacity:0}}
+dialog[open]{animation:zs-rise .18s ease-out}
+.btn,.minibtn{transition:background-color .12s,border-color .12s,color .12s,transform .12s,box-shadow .12s}
+.btn:active:not(:disabled),.minibtn:active{transform:scale(.97)}
+.btn:focus-visible,.minibtn:focus-visible{outline:none;box-shadow:0 0 0 1px var(--ember),0 0 0 4px var(--lime-wash)}
+a.card{transition:border-color .15s}
+a.card:hover{border-color:var(--line2)}
+@media (max-width:560px){.btn{min-height:44px}}
+@media (prefers-reduced-motion:reduce){
+  dialog[open],.drawer,.zsd-pop{animation:zs-fade .12s}
+  .btn:active:not(:disabled),.minibtn:active{transform:none}
+}
 h1,h2,h3,h4{font-family:var(--d);margin:0;line-height:1.12;letter-spacing:-.01em}
 :focus-visible{outline:2px solid var(--ember);outline-offset:2px}
 [hidden]{display:none!important}
@@ -395,7 +466,7 @@ body{display:block}
 .recrow label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
 .recrow input,.recrow select,.recrow textarea{width:100%;min-width:0}
 .recrow textarea{resize:vertical}
-.recrow .recval{font-size:14px;color:var(--ink);padding:7px 0;min-height:20px}
+.recrow .recval{font-size:14px;color:var(--tx);padding:7px 0;min-height:20px}
 .recrow .rechint{font-size:11px;color:var(--dim);line-height:1.35}
 /* a blank one is marked on the label, not by hiding the control */
 .recrow.blank label{color:var(--warn-ink)}
@@ -414,7 +485,7 @@ body{display:block}
    a screen and a save button you have to hunt for does not get pressed. */
 .recbar{position:sticky;bottom:0;z-index:5;display:flex;gap:10px;align-items:center;
   flex-wrap:wrap;margin-top:18px;padding:12px 14px;border:1px solid var(--line2);
-  border-radius:2px;background:var(--char)}
+  border-radius:12px;background:var(--char)}
 .recbar.armed{border-color:var(--accent)}
 /* the same bar at the top of the panel, stuck under the rail rather than to the
    foot of the page, so it is the first thing you see once something is typed */
@@ -495,7 +566,7 @@ body{display:block}
 /* ================= the detail drawer ================= */
 .scrim{position:fixed;inset:0;background:rgba(8,9,11,.62);z-index:80;
   animation:fade .16s ease}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,92vw);z-index:81;
+.drawer{animation:zs-slidein .22s cubic-bezier(.16,1,.3,1);position:fixed;top:0;right:0;bottom:0;width:min(760px,92vw);z-index:81;
   background:var(--ink);border-left:1px solid var(--line2);display:flex;flex-direction:column;
   box-shadow:-24px 0 60px var(--shadow);animation:slidein .2s cubic-bezier(.22,.7,.3,1)}
 .drawerbar{display:flex;align-items:center;gap:10px;padding:12px 16px;
@@ -587,7 +658,9 @@ td .sub{display:block;font-size:11px;color:var(--dim)}
 
 /* ---- skin: square edges soften a little, and the accent is a
        gradient rather than a flat ember ---- */
-.btn,.pill,.chip,.card,.uchip,input,select,textarea{border-radius:2px}
+.btn,.minibtn,.backbtn,.chip,.uchip,input,select,textarea,.zsd-btn{border-radius:8px}
+.card,dialog,.scanbox,.fieldset,.fgroup,.wbar{border-radius:12px}
+.pill{border-radius:999px}
 
 
 .demo-note{background:var(--note-bg);color:var(--note-ink);border-bottom:1px solid var(--note-line);font-weight:500;letter-spacing:.01em}
@@ -793,7 +866,7 @@ td .sub{display:block;font-size:11px;color:var(--dim)}
 /* ---- what is in play, and its follow-ups ---- */
 .stagepick{display:flex;align-items:center;gap:8px;background:var(--coal);border:1px solid var(--ember);padding:6px 10px}
 .stagepick label{font-family:var(--d);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-.stagepick select{background:var(--ink);border:1px solid var(--line);color:var(--tx);padding:7px 10px;font-family:var(--d);font-size:13.5px;font-weight:600;cursor:pointer}
+.stagepick select{font-family:var(--d);font-size:13.5px;font-weight:600}
 .stagenote{color:var(--mut);font-size:13px;margin:-8px 0 18px}
 
 .playproductd{border:1px solid var(--ember);background:var(--coal);margin-bottom:12px}
@@ -916,7 +989,7 @@ td .sub{display:block;font-size:11px;color:var(--dim)}
 .rlabel{font-family:var(--d);font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-right:4px}
 .rangebar .chip{padding:5px 10px;font-size:11.5px}
 .rcustom{display:flex;align-items:center;gap:6px;margin-left:4px}
-.rcustom input{background:var(--char);border:1px solid var(--line);padding:5px 8px;font-size:12.5px;color:var(--tx)}
+.rcustom input{min-height:34px;padding:6px 10px;font-size:12.5px}
 .rcustom span{font-size:12px;color:var(--dim)}
 .rnote{margin-left:auto;font-size:11.5px;color:var(--dim)}
 
@@ -982,10 +1055,7 @@ td .sub{display:block;font-size:11px;color:var(--dim)}
 }
 .fbody{padding:14px 16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}
 .f label{display:block;font-family:var(--d);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
-.f input,.f select,.f textarea{
-  width:100%;background:var(--char);border:1px solid var(--line);padding:9px 11px;font-size:14px;color:var(--tx);
-}
-.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--ember);outline:none}
+.f input,.f select,.f textarea{width:100%}
 .f textarea{min-height:76px;resize:vertical;font-family:var(--b)}
 .f.wide{grid-column:1/-1}
 .f .unit{color:var(--dim);font-size:11px;margin-left:5px;text-transform:none;letter-spacing:0}
@@ -1000,7 +1070,7 @@ td .sub{display:block;font-size:11px;color:var(--dim)}
 .fld .v{font-family:var(--d);font-size:14px;font-weight:600;display:block;word-break:break-word}
 .fld .v.none{color:var(--dim);font-weight:400;font-family:var(--b);font-size:13px;font-style:italic}
 .fld .go{margin-left:auto;flex:none}
-.fld input,.fld select,.fld textarea{width:100%;background:var(--ink);border:1px solid var(--ember);padding:6px 8px;font-size:13.5px;color:var(--tx)}
+.fld input,.fld select,.fld textarea{width:100%;min-height:36px;padding:7px 10px;font-size:13.5px}
 .fld form{display:flex;gap:6px;align-items:center;width:100%}
 .progress{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .progress .bar{width:180px;height:9px}
@@ -1052,7 +1122,7 @@ td .sub{display:block;font-size:11px;color:var(--dim)}
 .matrix td:first-child{text-align:left}
 .matrix tr:last-child td{border-bottom:0}
 .matrix input[type=checkbox]{width:17px;height:17px;accent-color:var(--ember);cursor:pointer}
-.matrix select{background:var(--char);border:1px solid var(--line);padding:6px 8px;font-size:12.5px;cursor:pointer}
+.matrix select{min-height:34px;padding:6px 30px 6px 10px;font-size:12.5px}
 .matrix tr.locked{opacity:.55}
 .matrix .rn{font-family:var(--d);font-weight:600}
 .matrix .rn span{display:block;font-family:var(--b);font-weight:400;font-size:11.5px;color:var(--dim)}
@@ -1176,25 +1246,28 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 
 <div id="toast" hidden></div>
 
-<script src="vocab.js?b=1790847198"></script>
-<script src="api.js?b=1790847198"></script>
-<script src="core.js?b=1790847198"></script>
-<script src="app.js?b=1790847198"></script>
-<script src="stock.js?b=1790847198"></script>
-<script src="crm.js?b=1790847198"></script>
-<script src="pipeline.js?b=1790847198"></script>
-<script src="autos.js?b=1790847198"></script>
-<script src="processing.js?b=1790847198"></script>
-<script src="whatsapp.js?b=1790847198"></script>
-<script src="campaigns.js?b=1790847198"></script>
-<script src="bin.js?b=1790847198"></script>
-<script src="inbox.js?b=1790847198"></script>
-<script src="chatbot.js?b=1790847198"></script>
-<script src="diary.js?b=1790847198"></script>
-<script src="handbook.js?b=1790847198"></script>
-<script src="jarvis.js?b=1790847198"></script>
-<script src="jarvis-desk.js?b=1790847198"></script>
-<script src="jarvis-view.js?b=1790847198"></script>
+<script src="places.js?b=1790851431"></script>
+<script src="vocab.js?b=1790851431"></script>
+<script src="api.js?b=1790851431"></script>
+<script src="core.js?b=1790851431"></script>
+<script src="app.js?b=1790851431"></script>
+<script src="stock.js?b=1790851431"></script>
+<script src="crm.js?b=1790851431"></script>
+<script src="pipeline.js?b=1790851431"></script>
+<script src="autos.js?b=1790851431"></script>
+<script src="processing.js?b=1790851431"></script>
+<script src="whatsapp.js?b=1790851431"></script>
+<script src="campaigns.js?b=1790851431"></script>
+<script src="bin.js?b=1790851431"></script>
+<script src="inbox.js?b=1790851431"></script>
+<script src="chatbot.js?b=1790851431"></script>
+<script src="outreach.js?b=1790851431"></script>
+<script src="diary.js?b=1790851431"></script>
+<script src="handbook.js?b=1790851431"></script>
+<script src="jarvis.js?b=1790851431"></script>
+<script src="jarvis-desk.js?b=1790851431"></script>
+<script src="dates.js?b=1790851431"></script>
+<script src="jarvis-view.js?b=1790851431"></script>
 <script>window.GE && window.GE.boot();</script>
 </body>
 </html>

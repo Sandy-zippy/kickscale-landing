@@ -512,10 +512,28 @@
                    registry, so it is not offered here rather than half-filled. */
                 city: 'cl-city', state: 'cl-state' };
     var filled = [];
-    Object.keys(SCANNED.fields).forEach(function (k) {
+    /* state before city: a new state refills the city list, which would wipe a
+       city filled first */
+    Object.keys(SCANNED.fields).sort(function (a2, b2) {
+      return (a2 === 'city') - (b2 === 'city');
+    }).forEach(function (k) {
       var el2 = document.getElementById(map[k]);
       if (!el2 || String(el2.value || '').trim()) return;     /* never overwrite */
-      el2.value = SCANNED.fields[k];
+      var val = SCANNED.fields[k];
+      if (el2.tagName === 'SELECT') {
+        /* a dropdown ignores a value it has no option for, so match it, or keep
+           what was read as "(not in list)" rather than dropping it */
+        var hit = Array.prototype.filter.call(el2.options, function (op) {
+          return op.value.toLowerCase() === String(val).toLowerCase();
+        })[0];
+        if (!hit) {
+          hit = document.createElement('option');
+          hit.value = val; hit.textContent = val + ' (not in list)';
+          el2.appendChild(hit);
+        }
+        el2.value = hit.value;
+        el2.dispatchEvent(new Event('change', { bubbles: true }));
+      } else el2.value = val;
       filled.push(k);
     });
     var note = document.getElementById('scan-note');
@@ -618,9 +636,20 @@
       '</div></div>';
 
     h += '<div class="fgroup"><h4>Where they are</h4><div class="fbody">' +
-      pick('cl-country', 'country', 'countries', addr.country || 'India', 'Country') +
-      '<div class="f"><label for="cl-state">State / province</label><input id="cl-state" name="state" autocomplete="off" value="' + v(addr.state) + '"></div>' +
-      '<div class="f"><label for="cl-city">City</label><input id="cl-city" name="city" autocomplete="off" value="' + v(addr.city) + '"></div>' +
+      /* Country → State → City, the one shared trio (ZS.placeFields), so a state
+         can no longer be typed as "Maharastra" */
+      ZS.placeFields({
+        id: 'cl', country: addr.country || 'India', state: addr.state, city: addr.city,
+        names: { country: 'country', state: 'state', city: 'city' },
+        countries: ZS.picklist(D(), 'countries'),
+        wrap: function (label, id, control) {
+          /* a country we have not listed can still be added, as before */
+          if (id === 'cl-country') control = '<div class="pickwrap">' + control +
+            '<button type="button" class="minibtn" data-act="addPick" data-id="countries|cl-country" ' +
+            'title="Add one that is not on the list">+</button></div>';
+          return '<div class="f"><label for="' + id + '">' + esc(label) + '</label>' + control + '</div>';
+        }
+      }).join('') +
       '<div class="f"><label for="cl-area">Area</label><input id="cl-area" name="area" autocomplete="off" value="' + v(addr.area) + '"></div>' +
       '<div class="f"><label for="cl-pin">PIN / postcode</label><input id="cl-pin" name="pin" autocomplete="off" value="' + v(addr.pin) + '"></div>' +
       '<div class="f wide"><label for="cl-line1">Street address</label><input id="cl-line1" name="line1" autocomplete="off" value="' + v(addr.line1) + '"></div>' +

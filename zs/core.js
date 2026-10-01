@@ -578,6 +578,22 @@
   }
   function usdRate() { return USD_RATE; }
   function inUsd(rupees) { return Math.round((Number(rupees) || 0) / (USD_RATE.rate || USD)); }
+
+  /* ⚠️ THE PRICE IS THE RUPEE FIGURE. A dirham figure is that same number in
+     another currency and nothing else. Bhargav asked for a conversion and got a
+     repositioning instead the first time, which was not mine to do. Editable
+     here for the same reason the dollar rate is: a rate hard-coded in a file is
+     a rate that is wrong by next quarter. */
+  var AED = 24;
+  var AED_RATE = { rate: AED, at: '2026-10-01' };
+  function setAedRate(r) {
+    var n = Number(r && r.rate ? r.rate : r);
+    if (!isFinite(n) || n <= 0) return AED_RATE;
+    AED_RATE = { rate: n, at: (r && r.at) || today() };
+    return AED_RATE;
+  }
+  function aedRate() { return AED_RATE.rate || AED; }
+  function inAed(rupees) { return Math.round((Number(rupees) || 0) / aedRate()); }
   /* `code` is the reference prefix for anything sold under this line, so an
      engagement reads AC-001 rather than a timestamp. Adding a product adds its
      own series; nothing else has to know about it. */
@@ -1679,10 +1695,13 @@
     { key: 'client',     label: 'Client name',        group: 'Identity', type: 'text' },
     { key: 'contact',    label: 'Decision maker',     group: 'Identity', type: 'text' },
     { key: 'sector',     label: 'Sector',             group: 'Identity', type: 'text' },
-    { key: 'city',       label: 'City',               group: 'Identity', type: 'text' },
+    /* Country, State and City are one chained trio (placeFields), not three
+       text boxes: a typed state is how "Maharastra" got into the record */
+    { key: 'country',    label: 'Country',            group: 'Identity', type: 'place' },
+    { key: 'city',       label: 'City',               group: 'Identity', type: 'place' },
     /* the reader pulls a state off a GST certificate; without a field for it,
        that reading went into the record and appeared on no screen */
-    { key: 'state',      label: 'State',              group: 'Identity', type: 'text' },
+    { key: 'state',      label: 'State',              group: 'Identity', type: 'place' },
     { key: 'mobile',     label: 'Mobile',             group: 'Identity', type: 'text' },
     { key: 'email',      label: 'Email',              group: 'Identity', type: 'text' },
 
@@ -2113,6 +2132,166 @@
       .filter(function (x) { return String(x || '').trim(); }).join(', ');
   }
 
+  /* ---- places: Country → State → City ----
+     Every address in the cockpit is three dropdowns from ONE list (places.js,
+     generated from the website's own list), because a typed state arrives as
+     "Maharastra" and can never be counted. "Other" turns that one box into text.
+     A stored value that is not on the list is kept and shown as "(not in list)",
+     so switching a box to a dropdown never loses what was typed into it. */
+  var PLACE_OTHER = '__other';
+  function places() { return root.ZS_PLACES || []; }
+  function placeCountry(v) {
+    var s = String(v || '').trim().toLowerCase();
+    return places().filter(function (c) { return c.name.toLowerCase() === s || c.code.toLowerCase() === s; })[0] || null;
+  }
+  var placeExtra = [];   /* countries somebody added on the spot (the countries picklist) */
+  function placeStateOf(c, city) {
+    if (!c || !city) return '';
+    var hits = Object.keys(c.states).filter(function (st) { return c.states[st].indexOf(city) >= 0; });
+    return hits.length === 1 ? hits[0] : '';
+  }
+  function placeList(level, country, state, city) {
+    if (level === 'country') {
+      var names = places().map(function (c) { return c.name; });
+      return names.concat(PICKLISTS.countries.concat(placeExtra).filter(function (n, i, a) {
+        return names.indexOf(n) < 0 && a.indexOf(n) === i;
+      }));
+    }
+    var c = placeCountry(country);
+    if (!c) return null;
+    if (level === 'state') return Object.keys(c.states);
+    /* no state on file: if the city names one state, offer that state's cities
+       (so "Mumbai" reads as Mumbai, not "not in list"); otherwise an empty list
+       that says "pick a state first", never a text box */
+    if (!state) {
+      var home = placeStateOf(c, city);
+      return home ? c.states[home].filter(function (x) { return x !== 'Other'; }) : [];
+    }
+    var st = c.states[state];
+    return st ? st.filter(function (x) { return x !== 'Other'; }) : null;
+  }
+  function placeLabel(level, country) {
+    if (level === 'country') return 'Country';
+    if (level === 'city') return 'City';
+    var c = placeCountry(country);
+    return c ? c.tier : 'State / province';
+  }
+  /* the inside of one control: options for a list, or null for a text box */
+  /* `hint` is a city used only to find which state's list to offer when no state
+     is on file; it is never added to the list */
+  function placeOptions(level, country, state, value, hint) {
+    var list = placeList(level, country, state, level === 'city' ? (hint || value) : '');
+    if (!list) return null;
+    var v = String(value || '');
+    var known = !v || list.indexOf(v) >= 0;
+    return '<option value="">' + (level === 'city' && !state && !list.length ? 'Pick a ' + placeLabel('state', country).toLowerCase() + ' first' : 'Choose') + '</option>' +
+      (known ? '' : '<option value="' + esc(v) + '" selected>' + esc(v) + ' (not in list)</option>') +
+      list.map(function (x) {
+        return '<option value="' + esc(x) + '"' + (x === v ? ' selected' : '') + '>' + esc(x) + '</option>';
+      }).join('') +
+      (level === 'country' ? '' : '<option value="' + PLACE_OTHER + '">Other (type it)</option>');
+  }
+  var placeSeq = 0;
+  /* Returns [country, state, city] as HTML. `wrap(label, id, control)` lets each
+     form keep its own field chrome; `attrs[level]` adds e.g. data-recfield. */
+  function placeFields(o) {
+    var grp = 'pl' + (++placeSeq);
+    if (o.countries) placeExtra = o.countries.slice();
+    /* `assume` is the country the lists are drawn for when none is on file. It is
+       NOT shown as chosen: a box that reads "India" but was never saved is a lie.
+       Choosing a state or city fills it in, as a visible unsaved change. */
+    var assume = o.assume || 'India';
+    var val = { country: o.country || '', state: o.state || '', city: o.city || '' };
+    var listCountry = val.country || assume;
+    return ['country', 'state', 'city'].map(function (lv) {
+      var id = o.id + '-' + lv;
+      var a = ' id="' + esc(id) + '" data-place="' + lv + '" data-place-grp="' + grp + '"' +
+        ' data-place-assume="' + esc(assume) + '"' +
+        (o.names && o.names[lv] ? ' name="' + esc(o.names[lv]) + '"' : '') + ((o.attrs && o.attrs[lv]) || '');
+      var opts = placeOptions(lv, listCountry, val.state, val[lv]);
+      var control = opts != null
+        ? '<select' + a + '>' + opts + '</select>'
+        : '<input' + a + ' type="text" autocomplete="off" value="' + esc(val[lv]) + '">';
+      return o.wrap(placeLabel(lv, listCountry), id, control);
+    });
+  }
+  /* the chain: a new country refills the states, a new state refills the cities,
+     "Other" becomes a text box. Each rebuilt box fires `change`, so a form that
+     stages its fields (the engagement registry) sees the cleared value too. */
+  function placeRebuild(el, tagName, inner) {
+    var d = root.document, n = d.createElement(tagName), keep = el.value;
+    Array.prototype.slice.call(el.attributes).forEach(function (at) {
+      if (at.name !== 'value' && at.name !== 'type') n.setAttribute(at.name, at.value);
+    });
+    if (tagName === 'input') { n.type = 'text'; n.autocomplete = 'off'; } else n.innerHTML = inner;
+    el.parentNode.replaceChild(n, el);
+    /* a state or city that still fits the new list stays: picking Maharashtra
+       must not wipe Mumbai */
+    if (tagName === 'select' && keep && keep !== PLACE_OTHER &&
+        Array.prototype.some.call(n.options, function (op) { return op.value === keep; })) {
+      n.value = keep;
+      return n;
+    }
+    n.dispatchEvent(new Event('change', { bubbles: true }));
+    return n;
+  }
+  if (root.document && root.document.addEventListener && root.document.createElement) {
+    root.document.addEventListener('change', function (e) {
+      var t = e.target, lv = t && t.getAttribute && t.getAttribute('data-place');
+      if (!lv) return;
+      var d = root.document, grp = t.getAttribute('data-place-grp');
+      /* stop the original event: the form must stage the new empty text box, never
+         the "__other" sentinel the select was holding */
+      if (t.value === PLACE_OTHER) { e.stopImmediatePropagation(); placeRebuild(t, 'input').focus(); return; }
+      var byGrp = function (l) { return d.querySelector('[data-place-grp="' + grp + '"][data-place="' + l + '"]'); };
+      var ids = {};
+      ['country', 'state', 'city'].forEach(function (l) { var x = byGrp(l); ids[l] = x && x.id; });
+      var assume = t.getAttribute('data-place-assume') || '', picked = t.value;
+      /* ⚠️ EVERYTHING BELOW WAITS FOR THIS EVENT TO FINISH. The engagement registry
+         redraws itself on its first unsaved change; touching the other boxes inside
+         this event made that redraw happen before the box you picked was staged, and
+         it came back blank (Telangana vanished, then Maharashtra). By id, because a
+         redraw keeps the ids and replaces the elements. */
+      setTimeout(function () {
+        var get = function (l) { return ids[l] ? d.getElementById(ids[l]) : null; };
+        var cEl = get('country');
+        var country = cEl ? (cEl.value || assume) : assume;
+        var refill = function (l) {
+          var el = get(l); if (!el) return;
+          /* read the state NOW: refilling the states just above may have cleared it */
+          var stNow = get('state') ? get('state').value : '';
+          var opts = placeOptions(l, country, l === 'city' ? stNow : '', '', l === 'city' ? el.value : '');
+          if (opts != null) placeRebuild(el, 'select', opts);
+          else if (el.tagName === 'SELECT') placeRebuild(el, 'input');
+          var lab = d.querySelector('label[for="' + ids[l] + '"]');
+          if (lab && l === 'state') lab.textContent = placeLabel('state', country);
+        };
+        if (lv === 'country') { refill('state'); refill('city'); return; }
+        if (lv === 'state') refill('city');
+        /* a city picked with no state names its state, when only one state has it */
+        var sEl = get('state');
+        if (lv === 'city' && picked && sEl && !sEl.value) {
+          var home = placeStateOf(placeCountry(country), picked);
+          if (home && Array.prototype.some.call(sEl.options || [], function (op) { return op.value === home; })) {
+            sEl.value = home; sEl.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+        /* a state or city picked under the assumed country fills the country in */
+        if (picked && cEl && !cEl.value && assume) {
+          cEl.value = assume; cEl.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      }, 0);
+    });
+  }
+
+  /* "2026-10-01" → "1 Oct 2026". 01/10/2026 means two different days depending on
+     who reads it, so no date in the cockpit is shown that way. */
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function niceDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
+    return m ? (+m[3]) + ' ' + MON[+m[2] - 1] + ' ' + m[1] : String(iso || '');
+  }
+
   /* ---- picklists ----
      A dropdown you can add to on the spot, where the new value is still there
      next time. ONE mechanism, used for sector and for country, because two
@@ -2488,6 +2667,200 @@
      as the server computed them, and every signal arrives with the sentence that
      earned it. */
 
+  /* ================= WHAT MARK WRITES =================
+
+     ⚠️ THE SUBJECT IS BUILT FROM A FINDING, OR THERE IS NO SUBJECT.
+
+     `subjectFor` takes a finding and returns a line. Handed nothing, it returns
+     null and the draft does not happen. That is not a style rule; it is the
+     whole design, for two reasons that happen to point the same way.
+
+     It is what works. The Car Cart email got read because the subject said
+     Airtel had their site flagged as a scam, and that was TRUE and checkable in
+     ten seconds. Nobody deletes an email that names a real problem on their own
+     property.
+
+     And it is what is lawful. A deceptive subject line is $53,088 per email
+     under the FTC's 2026 CAN-SPAM adjustment. The cheap trick and the crime are
+     the same act, and the honest version outperforms both.
+
+     TEMPLATE FIRST, MODEL SECOND. Every message below is complete as written, so
+     Mark never stops when the free model allowance runs out. The model sharpens
+     what is here; it never supplies it. check_ask.js already holds the rest of
+     the cockpit to that rule and this is no different.
+
+     NO EM DASHES. They read as machine-written and undo the one thing this email
+     is trying to establish. */
+
+  /* ⚠️ A SUBJECT GMAIL CUTS IN HALF IS A SUBJECT NOBODY READ. Gmail shows about
+     70 characters on a laptop and far fewer on a phone, and Gulf company names
+     run long: "Royal Fitout & Interior Design Dubai" is 35 before the problem is
+     even mentioned. So the name is shortened to the part a human would say out
+     loud, and the problem always survives. */
+  function shortName(name) {
+    var n = String(name || '').split(/[|,–-]/)[0].trim();
+    n = n.replace(/\s+(llc|l\.l\.c|fz-?llc|fzco|ltd|limited|pvt|private|co|company|est|trading|contracting)\b\.?/gi, '');
+    var words = n.split(/\s+/).filter(Boolean);
+    if (words.length > 3) words = words.slice(0, 3);
+    n = words.join(' ').replace(/\s*&\s*$/, '').trim();
+    return n.length > 28 ? n.slice(0, 28).replace(/\s\S*$/, '') : n;
+  }
+
+  var SUBJECTS = {
+    no_https:   function (p) { return shortName(p.name) + ': Chrome is showing visitors "Not secure"'; },
+    site_down:  function (p) { return shortName(p.name) + ': your website is not loading'; },
+    site_error: function (p) { return shortName(p.name) + ': your website is returning an error'; },
+    no_site:    function (p) { return shortName(p.name) + ' has no website on its Google listing'; },
+    not_mobile: function (p) { return shortName(p.name) + ': your site does not fit a phone screen'; },
+    stale:      function (p, f) {
+      var y = String(f.evidence || '').match(/(20\d\d)/);
+      return shortName(p.name) + ': your site still says ' + (y ? y[1] : 'an old year');
+    }
+  };
+
+  /* Worst first. A dead site beats a stale footer, because the first is costing
+     them money today and the second is only embarrassing. */
+  var FINDING_ORDER = ['site_down', 'site_error', 'no_site', 'no_https', 'not_mobile', 'stale'];
+
+  /* `order` is the playbook's, when there is one. That is the only lever the
+     learning actually pulls, and it pulls it only after somebody approved the
+     change: leadFinding reads the order, it never writes it. */
+  function leadFinding(p, order) {
+    var ord = (order && order.length) ? order : FINDING_ORDER;
+    var got = (p.findings || []).filter(function (f) { return f.verified && SUBJECTS[f.id]; });
+    if (!got.length) return null;
+    got.sort(function (a, b) {
+      var ai = ord.indexOf(a.id), bi = ord.indexOf(b.id);
+      return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+    });
+    return got[0];
+  }
+
+  function subjectFor(p, order) {
+    var f = leadFinding(p, order);
+    if (!f) return null;                 /* ⚠️ no verified finding, no subject, no email */
+    return { line: SUBJECTS[f.id](p, f), finding: f };
+  }
+
+  /* What each service costs, in their money. The rupee figure is the price;
+     everything else is the same number in another currency, which is all
+     Bhargav asked for. Rates are editable in Settings so nothing goes stale. */
+  var SERVICE_PRICE = { automations: 50000, cockpit: 70000, website: 100000 };
+
+  function priceIn(service, country) {
+    var inr = SERVICE_PRICE[service] || 0;
+    /* ⚠️ Through inAed/inUsd, never by dividing here: `aedRate()` returns a
+       number and `usdRate()` returns {rate, at}, so an arithmetic shortcut gave
+       "$NaN" on every American prospect. The two converters are the only place
+       that difference lives. Rounded to the nearest 50 dirhams and 5 dollars,
+       because a price reading "AED 2917" invites haggling over the 17. */
+    if (country === 'AE') return 'AED ' + Math.round(inAed(inr) / 50) * 50;
+    if (country === 'US') return '$' + Math.round(inUsd(inr) / 5) * 5;
+    return money(inr);
+  }
+
+  /* One paragraph per service, saying what we would actually do, in their words
+     rather than ours. Each takes the evidence so the sentence is about THEM. */
+  var PITCH = {
+    automations: function (p, hits) {
+      var e = (hits || []).map(function (h) { return h.evidence; });
+      return 'The enquiries. ' +
+        (e.filter(function (x) { return /wa\.me|WhatsApp/i.test(x); }).length
+          ? 'Right now they arrive on WhatsApp and live in a phone. '
+          : '') +
+        (e.filter(function (x) { return /no CRM/i.test(x); }).length
+          ? 'Nothing is recording them, so nobody can say how many came in last month or which ones went quiet. '
+          : '') +
+        'We join what you already use so a new enquiry files itself, chases itself and shows up on one screen. ' +
+        'Nothing you work in changes.';
+    },
+    cockpit: function (p, hits) {
+      var e = (hits || []).map(function (h) { return h.evidence; });
+      return 'One screen for the whole business. ' +
+        (e.filter(function (x) { return /memory/i.test(x); }).length
+          ? 'At the moment it runs on somebody remembering, which works until they are on leave. '
+          : '') +
+        'Every job, who it is for, where it has got to, what is owed and what is overdue, ' +
+        'with the chasing done for you. Built on your own data, not a demo.';
+    },
+    website: function (p, hits) {
+      var e = (hits || []).map(function (h) { return h.evidence; });
+      return 'The site itself. ' +
+        (e.filter(function (x) { return /Not secure/i.test(x); }).length
+          ? 'The certificate alone is turning people away before they read a word. '
+          : '') +
+        'We rebuild it so it loads fast, works on a phone, and turns a visitor into an enquiry ' +
+        'that lands somewhere you can see it.';
+    }
+  };
+
+  /* ⚠️ Returns null when there is nothing verified to lead with. Every caller
+     must handle that, and the whole point is that one of them cannot forget. */
+  function draftEmail(p, picks, me, order) {
+    var sub = subjectFor(p, order);
+    if (!sub) return null;
+
+    var greet = p.contact_name ? 'Hello ' + p.contact_name.split(' ')[0] + ',' : 'Hello,';
+    var services = (picks || []).slice(0, 3);
+    var sig = (me && me.name) || 'Bhargav Naidu';
+
+    var body = [
+      greet, '',
+      sub.finding.evidence + '.',
+      '',
+      'I found that looking at ' + p.name + ' this morning, before writing to you. ' +
+      'You can check it in ten seconds and it is yours to fix whether or not we ever speak.',
+      ''
+    ];
+
+    if (services.length) {
+      body.push(services.length === 1
+        ? 'While I was there, one thing stood out.'
+        : 'While I was there, ' + (services.length === 2 ? 'two' : 'three') + ' things stood out.');
+      body.push('');
+      services.forEach(function (sv) {
+        var hits = ((p.signals || {})[sv.key] || []);
+        body.push(PITCH[sv.key](p, hits));
+        body.push('From ' + priceIn(sv.key, p.country) + '.');
+        body.push('');
+      });
+    }
+
+    body.push('We build these in India for businesses in ' +
+      (p.country === 'US' ? 'the States' : 'the Gulf') +
+      ', which is why the price looks the way it does. Same engineers, no agency in the middle.');
+    body.push('');
+    body.push('Worth twenty minutes? I can show you what we have built for people in your trade: ' +
+      'zippyscale.in');
+    body.push('');
+    body.push(sig);
+    body.push('ZippyScale');
+
+    return { subject: sub.line, text: body.join('\n'), finding: sub.finding };
+  }
+
+  /* ⚠️ HELD UNTIL THEY REPLY, AND THE FUNCTION SAYS SO IN ITS NAME.
+     UAE Cabinet Resolutions 56 and 57 of 2024 require documented prior consent
+     before any marketing message INCLUDING WhatsApp, provable within 24 to 72
+     hours. Meta refuses templates written for cold outreach besides. So this is
+     written now and sent only after they have written to us, at which point it
+     is a reply inside the window: free, allowed, and welcome. */
+  function draftWhatsAppReply(p, picks, me, order) {
+    var sub = subjectFor(p, order);
+    if (!sub) return null;
+    var first = p.contact_name ? p.contact_name.split(' ')[0] : 'there';
+    var sv = (picks || [])[0];
+    return {
+      channel: 'whatsapp',
+      hold: 'until they reply',
+      text: 'Hello ' + first + ', thanks for coming back to me.\n\n' +
+        sub.finding.evidence + ', which is the bit I would fix first.\n\n' +
+        (sv ? PITCH[sv.key](p, ((p.signals || {})[sv.key] || [])) + '\n\n' : '') +
+        'Shall I send over twenty minutes on Thursday or Friday?\n\n' +
+        ((me && me.name) || 'Bhargav') + ', ZippyScale'
+    };
+  }
+
   /* Which services are worth pitching to this one, best first. Three or more is
      the bar: below that Mark has not found enough to say anything specific, and
      a vague email is worse than none. */
@@ -2500,6 +2873,275 @@
     ];
     return all.filter(function (x) { return x.score >= PITCH_BAR; })
               .sort(function (a, b) { return b.score - a.score; });
+  }
+
+/* ================= WHAT MARK LEARNS, AND WHAT HE TEACHES =================
+
+     ⚠️ NOTHING HERE DECIDES ANYTHING. Every lesson below is arithmetic over
+     outcomes that actually happened, and the only thing it produces is a
+     PROPOSAL. Mark never edits his own playbook, for the plain reason that an
+     agent which rewrites its own instructions from its own results is an agent
+     nobody can audit after the fact.
+
+     ⚠️ AND NOTHING HERE USES AN OPEN. Apple Mail Privacy Protection fetches
+     every image in every message on delivery, so an "open" is a number that
+     looks like attention and is not one. Replies, meetings and the words people
+     wrote back are the only signal, and they are all real.
+
+     ⚠️ A LESSON FROM THREE EMAILS IS NOT A LESSON. Eight is the floor for any
+     claim about a group, and below it the screen says how many more are needed
+     rather than showing a percentage of four. That number is low on purpose
+     (this is twenty a day, not twenty thousand) and it is still the difference
+     between learning and superstition. */
+
+  var LESSON_MIN = 8;
+  /* 5.8% replies on sends of fifty or fewer, against 2.1% on bulk (Apollo,
+     2026). A BENCHMARK, not a promise: it is here so a rate can be read as good
+     or bad rather than just as a number. */
+  var REPLY_BENCHMARK = 0.058;
+
+  function sentMessages(d) {
+    return (d.sends || []).filter(function (s) { return s && s.sent_at; });
+  }
+
+  function outreachStats(d) {
+    var sent = sentMessages(d);
+    var replied = sent.filter(function (s) { return s.replied_at; });
+    var good = replied.filter(function (s) { return s.sentiment === 'positive'; });
+    return {
+      sent: sent.length,
+      replied: replied.length,
+      positive: good.length,
+      meetings: replied.filter(function (s) { return s.meeting; }).length,
+      stopped: (d.prospects || []).filter(function (p) {
+        return p.stage === 'parked' && /not to be contacted/i.test(p.parked_why || '');
+      }).length,
+      rate: sent.length ? replied.length / sent.length : null,
+      benchmark: REPLY_BENCHMARK,
+      enough: sent.length >= LESSON_MIN,
+      shortBy: Math.max(0, LESSON_MIN - sent.length)
+    };
+  }
+
+  /* One row per group, with the counts kept alongside the rate so nothing ever
+     shows a percentage without the n it came from. */
+  function groupOutcomes(d, keyOf) {
+    var byKey = {};
+    sentMessages(d).forEach(function (s) {
+      var k = keyOf(s);
+      if (!k) return;
+      var g = byKey[k] || (byKey[k] = { key: k, sent: 0, replied: 0, positive: 0 });
+      g.sent++;
+      if (s.replied_at) g.replied++;
+      if (s.sentiment === 'positive') g.positive++;
+    });
+    return Object.keys(byKey).map(function (k) {
+      var g = byKey[k];
+      g.rate = g.sent ? g.replied / g.sent : 0;
+      g.enough = g.sent >= LESSON_MIN;
+      return g;
+    }).sort(function (a, b) { return b.rate - a.rate || b.sent - a.sent; });
+  }
+
+  function prospectOf(d, id) {
+    return (d.prospects || []).filter(function (p) { return p.id === id; })[0] || null;
+  }
+
+  /* The playbook: what Mark leads with, and what he has been told to leave
+     alone. It is a stored setting rather than code, because the whole point is
+     that it changes with the evidence. `lead` is the order findings are tried
+     in, which is the one lever that provably changed a reply rate. */
+  var DEFAULT_PLAYBOOK = { lead: FINDING_ORDER.slice(), avoid: [], why: [], updated: null };
+
+  function playbookOf(d) {
+    var b = (d && d.outreach_playbook) || null;
+    if (!b || !Array.isArray(b.lead) || !b.lead.length) return DEFAULT_PLAYBOOK;
+    /* a finding the playbook does not mention still has to be reachable, or a
+       stale playbook silently switches off a whole class of subject line */
+    var lead = b.lead.filter(function (x) { return FINDING_ORDER.indexOf(x) >= 0; });
+    FINDING_ORDER.forEach(function (x) { if (lead.indexOf(x) < 0) lead.push(x); });
+    return { lead: lead, avoid: b.avoid || [], why: b.why || [], updated: b.updated || null };
+  }
+
+  /* ⚠️ Every lesson carries its own n and says whether it is sure. A lesson that
+     is not sure is still worth showing, as a thing to watch rather than a thing
+     to act on, and it says which. */
+  function outreachLessons(d) {
+    var out = [];
+    var st = outreachStats(d);
+    if (!st.sent) return out;
+
+    var byFinding = groupOutcomes(d, function (s) { return s.finding_id || ''; });
+    var sureFindings = byFinding.filter(function (g) { return g.enough; });
+    if (sureFindings.length >= 2) {
+      var best = sureFindings[0], worst = sureFindings[sureFindings.length - 1];
+      if (best.key !== worst.key && best.rate > worst.rate) {
+        out.push({
+          id: 'lead_with',
+          what: 'Leading with "' + findingWords(best.key) + '" gets answered more than "' +
+                findingWords(worst.key) + '".',
+          evidence: pct(best.rate) + ' of ' + best.sent + ' against ' +
+                    pct(worst.rate) + ' of ' + worst.sent + '.',
+          sure: true,
+          change: { kind: 'lead', first: best.key, last: worst.key }
+        });
+      }
+    } else if (byFinding.length >= 2) {
+      out.push({
+        id: 'lead_waiting',
+        what: 'Not enough yet to say which problem is worth leading with.',
+        evidence: 'The biggest group is ' + byFinding[0].sent + ' message(s); ' +
+                  LESSON_MIN + ' is the floor for a claim.',
+        sure: false, change: null
+      });
+    }
+
+    var byPlace = groupOutcomes(d, function (s) {
+      var p = prospectOf(d, s.prospect_id);
+      return p ? ((p.city || '') + (p.country ? ', ' + p.country : '')) : '';
+    });
+    var deadPlace = byPlace.filter(function (g) { return g.enough && g.replied === 0; })[0];
+    if (deadPlace) {
+      out.push({
+        id: 'avoid_place',
+        what: 'Nothing has ever come back from ' + deadPlace.key + '.',
+        evidence: deadPlace.sent + ' sent, not one reply. Worth stopping rather than ' +
+                  'spending another week on it.',
+        sure: true,
+        change: { kind: 'avoid', what: deadPlace.key }
+      });
+    }
+
+    var byService = groupOutcomes(d, function (s) { return (s.services || [])[0] || ''; });
+    var bestService = byService.filter(function (g) { return g.enough; })[0];
+    if (bestService) {
+      out.push({
+        id: 'service',
+        what: 'The ' + serviceWords(bestService.key) + ' pitch is the one that lands.',
+        evidence: pct(bestService.rate) + ' of ' + bestService.sent + '.',
+        sure: true, change: null
+      });
+    }
+
+    /* The rate against the benchmark. Last, because it is the least actionable
+       and the easiest to stare at. */
+    if (st.enough) {
+      out.push({
+        id: 'rate',
+        what: st.rate >= st.benchmark
+          ? 'The reply rate is ahead of what small, specific outreach usually gets.'
+          : 'The reply rate is behind what small, specific outreach usually gets.',
+        evidence: pct(st.rate) + ' of ' + st.sent + ', against a 5.8% benchmark for ' +
+                  'sends of fifty or fewer.',
+        sure: true, change: null
+      });
+    } else {
+      out.push({
+        id: 'rate_waiting',
+        what: 'Too early to read the reply rate.',
+        evidence: st.sent + ' sent. ' + st.shortBy + ' more before the number means anything.',
+        sure: false, change: null
+      });
+    }
+    return out;
+  }
+
+  function pct(r) { return (Math.round((r || 0) * 1000) / 10) + '%'; }
+  function findingWords(id) {
+    var W = { no_https: 'the certificate', site_down: 'the site being down',
+              site_error: 'the site erroring', no_site: 'having no site at all',
+              not_mobile: 'not fitting a phone', stale: 'a stale year in the footer' };
+    return W[id] || id;
+  }
+  function serviceWords(k) {
+    return { automations: 'automations', cockpit: 'cockpit', website: 'website' }[k] || k;
+  }
+
+  /* ⚠️ WHAT MARK NEEDS FROM HIM. This is the half of the brief that makes the
+     agent worth owning rather than worth watching: a row he has to touch, named,
+     with the reason. An agent that only reports is an agent that becomes
+     wallpaper. */
+  function markNeeds(d) {
+    var out = [];
+    var noName = (d.prospects || []).filter(function (p) {
+      return p.needs_lookup && p.stage !== 'parked';
+    });
+    if (noName.length) {
+      out.push({ id: 'names', n: noName.length, where: '#/outreach',
+        what: noName.length + ' row(s) where I could not find a person.',
+        why: 'Each one is a search link and two fields. A row with nobody on it is ' +
+             'a row I open with "Hello," which reads like a circular.' });
+    }
+
+    var drafted = (d.prospects || []).filter(function (p) { return p.stage === 'drafted'; });
+    if (drafted.length) {
+      out.push({ id: 'unsent', n: drafted.length, where: '#/jarvis',
+        what: drafted.length + ' email(s) approved and never sent.',
+        why: 'They are written and sitting still, which is the same as not having ' +
+             'written them.' });
+    }
+
+    var warm = sentMessages(d).filter(function (s) {
+      return s.sentiment === 'positive' && !s.meeting;
+    });
+    if (warm.length) {
+      out.push({ id: 'warm', n: warm.length, where: '#/outreach',
+        what: warm.length + ' warm repl' + (warm.length === 1 ? 'y' : 'ies') +
+              ' with no time in the diary.',
+        why: 'Somebody said yes and nothing was booked. This is the only item here ' +
+             'that costs money every day it waits.' });
+    }
+
+    var noEmail = (d.prospects || []).filter(function (p) {
+      return !p.email && !p.needs_lookup && p.stage !== 'parked' && worthPitching(p).length;
+    });
+    if (noEmail.length) {
+      out.push({ id: 'addresses', n: noEmail.length, where: '#/outreach',
+        what: noEmail.length + ' worth writing to with no address published.',
+        why: 'Their site did not print one. Their contact form or their Instagram ' +
+             'will, and then I can write.' });
+    }
+    return out;
+  }
+
+  /* The daily brief: what went, what came back, the one thing to change, and
+     what he has to do himself. One shape, read by the Overview and the Outreach
+     screen, so the two can never disagree. */
+  function outreachBrief(d) {
+    var st = outreachStats(d);
+    var lessons = outreachLessons(d);
+    var sure = lessons.filter(function (l) { return l.sure && l.change; })[0] ||
+               lessons.filter(function (l) { return l.sure; })[0] || null;
+    return {
+      at: today(),
+      stats: st,
+      /* ⚠️ ONE change, not a list. A brief with six recommendations is a brief
+         nobody acts on, and the arithmetic cannot rank six honestly anyway. */
+      change: sure,
+      lessons: lessons,
+      needs: markNeeds(d),
+      playbook: playbookOf(d)
+    };
+  }
+
+  /* Is there a playbook change worth proposing, and has it not been proposed in
+     the last week? Mark proposes; the playbook only moves when somebody says so. */
+  function playbookProposal(d) {
+    var book = playbookOf(d);
+    var change = outreachLessons(d).filter(function (l) { return l.sure && l.change; })[0];
+    if (!change) return null;
+    var c = change.change;
+    if (c.kind === 'lead') {
+      if (book.lead[0] === c.first) return null;          /* already doing it */
+      var lead = [c.first].concat(book.lead.filter(function (x) { return x !== c.first; }));
+      return { lesson: change, next: { lead: lead, avoid: book.avoid.slice() } };
+    }
+    if (c.kind === 'avoid') {
+      if (book.avoid.indexOf(c.what) >= 0) return null;
+      return { lesson: change,
+               next: { lead: book.lead.slice(), avoid: book.avoid.concat([c.what]) } };
+    }
+    return null;
   }
 
   function hoursSaved(store, from, to) {
@@ -3244,7 +3886,16 @@
     newRun: newRun, step: step, runKey: runKey, recentlyDecided: recentlyDecided,
     hoursSaved: hoursSaved,
     /* Mark's rubric: deterministic, auditable, and free */
-    newProspect: newProspect, LEVELS: LEVELS,
+    newProspect: newProspect, LEVELS: LEVELS, shortName: shortName,
+    AED_RATE: AED_RATE, setAedRate: setAedRate, aedRate: aedRate, inAed: inAed,
+    SUBJECTS: SUBJECTS, subjectFor: subjectFor, leadFinding: leadFinding,
+    FINDING_ORDER: FINDING_ORDER, DEFAULT_PLAYBOOK: DEFAULT_PLAYBOOK, playbookOf: playbookOf,
+    LESSON_MIN: LESSON_MIN, REPLY_BENCHMARK: REPLY_BENCHMARK,
+    outreachStats: outreachStats, groupOutcomes: groupOutcomes,
+    outreachLessons: outreachLessons, markNeeds: markNeeds,
+    outreachBrief: outreachBrief, playbookProposal: playbookProposal,
+    SERVICE_PRICE: SERVICE_PRICE, priceIn: priceIn, PITCH: PITCH,
+    draftEmail: draftEmail, draftWhatsAppReply: draftWhatsAppReply,
     worthPitching: worthPitching, PITCH_BAR: PITCH_BAR,
     PAID_SOURCES: PAID_SOURCES, isPaid: isPaid, newCampaign: newCampaign, PLATFORMS: PLATFORMS,
     campaignsFor: campaignsFor, campaignById: campaignById, campaignResults: campaignResults,
@@ -3252,6 +3903,7 @@
     primaryContact: primaryContact, contactById: contactById, oppContact: oppContact,
     addContact: addContact, dropContact: dropContact,
     makePrimary: makePrimary, newAddress: newAddress, addressLine: addressLine,
+    placeFields: placeFields, placeList: placeList, niceDate: niceDate, PLACE_OTHER: PLACE_OTHER,
     PICKLISTS: PICKLISTS, picklist: picklist, addToPicklist: addToPicklist,
     DESIGNATIONS: DESIGNATIONS, designationsFor: designationsFor,
     findByName: findByName,

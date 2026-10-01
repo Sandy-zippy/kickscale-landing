@@ -611,6 +611,34 @@
         '<span class="recval">' + esc(has ? String(v) : '—') + '</span></div>';
     }
 
+    /* Country, State and City render together, as one chained trio, at the
+       Country row; the State and City rows are drawn there, not on their own */
+    if (fd.type === 'place') {
+      if (fd.key !== 'country') return '';
+      var valOf = function (k) {
+        var f2 = ZS.FIELDS.filter(function (x) { return x.key === k; })[0];
+        if (pend.hasOwnProperty(k)) return pend[k];
+        return f2 && ZS.hasField(rec, f2) ? String(ZS.fieldValue(rec, f2)) : '';
+      };
+      var keyOf = { country: 'country', state: 'state', city: 'city' };
+      return ZS.placeFields({
+        /* blank stays blank ("Choose"); India is only the list to offer */
+        id: 'rf-' + o.id, country: valOf('country'), state: valOf('state'), city: valOf('city'), assume: 'India',
+        attrs: {
+          country: ' data-recfield="' + esc(o.id + '|country') + '"',
+          state: ' data-recfield="' + esc(o.id + '|state') + '"',
+          city: ' data-recfield="' + esc(o.id + '|city') + '"'
+        },
+        wrap: function (label, cid, control) {
+          var k = keyOf[cid.slice(cid.lastIndexOf('-') + 1)];
+          var isDirty = pend.hasOwnProperty(k), filled = !!valOf(k);
+          return '<div class="recrow' + (filled ? '' : ' blank') + (isDirty ? ' dirty' : '') + '">' +
+            '<label for="' + esc(cid) + '">' + esc(label) + '</label>' + control +
+            (isDirty ? '<span class="rechint dirtyhint">Not saved yet.</span>' : '') + '</div>';
+        }
+      }).join('');
+    }
+
     var control;
     if (fd.type === 'select') {
       control = '<select id="' + esc(id) + '" ' + name + '>' +
@@ -633,7 +661,8 @@
              : fd.note ? '<span class="rechint">' + esc(fd.note) + '</span>' : '') + '</div>';
   }
 
-  function li(k, v) { return '<li><span>' + k + '</span><b>' + esc(v) + '</b></li>'; }
+  /* an ISO date in a read-out reads "1 Oct 2026", never 2026-10-01 or 01/10/2026 */
+  function li(k, v) { return '<li><span>' + k + '</span><b>' + esc(ZS.niceDate(v)) + '</b></li>'; }
 
   /* ---------------- a new opportunity ---------------- */
 

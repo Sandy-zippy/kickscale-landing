@@ -54,6 +54,14 @@
 
   function rows() { return (D().prospects || []).slice(); }
 
+  /* Every message that actually left, by prospect, newest first. The server
+     sends it down with the bootstrap so this screen never has to fetch before
+     it can render a row. */
+  function sentTo(id) {
+    return (D().sends || []).filter(function (s) { return s.prospect_id === id && s.sent_at; })
+      .sort(function (a, b) { return String(b.sent_at).localeCompare(String(a.sent_at)); });
+  }
+
   function pitchable(p) {
     return ZS.worthPitching(p);
   }
@@ -63,6 +71,7 @@
     if (SHOW === 'pitch') return all.filter(function (p) { return pitchable(p).length; });
     if (SHOW === 'lookup') return all.filter(function (p) { return p.needs_lookup; });
     if (SHOW === 'parked') return all.filter(function (p) { return p.stage === 'parked'; });
+    if (SHOW === 'sent') return all.filter(function (p) { return sentTo(p.id).length; });
     return all;
   }
 
@@ -80,21 +89,28 @@
       'works out who to write to, and scores each one out of 5 against the three things ' +
       'we sell. Every number here opens into the reasons behind it.</p></div>' +
       (G.acc().settings
-        ? '<div class="right"><button class="btn" data-act="markFind">Find more</button></div>'
+        ? '<div class="right">' +
+          ((D().sends || []).some(function (x) { return x.sent_at && !x.replied_at; })
+            ? '<button class="btn alt" data-act="markReplies">Read the replies</button>'
+            : '') +
+          '<button class="btn" data-act="markFind">Find more</button></div>'
         : '') +
       '</div>';
 
     if (NOTE) h += '<div class="note">' + esc(NOTE) + '</div>';
 
+    h += brief();
+
     var counts = {
       pitch: all.filter(function (p) { return pitchable(p).length; }).length,
       lookup: all.filter(function (p) { return p.needs_lookup; }).length,
+      sent: all.filter(function (p) { return sentTo(p.id).length; }).length,
       all: all.length,
       parked: all.filter(function (p) { return p.stage === 'parked'; }).length
     };
     h += '<div class="chips" style="margin-bottom:16px">' +
       [['pitch', 'Worth writing to'], ['lookup', 'Need a name'],
-       ['all', 'Everything'], ['parked', 'Parked']].map(function (c) {
+       ['sent', 'Written to'], ['all', 'Everything'], ['parked', 'Parked']].map(function (c) {
         return '<button class="chip" data-act="markShow" data-id="' + c[0] + '" aria-pressed="' +
           (SHOW === c[0] ? 'true' : 'false') + '">' + esc(c[1]) +
           '<i>' + counts[c[0]] + '</i></button>';
@@ -115,6 +131,77 @@
     h += list.map(card).join('');
     return h;
   };
+
+  /* ---------------- what Mark learned, and what he needs ----------------
+
+     ⚠️ THIS IS THE HALF THAT MAKES THE AGENT WORTH OWNING. A screen that only
+     lists prospects is a list; a screen that says what the outcomes mean and
+     what he cannot do without you is a colleague. It is also the part Bhargav
+     asked for in those words: teach me, do not just report to me.
+
+     ⚠️ AND IT NEVER SHOWS A RATE WITHOUT THE N. Below eight messages it says
+     how many more are needed instead of a percentage of four, because a number
+     that moves twenty points on one reply is worse than no number. */
+  function brief() {
+    var b = ZS.outreachBrief(D());
+    var st = b.stats;
+    if (!st.sent && !b.needs.length) return '';
+
+    var h = '<div class="card pad" style="margin-bottom:14px">' +
+      '<div class="cardhead"><h3>What I have learned so far</h3>' +
+      '<span class="hint">' + esc(ZS.niceDate(b.at)) + '</span></div>';
+
+    if (st.sent) {
+      h += '<div class="chips" style="margin:8px 0 2px">' +
+        '<span class="pill dim">' + st.sent + ' sent</span>' +
+        '<span class="pill ' + (st.replied ? 'ok' : 'dim') + '">' + st.replied + ' replied</span>' +
+        (st.meetings ? '<span class="pill em">' + st.meetings + ' named a time</span>' : '') +
+        (st.stopped ? '<span class="pill bad">' + st.stopped + ' asked to be left alone</span>' : '') +
+        '</div>' +
+        /* ⚠️ opens are not here and must never be. Apple Mail Privacy Protection
+           fetches every image on delivery, so an open is attention-shaped noise. */
+        '<p class="hint">Replies, not opens. An open is counted by a mail app ' +
+        'fetching an image, not by anybody reading anything.</p>';
+    }
+
+    if (b.change) {
+      h += '<div class="note" style="margin-top:10px;border-color:var(--warn)">' +
+        '<b>The one thing to change.</b> ' + esc(b.change.what) +
+        '<p class="mtmin">' + esc(b.change.evidence) + '</p>' +
+        (b.change.change
+          ? '<p class="hint">I have put this in the queue as a proposal. It does not ' +
+            'take effect until you approve it, and I cannot approve my own.</p>'
+          : '') +
+        '</div>';
+    }
+
+    if (b.lessons.length) {
+      h += '<ul class="ledger" style="margin-top:10px">' + b.lessons.map(function (l) {
+        return '<li><span>' + esc(l.what) + (l.sure ? '' : ' <i>(watching)</i>') +
+          '</span><b>' + esc(l.evidence) + '</b></li>';
+      }).join('') + '</ul>';
+    }
+
+    if (b.needs.length) {
+      h += '<p class="eyebrow" style="margin-top:14px">What I need from you</p>' +
+        b.needs.map(function (n) {
+          return '<div class="mtrow"><div class="mthead">' +
+            '<b>' + esc(n.what) + '</b>' +
+            '<button class="minibtn" data-act="goto" data-id="' + esc(n.where) + '">Go</button>' +
+            '</div><p class="mtmin">' + esc(n.why) + '</p></div>';
+        }).join('');
+    }
+
+    if (b.playbook.updated) {
+      h += '<p class="hint" style="margin-top:12px">I lead with <b>' +
+        esc(b.playbook.lead[0]) + '</b> first, changed on ' +
+        esc(ZS.niceDate(b.playbook.updated)) + ' because you approved it' +
+        (b.playbook.avoid.length
+          ? '. I leave ' + esc(b.playbook.avoid.join(', ')) + ' alone.'
+          : '.') + '</p>';
+    }
+    return h + '</div>';
+  }
 
   function scorePill(label, n, bar) {
     var tone = n >= 4 ? 'ok' : n >= bar ? 'warn' : 'dim';
@@ -155,6 +242,29 @@
                 : '<b>None at all</b>')) +
         li('Email', p.email ? esc(p.email) : '<span class="hint">not published on their site</span>') +
       '</ul>';
+
+    /* ⚠️ WHAT HAPPENED AFTER IT WENT, ON THE ROW. A prospect written to a week
+       ago looked identical to one nobody had touched, which is how the same
+       business gets a second cold email. The reply itself is here rather than
+       behind a click, because it is the only sentence on this card that was
+       written by them. */
+    var gone = sentTo(p.id);
+    if (gone.length) {
+      var last = gone[0];
+      h += '<div class="note" style="margin-top:10px">' +
+        '<b>Written to on ' + esc(ZS.niceDate(String(last.sent_at).slice(0, 10))) + '.</b> ' +
+        esc(last.subject || '') +
+        (last.replied_at
+          ? '<p class="mtmin" style="margin-top:8px"><span class="pill ' +
+            (last.sentiment === 'positive' ? 'ok' : last.sentiment === 'negative' ? 'bad' : 'dim') +
+            '">' + esc(last.sentiment || 'replied') + '</span>' +
+            (last.meeting ? ' <span class="pill em">a time was named</span>' : '') +
+            '</p><p class="mtmin">' + esc(String(last.reply_text || '').slice(0, 600)) + '</p>'
+          : '<p class="mtmin">No answer yet. Mark checks the thread when you press ' +
+            '<b>Read the replies</b>.</p>') +
+        (gone.length > 1 ? '<p class="hint">' + gone.length + ' messages in all.</p>' : '') +
+        '</div>';
+    }
 
     /* ⚠️ THE ROW THAT NEEDS A HUMAN SAYS WHAT IT NEEDS AND LINKS STRAIGHT TO IT.
        A prospect nobody could name is still a prospect. Dropping it would quietly
@@ -222,6 +332,31 @@
   /* ---------------- finding ---------------- */
 
   A.markShow = function (which) { SHOW = which; G.render(); };
+
+  /* Reading the answers. It is a button rather than a timer: it reads his Gmail,
+     and something that reads a mailbox on a schedule nobody asked for is the
+     kind of thing people switch off. */
+  A.markReplies = function () {
+    if (!G.acc().settings) return G.toast('Reading the mailbox is the owner\u2019s.', true);
+    if (!(window.API && API.signedIn())) {
+      return G.toast('Not signed in to the server, and the replies are read through it.', true);
+    }
+    if (BUSY) return;
+    BUSY = true;
+    G.toast('Looking at the threads\u2026');
+    API.readReplies().then(function (out) {
+      BUSY = false;
+      NOTE = out.replies
+        ? out.replies + ' repl' + (out.replies === 1 ? 'y' : 'ies') + ' came back' +
+          (out.stopped ? ', and ' + out.stopped + ' asked never to be written to again. ' +
+            'Those are parked and Mark will not touch them.' : '.')
+        : 'Nothing new on ' + out.checked + ' thread(s).';
+      if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
+    }).catch(function (e) {
+      BUSY = false;
+      G.toast((e && e.message) || 'Google would not answer.', true);
+    });
+  };
   A.markOpen = function (id) { OPEN = OPEN === id ? null : id; G.render(); };
 
   A.markFind = function () {

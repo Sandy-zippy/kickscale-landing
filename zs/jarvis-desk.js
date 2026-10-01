@@ -86,6 +86,83 @@
     return { ok: (inv.ref || 'The invoice') + ' is cleared.' };
   };
 
+  /* ⚠️ APPROVING A DRAFT DOES NOT SEND IT, YET. Phase 3 wires the sending; until
+     then this records the decision and moves the prospect on, so nothing claims
+     to have left the building when it has not. "Approve and mark sent" is the
+     human saying they sent it themselves, which is true today and the only
+     honest reading of that button until Gmail is wired. */
+  APPLY.mark = function (p, o) {
+    /* ⚠️ THE ONLY PLACE THE PLAYBOOK EVER CHANGES, and it is behind an approval.
+       Mark proposes the change and shows the arithmetic; a person says yes. An
+       agent that rewrites its own instructions from its own results is an agent
+       nobody can audit afterwards. */
+    if ((p.payload || {}).playbook) {
+      if (!G.acc().settings) return { error: 'Changing how Mark writes is the owner\u2019s.' };
+      var next = p.payload.playbook;
+      var book = ZS.playbookOf(D());
+      D().outreach_playbook = {
+        lead: next.lead, avoid: next.avoid,
+        /* the reason is kept with the change, so in three months somebody can
+           read why Mark leads with what he leads with */
+        why: (book.why || []).concat([{ at: ZS.today(), said: p.summary }]).slice(-20),
+        updated: ZS.today()
+      };
+      if (window.API && API.signedIn()) API.touchSetting('outreach_playbook');
+      return { ok: 'Done. From now on I lead with ' + next.lead[0] +
+               (next.avoid.length ? ' and leave ' + next.avoid.join(', ') + ' alone.' : '.') };
+    }
+
+    var pr = (D().prospects || []).filter(function (x) { return x.id === (p.payload || {}).prospectId; })[0];
+    if (!pr) return { error: 'That prospect is no longer on the board.' };
+    if (!G.acc().clients) return { error: 'Outreach is switched off for your role.' };
+
+    /* ⚠️ "Approve, don't send" MUST NOT SEND, and that is the whole reason the
+       desk has two buttons. Everything below the branch is the sending path. */
+    if (!(o && o.send)) {
+      pr.stage = 'drafted';
+      if (window.API && API.signedIn()) {
+        API.saveProspect({ id: pr.id, stage: 'drafted' }).catch(function () {});
+      }
+      return { ok: 'Approved and kept. Nothing has gone out.' };
+    }
+
+    if (!pr.email) {
+      return { error: 'There is no email address on that row, so there is nowhere to send it. ' +
+                      'Their site did not publish one. Put it on the row first.' };
+    }
+    if (!(window.API && API.signedIn())) {
+      return { error: 'Not signed in to the server, and the email goes out through the server. ' +
+                      'Nothing was sent.' };
+    }
+
+    /* ⚠️ THE STAGE MOVES WHEN GOOGLE SAYS IT SENT, NOT BEFORE.
+       Marking it sent and then firing the request is how a cockpit ends up
+       saying "sent" over an email that never left, which is the one lie that
+       makes everything else on the screen worthless. */
+    var pay = p.payload || {};
+    G.toast('Sending it…');
+    API.sendOutreach({
+      prospect: pr.id,
+      subject: (p.draft && p.draft.subject) || (pay.email || {}).subject || '',
+      text: (p.draft && p.draft.text) || (pay.email || {}).text || '',
+      finding: pay.findingId,
+      services: pay.services || []
+    }).then(function (out) {
+      pr.stage = 'sent';
+      G.log('agent_run', 'Mark sent the email to ' + (pr.contact_name || pr.name) +
+            ' at ' + (out.to || pr.email));
+      G.save();
+      G.toast('Gone, out of your own mailbox. The reply comes to your inbox.');
+      if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
+    }).catch(function (e) {
+      /* The proposal stays approved and the stage stays where it was, so the
+         row still reads as needing to be sent rather than as done. */
+      G.toast((e && e.message) || 'It did not send. Nothing left the building.', true);
+    });
+
+    return { ok: 'Handing it to Google now.' };
+  };
+
   APPLY.watchman = function () { return { ok: 'Noted.' }; };
   APPLY.brief = function () { return { ok: 'Noted.' }; };
 
@@ -119,8 +196,17 @@
       return;
     }
 
+    /* ⚠️ WHAT HE APPROVED IS WHAT GETS SENT. The edited text came in as an
+       argument and the proposal kept the original, so the record of what was
+       approved disagreed with what went out the moment anybody tightened a
+       line. The draft is overwritten here, before apply, so there is one copy. */
+    if (p.draft) {
+      if (opts.text) p.draft.text = opts.text;
+      if (opts.subject) p.draft.subject = opts.subject;
+    }
     var fn = APPLY[p.agent] || function () { return { ok: 'Noted.' }; };
-    var res = fn(p, { send: !!opts.send, text: opts.text || (p.draft && p.draft.text) || '' });
+    var res = fn(p, { send: !!opts.send, text: opts.text || (p.draft && p.draft.text) || '',
+                      subject: opts.subject || (p.draft && p.draft.subject) || '' });
     if (res.error) { G.toast(res.error, true); return; }
 
     p.status = 'approved'; p.decided = ZS.today(); p.sent = !!opts.send;

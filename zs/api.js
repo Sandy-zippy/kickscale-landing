@@ -561,6 +561,12 @@
      which it can reach and the Worker cannot. */
   async function findProspects(payload) { return call('POST', '/api/prospects/find', { body: payload }); }
   async function saveProspect(patch) { return call('POST', '/api/prospects', { body: patch }); }
+  /* ⚠️ THE ONE CALL THAT REACHES A STRANGER. It goes out of Bhargav's own
+     mailbox through the Apps Script, and the server re-checks that the subject
+     has a verified finding behind it before it will send. The browser cannot
+     talk it out of that. */
+  async function sendOutreach(payload) { return call('POST', '/api/outreach/send', { body: payload }); }
+  async function readReplies() { return call('POST', '/api/outreach/replies', { body: {} }); }
 
   /* ---------------- has anything happened? ----------------
      Three counts and the newest activity row. Cheap on purpose: it is asked
@@ -624,6 +630,7 @@
     sendOnThread: sendOnThread, templates: templates,
     bots: bots, saveBot: saveBot,
     findProspects: findProspects, saveProspect: saveProspect,
+    sendOutreach: sendOutreach, readReplies: readReplies,
     pulse: pulse,
     readDoc: readDoc,
     /* configuration */
