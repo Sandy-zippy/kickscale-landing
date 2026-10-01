@@ -2640,6 +2640,12 @@
       .map(function (d) {
         return { id: d.id, type: d.type, name: d.name, size: d.size, mime: d.mime,
                  when: String(d.uploaded_at || '').slice(0, 10), by: d.uploaded_by,
+                 /* ⚠️ WHAT IT HANGS OFF, carried back down. These were kept only
+                    in the browser, so after a pull a file dropped on a logged
+                    call showed on no call, and an invoice offered to generate a
+                    PDF it had already made. Same trap as the bin: what the
+                    server does not send back does not exist. */
+                 comm: d.comm || null, invoice: d.invoice || null,
                  /* the file lives on the server now, so the link points there */
                  data: d.r2_key && window.API ? API.docUrl(d.id) : null,
                  remote: true };

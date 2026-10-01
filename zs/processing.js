@@ -548,10 +548,13 @@
   function sendUp(doc, kind, holder, done) {
     var f = doc._file;
     var put = holderOnServer(kind, holder).then(function () {
+      /* what it hangs off travels with it, or the link is lost the moment the
+         browser copy is replaced by the server's */
+      var refs = { comm: doc.comm || null, invoice: doc.invoice || null };
       return f
-        ? API.uploadDoc(f, kind === 'client' ? 'client' : 'deal', holder, doc.type, doc.name)
+        ? API.uploadDoc(f, kind === 'client' ? 'client' : 'deal', holder, doc.type, doc.name, refs)
         : API.uploadDataUrl(doc.data, doc.name, doc.mime,
-                            kind === 'client' ? 'client' : 'deal', holder, doc.type);
+                            kind === 'client' ? 'client' : 'deal', holder, doc.type, refs);
     });
     return put.then(function (r) {
       if (!r || !r.id) throw new Error('the server took it and named nothing');
@@ -637,6 +640,9 @@
     return h;
   }
 
+  /* the file rows, reusable wherever files hang off something smaller than a
+     document slot: an invoice, a logged communication. */
+  G.docFileList = docFileList;
   G.docSection = docSection;
   function docSection(kind, holderId, docs, may, blurb, blocking) {
     var types = ZS.docTypes(kind);
@@ -929,7 +935,7 @@
         o.proc.docs = o.proc.docs || [];
         var doc = ZS.newDoc({
           type: 'invoices', name: out.name, mime: 'application/pdf',
-          data: out.dataUrl, by: D().session, invoice: inv.id,
+          data: out.dataUrl, by: D().session, invoice: inv.id, comm: null,
           note: 'Generated from the cockpit' +
                 (inv.number ? ' — ' + inv.number : '')
         });
@@ -1365,11 +1371,14 @@
   G.onDocPicked = function (input) {
     var spec = input.getAttribute('data-doc');
     if (!spec || !input.files || !input.files.length) return;
-    var p = spec.split('|'), kind = p[0], holder = p[1], type = p[2];
+    /* kind|holder|type, and optionally the communication entry it was dropped
+       on. A fourth part is what makes a file land on one conversation instead of
+       only in the Documents tab. */
+    var p = spec.split('|'), kind = p[0], holder = p[1], type = p[2], comm = p[3] || null;
     if (!G.acc().clients) return;
     var files = Array.prototype.slice.call(input.files);
 
-    PICKED = { files: files, kind: kind, holder: holder, type: type };
+    PICKED = { files: files, kind: kind, holder: holder, type: type, comm: comm };
     /* the input keeps its FileList; clearing it lets the same file be picked
        again after a cancel, which otherwise silently does nothing */
     try { input.value = ''; } catch (e) {}
@@ -1412,13 +1421,14 @@
   });
 
   function fileThem(job, names) {
-    var kind = job.kind, holder = job.holder, type = job.type;
+    var kind = job.kind, holder = job.holder, type = job.type, comm = job.comm || null;
     var files = job.files;
     var left = files.length;
     files.forEach(function (f, i) { G.takeDoc(f, kind, type, function (doc) {
       /* ⚠️ THE NAME THEY TYPED, NOT THE FILENAME. takeDoc fills in file.name by
          default, so this has to overwrite it or the whole step was theatre. */
       doc.name = names[i] || doc.name;
+      doc.comm = comm;
       if (kind === 'client') {
         var cl2 = G.clientById(holder);
         if (!cl2) return;

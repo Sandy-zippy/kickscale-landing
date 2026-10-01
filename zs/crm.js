@@ -124,7 +124,11 @@
       '</div>';
 
     var tabs = [['opps', 'Engagements'], ['people', 'Contacts'], ['profile', 'Profile'],
-                ['papers', 'Documents'], ['money', 'Invoices'], ['timeline', 'Timeline']];
+                ['papers', 'Documents'], ['money', 'Invoices'],
+                /* ⚠️ BEFORE THE TIMELINE, because the timeline is what the system
+                   noticed and this is what a person decided was worth writing
+                   down. The second is read far more often than the first. */
+                ['comms', 'Communication'], ['timeline', 'Timeline']];
     h += '<div class="tabs">' + tabs.map(function (t) {
       return '<button class="tab ' + (TAB === t[0] ? 'on' : '') + '" data-act="clientTab" data-id="' + t[0] + '">' + t[1] + '</button>';
     }).join('') + '</div>';
@@ -295,6 +299,8 @@
         : '<div class="card" style="margin-top:12px"><p class="m">Nothing invoiced yet.</p></div>';
     }
 
+    if (TAB === 'comms') h += commsTab(c);
+
     if (TAB === 'timeline') {
       var events = [];
       events.push({ at: c.created, t: 'Came in from ' + (CHANNELS[c.source] || ['—'])[0] });
@@ -405,6 +411,84 @@
 
   /* Source, and — when it is a paid one — which campaign. "Meta ad" alone
      cannot tell you which ad paid for itself. */
+/* ---------------- the communication log ----------------
+
+     ⚠️ ONE ENTRY IS A CONVERSATION, NOT A FIELD. What makes this worth having is
+     the note: six months later nobody remembers the call, and "Called Roshan,
+     he wants phase two split across two invoices" settles an argument that
+     would otherwise be two people remembering differently.
+
+     Files attach to the ENTRY, not just to the client, so the proposal that was
+     sent sits on the day it was sent. They are ordinary client documents with a
+     back-reference, which is why Open, Download, Share and Edit here are the
+     same ones as everywhere else rather than a second set that behaves
+     slightly differently. */
+  function commsTab(c) {
+    var may = G.acc().clients;
+    var list = ZS.commsOf(c);
+
+    var h = '<div class="note">Every conversation with this brand worth finding again: ' +
+      'a call, an update sent, a reply worth keeping. Attach whatever was sent or ' +
+      'received and it stays on the day it happened.</div>';
+
+    if (may) {
+      h += '<div class="card pad" style="margin-bottom:14px">' +
+        '<form id="commform" data-cid="' + esc(c.id) + '">' +
+        '<div style="display:grid;grid-template-columns:170px 190px 1fr;gap:11px;align-items:end">' +
+        '<div class="f"><label for="cm-at">When it happened</label>' +
+          '<input id="cm-at" name="at" type="date" value="' + ZS.today() + '" max="' +
+          ZS.today() + '"></div>' +
+        '<div class="f"><label for="cm-ch">How</label><select id="cm-ch" name="channel">' +
+          ZS.FOLLOW_METHODS.map(function (m) { return '<option>' + esc(m) + '</option>'; }).join('') +
+        '</select></div>' +
+        '<div class="f"><label for="cm-note">What was said</label>' +
+          '<div style="display:flex;gap:8px;align-items:flex-start">' +
+          '<textarea id="cm-note" name="note" rows="2" placeholder="' +
+          'Called Roshan. He wants phase two split across two invoices and asked for ' +
+          'the revised scope by Friday.' + '"></textarea>' +
+          G.micButton('cm-note') + '</div></div>' +
+        '</div>' +
+        '<p class="err" id="cm-err"></p>' +
+        '<button class="btn" type="submit" style="margin-top:11px">Log it</button>' +
+        '</form></div>';
+    }
+
+    if (!list.length) {
+      return h + '<div class="card pad"><p class="m">Nothing logged yet. ' +
+        (may ? 'The first one takes ten seconds and saves an argument later.'
+             : 'Nobody has written anything down for this client.') + '</p></div>';
+    }
+
+    h += '<div class="card" style="padding:0">' + list.map(function (m) {
+      var who = ZS.staffById(m.by);
+      var files = ZS.docsOfComm(c, m.id);
+      return '<div class="mtrow">' +
+        '<div class="mthead">' +
+          '<b>' + esc(m.channel) + '</b>' +
+          '<span>' + esc(ZS.niceDate(m.at)) +
+            (who ? ' &middot; ' + esc(who.name) : '') +
+            (m.logged && m.logged !== m.at ? ' &middot; written down ' +
+              esc(ZS.niceDate(m.logged)) : '') + '</span>' +
+          (may
+            ? '<label class="upl">Attach a file' +
+              '<input type="file" multiple hidden ' +
+              'accept="image/*,.pdf,.doc,.docx,.xlsx,.csv,.txt" ' +
+              'data-doc="' + esc('client|' + c.id + '|client_chats|' + m.id) + '"></label>' +
+              '<button class="minibtn" data-act="editComm" data-id="' +
+                esc(c.id + '|' + m.id) + '">Edit</button>' +
+              '<button class="xbtn" data-act="dropComm" data-id="' + esc(c.id + '|' + m.id) +
+                '" title="Remove this entry" aria-label="Remove this entry">&times;</button>'
+            : '') +
+        '</div>' +
+        '<p class="mtmin" style="white-space:pre-wrap">' + esc(m.note) + '</p>' +
+        (files.length
+          ? '<div class="dfiles">' + G.docFileList(files, 'client', c.id, may) + '</div>'
+          : '') +
+        '</div>';
+    }).join('') + '</div>';
+    return h;
+  }
+
   function sourceField(id, name, value, label) {
     var camps = D().campaigns || [];
     return '<div class="f"><label for="' + id + '">' + esc(label || 'Source') + '</label>' +
@@ -765,6 +849,50 @@
     clientStage: function (s) { CF = s || ''; G.render(); },
     clientTab: function (t) { TAB = t; G.render(); },
 
+    /* ---- editing and removing one logged conversation ---- */
+    editComm: function (arg) {
+      if (!G.acc().clients) return;
+      var p = String(arg).split('|');
+      var cc = G.clientById(p[0]);
+      var m = cc ? ZS.commsOf(cc).filter(function (x) { return x.id === p[1]; })[0] : null;
+      if (!m) return;
+      G.modal('Edit this entry', esc(cc.name),
+        '<form id="commeditform" data-id="' + esc(p[0] + '|' + p[1]) + '">' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px">' +
+        '<div class="f"><label for="ce-at">When it happened</label>' +
+          '<input id="ce-at" name="at" type="date" value="' + esc(m.at) + '"></div>' +
+        '<div class="f"><label for="ce-ch">How</label><select id="ce-ch" name="channel">' +
+          ZS.FOLLOW_METHODS.map(function (x) {
+            return '<option' + (x === m.channel ? ' selected' : '') + '>' + esc(x) + '</option>';
+          }).join('') + '</select></div></div>' +
+        '<div class="f" style="margin-bottom:12px"><label for="ce-note">What was said</label>' +
+          '<textarea id="ce-note" name="note" rows="4">' + esc(m.note) + '</textarea></div>' +
+        '<p class="err" id="ce-err"></p>' +
+        '<div style="display:flex;gap:10px">' +
+        '<button class="btn" type="submit">Save it</button>' +
+        '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
+    },
+
+    dropComm: function (arg) {
+      if (!G.acc().clients) return;
+      var p = String(arg).split('|');
+      var cc = G.clientById(p[0]);
+      if (!cc) return;
+      var files = ZS.docsOfComm(cc, p[1]);
+      /* ⚠️ THE FILES ARE NOT DELETED WITH IT. They stay on the client, under
+         Documents, because a file somebody uploaded is worth more than the line
+         of text it was attached to and deleting both on one click is a trap. */
+      if (!confirm('Remove this entry?' +
+          (files.length ? ' The ' + files.length + ' file(s) on it stay under Documents.' : ''))) return;
+      var out = ZS.dropComm(cc, p[1]);
+      if (out.error) return G.toast(out.error, true);
+      files.forEach(function (d) { d.comm = null; });
+      if (window.API) API.touch('clients', cc);
+      G.save();
+      G.toast('Removed.');
+      G.render();
+    },
+
     /* "Save for them" was a wishlist button. There is no wishlist: the only
        thing worth recording is where they stand on the line. */
     wishFor: function (arg) {
@@ -1075,6 +1203,51 @@
 
   A.onSubmit = function (e) {
     if (prevSubmit) prevSubmit(e);
+
+    if (e.target.id === 'commform') {
+      e.preventDefault();
+      if (!G.acc().clients) return;
+      var cc = G.clientById(e.target.dataset.cid);
+      if (!cc) return;
+      var cfd = new FormData(e.target);
+      var out = ZS.addComm(cc, { at: cfd.get('at') || ZS.today(),
+                                 channel: cfd.get('channel'),
+                                 note: cfd.get('note'), by: D().session });
+      if (out.error) {
+        var ce = document.getElementById('cm-err');
+        if (ce) ce.textContent = out.error;
+        return;
+      }
+      if (window.API) API.touch('clients', cc);
+      G.log('client_edit', cc.name + ' \u2014 ' + out.comm.channel + ': ' +
+            out.comm.note.slice(0, 90), { client: cc.id });
+      G.save();
+      G.toast('Logged. Attach anything that went with it.');
+      G.render();
+      return;
+    }
+
+    if (e.target.id === 'commeditform') {
+      e.preventDefault();
+      if (!G.acc().clients) return;
+      var ep = String(e.target.dataset.id).split('|');
+      var ec = G.clientById(ep[0]);
+      if (!ec) return;
+      var efd = new FormData(e.target);
+      var eout = ZS.editComm(ec, ep[1], { at: efd.get('at'), channel: efd.get('channel'),
+                                          note: String(efd.get('note') || '').trim() });
+      if (eout.error) {
+        var ee = document.getElementById('ce-err');
+        if (ee) ee.textContent = eout.error;
+        return;
+      }
+      if (window.API) API.touch('clients', ec);
+      G.save();
+      var em = document.getElementById('modal'); if (em && em.open) em.close();
+      G.toast('Saved.');
+      G.render();
+      return;
+    }
 
     if (e.target.id === 'delclientform') {
       e.preventDefault();

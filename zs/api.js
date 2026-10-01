@@ -461,7 +461,7 @@
 
   /* ---------------- documents ---------------- */
 
-  async function uploadDoc(file, holderKind, holderId, type, name) {
+  async function uploadDoc(file, holderKind, holderId, type, name, refs) {
     var form = new FormData();
     form.append('file', file, file.name);
     form.append('holder_kind', holderKind);
@@ -470,6 +470,12 @@
     /* what somebody typed when they uploaded it. Without this the server keeps
        the camera's filename and the next sync overwrites the name they gave. */
     if (name) form.append('name', name);
+    /* ⚠️ WHAT IT WAS ATTACHED TO. A file dropped on a logged call, or the PDF of
+       one invoice. Kept in the browser only, both were lost on the next pull:
+       the call showed no file and the invoice offered to generate a PDF it
+       already had. */
+    if (refs && refs.comm) form.append('comm', refs.comm);
+    if (refs && refs.invoice) form.append('invoice', refs.invoice);
     return call('POST', '/api/documents', { form: form });
   }
   function docUrl(id) {
@@ -496,11 +502,11 @@
 
   /* Re-sending a file we only hold as a data URL, because the original File
      object is long gone by the time somebody presses "Send it up". */
-  async function uploadDataUrl(dataUrl, name, mime, holderKind, holderId, type) {
+  async function uploadDataUrl(dataUrl, name, mime, holderKind, holderId, type, refs) {
     var res = await fetch(dataUrl);
     var blob = await res.blob();
     return uploadDoc(new File([blob], name || 'document', { type: mime || blob.type }),
-                     holderKind, holderId, type, name);
+                     holderKind, holderId, type, name, refs);
   }
   async function fetchDoc(id) {
     var res = await call('GET', '/api/documents/' + id);

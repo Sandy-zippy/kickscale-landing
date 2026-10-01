@@ -1106,9 +1106,92 @@
       note: o.note || '',
       /* Set when this file IS an invoice the cockpit generated, so the row can
          find its own PDF rather than guessing from the file name. */
-      invoice: o.invoice || null
+      invoice: o.invoice || null,
+      /* Set when it was dropped on a communication entry, so it shows on that
+         conversation and not only in the Documents tab with no clue why. */
+      comm: o.comm || null
     };
   }
+
+/* ================= COMMUNICATION =================
+
+     Every conversation with a brand that somebody should be able to find again:
+     a call about something new, an update sent over WhatsApp, a reply worth
+     keeping, a meeting nobody wrote minutes for.
+
+     ⚠️ THIS IS NOT A FOLLOW-UP, and the difference is worth stating because the
+     two look alike on screen. A follow-up hangs off an ENGAGEMENT and carries a
+     next date and an outcome: it is the machinery of chasing one deal, and the
+     board flags the ones that go quiet. This hangs off the COMPANY and carries
+     neither. Most of what gets said to a client belongs to no deal at all, and
+     filing it as a follow-up would mean inventing an engagement for every
+     conversation until the board filled with deals nobody is working.
+
+     ⚠️ THE CHANNEL LIST IS FOLLOW_METHODS, deliberately. A call is a call
+     whichever screen it was logged on, and two lists of the same idea drift
+     apart within a month: one grows "Online meet" and the other does not. */
+
+  function newComm(o) {
+    o = o || {};
+    return {
+      id: o.id || 'cm' + Date.now() + Math.floor(Math.random() * 1000),
+      /* the day it HAPPENED, which is not always the day it was written down */
+      at: o.at || today(),
+      channel: o.channel || FOLLOW_METHODS[0],
+      note: o.note || '',
+      by: o.by || null,
+      logged: o.logged || today()
+    };
+  }
+
+  /* Newest first, because the question is almost always "what was the last thing
+     we said to them". Defensive about the field existing at all: a client record
+     written before this feature has no `comms`, and reading it must not throw. */
+  function commsOf(client) {
+    return ((client && client.comms) || []).slice().sort(function (a, b) {
+      return String(b.at).localeCompare(String(a.at)) ||
+             String(b.logged).localeCompare(String(a.logged));
+    });
+  }
+
+  function addComm(client, o) {
+    if (!client) return { error: 'No client to log it against.' };
+    var note = String((o && o.note) || '').trim();
+    if (!note) return { error: 'Write what was said.' };
+    if (!Array.isArray(client.comms)) client.comms = [];
+    var c = newComm(o);
+    c.note = note;
+    client.comms.unshift(c);
+    client.last_touch = today();
+    return { ok: true, comm: c };
+  }
+
+  function editComm(client, id, patch) {
+    var c = ((client && client.comms) || []).filter(function (x) { return x.id === id; })[0];
+    if (!c) return { error: 'That entry is no longer here.' };
+    ['at', 'channel', 'note'].forEach(function (k) {
+      if (patch && patch[k] !== undefined) c[k] = patch[k];
+    });
+    return { ok: true, comm: c };
+  }
+
+  function dropComm(client, id) {
+    if (!client || !Array.isArray(client.comms)) return { error: 'Nothing to remove.' };
+    var before = client.comms.length;
+    client.comms = client.comms.filter(function (x) { return x.id !== id; });
+    return before === client.comms.length ? { error: 'That entry is no longer here.' } : { ok: true };
+  }
+
+  /* The files dropped on one entry. They are ordinary documents on the client
+     with a back-reference, so open, download, share and edit are the ones that
+     already exist rather than a second set that behaves slightly differently. */
+  function docsOfComm(client, commId) {
+    return ((client && client.docs) || []).filter(function (d) { return d && d.comm === commId; });
+  }
+
+  /* The last thing said to them, for anything that needs one line rather than a
+     list: a client row, Mark's brief, a prospect card. */
+  function lastComm(client) { return commsOf(client)[0] || null; }
 
   function docsOf(holder) { return (holder && holder.docs) || []; }
   /* The generated PDF for one invoice, if it has been made. Newest wins: making
@@ -2185,8 +2268,18 @@
   var REVENUE_SKIP = 'I would rather say on the call';
   var BUDGET_SKIP  = 'No idea yet, tell me what it should be';
 
+  /* ⚠️ ONE LIST, AND EVERY SOURCE FIELD IN THE COCKPIT READS IT. The add-client
+     form, the new-opportunity form, the engagement registry, the automation
+     audience picker and the reports all come through here, so a source added
+     once appears everywhere and stays countable.
+
+     `mark` is deliberately separate from `outbound`. Outbound is us going to
+     somebody by any means; `mark` is specifically a business Mark found, scored
+     and wrote to, and keeping it apart is the only way to answer "what is the
+     outreach actually bringing in" with a number rather than an impression. */
   var SOURCES = {
     referral: 'Referral', outbound: 'Outbound — we went to them',
+    mark: 'Outreach by Mark',
     instagram: 'Instagram', whatsapp: 'WhatsApp', google: 'Google',
     meta: 'Meta ad', linkedin: 'LinkedIn', website: 'Website', event: 'Event'
   };
@@ -3374,6 +3467,8 @@
               holder: (o.bank && o.bank.holder) || '', branch: (o.bank && o.bank.branch) || '' },
       contacts: (o.contacts || []).map(newContact),
       docs: o.docs || [],
+      /* every conversation with this brand worth finding again */
+      comms: Array.isArray(o.comms) ? o.comms : [],
       mobile: normMobile(o.mobile),                /* the primary contact's, for display */
       email: o.email || '',
       source: o.source || 'referral',
@@ -4066,6 +4161,8 @@
     ENGAGEMENT_DOCS: ENGAGEMENT_DOCS, CLIENT_DOCS: CLIENT_DOCS,
     docTypes: docTypes, docLabel: docLabel, editDoc: editDoc, newDoc: newDoc, docsOf: docsOf,
     docOfInvoice: docOfInvoice,
+    newComm: newComm, commsOf: commsOf, addComm: addComm, editComm: editComm,
+    dropComm: dropComm, docsOfComm: docsOfComm, lastComm: lastComm,
     hasDoc: hasDoc, missingDocs: missingDocs, docsIn: docsIn, docCount: docCount, newProc: newProc,
     isProcessing: isProcessing, procDeals: procDeals, procDue: procDue,
     addDays: addDays, daysLeft: daysLeft, procOverdue: procOverdue,
