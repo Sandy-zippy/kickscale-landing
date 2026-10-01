@@ -727,7 +727,7 @@
   function log(kind, text, refs) {
     refs = refs || {};
     D.activity.unshift({
-      id: 'l' + Date.now() + Math.floor(Math.random() * 1000),
+      id: ZS.uid('l'),
       at: new Date().toISOString(), by: D.session, kind: kind, text: text,
       client: refs.client || null, opp: refs.opp || null, line: refs.line || null
     });

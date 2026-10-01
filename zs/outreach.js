@@ -71,7 +71,10 @@
     if (SHOW === 'pitch') return all.filter(function (p) { return pitchable(p).length; });
     if (SHOW === 'lookup') return all.filter(function (p) { return p.needs_lookup; });
     if (SHOW === 'parked') return all.filter(function (p) { return p.stage === 'parked'; });
-    if (SHOW === 'sent') return all.filter(function (p) { return sentTo(p.id).length; });
+    if (SHOW === 'clients') return all.filter(function (p) { return p.stage === 'won' || p.client_id; });
+    if (SHOW === 'sent') {
+      return all.filter(function (p) { return sentTo(p.id).length || p.stage === 'sent'; });
+    }
     return all;
   }
 
@@ -104,13 +107,18 @@
     var counts = {
       pitch: all.filter(function (p) { return pitchable(p).length; }).length,
       lookup: all.filter(function (p) { return p.needs_lookup; }).length,
-      sent: all.filter(function (p) { return sentTo(p.id).length; }).length,
+      sent: all.filter(function (p) { return sentTo(p.id).length || p.stage === 'sent'; }).length,
+      clients: all.filter(function (p) { return p.stage === 'won' || p.client_id; }).length,
       all: all.length,
       parked: all.filter(function (p) { return p.stage === 'parked'; }).length
     };
     h += '<div class="chips" style="margin-bottom:16px">' +
+      /* ⚠️ "Parked" is not a shelf any more. The only rows on it are businesses
+         that asked not to be contacted, so the chip says that rather than a word
+         that sounds like a decision somebody might undo. */
       [['pitch', 'Worth writing to'], ['lookup', 'Need a name'],
-       ['sent', 'Written to'], ['all', 'Everything'], ['parked', 'Parked']].map(function (c) {
+       ['sent', 'Written to'], ['clients', 'Became clients'], ['all', 'Everything'],
+       ['parked', 'Asked not to be contacted']].map(function (c) {
         return '<button class="chip" data-act="markShow" data-id="' + c[0] + '" aria-pressed="' +
           (SHOW === c[0] ? 'true' : 'false') + '">' + esc(c[1]) +
           '<i>' + counts[c[0]] + '</i></button>';
@@ -280,18 +288,61 @@
         '</div></div>';
     }
 
+    /* ⚠️ WHAT WAS SAID TO THEM, ON THE ROW. A business Mark found and a business
+       somebody has spoken to look identical without this, and the second one is
+       not a cold prospect any more. It is the same log as on a client, and it
+       moves onto the client record the moment they become one. */
+    h += comms(p);
+
+    var done = p.stage === 'won' || !!p.client_id;
+    var stopped = p.stage === 'parked';
+
     h += '<div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap">' +
       '<button class="minibtn" data-act="markOpen" data-id="' + esc(p.id) + '">' +
       (open ? 'Hide the reasons' : 'Why these scores?') + '</button>' +
       (src.listing ? '<a class="minibtn" href="' + esc(src.listing) +
         '" target="_blank" rel="noopener">Where he found them</a>' : '') +
-      (p.stage === 'parked'
-        ? '<button class="minibtn" data-act="markPark" data-id="' + esc(p.id) + '|0">Put back</button>'
-        : '<button class="minibtn" data-act="markPark" data-id="' + esc(p.id) + '|1">Park it</button>') +
+      (stopped || done ? ''
+        : '<button class="minibtn" data-act="markLog" data-id="' + esc(p.id) +
+          '">Log a conversation</button>') +
+      /* ⚠️ WE HAVE WRITTEN TO THEM. Mark sets this himself when he sends, but
+         most of these go out by hand long before that is wired up, and a row
+         that cannot be marked is a row somebody writes to twice. */
+      (!done && !stopped && p.stage !== 'sent' && p.stage !== 'replied'
+        ? '<button class="minibtn" data-act="markWritten" data-id="' + esc(p.id) +
+          '">Written to them</button>' : '') +
+      (!done && !stopped
+        ? '<button class="btn alt" data-act="markToClient" data-id="' + esc(p.id) +
+          '">Add to clients</button>' : '') +
+      (done
+        ? '<a class="minibtn" href="#/client/' + esc(p.client_id || '') + '">Open the client</a>'
+        : '') +
       '</div>';
 
     if (open) h += reasons(p);
     return h + '</div>';
+  }
+
+  /* ---------------- what has been said to them ---------------- */
+
+  function comms(p) {
+    var list = ZS.commsOf(p);
+    if (!list.length) return '';
+    return '<div class="card" style="margin-top:12px;padding:0;background:var(--ink)">' +
+      list.slice(0, 6).map(function (m) {
+        var who = ZS.staffById(m.by);
+        return '<div class="mtrow"><div class="mthead">' +
+          '<b>' + esc(m.channel) + '</b>' +
+          '<span>' + esc(ZS.niceDate(m.at)) + (who ? ' &middot; ' + esc(who.name) : '') + '</span>' +
+          (G.acc().clients
+            ? '<button class="xbtn" data-act="markDropComm" data-id="' + esc(p.id + '|' + m.id) +
+              '" title="Remove" aria-label="Remove">&times;</button>' : '') +
+          '</div>' +
+          '<p class="mtmin" style="white-space:pre-wrap">' + esc(m.note) + '</p></div>';
+      }).join('') +
+      (list.length > 6 ? '<p class="hint" style="padding:8px 13px">' + (list.length - 6) +
+        ' older, kept on the record.</p>' : '') +
+      '</div>';
   }
 
   function li(k, v) { return '<li><span>' + esc(k) + '</span><b>' + v + '</b></li>'; }
@@ -475,12 +526,142 @@
       .catch(function (e) { G.toast((e && e.message) || 'That did not save.', true); });
   };
 
-  A.markPark = function (arg) {
-    var p = String(arg).split('|');
-    API.saveProspect({ id: p[0], stage: p[1] === '1' ? 'parked' : 'qualified' })
-      .then(function () { return G.pullNow ? G.pullNow() : G.render(); })
-      .catch(function (e) { G.toast((e && e.message) || 'That did not save.', true); });
+  /* ⚠️ "PARK IT" IS GONE. It was a manual shelf that meant nothing in particular,
+     and a row on it looked the same as a row somebody had decided about.
+
+     The `parked` STAGE survives for exactly one thing: somebody who has asked
+     not to be contacted. That is set by the reply reader, never by a button, and
+     it must stay, because writing to them again after they asked you not to is
+     the one mistake here with a lawyer attached. */
+
+  function byId(id) {
+    return (D().prospects || []).filter(function (x) { return x.id === id; })[0] || null;
+  }
+  function saveRow(p, patch, said) {
+    Object.keys(patch).forEach(function (k) { p[k] = patch[k]; });
+    G.save();
+    G.render();
+    if (!(window.API && API.signedIn())) return;
+    API.saveProspect(Object.assign({ id: p.id }, patch))
+      .then(function () { if (said) G.toast(said); })
+      .catch(function (e) { G.toast((e && e.message) || 'That did not reach the server.', true); });
+  }
+
+  /* ---- we have written to them ---- */
+  A.markWritten = function (id) {
+    if (!G.acc().clients) return;
+    var p = byId(id);
+    if (!p) return;
+    saveRow(p, { stage: 'sent' }, 'Marked as written to. Log what comes back.');
   };
+
+  /* ---- logging a conversation, the same log as on a client ---- */
+  A.markLog = function (id) {
+    if (!G.acc().clients) return;
+    var p = byId(id);
+    if (!p) return;
+    G.modal('Log a conversation', p.name,
+      '<form id="pcommform" data-id="' + esc(p.id) + '">' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:12px">' +
+      '<div class="f"><label for="pc-at">When it happened</label>' +
+        '<input id="pc-at" name="at" type="date" value="' + ZS.today() + '" max="' +
+        ZS.today() + '"></div>' +
+      '<div class="f"><label for="pc-ch">How</label><select id="pc-ch" name="channel">' +
+        ZS.FOLLOW_METHODS.map(function (m) { return '<option>' + esc(m) + '</option>'; }).join('') +
+      '</select></div></div>' +
+      '<div class="f" style="margin-bottom:12px"><label for="pc-note">What was said</label>' +
+        '<textarea id="pc-note" name="note" rows="4" placeholder="' +
+        'Rang the office. They are rebuilding the site themselves and asked what we would ' +
+        'charge to take it over.' + '"></textarea></div>' +
+      '<p class="hint">This moves onto their client record if they become one, so nothing ' +
+      'said before they signed is lost.</p>' +
+      '<p class="err" id="pc-err"></p>' +
+      '<div style="display:flex;gap:10px;margin-top:12px">' +
+      '<button class="btn" type="submit">Log it</button>' +
+      '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
+  };
+
+  A.markDropComm = function (arg) {
+    if (!G.acc().clients) return;
+    var q = String(arg).split('|');
+    var p = byId(q[0]);
+    if (!p) return;
+    if (!confirm('Remove this entry?')) return;
+    var out = ZS.dropComm(p, q[1]);
+    if (out.error) return G.toast(out.error, true);
+    saveRow(p, { comms: p.comms || [] }, 'Removed.');
+  };
+
+  /* ---- they want to work with us ----
+
+     ⚠️ A CLIENT RECORD ONLY, which is Bhargav's call and the right one: a
+     prospect who says yes has a company and a person, and almost never a product
+     and a fee yet. The engagement gets opened from the client record when there
+     is something real to put on it, rather than dropping a half-empty deal onto
+     the board that nobody is working.
+
+     The source is set to Mark so the question "what is the outreach actually
+     bringing in" has an answer later, and every conversation logged against the
+     prospect moves across. */
+  A.markToClient = function (id) {
+    if (!G.acc().clients) return G.toast('Client records are the owner\u2019s.', true);
+    var p = byId(id);
+    if (!p) return;
+
+    var out = ZS.upsertClient(D().clients, {
+      name: p.name,
+      type: 'lead',
+      source: 'mark',
+      sector: p.category || '',
+      website: p.website || '',
+      email: p.email || '',
+      assigned_to: D().session,
+      contact_name: p.contact_name || '',
+      designation: p.contact_title || '',
+      address: { line1: '', area: '', city: p.city || '', state: '',
+                 country: p.country === 'US' ? 'United States'
+                        : p.country === 'AE' ? 'United Arab Emirates' : 'India', pin: '' }
+    });
+    if (out.error) return G.toast(out.error, true);
+    var c = out.client;
+
+    /* ⚠️ THE HISTORY MOVES WITH THEM. This is the one moment where losing it
+       would hurt most: everything said before they signed is the context for
+       everything said after. Appended rather than replaced, in case the company
+       was already on file. */
+    c.comms = (c.comms || []).concat(ZS.commsOf(p));
+    c.last_touch = ZS.today();
+    if (window.API) API.touch('clients', c);
+
+    saveRow(p, { stage: 'won', client_id: c.id });
+    G.log('client_add', p.name + ' came in through the outreach and is now a client' +
+          (out.created ? '' : ' (folded into the one already on file)'),
+          { client: c.id });
+    G.save();
+    G.toast(out.created ? 'Added to clients. Open an engagement when there is one.'
+                        : 'They were already on file. The conversations moved across.');
+    G.go('#/client/' + c.id);
+  };
+
+  document.addEventListener('submit', function (e) {
+    if (!e.target || e.target.id !== 'pcommform') return;
+    e.preventDefault();
+    if (!G.acc().clients) return;
+    var p = byId(e.target.dataset.id);
+    if (!p) return;
+    var fd = new FormData(e.target);
+    var out = ZS.addComm(p, { at: fd.get('at') || ZS.today(), channel: fd.get('channel'),
+                              note: fd.get('note'), by: D().session });
+    if (out.error) {
+      var err = document.getElementById('pc-err');
+      if (err) err.textContent = out.error;
+      return;
+    }
+    var m = document.getElementById('modal'); if (m && m.open) m.close();
+    G.log('follow_log', p.name + ' \u2014 ' + out.comm.channel + ': ' +
+          out.comm.note.slice(0, 90));
+    saveRow(p, { comms: p.comms }, 'Logged.');
+  });
 
   G.markProspects = rows;
 })();

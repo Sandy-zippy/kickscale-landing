@@ -124,7 +124,7 @@
     var open = D().proposals.filter(function (p) {
       return p.key === run.key && p.status === 'pending';
     })[0];
-    var prop = Object.assign(open || { id: 'p' + Date.now() + Math.floor(Math.random() * 1000) }, {
+    var prop = Object.assign(open || { id: ZS.uid('p') }, {
       runId: run.id, agent: run.agent, title: run.title, summary: run.summary,
       target: run.target, steps: run.steps, draft: run.draft, payload: run.payload,
       clientFacing: run.clientFacing, confidence: run.confidence, minutes: run.minutes,
@@ -282,9 +282,16 @@
     var book = ZS.playbookOf(D());
 
     all.forEach(function (p) {
-      if (!p || p.stage === 'parked' || p.stage === 'sent' || p.stage === 'replied') return;
+      if (!p || p.stage === 'parked' || p.stage === 'sent' || p.stage === 'replied' ||
+          p.stage === 'won' || p.client_id) return;
       var picks = ZS.worthPitching(p);
       if (!picks.length) return;                    /* nothing specific to say */
+
+      /* ⚠️ SOMEBODY WE HAVE SPOKEN TO IS NOT A COLD PROSPECT. The cold template
+         opens by telling them what we found on their website, which reads as if
+         nobody had spoken to them, and it is the fastest way to undo an actual
+         conversation. Mark stops and says so in the brief instead. */
+      if (ZS.commsOf(p).length) return;
 
       var email = ZS.draftEmail(p, picks, me, book.lead);
       if (!email) return;                           /* nothing verified to lead with */

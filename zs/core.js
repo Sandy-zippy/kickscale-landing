@@ -13,6 +13,28 @@
 (function (root) {
   'use strict';
 
+  /* ⚠️ EVERY ID IN THE COCKPIT COMES FROM HERE, and it was not always so. Each
+     record minted its own as `Date.now() + Math.floor(Math.random() * 1000)`,
+     which collides whenever two are created in the same millisecond and the
+     thousand-sided die lands twice: about one pair in a thousand. An invoice was
+     worse still, `'INV' + Date.now()` with no random part at all, so two raised
+     in the same millisecond collided outright.
+
+     A collision is not a crash. It is a contact that answers to another
+     contact's id, an invoice that overwrites another invoice, a document that
+     opens the wrong file: silent, rare, and impossible to reproduce on purpose.
+     It showed up here as a test that failed roughly once in twenty runs and
+     passed every time it was looked at.
+
+     The counter is what fixes it. Two ids minted in the same millisecond differ
+     because the sequence moved, not because a random number happened to. */
+  var idSeq = 0;
+  function uid(prefix) {
+    idSeq = (idSeq + 1) % 1679616;                 /* 36^4, so it stays four chars */
+    return String(prefix) + Date.now().toString(36) +
+           idSeq.toString(36) + Math.floor(Math.random() * 1296).toString(36);
+  }
+
   var fmt = function (n) { return n == null ? '—' : Number(n).toLocaleString('en-IN'); };
 
   /* ⚠️ THE FULL FIGURE, FOR ANYTHING A CLIENT READS. `money` below abbreviates
@@ -305,7 +327,7 @@
   function newOpp(o) {
     o = o || {};
     return {
-      id: o.id || 'o' + Date.now() + Math.floor(Math.random() * 1000),
+      id: o.id || uid('o'),
       ref: o.ref || null,            /* what people see; minted on the way in */
       client: o.client || null,
       title: o.title || '',
@@ -841,7 +863,7 @@
   function newInvoice(o) {
     o = o || {};
     return {
-      id: o.id || 'INV' + Date.now(),
+      id: o.id || uid('INV'),
       ref: o.ref || null,
       opp: o.opp || null, client: o.client || null,
       n: o.n || 1, of: o.of || 2,
@@ -1094,7 +1116,7 @@
   function newDoc(o) {
     o = o || {};
     return {
-      id: o.id || 'doc' + Date.now() + Math.floor(Math.random() * 1000),
+      id: o.id || uid('doc'),
       type: o.type || null,
       name: o.name || '',
       size: o.size || 0,
@@ -1134,7 +1156,7 @@
   function newComm(o) {
     o = o || {};
     return {
-      id: o.id || 'cm' + Date.now() + Math.floor(Math.random() * 1000),
+      id: o.id || uid('cm'),
       /* the day it HAPPENED, which is not always the day it was written down */
       at: o.at || today(),
       channel: o.channel || FOLLOW_METHODS[0],
@@ -1375,7 +1397,7 @@
   function binPut(store, kind, record, extra, actor) {
     store.bin = store.bin || [];
     store.bin.unshift({
-      id: 'bin' + Date.now() + Math.floor(Math.random() * 1000),
+      id: uid('bin'),
       kind: kind,                       /* 'opportunity' | 'client' | 'document' */
       record: JSON.parse(JSON.stringify(record)),
       with: extra || {},                /* everything that went with it */
@@ -1593,7 +1615,7 @@
   function newFollow(o) {
     o = o || {};
     return {
-      id: o.id || 'f' + Date.now() + Math.floor(Math.random() * 1000),
+      id: o.id || uid('f'),
       opp: o.opp || null, client: o.client || null, owner: o.owner || null,
       line: o.line || null,             // which line this conversation was about
       due: o.due || today(),          // when to come back
@@ -1716,7 +1738,7 @@
 
   function newRequirement(o) {
     o = o || {};
-    return { id: o.id || 'rq' + Date.now() + Math.floor(Math.random() * 1000),
+    return { id: o.id || uid('rq'),
              text: String(o.text || '').trim(), at: o.at || today(),
              by: o.by || null, stage: o.stage || null };
   }
@@ -1730,7 +1752,7 @@
   function newMeeting(o) {
     o = o || {};
     var mode = MEETING_MODES[o.mode] ? o.mode : 'meet';
-    return { id: o.id || 'mt' + Date.now() + Math.floor(Math.random() * 1000),
+    return { id: o.id || uid('mt'),
              kind: o.kind || 'Discovery',
              mode: mode,
              at: o.at || today(), time: o.time || '',
@@ -1758,7 +1780,7 @@
   }
   function newDeliverable(o) {
     o = o || {};
-    return { id: o.id || 'dl' + Date.now() + Math.floor(Math.random() * 1000),
+    return { id: o.id || uid('dl'),
              label: String(o.label || '').trim(), url: o.url || '',
              at: o.at || today(), by: o.by || null, note: o.note || '' };
   }
@@ -2351,7 +2373,7 @@
   function newContact(o) {
     o = o || {};
     return {
-      id: o.id || 'ct' + Date.now() + Math.floor(Math.random() * 1000),
+      id: o.id || uid('ct'),
       name: String(o.name || '').trim(),
       designation: o.designation || '',
       dial: o.dial || DEFAULT_DIAL,
@@ -2659,7 +2681,7 @@
   function newCampaign(o) {
     o = o || {};
     return {
-      id: o.id || 'cmp' + Date.now() + Math.floor(Math.random() * 1000),
+      id: o.id || uid('cmp'),
       name: String(o.name || '').trim(),
       platform: o.platform || 'meta',        /* meta | google | linkedin */
       ref: o.ref || '',                      /* the id in their ad manager */
@@ -2869,7 +2891,7 @@
     o = o || {};
     var a = agentById(agentId);
     return Object.assign({
-      id: 'r' + Date.now() + Math.floor(Math.random() * 1000),
+      id: uid('r'),
       agent: agentId, title: title, at: new Date().toISOString(),
       steps: [], summary: '', payload: {}, draft: null, target: null,
       clientFacing: !!(a && a.client),
@@ -2923,7 +2945,7 @@
   function newProspect(o) {
     o = o || {};
     return {
-      id: o.id || 'p' + Date.now() + Math.floor(Math.random() * 1000),
+      id: o.id || uid('p'),
       country: o.country || 'AE',
       city: o.city || '', category: o.category || '',
       name: o.name || '', website: o.website || '', email: o.email || '',
@@ -3388,6 +3410,24 @@
              'that costs money every day it waits.' });
     }
 
+    /* ⚠️ THE ONES MARK HAS STOPPED WRITING TO. Somebody we have spoken to is not
+       cold, so he does not draft for them: that makes them invisible unless they
+       are named here. The last thing they said is the thing to act on. */
+    var spoken = (d.prospects || []).filter(function (p) {
+      return commsOf(p).length && p.stage !== 'parked' && p.stage !== 'won' && !p.client_id;
+    });
+    if (spoken.length) {
+      var newest = spoken.map(function (p) {
+        return { name: p.name, at: (lastComm(p) || {}).at || '', note: (lastComm(p) || {}).note || '' };
+      }).sort(function (a, b) { return String(a.at).localeCompare(String(b.at)); })[0];
+      out.push({ id: 'spoken', n: spoken.length, where: '#/outreach',
+        what: spoken.length + ' you have spoken to and I have stopped writing to.',
+        why: 'The oldest is ' + newest.name + ', ' +
+             (newest.at ? 'last spoken to on ' + niceDate(newest.at) : 'with no date on it') +
+             ': "' + String(newest.note).slice(0, 110) + '". A cold email now would read ' +
+             'as if nobody had spoken to them.' });
+    }
+
     var noEmail = (d.prospects || []).filter(function (p) {
       return !p.email && !p.needs_lookup && p.stage !== 'parked' && worthPitching(p).length;
     });
@@ -3452,7 +3492,7 @@
   function newClient(o) {
     o = o || {};
     return {
-      id: o.id || 'c' + Date.now() + Math.floor(Math.random() * 1000),
+      id: o.id || uid('c'),
       ref: o.ref || null,
       name: String(o.name || '').trim(),          /* the COMPANY, not a person */
       type: o.type || 'lead',
@@ -3795,7 +3835,7 @@
   function newTemplate(o) {
     o = o || {};
     return {
-      id: o.id || 'tpl' + Date.now() + Math.floor(Math.random() * 1000),
+      id: o.id || uid('tpl'),
       name: o.name || '',
       category: o.category || 'UTILITY',
       language: o.language || 'en',
@@ -4107,6 +4147,7 @@
 
   var api = {
     fmt: fmt, money: money, rupees: rupees, esc: esc, today: today, nonEmpty: nonEmpty,
+    uid: uid,
     normMobile: normMobile, validName: validName,
     prepare: prepare,
 
