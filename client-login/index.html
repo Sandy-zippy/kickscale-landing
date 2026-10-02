@@ -372,6 +372,11 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
       <span class="btext"><b>Royale Collections</b><span>Corporate gifting &middot; Discovery Portal + Gifting Cockpit</span></span>
       <span class="bgo">&rarr;</span>
     </button>
+    <button class="badge" onclick="goClientLogin('saasya')">
+      <span class="bicon">SM</span>
+      <span class="btext"><b>Saasya Men</b><span>Kolkata menswear &middot; bespoke, the floor and the designers</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
     <div class="dir-note"><span>&#9679;</span><span>More client workspaces appear here as Zippyscale builds them out.</span></div>
   </div>
 </div>
@@ -459,6 +464,27 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     </div>
     <div class="login-err" id="vaerr"></div>
     <button class="btn-primary" onclick="tryVaarahi()">Enter workspace</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+  </div>
+</div>
+
+<!-- SAASYA MEN LOGIN -->
+<div id="salogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Saasya Men &times; Zippyscale</div>
+    <h1>The cockpit</h1>
+    <p class="sub">A clickable walkthrough of the Agentic Cockpit built for Saasya Men: the showroom, the clients and their households, our operations and the designers&rsquo; floor, the fabric library, the money and the agents. Sign in as the owner, the operations manager, accounts, a stylist, a salesperson or a master tailor, and the screen changes with the person. Every client, order, fabric and figure inside is sample data created by Zippyscale, not Sasya&rsquo;s own records.</p>
+    <div class="field">
+      <label for="sau">Username</label>
+      <input id="sau" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. saasya" onkeydown="if(event.key==='Enter')trySaasya()">
+    </div>
+    <div class="field">
+      <label for="sap">Password</label>
+      <input id="sap" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')trySaasya()">
+    </div>
+    <div class="login-err" id="saerr"></div>
+    <button class="btn-primary" onclick="trySaasya()">Enter workspace</button>
     <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
   </div>
 </div>
@@ -1873,7 +1899,7 @@ async function downloadPDF(){
 function hideGates(){document.querySelectorAll('.gatewrap').forEach(el=>el.classList.add('hidden'));}
 function goPortal(){hideGates();document.getElementById('portal').classList.remove('hidden');}
 function goDirectory(){hideGates();document.getElementById('directory').classList.remove('hidden');}
-const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'] };
+const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'], saasya:['salogin','saerr','sau'] };
 /* Royale has two products behind one password, so the gate opens a chooser rather
    than guessing which one they wanted. */
 function showRoyalePick(){
@@ -1901,6 +1927,14 @@ function tryVaarahi(){
   const p=document.getElementById('vap').value;
   if(u===VAARAHI.user && p===VAARAHI.pass){ location.href='../vaarahi/'; return; }
   document.getElementById('vaerr').textContent='Wrong username or password.';
+}
+
+const SAASYA = { user:"saasya", pass:"Saasya@men26" };
+function trySaasya(){
+  const u=document.getElementById('sau').value.trim().toLowerCase();
+  const p=document.getElementById('sap').value;
+  if(u===SAASYA.user && p===SAASYA.pass){ location.href='../saasya/'; return; }
+  document.getElementById('saerr').textContent='Wrong username or password.';
 }
 
 const ROYALE = { user:"royale", pass:"Royale@26" };
