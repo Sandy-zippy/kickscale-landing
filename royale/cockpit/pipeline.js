@@ -6,6 +6,9 @@
   var G = window.GE, V = G.VIEWS, A = G.ACTIONS, esc = G.esc;
   var D = function () { return G.D(); };
 
+  /* Open for editing. Read view first; editing is a deliberate act. */
+  var EDITING = {};
+
   var BF = { who: '', q: '' };
   V.pipeline = function () {
     var u = G.me();
@@ -49,13 +52,14 @@
     var h = '<div class="stickyhead"><div class="ph"><div><p class="muted small"><a href="#/company/' + (co ? co.id : '') + '">' + esc(co ? co.name : 'No company') + '</a>' + (ct ? ' · ' + esc(ct.name) + ' (' + esc(ct.role) + ')' : '') + ' · via ' + esc(GC.T.sources[o.source] || o.source) + '</p>' +
       '<h1>' + esc(o.title) + '</h1><p>' + G.pill(o.stage, o.stage === 'Won' ? 'ok' : o.stage === 'Lost' ? 'bad' : 'info') + ' ' + GC.money(val) + ' · owner ' + esc(GC.staffName(o.assigned_to)) + ' · opened ' + esc(o.created) +
       (o.brief.deadline ? ' · deliver by <b>' + esc(o.brief.deadline) + '</b> (' + GC.daysBetween(GC.today(), o.brief.deadline) + ' days)' : '') + '</p></div>' +
-      '<div class="acts">' + (open ? '<button class="btn ghost" data-act="logFollow" data-id="' + id + '">Log a conversation</button><button class="btn" data-act="winOpp" data-id="' + id + '">Won — PO in hand</button><button class="btn ghost" data-act="loseOpp" data-id="' + id + '">Lost</button>'
+      '<div class="acts"><button class="btn ghost" data-act="editOppToggle" data-id="' + id + '">' + (EDITING[id] ? 'Done editing' : 'Edit details') + '</button>' + (open ? '<button class="btn ghost" data-act="logFollow" data-id="' + id + '">Log a conversation</button><button class="btn" data-act="winOpp" data-id="' + id + '">Won — PO in hand</button><button class="btn ghost" data-act="loseOpp" data-id="' + id + '">Lost</button>'
         : o.order ? '<a class="btn" href="#/order/' + o.order + '">Open the order →</a>' : '') + '</div></div>';
     if (open) h += '<div class="stagebar">' + GC.T.stages.map(function (s, i) {
       var cur = GC.T.stages.indexOf(o.stage);
       return '<button class="' + (s === o.stage ? 'on' : i < cur ? 'done' : '') + '" data-act="moveOpp" data-id="' + id + '|' + esc(s) + '" title="' + esc(GC.T.stageHelp[s] || '') + '">' + esc(s) + '</button>';
     }).join('') + '</div>';
     h += '</div>';
+    if (EDITING[id]) h += editCard(o, id, co);
     if (o.stage === 'Lost') h += '<div class="notice bad">Lost on ' + esc(o.closed) + ' — ' + esc(o.lost_reason || 'no reason') + '. <button class="btn sm ghost" data-act="reopenOpp" data-id="' + id + '">Reopen</button></div>';
     var waiting = D().proposals.filter(function (p) { return p.status === 'pending' && p.target && p.target.id === id; });
     waiting.forEach(function (p) {
@@ -126,6 +130,58 @@
     }).join('') + '</div>';
     return h + '</div></div>';
   };
+
+  /* The requirement's edit card. The value is deliberately absent: it is worked out from
+     the line items, and a total you can type over is a total that disagrees with the
+     products under it. Change the lines instead. */
+  function editCard(o, id, co) {
+    var contacts = co ? D().contacts.filter(function (x) { return x.company === co.id; }) : [];
+    var fields = GC.oppFields(GC.T, contacts);
+    var h = '<div class="card" style="margin-top:16px"><div class="between"><h3>Edit details</h3>' +
+      '<button class="btn sm ghost" data-act="editOppToggle" data-id="' + id + '">Done</button></div><div class="grid2">';
+    h += fields.map(function (f) {
+      var raw = GC.valueOn(o, f);
+      var v = raw == null ? '' : String(raw);
+      var did = id + '|' + f.key;
+      var inp;
+      if (f.type === 'select') {
+        var opts = (f.options || []).map(function (op) {
+          var val = op && op.value !== undefined ? op.value : op;
+          var lab = op && op.label !== undefined ? op.label : op;
+          return '<option value="' + esc(String(val)) + '"' + (String(val) === v ? ' selected' : '') + '>' + esc(String(lab)) + '</option>';
+        }).join('');
+        var none = f.key === 'contact'
+          ? (contacts.length ? '<option value="">Nobody chosen yet</option>'
+                             : '<option value="">No contacts on this client yet</option>')
+          : '<option value="">Not set</option>';
+        inp = '<select data-chg="oppField" data-id="' + did + '">' + none + opts + '</select>';
+      } else if (f.type === 'number') {
+        inp = '<input type="number" min="0" data-chg="oppField" data-id="' + did + '" value="' + esc(v) + '">';
+      } else if (f.type === 'date') {
+        inp = '<input type="date" data-chg="oppField" data-id="' + did + '" value="' + esc(v) + '">';
+      } else {
+        inp = '<input type="text" data-chg="oppField" data-id="' + did + '" value="' + esc(v) + '">';
+      }
+      return G.field(f.label + (f.required ? ' *' : ''), inp);
+    }).join('') + '</div>';
+
+    h += '<p class="small muted" style="margin-top:10px">The value is worked out from the products on this requirement, so it is changed there, not here.</p>';
+
+    var blockers = GC.oppDeleteBlockers(o, D().orders);
+    var cost = GC.oppDeleteCost(o, D().followups, D().proposals);
+    h += '<div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">';
+    if (blockers.length) {
+      h += '<p class="small muted"><b>This requirement cannot be deleted.</b> ' + esc(blockers.join('. ')) + '.</p>';
+    } else {
+      h += '<p class="small muted">Deleting removes <b>' + cost.products + '</b> product line' + (cost.products === 1 ? '' : 's') +
+           ', <b>' + cost.samples + '</b> sample' + (cost.samples === 1 ? '' : 's') +
+           ', <b>' + cost.quotes + '</b> quote' + (cost.quotes === 1 ? '' : 's') +
+           ', <b>' + cost.followups + '</b> follow-up' + (cost.followups === 1 ? '' : 's') +
+           ' and <b>' + cost.proposals + '</b> agent proposal' + (cost.proposals === 1 ? '' : 's') + '. This cannot be undone.</p>' +
+           '<button class="btn sm bad" data-act="delOpp" data-id="' + id + '">Delete this requirement</button>';
+    }
+    return h + '</div></div>';
+  }
 
   V.oppnew = function (companyId) {
     var cos = D().companies.filter(G.inScope).sort(function (a, b) { return a.name.localeCompare(b.name); });
@@ -273,4 +329,26 @@
       G.log('follow', 'Conversation logged on ' + o.title + ' (' + s.score + '/10)', { opp: o.id, company: o.company }); G.save(); G.closeModal(); G.render();
     }
   });
+
+  A.editOppToggle = function (id) { EDITING[id] = !EDITING[id]; G.render(); };
+
+  A.oppField = function (v, el) {
+    var parts = String(el.getAttribute('data-id')).split('|');
+    var r = G.editOpp(parts[0], parts[1], v);
+    if (r && r.error) { G.toast(r.error, 'bad'); G.render(); return; }
+    G.toast('Saved.', 'ok');
+    G.render();
+  };
+
+  A.delOpp = function (id) {
+    var o = G.oppById(id);
+    if (!o) return;
+    if (!window.confirm('Delete "' + o.title + '"? This cannot be undone.')) return;
+    var co = o.company;
+    var r = G.deleteOpp(id);
+    if (r.error) { G.toast(r.error, 'bad'); return; }
+    G.toast('Deleted.', 'ok');
+    G.go(co ? '#/company/' + co : '#/pipeline');
+  };
+
 })();

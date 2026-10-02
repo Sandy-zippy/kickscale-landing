@@ -6,6 +6,10 @@
   var G = window.GE, V = G.VIEWS, A = G.ACTIONS, esc = G.esc;
   var D = function () { return G.D(); };
 
+  /* Which records are open for editing. The read view is what people want 99% of the
+     time, so editing is a deliberate act behind a button, never a page of empty inputs. */
+  var EDITING = {};
+
   /* ================= INBOX ================= */
 
   V.inbox = function () {
@@ -74,10 +78,11 @@
     var paused = issues.some(function (i) { return i.status !== 'resolved'; }) || !c.consent;
     var h = '<div class="stickyhead"><div class="ph"><div><p class="muted small">' + esc(c.industry || 'Client') + ' · ' + esc(c.city || '') + (c.gstin ? ' · GSTIN ' + esc(c.gstin) : '') + '</p><h1>' + esc(c.name) + ' ' + G.tierPill(c) + '</h1>' +
       '<p>Owner ' + esc(GC.staffName(c.assigned_to)) + ' · via ' + esc(GC.T.sources[c.source] || c.source) + ' · since ' + esc(c.created) + (c.pharma ? ' · ' + G.pill('UCPMP applies', 'warn') : '') + '</p></div>' +
-      '<div class="acts"><button class="btn" data-act="newOppFor" data-id="' + id + '">+ New requirement</button><button class="btn ghost" data-act="addContact" data-id="' + id + '">+ Contact</button><button class="btn ghost" data-act="newIssue" data-id="' + id + '">⚑ Log an issue</button></div></div>';
+      '<div class="acts"><button class="btn" data-act="newOppFor" data-id="' + id + '">+ New requirement</button><button class="btn ghost" data-act="addContact" data-id="' + id + '">+ Contact</button><button class="btn ghost" data-act="newIssue" data-id="' + id + '">⚑ Log an issue</button><button class="btn ghost" data-act="editClientToggle" data-id="' + id + '">' + (EDITING[id] ? 'Done editing' : 'Edit details') + '</button></div></div>';
     h += G.kpis([[GC.money(GC.companySpend(c, D().orders)), '12-month orders'], [orders.length, 'Orders all time'], [opps.filter(GC.isOpen).length, 'Open requirements'],
                  [opps.filter(function (o) { return o.outcome === 'lost'; }).length, 'Lost']]).replace('class="kpis"', 'class="kpis slim"') + '</div>';
     if (paused) h += '<div class="notice warn">Marketing to this client is paused — ' + (c.consent ? 'an issue is open. Service messages still go out; campaigns resume when it is resolved.' : 'they opted out.') + '</div>';
+    if (EDITING[id]) h += editCard(c, id);
     h += '<div class="split" style="margin-top:18px"><div>';
     h += '<div class="card pad0"><div class="hd"><h3>Requirements</h3></div>' + (opps.length ? opps.slice().sort(function (a, b) { return String(b.created).localeCompare(String(a.created)); }).map(function (o) {
       return '<div class="item" data-act="go" data-id="#/opp/' + o.id + '" style="cursor:pointer"><div class="grow"><h4>' + esc(o.title) + '</h4><p>' + esc(o.created) + ' · ' + o.lines.length + ' products' + (o.lost_reason ? ' · ' + esc(o.lost_reason) : '') + '</p></div>' + G.pill(o.stage, o.stage === 'Won' ? 'ok' : o.stage === 'Lost' ? 'bad' : 'info') + '</div>';
@@ -100,6 +105,47 @@
       (G.can('settings') || G.me().role === 'head' ? G.field('Account manager', '<select data-chg="coOwner" data-id="' + id + '">' + D().staff.filter(function (u) { return ['am', 'head', 'owner'].indexOf(u.role) >= 0; }).map(function (u) { return '<option value="' + u.id + '"' + (c.assigned_to === u.id ? ' selected' : '') + '>' + esc(u.name) + '</option>'; }).join('') + '</select>') : '') + '</div>';
     return h + '</div></div>';
   };
+
+  /* The edit card. Every field saves on change, like the product editor, so there is no
+     "did I press save" question. Deleting lives in here rather than on the header,
+     because a delete one click from a list is a delete somebody makes by accident. */
+  function editCard(c, id) {
+    var fields = GC.companyFields(GC.T);
+    var h = '<div class="card" style="margin-top:16px"><div class="between"><h3>Edit details</h3>' +
+      '<button class="btn sm ghost" data-act="editClientToggle" data-id="' + id + '">Done</button></div>' +
+      '<div class="grid2">';
+    h += fields.map(function (f) {
+      var v = c[f.key] == null ? '' : String(c[f.key]);
+      var did = id + '|' + f.key;
+      var inp;
+      if (f.type === 'select') {
+        inp = '<select data-chg="coField" data-id="' + did + '"><option value="">Not set</option>' +
+          (f.options || []).map(function (o) {
+            var val = o && o.value !== undefined ? o.value : o, lab = o && o.label !== undefined ? o.label : o;
+            return '<option value="' + esc(String(val)) + '"' + (String(val) === v ? ' selected' : '') + '>' + esc(String(lab)) + '</option>';
+          }).join('') + '</select>';
+      } else if (f.type === 'textarea') {
+        inp = '<textarea data-chg="coField" data-id="' + did + '" style="min-height:70px">' + esc(v) + '</textarea>';
+      } else {
+        inp = '<input type="text" data-chg="coField" data-id="' + did + '" value="' + esc(v) + '">';
+      }
+      return G.field(f.label + (f.required ? ' *' : ''), inp);
+    }).join('') + '</div>';
+
+    var blockers = GC.companyDeleteBlockers(c, D().opps, D().orders, D().issues);
+    var cost = GC.companyDeleteCost(c, D().opps, D().contacts, D().activity);
+    h += '<div class="danger" style="margin-top:16px;border-top:1px solid var(--line);padding-top:14px">';
+    if (blockers.length) {
+      h += '<p class="small muted"><b>This client cannot be deleted.</b> ' + esc(blockers.join('. ')) + '.</p>';
+    } else {
+      h += '<p class="small muted">Deleting removes <b>' + cost.requirements + '</b> requirement' + (cost.requirements === 1 ? '' : 's') +
+           ', <b>' + cost.contacts + '</b> contact' + (cost.contacts === 1 ? '' : 's') +
+           ', <b>' + cost.dates + '</b> saved date' + (cost.dates === 1 ? '' : 's') +
+           ' and <b>' + cost.timeline + '</b> timeline entr' + (cost.timeline === 1 ? 'y' : 'ies') + '. This cannot be undone.</p>' +
+           '<button class="btn sm bad" data-act="delClient" data-id="' + id + '">Delete this client</button>';
+    }
+    return h + '</div></div>';
+  }
 
   /* ================= CAMPAIGNS ================= */
 
@@ -190,4 +236,25 @@
       G.log('auto_save', 'Campaign drafted: ' + f.name + ' (' + aud + ' companies qualify)'); G.save(); G.closeModal(); G.toast(aud + ' companies qualify today. Saved as a draft — nothing sent.'); G.render();
     }
   });
+
+  A.editClientToggle = function (id) { EDITING[id] = !EDITING[id]; G.render(); };
+
+  A.coField = function (v, el) {
+    var parts = String(el.getAttribute('data-id')).split('|');
+    var r = G.editCompany(parts[0], parts[1], v);
+    if (r && r.error) { G.toast(r.error, 'bad'); G.render(); return; }
+    G.toast('Saved.', 'ok');
+    G.render();
+  };
+
+  A.delClient = function (id) {
+    var c = G.companyById(id);
+    if (!c) return;
+    if (!window.confirm('Delete ' + c.name + '? This cannot be undone.')) return;
+    var r = G.deleteCompany(id);
+    if (r.error) { G.toast(r.error, 'bad'); return; }
+    G.toast('Deleted ' + r.name + '.', 'ok');
+    G.go('#/companies');
+  };
+
 })();

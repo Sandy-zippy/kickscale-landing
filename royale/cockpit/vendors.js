@@ -55,6 +55,18 @@
     D().orders.forEach(function (o) { o.vendorPOs.forEach(function (p) { if (p.vendor === vi) pos.push([o, p]); }); });
     var h = '<div class="ph"><div><p class="muted small">' + esc(G.db().cats[m.cat].name) + ' · ' + esc(m.city) + (m.brand ? ' · brand' : '') + '</p><h1>' + esc(m.name) + '</h1><p>' + GC.fmt(c[vi] || 0) + ' products · score ' + GC.vendorScore(m) + '/100</p></div>' +
       '<div class="acts">' + (G.can('catalogue') ? '<a class="btn" href="#/intake/' + vi + '">⇪ Read their price list</a>' : '') + '</div></div>';
+    /* Vendors are generated from the catalogue rather than stored, so their people live
+       in the same contacts collection as clients', keyed by vendor instead of company.
+       One collection and one UI pattern beats a second half-built one. */
+    var vcs = (D().contacts || []).filter(function (x) { return x.vendor === vi; });
+    h += '<div class="card pad0" style="margin-top:14px"><div class="between" style="padding:12px 14px 0"><h3>People</h3>' +
+      (edit ? '<button class="btn sm ghost" data-act="addVendorContact" data-id="' + vi + '">+ Contact</button>' : '') + '</div>' +
+      (vcs.length ? vcs.map(function (ct) {
+        return '<div class="item"><span class="av sm" style="background:var(--brand-2)">' + esc(String(ct.name || '?').charAt(0)) + '</span>' +
+          '<div class="grow"><h4>' + esc(ct.name) + '</h4><p>' + esc(ct.role || '') +
+          (ct.mobile ? ' · ' + esc(G.mob(ct.mobile)) : '') + (ct.email ? ' · ' + esc(ct.email) : '') + '</p></div>' +
+          (edit ? '<button class="minibtn" data-act="delVendorContact" data-id="' + ct.id + '">Remove</button>' : '') + '</div>';
+      }).join('') : G.empty('Nobody recorded yet. A price list is worth more when you know who to ring about it.')) + '</div>';
     h += G.kpis([[m.rating + '★', 'Rating'], [m.ontime + '%', 'On time', m.ontime < 80 ? 'warn' : 'ok'], [m.priceListAge + ' days', 'Price list age', m.priceListAge > 90 ? 'warn' : null], [pos.length, 'POs on our orders']]);
     h += '<div class="split" style="margin-top:18px"><div><div class="card pad0"><div class="hd"><h3>Products</h3><a class="small" href="#/discover">Search all in Discover →</a></div><div class="pgrid" style="padding:12px">' + prods.map(function (it) {
       var p = G.P(it.id); return '<div class="pcard" data-act="go" data-id="#/product/' + esc(p.id) + '"><div class="body"><b>' + esc(p.name) + '</b><span class="small muted">MOQ ' + p.moq + ' · ' + p.lead + ' d</span><div class="foot"><span class="price">₹' + GC.fmt(p.price) + '</span></div></div></div>';
@@ -119,4 +131,43 @@
     },
     queueDrop: function (i) { D().intakeQueue.splice(+i, 1); G.save(); G.render(); }
   });
+
+  A.addVendorContact = function (vi) {
+    var v = G.db().vendors[+vi];
+    if (!v) return;
+    G.modal('Add a person', v.name,
+      '<form data-submit="saveVendorContact" data-id="' + vi + '">' +
+      G.field('Name', '<input name="name" required>') +
+      G.field('Role', '<input name="role" placeholder="e.g. Sales, Dispatch, Accounts">') +
+      G.field('Mobile', '<input name="mobile">') +
+      G.field('Email', '<input name="email" type="email">') +
+      '<div class="err" id="vcErr"></div><button class="btn">Save</button></form>');
+  };
+
+  A.saveVendorContact = function (f, form) {
+    var vi = +form.dataset.id, v = G.db().vendors[vi];
+    if (!v) return;
+    if (!f.name || !String(f.name).trim()) {
+      var e = document.getElementById('vcErr'); if (e) e.textContent = 'A name, please.';
+      return;
+    }
+    if (f.mobile && String(f.mobile).replace(/\D/g, '').length < 10) {
+      var e2 = document.getElementById('vcErr'); if (e2) e2.textContent = 'That mobile number is too short.';
+      return;
+    }
+    D().contacts = D().contacts || [];
+    D().contacts.push({ id: GC.uid('ct'), vendor: vi, name: String(f.name).trim(),
+                        role: f.role || '', mobile: f.mobile || '', email: f.email || '' });
+    G.log('contact_add', f.name + ' added to ' + v.name, {});
+    G.save(); G.closeModal(); G.render();
+  };
+
+  A.delVendorContact = function (id) {
+    var ct = (D().contacts || []).filter(function (x) { return x.id === id; })[0];
+    if (!ct || !window.confirm('Remove ' + ct.name + '?')) return;
+    D().contacts = D().contacts.filter(function (x) { return x.id !== id; });
+    G.log('contact_del', 'Removed ' + ct.name, {});
+    G.save(); G.render();
+  };
+
 })();

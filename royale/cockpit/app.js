@@ -125,6 +125,82 @@
     return r;
   }
 
+  /* ---------------- editing and deleting clients and requirements ----------------
+
+     Same shape as editProduct above: validate through core, apply, log what it was
+     before, save. The log line carries the old value because "who changed the GSTIN"
+     is only answerable if the answer says what it used to be. */
+
+  function editCompany(id, key, value) {
+    var c = companyById(id);
+    if (!c) return { error: 'No such client.' };
+    if (!canOpen(c)) return { error: 'This client belongs to somebody else.' };
+    var r = GC.setOn(c, GC.companyFields(GC.T), key, value);
+    if (r.error) return r;
+    GC.applyOn(c, r.field, r.after);
+    log('client_edit', r.field.label + ': ' +
+        (r.before == null || r.before === '' ? 'blank' : String(r.before).slice(0, 40)) + ' → ' +
+        (r.after == null || r.after === '' ? 'cleared' : String(r.after).slice(0, 40)),
+        { company: id });
+    save();
+    return r;
+  }
+
+  function editOpp(id, key, value) {
+    var o = D.opps.filter(function (x) { return x.id === id; })[0];
+    if (!o) return { error: 'No such requirement.' };
+    if (!canOpen(o)) return { error: 'This requirement belongs to somebody else.' };
+    var r = GC.setOn(o, GC.oppFields(GC.T, contactsOf(o.company)), key, value);
+    if (r.error) return r;
+    var wasStage = o.stage;
+    GC.applyOn(o, r.field, r.after);
+    /* Moving to Won or Lost is an outcome, not just a label, and the rest of the
+       cockpit reads `outcome`. Keep the two in step or a won deal stays in the pipeline. */
+    if (key === 'stage') {
+      if (r.after === 'Won') o.outcome = 'won';
+      else if (r.after === 'Lost') o.outcome = 'lost';
+      else o.outcome = null;
+    }
+    log('opp_edit', r.field.label + ': ' +
+        (r.before == null || r.before === '' ? 'blank' : String(r.before).slice(0, 40)) + ' → ' +
+        (r.after == null || r.after === '' ? 'cleared' : String(r.after).slice(0, 40)),
+        { opp: id, company: o.company });
+    if (key === 'stage' && wasStage !== r.after) log('stage', o.title + ': ' + wasStage + ' → ' + r.after, { opp: id, company: o.company });
+    save();
+    return r;
+  }
+
+  function deleteOpp(id) {
+    var o = D.opps.filter(function (x) { return x.id === id; })[0];
+    if (!o) return { error: 'No such requirement.' };
+    if (!canOpen(o)) return { error: 'This requirement belongs to somebody else.' };
+    var blockers = GC.oppDeleteBlockers(o, D.orders);
+    if (blockers.length) return { error: 'Cannot delete: ' + blockers.join('; ') + '.' };
+    D.opps = D.opps.filter(function (x) { return x.id !== id; });
+    D.followups = (D.followups || []).filter(function (f) { return f.opp !== id; });
+    /* A pending proposal about something that no longer exists is a trap for whoever
+       opens the desk next. */
+    D.proposals = (D.proposals || []).filter(function (pr) { return (pr.target || {}).id !== id; });
+    log('opp_delete', 'Deleted requirement: ' + o.title, { company: o.company });
+    save();
+    return { ok: true, title: o.title };
+  }
+
+  function deleteCompany(id) {
+    var c = D.companies.filter(function (x) { return x.id === id; })[0];
+    if (!c) return { error: 'No such client.' };
+    if (!canOpen(c)) return { error: 'This client belongs to somebody else.' };
+    var blockers = GC.companyDeleteBlockers(c, D.opps, D.orders, D.issues);
+    if (blockers.length) return { error: 'Cannot delete: ' + blockers.join('; ') + '.' };
+    D.companies = D.companies.filter(function (x) { return x.id !== id; });
+    D.opps = D.opps.filter(function (o) { return o.company !== id; });
+    D.contacts = (D.contacts || []).filter(function (x) { return x.company !== id; });
+    log('client_delete', 'Deleted client: ' + c.name, {});
+    save();
+    return { ok: true, name: c.name };
+  }
+
+
   /* ================= people & access ================= */
 
   function me() { return D && D.session ? GC.staffById(D.session) : null; }
@@ -906,7 +982,8 @@
   window.GE = {
     VIEWS: VIEWS, ACTIONS: ACTIONS, SETTINGS: SETTINGS, boot: boot, render: render, go: go, save: save, log: log,
     D: function () { return D; }, setD: function (d) { D = d; }, db: function () { return DB; }, E: E, P: P, dropCache: dropCache,
-    editProduct: editProduct, rebuildIndex: rebuildIndex, blank: blank, load: load, migrate: migrate, repair: repair, applyTenant: applyTenant,
+    editProduct: editProduct, editCompany: editCompany, editOpp: editOpp,
+    deleteCompany: deleteCompany, deleteOpp: deleteOpp, rebuildIndex: rebuildIndex, blank: blank, load: load, migrate: migrate, repair: repair, applyTenant: applyTenant,
     me: me, acc: acc, can: can, roleName: roleName, avatar: avatar, inScope: inScope, canOpen: canOpen, mob: mob, cost: cost,
     companyById: companyById, contactById: contactById, oppById: oppById, orderById: orderById, contactsOf: contactsOf, byId: byId,
     tierOf: tierOf, tierPill: tierPill, pill: pill, thumb: thumb, kpis: kpis, conf: conf, stepsHTML: stepsHTML, when: when,

@@ -315,6 +315,147 @@
   }
 
 
+  /* ================= EDITING CLIENTS AND REQUIREMENTS =================
+
+     `setField` above is the product editor: it reads the product FIELDS registry and a
+     hardcoded key list, so it cannot be pointed at anything else. Rather than copy that
+     logic twice more, a record type declares its editable fields and `setOn` validates
+     against whichever registry it is handed.
+
+     Only fields a human should type are listed. Anything worked out from other data
+     (tier, spend, stage counts) stays out, because an editable derived figure is a lie
+     waiting to happen. */
+
+  function companyFields(T) {
+    return [
+      { key: 'name',     label: 'Client name',        type: 'text',     required: true },
+      { key: 'industry', label: 'Industry',           type: 'text' },
+      { key: 'city',     label: 'City',               type: 'select',   options: CITIES },
+      { key: 'gstin',    label: 'GSTIN',              type: 'text' },
+      { key: 'mobile',   label: 'Main number',        type: 'text' },
+      { key: 'email',    label: 'Main email',         type: 'text' },
+      { key: 'source',   label: 'How they found us',  type: 'select',
+        options: Object.keys((T && T.sources) || {}) },
+      { key: 'note',     label: 'Notes',              type: 'textarea' }
+    ];
+  }
+
+  function oppFields(T, contacts) {
+    /* NOTE: the requirement's value is NOT here. It is worked out from the line items by
+       oppValue(), and an editable derived figure is a number that disagrees with the
+       products under it the moment somebody types in it. Change the lines, not the total.
+
+       `path` is for the fields that live under `brief`, which is where the requirement
+       itself is kept. Without it an edit writes o.deadline while every screen reads
+       o.brief.deadline, and the change silently does nothing. */
+    return [
+      { key: 'title',      label: 'What they need',   type: 'text',     required: true },
+      { key: 'stage',      label: 'Stage',            type: 'select',
+        options: ((T && T.stages) || []).concat(['Won', 'Lost']) },
+      /* the point of contact, drawn from that client's own people */
+      { key: 'contact',    label: 'Point of contact', type: 'select',
+        options: (contacts || []).map(function (c) { return { value: c.id, label: c.name + (c.role ? ' \u00b7 ' + c.role : '') }; }) },
+      { key: 'deadline',   label: 'Deliver by',       type: 'date',     path: ['brief', 'deadline'] },
+      { key: 'qty',        label: 'Quantity',         type: 'number',   path: ['brief', 'qty'] },
+      { key: 'recipients', label: 'Who receives it',  type: 'text',     path: ['brief', 'recipients'] }
+    ];
+  }
+
+  /** Read a field off a record, following `path` when the value is nested. */
+  function valueOn(row, f) {
+    if (!f.path) return row[f.key];
+    var v = row;
+    for (var i = 0; i < f.path.length; i++) { if (v == null) return undefined; v = v[f.path[i]]; }
+    return v;
+  }
+
+  /** Write one validated value onto a record, creating any missing parent objects. */
+  function applyOn(row, f, v) {
+    if (!f.path) { row[f.key] = v; return; }
+    var t = row;
+    for (var i = 0; i < f.path.length - 1; i++) {
+      if (t[f.path[i]] == null || typeof t[f.path[i]] !== 'object') t[f.path[i]] = {};
+      t = t[f.path[i]];
+    }
+    t[f.path[f.path.length - 1]] = v;
+  }
+
+  /** Validate one change against a registry and return the patch, never applying it. */
+  function setOn(row, fields, key, value) {
+    var f = null;
+    for (var i = 0; i < fields.length; i++) if (fields[i].key === key) f = fields[i];
+    if (!f) return { error: 'No such field.' };
+
+    var v = value;
+    if (f.type === 'number') {
+      if (value === '' || value === null || value === undefined) v = null;
+      else { v = Number(value); if (isNaN(v) || v < 0) return { error: f.label + ' must be a number.' }; }
+    }
+    if (typeof v === 'string') v = v.trim();
+    if (f.required && (v === '' || v == null)) return { error: f.label + ' cannot be empty.' };
+
+    /* A GSTIN is 15 characters. Half of one is a typo that reaches an invoice. */
+    if (key === 'gstin' && v) {
+      v = String(v).toUpperCase();
+      if (v.length !== 15) return { error: 'A GSTIN is 15 characters. That one is ' + v.length + '.' };
+    }
+    if (key === 'mobile' && v && String(v).replace(/\D/g, '').length < 10) {
+      return { error: 'That mobile number is too short.' };
+    }
+    if (key === 'email' && v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) {
+      return { error: 'That email does not look right.' };
+    }
+
+    return { field: f, before: valueOn(row, f), after: v };
+  }
+
+  /* ================= DELETING =================
+
+     Ported from the ZippyScale cockpit, which got this right: two separate questions.
+     `blockers` is why you may NOT, and it stops the delete. `cost` is what disappears,
+     counted and shown BEFORE it happens, so nobody finds out afterwards. */
+
+  function oppDeleteBlockers(o, orders) {
+    var out = [];
+    var mine = (orders || []).filter(function (x) { return x.opp === o.id || x.from_opp === o.id; });
+    var paid = mine.filter(function (x) { return x.stage === 'Paid' || x.paid; });
+    if (paid.length) out.push(paid.length + ' order' + (paid.length === 1 ? '' : 's') + ' already paid against it');
+    else if (mine.length) out.push(mine.length + ' order' + (mine.length === 1 ? '' : 's') + ' raised from it');
+    if (o.outcome === 'won') out.push('it is a won requirement. Mark it Lost instead if it fell through');
+    return out;
+  }
+
+  function oppDeleteCost(o, followups, proposals) {
+    return {
+      products: (o.lines || []).length,
+      samples: (o.samples || []).length,
+      quotes: (o.quotes || []).length,
+      followups: (followups || []).filter(function (f) { return f.opp === o.id; }).length,
+      proposals: (proposals || []).filter(function (p) { return (p.target || {}).id === o.id; }).length
+    };
+  }
+
+  function companyDeleteBlockers(c, opps, orders, issues) {
+    var out = [];
+    var live = (opps || []).filter(function (o) { return o.company === c.id && isOpen(o); });
+    if (live.length) out.push(live.length + ' open requirement' + (live.length === 1 ? '' : 's') + '. Close or delete those first');
+    var ord = (orders || []).filter(function (o) { return o.company === c.id; });
+    if (ord.length) out.push(ord.length + ' order' + (ord.length === 1 ? '' : 's') + ' in their history');
+    var open = (issues || []).filter(function (i) { return i.company === c.id && i.status !== 'resolved'; });
+    if (open.length) out.push(open.length + ' unresolved issue' + (open.length === 1 ? '' : 's'));
+    return out;
+  }
+
+  function companyDeleteCost(c, opps, contacts, activity) {
+    return {
+      requirements: (opps || []).filter(function (o) { return o.company === c.id; }).length,
+      contacts: (contacts || []).filter(function (x) { return x.company === c.id; }).length,
+      dates: (c.dates || []).length,
+      timeline: (activity || []).filter(function (a) { return a.company === c.id; }).length
+    };
+  }
+
+
   /* ================= VENDORS ================= */
 
   var CITIES = ['Mumbai', 'Bhiwandi', 'Delhi NCR', 'Surat', 'Ahmedabad', 'Bengaluru', 'Pune', 'Jaipur', 'Ludhiana', 'Chennai'];
@@ -890,6 +1031,10 @@
 
     CAT_META: CAT_META, catMeta: catMeta, product: product, priceBands: priceBands, unitPrice: unitPrice,
     FIELDS: FIELDS, fieldByKey: fieldByKey, fieldValue: fieldValue, scoreRecord: scoreRecord, setField: setField,
+    companyFields: companyFields, oppFields: oppFields, setOn: setOn,
+    valueOn: valueOn, applyOn: applyOn,
+    oppDeleteBlockers: oppDeleteBlockers, oppDeleteCost: oppDeleteCost,
+    companyDeleteBlockers: companyDeleteBlockers, companyDeleteCost: companyDeleteCost,
     vendorMeta: vendorMeta, vendorScore: vendorScore,
 
     normMobile: normMobile, validMobile: validMobile, normName: normName,
