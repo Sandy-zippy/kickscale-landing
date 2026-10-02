@@ -1907,6 +1907,52 @@
     u4: { units: 2, value: 6000000 }
   };
 
+/* ⚠️ A SALE IS DERIVED FROM THE ENGAGEMENT, NOT KEPT BESIDE IT.
+     `D.sales` was a second list, written only when somebody pressed Won and
+     NEVER sent to or read back from the server. So every sync reset it to empty
+     and every target, every report and every "sold in window" read zero for ever,
+     on a book with a signed engagement in it. Two sources of truth for "what did
+     we sell", and the one everything read was the one nothing maintained.
+
+     There is one source now: the engagements, which already carry the fee, the
+     owner, the line and the dates, and which sync properly.
+
+     ⚠️ WHAT COUNTS AS SOLD. Not only `Won`. An engagement at **Invoiced** is
+     signed in principle with the first invoice raised: it is contracted revenue
+     and the owner counts it the day it happens, which is exactly what he meant by
+     "we already closed a 2.4 lakh deal". A deal still at Pitched counts nothing.
+
+     ⚠️ WHEN IT COUNTS. The day it was contracted, which is `closed` for a won
+     deal, the first invoice's date for one still being delivered, and `updated`
+     only as a last resort. Dating it by `created` would put a deal signed in
+     October into August's target. */
+  var CONTRACTED_STAGES = ['Invoiced'];
+  function isContracted(o) {
+    return !!o && (o.outcome === 'won' || CONTRACTED_STAGES.indexOf(o.stage) >= 0);
+  }
+  function contractedOn(o, invoices) {
+    if (!o) return null;
+    if (o.outcome === 'won' && o.closed) return o.closed;
+    var mine = (invoices || []).filter(function (i) { return i.opp === o.id && i.raised; })
+      .map(function (i) { return i.raised; }).sort();
+    return mine[0] || o.closed || o.updated || o.created || null;
+  }
+
+  /* Every sale, as rows shaped the way the reports already expect. */
+  function salesOf(store) {
+    var invoices = (store && store.invoices) || [];
+    return ((store && store.opportunities) || []).filter(isContracted).map(function (o) {
+      return {
+        id: 'sale-' + o.id, opp: o.id, client: o.client,
+        product_id: o.product, line: productName(o.product),
+        /* what it actually sold for when that is recorded, not the quoted fee */
+        price: o.won_price || oppValue(o), by: o.assigned_to || null,
+        at: contractedOn(o, invoices),
+        won: o.outcome === 'won'
+      };
+    }).filter(function (s) { return !!s.at; });
+  }
+
   function salesFor(sales, userId, r) {
     return (sales || []).filter(function (s) {
       if (userId && s.by !== userId) return false;
@@ -1949,7 +1995,7 @@
     var visits = (D.opportunities || []).filter(function (o) {
       return o.assigned_to === userId && inRange(o.created, r);
     });
-    var prog = targetProgress(D.sales, userId, (D.targets || {})[userId], r);
+    var prog = targetProgress(salesOf(D), userId, (D.targets || {})[userId], r);
     var shown = clients.reduce(function (a, c) {
       return a + (c.shown || []).filter(function (x) { return inRange(x.when, r); }).length;
     }, 0);
@@ -4222,6 +4268,8 @@
     RANGES: RANGES, rangeDates: rangeDates, rangeLabel: rangeLabel, inRange: inRange,
     monthsIn: monthsIn, monthKey: monthKey, iso: iso,
     DEFAULT_TARGETS: DEFAULT_TARGETS, salesFor: salesFor, targetProgress: targetProgress,
+    salesOf: salesOf, isContracted: isContracted, contractedOn: contractedOn,
+    CONTRACTED_STAGES: CONTRACTED_STAGES,
     band: band, personStats: personStats,
 
     STAGES: OPP_STAGES, MARKS: MARKS, SOURCES: SOURCES,

@@ -1906,9 +1906,11 @@
         wo.proc.duration = wdays;
         wo.proc.plan = ZS.planFor(wo.closed, wdays);
       }
-      D().sales.push({ id: 's' + Date.now(), client: wc.id, product_id: pid,
-        line: ZS.productName(pid), buyer: wc.name, price: wfee || wo.fee || 0,
-        by: wo.assigned_to || D().session, at: ZS.today(), opp: wo.id });
+      /* ⚠️ NOTHING IS PUSHED TO A SALES LIST ANY MORE. It used to append to
+         `D.sales`, which no sync ever carried, so the row was gone on the next
+         pull and every target read zero. The engagement IS the sale now:
+         ZS.salesOf() derives it from the fee, the owner and the dates that are
+         already on it and already sync. */
       D().followups.unshift(ZS.newFollow({
         opp: wo.id, client: wc.id, line: pid, owner: wo.assigned_to, by: D().session,
         due: ZS.today(), method: 'Call',

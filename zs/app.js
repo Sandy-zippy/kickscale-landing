@@ -343,10 +343,39 @@
   /* What changed since the last save, so the push is a diff rather than the
      whole book. Compared by a cheap hash of the record, because deep-comparing
      every client on every keystroke is how a form starts to feel slow. */
+  /* ⚠️ ONE LIST. There were two, and they disagreed: seven keys were watched for
+     changes going UP and nine came back DOWN, so three settings could be
+     overwritten by the server having never been sent to it. Anything that
+     round-trips belongs here and nowhere else. */
+  var SYNCED_SETTINGS = ['access', 'targets', 'picklists', 'products', 'usd_rate',
+                         'roles', 'agentModes', 'backup_sheet', 'outreach_playbook',
+                         'invoice_template'];
+
   var LAST_SEEN = {};
+  /* ⚠️ THIS HASHES THE CONTENT. IT USED TO MEASURE ITS LENGTH.
+     `JSON.stringify(r).length` is the same for 69999 and 61000, for "Pitched"
+     and "Offered", for any edit that swaps characters without adding one. So the
+     diff saw no change, nothing was queued, and the next pull overwrote the edit
+     with the server's older copy. A price typed three times, reverting three
+     times, with nothing anywhere reporting a failure.
+
+     It survived because of the fallback: a client and an engagement carry an
+     `updated` date, so most edits changed the stamp for that reason instead. But
+     a second edit on the same day was invisible, and SETTINGS have no date at
+     all, which is why the product price reverted every single time.
+
+     FNV-1a over the string jsonify already built: one pass over the same
+     characters the old code only counted, and it actually changes when they do. */
   function stamp(r) {
-    try { return JSON.stringify(r).length + ':' + (r.updated || r.updated_at || r.last_touch || ''); }
-    catch (e) { return String(Math.random()); }
+    try {
+      var s = JSON.stringify(r);
+      var h = 0x811c9dc5;
+      for (var i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+      }
+      return s.length + ':' + h.toString(36);
+    } catch (e) { return String(Math.random()); }
   }
   /* Record what everything looks like now, WITHOUT queueing any of it. Used
      right after a pull, so the first local edit is the first thing pushed. */
@@ -356,9 +385,7 @@
     (D.opportunities || []).forEach(function (o) { LAST_SEEN['o:' + o.id] = stamp(o); });
     (D.invoices || []).forEach(function (i) { LAST_SEEN['i:' + i.id] = stamp(i); });
     (D.followups || []).forEach(function (f) { LAST_SEEN['f:' + f.id] = stamp(f); });
-    ['access', 'targets', 'picklists', 'products', 'usd_rate', 'roles', 'agentModes'].forEach(function (k) {
-      LAST_SEEN['s:' + k] = stamp(D[k]);
-    });
+    SYNCED_SETTINGS.forEach(function (k) { LAST_SEEN['s:' + k] = stamp(D[k]); });
   }
 
   function queueChanges() {
@@ -394,7 +421,7 @@
       delete LAST_SEEN[k];
       API.touch(kind === 'i:' ? 'invoices' : 'followups', { id: id });
     });
-    ['access', 'targets', 'picklists', 'products', 'usd_rate', 'roles', 'agentModes'].forEach(function (key) {
+    SYNCED_SETTINGS.forEach(function (key) {
       var k = 's:' + key, now = stamp(D[key]);
       if (LAST_SEEN[k] !== now) { LAST_SEEN[k] = now; API.touchSetting(key); }
     });
@@ -1873,7 +1900,7 @@
       ZS.PRODUCTS.map(function (b) {
         var staff = D.staff.filter(function (u) { return u.line === b.id; });
         var ids = staff.map(function (u) { return u.id; });
-        var sold = (D.sales || []).filter(function (sl) {
+        var sold = ZS.salesOf(D).filter(function (sl) {
           return ids.indexOf(sl.by) >= 0 && ZS.inRange(sl.at, r);
         });
         var value = sold.reduce(function (a2, sl) { return a2 + (sl.price || 0); }, 0);
@@ -1899,7 +1926,7 @@
       '<th>Value / month</th><th>Sold in window</th><th>Against target</th></tr></thead><tbody>' +
       sellers.map(function (u) {
         var t = D.targets[u.id] || { units: 0, value: 0 };
-        var prog = ZS.targetProgress(D.sales, u.id, t, r);
+        var prog = ZS.targetProgress(ZS.salesOf(D), u.id, t, r);
         return '<tr><td class="rn">' + esc(u.name) + '<span>' + esc(roleName(u.role)) + '</span></td>' +
           '<td>' + esc(u.line ? ZS.lineName(u.line) : 'All lines') + '</td>' +
           '<td><input type="number" min="0" class="tin" data-ptarget="' + esc(u.id) + '|units" value="' +
@@ -1976,7 +2003,7 @@
 
     /* month by month, so a custom window is not the only way to see a trend */
     var months = {};
-    (D.sales || []).forEach(function (sl) {
+    ZS.salesOf(D).forEach(function (sl) {
       if (!ZS.inRange(sl.at, r)) return;
       var mk = ZS.monthKey(sl.at);
       months[mk] = months[mk] || { n: 0, v: 0 };
@@ -2472,7 +2499,23 @@
       was[k] = (D[k] || []).slice();
     });
 
+    /* ⚠️ WHAT THE SERVER DOES NOT OWN STILL HAS TO SURVIVE THE PULL.
+       This starts from blank(), so every key the server has no table for was
+       reset to empty on every sync: the agent run log, the approval queue
+       waiting on somebody, the Jarvis conversation. Twenty seconds after an
+       agent proposed something, the proposal was gone, and "hours saved" sums
+       over `runs` so that read zero too. Same trap as the bin, three more
+       victims.
+
+       These are carried forward by hand because they are browser-only by
+       design. The moment one of them gets a table on the server it moves out of
+       this list and into the block below. */
+    var KEEP_LOCAL = ['runs', 'proposals', 'jarvisLog', 'campaigns', 'messages',
+                      'edits', 'audit', 'syncLog'];
     var b = blank();
+    KEEP_LOCAL.forEach(function (k) {
+      if (D && D[k] !== undefined && D[k] !== null) b[k] = D[k];
+    });
     D = Object.assign(b, {
       v: b.v,
       session: remote.user && remote.user.id,
@@ -2521,8 +2564,8 @@
        above is built from blank(). backup_sheet is the address of the backup
        sheet; leaving it out meant the Open the sheet button vanished twenty
        seconds after it appeared. */
-    ['targets', 'picklists', 'products', 'usd_rate', 'roles', 'agentModes',
-     'backup_sheet', 'outreach_playbook', 'invoice_template'].forEach(function (k) {
+    SYNCED_SETTINGS.forEach(function (k) {
+      if (k === 'access') return;            /* access arrives on its own, above */
       if (remote.settings && remote.settings[k]) D[k] = remote.settings[k];
     });
     /* syncStaff() also republishes the product list, so what we sell comes from
