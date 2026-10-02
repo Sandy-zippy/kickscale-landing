@@ -1898,18 +1898,28 @@
        Scores whichever target is actually set: builds when there is a build
        target, otherwise value, and says plainly when there is neither. */
     function againstTarget(prog) {
-      var onUnits = prog.unitsPct !== null;
-      var pct = onUnits ? prog.unitsPct : prog.valuePct;
+      /* ⚠️ THE MONEY IS THE SCORE. He sets a value per month and that is the
+         number he is managing to; builds are the secondary fact. It scored
+         builds first, so a line with both targets showed a build percentage and
+         the value target he had just typed appeared nowhere. */
+      var onValue = prog.valuePct !== null;
+      var pct = onValue ? prog.valuePct : prog.unitsPct;
       if (pct === null) {
         return '<span class="hint">' + (prog.tooShort
           ? 'the window is too short to score'
           : 'no target set') + '</span>';
       }
-      var of = onUnits ? prog.targetUnits + ' build' + (prog.targetUnits === 1 ? '' : 's')
-                       : ZS.money(prog.targetValue);
+      var of = onValue ? ZS.money(prog.targetValue)
+                       : prog.targetUnits + ' build' + (prog.targetUnits === 1 ? '' : 's');
+      /* and the other one, quietly, so neither target is invisible */
+      var also = (onValue && prog.unitsPct !== null)
+        ? '<span style="display:block;color:var(--dim);font-size:11px">' + prog.units +
+          ' of ' + prog.targetUnits + ' build' + (prog.targetUnits === 1 ? '' : 's') +
+          ' &middot; ' + prog.unitsPct + '%</span>'
+        : '';
       return '<span class="bar"><i class="' + ZS.band(pct) + '" style="width:' +
         Math.min(100, pct) + '%"></i></span> <b class="' + ZS.band(pct) + '">' + pct +
-        '%</b><span style="color:var(--dim);font-size:11px"> of ' + of + '</span>';
+        '%</b><span style="color:var(--dim);font-size:11px"> of ' + of + '</span>' + also;
     }
 
     /* branches */
@@ -1945,7 +1955,15 @@
         var t = D.targets[u.id] || { units: 0, value: 0 };
         var prog = ZS.targetProgress(ZS.salesOf(D), u.id, t, r);
         return '<tr><td class="rn">' + esc(u.name) + '<span>' + esc(roleName(u.role)) + '</span></td>' +
-          '<td>' + esc(u.line ? ZS.lineName(u.line) : 'All lines') + '</td>' +
+          /* ⚠️ A PICKER, NOT A LABEL. Which line somebody covers decides what the
+             Lines table counts for them and what their own dashboard shows, and
+             it could only be changed by editing the person on another screen. */
+          '<td><select class="tin" data-pline="' + esc(u.id) + '">' +
+            '<option value=""' + (u.line ? '' : ' selected') + '>All lines</option>' +
+            ZS.PRODUCTS.map(function (b) {
+              return '<option value="' + esc(b.id) + '"' + (u.line === b.id ? ' selected' : '') +
+                '>' + esc(b.name) + '</option>';
+            }).join('') + '</select></td>' +
           '<td><input type="number" min="0" class="tin" data-ptarget="' + esc(u.id) + '|units" value="' +
             esc(t.units || 0) + '"></td>' +
           '<td><input type="number" min="0" step="100000" class="tin wide" data-ptarget="' + esc(u.id) +
@@ -1953,8 +1971,9 @@
           '<td class="num">' + prog.units + ' &middot; ' + ZS.money(prog.value) + '</td>' +
           '<td>' + againstTarget(prog) + '</td></tr>';
       }).join('') + '</tbody></table></div>' +
-      '<p class="hint">Type a new figure and it saves itself. ' +
-      'A window shorter than a day is not scored — the target rounds below one build.</p>';
+      '<p class="hint">Type a new figure and it saves itself. The score is against ' +
+      'the <b>value per month</b>, counted over whole months: any part of October is ' +
+      'October\u2019s target, a quarter is three of them.</p>';
     return h;
   };
 
@@ -3595,6 +3614,22 @@
         save(); toast('Target set for ' + ZS.staffById(pp[0]).name + '.'); render();
         return;
       }
+      /* which service line somebody covers */
+      var pl = e.target.closest ? e.target.closest('[data-pline]') : null;
+      if (pl) {
+        if (!can('settings')) { render(); return; }
+        var whoL = D.staff.filter(function (u) { return u.id === pl.dataset.pline; })[0];
+        if (!whoL) return;
+        whoL.line = pl.value || null;
+        log('access_change', whoL.name + ' now covers ' +
+            (whoL.line ? ZS.lineName(whoL.line) : 'all lines'));
+        if (window.API && API.signedIn()) API.touchSetting('roles');
+        save();
+        toast(whoL.name + ' covers ' + (whoL.line ? ZS.lineName(whoL.line) : 'all lines') + '.');
+        render();
+        return;
+      }
+
       var pe = e.target.closest ? e.target.closest('[data-person]') : null;
       if (pe) {
         var pk = pe.dataset.person.split('|');

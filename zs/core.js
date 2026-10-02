@@ -1889,6 +1889,25 @@
 
   /* How many whole months a range spans, so a monthly target can be pro-rated
      rather than compared against a quarter and looking like a catastrophe. */
+  /* ⚠️ A MONTHLY TARGET IS THE MONTH'S TARGET, however far through it you are.
+     `monthsIn` pro-rates by days, which is right for asking "am I on pace" and
+     wrong for the Targets screen: on 2 October it turned a ₹5,00,000 monthly
+     target into ₹32,258, and a real ₹2.4 lakh sale scored 744%. The figure he
+     typed was 5,00,000 and the only honest thing to compare against is
+     5,00,000.
+
+     So the denominator counts the calendar months the window TOUCHES, never
+     less than one. Any part of October is one month. A quarter is three. The
+     percentage then means what anybody reading it assumes it means: how much of
+     this month's target is in. */
+  function monthsCovered(r) {
+    if (!r || r.key === 'all') return 12;
+    var a = parseISO(r.from), b = parseISO(r.to);
+    if (!a || !b) return 1;
+    return Math.max(1, (b.getFullYear() - a.getFullYear()) * 12 +
+                       (b.getMonth() - a.getMonth()) + 1);
+  }
+
   function monthsIn(r) {
     if (!r || r.key === 'all') return 12;
     var a = parseISO(r.from), b = parseISO(r.to);
@@ -1964,7 +1983,7 @@
     var rows = salesFor(sales, userId, r);
     var units = rows.length;
     var value = rows.reduce(function (a, s) { return a + (s.price || 0); }, 0);
-    var mul = monthsIn(r);
+    var mul = monthsCovered(r);
     var tUnits = (target && target.units ? target.units : 0) * mul;
     var tValue = (target && target.value ? target.value : 0) * mul;
     /* A window shorter than a few days pro-rates to a target below one product.
@@ -4275,7 +4294,7 @@
     FIELD_HOME: FIELD_HOME,
 
     RANGES: RANGES, rangeDates: rangeDates, rangeLabel: rangeLabel, inRange: inRange,
-    monthsIn: monthsIn, monthKey: monthKey, iso: iso,
+    monthsIn: monthsIn, monthsCovered: monthsCovered, monthKey: monthKey, iso: iso,
     DEFAULT_TARGETS: DEFAULT_TARGETS, salesFor: salesFor, targetProgress: targetProgress,
     salesOf: salesOf, isContracted: isContracted, contractedOn: contractedOn,
     CONTRACTED_STAGES: CONTRACTED_STAGES,
