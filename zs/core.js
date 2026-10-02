@@ -1969,13 +1969,22 @@
     var tValue = (target && target.value ? target.value : 0) * mul;
     /* A window shorter than a few days pro-rates to a target below one product.
        Scoring against that is meaningless, so say nothing rather than red. */
-    var judgeable = tUnits >= 1;
+    /* ⚠️ VALUE IS SCORED ON ITS OWN. Both percentages used to be gated on the
+       BUILDS target reaching one, so somebody carrying a 4 lakh monthly value
+       target and no build target scored nothing at all: the bar read "— of 0"
+       next to a real sale. The two targets are independent and either one on its
+       own is worth scoring against. */
+    var judgeUnits = tUnits >= 1;
+    var judgeValue = tValue >= 1;
     return {
       units: units, value: value,
       targetUnits: Math.round(tUnits), targetValue: Math.round(tValue),
-      unitsPct: judgeable ? Math.round(100 * units / tUnits) : null,
-      valuePct: judgeable && tValue ? Math.round(100 * value / tValue) : null,
-      tooShort: !judgeable && !!(target && target.units),
+      unitsPct: judgeUnits ? Math.round(100 * units / tUnits) : null,
+      valuePct: judgeValue ? Math.round(100 * value / tValue) : null,
+      /* ⚠️ Nothing to score against at all is not the same as a window too short
+         to score in. The screen has to say which. */
+      noTarget: !judgeUnits && !judgeValue && !(target && (target.units || target.value)),
+      tooShort: !judgeUnits && !judgeValue && !!(target && (target.units || target.value)),
       months: mul, sales: rows
     };
   }

@@ -1893,19 +1893,38 @@
       'Reports pro-rate these across whatever window is picked.</p></div></div>';
     h += rangeBar();
 
+    /* ⚠️ ONE RENDERER FOR BOTH TABLES. The lines table and the people table drew
+       their own "against target" cell, and only one of them was ever fixed.
+       Scores whichever target is actually set: builds when there is a build
+       target, otherwise value, and says plainly when there is neither. */
+    function againstTarget(prog) {
+      var onUnits = prog.unitsPct !== null;
+      var pct = onUnits ? prog.unitsPct : prog.valuePct;
+      if (pct === null) {
+        return '<span class="hint">' + (prog.tooShort
+          ? 'the window is too short to score'
+          : 'no target set') + '</span>';
+      }
+      var of = onUnits ? prog.targetUnits + ' build' + (prog.targetUnits === 1 ? '' : 's')
+                       : ZS.money(prog.targetValue);
+      return '<span class="bar"><i class="' + ZS.band(pct) + '" style="width:' +
+        Math.min(100, pct) + '%"></i></span> <b class="' + ZS.band(pct) + '">' + pct +
+        '%</b><span style="color:var(--dim);font-size:11px"> of ' + of + '</span>';
+    }
+
     /* branches */
     h += '<p class="eyebrow">Lines</p><div class="scroller" style="max-height:none;margin-bottom:26px">' +
       '<table class="matrix"><thead><tr><th>Line</th><th>People</th><th>Builds / month</th>' +
       '<th>Value / month</th><th>Sold in window</th><th>Against target</th></tr></thead><tbody>' +
       ZS.PRODUCTS.map(function (b) {
         var staff = D.staff.filter(function (u) { return u.line === b.id; });
-        var ids = staff.map(function (u) { return u.id; });
-        var sold = ZS.salesOf(D).filter(function (sl) {
-          return ids.indexOf(sl.by) >= 0 && ZS.inRange(sl.at, r);
-        });
-        var value = sold.reduce(function (a2, sl) { return a2 + (sl.price || 0); }, 0);
-        var want = Math.round((b.target && b.target.units || 0) * ZS.monthsIn(r));
-        var pct = want >= 1 ? Math.round(100 * sold.length / want) : null;
+        /* ⚠️ A SALE BELONGS TO THE LINE IT WAS SOLD ON, not to whichever staff
+           happen to be assigned to that line. This matched by salesperson, so a
+           line sold by somebody on "All lines" counted nothing, which is every
+           sale in a one-person company. */
+        var lineSales = ZS.salesOf(D).filter(function (sl) { return sl.product_id === b.id; });
+        var prog = ZS.targetProgress(lineSales, null, b.target, r);
+        var sold = prog.sales, value = prog.value;
         return '<tr><td class="rn">' + esc(b.name) + '<span>' + esc(b.code) + '-001… · from ' +
             esc(ZS.money(b.from)) + '</span></td>' +
           '<td class="num">' + staff.length + '</td>' +
@@ -1914,9 +1933,7 @@
           '<td><input type="number" min="0" step="100000" class="tin wide" data-btarget="' + esc(b.id) +
             '|value" value="' + esc(b.target && b.target.value || 0) + '"></td>' +
           '<td class="num">' + sold.length + ' &middot; ' + ZS.money(value) + '</td>' +
-          '<td><span class="bar"><i class="' + ZS.band(pct) + '" style="width:' + Math.min(100, pct || 0) +
-            '%"></i></span> <b class="' + ZS.band(pct) + '">' + (pct === null ? '—' : pct + '%') + '</b>' +
-            '<span style="color:var(--dim);font-size:11px"> of ' + want + '</span></td></tr>';
+          '<td>' + againstTarget(prog) + '</td></tr>';
       }).join('') + '</tbody></table></div>';
 
     /* people */
@@ -1934,10 +1951,7 @@
           '<td><input type="number" min="0" step="100000" class="tin wide" data-ptarget="' + esc(u.id) +
             '|value" value="' + esc(t.value || 0) + '"></td>' +
           '<td class="num">' + prog.units + ' &middot; ' + ZS.money(prog.value) + '</td>' +
-          '<td><span class="bar"><i class="' + ZS.band(prog.unitsPct) + '" style="width:' +
-            Math.min(100, prog.unitsPct || 0) + '%"></i></span> <b class="' + ZS.band(prog.unitsPct) + '">' +
-            (prog.unitsPct === null ? '—' : prog.unitsPct + '%') + '</b>' +
-            '<span style="color:var(--dim);font-size:11px"> of ' + prog.targetUnits + '</span></td></tr>';
+          '<td>' + againstTarget(prog) + '</td></tr>';
       }).join('') + '</tbody></table></div>' +
       '<p class="hint">Type a new figure and it saves itself. ' +
       'A window shorter than a day is not scored — the target rounds below one build.</p>';

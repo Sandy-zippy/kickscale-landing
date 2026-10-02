@@ -578,7 +578,12 @@
       (sc
         ? '<button class="scorechip ' + sc.band + '" data-act="explainScore" data-id="' + esc(f.id) + '" ' +
           'title="How this was scored">' + sc.score + '<span>/10</span></button>'
-        : '<button class="minibtn" data-act="doneFollow" data-id="' + esc(f.id) + '">Done</button>') +
+        /* ⚠️ "Done" ON ITS OWN THREW THE CONVERSATION AWAY. Pressing it recorded
+           that something happened and nothing about what, and it was also the
+           only way to close a follow-up, so the remark never got written. It
+           opens now: write it up, decide whether there is a next one, and only
+           then is it closed. */
+        : '<button class="minibtn" data-act="openFollow" data-id="' + esc(f.id) + '">Open it</button>') +
       '</div>';
   }
 
@@ -1468,6 +1473,70 @@
       if (grid) grid.style.gridTemplateColumns = wrap.hidden ? '1fr' : '1fr 1fr';
     },
 
+    /* ---- closing one off, properly ----
+
+       ⚠️ THE NEXT DATE IS NOT ASKED FOR UNTIL HE SAYS THERE IS ONE. A date field
+       sitting on the form gets filled in out of habit, and then every closed
+       conversation books another one whether or not anybody meant to. The box is
+       hidden until "Book another one" is ticked, and the handler ignores it
+       otherwise, because a hidden input still submits its value. */
+    openFollow: function (id) {
+      var f = (D().followups || []).filter(function (x) { return x.id === id; })[0];
+      if (!f) return;
+      var o = (D().opportunities || []).filter(function (x) { return x.id === f.opp; })[0];
+      var c = o ? G.clientById(o.client) : G.clientById(f.client);
+      var next = new Date(); next.setDate(next.getDate() + 3);
+
+      G.modal('Follow-up — ' + ((c && c.name) || ''),
+        esc(f.method) + ' due ' + esc(ZS.niceDate(f.due)),
+        '<form id="folcloseform" data-id="' + esc(f.id) + '">' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:13px">' +
+        '<div class="f"><label for="fc-method">How it happened</label>' +
+          '<select id="fc-method" name="method">' +
+          ZS.FOLLOW_METHODS.map(function (m) {
+            return '<option' + (m === f.method ? ' selected' : '') + '>' + esc(m) + '</option>';
+          }).join('') + '</select></div>' +
+        '<div class="f"><label for="fc-when">When it happened</label>' +
+          '<input id="fc-when" name="when" type="date" value="' + ZS.today() + '"></div>' +
+        '</div>' +
+
+        '<div class="f" style="margin-bottom:13px"><label for="fc-note">What was said</label>' +
+        '<div style="display:flex;gap:8px;align-items:flex-start">' +
+        '<textarea id="fc-note" name="note" rows="4" data-scored="1" placeholder="' +
+        'What they actually said, what was agreed, and what they are waiting on from us.' +
+        '">' + esc(f.note && f.note.indexOf('Follow up on:') !== 0 ? f.note : '') + '</textarea>' +
+        G.micButton('fc-note') + '</div>' +
+        '<div id="fc-score" class="scorebar"></div></div>' +
+
+        '<div class="f" style="margin-bottom:13px"><label for="fc-outcome">How did it go?</label>' +
+        '<select id="fc-outcome" name="outcome">' +
+          ZS.FOLLOW_OUTCOMES.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('') +
+        '</select></div>' +
+
+        '<div class="f" style="margin-bottom:6px">' +
+        '<label style="display:flex;gap:9px;align-items:center;cursor:pointer">' +
+        '<input type="checkbox" id="fc-again" name="again" style="width:auto">' +
+        '<span>Book another follow-up</span></label>' +
+        '<span class="hint">Leave this alone if the next move is to change the stage ' +
+        'instead.</span></div>' +
+        '<div class="f" id="fc-nextwrap" hidden style="margin-bottom:13px">' +
+        '<label for="fc-next">Next follow-up</label>' +
+        '<input id="fc-next" name="next" type="date" value="' + ZS.iso(next) + '"></div>' +
+
+        (o ? '<div class="f" style="margin-bottom:13px"><label for="fc-stage">Move the stage</label>' +
+          '<select id="fc-stage" name="stage">' +
+          '<option value="">Leave it at ' + esc(o.stage) + '</option>' +
+          ZS.OPEN_STAGES.filter(function (x) { return x !== o.stage; }).map(function (x) {
+            return '<option value="' + esc(x) + '">' + esc(x) + '</option>';
+          }).join('') + '</select>' +
+          '<span class="hint">The usual next move once a conversation is written up.</span>' +
+          '</div>' : '') +
+
+        '<div style="display:flex;gap:10px;margin-top:4px">' +
+        '<button class="btn" type="submit">Save and mark it done</button>' +
+        '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
+    },
+
     logFollow: function (arg) {
       /* One engagement, one thread. This used to refuse outright — "put a service
          line in play first" — and offered a dropdown of which car the call was
@@ -1595,6 +1664,11 @@
     var st = e.target.closest ? e.target.closest('[data-stage]') : null;
     if (st) { A.setStage(st.dataset.stage + '|' + st.value); return; }
     if (e.target.id === 'f-outcome') { A.folOutcome(); return; }
+    if (e.target.id === 'fc-again') {
+      var w = document.getElementById('fc-nextwrap');
+      if (w) w.hidden = !e.target.checked;
+      return;
+    }
     /* The address box only exists for a meeting somebody has to travel to, and
        the hint under the mode picker says what each one will actually do. */
     if (e.target.name === 'mode') {
@@ -1921,6 +1995,59 @@
             (wfee ? ' at ' + ZS.money(wfee) : ' with no fee agreed yet') +
             ', ' + wdays + '-day build', { client: wc.id, opp: wo.id });
       G.toast('Signed. The delivery file is open and the dates are set.');
+      G.render();
+      return;
+    }
+
+    if (f.id === 'folcloseform') {
+      e.preventDefault();
+      var cf = (D().followups || []).filter(function (x) { return x.id === f.dataset.id; })[0];
+      if (!cf) return;
+      var cfd = new FormData(f);
+      var cnote = String(cfd.get('note') || '').trim();
+      var co = (D().opportunities || []).filter(function (x) { return x.id === cf.opp; })[0];
+      var cc = co ? G.clientById(co.client) : G.clientById(cf.client);
+
+      cf.done = true;
+      cf.done_at = cfd.get('when') || ZS.today();
+      cf.method = cfd.get('method') || cf.method;
+      cf.outcome = cfd.get('outcome') || cf.outcome;
+      if (cnote) cf.note = cnote;
+
+      /* ⚠️ ONLY IF HE ASKED FOR ONE. A hidden input still submits its value, so
+         the tick is checked here as well as hiding the box. */
+      var wantNext = !!cfd.get('again') && cfd.get('next');
+      if (wantNext) {
+        D().followups.unshift(ZS.newFollow({
+          opp: cf.opp, client: cf.client, line: cf.line, owner: cf.owner, by: D().session,
+          due: cfd.get('next'), method: cf.method,
+          note: 'Follow up on: ' + (cnote ? cnote.slice(0, 80) : (co && co.title) || 'the enquiry')
+        }));
+      }
+
+      var moved = String(cfd.get('stage') || '');
+      if (moved && co) {
+        var mr = ZS.moveOpp(co, moved, cc);
+        if (mr && mr.error) G.toast(mr.error, true);
+        else {
+          co.updated = ZS.today();
+          G.log('opp_stage', ((cc && cc.name) || 'An engagement') + ' moved to ' + moved,
+                { client: co.client, opp: co.id });
+          if (window.API) API.touch('opportunities', co);
+        }
+      }
+
+      if (cc) cc.last_touch = ZS.today();
+      var csc = ZS.scoreNote(cnote, { outcome: cf.outcome,
+        lineNames: G.products().map(function (x) { return x.name; }) });
+      G.log('follow_done', ((cc && cc.name) || 'Client') + ' — ' + cf.method + ': ' +
+            (cnote ? cnote.slice(0, 90) : 'no remark') + ' (' + cf.outcome + ')',
+            { client: cf.client, opp: cf.opp });
+      G.save();
+      var cm = document.getElementById('modal'); if (cm && cm.open) cm.close();
+      G.toast('Done, scored ' + csc.score + '/10.' +
+              (wantNext ? ' Next one booked for ' + cfd.get('next') + '.' : '') +
+              (moved ? ' Moved to ' + moved + '.' : ''));
       G.render();
       return;
     }
