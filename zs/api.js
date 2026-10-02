@@ -573,6 +573,11 @@
      talk it out of that. */
   async function sendOutreach(payload) { return call('POST', '/api/outreach/send', { body: payload }); }
   async function readReplies() { return call('POST', '/api/outreach/replies', { body: {} }); }
+  /* Mark's drafts: saved on the server, put in Bhargav's Gmail Drafts on approval */
+  async function saveDraft(d) { return call('POST', '/api/outreach/drafts', { body: d }); }
+  async function discardDraft(id, prospect) { return call('POST', '/api/outreach/drafts/discard', { body: { id: id, prospect: prospect } }); }
+  async function draftToGmail(id, prospect) { return call('POST', '/api/outreach/drafts/gmail', { body: { id: id, prospect: prospect } }); }
+  async function markByHand(prospect) { return call('POST', '/api/outreach/byhand', { body: { prospect: prospect } }); }
 
   /* ---------------- has anything happened? ----------------
      Three counts and the newest activity row. Cheap on purpose: it is asked
@@ -637,6 +642,7 @@
     bots: bots, saveBot: saveBot,
     findProspects: findProspects, saveProspect: saveProspect,
     sendOutreach: sendOutreach, readReplies: readReplies,
+    saveDraft: saveDraft, discardDraft: discardDraft, draftToGmail: draftToGmail, markByHand: markByHand,
     pulse: pulse,
     readDoc: readDoc,
     /* configuration */

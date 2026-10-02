@@ -3128,6 +3128,23 @@
     return got[0];
   }
 
+  /* The findings an email may open with: verified, and with a subject line written
+     for them. Compose offers exactly these, so a choice Bhargav makes can never be
+     one the server will refuse. */
+  function leadOptions(p) {
+    return (p.findings || []).filter(function (f) { return f.verified && SUBJECTS[f.id]; })
+      .sort(function (a, b) {
+        var ai = FINDING_ORDER.indexOf(a.id), bi = FINDING_ORDER.indexOf(b.id);
+        return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+      })
+      .map(function (f) { return { id: f.id, line: SUBJECTS[f.id](p, f), evidence: f.evidence }; });
+  }
+
+  /* drafts: composed, not yet sent, not thrown away. In Gmail or not. */
+  function draftsOf(d) {
+    return (d.sends || []).filter(function (s) { return s && !s.sent_at && !s.discarded_at && s.drafted_at; });
+  }
+
   function subjectFor(p, order) {
     var f = leadFinding(p, order);
     if (!f) return null;                 /* ⚠️ no verified finding, no subject, no email */
@@ -3188,7 +3205,9 @@
 
   /* ⚠️ Returns null when there is nothing verified to lead with. Every caller
      must handle that, and the whole point is that one of them cannot forget. */
-  function draftEmail(p, picks, me, order) {
+  /* `notes` is what Bhargav told Mark to put in (Compose email): an offer, a link,
+     when he is free. It goes in as its own paragraph, in his words, unedited. */
+  function draftEmail(p, picks, me, order, notes) {
     var sub = subjectFor(p, order);
     if (!sub) return null;
 
@@ -3217,6 +3236,9 @@
         body.push('');
       });
     }
+
+    var said = String(notes || '').trim();
+    if (said) { body.push(said); body.push(''); }
 
     body.push('We build these in India for businesses in ' +
       (p.country === 'US' ? 'the States' : 'the Gulf') +
@@ -4319,6 +4341,7 @@
     outreachBrief: outreachBrief, playbookProposal: playbookProposal,
     SERVICE_PRICE: SERVICE_PRICE, priceIn: priceIn, PITCH: PITCH,
     draftEmail: draftEmail, draftWhatsAppReply: draftWhatsAppReply,
+    leadOptions: leadOptions, draftsOf: draftsOf,
     worthPitching: worthPitching, PITCH_BAR: PITCH_BAR,
     PAID_SOURCES: PAID_SOURCES, isPaid: isPaid, newCampaign: newCampaign, PLATFORMS: PLATFORMS,
     campaignsFor: campaignsFor, campaignById: campaignById, campaignResults: campaignResults,

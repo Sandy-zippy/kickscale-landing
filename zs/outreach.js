@@ -20,7 +20,7 @@
   var esc = function (s) { return ZS.esc(s); };
   function D() { return G.D(); }
 
-  var SHOW = 'pitch';      /* pitch | lookup | all | parked */
+  var SHOW = 'pitch';      /* pitch | lookup | drafts | sent | clients | all | parked */
   var OPEN = null;
   var BUSY = false;
   var NOTE = '';
@@ -93,8 +93,10 @@
       'we sell. Every number here opens into the reasons behind it.</p></div>' +
       (G.acc().settings
         ? '<div class="right">' +
-          ((D().sends || []).some(function (x) { return x.sent_at && !x.replied_at; })
-            ? '<button class="btn alt" data-act="markReplies">Read the replies</button>'
+          ((D().sends || []).some(function (x) {
+              return (x.sent_at && !x.replied_at) || (x.gmail_draft_id && !x.sent_at && !x.discarded_at);
+            })
+            ? '<button class="btn alt" data-act="markReplies">Check Gmail</button>'
             : '') +
           '<button class="btn" data-act="markFind">Find more</button></div>'
         : '') +
@@ -107,6 +109,7 @@
     var counts = {
       pitch: all.filter(function (p) { return pitchable(p).length; }).length,
       lookup: all.filter(function (p) { return p.needs_lookup; }).length,
+      drafts: ZS.draftsOf(D()).length,
       sent: all.filter(function (p) { return sentTo(p.id).length || p.stage === 'sent'; }).length,
       clients: all.filter(function (p) { return p.stage === 'won' || p.client_id; }).length,
       all: all.length,
@@ -116,13 +119,15 @@
       /* ⚠️ "Parked" is not a shelf any more. The only rows on it are businesses
          that asked not to be contacted, so the chip says that rather than a word
          that sounds like a decision somebody might undo. */
-      [['pitch', 'Worth writing to'], ['lookup', 'Need a name'],
+      [['pitch', 'Worth writing to'], ['lookup', 'Need a name'], ['drafts', 'Drafts'],
        ['sent', 'Written to'], ['clients', 'Became clients'], ['all', 'Everything'],
        ['parked', 'Asked not to be contacted']].map(function (c) {
         return '<button class="chip" data-act="markShow" data-id="' + c[0] + '" aria-pressed="' +
           (SHOW === c[0] ? 'true' : 'false') + '">' + esc(c[1]) +
           '<i>' + counts[c[0]] + '</i></button>';
       }).join('') + '</div>';
+
+    if (SHOW === 'drafts') return h + draftsView();
 
     if (!all.length) {
       return h + '<div class="card pad"><p class="m">Nothing yet. Press <b>Find more</b> and ' +
@@ -302,6 +307,12 @@
       (open ? 'Hide the reasons' : 'Why these scores?') + '</button>' +
       (src.listing ? '<a class="minibtn" href="' + esc(src.listing) +
         '" target="_blank" rel="noopener">Where he found them</a>' : '') +
+      (stopped || done || sentTo(p.id).length ? ''
+        : draftFor(p.id)
+          ? '<button class="btn alt" data-act="markShow" data-id="drafts">See the draft</button>'
+          : (p.email && ZS.leadOptions(p).length
+              ? '<button class="btn" data-act="markCompose" data-id="' + esc(p.id) + '">Compose email</button>'
+              : '')) +
       (stopped || done ? ''
         : '<button class="minibtn" data-act="markLog" data-id="' + esc(p.id) +
           '">Log a conversation</button>') +
@@ -397,11 +408,13 @@
     G.toast('Looking at the threads\u2026');
     API.readReplies().then(function (out) {
       BUSY = false;
-      NOTE = out.replies
+      NOTE = (out.sentFromGmail ? out.sentFromGmail + ' draft' + (out.sentFromGmail === 1 ? '' : 's') +
+               ' you sent from Gmail now read as written to. ' : '') +
+        (out.replies
         ? out.replies + ' repl' + (out.replies === 1 ? 'y' : 'ies') + ' came back' +
           (out.stopped ? ', and ' + out.stopped + ' asked never to be written to again. ' +
             'Those are parked and Mark will not touch them.' : '.')
-        : 'Nothing new on ' + out.checked + ' thread(s).';
+        : 'Nothing new on ' + out.checked + ' thread(s).');
       if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
     }).catch(function (e) {
       BUSY = false;
@@ -548,11 +561,190 @@
   }
 
   /* ---- we have written to them ---- */
+  /* ⚠️ ONE CLICK USED TO DO THIS, with no question and no record. Build Craft read
+     "sent" on 2 Oct and nobody had written to them. Now it asks, and the server
+     leaves a send row, so "written to" always has something behind it. */
   A.markWritten = function (id) {
     if (!G.acc().clients) return;
     var p = byId(id);
     if (!p) return;
-    saveRow(p, { stage: 'sent' }, 'Marked as written to. Log what comes back.');
+    if (!confirm('Did you already email ' + p.name + ' yourself, outside Mark?\n\n' +
+                 'Mark will treat them as written to and never draft them a cold email.')) return;
+    if (!(window.API && API.signedIn())) return G.toast('Not signed in to the server.', true);
+    API.markByHand(p.id).then(function () {
+      G.toast('Recorded: written to by hand.');
+      if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
+    }).catch(function (e) { G.toast((e && e.message) || 'That did not reach the server.', true); });
+  };
+
+  /* ================= COMPOSE WITH MARK, AND THE DRAFTS =================
+
+     ⚠️ BHARGAV PICKS WHAT TO PITCH, NOT MARK (2 Oct 2026). Mark has read their site
+     and can say what he saw; which of the three to put in front of a stranger is
+     the owner's call. So Compose ASKS: what to pitch, what to open with, anything
+     to say in his own words. Then Mark writes it, and it waits here, readable in
+     full, until Bhargav approves it into his own Gmail Drafts and sends it there. */
+
+  var SERVICE_NAME = { website: 'A new website', cockpit: 'An Agentic Cockpit', automations: 'Automations' };
+
+  function draftFor(pid) {
+    return ZS.draftsOf(D()).filter(function (x) { return x.prospect_id === pid; })[0] || null;
+  }
+  function servicesOf(row) {
+    var v = row.services;
+    if (typeof v === 'string') { try { v = JSON.parse(v); } catch (e) { v = []; } }
+    return (v || []).map(function (x) { return typeof x === 'string' ? x : x && x.key; }).filter(Boolean);
+  }
+
+  A.markCompose = function (id) {
+    if (!G.acc().settings) return G.toast('Writing to prospects is the owner\u2019s.', true);
+    var p = byId(id);
+    if (!p) return;
+    var leads = ZS.leadOptions(p);
+    var scores = { automations: p.score_auto, cockpit: p.score_cockpit, website: p.score_site };
+    G.modal('Compose an email', p.name + (p.email ? ' \u00b7 ' + p.email : ''),
+      '<form id="composeform" data-id="' + esc(p.id) + '">' +
+      '<p class="m" style="margin-top:0">I have read their site. Tell me what to pitch and what ' +
+      'to say, and I will write it. Nothing leaves until you approve it into your Gmail Drafts.</p>' +
+      '<div class="f" style="margin-bottom:14px"><label>What are we pitching?</label>' +
+        ['website', 'cockpit', 'automations'].map(function (k) {
+          return '<label class="cpick"><input type="checkbox" name="svc" value="' + k + '"> ' +
+            '<b>' + esc(SERVICE_NAME[k]) + '</b> <span class="hint">from ' + esc(ZS.priceIn(k, p.country)) +
+            ' \u00b7 my read: ' + (scores[k] || 0) + '/5</span></label>';
+        }).join('') + '</div>' +
+      '<div class="f" style="margin-bottom:14px"><label for="cp-lead">Open with</label>' +
+        '<select id="cp-lead" name="lead">' + leads.map(function (f) {
+          return '<option value="' + esc(f.id) + '">' + esc(f.line) + '</option>';
+        }).join('') + '</select>' +
+        '<p class="hint">Only things I checked on their own site. The subject line is built from this.</p></div>' +
+      '<div class="f" style="margin-bottom:6px"><label for="cp-notes">Anything you want in it? ' +
+        '<em>optional, it goes in exactly as you write it</em></label>' +
+        '<textarea id="cp-notes" name="notes" rows="4" placeholder="' +
+        'e.g. We can have the first version live in three weeks. One we built for a retailer: zippyscale.in/vaarahi' +
+        '"></textarea></div>' +
+      '<p class="err" id="cp-err"></p>' +
+      '<div style="display:flex;gap:10px;margin-top:12px">' +
+      '<button class="btn" type="submit">Draft it</button>' +
+      '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
+  };
+
+  document.addEventListener('submit', function (e) {
+    if (!e.target || e.target.id !== 'composeform') return;
+    e.preventDefault();
+    var p = byId(e.target.dataset.id);
+    if (!p) return;
+    var fd = new FormData(e.target);
+    var err = document.getElementById('cp-err');
+    var picks = fd.getAll('svc').map(function (k) { return { key: k }; });
+    if (!picks.length) { if (err) err.textContent = 'Pick at least one thing to pitch.'; return; }
+    var book = ZS.playbookOf(D());
+    var lead = String(fd.get('lead') || '');
+    var email = ZS.draftEmail(p, picks, G.me(), [lead].concat(book.lead || []), fd.get('notes'));
+    if (!email) { if (err) err.textContent = 'There is nothing checkable on their site to open with.'; return; }
+    if (!(window.API && API.signedIn())) { if (err) err.textContent = 'Not signed in to the server.'; return; }
+    API.saveDraft({ prospect: p.id, subject: email.subject, text: email.text,
+                    finding: email.finding.id, services: picks.map(function (x) { return x.key; }) })
+      .then(function () {
+        var m = document.getElementById('modal'); if (m && m.open) m.close();
+        SHOW = 'drafts';
+        G.toast('Drafted. Read it on the Drafts tab.');
+        if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
+      })
+      .catch(function (x) { if (err) err.textContent = (x && x.message) || 'That did not save.'; });
+  });
+
+  function draftsView() {
+    var list = ZS.draftsOf(D()).sort(function (a, b) {
+      return String(b.drafted_at || '').localeCompare(String(a.drafted_at || ''));
+    });
+    if (!list.length) {
+      return '<div class="card pad"><p class="m">No drafts yet. Open a business on ' +
+        '<b>Worth writing to</b> and press <b>Compose email</b>. I will ask you what to pitch.</p></div>';
+    }
+    return list.map(function (d) {
+      var p = byId(d.prospect_id) || { name: d.prospect_name || 'A prospect', email: '' };
+      var inGmail = !!d.gmail_draft_id;
+      var lines = String(d.body || '').split('\n').length;
+      return '<div class="card pad draftcard" style="margin-bottom:12px">' +
+        '<div class="cardhead"><h3>' + esc(p.name) + '</h3>' +
+          '<span class="pill ' + (inGmail ? 'ok' : 'dim') + '">' +
+          (inGmail ? 'In your Gmail Drafts' : 'Drafted here, not in Gmail yet') + '</span></div>' +
+        '<p class="hint" style="margin:2px 0 10px">To ' + esc(p.contact_name ? p.contact_name + ' <' + p.email + '>' : p.email || '') +
+          ' \u00b7 pitching ' + esc(servicesOf(d).map(function (k) { return SERVICE_NAME[k] || k; }).join(', ') || 'nothing named') + '</p>' +
+        (inGmail
+          ? '<p style="margin:0 0 6px"><b>' + esc(d.subject) + '</b></p>' +
+            '<div class="draftbody">' + esc(d.body) + '</div>' +
+            '<div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap">' +
+              '<a class="btn" href="https://mail.google.com/mail/u/0/#drafts" target="_blank" rel="noopener">Open Gmail Drafts</a>' +
+              '<button class="btn alt" data-act="markReplies">I sent it: check Gmail</button>' +
+              '<button class="minibtn" data-act="markDraftDiscard" data-id="' + esc(d.id) + '">Discard (deletes it in Gmail too)</button></div>'
+          : '<div class="f" style="margin-bottom:8px"><label for="ds-' + esc(d.id) + '">Subject</label>' +
+              '<input id="ds-' + esc(d.id) + '" value="' + esc(d.subject) + '"></div>' +
+            '<div class="f"><label for="db-' + esc(d.id) + '">The email</label>' +
+              '<textarea id="db-' + esc(d.id) + '" rows="' + Math.min(Math.max(lines + 1, 10), 26) + '">' +
+              esc(d.body) + '</textarea></div>' +
+            '<p class="err" id="de-' + esc(d.id) + '"></p>' +
+            '<div style="display:flex;gap:9px;margin-top:10px;flex-wrap:wrap">' +
+              '<button class="btn" data-act="markDraftGmail" data-id="' + esc(d.id) + '">Approve: put it in my Gmail Drafts</button>' +
+              '<button class="btn alt" data-act="markDraftSave" data-id="' + esc(d.id) + '">Save my edits</button>' +
+              '<button class="minibtn" data-act="markDraftDiscard" data-id="' + esc(d.id) + '">Discard</button></div>') +
+        '</div>';
+    }).join('');
+  }
+
+  function draftRow(id) {
+    return (D().sends || []).filter(function (x) { return x.id === id; })[0] || null;
+  }
+  function draftEdits(d) {
+    var su = document.getElementById('ds-' + d.id), bo = document.getElementById('db-' + d.id);
+    return { subject: su ? su.value : d.subject, text: bo ? bo.value : d.body };
+  }
+  function saveEdits(d) {
+    var e = draftEdits(d);
+    if (e.subject === d.subject && e.text === d.body) return Promise.resolve();
+    return API.saveDraft({ id: d.id, prospect: d.prospect_id, subject: e.subject, text: e.text,
+                           finding: d.finding_id, services: servicesOf(d) });
+  }
+  function draftFail(d, x) {
+    var el = document.getElementById('de-' + d.id);
+    var msg = (x && x.message) || 'That did not reach the server.';
+    if (el) el.textContent = msg; else G.toast(msg, true);
+  }
+
+  A.markDraftSave = function (id) {
+    var d = draftRow(id);
+    if (!d) return;
+    saveEdits(d).then(function () {
+      G.toast('Saved.');
+      if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
+    }).catch(function (x) { draftFail(d, x); });
+  };
+
+  /* ⚠️ APPROVE PUTS IT IN HIS GMAIL DRAFTS. IT DOES NOT SEND. He presses Send in
+     Gmail; "Check Gmail" (and the 08:47 run) notices, and only then does the
+     business read "written to", on the time he actually sent it. */
+  A.markDraftGmail = function (id) {
+    var d = draftRow(id);
+    if (!d || BUSY) return;
+    BUSY = true;
+    saveEdits(d).then(function () { return API.draftToGmail(d.id, d.prospect_id); })
+      .then(function () {
+        BUSY = false;
+        G.toast('It is in your Gmail Drafts. Open Gmail, read it once more, press Send.');
+        if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
+      })
+      .catch(function (x) { BUSY = false; draftFail(d, x); });
+  };
+
+  A.markDraftDiscard = function (id) {
+    var d = draftRow(id);
+    if (!d) return;
+    if (!confirm(d.gmail_draft_id ? 'Discard this draft? It is deleted from your Gmail Drafts too.'
+                                  : 'Discard this draft?')) return;
+    API.discardDraft(d.id, d.prospect_id).then(function () {
+      G.toast('Discarded.');
+      if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
+    }).catch(function (x) { draftFail(d, x); });
   };
 
   /* ---- logging a conversation, the same log as on a client ---- */

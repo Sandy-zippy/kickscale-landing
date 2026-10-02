@@ -143,7 +143,11 @@
             '<textarea id="dr-' + esc(p.id) + '" rows="6">' + esc(p.draft.text) + '</textarea></div>'
           : '') +
         '<div class="propacts">' +
-          (p.draft && p.clientFacing
+          /* Mark never sends from here: his approval goes to Bhargav's Gmail Drafts */
+          (p.draft && p.clientFacing && p.agent === 'mark'
+            ? '<button class="btn" data-act="approveSend" data-id="' + esc(p.id) + '">Approve: put it in my Gmail Drafts</button>' +
+              '<button class="btn alt" data-act="approveOnly" data-id="' + esc(p.id) + '">Keep as a draft on Outreach</button>'
+          : p.draft && p.clientFacing
             ? '<button class="btn" data-act="approveSend" data-id="' + esc(p.id) + '">Approve &amp; mark sent</button>' +
               '<button class="btn alt" data-act="approveOnly" data-id="' + esc(p.id) + '">Approve, don\'t send</button>'
             : '<button class="btn" data-act="approveOnly" data-id="' + esc(p.id) + '">Approve</button>') +

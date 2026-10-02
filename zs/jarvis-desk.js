@@ -116,51 +116,41 @@
     if (!pr) return { error: 'That prospect is no longer on the board.' };
     if (!G.acc().clients) return { error: 'Outreach is switched off for your role.' };
 
-    /* ⚠️ "Approve, don't send" MUST NOT SEND, and that is the whole reason the
-       desk has two buttons. Everything below the branch is the sending path. */
-    if (!(o && o.send)) {
-      pr.stage = 'drafted';
-      if (window.API && API.signedIn()) {
-        API.saveProspect({ id: pr.id, stage: 'drafted' }).catch(function () {});
-      }
-      return { ok: 'Approved and kept. Nothing has gone out.' };
-    }
-
+    /* ⚠️ NOTHING ON THE DESK SENDS ANY MORE (2 Oct 2026). Bhargav approves an email
+       into HIS Gmail Drafts and presses Send there himself. Both desk buttons now go
+       through the one draft path the Outreach board uses:
+         "Approve, don't send" → a draft on the Drafts tab, to read and edit;
+         "Approve and send"    → that draft, put straight into his Gmail Drafts.
+       The server re-checks the finding and refuses a second email to the same
+       business on both, exactly as it did for a send. */
     if (!pr.email) {
       return { error: 'There is no email address on that row, so there is nowhere to send it. ' +
                       'Their site did not publish one. Put it on the row first.' };
     }
     if (!(window.API && API.signedIn())) {
-      return { error: 'Not signed in to the server, and the email goes out through the server. ' +
-                      'Nothing was sent.' };
+      return { error: 'Not signed in to the server, and drafts are kept there. Nothing was drafted.' };
     }
-
-    /* ⚠️ THE STAGE MOVES WHEN GOOGLE SAYS IT SENT, NOT BEFORE.
-       Marking it sent and then firing the request is how a cockpit ends up
-       saying "sent" over an email that never left, which is the one lie that
-       makes everything else on the screen worthless. */
     var pay = p.payload || {};
-    G.toast('Sending it…');
-    API.sendOutreach({
+    var toGmail = !!(o && o.send);
+    API.saveDraft({
       prospect: pr.id,
       subject: (p.draft && p.draft.subject) || (pay.email || {}).subject || '',
       text: (p.draft && p.draft.text) || (pay.email || {}).text || '',
       finding: pay.findingId,
-      services: pay.services || []
+      services: (pay.services || []).map(function (x) { return typeof x === 'string' ? x : x && x.key; })
     }).then(function (out) {
-      pr.stage = 'sent';
-      G.log('agent_run', 'Mark sent the email to ' + (pr.contact_name || pr.name) +
-            ' at ' + (out.to || pr.email));
-      G.save();
-      G.toast('Gone, out of your own mailbox. The reply comes to your inbox.');
+      return toGmail ? API.draftToGmail(out.draft, pr.id) : out;
+    }).then(function () {
+      G.log('agent_run', 'Mark drafted an email to ' + (pr.contact_name || pr.name) +
+            (toGmail ? ', now in your Gmail Drafts' : ', on the Drafts tab'));
+      G.toast(toGmail ? 'It is in your Gmail Drafts. Open Gmail, read it once more, press Send.'
+                      : 'Kept as a draft on Outreach \u2192 Drafts. Nothing has gone out.');
       if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
     }).catch(function (e) {
-      /* The proposal stays approved and the stage stays where it was, so the
-         row still reads as needing to be sent rather than as done. */
-      G.toast((e && e.message) || 'It did not send. Nothing left the building.', true);
+      G.toast((e && e.message) || 'That did not save. Nothing has gone out.', true);
     });
 
-    return { ok: 'Handing it to Google now.' };
+    return { ok: toGmail ? 'Putting it in your Gmail Drafts\u2026' : 'Keeping it as a draft\u2026' };
   };
 
   APPLY.watchman = function () { return { ok: 'Noted.' }; };
