@@ -395,6 +395,12 @@ const SUB_TYPES = ['Plank', 'Tile', 'Herringbone', 'Chevron', 'Board', 'Profile'
 const COLLECTION_FIELDS = [
   { key: 'category', label: 'Category', type: 'cat', req: true, col: true, section: 'Collection' },
   { key: 'name', label: 'Collection name', type: 'text', req: true, col: true, section: 'Collection' },
+  { key: 'sqft_per_box', label: 'Square feet per box', type: 'decimal', section: 'Box size and packing' },
+  { key: 'sqm_per_box', label: 'Square metres per box', type: 'decimal', section: 'Box size and packing' },
+  { key: 'pcs_per_box', label: 'Pieces per box', type: 'number', section: 'Box size and packing' },
+  { key: 'weight_box_kg', label: 'Weight per box (kg)', type: 'decimal', section: 'Box size and packing' },
+  { key: 'boxes_per_pallet', label: 'Boxes per pallet', type: 'number', section: 'Box size and packing' },
+  { key: 'price_sqft', label: 'Price per sq ft (₹)', type: 'money', section: 'Box size and packing' },
   { key: 'size_mm', label: 'Size (mm)', type: 'text', section: 'Specifications' },
   { key: 'thickness_mm', label: 'Thickness', type: 'text', section: 'Specifications' },
   { key: 'wear_layer', label: 'Wear layer', type: 'text', section: 'Specifications' },
@@ -413,13 +419,8 @@ const COLLECTION_FIELDS = [
   { key: 'emissions', label: 'Emissions', type: 'text', section: 'Specifications' },
   { key: 'warranty_res', label: 'Warranty, residential (years)', type: 'number', section: 'Warranty' },
   { key: 'warranty_com', label: 'Warranty, commercial (years)', type: 'number', section: 'Warranty' },
-  { key: 'pcs_per_box', label: 'Pieces per box', type: 'number', section: 'Packing' },
-  { key: 'sqm_per_box', label: 'Square metres per box', type: 'decimal', section: 'Packing' },
-  { key: 'weight_box_kg', label: 'Weight per box (kg)', type: 'decimal', section: 'Packing' },
-  { key: 'boxes_per_pallet', label: 'Boxes per pallet', type: 'number', section: 'Packing' },
-  { key: 'price_sqft', label: 'Price per sq ft (₹)', type: 'money', section: 'Packing' },
-  { key: 'catalogue_url', label: 'Catalogue link', type: 'text', section: 'Packing' },
-  { key: 'notes', label: 'Notes', type: 'textarea', section: 'Packing' },
+  { key: 'catalogue_url', label: 'Catalogue link', type: 'text', section: 'Other' },
+  { key: 'notes', label: 'Notes', type: 'textarea', section: 'Other' },
 ];
 const PRODUCT_FIELDS = [
   { key: 'collection_id', label: 'Collection', type: 'collection', req: true, col: true },
@@ -439,6 +440,12 @@ const WAREHOUSE_FIELDS = [
 const MOVE_KINDS = { in: 'Stock in', out: 'Stock out', transfer: 'Transfer', opening: 'Opening stock' };
 const SQFT = 10.7639;
 const sqftOf = (boxes, sqm) => sqm ? Math.round(boxes * sqm * SQFT) : null;
+/* a box size can be given in sq ft or in m²: whichever is missing is worked out, so both are always there */
+function boxSizes(extra) {
+  if (extra.sqft_per_box != null && extra.sqm_per_box == null) extra.sqm_per_box = Math.round(extra.sqft_per_box / SQFT * 1000) / 1000;
+  else if (extra.sqm_per_box != null && extra.sqft_per_box == null) extra.sqft_per_box = Math.round(extra.sqm_per_box * SQFT * 100) / 100;
+  return extra;
+}
 /* one cleaner for the three: unknown keys are dropped, money and specs go in extra */
 function cleanFields(fields, input, ctx) {
   const errors = [], rec = { extra: {} };
@@ -483,27 +490,42 @@ const TEMPLATES = {
   bige: { id: 'bige', company: 'Big E', division: 'retail', version: 'BIGE-1', file: 'Big-E-Upload-Template.xlsx',
     sheets: [SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('retail')] },
   /* the shared inventory: the same file whichever company uploads it */
-  inv: { id: 'inv', company: 'Inventory', division: 'both', version: 'EGO-INV-1', file: 'EGO-Inventory-Upload-Template.xlsx', sheets: [
-    { id: 'collections', sheet: 'Collections', tab: 'collections', heads: { category: 'Category (LVT, SPC, Laminate...)', name: 'Collection name (e.g. Divine)' } },
-    { id: 'designs', sheet: 'Designs', tab: 'products', heads: { collection_id: 'Collection (name exactly as on the Collections sheet)', name: 'Design name', code: 'Design code (if any)', sub_type: 'Type (Plank, Tile, Herringbone...)' } },
+  inv: { id: 'inv', company: 'Inventory', division: 'both', version: 'EGO-INV-2', file: 'EGO-Inventory-Upload-Template.xlsx', sheets: [
+    { id: 'categories', sheet: 'Categories', tab: 'categories' },
+    { id: 'collections', sheet: 'Collections', tab: 'collections', first: ['category', 'name', 'sqft_per_box', 'sqm_per_box', 'pcs_per_box'],
+      heads: { category: 'Category (as on the Categories sheet)', name: 'Collection name (e.g. Divine)', sqft_per_box: 'Box size in square feet', sqm_per_box: 'Box size in square metres (fill this OR square feet)' } },
     { id: 'warehouses', sheet: 'Warehouses', tab: 'warehouses' },
-    { id: 'opening', sheet: 'Opening stock', tab: 'opening' },
+    { id: 'stock', sheet: 'Designs & stock', tab: 'stock' },
   ] },
 };
 const templateFor = division => Object.values(TEMPLATES).find(t => t.division === division);
-const OPENING_COLS = [
-  { key: 'product', type: 'text', req: true, header: 'Design (code, or name exactly as on the Designs sheet) *' },
-  { key: 'collection', type: 'text', header: 'Collection (only needed when two designs share a name)' },
-  { key: 'warehouse', type: 'text', req: true, header: 'Warehouse (name exactly as on the Warehouses sheet) *' },
-  { key: 'boxes', type: 'number', req: true, header: 'Boxes in stock today *' },
+/* One row = one design in one warehouse. A design in two warehouses is two rows; a
+   design with no stock yet leaves Warehouse and Boxes empty. Square feet is a formula
+   in the file, worked out from the collection's box size, and is never imported. */
+const CATEGORY_COLS = [{ key: 'name', type: 'text', req: true, header: 'Category name *' }];
+const STOCK_COLS = [
+  { key: 'category', type: 'text', header: 'Category' },
+  { key: 'collection', type: 'text', req: true, header: 'Collection (as on the Collections sheet) *' },
+  { key: 'name', type: 'text', req: true, header: 'Design name *' },
+  { key: 'code', type: 'text', header: 'Design code (if any)' },
+  { key: 'sub_type', type: 'select', opts: SUB_TYPES, header: 'Type (Plank, Tile, Herringbone...)' },
+  { key: 'colour', type: 'text', header: 'Colour or shade' },
+  { key: 'warehouse', type: 'text', header: 'Warehouse (as on the Warehouses sheet)' },
+  { key: 'boxes', type: 'number', header: 'Boxes in this warehouse today' },
+  { key: 'calc_sqft', type: 'calc', header: 'Square feet in this warehouse (worked out, do not type)' },
+  { key: 'low_stock', type: 'number', header: 'Warn below (boxes)' },
+  { key: 'image', type: 'text', header: 'Photo link' },
+  { key: 'status', type: 'select', opts: ['Active', 'Discontinued'], header: 'Status' },
 ];
 const HINT = { decimal: '', mobile: ' (10 digits)', multi: ' (separate with commas)', cats: ' (separate with commas)', cities: ' (cities, separate with commas)', date: ' (DD/MM/YYYY)', owner: ' (username or name)', pincode: ' (6 digits)' };
 function templateColumns(t) {
   const heads = t.heads || {};
   const col = f => ({ key: f.key, type: f.type, opts: f.opts, req: !!f.req, header: (heads[f.key] || f.label + (f.type === 'link' ? ' (name, mobile or GST)' : HINT[f.type] || '')) + (f.req ? ' *' : '') });
-  if (t.tab === 'opening') return OPENING_COLS;
-  const own = { collections: COLLECTION_FIELDS, products: PRODUCT_FIELDS, warehouses: WAREHOUSE_FIELDS }[t.tab];
-  if (own) return own.map(f => ({ ...col(f), type: f.type === 'collection' ? 'text' : f.type }));
+  if (t.tab === 'stock') return STOCK_COLS;
+  if (t.tab === 'categories') return CATEGORY_COLS;
+  const own = { collections: COLLECTION_FIELDS, warehouses: WAREHOUSE_FIELDS }[t.tab];
+  if (own) { const order = t.first || [], rank = f => order.includes(f.key) ? order.indexOf(f.key) : order.length;
+    return own.map((f, i) => [f, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([f]) => col(f)); }
   if (t.tab === 'contacts') return [{ key: 'client_key', type: 'text', req: true, header: heads.client_key + ' *' }, ...CONTACT_FIELDS.map(col)];
   const keys = new Set(t.kinds.flatMap(k => fieldsFor(k).map(f => f.key)));
   const fields = CLIENT_FIELDS.filter(f => keys.has(f.key) && !(t.skip || []).includes(f.key) && !(f.key === 'kind' && t.kinds.length === 1));
