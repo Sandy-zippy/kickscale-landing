@@ -95,6 +95,8 @@ function fieldHtml(f, v, p, opt = {}) {
       const opts = D.clients.filter(c => f.to.includes(c.kind) && c.id !== opt.self).sort((a, b) => a.name.localeCompare(b.name)).map(c => [c.id, `${c.name} · ${kindLabel(c.kind)} · ${c.city}`]);
       return G.select(f, v, p, opts);
     }
+    case 'cats': return fieldHtml({ ...f, type: 'multi', opts: D.lists.categories }, v, p);
+    case 'cities': return fieldHtml({ ...f, type: 'multi', opts: D.lists.cities.map(c => c.city) }, v, p);
     case 'multi': return G.wrap(f, p, `<div class="checks" id="${p}-${f.key}" role="group" aria-label="${esc(f.label)}">${f.opts.map(o => `<label class="chip"><input type="checkbox" name="${f.key}" value="${esc(o)}" ${(Array.isArray(v) ? v : []).includes(o) ? 'checked' : ''}> ${esc(o)}</label>`).join('')}</div>`, true);
     case 'stage': return G.select(f, v, p, ((D.lists.stages || {})[opt.pipeline] || []).map(s => [s, s]), false);
     case 'lost': return G.select(f, v, p, D.lists.lost_reasons.map(s => [s, s]));
@@ -106,7 +108,7 @@ function fieldHtml(f, v, p, opt = {}) {
 function readForm(form, fields) {
   const fd = new FormData(form), o = {};
   for (const f of fields) {
-    if (f.type === 'multi') o[f.key] = fd.getAll(f.key);
+    if (['multi', 'cats', 'cities'].includes(f.type)) o[f.key] = fd.getAll(f.key);
     else { o[f.key] = fd.has(f.key) ? String(fd.get(f.key)) : ''; if (f.type === 'mobile') o[f.key + '_dial'] = String(fd.get(f.key + '_dial') || '+91'); }
   }
   return o;
@@ -120,7 +122,7 @@ function showVal(f, v) {
     case 'owner': return esc(staffName(v));
     case 'link': { const c = CL()[v]; return c ? `<a href="#/client/${c.id}">${esc(c.name)}</a>` : '<span class="muted">Outside your view</span>'; }
     case 'yesno': return v ? 'Yes' : 'No';
-    case 'multi': return v.map(x => `<span class="chip">${esc(x)}</span>`).join('');
+    case 'multi': case 'cats': case 'cities': return v.map(x => `<span class="chip">${esc(x)}</span>`).join('');
     case 'money': return money(v);
     case 'date': return ds(v);
     case 'select': return esc(optLabel(f, v));
@@ -142,6 +144,7 @@ EM.VIEWS.home = () => {
   const groups = [
     ['wholesale', 'Dealers & distributors', ['distributor', 'dealer', 'sub_dealer'], '#/clients/dealers'],
     ['both', 'Architects & design firms', ['architect', 'design_firm'], '#/clients/architects'],
+    ['wholesale', 'Clients', ['direct'], '#/clients/retail'],
     ['retail', 'Retail clients', ['retail'], '#/clients/retail'],
   ].filter(([d]) => canDiv(d) && (EM.div === 'both' || d === 'both' || d === EM.div));
   const tiles = groups.map(([, l, ks, h]) => tile(l, ks.reduce((a, k) => a + n(k), 0), ks.length > 1 ? ks.map(k => `${n(k)} ${kindLabel(k).toLowerCase()}${n(k) === 1 ? '' : 's'}`).join(' · ') : '', h)).join('')
@@ -182,7 +185,7 @@ for (const [r, k] of Object.entries(DEMO_ROUTES)) {
 /* ---------------------------------------------------------------- clients */
 const CLIENT_TABS = [
   ['all', 'All', null], ['dealers', 'Dealers & distributors', ['distributor', 'dealer', 'sub_dealer']],
-  ['architects', 'Architects & firms', ['architect', 'design_firm']], ['retail', 'Retail clients', ['retail']],
+  ['architects', 'Architects & firms', ['architect', 'design_firm']], ['retail', 'Clients', ['retail', 'direct']],
 ];
 const kindsAllowed = () => Object.keys(KINDS).filter(k => canDiv(KINDS[k].division) && (EM.div === 'both' || KINDS[k].division === 'both' || KINDS[k].division === EM.div));
 EM.clientQ = '';
@@ -219,7 +222,8 @@ function openClientForm(c, kind, keep) {
   EM.modal(`<h2>${c ? 'Edit ' + esc(c.name) : 'Add a client'}</h2>
     <p class="muted small">Compulsory: name, type, mobile, city and owner. The same mobile or GST number cannot be saved twice.</p>
     <form id="cf" class="stack" onsubmit="return false" style="margin-top:14px" data-id="${c ? c.id : ''}">
-      <div class="fgrid">${G.select(CLIENT_FIELDS[0], kind, 'cf', kinds.map(k => [k, `${KINDS[k].label} · ${KINDS[k].division === 'both' ? 'both companies' : DIVS[KINDS[k].division].co}`]), false).replace('<select', '<select data-kind-pick')}</div>
+      <div class="fgrid">${G.select(CLIENT_FIELDS[0], kind, 'cf', kinds.map(k => [k, `${KINDS[k].label} · ${KINDS[k].division === 'both' ? 'EGO Premium or Big E' : DIVS[KINDS[k].division].co}`]), false).replace('<select', '<select data-kind-pick')}
+        ${KINDS[kind].division === 'both' && D.user.division === 'both' ? G.select({ key: 'division', label: 'Which company keeps this record' }, v.division || (EM.div === 'both' ? 'both' : EM.div), 'cf', [['wholesale', 'EGO Premium'], ['retail', 'Big E'], ['both', 'Both companies']], false) : ''}</div>
       ${sections.map(s => `<fieldset class="fs"><legend>${esc(s)}</legend><div class="fgrid">${fields.filter(f => f.section === s).map(f => fieldHtml(f, v[f.key], 'cf', { self: c && c.id })).join('')}</div></fieldset>`).join('')}
       ${errBox('cf-err')}
       <div class="row sticky-actions"><button class="btn primary" data-act="client-save">${c ? 'Save changes' : 'Add client'}</button><button class="btn" data-act="close-modal">Cancel</button></div>
@@ -229,6 +233,7 @@ document.addEventListener('change', e => {
   if (!e.target.matches('[data-kind-pick]')) return;
   const form = qs('#cf'), id = form.dataset.id, c = id ? CL()[id] : null;
   const prev = readForm(form, CLIENT_FIELDS);
+  const dv = form.querySelector('[name="division"]'); if (dv) prev.division = dv.value;
   for (const f of CLIENT_FIELDS) if (f.type === 'mobile' && prev[f.key]) { const r = normMobile(prev[f.key], prev[f.key + '_dial']); if (r.value) prev[f.key] = r.value; }
   openClientForm(c, e.target.value, prev);
 });
@@ -238,6 +243,9 @@ EM.ACTIONS['client-save'] = async el => {
   const form = qs('#cf'), id = form.dataset.id, kind = form.querySelector('[data-kind-pick]').value;
   const input = readForm(form, fieldsFor(kind));
   input.kind = kind;
+  const dv = form.querySelector('[name="division"]');
+  if (dv) input.division = dv.value;
+  else if (KINDS[kind].division === 'both' && !id) input.division = EM.div;
   const { errors } = cleanClient(input, ctxLocal());
   if (errors.length) return showErr('cf-err', errors);
   if (id) input.id = id;
@@ -257,11 +265,12 @@ EM.VIEWS.client = arg => {
   const [id, tab = 'overview'] = arg.split('/'), c = CL()[id];
   if (!c) return `<div class="stack"><h1>Client not found</h1><p class="muted">It may have been deleted, or it is outside your view.</p><a class="btn" href="#/clients">Clients</a></div>`;
   const cts = D.contacts.filter(k => k.client_id === id), ops = D.opportunities.filter(o => o.client_id === id), docs = D.documents.filter(d => d.client_id === id);
-  const tabs = [['overview', 'Overview'], ['contacts', `Contacts (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
+  const org = ['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group);
+  const tabs = [['overview', 'Overview'], ['contacts', `${org ? 'People' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
   const body = { overview: clientOverview, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>' }[tab] || clientOverview;
   return `<div class="stack">${crumbs(['Clients', '#/clients'], [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
-      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade ? `<span class="badge plain">Grade ${esc(c.grade)}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
+      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade ? `<span class="badge plain">Grade ${esc(c.grade)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
       <p class="muted">${esc(fmtMobile(c.mobile))} · ${esc(c.city)}${c.region ? ', ' + esc(c.region) : ''} · owner ${esc(staffName(c.owner_id))}</p></div>
       <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button>${isOwner() ? `<button class="btn ghost" data-act="client-del" data-id="${id}">Delete</button>` : ''}</div></div>
     ${subtabs(`#/client/${id}`, tab, tabs)}
@@ -281,8 +290,8 @@ function clientOverview(c) {
     ${c.prices_hidden ? '<p class="small muted">Money fields are hidden for your role.</p>' : ''}</div>`;
 }
 function clientContacts(c, cts) {
-  return `<div class="stack-s"><div class="row between"><p class="muted">The people at ${esc(c.name)}. Mark one as the main contact.</p><button class="btn primary" data-act="contact-add" data-client="${c.id}">+ Add contact</button></div>
-    ${cts.length ? table(['Name', 'Designation', 'Mobile', 'WhatsApp', 'Email', 'Main', ''], cts.sort((a, b) => b.is_primary - a.is_primary).map(k => [`<b>${esc(k.name)}</b>`, esc(k.designation || ''), esc(fmtMobile(k.mobile)), esc(fmtMobile(k.whatsapp)), esc(k.email || ''), k.is_primary ? '<span class="badge ok">Main</span>' : '',
+  return `<div class="stack-s"><div class="row between"><p class="muted">The people at ${esc(c.name)}, their role and what they handle. Mark one as the main person to talk to.</p><button class="btn primary" data-act="contact-add" data-client="${c.id}">+ Add person</button></div>
+    ${cts.length ? table(['Name', 'Role', 'Responsibilities', 'Mobile', 'WhatsApp', 'Email', 'Main', ''], cts.sort((a, b) => b.is_primary - a.is_primary).map(k => [`<b>${esc(k.name)}</b>`, esc(k.designation || ''), esc(k.responsibilities || ''), esc(fmtMobile(k.mobile)), esc(fmtMobile(k.whatsapp)), esc(k.email || ''), k.is_primary ? '<span class="badge ok">Main</span>' : '',
       `<button class="btn sm ghost" data-act="contact-edit" data-id="${k.id}">Edit</button><button class="btn sm ghost" data-act="contact-del" data-id="${k.id}">Remove</button>`]))
     : empty('No contacts yet', 'Add the owner, the purchase person, accounts and anyone else you deal with.')}</div>`;
 }
@@ -487,44 +496,63 @@ EM.ACTIONS['opp-del'] = async el => {
   try { await API('DELETE', '/api/opportunities/' + o.id); D.opportunities = D.opportunities.filter(x => x.id !== o.id); D.history = D.history.filter(h => h.opp_id !== o.id); location.hash = '#/opps/' + o.pipeline; } catch (x) { EM.toast(esc(x.message)); }
 };
 
-/* ---------------------------------------------------------------- import from Excel */
+/* ---------------------------------------------------------------- import from Excel
+   Two templates, one per company. Each company's card downloads its own file and
+   uploads only that file; the server refuses the other company's file too. */
 const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-const IMP = { file: null, rows: [], results: null, done: null, error: '' };
+const IMP = { tpl: null, file: null, rows: [], results: null, done: null, error: '' };
+const tplsHere = () => Object.values(TEMPLATES).filter(t => canDiv(t.division) && (EM.div === 'both' || EM.div === t.division));
+const SHEET_NOTE = {
+  dealers: 'Each dealer, distributor and sub-dealer company: where it is, the areas it covers, its rating, then the rest.',
+  dealer_people: 'Everyone who works at those companies: role, what they handle, name, mobile, email.',
+  architects: 'Each architect firm, or solo architect: where it is, its rating, then the rest.',
+  architect_people: 'Everyone who works at those firms: role, what they handle, name, mobile, email.',
+  clients: 'Clients who are not under any dealer or architect: individuals, or individual firms.',
+  ego_lists: 'Your own product categories and warehouses, for the stock module that comes next.',
+};
 EM.VIEWS.import = () => {
   const r = IMP.results, cnt = s => r ? r.filter(x => x.status === s).length : 0;
   const shown = r ? (IMP.errorsOnly ? r.filter(x => x.status === 'error') : r) : [];
+  const ts = tplsHere();
   return `<div class="stack">
-    <div class="stack-s"><div class="kicker">Bulk upload</div><h1>Import from Excel</h1><p class="muted" style="max-width:760px">Fill the EGO Master template and upload it here. Nothing is saved until you have seen every row: each one shows as <b>new</b>, <b>update</b> (the same mobile or GST is already saved) or <b>error</b> with the reason. Uploading the same file again only updates.</p></div>
-    <div class="grid g2"><section class="card stack-s"><h3>1. Get the template</h3><p class="small muted">Tabs: How to fill, Dealers &amp; distributors, Architects &amp; firms, Retail clients, Contacts, Opportunities. Compulsory columns end with a star. Keep the example rows: they are skipped.</p><a class="btn" href="EGO-Master-Upload-Template.xlsx" download>Download the template</a></section>
-      <section class="card stack-s"><h3>2. Upload the filled file</h3><input class="input" type="file" id="imp-file" accept=".xlsx,.xls"><p class="small muted">${IMP.file ? 'Read: ' + esc(IMP.file) : 'The file is read in your browser, then checked by EGO Master.'}</p></section></div>
+    <div class="stack-s"><div class="kicker">Bulk upload</div><h1>Import from Excel</h1><p class="muted" style="max-width:760px">EGO Premium and Big E each have their own file. Download the file for your company, fill it, and upload it in the same card. Nothing is saved until you have seen every row: each one shows as <b>new</b>, <b>update</b> (already saved) or <b>error</b> with the reason. Uploading the same file again only updates.</p></div>
+    <div class="grid g2">${ts.map(t => `<section class="card stack-s" data-template="${t.id}"><div class="kicker">${esc(t.division === 'wholesale' ? 'Wholesale' : 'Retail')}</div><h3>${esc(t.company)} file</h3>
+      <ol class="small" style="margin:0;padding-left:18px">${t.sheets.map(sh => `<li><b>${esc(sh.sheet)}</b>: ${esc(SHEET_NOTE[sh.id])}</li>`).join('')}</ol>
+      <p class="small muted">Compulsory columns end with a star. The grey EXAMPLE rows are skipped.</p>
+      <a class="btn" href="${t.file}" download>1. Download the ${esc(t.company)} file</a>
+      <label class="field"><span class="small muted">2. Upload the filled ${esc(t.company)} file</span><input class="input" type="file" id="imp-file-${t.id}" data-imp="${t.id}" accept=".xlsx,.xls"></label>
+      ${IMP.tpl === t.id && IMP.file ? `<p class="small muted">Read: ${esc(IMP.file)}</p>` : ''}</section>`).join('')}</div>
     ${IMP.error ? `<div class="callout warn">${esc(IMP.error)}</div>` : ''}
     ${IMP.done ? `<div class="callout ok"><b>Import finished.</b> ${IMP.done.added} added · ${IMP.done.updated} updated · ${IMP.done.skipped} skipped with errors.</div>` : ''}
-    ${r ? `<section class="stack-s"><h3>3. Check, then save</h3><div class="grid g4">${tile('New', cnt('new'))}${tile('Update', cnt('update'))}${tile('Error', cnt('error'), cnt('error') ? 'skipped when you save' : '')}${tile('Rows read', r.length)}</div>
+    ${r ? `<section class="stack-s"><h3>3. Check, then save the ${esc(TEMPLATES[IMP.tpl].company)} file</h3><div class="grid g4">${tile('New', cnt('new'))}${tile('Update', cnt('update'))}${tile('Error', cnt('error'), cnt('error') ? 'skipped when you save' : '')}${tile('Rows read', r.length)}</div>
       <div class="row"><button class="btn primary" data-act="imp-save" ${cnt('new') + cnt('update') && !IMP.done ? '' : 'disabled'}>Save ${cnt('new') + cnt('update')} rows</button><label class="chip" style="padding:8px 10px"><input type="checkbox" id="imp-errs" ${IMP.errorsOnly ? 'checked' : ''}> Show errors only</label></div>
       <div id="imp-prog" class="small muted"></div>
-      ${table(['Sheet', 'Row', 'Name', 'Result', 'Reason'], shown.slice(0, 500).map(x => [esc(x.sheet), x.row, esc(x.name || ''), `<span class="badge ${x.status === 'new' ? 'ok' : x.status === 'update' ? 'info' : 'bad'}" data-status="${x.status}">${x.status}</span>`, esc(x.reason || x.note || '')]))}
+      ${table(['Sheet', 'Row', 'Name', 'Result', 'Reason'], shown.slice(0, 500).map(x => [esc(x.sheetName), x.row, esc(x.name || ''), `<span class="badge ${x.status === 'new' ? 'ok' : x.status === 'update' ? 'info' : 'bad'}" data-status="${x.status}">${x.status}</span>`, esc(x.reason || x.note || '')]))}
       ${shown.length > 500 ? `<p class="small muted">Showing 500 of ${shown.length}.</p>` : ''}</section>` : ''}</div>`;
 };
 EM.VIEWS.import.title = () => 'Import from Excel';
 document.addEventListener('change', async e => {
   if (e.target.id === 'imp-errs') { IMP.errorsOnly = e.target.checked; EM.rerender(); return; }
-  if (e.target.id !== 'imp-file' || !e.target.files[0]) return;
+  if (!e.target.dataset.imp || !e.target.files[0]) return;
   const f = e.target.files[0];
-  Object.assign(IMP, { file: f.name, rows: [], results: null, done: null, error: '' });
+  Object.assign(IMP, { tpl: e.target.dataset.imp, file: f.name, rows: [], results: null, done: null, error: '' });
   EM.toast('Reading ' + esc(f.name) + '…');
-  try { await readWorkbook(f); await preview(); } catch (x) { IMP.error = x.message; }
+  try { await readWorkbook(f, TEMPLATES[IMP.tpl]); await preview(); } catch (x) { IMP.error = x.message; }
   EM.rerender();
 });
 const loadScript = src => new Promise((ok, bad) => { if (window.XLSX) return ok(); const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => bad(new Error('Could not load the Excel reader. Check the internet connection.')); document.head.appendChild(s); });
-async function readWorkbook(file) {
+async function readWorkbook(file, tpl) {
   await loadScript(XLSX_URL);
   const wb = window.XLSX.read(await file.arrayBuffer(), { type: 'array' });
   const how = wb.Sheets['How to fill'], ver = how && how.B1 ? String(how.B1.v).trim() : '';
-  if (!ver) throw new Error('This is not the EGO Master template (the How to fill sheet is missing). Download the template and copy your rows into it.');
-  if (ver !== TEMPLATE_VERSION) throw new Error(`This file is template ${ver}. Download the current template (${TEMPLATE_VERSION}) and copy your rows into it.`);
+  if (!ver) throw new Error(`This is not an EGO Master file (the How to fill sheet is missing). Download the ${tpl.company} file and copy your rows into it.`);
+  if (ver !== tpl.version) {
+    const other = Object.values(TEMPLATES).find(t => t.version === ver);
+    throw new Error(other ? `This is the ${other.company} file. Upload it under ${other.company}, not ${tpl.company}.` : `This file is an old template (${ver}). Download the ${tpl.company} file and copy your rows into it.`);
+  }
   IMP.version = ver;
   const rows = [];
-  for (const t of TEMPLATE_TABS) {
+  for (const t of tpl.sheets) {
     const ws = wb.Sheets[t.sheet];
     if (!ws) continue;
     const grid = window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
@@ -538,9 +566,10 @@ async function readWorkbook(file) {
       if (line.every(x => String(x).trim() === '')) return;
       const data = {};
       map.forEach((c, j) => { if (c) data[c.key] = line[j]; });
-      if (String(data.name || data.title || '').trim().toUpperCase().startsWith(EXAMPLE_MARK)) return;
-      if (t.id === 'retail') data.kind = 'retail';
-      group.push({ tab: t.tab, sheet: t.sheet, row: i + 2, data, name: String(data.name || data.title || '').trim() });
+      const name = String(data.name || data.category || data.wh_name || '').trim();
+      if (name.toUpperCase().startsWith(EXAMPLE_MARK)) return;
+      if (t.tab === 'clients' && t.kinds.length === 1) data.kind = t.kinds[0];
+      group.push({ tab: t.tab, sheet: t.id, sheetName: t.sheet, row: i + 2, data, name });
     });
     /* parents before children, so a sub-dealer's distributor already exists when it is saved */
     const rank = { distributor: 0, design_firm: 0, dealer: 1, architect: 1, sub_dealer: 2 };
@@ -549,32 +578,41 @@ async function readWorkbook(file) {
     rows.push(...group);
   }
   if (!rows.length) throw new Error('No rows to import. Fill rows under the headers (the example rows are skipped).');
-  /* the same person twice in one file: the second is an error, not a silent update */
+  /* the same company or person twice in one file: the second is an error, not a silent update */
   const seen = new Map();
   for (const r of rows) {
     const keys = r.tab === 'clients' ? [normMobile(r.data.mobile).value, normGst(r.data.gst)].filter(Boolean).map(k => 'c:' + k)
-      : r.tab === 'contacts' ? ['k:' + String(r.data.client_key).trim() + '|' + (normMobile(r.data.mobile).value || '')]
-        : ['o:' + String(r.data.client_key).trim() + '|' + String(r.data.pipeline).trim().toLowerCase() + '|' + String(r.data.title).trim().toLowerCase()];
-    for (const k of keys) { if (seen.has(k)) { r.local = `same as ${seen.get(k).sheet} row ${seen.get(k).row} in this file`; break; } }
+      : r.tab === 'contacts' ? ['k:' + String(r.data.client_key).trim().toLowerCase() + '|' + (normMobile(r.data.mobile).value || '')] : [];
+    for (const k of keys) { if (seen.has(k)) { r.local = `same as ${seen.get(k).sheetName} row ${seen.get(k).row} in this file`; break; } }
     if (!r.local) keys.forEach(k => seen.set(k, r));
   }
   IMP.rows = rows;
 }
-const pendingKeys = () => { const o = {}; IMP.rows.filter(r => r.tab === 'clients' && !r.local).forEach(r => [normMobile(r.data.mobile).value, normGst(r.data.gst)].filter(Boolean).forEach(k => { o[k] = String(r.data.kind || ''); })); return o; };
+/* companies this file creates, by mobile, GST and name, so their people preview cleanly */
+const pendingKeys = () => {
+  const o = {};
+  IMP.rows.filter(r => r.tab === 'clients' && !r.local).forEach(r => {
+    const kind = String(r.data.kind || '');
+    [normMobile(r.data.mobile).value, normGst(r.data.gst)].filter(Boolean).forEach(k => { o[k] = kind; });
+    if (r.name) o['n:' + r.name.toLowerCase()] = kind;
+  });
+  return o;
+};
 async function sendRows(rows, dry, prog) {
   const out = [];
   for (let i = 0; i < rows.length; i += 50) {
     const part = rows.slice(i, i + 50);
-    const r = await API('POST', '/api/import', { version: IMP.version, dry, pending: dry ? pendingKeys() : {}, rows: part.map(x => ({ tab: x.tab, row: x.row, data: x.data })) });
-    r.results.forEach((res, j) => out.push({ ...res, sheet: part[j].sheet, name: res.name || part[j].name }));
+    const r = await API('POST', '/api/import', { template: IMP.tpl, version: IMP.version, dry, pending: dry ? pendingKeys() : {}, rows: part.map(x => ({ sheet: x.sheet, row: x.row, data: x.data })) });
+    r.results.forEach((res, j) => out.push({ ...res, sheet: part[j].sheet, sheetName: part[j].sheetName, name: res.name || part[j].name }));
     if (prog) prog(Math.min(rows.length, i + 50), rows.length);
   }
   return out;
 }
 async function preview() {
-  const local = IMP.rows.filter(r => r.local).map(r => ({ tab: r.tab, sheet: r.sheet, row: r.row, name: r.name, status: 'error', reason: r.local }));
+  const local = IMP.rows.filter(r => r.local).map(r => ({ sheet: r.sheet, sheetName: r.sheetName, row: r.row, name: r.name, status: 'error', reason: r.local }));
   const res = await sendRows(IMP.rows.filter(r => !r.local), true);
-  IMP.results = [...res, ...local].sort((a, b) => TEMPLATE_TABS.findIndex(t => t.sheet === a.sheet) - TEMPLATE_TABS.findIndex(t => t.sheet === b.sheet) || a.row - b.row);
+  const order = TEMPLATES[IMP.tpl].sheets.map(t => t.id);
+  IMP.results = [...res, ...local].sort((a, b) => order.indexOf(a.sheet) - order.indexOf(b.sheet) || a.row - b.row);
 }
 EM.ACTIONS['imp-save'] = async el => {
   busy(el, true);
@@ -583,7 +621,7 @@ EM.ACTIONS['imp-save'] = async el => {
   const prog = (n, of) => { const p = qs('#imp-prog'); if (p) p.textContent = `Saved ${n} of ${of}…`; };
   const done = { added: 0, updated: 0, skipped: IMP.results.length - todo.length };
   try {
-    for (const tab of ['clients', 'contacts', 'opps']) {
+    for (const tab of ['clients', 'contacts', 'lists']) {
       const res = await sendRows(todo.filter(r => r.tab === tab), false, prog);
       for (const r of res) { if (r.status === 'new') done.added++; else if (r.status === 'update') done.updated++; else done.skipped++; }
       const failed = res.filter(r => r.status === 'error');
@@ -687,16 +725,19 @@ EM.ACTIONS['staff-off-go'] = async el => {
 EM.VIEWS.lists = () => {
   if (!isOwner()) return EM.noAccess('Only an Owner edits the lists and stages.');
   const L = D.lists;
-  return `<div class="stack"><div class="stack-s"><h1>Lists &amp; stages</h1><p class="muted" style="max-width:760px">The stages of each pipeline, the cities and the lost reasons. One per line. The last two stages of every pipeline stay Won and Lost. A city already used by a client cannot be removed.</p></div>
+  return `<div class="stack"><div class="stack-s"><h1>Lists &amp; stages</h1><p class="muted" style="max-width:760px">The stages of each pipeline, the cities, the lost reasons, and EGO's product categories and warehouses. One per line. The last two stages of every pipeline stay Won and Lost. A city already used by a client cannot be removed.</p></div>
     <form id="lf2" class="stack" onsubmit="return false"><div class="grid g3">${Object.keys(PIPELINES).map(p => `<div class="field"><label for="ls-${p}">${esc(PIPELINES[p].label)} stages</label><textarea class="input" rows="11" id="ls-${p}" name="${p}">${esc(L.stages[p].join('\n'))}</textarea></div>`).join('')}</div>
       <div class="grid g2"><div class="field"><label for="ls-cities">Cities (City, Region)</label><textarea class="input" rows="12" id="ls-cities" name="cities">${esc(L.cities.map(c => c.city + ', ' + c.region).join('\n'))}</textarea><span class="small muted">Regions: ${REGIONS.join(', ')}</span></div>
       <div class="field"><label for="ls-lost">Lost reasons</label><textarea class="input" rows="12" id="ls-lost" name="lost">${esc(L.lost_reasons.join('\n'))}</textarea></div></div>
+      <div class="grid g2"><div class="field"><label for="ls-cats">Product categories (${L.categories.length})</label><textarea class="input" rows="10" id="ls-cats" name="cats">${esc(L.categories.join('\n'))}</textarea><span class="small muted">EGO's own categories. They fill every product list.</span></div>
+      <div class="field"><label for="ls-wh">Warehouses (${L.warehouses.length}): Name, City, Address</label><textarea class="input" rows="10" id="ls-wh" name="wh" placeholder="Bhiwandi godown, Thane, Gala 12, Mankoli Naka">${esc(L.warehouses.map(w => [w.name, w.city, w.address].filter(Boolean).join(', ')).join('\n'))}</textarea><span class="small muted">For the stock module that comes next.</span></div></div>
       ${errBox('ls-err')}<div class="row"><button class="btn primary" data-act="lists-save">Save lists</button></div></form></div>`;
 };
 EM.VIEWS.lists.title = () => 'Lists & stages';
 EM.ACTIONS['lists-save'] = async el => {
   const lines = id => qs(id).value.split('\n').map(s => s.trim()).filter(Boolean);
-  const b = { stages: Object.fromEntries(Object.keys(PIPELINES).map(p => [p, lines('#ls-' + p)])), cities: lines('#ls-cities').map(l => { const [city, region] = l.split(',').map(s => (s || '').trim()); return { city, region }; }), lost_reasons: lines('#ls-lost') };
+  const b = { stages: Object.fromEntries(Object.keys(PIPELINES).map(p => [p, lines('#ls-' + p)])), cities: lines('#ls-cities').map(l => { const [city, region] = l.split(',').map(s => (s || '').trim()); return { city, region }; }), lost_reasons: lines('#ls-lost'),
+    categories: lines('#ls-cats'), warehouses: lines('#ls-wh').map(l => { const [name, city, ...rest] = l.split(',').map(s => s.trim()); return { name, city: city || '', address: rest.join(', ') }; }) };
   busy(el, true);
   try { const r = await API('POST', '/api/lists', b); D.lists = r.lists; busy(el, false); EM.toast('Lists saved.'); EM.rerender(); } catch (x) { busy(el, false); showErr('ls-err', x.message); }
 };

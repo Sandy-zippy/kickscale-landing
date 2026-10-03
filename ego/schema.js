@@ -8,8 +8,6 @@
    dropdowns. A field added here appears in the form, the 360 page, the server's
    validation and the upload template together, or it is not added at all. */
 
-const TEMPLATE_VERSION = 'EGO-UPLOAD-1';
-
 const CATS = ['LVT', 'SPC', 'Laminate', 'Engineered', 'WPC Tile Deck', 'WPC Plank / Outdoor', 'PVC Soffit & Cladding'];
 
 /* kind -> which division owns it. Architects and design firms sit in BOTH
@@ -21,7 +19,10 @@ const KINDS = {
   architect: { label: 'Architect', plural: 'Architects', group: 'architect', division: 'both' },
   design_firm: { label: 'Design firm', plural: 'Design firms', group: 'firm', division: 'both' },
   retail: { label: 'Retail client', plural: 'Retail clients', group: 'retail', division: 'retail' },
+  direct: { label: 'Client (individual or firm)', plural: 'Clients', group: 'direct', division: 'wholesale' },
 };
+/* Architects and firms are 'both' as a kind, but each RECORD belongs to the company
+   that holds it (EGO Premium and Big E keep separate architect lists, 3 Oct). */
 const KIND_BY_LABEL = Object.fromEntries(Object.entries(KINDS).map(([k, v]) => [v.label.toLowerCase(), k]));
 
 const PIPELINES = {
@@ -30,7 +31,7 @@ const PIPELINES = {
   retail_project: { label: 'Retail project', plural: 'Retail projects', division: 'retail' },
 };
 /* which pipelines a client of each group may have */
-const PIPES_FOR = { dealer: ['wholesale'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'retail_lead', 'retail_project'], firm: ['wholesale', 'retail_lead', 'retail_project'] };
+const PIPES_FOR = { dealer: ['wholesale'], direct: ['wholesale'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'retail_lead', 'retail_project'], firm: ['wholesale', 'retail_lead', 'retail_project'] };
 
 const SOURCES = ['Meta Ads', 'Google Ads', 'Website', 'WhatsApp', 'IndiaMART', 'JustDial', 'QR code', 'Walk-in', 'Referral', 'Field visit', 'Architect', 'Existing relationship', 'Other'];
 
@@ -48,21 +49,25 @@ const DEFAULT_LISTS = {
     ['New Delhi', 'North'], ['Gurugram', 'North'], ['Noida', 'North'], ['Jaipur', 'North'], ['Chandigarh', 'North'], ['Lucknow', 'North'],
     ['Kolkata', 'East'], ['Indore', 'Central'],
   ].map(([city, region]) => ({ city, region })),
+  categories: CATS,
+  warehouses: [],   /* { name, city, address } */
   lost_reasons: ['Price', 'Chose a competitor', 'Architect specified another brand', 'Project on hold', 'Delivery timeline', 'Credit terms', 'No response', 'Other'],
 };
 const REGIONS = ['West', 'South', 'North', 'East', 'Central'];
 
-const DESIGNATIONS = ['Owner', 'Partner', 'Director', 'Purchase', 'Accounts', 'Store manager', 'Sales', 'Site engineer', 'Project manager', 'Architect', 'Interior designer', 'Other'];
+const DESIGNATIONS = ['Owner', 'Partner', 'Director', 'Principal', 'Purchase', 'Accounts', 'Store manager', 'Sales', 'Telecaller', 'Marketing', 'Site engineer', 'Project manager', 'Senior architect', 'Architect', 'Interior designer', 'Other'];
 
 /* A field: key, label, type, where it shows (groups), required, options.
    col: true = its own database column; otherwise it lives in the `extra` JSON.
    Types: text textarea mobile email select multi number money date yesno gst
-   pincode city owner link (to another client). */
-const ALL = ['dealer', 'architect', 'firm', 'retail'];
+   pincode city cities (several from the city list) cats (from the category list)
+   owner link (to another client). */
+const ALL = ['dealer', 'architect', 'firm', 'retail', 'direct'];
+const ORGS = ['dealer', 'architect', 'firm'];
 const CLIENT_FIELDS = [
   { key: 'kind', label: 'Type', type: 'select', opts: Object.keys(KINDS), req: true, col: true, groups: ALL, section: 'Basics' },
   { key: 'name', label: 'Name', type: 'text', req: true, col: true, groups: ALL, section: 'Basics' },
-  { key: 'client_type', label: 'Client type', type: 'select', opts: ['Homeowner', 'Builder', 'Hotel', 'Corporate', 'Retail chain', 'Institution'], req: true, groups: ['retail'], section: 'Basics' },
+  { key: 'client_type', label: 'Client type', type: 'select', opts: ['Individual', 'Homeowner', 'Builder', 'Contractor', 'Hotel', 'Corporate', 'Retail chain', 'Institution', 'Other firm'], req: true, groups: ['retail', 'direct'], section: 'Basics' },
   { key: 'mobile', label: 'Mobile', type: 'mobile', req: true, col: true, groups: ALL, section: 'Basics' },
   { key: 'whatsapp', label: 'WhatsApp number', type: 'mobile', col: true, groups: ALL, section: 'Basics' },
   { key: 'mobile_alt', label: 'Alternate mobile', type: 'mobile', col: true, groups: ALL, section: 'Basics' },
@@ -71,14 +76,16 @@ const CLIENT_FIELDS = [
   { key: 'locality', label: 'Area or locality', type: 'text', groups: ALL, section: 'Basics' },
   { key: 'pincode', label: 'Pincode', type: 'pincode', groups: ALL, section: 'Basics' },
   { key: 'address', label: 'Address', type: 'textarea', groups: ALL, section: 'Basics' },
+  { key: 'areas_covered', label: 'Areas they cover', type: 'cities', groups: ORGS, section: 'Basics' },
+  { key: 'other_offices', label: 'Other offices or branches (areas)', type: 'text', groups: ORGS, section: 'Basics' },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true, col: true, groups: ALL, section: 'Basics' },
   { key: 'source', label: 'Came from', type: 'select', opts: SOURCES, col: true, groups: ALL, section: 'Basics' },
   { key: 'status', label: 'Status', type: 'select', opts: ['Active', 'Prospect', 'Inactive'], col: true, groups: ALL, section: 'Basics' },
 
   { key: 'legal_name', label: 'Legal name (as on GST)', type: 'text', groups: ['dealer', 'firm'], section: 'Business' },
-  { key: 'gst', label: 'GST number', type: 'gst', col: true, groups: ['dealer', 'firm', 'retail'], section: 'Business' },
+  { key: 'gst', label: 'GST number', type: 'gst', col: true, groups: ['dealer', 'firm', 'retail', 'direct'], section: 'Business' },
   { key: 'parent_id', label: 'Buys through', type: 'link', to: ['distributor', 'dealer'], col: true, groups: ['dealer'], kinds: ['dealer', 'sub_dealer'], section: 'Business' },
-  { key: 'grade', label: 'Grade', type: 'select', opts: ['Platinum', 'A', 'B', 'C'], col: true, groups: ['dealer'], section: 'Business' },
+  { key: 'grade', label: 'Dealer rating', type: 'select', opts: ['Platinum', 'A', 'B', 'C'], col: true, groups: ['dealer'], section: 'Business' },
   { key: 'priority200', label: 'Priority 200', type: 'yesno', groups: ['dealer'], section: 'Business' },
   { key: 'since', label: 'Working with EGO since', type: 'date', groups: ['dealer', 'firm'], section: 'Business' },
   { key: 'credit_limit', label: 'Credit limit (₹)', type: 'money', groups: ['dealer'], section: 'Business' },
@@ -86,8 +93,8 @@ const CLIENT_FIELDS = [
   { key: 'specialist_id', label: 'Specialist owner', type: 'owner', groups: ['dealer'], section: 'Business' },
   { key: 'contact_every_days', label: 'Call or visit every (days)', type: 'number', groups: ['dealer'], section: 'Business' },
 
-  { key: 'categories', label: 'Categories bought', type: 'multi', opts: CATS, groups: ['dealer'], section: 'Products and market' },
-  { key: 'categories_missing', label: 'Categories not bought yet', type: 'multi', opts: CATS, groups: ['dealer'], section: 'Products and market' },
+  { key: 'categories', label: 'Categories bought', type: 'cats', groups: ['dealer'], section: 'Products and market' },
+  { key: 'categories_missing', label: 'Categories not bought yet', type: 'cats', groups: ['dealer'], section: 'Products and market' },
   { key: 'brands_sold', label: 'Other brands they sell', type: 'text', groups: ['dealer'], section: 'Products and market' },
   { key: 'competitors', label: 'Main competitors nearby', type: 'text', groups: ['dealer'], section: 'Products and market' },
   { key: 'customer_types', label: 'They sell to', type: 'multi', opts: ['Homeowners', 'Builders', 'Architects and designers', 'Contractors', 'Corporate offices', 'Hotels', 'Institutions'], groups: ['dealer'], section: 'Products and market' },
@@ -110,12 +117,13 @@ const CLIENT_FIELDS = [
   { key: 'specialisation', label: 'Specialisation', type: 'select', opts: ['Luxury villas', 'Apartments', 'Workplace', 'Retail fit-outs', 'Hospitality', 'Institutional', 'Other'], groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'focus', label: 'Focus', type: 'select', opts: ['Residential', 'Corporate', 'Hospitality', 'Retail', 'Mixed'], groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'team_size', label: 'Team size', type: 'number', groups: ['firm'], section: 'Practice' },
+  { key: 'rating', label: 'Architect rating', type: 'select', opts: ['A', 'B', 'C'], groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'potential', label: 'Potential', type: 'select', opts: ['High', 'Medium', 'Low'], groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'design500', label: 'Design 500 member', type: 'yesno', groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'relationship', label: 'Relationship', type: 'select', opts: ['EGO direct', 'Via dealer'], groups: ['architect'], section: 'Practice' },
   { key: 'connected_dealers', label: 'Connected dealers', type: 'text', groups: ['architect'], section: 'Practice' },
 
-  { key: 'architect_id', label: 'Architect', type: 'link', to: ['architect'], col: true, groups: ['retail'], section: 'Retail' },
+  { key: 'architect_id', label: 'Architect', type: 'link', to: ['architect', 'design_firm'], col: true, groups: ['retail'], section: 'Retail' },
   { key: 'campaign', label: 'Campaign', type: 'text', groups: ['retail'], section: 'Retail' },
   { key: 'condition_tag', label: 'Condition tag', type: 'select', opts: ['Hot', 'Warm', 'Cold'], groups: ['retail'], section: 'Retail' },
 
@@ -127,7 +135,8 @@ const CLIENT_FIELDS = [
 
 const CONTACT_FIELDS = [
   { key: 'name', label: 'Name', type: 'text', req: true },
-  { key: 'designation', label: 'Designation', type: 'select', opts: DESIGNATIONS },
+  { key: 'designation', label: 'Role', type: 'select', opts: DESIGNATIONS },
+  { key: 'responsibilities', label: 'Responsibilities', type: 'text' },
   { key: 'mobile', label: 'Mobile', type: 'mobile', req: true },
   { key: 'whatsapp', label: 'WhatsApp number', type: 'mobile' },
   { key: 'email', label: 'Email', type: 'email' },
@@ -139,7 +148,7 @@ const OPP_FIELDS = [
   { key: 'title', label: 'Title', type: 'text', req: true },
   { key: 'stage', label: 'Stage', type: 'stage', req: true },
   { key: 'value', label: 'Value (₹)', type: 'money' },
-  { key: 'products', label: 'Products', type: 'multi', opts: CATS },
+  { key: 'products', label: 'Products', type: 'cats' },
   { key: 'area_sqft', label: 'Area (sq ft)', type: 'number' },
   { key: 'application', label: 'Room or application', type: 'text' },
   { key: 'budget', label: 'Budget band', type: 'select', opts: ['Under 2 lakh', '2 to 5 lakh', '5 to 10 lakh', 'Above 10 lakh'] },
@@ -325,6 +334,8 @@ function cleanValue(f, v, ctx, whole) {
       for (const x of arr) { const hit = matchOpt(f.opts, x); if (hit == null) return { error: `"${x}" is not in the list` }; if (!out.includes(hit)) out.push(hit); }
       return { value: out };
     }
+    case 'cats': return cleanValue({ ...f, type: 'multi', opts: lists.categories || CATS }, v, ctx, whole);
+    case 'cities': return cleanValue({ ...f, type: 'multi', opts: lists.cities.map(c => c.city) }, v, ctx, whole);
     case 'city': {
       if (v === '') return { value: '' };
       const hit = lists.cities.find(c => c.city.toLowerCase() === String(v).toLowerCase());
@@ -362,31 +373,54 @@ function matchOpt(opts, v, labels) {
 const optLabel = (f, o) => f.key === 'kind' ? KINDS[o].label : f.key === 'pipeline' ? PIPELINES[o].label : o;
 const regionOf = (lists, city) => { const c = (lists || DEFAULT_LISTS).cities.find(x => x.city === city); return c ? c.region : ''; };
 
-/* ---------------------------------------------------------------- the Excel template
+/* ---------------------------------------------------------------- the Excel templates
 
-   The tabs and their columns, derived from the fields above so a new field
-   reaches the template without a second edit. The header text IS the mapping:
-   the importer reads a column by its header, so headers are generated here and
-   compared after normHeader() on the way back in. */
-const TEMPLATE_TABS = [
-  { id: 'dealers', sheet: 'Dealers & distributors', tab: 'clients', kinds: ['distributor', 'dealer', 'sub_dealer'] },
-  { id: 'architects', sheet: 'Architects & firms', tab: 'clients', kinds: ['architect', 'design_firm'] },
-  { id: 'retail', sheet: 'Retail clients', tab: 'clients', kinds: ['retail'] },
-  { id: 'contacts', sheet: 'Contacts', tab: 'contacts' },
-  { id: 'opps', sheet: 'Opportunities', tab: 'opps' },
+   TWO files, one per company (3 Oct): EGO Premium uploads only in Wholesale, Big E
+   only in Retail. Each sheet lists its plain-language headers; the header text IS the
+   mapping (compared after normHeader), so headers are generated here and nowhere else.
+   `first` puts the columns a person fills first at the front: who they are, where,
+   and the rating; every remaining field of the kind follows in registry order. */
+const ORG_FIRST = ['name', 'kind', 'mobile', 'whatsapp', 'email', 'city', 'locality', 'areas_covered', 'other_offices'];
+const ORG_HEADS = { email: 'Email ID', city: 'City of main office', locality: 'Area of main office', address: 'Full address of main office', owner_id: 'Who looks after them at EGO (username or name)', mobile: 'Office mobile (10 digits)' };
+const PEOPLE = (id, sheet, of, kinds) => ({ id, sheet, tab: 'contacts', kinds, heads: {
+  client_key: `${of} (name exactly as on the ${of === 'Company' ? 'Dealer companies' : 'Architect firms'} sheet, or its mobile or GST)`,
+  name: 'Person name', designation: 'Role', responsibilities: 'Responsibilities (what they handle)', mobile: 'Mobile number (10 digits)',
+  whatsapp: 'WhatsApp number, if different', email: 'Email ID', is_primary: 'Main person to talk to (Yes or No)' } });
+const LISTS_SHEET = { id: 'ego_lists', sheet: 'Products & warehouses', tab: 'lists' };
+const SHEETS = {
+  dealers: { id: 'dealers', sheet: 'Dealer companies', tab: 'clients', kinds: ['distributor', 'dealer', 'sub_dealer'], first: [...ORG_FIRST, 'grade'],
+    heads: { ...ORG_HEADS, name: 'Dealer company name', kind: 'Type (Distributor, Dealer or Sub-dealer)', parent_id: 'Buys through (name, mobile or GST of their distributor or dealer)' } },
+  dealer_people: PEOPLE('dealer_people', 'Dealer people', 'Company', ['distributor', 'dealer', 'sub_dealer']),
+  architects: { id: 'architects', sheet: 'Architect firms', tab: 'clients', kinds: ['design_firm', 'architect'], first: [...ORG_FIRST, 'rating'], skip: ['firm_id'],
+    heads: { ...ORG_HEADS, name: 'Architect firm name', kind: 'Firm or solo architect (Design firm or Architect)', areas_covered: 'Areas they work in' } },
+  architect_people: PEOPLE('architect_people', 'Architect people', 'Firm', ['design_firm', 'architect']),
+};
+const CLIENTS_SHEET = kind => ({ id: 'clients', sheet: 'Clients', tab: 'clients', kinds: [kind], first: ['name', 'client_type', 'mobile', 'whatsapp', 'email', 'city', 'locality'], skip: ['architect_id'],
+  heads: { email: 'Email ID', name: 'Client name (person or firm)', client_type: 'Individual or what kind of firm', city: 'City', locality: 'Area', owner_id: 'Who looks after them at EGO (username or name)', mobile: 'Mobile number (10 digits)' } });
+const TEMPLATES = {
+  ws: { id: 'ws', company: 'EGO Premium', division: 'wholesale', version: 'EGO-WS-1', file: 'EGO-Premium-Upload-Template.xlsx',
+    sheets: [SHEETS.dealers, SHEETS.dealer_people, SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('direct'), LISTS_SHEET] },
+  bige: { id: 'bige', company: 'Big E', division: 'retail', version: 'BIGE-1', file: 'Big-E-Upload-Template.xlsx',
+    sheets: [SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('retail'), LISTS_SHEET] },
+};
+const templateFor = division => Object.values(TEMPLATES).find(t => t.division === division);
+const LIST_COLS = [
+  { key: 'category', type: 'text', header: 'Product category' },
+  { key: 'wh_name', type: 'text', header: 'Warehouse name' },
+  { key: 'wh_city', type: 'text', header: 'Warehouse city' },
+  { key: 'wh_address', type: 'text', header: 'Warehouse address' },
 ];
-const HINT = { mobile: ' (10 digits)', multi: ' (separate with commas)', date: ' (DD/MM/YYYY)', owner: ' (login or name)', pincode: ' (6 digits)' };
-const linkHint = f => ` (mobile or GST of the ${f.to.map(k => KINDS[k].label.toLowerCase()).join(' or ')})`;
+const HINT = { mobile: ' (10 digits)', multi: ' (separate with commas)', cats: ' (separate with commas)', cities: ' (cities, separate with commas)', date: ' (DD/MM/YYYY)', owner: ' (username or name)', pincode: ' (6 digits)' };
 function templateColumns(t) {
-  const col = (f, header) => ({ key: f.key, type: f.type, opts: f.opts, req: !!f.req, header: (header || f.label + (f.type === 'link' ? linkHint(f) : HINT[f.type] || '')) + (f.req ? ' *' : '') });
-  if (t.tab === 'clients') {
-    const keys = new Set(t.kinds.flatMap(k => fieldsFor(k).map(f => f.key)));
-    return CLIENT_FIELDS.filter(f => keys.has(f.key) && !(f.key === 'kind' && t.kinds.length === 1))
-      .map(f => f.key === 'kind' ? { ...col(f), opts: t.kinds } : col(f));
-  }
-  const key = { key: 'client_key', type: 'text', req: true, header: 'Client mobile or GST *' };
-  if (t.tab === 'contacts') return [key, ...CONTACT_FIELDS.map(f => col(f))];
-  return [key, ...OPP_FIELDS.map(f => f.key === 'contact_id' ? { key: 'contact_name', type: 'text', header: 'Point of contact (name, as on the Contacts sheet)' } : f.key === 'stage' ? { ...col(f), opts: [] } : col(f))];
+  const heads = t.heads || {};
+  const col = f => ({ key: f.key, type: f.type, opts: f.opts, req: !!f.req, header: (heads[f.key] || f.label + (f.type === 'link' ? ' (name, mobile or GST)' : HINT[f.type] || '')) + (f.req ? ' *' : '') });
+  if (t.tab === 'lists') return LIST_COLS;
+  if (t.tab === 'contacts') return [{ key: 'client_key', type: 'text', req: true, header: heads.client_key + ' *' }, ...CONTACT_FIELDS.map(col)];
+  const keys = new Set(t.kinds.flatMap(k => fieldsFor(k).map(f => f.key)));
+  const fields = CLIENT_FIELDS.filter(f => keys.has(f.key) && !(t.skip || []).includes(f.key) && !(f.key === 'kind' && t.kinds.length === 1));
+  const order = t.first || [], rank = f => order.includes(f.key) ? order.indexOf(f.key) : order.length;
+  return fields.map((f, i) => [f, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1])
+    .map(([f]) => f.key === 'kind' ? { ...col(f), opts: t.kinds } : col(f));
 }
 const normHeader = h => String(h == null ? '' : h).replace(/\*/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 /* an example row is shown in every sheet and never imported */
