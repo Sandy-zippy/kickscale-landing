@@ -330,6 +330,15 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
   .mod,.q{break-inside:avoid}
 }
 </style>
+<style>
+#safilm{position:absolute;inset:0;overflow:hidden;z-index:0;background:#0a0b0a;pointer-events:none}
+#safilm video{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .9s ease}
+#safilm::after{content:"";position:absolute;inset:0;background:
+  linear-gradient(180deg,rgba(10,11,10,.62),rgba(10,11,10,.78) 55%,rgba(10,11,10,.92))}
+#salogin{position:relative}
+#salogin .gate-card{position:relative;z-index:1}
+@media (prefers-reduced-motion: reduce){#safilm video{display:none}}
+</style>
 </head>
 <body>
 
@@ -357,6 +366,11 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
       <span class="btext"><b>EGO Premium</b><span>EGO Master &middot; Complete Build Plan</span></span>
       <span class="bgo">&rarr;</span>
     </button>
+    <button class="badge" onclick="location.href='../ego/'">
+      <span class="bicon">EM</span>
+      <span class="btext"><b>EGO Master (live)</b><span>EGO Premium &amp; Big E &middot; real records, each person signs in with their own login</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
     <button class="badge" onclick="goClientLogin('carcart')">
       <span class="bicon">CC</span>
       <span class="btext"><b>Car Cart</b><span>Pre-owned luxury cars &middot; Catalogue + Stock Console</span></span>
@@ -369,7 +383,12 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     </button>
     <button class="badge" onclick="goClientLogin('royale')">
       <span class="bicon">RC</span>
-      <span class="btext"><b>Royale Collections</b><span>Corporate gifting &middot; Product Discovery Portal</span></span>
+      <span class="btext"><b>Royale Collections</b><span>Corporate gifting &middot; Discovery Portal + Gifting Cockpit</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
+    <button class="badge" onclick="goClientLogin('saasya')">
+      <span class="bicon">SM</span>
+      <span class="btext"><b>Saasya Men</b><span>Kolkata menswear &middot; bespoke, the floor and the designers</span></span>
       <span class="bgo">&rarr;</span>
     </button>
     <div class="dir-note"><span>&#9679;</span><span>More client workspaces appear here as Zippyscale builds them out.</span></div>
@@ -418,6 +437,30 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
   </div>
 </div>
 
+<!-- ROYALE: TWO PRODUCTS, ONE PASSWORD -->
+<div id="rcpick" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Royale Collections &times; Zippyscale</div>
+    <h1>Two workspaces</h1>
+    <p class="sub">The portal you already use, and the cockpit built around the whole operation. They are separate products, so pick one.</p>
+
+    <button class="badge" onclick="location.href='../royale/'">
+      <span class="bicon">PD</span>
+      <span class="btext"><b>Product Discovery Portal</b><span>Search the catalogue, build a shortlist, send it on WhatsApp</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
+
+    <button class="badge" style="margin-top:12px" onclick="location.href='../royale/cockpit/console.html'">
+      <span class="bicon">GC</span>
+      <span class="btext"><b>Gifting Cockpit</b><span>Briefs, quotes, sourcing, orders and the agent desk</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
+
+    <p class="login-note">The cockpit also has a client order view, a gift picker and a vendor portal. Sign in with <b>sagar</b> and the password <b>royale26</b>. Every product, vendor and order inside is sample data created by Zippyscale, not Royale's own records.</p>
+  </div>
+</div>
+
 <!-- VAARAHI SILKS LOGIN -->
 <div id="valogin" class="gatewrap hidden">
   <div class="gate-card">
@@ -435,6 +478,28 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     </div>
     <div class="login-err" id="vaerr"></div>
     <button class="btn-primary" onclick="tryVaarahi()">Enter workspace</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+  </div>
+</div>
+
+<!-- SAASYA MEN LOGIN -->
+<div id="salogin" class="gatewrap hidden">
+  <div id="safilm" aria-hidden="true"></div>
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Saasya Men &times; Zippyscale</div>
+    <h1>The cockpit</h1>
+    <p class="sub">A clickable walkthrough of the Agentic Cockpit built for Saasya Men: the showroom, the clients and their households, our operations and the designers&rsquo; floor, the fabric library, the money and the agents. Sign in as the owner, the operations manager, accounts, a stylist, a salesperson or a master tailor, and the screen changes with the person. Every client, order, fabric and figure inside is sample data created by Zippyscale, not Sasya&rsquo;s own records.</p>
+    <div class="field">
+      <label for="sau">Username</label>
+      <input id="sau" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. saasya" onkeydown="if(event.key==='Enter')trySaasya()">
+    </div>
+    <div class="field">
+      <label for="sap">Password</label>
+      <input id="sap" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')trySaasya()">
+    </div>
+    <div class="login-err" id="saerr"></div>
+    <button class="btn-primary" onclick="trySaasya()">Enter workspace</button>
     <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
   </div>
 </div>
@@ -1849,13 +1914,41 @@ async function downloadPDF(){
 function hideGates(){document.querySelectorAll('.gatewrap').forEach(el=>el.classList.add('hidden'));}
 function goPortal(){hideGates();document.getElementById('portal').classList.remove('hidden');}
 function goDirectory(){hideGates();document.getElementById('directory').classList.remove('hidden');}
-const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'] };
+const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'], saasya:['salogin','saerr','sau'] };
+/* Royale has two products behind one password, so the gate opens a chooser rather
+   than guessing which one they wanted. */
+function showRoyalePick(){
+  document.getElementById('rclogin').classList.add('hidden');
+  document.getElementById('rcpick').classList.remove('hidden');
+}
+/* The Saasya gate runs a film behind it. It is 9.5 MB, so it is built only when
+   that one gate opens, never on the portal, and it removes itself if it cannot
+   play. A client who asked for less motion gets the still ground instead. */
+let saasyaFilmUp = false;
+function saasyaFilm(){
+  if(saasyaFilmUp) return;
+  saasyaFilmUp = true;
+  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const host = document.getElementById('safilm');
+  if(!host) return;
+  const v = document.createElement('video');
+  v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+  v.setAttribute('playsinline',''); v.setAttribute('aria-hidden','true');
+  v.preload = 'metadata';
+  v.src = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260818_072341_50851634-bbc3-4c33-9acc-7647d4db44aa.mp4';
+  v.addEventListener('playing', ()=>{ v.style.opacity = '1'; });
+  v.addEventListener('error', ()=>{ v.remove(); });
+  host.appendChild(v);
+  const p = v.play();
+  if(p && p.catch) p.catch(()=>{ v.remove(); });
+}
 function goClientLogin(key){
   hideGates();
   const [gate,err,first] = GATES[key] || ['clientlogin','lerr','u'];
   document.getElementById(gate).classList.remove('hidden');
   document.getElementById(err).textContent='';
   document.getElementById(first).focus();
+  if(key==='saasya') saasyaFilm();
 }
 const CARCART = { user:"carcart", pass:"Carcart@hyd26" };
 function tryCarCart(){
@@ -1873,11 +1966,19 @@ function tryVaarahi(){
   document.getElementById('vaerr').textContent='Wrong username or password.';
 }
 
+const SAASYA = { user:"saasya", pass:"Saasya@men26" };
+function trySaasya(){
+  const u=document.getElementById('sau').value.trim().toLowerCase();
+  const p=document.getElementById('sap').value;
+  if(u===SAASYA.user && p===SAASYA.pass){ location.href='../saasya/'; return; }
+  document.getElementById('saerr').textContent='Wrong username or password.';
+}
+
 const ROYALE = { user:"royale", pass:"Royale@26" };
 function tryRoyale(){
   const u=document.getElementById('rcu').value.trim().toLowerCase();
   const p=document.getElementById('rcp').value;
-  if(u===ROYALE.user && p===ROYALE.pass){ try{ sessionStorage.setItem('royaleIn',1); }catch(e){} location.href='../royale/'; return; }
+  if(u===ROYALE.user && p===ROYALE.pass){ try{ sessionStorage.setItem('royaleIn',1); }catch(e){} showRoyalePick(); return; }
   document.getElementById('rcerr').textContent='Wrong username or password.';
 }
 
