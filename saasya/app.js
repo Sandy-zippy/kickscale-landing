@@ -32,6 +32,35 @@
     return '#/home';
   }
 
+  /* ---------- light and dark ---------- */
+
+  var THEME_KEY = 'saasya.theme';
+
+  function themeNow() {
+    return document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  }
+  /* One attribute on <html>. Every colour in the sheet is a custom property, so
+     there is one set of rules and no second stylesheet. */
+  function applyTheme(t) {
+    if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    else document.documentElement.removeAttribute('data-theme');
+    var light = t === 'light';
+    [].forEach.call(document.querySelectorAll('.tsw'), function (b) {
+      b.setAttribute('aria-pressed', light ? 'true' : 'false');
+      b.setAttribute('aria-label', 'Appearance: ' + (light ? 'Light' : 'Dark') +
+        '. Switch to ' + (light ? 'dark' : 'light') + ' mode.');
+      var l = b.querySelector('.tsw-l');
+      if (l) l.textContent = light ? 'Light' : 'Dark';
+    });
+  }
+  GE.theme = function (t) {
+    if (t !== 'light' && t !== 'dark') t = themeNow() === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem(THEME_KEY, t); } catch (e) {}
+    applyTheme(t);
+    return t;
+  };
+  GE.themeNow = themeNow;
+
   /* ---------- the loader: their monogram drawing itself ---------- */
 
   var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -263,6 +292,7 @@
         GE.reset();
       return;
     }
+    if (act === 'theme') { GE.theme(); return; }
     if (act === 'closemodal') { GE.closeModal(); return; }
     if (act === 'closedrawer') { GE.closeDrawer(); return; }
     if (GE.ACTIONS[act]) {
@@ -298,6 +328,9 @@
 
   GE.boot = function () {
     document.documentElement.classList.add('js');
+    var saved = null;
+    try { saved = localStorage.getItem(THEME_KEY); } catch (err) {}
+    applyTheme(saved === 'light' ? 'light' : 'dark');
     var seen = null;
     try { seen = sessionStorage.getItem(GE.KEY + '.seen'); sessionStorage.setItem(GE.KEY + '.seen', '1'); } catch (err) {}
     if (seen) showBoot(true);

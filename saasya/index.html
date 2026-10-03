@@ -14,24 +14,9 @@
    White appears only at low opacity, as glass and as hairlines.
    ════════════════════════════════════════════════════════════════════ */
 :root{
- /* theirs */
+ /* theirs, and these five do not change with the mode */
  --black:#0a0b0a;--charcoal:#12140f;--gold:#a9835a;--gold-soft:#cba97c;--cream:#f1e9da;
- /* built out of theirs */
- --ink:#f1e9da;
- /* Three steps of cream, and every one of them clears 4.5:1 on charcoal, on glass
-    and inside the gold-washed note. On a dark ground you do not get four. */
- --mut:rgba(241,233,218,.72);
- --dim:rgba(241,233,218,.58);
- --faint:rgba(241,233,218,.54);
- --line:rgba(241,233,218,.1);
- --line2:rgba(241,233,218,.17);
- --glass:rgba(241,233,218,.045);
- --glass2:rgba(241,233,218,.08);
- --glass3:rgba(241,233,218,.13);
- --goldline:rgba(169,131,90,.4);
- --goldwash:rgba(169,131,90,.14);
- --shine:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.45) 48%,transparent 76%);
- --metal:linear-gradient(105deg,rgba(241,233,218,.13),rgba(241,233,218,.04) 42%,rgba(241,233,218,.11));
+ --shine-c:rgba(255,255,255,.45);
  /* type */
  --s:Inter,system-ui,-apple-system,sans-serif;
  --d:"Instrument Serif",Georgia,serif;
@@ -39,7 +24,88 @@
  --e:cubic-bezier(.16,1,.3,1);--e2:cubic-bezier(.4,0,.2,1);
  --t1:.16s;--t2:.3s;--t3:.65s;--in:.7s;--seam:1.15s;
  /* the scale steps with the screen, the way the reference does */
- --fs:15px;--h1:33px;--h2:21px;--h3:16px;--pad:34px;--gap:16px;--r:16px;--rs:9px;--air:30px}
+ --fs:15px;--h1:33px;--h2:21px;--h3:16px;--pad:34px;--gap:16px;--r:16px;--rs:9px;--air:30px;
+ /* resolved where it is used, so the light block's --shine-c flows through */
+ --shine:linear-gradient(115deg,transparent 20%,var(--shine-c) 48%,transparent 76%)}
+
+/* ════ DARK, the default. He chose it against the cream on 2 October. ════
+   Nothing reads prefers-color-scheme: a first visit and the client demo both
+   land here, and only a deliberate flip of the switch changes it. */
+:root{
+ --stage:#0a0b0a;          /* the gate and the loader: the ceremony ground */
+ --deep:#0a0b0a;           /* the sidebar */
+ --surface:#12140f;        /* the working ground */
+ --panel:rgba(241,233,218,.045);
+ --raised:#171915;         /* modal, toast, a select's own menu */
+ --ink:#f1e9da;
+ /* Three steps of one ink, every one over 4.5:1 on every ground in this mode.
+    A dark ground does not give you four. The fourth step is size and tracking. */
+ --mut:rgba(241,233,218,.74);
+ --dim:rgba(241,233,218,.62);
+ --faint:rgba(241,233,218,.58);
+ /* GOLD IS NEVER TEXT. #a9835a is 5.37:1 on charcoal but 3.86:1 on the lightest
+    glass, so every gold word takes --gold-ink and every gold fill takes --gold. */
+ --gold-ink:#cba97c;
+ --line:rgba(241,233,218,.1);
+ --line2:rgba(241,233,218,.17);
+ --glass:rgba(241,233,218,.045);
+ --glass2:rgba(241,233,218,.08);
+ --glass3:rgba(241,233,218,.13);
+ --tile:rgba(241,233,218,.08);
+ --ghost:linear-gradient(140deg,rgba(241,233,218,.085),rgba(241,233,218,.02));
+ --rail:linear-gradient(180deg,rgba(241,233,218,.055),rgba(241,233,218,.012));
+ --metal:linear-gradient(105deg,rgba(241,233,218,.13),rgba(241,233,218,.04) 42%,rgba(241,233,218,.11));
+ --hi:rgba(255,255,255,.12);
+ --goldline:rgba(169,131,90,.4);
+ --goldwash:rgba(169,131,90,.14);
+ --scrim:rgba(10,11,10,.62);
+ --scrim2:rgba(10,11,10,.68);
+ --shadow:rgba(10,11,10,.6);
+ --grain:.05;
+ --filmfilter:none;
+ --filmscrim:radial-gradient(66% 58% at 50% 46%,rgba(10,11,10,.93),rgba(10,11,10,.72) 48%,rgba(10,11,10,.55)),
+  linear-gradient(180deg,rgba(10,11,10,.62),rgba(10,11,10,.3) 40%,rgba(10,11,10,.86));
+ color-scheme:dark}
+
+/* ════ LIGHT. The same system, re-derived on cream, not a second stylesheet. ════
+   The gold inverts. #cba97c is 2.08:1 on paper and even #a9835a is only 3.26:1,
+   so the gold that carries WORDS here is #7a5e41, a darker tone of their own
+   gold at 5.11 to 5.99:1. Every gold FILL stays #a9835a. */
+:root[data-theme="light"]{
+ --stage:#fbf8f2;
+ --deep:#f4efe5;
+ --surface:#fbf8f2;
+ --panel:#ffffff;
+ --raised:#ffffff;
+ --ink:#0a0b0a;
+ --mut:rgba(10,11,10,.76);
+ --dim:rgba(10,11,10,.66);
+ --faint:rgba(10,11,10,.62);
+ --gold-ink:#7a5e41;
+ --line:rgba(10,11,10,.1);
+ --line2:rgba(10,11,10,.16);
+ --glass:rgba(10,11,10,.035);
+ --glass2:rgba(10,11,10,.055);
+ --glass3:rgba(10,11,10,.085);
+ --tile:#ffffff;
+ --ghost:linear-gradient(140deg,rgba(10,11,10,.055),rgba(10,11,10,.012));
+ --rail:linear-gradient(180deg,rgba(10,11,10,.045),rgba(10,11,10,.012));
+ --metal:linear-gradient(105deg,rgba(10,11,10,.075),rgba(10,11,10,.02) 42%,rgba(10,11,10,.065));
+ --hi:rgba(255,255,255,.85);
+ --goldline:rgba(169,131,90,.55);
+ --goldwash:rgba(169,131,90,.1);
+ --scrim:rgba(10,11,10,.4);
+ --scrim2:rgba(10,11,10,.46);
+ --shadow:rgba(10,11,10,.16);
+ --grain:.035;
+ /* the film is white silk on black. Inverted it is ink silk on paper, which is
+    the same cloth in a lit room. */
+ --filmfilter:invert(1);
+ --filmscrim:radial-gradient(66% 58% at 50% 46%,rgba(251,248,242,.93),rgba(251,248,242,.76) 48%,rgba(251,248,242,.6)),
+  linear-gradient(180deg,rgba(251,248,242,.66),rgba(251,248,242,.34) 40%,rgba(251,248,242,.88));
+ --shine-c:rgba(255,255,255,.92);
+ color-scheme:light}
+
 @media(min-width:1600px){:root{--fs:15.5px;--h1:37px;--pad:48px;--air:36px}}
 @media(min-width:1920px){:root{--fs:16px;--h1:41px;--pad:64px;--air:40px;--r:18px}}
 @media(min-width:2560px){:root{--fs:17px;--h1:48px;--pad:88px;--air:48px;--r:20px}}
@@ -47,8 +113,8 @@
 @media(max-width:900px){:root{--pad:16px;--air:22px;--h1:27px;--r:14px}}
 
 *{box-sizing:border-box}
-html{background:var(--black)}
-body{margin:0;background:var(--charcoal);color:var(--ink);overflow-x:clip;
+html{background:var(--surface)}
+body{margin:0;background:var(--surface);color:var(--ink);overflow-x:clip;
  font:var(--fs)/1.6 var(--s);font-optical-sizing:auto;letter-spacing:-.006em;
  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 h1,h2,h3,h4{margin:0;font-family:var(--s);font-weight:500;line-height:1.1;letter-spacing:-.028em}
@@ -60,15 +126,15 @@ a{color:inherit}
 
 /* the one serif phrase. Instrument Serif italic, on a word or two, never more. */
 em.ser{font-family:var(--d);font-style:italic;font-size:1.08em;letter-spacing:-.03em;
- font-weight:400;color:rgba(241,233,218,.72)}
-.gcard em.ser,#boot em.ser{color:var(--gold-soft)}
+ font-weight:400;color:var(--mut)}
+.gcard em.ser,#boot em.ser{color:var(--gold-ink)}
 
 /* ── one focus ring for the whole house ── */
 :focus{outline:none}
-:focus-visible{outline:2px solid var(--gold-soft);outline-offset:3px;border-radius:var(--rs)}
+:focus-visible{outline:2px solid var(--gold-ink);outline-offset:3px;border-radius:var(--rs)}
 
 /* ── grain, at the very top of the stack ── */
-body::after{content:"";position:fixed;inset:0;z-index:400;pointer-events:none;opacity:.05;
+body::after{content:"";position:fixed;inset:0;z-index:400;pointer-events:none;opacity:var(--grain);
  background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E")}
 
 /* ══ the monogram ══ */
@@ -88,20 +154,18 @@ body::after{content:"";position:fixed;inset:0;z-index:400;pointer-events:none;op
 /* ══ the moving cloth, behind the gate and the loader ══
    The poster is local and 31 KB, so the ground is there on the first frame.
    The film is 9.5 MB and nothing waits on it. */
-.cloth{position:absolute;inset:0;overflow:hidden;background:var(--black) center/cover no-repeat;
- background-image:url(assets/gate-poster.jpg)}
+.cloth{position:absolute;inset:0;overflow:hidden;background:var(--stage)}
+.cloth::before{content:"";position:absolute;inset:0;filter:var(--filmfilter);
+ background:url(assets/gate-poster.jpg) center/cover no-repeat}
 .cloth video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
- opacity:0;transition:opacity 1.1s var(--e2)}
+ filter:var(--filmfilter);opacity:0;transition:opacity 1.1s var(--e2)}
 .cloth video.on{opacity:.68}
-.cloth::after{content:"";position:absolute;inset:0;
- background:
-  radial-gradient(66% 58% at 50% 46%,rgba(10,11,10,.93),rgba(10,11,10,.72) 48%,rgba(10,11,10,.55)),
-  linear-gradient(180deg,rgba(10,11,10,.62),rgba(10,11,10,.3) 40%,rgba(10,11,10,.86))}
+.cloth::after{content:"";position:absolute;inset:0;background:var(--filmscrim)}
 
 /* ══ the loader ══ */
 #boot{position:fixed;inset:0;z-index:260;display:flex;flex-direction:column;
- align-items:center;justify-content:center;gap:24px;background:var(--black);
- color:var(--gold);transition:opacity .45s var(--e2)}
+ align-items:center;justify-content:center;gap:24px;background:var(--stage);
+ color:var(--gold-ink);transition:opacity .45s var(--e2)}
 #boot .bmark,#boot .bword{position:relative;z-index:1}
 #boot .bmark{width:84px}
 #boot .bword{font:400 10.5px var(--s);letter-spacing:.5em;text-transform:uppercase;
@@ -116,10 +180,10 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
 
 /* ══ sign in ══ */
 #gate{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;
- padding:30px 22px;overflow:auto;background:var(--black)}
+ padding:30px 22px;overflow:auto;background:var(--stage)}
 .gcard{position:relative;z-index:1;width:100%;max-width:500px;text-align:center;margin:auto}
-.gmono{width:56px;margin:0 auto 20px;color:var(--gold-soft)}
-.gmark{font:500 9.5px var(--s);letter-spacing:.44em;color:var(--gold-soft);
+.gmono{width:56px;margin:0 auto 20px;color:var(--gold-ink)}
+.gmark{font:500 9.5px var(--s);letter-spacing:.44em;color:var(--gold-ink);
  text-transform:uppercase;padding-left:.44em}
 .gcard h1{display:block;overflow:hidden;font-size:calc(var(--h1) + 7px);font-weight:400;
  letter-spacing:-.035em;padding:.06em .15em .16em;margin:14px -.15em 8px}
@@ -129,7 +193,7 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
  gap:14px;width:100%;color:var(--ink);font:inherit;text-align:left;cursor:pointer;
  padding:13px 16px;border-radius:12px;border:1px solid var(--line2);background:var(--metal);
  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
- box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
+ box-shadow:inset 0 1px 0 var(--hi);
  transition:border-color var(--t2) var(--e2),background var(--t2) var(--e2),transform var(--t2) var(--e)}
 .who button::after{content:"";position:absolute;inset:0;pointer-events:none;background:var(--shine);
  opacity:.5;transform:translateX(-130%);transition:transform .65s ease}
@@ -143,12 +207,12 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
 .who button:hover .av,.who button:focus-visible .av{transform:scale(1.07)}
 .who b{display:block;font-weight:500;letter-spacing:-.015em}
 .who span{font-size:12.5px;color:var(--mut)}
-.who .go{margin-left:auto;color:var(--gold-soft);font-size:16px;opacity:0;transform:translateX(-6px);
+.who .go{margin-left:auto;color:var(--gold-ink);font-size:16px;opacity:0;transform:translateX(-6px);
  transition:opacity var(--t2) var(--e2),transform var(--t2) var(--e)}
 .who button:hover .go,.who button:focus-visible .go{opacity:1;transform:none}
 .gnote{margin-top:28px;text-align:left;font-size:11.5px;line-height:1.75;color:var(--dim);
  border:1px solid var(--line);border-radius:12px;padding:15px 17px;background:var(--glass)}
-.gnote b{display:block;color:var(--gold-soft);font:600 9px var(--s);letter-spacing:.24em;
+.gnote b{display:block;color:var(--gold-ink);font:600 9px var(--s);letter-spacing:.24em;
  text-transform:uppercase;margin-bottom:7px}
 
 /* ══ the frame ══ */
@@ -158,17 +222,17 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
  font:600 9.5px var(--s);letter-spacing:.24em;text-transform:uppercase;padding:8px 16px}
 .frame{display:flex;height:calc(100vh - 31px);min-height:0}
 .side{width:234px;flex:none;display:flex;flex-direction:column;overflow:hidden;
- background:var(--black);border-right:1px solid var(--line);padding:22px 0 18px}
+ background:var(--deep);border-right:1px solid var(--line);padding:22px 0 18px}
 .brand{display:flex;align-items:center;gap:12px;padding:0 20px 20px;margin-bottom:6px;
  border-bottom:1px solid var(--line)}
-.brand .bmark{width:26px;flex:none;color:var(--gold-soft)}
+.brand .bmark{width:26px;flex:none;color:var(--gold-ink)}
 .brand .bt{font-size:17px;font-weight:500;letter-spacing:-.025em;line-height:1.1}
-.brand i{display:block;font-style:normal;font-size:8px;letter-spacing:.34em;color:var(--gold-soft);
+.brand i{display:block;font-style:normal;font-size:8px;letter-spacing:.34em;color:var(--gold-ink);
  margin-top:4px;font-weight:500}
 .nav{flex:1;overflow:auto;padding:8px 12px;scrollbar-width:thin;
- scrollbar-color:rgba(203,169,124,.35) transparent}
+ scrollbar-color:var(--goldline) transparent}
 .nav::-webkit-scrollbar{width:4px}
-.nav::-webkit-scrollbar-thumb{background:rgba(203,169,124,.3);border-radius:3px}
+.nav::-webkit-scrollbar-thumb{background:var(--goldline);border-radius:3px}
 .nav a{position:relative;isolation:isolate;overflow:hidden;display:block;margin-bottom:2px;
  padding:9px 13px;border-radius:7px;font-size:13.5px;color:var(--dim);text-decoration:none;
  border:1px solid transparent;
@@ -178,16 +242,16 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
 .nav a:hover,.nav a:focus-visible{color:var(--ink);background:var(--glass);border-color:var(--line)}
 .nav a:hover::after,.nav a:focus-visible::after{transform:translateX(130%)}
 .nav a.on{color:var(--ink);background:var(--metal);border-color:rgba(241,233,218,.2);
- box-shadow:inset 0 1px 0 rgba(255,255,255,.1)}
+ box-shadow:inset 0 1px 0 var(--hi)}
 .nav a.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;
- border-radius:2px;background:var(--gold-soft)}
-.nav .grp{padding:17px 13px 7px;font-size:8.5px;letter-spacing:.28em;color:var(--gold-soft);
+ border-radius:2px;background:var(--gold-ink)}
+.nav .grp{padding:17px 13px 7px;font-size:8.5px;letter-spacing:.28em;color:var(--gold-ink);
  text-transform:uppercase;opacity:.75;font-weight:600}
 .me{padding:15px 20px 0;margin-top:10px;border-top:1px solid var(--line)}
 .me b{display:block;font-size:13px;font-weight:500;letter-spacing:-.015em}
 .me span{display:block;font-size:11px;color:var(--dim);margin-bottom:10px}
 .main{flex:1;max-width:1680px;overflow:auto;padding:var(--air) var(--pad) 90px;
- background:var(--charcoal)}
+ background:var(--surface)}
 
 /* ══ page furniture ══ */
 .ph{position:relative;display:flex;align-items:flex-start;justify-content:space-between;
@@ -196,7 +260,7 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
 .ph h1{display:block;overflow:hidden;padding:.06em .15em .14em;margin:-.06em -.15em -.14em}
 .ph p{color:var(--mut);font-size:13.5px;margin:12px 0 0;max-width:68ch;line-height:1.65}
 .ph>div:last-child{display:flex;gap:9px;flex-wrap:wrap}
-.card{position:relative;background:var(--glass);border:1px solid var(--line);border-radius:var(--r);
+.card{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
  padding:22px 24px;margin-bottom:var(--gap);
  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .pad{padding:22px 24px}
@@ -211,7 +275,7 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
 /* overflow:hidden is what lets the shine sweep stay inside the control, and it also
    makes a flex item's automatic minimum size 0. Without flex:none every button in a
    flex row collapses to a sliver. */
-.btn,.mini,.chip,.tabs button,.dclose,.me button{
+.btn,.mini,.chip,.tabs button,.dclose,.me button,.tsw{
  position:relative;isolation:isolate;overflow:hidden;cursor:pointer;flex:none;font-family:var(--s);
  transition:background var(--t2) var(--e2),color var(--t2) var(--e2),
   border-color var(--t2) var(--e2),transform var(--t1) var(--e),box-shadow var(--t2) var(--e)}
@@ -220,7 +284,7 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
  font:500 13px var(--s);letter-spacing:-.01em;color:var(--ink);
  border:1px solid var(--line2);background:var(--metal);
  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
- box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+ box-shadow:inset 0 1px 0 var(--hi)}
 .btn::after{content:"";position:absolute;inset:0;background:var(--shine);opacity:.55;
  transform:translateX(-130%);transition:transform .65s ease}
 .btn:hover,.btn:focus-visible{border-color:var(--goldline);transform:translateY(-1px)}
@@ -234,7 +298,7 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
  box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 2px 22px rgba(169,131,90,.34)}
 .btn.gold::after{opacity:.75}
 /* the ghost one */
-.btn.alt{background:linear-gradient(140deg,rgba(241,233,218,.085),rgba(241,233,218,.02));
+.btn.alt{background:var(--ghost);
  border-color:var(--line);color:var(--mut)}
 .btn.alt:hover,.btn.alt:focus-visible{color:var(--ink);border-color:var(--goldline)}
 .btn[disabled],.mini[disabled]{opacity:.4;cursor:not-allowed;transform:none!important}
@@ -270,19 +334,37 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
 .tabs button.on .sub{color:rgba(10,11,10,.68)}
 .tabs button .sub{font-size:11.5px}
 
+/* ══ the appearance switch: a real control with a visible label ══ */
+.tsw{display:inline-flex;align-items:center;gap:9px;padding:7px 14px 7px 8px;border-radius:99px;
+ border:1px solid var(--line);background:var(--glass);color:var(--mut);
+ font:500 11.5px var(--s);letter-spacing:.01em}
+.tsw::after{content:"";position:absolute;inset:0;background:var(--shine);opacity:.4;
+ transform:translateX(-130%);transition:transform .6s ease}
+.tsw:hover,.tsw:focus-visible{color:var(--ink);border-color:var(--goldline)}
+.tsw:hover::after,.tsw:focus-visible::after{transform:translateX(130%)}
+.tsw:active{transform:scale(.97)}
+.tsw-t{position:relative;flex:none;width:30px;height:16px;border-radius:99px;
+ background:var(--glass3);border:1px solid var(--line2)}
+.tsw-k{position:absolute;top:1px;left:1px;width:12px;height:12px;border-radius:50%;
+ background:var(--gold-ink);transition:transform var(--t2) var(--e)}
+:root[data-theme="light"] .tsw-k{transform:translateX(14px)}
+.tsw-l{min-width:30px;text-align:left}
+.themerow{padding:14px 20px 0}
+.gatesw{position:absolute;top:24px;right:26px;z-index:2}
+
 /* ══ pills: no new hues, so a state is a weight, not a colour ══ */
 .pill{display:inline-block;border-radius:99px;padding:3px 11px;white-space:nowrap;
  font:600 10.5px var(--s);letter-spacing:.03em;
  background:var(--glass2);color:var(--mut);border:1px solid var(--line)}
 .pill.ok{background:var(--glass);color:var(--dim);border-color:var(--line)}
-.pill.warn{background:transparent;color:var(--gold-soft);border-color:var(--goldline)}
+.pill.warn{background:transparent;color:var(--gold-ink);border-color:var(--goldline)}
 .pill.bad,.pill.gold{background:linear-gradient(180deg,var(--gold-soft),var(--gold));
  color:var(--black);border-color:var(--gold);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
 .bar{display:inline-block;width:78px;height:4px;border-radius:3px;background:var(--glass2);
  overflow:hidden;vertical-align:middle;margin-right:9px}
-.bar i{display:block;height:100%;background:rgba(241,233,218,.45)}
-.bar i.ok{background:rgba(241,233,218,.55)}
-.bar i.warn{background:var(--gold-soft)}
+.bar i{display:block;height:100%;background:var(--dim)}
+.bar i.ok{background:var(--mut)}
+.bar i.warn{background:var(--gold-ink)}
 .bar i.bad{background:var(--gold)}
 .note{background:var(--goldwash);border:1px solid var(--goldline);border-left-width:2px;
  border-radius:var(--rs);padding:15px 18px;margin-bottom:var(--gap);font-size:13.5px;color:var(--ink)}
@@ -303,10 +385,10 @@ tbody tr.click,tbody tr.pick{cursor:pointer;
  transition:background var(--t2) var(--e2),box-shadow var(--t2) var(--e2)}
 tbody tr.click:hover,tbody tr.pick:hover,
 tbody tr.click:focus-visible,tbody tr.pick:focus-visible{
- background:var(--glass2);box-shadow:inset 2px 0 0 var(--gold-soft);outline:none}
+ background:var(--glass2);box-shadow:inset 2px 0 0 var(--gold-ink);outline:none}
 tbody tr.click:hover td,tbody tr.pick:hover td{color:var(--ink)}
 tbody tr.click:focus-visible,tbody tr.pick:focus-visible{
- box-shadow:inset 2px 0 0 var(--gold-soft),0 0 0 2px var(--gold-soft)}
+ box-shadow:inset 2px 0 0 var(--gold-ink),0 0 0 2px var(--gold-ink)}
 tbody tr.picked{background:var(--glass2);box-shadow:inset 2px 0 0 var(--gold)}
 .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 td.num{color:var(--ink);font-weight:400}
@@ -338,7 +420,7 @@ p.sub.empty{display:block;border:1px dashed var(--line2);border-radius:var(--r);
  scroll-snap-type:x proximity}
 .col{flex:0 0 256px;scroll-snap-align:start;min-height:190px;border-radius:var(--r);
  padding:0 12px 12px;border:1px solid var(--line);
- background:linear-gradient(180deg,rgba(241,233,218,.055),rgba(241,233,218,.012))}
+ background:var(--rail)}
 .col h4{position:relative;display:flex;justify-content:space-between;align-items:center;
  margin:0 -12px 12px;padding:14px 14px 12px;border-bottom:1px solid var(--line);
  font:600 9px var(--s);letter-spacing:.22em;text-transform:uppercase;color:var(--faint)}
@@ -346,7 +428,7 @@ p.sub.empty{display:block;border:1px dashed var(--line2);border-radius:var(--r);
  text-align:center;padding:0 7px;line-height:20px;border-radius:99px;
  border:1px solid var(--line);background:var(--glass)}
 .ocard{position:relative;isolation:isolate;overflow:hidden;cursor:pointer;margin-bottom:9px;
- padding:14px 15px;border-radius:12px;border:1px solid var(--line);background:var(--glass2);
+ padding:14px 15px;border-radius:12px;border:1px solid var(--line);background:var(--tile);
  transition:border-color var(--t2) var(--e2),transform var(--t2) var(--e),background var(--t2) var(--e2)}
 .ocard::after{content:"";position:absolute;inset:0;pointer-events:none;background:var(--shine);
  opacity:.3;transform:translateX(-130%);transition:transform .65s ease}
@@ -366,7 +448,7 @@ p.sub.empty{display:block;border:1px dashed var(--line2);border-radius:var(--r);
  padding:13px 0;border-bottom:1px solid var(--line)}
 .rung:last-child{border-bottom:0}
 .rung .n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;
- justify-content:center;font:600 11px var(--s);color:var(--faint);
+ justify-content:center;font:600 11px var(--s);color:var(--mut);
  background:var(--glass2);border:1px solid var(--line)}
 .rung.done .n{color:var(--ink);background:var(--glass3);border-color:var(--line2)}
 .rung.now .n{color:var(--black);border-color:var(--gold);
@@ -378,7 +460,7 @@ p.sub.empty{display:block;border:1px dashed var(--line2);border-radius:var(--r);
 /* ══ cloth and pieces ══ */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(216px,1fr));gap:var(--gap)}
 .swatch{position:relative;isolation:isolate;overflow:hidden;cursor:pointer;border-radius:var(--r);
- border:1px solid var(--line);background:var(--glass);
+ border:1px solid var(--line);background:var(--tile);
  transition:border-color var(--t2) var(--e2),transform var(--t2) var(--e)}
 .swatch:hover,.swatch:focus-visible{border-color:var(--goldline);transform:translateY(-3px)}
 .swatch:active{transform:translateY(0)}
@@ -414,17 +496,17 @@ p.sub.empty{display:block;border:1px dashed var(--line2);border-radius:var(--r);
 .mon tr.cut td{color:var(--dim)}
 .mon tr.pend td{font-size:19px;font-weight:450;letter-spacing:-.03em;border-bottom:0;
  padding-top:18px;color:var(--ink)}
-.mon tr.pend td:last-child{color:var(--gold-soft);font-size:24px}
+.mon tr.pend td:last-child{color:var(--gold-ink);font-size:24px}
 .mon .sub{color:var(--dim)}
 
 /* ══ drawer ══ */
-#drawer{position:fixed;inset:0;z-index:150;background:rgba(10,11,10,.62);
+#drawer{position:fixed;inset:0;z-index:150;background:var(--scrim);
  opacity:0;visibility:hidden;transition:opacity var(--t2) var(--e2),visibility 0s linear var(--t2)}
 #drawer.on{opacity:1;visibility:visible;transition:opacity var(--t2) var(--e2),visibility 0s}
 @supports (backdrop-filter:blur(2px)){#drawer{-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}}
 .dpanel{position:absolute;right:0;top:0;bottom:0;width:min(900px,100%);overflow:auto;
- padding:30px 34px 70px;background:var(--charcoal);border-left:1px solid var(--line2);
- box-shadow:-30px 0 90px rgba(10,11,10,.6);
+ padding:30px 34px 70px;background:var(--surface);border-left:1px solid var(--line2);
+ box-shadow:-30px 0 90px var(--shadow);
  transform:translateX(30px);opacity:0;transition:transform .45s var(--e),opacity .3s var(--e2)}
 #drawer.on .dpanel{transform:none;opacity:1}
 .dpanel h1{font-size:calc(var(--h1) - 4px);padding-right:60px}
@@ -435,12 +517,12 @@ p.sub.empty{display:block;border:1px dashed var(--line2);border-radius:var(--r);
 
 /* ══ modal ══ */
 #modal{position:fixed;inset:0;z-index:180;display:none;align-items:center;justify-content:center;
- padding:24px;overflow:auto;background:rgba(10,11,10,.68)}
+ padding:24px;overflow:auto;background:var(--scrim2)}
 @supports (backdrop-filter:blur(2px)){#modal{-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}}
 #modal.on{display:flex}
 .mpanel{position:relative;width:min(580px,100%);max-height:88vh;overflow:auto;padding:28px 30px;
- border-radius:var(--r);background:#171915;border:1px solid var(--line2);
- box-shadow:0 40px 100px rgba(10,11,10,.7);animation:in-pop .4s var(--e) backwards}
+ border-radius:var(--r);background:var(--raised);border:1px solid var(--line2);
+ box-shadow:0 40px 100px var(--shadow);animation:in-pop .4s var(--e) backwards}
 .mpanel>h1,.mpanel>h2,.mpanel>h3{margin:0 0 18px;padding-right:48px}
 .mpanel>h2+p,.mpanel>h3+p{margin:-12px 0 20px;color:var(--mut)}
 .mpanel .dclose{top:18px;right:20px}
@@ -459,7 +541,9 @@ input[type=checkbox],input[type=radio]{accent-color:var(--gold);width:17px;heigh
 select{-webkit-appearance:none;appearance:none;padding-right:34px;cursor:pointer;
  background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23cba97c' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
  background-repeat:no-repeat;background-position:right 13px center}
-select option{background:#171915;color:var(--ink)}
+:root[data-theme="light"] select{
+ background-image:url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%237a5e41' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")}
+select option{background:var(--raised);color:var(--ink)}
 input[type=file]{padding:10px 12px;font-size:13px;cursor:pointer;color:var(--mut)}
 input[type=date]{color-scheme:dark}
 .f{margin-bottom:16px}
@@ -478,7 +562,7 @@ input[type=date]{color-scheme:dark}
 .tl{border-left:1px solid var(--line);padding-left:20px;margin-left:7px}
 .tl .ev{position:relative;padding-bottom:18px}
 .tl .ev::before{content:"";position:absolute;left:-25px;top:5px;width:9px;height:9px;border-radius:50%;
- background:var(--gold);box-shadow:0 0 0 3px var(--charcoal)}
+ background:var(--gold);box-shadow:0 0 0 3px var(--surface)}
 .tl b{font-size:13px;font-weight:500;color:var(--ink)}
 .tl span{display:block;font-size:11.5px;color:var(--dim)}
 
@@ -486,12 +570,12 @@ input[type=date]{color-scheme:dark}
 .toast{position:fixed;left:50%;bottom:30px;z-index:300;max-width:min(440px,calc(100vw - 32px));
  transform:translateX(-50%);padding:14px 20px 14px 18px;border-radius:12px;
  font:500 13px var(--s);color:var(--ink);overflow:hidden;
- background:#1a1c17;border:1px solid var(--line2);border-left:2px solid var(--gold);
+ background:var(--raised);border:1px solid var(--line2);border-left:2px solid var(--gold);
  -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
- box-shadow:0 20px 60px rgba(10,11,10,.6);
+ box-shadow:0 20px 60px var(--shadow);
  animation:tin .4s var(--e) backwards,tout .3s var(--e2) 2.3s forwards}
 .toast::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;
- background:var(--gold-soft);transform-origin:left;animation:trun 2.6s linear forwards}
+ background:var(--gold-ink);transform-origin:left;animation:trun 2.6s linear forwards}
 @keyframes tin{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}
 @keyframes tout{to{opacity:0;transform:translate(-50%,12px)}}
 @keyframes trun{to{transform:scaleX(0)}}
@@ -544,6 +628,10 @@ input[type=date]{color-scheme:dark}
  .nav a.on{color:var(--black);border-color:var(--gold);
   background:linear-gradient(180deg,var(--gold-soft),var(--gold))}
  .demobar{font-size:8.5px;letter-spacing:.16em;padding:7px 14px}
+ .themerow{order:2;padding:0;margin-left:auto}
+ .me{margin-left:0}
+ .tsw{padding:6px 11px 6px 6px;font-size:11px;gap:7px}
+ .gatesw{top:16px;right:16px}
  .main{overflow:visible;max-width:none}
  .card{padding:18px 16px}
  .card>table{display:block;overflow-x:auto;max-width:100%}
@@ -558,8 +646,9 @@ input[type=date]{color-scheme:dark}
  .dpanel{padding:24px 18px 70px}
  .mpanel{padding:22px 18px}
 }
+@media(max-width:480px){.brand .bt{display:none}}
 @media(pointer:coarse){
- .mini,.chip,.tabs button,.dclose,.me button{min-height:44px}
+ .mini,.chip,.tabs button,.dclose,.me button,.tsw{min-height:44px}
  .nav a{min-height:44px;display:flex;align-items:center}
  tbody tr.click td,tbody tr.pick td{padding-top:16px;padding-bottom:16px}
 }
@@ -575,7 +664,14 @@ input[type=date]{color-scheme:dark}
  .cloth video{display:none}
  .btn:hover,.mini:hover,.ocard:hover,.swatch:hover,.who button:hover{transform:none}
 }
-</style></head>
+</style>
+<script>
+/* Dark is the default and prefers-color-scheme is deliberately not read: he chose
+   dark against the cream. Only a flip of the switch is remembered, and it has to
+   land before the first paint or the page blinks. */
+try{if(localStorage.getItem('saasya.theme')==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}
+</script>
+</head>
 <body>
 
 <!-- the loader: their monogram drawing itself over the moving cloth -->
@@ -605,6 +701,7 @@ input[type=date]{color-scheme:dark}
 
 <div id="gate">
   <div class="cloth" data-cloth></div>
+  <button class="tsw gatesw" data-act="theme" aria-pressed="false" aria-label="Appearance: Dark. Switch to light mode."><span class="tsw-t"><span class="tsw-k"></span></span><span class="tsw-l">Dark</span></button>
   <div class="gcard">
     <div class="gmono appear"></div>
     <div class="gmark appear">Saasya Men</div>
@@ -624,6 +721,7 @@ input[type=date]{color-scheme:dark}
       <div class="brand appear"><span class="bmark"></span><span class="bt">Saasya<i>Men</i></span></div>
       <nav class="nav" id="nav"></nav>
       <div class="me appear" id="me"></div>
+      <div class="themerow appear"><button class="tsw" data-act="theme" aria-pressed="false" aria-label="Appearance: Dark. Switch to light mode."><span class="tsw-t"><span class="tsw-k"></span></span><span class="tsw-l">Dark</span></button></div>
     </aside>
     <main class="main" id="shell"></main>
   </div>
