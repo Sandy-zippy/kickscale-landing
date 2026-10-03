@@ -19,18 +19,21 @@ const holds = () => D.access.scope !== 'none';
 const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.user.division;
 function allowedTab(t) {
   if (['home', 'account', 'soon'].includes(t)) return true;
-  if (['clients', 'opps', 'import'].includes(t)) return holds();
+  if (['clients', 'people', 'opps', 'import'].includes(t)) return holds();
+  if (t === 'dealers') return holds() && canDiv('wholesale');
+  if (t === 'architects') return holds();
   if (t === 'team') return D.access.users;
   if (t === 'lists') return isOwner();
   return false;
 }
 EM.div = D.user.division === 'both' ? 'both' : D.user.division;
 EM.navTabs = () => ({
-  main: [['home', 'Home'], ['clients', 'Clients'], ['opps', 'Opportunities'], ['import', 'Import from Excel']].filter(([k]) => allowedTab(k)),
+  main: [['home', 'Home'], ['dealers', 'Dealers'], ['architects', 'Architects'], ['people', 'People'], ['opps', 'Opportunities'], ['import', 'Import from Excel']]
+    .filter(([k]) => allowedTab(k) && !(k === 'dealers' && EM.div === 'retail')),
   shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
 Object.assign(ICON, {
-  opps: ICON.leads, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
+  opps: ICON.leads, architects: ICON.firms, people: ICON.clients, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
 });
@@ -142,18 +145,18 @@ EM.VIEWS.home = () => {
   const won = os.filter(o => o.stage === 'Won' && (o.closed_at || '').slice(0, 7) === month);
   const sum = a => a.reduce((s, o) => s + (Number(o.value) || 0), 0);
   const groups = [
-    ['wholesale', 'Dealers & distributors', ['distributor', 'dealer', 'sub_dealer'], '#/clients/dealers'],
-    ['both', 'Architects & design firms', ['architect', 'design_firm'], '#/clients/architects'],
-    ['wholesale', 'Clients', ['direct'], '#/clients/retail'],
-    ['retail', 'Retail clients', ['retail'], '#/clients/retail'],
+    ['wholesale', 'Dealers', DEALER_KINDS, '#/dealers'],
+    ['both', 'Architects', ARCH_KINDS, '#/architects'],
   ].filter(([d]) => canDiv(d) && (EM.div === 'both' || d === 'both' || d === EM.div));
-  const tiles = groups.map(([, l, ks, h]) => tile(l, ks.reduce((a, k) => a + n(k), 0), ks.length > 1 ? ks.map(k => `${n(k)} ${kindLabel(k).toLowerCase()}${n(k) === 1 ? '' : 's'}`).join(' · ') : '', h)).join('')
+  const ppl = peopleRows();
+  const tiles = groups.map(([, l, ks, h]) => tile(l, ks.reduce((a, k) => a + n(k), 0), ks.map(k => `${n(k)} ${kindLabel(k).toLowerCase()}${n(k) === 1 ? '' : 's'}`).join(' · '), h)).join('')
+    + tile('People', ppl.length, ppl.length ? `${ppl.filter(x => x.type === 'personal').length} personal` : '', '#/people')
     + tile('Open opportunities', open.length, D.access.prices && open.length ? `${inr(sum(open))} in values entered` : '', '#/opps')
     + tile('Next actions due', due.length, due.length ? `${due.filter(o => o.next_date < t).length} overdue` : 'nothing due today', '#/opps')
     + tile('Won this month', won.length, D.access.prices && won.length ? inr(sum(won)) : '', '#/opps');
   const next = due.concat(open.filter(o => o.next_date > t)).sort((a, b) => (a.next_date || '').localeCompare(b.next_date || '')).slice(0, 8);
   return `<div class="stack">${who}
-    ${cs.length ? '' : empty('No clients yet', 'Add a dealer, an architect or a retail client, or fill the Excel template and upload it. Every number on this page is counted from what you save.', `<button class="btn primary" data-act="client-add">+ Add client</button><a class="btn" href="#/import">Import from Excel</a>`)}
+    ${cs.length ? '' : empty('Nothing saved yet', 'Add a dealer with its team, an architect firm with its team, or a person, or fill the Excel file and upload it. Every number on this page is counted from what you save.', addButtons())}
     <div class="grid g4">${tiles}</div>
     ${next.length ? `<section class="stack-s"><h3>Next actions in your view</h3>${table(['Opportunity', 'Client', 'Next action', 'Due', 'Owner'], next.map(o => ({ href: `#/opp/${o.id}`, cells: [`<b>${esc(o.title)}</b>`, esc((CL()[o.client_id] || {}).name || ''), esc(o.next_action || ''), o.next_date < t ? `<span class="badge bad">${ds(o.next_date)}</span>` : ds(o.next_date), esc(staffName(o.owner_id))] })))}</section>` : ''}
     ${notConnectedCard()}</div>`;
@@ -175,67 +178,177 @@ const SOON = {
 const notConnectedCard = () => `<section class="card stack-s"><h3>Not connected yet</h3><p class="small muted">These parts of EGO Master show no figures until the system that feeds them is connected. Nothing here is estimated.</p>
   ${table(['Part', 'Waits for', ''], Object.values(SOON).map(([a, b]) => [esc(a), esc(b), '<span class="badge warn">Not connected yet</span>']))}</section>`;
 /* the demo's screens, if a bookmark or an old link reaches them */
-const DEMO_ROUTES = { dealers: 'sales', dealer: 'sales', orders: 'sales', worder: 'sales', order: 'sales', fulfilment: 'stock', fulfil: 'stock', production: 'stock', po: 'stock', stock: 'stock', targets: 'targets', schemes: 'targets', p200: 'targets', champions: 'targets', complaints: 'sales', leads: 'ads', lead: 'ads', projects: 'sales', project: 'sales', installation: 'stock', firms: 'sales', firm: 'sales', inbox: 'whatsapp', approvals: 'sales', cockpit: 'targets', automations: 'whatsapp', ai: 'ai', integrations: 'ai', app: 'visits', map: 'ai', tech: 'ai' };
+const DEMO_ROUTES = { orders: 'sales', worder: 'sales', order: 'sales', fulfilment: 'stock', fulfil: 'stock', production: 'stock', po: 'stock', stock: 'stock', targets: 'targets', schemes: 'targets', p200: 'targets', champions: 'targets', complaints: 'sales', leads: 'ads', lead: 'ads', projects: 'sales', project: 'sales', installation: 'stock', inbox: 'whatsapp', approvals: 'sales', cockpit: 'targets', automations: 'whatsapp', ai: 'ai', integrations: 'ai', app: 'visits', map: 'ai', tech: 'ai' };
 for (const [r, k] of Object.entries(DEMO_ROUTES)) {
-  EM.VIEWS[r] = () => `<div class="stack" style="max-width:720px"><span class="badge warn">Not connected yet</span><h1>${esc(SOON[k][0])}</h1><p class="muted">This part of EGO Master waits for: ${esc(SOON[k][1])} Until then it shows nothing rather than sample figures.</p><div class="row"><a class="btn primary" href="#/clients">Clients</a><a class="btn" href="#/home">Home</a></div></div>`;
+  EM.VIEWS[r] = () => `<div class="stack" style="max-width:720px"><span class="badge warn">Not connected yet</span><h1>${esc(SOON[k][0])}</h1><p class="muted">This part of EGO Master waits for: ${esc(SOON[k][1])} Until then it shows nothing rather than sample figures.</p><div class="row"><a class="btn primary" href="#/people">People</a><a class="btn" href="#/home">Home</a></div></div>`;
   EM.VIEWS[r].tab = 'soon';
   EM.VIEWS[r].title = () => SOON[k][0];
 }
 
-/* ---------------------------------------------------------------- clients */
-const CLIENT_TABS = [
-  ['all', 'All', null], ['dealers', 'Dealers & distributors', ['distributor', 'dealer', 'sub_dealer']],
-  ['architects', 'Architects & firms', ['architect', 'design_firm']], ['retail', 'Clients', ['retail', 'direct']],
-];
+/* ---------------------------------------------------------------- dealers, architects, people
+   A dealer or an architect firm is a COMPANY (a row in clients) with its team (contacts).
+   A person with no company is a personal contact (a client of kind direct or retail).
+   People shows all of them together; each company portal shows its own companies. */
+const DEALER_KINDS = ['distributor', 'dealer', 'sub_dealer'], ARCH_KINDS = ['design_firm', 'architect'];
+const PERSONAL_KINDS = ['direct', 'retail'];
 const kindsAllowed = () => Object.keys(KINDS).filter(k => canDiv(KINDS[k].division) && (EM.div === 'both' || KINDS[k].division === 'both' || KINDS[k].division === EM.div));
+const personalKinds = () => PERSONAL_KINDS.filter(k => kindsAllowed().includes(k));
+const addButtons = () => [
+  allowedTab('dealers') && kindsAllowed().includes('dealer') ? '<button class="btn primary" data-act="org-add" data-org="dealer">+ Add dealer</button>' : '',
+  '<button class="btn primary" data-act="org-add" data-org="architect">+ Add architect firm</button>',
+  '<button class="btn" data-act="person-add">+ Add person</button>', '<a class="btn" href="#/import">Import from Excel</a>'].join('');
+const wonValue = id => D.opportunities.filter(o => o.client_id === id && o.stage === 'Won').reduce((a, o) => a + (Number(o.value) || 0), 0);
 EM.clientQ = '';
-EM.VIEWS.clients = arg => {
-  const tabs = CLIENT_TABS.filter(([, , ks]) => !ks || ks.some(k => kindsAllowed().includes(k)));
-  const tab = tabs.find(t => t[0] === arg) || tabs[0];
-  const kinds = tab[2] || kindsAllowed();
-  const all = D.clients.filter(c => kinds.includes(c.kind) && inDiv(c));
-  const q = EM.clientQ.toLowerCase(), qd = q.replace(/\D/g, '');
-  const rows = all.filter(c => !q || (c.name + ' ' + c.city + ' ' + (c.ref || '') + ' ' + c.gst).toLowerCase().includes(q) || (qd.length >= 4 && c.mobile.includes(qd)));
-  const nCt = id => D.contacts.filter(k => k.client_id === id).length, nOp = id => D.opportunities.filter(o => o.client_id === id && !['Won', 'Lost'].includes(o.stage)).length;
-  const addKind = tab[2] ? tab[2][tab[2].length > 1 && tab[0] === 'dealers' ? 1 : 0] : '';
+const searchBox = ph => `<label class="field" style="max-width:420px"><span class="small muted">Search</span><input class="input" id="cq" value="${esc(EM.clientQ)}" placeholder="${ph}"></label>`;
+const matches = (txt, mobiles) => { const q = EM.clientQ.toLowerCase(), qd = q.replace(/\D/g, ''); return !q || txt.toLowerCase().includes(q) || (qd.length >= 4 && mobiles.some(m => String(m || '').includes(qd))); };
+function orgList(org, arg) {
+  const all0 = org === 'dealer' ? DEALER_KINDS : ARCH_KINDS;
+  const subs = org === 'dealer' ? [['all', 'All', all0], ['distributor', 'Distributors', ['distributor']], ['dealer', 'Dealers', ['dealer']], ['sub_dealer', 'Sub-dealers', ['sub_dealer']]]
+    : [['all', 'All', all0], ['design_firm', 'Firms', ['design_firm']], ['architect', 'Solo architects', ['architect']]];
+  const tab = subs.find(t => t[0] === arg) || subs[0];
+  const all = D.clients.filter(c => all0.includes(c.kind) && inDiv(c));
+  const rows = all.filter(c => tab[2].includes(c.kind) && matches(`${c.name} ${c.city} ${c.ref || ''} ${c.gst}`, [c.mobile]));
+  const team = id => D.contacts.filter(k => k.client_id === id).length, open = id => D.opportunities.filter(o => o.client_id === id && !['Won', 'Lost'].includes(o.stage)).length;
+  const title = org === 'dealer' ? 'Dealers' : 'Architects', base = '#/' + (org === 'dealer' ? 'dealers' : 'architects');
+  const rating = c => org === 'dealer' ? c.grade : (c.extra || {}).rating;
   return `<div class="stack">
-    <div class="row between"><div class="stack-s"><div class="kicker">Every kind of client in one place</div><h1>Clients</h1><p class="muted">${rows.length} of ${all.length} · ${esc(scopeLabel())}</p></div>
-      <div class="row"><a class="btn" href="#/import">Import from Excel</a><button class="btn primary" data-act="client-add" data-kind="${addKind}">+ Add client</button></div></div>
-    ${subtabs('#/clients', tab[0], tabs.map(([k, l, ks]) => [k, `${l} <span class="muted">${D.clients.filter(c => (ks || kindsAllowed()).includes(c.kind) && inDiv(c)).length}</span>`]))}
-    <label class="field" style="max-width:420px"><span class="small muted">Search</span><input class="input" id="cq" value="${esc(EM.clientQ)}" placeholder="Name, city, mobile, GST or reference"></label>
-    ${all.length ? (rows.length ? table(['Name', 'Type', 'City', 'Mobile', 'Owner', 'Contacts', 'Open opportunities'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
-      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}${c.parent_id && CL()[c.parent_id] ? ' · under ' + esc(CL()[c.parent_id].name) : ''}</div>`, esc(kindLabel(c.kind)), esc(c.city), esc(fmtMobile(c.mobile)), esc(staffName(c.owner_id)), nCt(c.id), nOp(c.id)] })))
+    <div class="row between"><div class="stack-s"><div class="kicker">${org === 'dealer' ? 'Distributors, dealers and sub-dealers, each with its team' : 'Architect firms and solo architects, each with its team'}</div><h1>${title}</h1><p class="muted">${rows.length} of ${all.length} · ${esc(scopeLabel())}</p></div>
+      <div class="row"><a class="btn" href="#/import">Import from Excel</a><button class="btn primary" data-act="org-add" data-org="${org}">+ Add ${org === 'dealer' ? 'dealer' : 'architect firm'}</button></div></div>
+    ${subtabs(base, tab[0], subs.map(([k, l, ks]) => [k, `${l} <span class="muted">${all.filter(c => ks.includes(c.kind)).length}</span>`]))}
+    ${searchBox('Company name, city, mobile, GST or reference')}
+    ${all.length ? (rows.length ? table(['Company', 'Type', 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
+      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}${c.parent_id && CL()[c.parent_id] ? ' · under ' + esc(CL()[c.parent_id].name) : ''}</div>`, esc(kindLabel(c.kind)), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
       + (rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing matches that search.</p>')
-      : empty(`No ${tab[0] === 'all' ? 'clients' : esc(tab[1].toLowerCase())} yet`, 'Add the first one, or fill the Excel template and upload it.', `<button class="btn primary" data-act="client-add" data-kind="${addKind}">+ Add client</button><a class="btn" href="#/import">Import from Excel</a>`)}
+      : empty(`No ${title.toLowerCase()} yet`, `Add the company and its people in one go, or fill the Excel file and upload it.`, `<button class="btn primary" data-act="org-add" data-org="${org}">+ Add ${org === 'dealer' ? 'dealer' : 'architect firm'}</button><a class="btn" href="#/import">Import from Excel</a>`)}
+  </div>`;
+}
+EM.VIEWS.dealers = arg => orgList('dealer', arg);
+EM.VIEWS.dealers.title = () => 'Dealers';
+EM.VIEWS.architects = arg => orgList('architect', arg);
+EM.VIEWS.architects.title = () => 'Architects';
+
+/* everyone in one list: the team of every company in view, and every personal contact */
+function peopleRows() {
+  const out = [];
+  for (const k of D.contacts) {
+    const c = CL()[k.client_id];
+    if (!c || !inDiv(c)) continue;
+    out.push({ id: k.id, name: k.name, role: k.designation || '', resp: k.responsibilities || '', mobile: k.mobile, email: k.email || '', company: c, type: DEALER_KINDS.includes(c.kind) ? 'dealer' : ARCH_KINDS.includes(c.kind) ? 'architect' : 'personal', href: `#/client/${c.id}/contacts` });
+  }
+  for (const c of D.clients) if (PERSONAL_KINDS.includes(c.kind) && inDiv(c)) out.push({ id: c.id, name: c.name, role: (c.extra || {}).client_type || '', resp: '', mobile: c.mobile, email: c.email || '', company: null, type: 'personal', href: `#/client/${c.id}` });
+  return out.sort((a, b) => a.name.localeCompare(b.name));
+}
+EM.VIEWS.people = arg => {
+  const all = peopleRows();
+  const subs = [['all', 'All'], ...(allowedTab('dealers') && EM.div !== 'retail' ? [['dealer', 'At a dealer']] : []), ['architect', 'At an architect firm'], ['personal', 'Personal']];
+  const tab = subs.find(t => t[0] === arg) || subs[0];
+  const rows = all.filter(x => (tab[0] === 'all' || x.type === tab[0]) && matches(`${x.name} ${x.role} ${x.company ? x.company.name : ''} ${x.email}`, [x.mobile]));
+  const TYPE = { dealer: 'Dealer', architect: 'Architect firm', personal: 'Personal' };
+  return `<div class="stack">
+    <div class="row between"><div class="stack-s"><div class="kicker">Everyone in one place</div><h1>People</h1><p class="muted">${rows.length} of ${all.length}. Every person belongs to a dealer, an architect firm, or is a personal contact.</p></div>
+      <div class="row"><a class="btn" href="#/import">Import from Excel</a><button class="btn primary" data-act="person-add">+ Add person</button></div></div>
+    ${subtabs('#/people', tab[0], subs.map(([k, l]) => [k, `${l} <span class="muted">${k === 'all' ? all.length : all.filter(x => x.type === k).length}</span>`]))}
+    ${searchBox('Name, role, company, mobile or email')}
+    ${all.length ? (rows.length ? table(['Name', 'Role', 'Belongs to', 'Type', 'Mobile', 'Email'], rows.slice(0, 400).map(x => ({ href: x.href,
+      cells: [`<b>${esc(x.name)}</b>${x.resp ? `<div class="small muted">${esc(x.resp)}</div>` : ''}`, esc(x.role), x.company ? esc(x.company.name) : '<span class="muted">Personal</span>', esc(TYPE[x.type]), esc(fmtMobile(x.mobile)), esc(x.email)] })))
+      + (rows.length > 400 ? `<p class="small muted">Showing 400 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing matches that search.</p>')
+      : empty('No people yet', 'Add a dealer or an architect firm with its team, or add a personal contact.', addButtons())}
   </div>`;
 };
-EM.VIEWS.clients.title = () => 'Clients';
+EM.VIEWS.people.title = () => 'People';
+EM.VIEWS.clients = EM.VIEWS.people;   // old links
+EM.VIEWS.clients.title = () => 'People';
 document.addEventListener('input', e => { if (e.target.id === 'cq') { EM.clientQ = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#cq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
 
+/* + Add person: at a dealer, at an architect firm, or personal */
+EM.ACTIONS['person-add'] = () => {
+  const opts = [allowedTab('dealers') && kindsAllowed().includes('dealer') ? ['dealer', 'Works at a dealer', 'Distributor, dealer or sub-dealer'] : null,
+    ['architect', 'Works at an architect firm', 'Or is a solo architect'], personalKinds().length ? ['personal', 'Personal contact', 'No company: a homeowner, or a firm on its own'] : null].filter(Boolean);
+  EM.modal(`<h2>Add a person</h2><p class="muted">Every person belongs to a dealer, an architect firm, or is a personal contact.</p>
+    <div class="stack-s" style="margin-top:14px">${opts.map(([k, l, d]) => `<button class="btn" style="justify-content:flex-start;text-align:left" data-act="person-at" data-at="${k}"><span><b>${l}</b><br><span class="small muted">${d}</span></span></button>`).join('')}</div>
+    <div class="row" style="margin-top:14px"><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+EM.ACTIONS['person-at'] = el => {
+  const at = el.dataset.at;
+  if (at === 'personal') return openClientForm(null, personalKinds()[0], null, personalKinds());
+  openPersonForm(at, null, {});
+};
+function openPersonForm(org, companyId, keep) {
+  const kinds = org === 'dealer' ? DEALER_KINDS : ARCH_KINDS;
+  const cos = D.clients.filter(c => kinds.includes(c.kind) && inDiv(c)).sort((a, b) => a.name.localeCompare(b.name));
+  const what = org === 'dealer' ? 'dealer company' : 'architect firm';
+  EM.modal(`<h2>Add a person at a ${what}</h2>
+    <form id="pf" class="stack" onsubmit="return false" style="margin-top:14px" data-org="${org}">
+      <div class="fgrid">${G.select({ key: 'company', label: `Which ${what}`, req: true }, companyId || keep.company || '', 'pf', [...cos.map(c => [c.id, `${c.name} · ${c.city}`]), ['__new', `+ New ${what}…`]]).replace('<select', '<select data-company-pick')}</div>
+      <div class="fgrid">${CONTACT_FIELDS.map(f => fieldHtml(f, keep[f.key], 'pf')).join('')}</div>
+      ${errBox('pf-err')}
+      <div class="row sticky-actions"><button class="btn primary" data-act="person-save">Add person</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+}
+document.addEventListener('change', e => {
+  if (!e.target.matches('[data-company-pick]') || e.target.value !== '__new') return;
+  /* a company not on the list: open the company form with this person already in its team */
+  const form = qs('#pf'), org = form.dataset.org, person = withDials(readForm(form, CONTACT_FIELDS), CONTACT_FIELDS);
+  openClientForm(null, org === 'dealer' ? 'dealer' : 'design_firm', null, org === 'dealer' ? DEALER_KINDS : ARCH_KINDS, Object.values(person).some(v => v && v !== '+91') ? [person] : [{}]);
+});
+EM.ACTIONS['person-save'] = async el => {
+  const form = qs('#pf'), company = form.querySelector('[data-company-pick]').value;
+  if (!company || company === '__new') return showErr('pf-err', 'Choose the company this person works at.');
+  const input = withDials(readForm(form, CONTACT_FIELDS), CONTACT_FIELDS);
+  const { errors } = cleanContact(input, {});
+  if (errors.length) return showErr('pf-err', errors);
+  busy(el, true);
+  try {
+    const r = await API('POST', '/api/contacts', { ...input, client_id: company });
+    D.contacts = D.contacts.filter(k => k.client_id !== company).concat(r.contacts);
+    EM.closeModal(); EM.toast(`<b>${esc(input.name)} added</b><ul><li>${esc(CL()[company].name)}</li></ul>`);
+    location.hash = `#/client/${company}/contacts`; EM.rerender();
+  } catch (x) { busy(el, false); showErr('pf-err', x.errors || x.message); }
+};
+EM.ACTIONS['org-add'] = el => openClientForm(null, el.dataset.org === 'dealer' ? 'dealer' : 'design_firm', null, el.dataset.org === 'dealer' ? DEALER_KINDS : ARCH_KINDS, [{}]);
+
 /* the add / edit form: the type decides the fields */
-function openClientForm(c, kind, keep) {
-  const kinds = c ? Object.keys(KINDS).filter(k => canDiv(KINDS[k].division)) : kindsAllowed();
+/* The add / edit form: the type decides the fields. `only` limits the types offered
+   (a dealer form offers the three dealer types). A NEW dealer or architect firm gets a
+   people block under it: as many people as they like, saved with the company. */
+const FAMILIES = [DEALER_KINDS, ARCH_KINDS, PERSONAL_KINDS];
+const kindName = k => PERSONAL_KINDS.includes(k) ? `Personal contact · ${DIVS[KINDS[k].division].co}` : `${KINDS[k].label} · ${KINDS[k].division === 'both' ? 'EGO Premium or Big E' : DIVS[KINDS[k].division].co}`;
+const personRow = (i, v = {}) => `<form class="card stack-s pf-row" data-i="${i}" onsubmit="return false"><div class="row between"><b>Person ${i + 1}</b><button class="btn sm ghost" data-act="ppl-del" data-i="${i}">Remove</button></div>
+  <div class="fgrid">${CONTACT_FIELDS.map(f => fieldHtml(f, v[f.key], 'pp' + i)).join('')}</div></form>`;
+function openClientForm(c, kind, keep, only, people) {
+  const fam = c ? FAMILIES.find(f => f.includes(c.kind)) : null;
+  const kinds = c ? fam.filter(k => canDiv(KINDS[k].division)) : (only || kindsAllowed()).filter(k => kindsAllowed().includes(k));
   kind = kinds.includes(kind) ? kind : (c ? c.kind : kinds[0]);
   const v = keep || (c ? { ...c, ...c.extra } : { owner_id: me().id, status: 'Active' });
   const fields = showFields(fieldsFor(kind)).filter(f => f.key !== 'kind');
   const sections = [...new Set(fields.map(f => f.section))];
-  EM.modal(`<h2>${c ? 'Edit ' + esc(c.name) : 'Add a client'}</h2>
-    <p class="muted small">Compulsory: name, type, mobile, city and owner. The same mobile or GST number cannot be saved twice.</p>
-    <form id="cf" class="stack" onsubmit="return false" style="margin-top:14px" data-id="${c ? c.id : ''}">
-      <div class="fgrid">${G.select(CLIENT_FIELDS[0], kind, 'cf', kinds.map(k => [k, `${KINDS[k].label} · ${KINDS[k].division === 'both' ? 'EGO Premium or Big E' : DIVS[KINDS[k].division].co}`]), false).replace('<select', '<select data-kind-pick')}
+  const org = DEALER_KINDS.includes(kind) ? 'dealer' : ARCH_KINDS.includes(kind) ? 'architect' : null;
+  const noun = org === 'dealer' ? 'dealer' : org === 'architect' ? 'architect firm' : 'person';
+  const team = !c && org ? (people && people.length ? people : [{}]) : null;
+  EM.modal(`<h2>${c ? 'Edit ' + esc(c.name) : `Add a ${noun}`}</h2>
+    <p class="muted small">${org ? 'Company details first, then the people who work there. ' : ''}Compulsory fields end with a star. The same mobile or GST number cannot be saved twice in one company.</p>
+    <form id="cf" class="stack" onsubmit="return false" style="margin-top:14px" data-id="${c ? c.id : ''}" data-only="${(only || []).join(',')}">
+      ${org ? '<h3>Company details</h3>' : ''}
+      <div class="fgrid">${G.select(CLIENT_FIELDS[0], kind, 'cf', kinds.map(k => [k, kindName(k)]), false).replace('<select', '<select data-kind-pick')}
         ${KINDS[kind].division === 'both' && D.user.division === 'both' ? G.select({ key: 'division', label: 'Which company keeps this record' }, v.division || (EM.div === 'both' ? 'both' : EM.div), 'cf', [['wholesale', 'EGO Premium'], ['retail', 'Big E'], ['both', 'Both companies']], false) : ''}</div>
       ${sections.map(s => `<fieldset class="fs"><legend>${esc(s)}</legend><div class="fgrid">${fields.filter(f => f.section === s).map(f => fieldHtml(f, v[f.key], 'cf', { self: c && c.id })).join('')}</div></fieldset>`).join('')}
-      ${errBox('cf-err')}
-      <div class="row sticky-actions"><button class="btn primary" data-act="client-save">${c ? 'Save changes' : 'Add client'}</button><button class="btn" data-act="close-modal">Cancel</button></div>
-    </form>`);
+    </form>
+    ${team ? `<div class="stack-s" style="margin-top:18px"><h3>People at this ${noun}</h3><p class="small muted">Name, role, what they handle, mobile and email. Leave a block empty to skip it. More people can be added later from the company page.</p>
+      <div id="ppl" class="stack-s">${team.map((pv, i) => personRow(i, pv)).join('')}</div><div class="row"><button class="btn" data-act="ppl-add">+ Add another person</button></div></div>` : ''}
+    ${errBox('cf-err')}
+    <div class="row sticky-actions" style="margin-top:14px"><button class="btn primary" data-act="client-save">${c ? 'Save changes' : `Add ${noun}`}</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
 }
+const readPeople = () => [...document.querySelectorAll('#ppl .pf-row')].map(f => withDials(readForm(f, CONTACT_FIELDS), CONTACT_FIELDS))
+  .filter(pv => CONTACT_FIELDS.some(f => f.type !== 'yesno' && String(pv[f.key] || '').trim()));
+EM.ACTIONS['ppl-add'] = () => { const box = qs('#ppl'), n = box.querySelectorAll('.pf-row').length; box.insertAdjacentHTML('beforeend', personRow(n)); };
+EM.ACTIONS['ppl-del'] = el => { const f = el.closest('.pf-row'); if (f) f.remove(); };
 document.addEventListener('change', e => {
   if (!e.target.matches('[data-kind-pick]')) return;
   const form = qs('#cf'), id = form.dataset.id, c = id ? CL()[id] : null;
   const prev = readForm(form, CLIENT_FIELDS);
   const dv = form.querySelector('[name="division"]'); if (dv) prev.division = dv.value;
   for (const f of CLIENT_FIELDS) if (f.type === 'mobile' && prev[f.key]) { const r = normMobile(prev[f.key], prev[f.key + '_dial']); if (r.value) prev[f.key] = r.value; }
-  openClientForm(c, e.target.value, prev);
+  const only = form.dataset.only ? form.dataset.only.split(',') : null;
+  openClientForm(c, e.target.value, prev, only, qs('#ppl') ? readPeople() : null);
 });
 EM.ACTIONS['client-add'] = el => openClientForm(null, el.dataset.kind);
 EM.ACTIONS['client-edit'] = el => openClientForm(CL()[el.dataset.id], CL()[el.dataset.id].kind);
@@ -247,14 +360,18 @@ EM.ACTIONS['client-save'] = async el => {
   if (dv) input.division = dv.value;
   else if (KINDS[kind].division === 'both' && !id) input.division = EM.div;
   const { errors } = cleanClient(input, ctxLocal());
+  const people = qs('#ppl') ? readPeople() : [];
+  people.forEach((pv, i) => { const r = cleanContact(pv, {}); if (r.errors.length) errors.push(`Person ${i + 1}: ${r.errors.join(', ')}`); });
   if (errors.length) return showErr('cf-err', errors);
   if (id) input.id = id;
+  if (people.length) input.people = people;
   busy(el, true);
   try {
     const r = await API('POST', '/api/clients', input);
     upsertLocal(D.clients, r.client);
+    if (r.contacts) D.contacts = D.contacts.filter(k => k.client_id !== r.client.id).concat(r.contacts);
     EM.closeModal();
-    EM.toast(`<b>${esc(r.client.name)} ${r.created ? 'added' : 'saved'}</b><ul><li>${esc(kindLabel(r.client.kind))} · ${esc(r.client.city)} · ${esc(r.client.ref || '')}</li><li>Saved to EGO Master</li></ul>`);
+    EM.toast(`<b>${esc(r.client.name)} ${r.created ? 'added' : 'saved'}</b><ul><li>${esc(kindLabel(r.client.kind))} · ${esc(r.client.city)} · ${esc(r.client.ref || '')}</li>${r.created && people.length ? `<li>${people.length} ${people.length === 1 ? 'person' : 'people'} added to the team</li>` : ''}<li>Saved to EGO Master</li></ul>`);
     location.hash = `#/client/${r.client.id}`; EM.rerender();
   } catch (x) { busy(el, false); showErr('cf-err', x.errors || x.message); }
 };
@@ -263,20 +380,23 @@ EM.ACTIONS['client-save'] = async el => {
 const DOC_TYPES = ['GST certificate', 'PAN card', 'Cancelled cheque', 'Agreement', 'Visiting card', 'Shop photo', 'Display photo', 'Quotation', 'Other'];
 EM.VIEWS.client = arg => {
   const [id, tab = 'overview'] = arg.split('/'), c = CL()[id];
-  if (!c) return `<div class="stack"><h1>Client not found</h1><p class="muted">It may have been deleted, or it is outside your view.</p><a class="btn" href="#/clients">Clients</a></div>`;
+  if (!c) return `<div class="stack"><h1>Not found</h1><p class="muted">It may have been deleted, or it is outside your view.</p><a class="btn" href="#/people">People</a></div>`;
   const cts = D.contacts.filter(k => k.client_id === id), ops = D.opportunities.filter(o => o.client_id === id), docs = D.documents.filter(d => d.client_id === id);
   const org = ['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group);
-  const tabs = [['overview', 'Overview'], ['contacts', `${org ? 'People' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
+  const tabs = [['overview', 'Overview'], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
   const body = { overview: clientOverview, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>' }[tab] || clientOverview;
-  return `<div class="stack">${crumbs(['Clients', '#/clients'], [c.name])}
+  const home = homeOf(c);
+  return `<div class="stack">${crumbs(home, [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
-      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade ? `<span class="badge plain">Grade ${esc(c.grade)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
+      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
       <p class="muted">${esc(fmtMobile(c.mobile))} · ${esc(c.city)}${c.region ? ', ' + esc(c.region) : ''} · owner ${esc(staffName(c.owner_id))}</p></div>
       <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button>${isOwner() ? `<button class="btn ghost" data-act="client-del" data-id="${id}">Delete</button>` : ''}</div></div>
     ${subtabs(`#/client/${id}`, tab, tabs)}
     ${body(c, cts, ops, docs)}</div>`;
 };
-EM.VIEWS.client.tab = 'clients';
+const homeOf = c => DEALER_KINDS.includes(c.kind) ? ['Dealers', '#/dealers'] : ARCH_KINDS.includes(c.kind) ? ['Architects', '#/architects'] : ['People', '#/people'];
+/* the menu highlights the portal the record belongs to */
+Object.defineProperty(EM.VIEWS.client, 'tab', { get() { const c = CL()[(location.hash.split('/')[2] || '')]; return c ? homeOf(c)[1].slice(2) : 'people'; } });
 EM.VIEWS.client.title = a => (CL()[a.split('/')[0]] || { name: 'Client' }).name;
 EM.VIEWS.client.after = arg => { const [id, tab] = arg.split('/'); if (tab === 'history') loadHistory(id); };
 
@@ -285,9 +405,22 @@ function clientOverview(c) {
   const sections = [...new Set(fields.map(f => f.section))];
   const kids = D.clients.filter(x => x.parent_id === c.id || x.firm_id === c.id || x.architect_id === c.id);
   return `<div class="grid g2">${sections.map(s => `<section class="card stack-s"><h3>${esc(s)}</h3>${kv(fields.filter(f => f.section === s).map(f => [esc(f.label), showVal(f, v[f.key])]))}</section>`).join('')}
+    ${['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group) ? businessCard(c) : ''}
     ${KINDS[c.kind].group === 'dealer' ? `<section class="card stack-s"><h3>Sales, outstanding and orders</h3><span class="badge warn">Not connected yet</span><p class="small muted">These come from Tally invoices once Tally is connected. Nothing is shown until then, so no figure here is ever typed or estimated.</p></section>` : ''}
     ${kids.length ? `<section class="card stack-s"><h3>Linked to ${esc(c.name)}</h3>${table(['Name', 'Type', 'City'], kids.map(x => ({ href: `#/client/${x.id}`, cells: [esc(x.name), esc(kindLabel(x.kind)), esc(x.city)] })))}</section>` : ''}
     ${c.prices_hidden ? '<p class="small muted">Money fields are hidden for your role.</p>' : ''}</div>`;
+}
+/* what this company brings, counted only from saved opportunities */
+function businessCard(c) {
+  const ops = D.opportunities.filter(o => o.client_id === c.id), won = ops.filter(o => o.stage === 'Won'), open = ops.filter(o => !['Won', 'Lost'].includes(o.stage));
+  const sum = a => a.reduce((t, o) => t + (Number(o.value) || 0), 0);
+  const by = {};
+  for (const o of won) { const k = o.contact_id || ''; by[k] = (by[k] || 0) + (Number(o.value) || 0); }
+  const who = Object.entries(by).filter(([k]) => k).map(([k, v]) => [esc((D.contacts.find(x => x.id === k) || { name: 'Removed' }).name), D.access.prices ? money(v) : '']);
+  return `<section class="card stack-s"><h3>Business from ${esc(c.name)}</h3>
+    ${kv([['Team', String(D.contacts.filter(k => k.client_id === c.id).length)], ['Open opportunities', String(open.length) + (D.access.prices && open.length ? ` · ${money(sum(open))}` : '')], ['Won', String(won.length) + (D.access.prices && won.length ? ` · ${money(sum(won))}` : '')]])}
+    ${who.length ? `<div class="small muted">Won business by the person who brought it</div>${kv(who)}` : ''}
+    <p class="small muted">Counted from opportunities saved here. Invoice revenue arrives when Tally is connected.</p></section>`;
 }
 function clientContacts(c, cts) {
   return `<div class="stack-s"><div class="row between"><p class="muted">The people at ${esc(c.name)}, their role and what they handle. Mark one as the main person to talk to.</p><button class="btn primary" data-act="contact-add" data-client="${c.id}">+ Add person</button></div>
@@ -329,13 +462,13 @@ EM.ACTIONS['client-del-go'] = async el => {
     D.clients = D.clients.filter(c => c.id !== id); D.contacts = D.contacts.filter(k => k.client_id !== id);
     const gone = new Set(D.opportunities.filter(o => o.client_id === id).map(o => o.id));
     D.opportunities = D.opportunities.filter(o => !gone.has(o.id)); D.history = D.history.filter(h => !gone.has(h.opp_id)); D.documents = D.documents.filter(d => d.client_id !== id);
-    EM.closeModal(); EM.toast('Deleted.'); location.hash = '#/clients';
+    EM.closeModal(); EM.toast('Deleted.'); location.hash = '#/people';
   } catch (x) { busy(el, false); showErr('del-err', x.message); }
 };
 
 /* ---------------------------------------------------------------- contacts */
 function openContactForm(clientId, k) {
-  EM.modal(`<h2>${k ? 'Edit contact' : 'Add a contact'}</h2><p class="muted small">At ${esc(CL()[clientId].name)}</p>
+  EM.modal(`<h2>${k ? 'Edit ' + esc(k.name) : 'Add a person'}</h2><p class="muted small">At ${esc(CL()[clientId].name)}</p>
     <form id="kf" class="stack" onsubmit="return false" style="margin-top:14px"><div class="fgrid">${CONTACT_FIELDS.map(f => fieldHtml(f, k ? k[f.key] : '', 'kf')).join('')}</div>
     ${errBox('kf-err')}<div class="row"><button class="btn primary" data-act="contact-save" data-client="${clientId}" data-id="${k ? k.id : ''}">${k ? 'Save' : 'Add contact'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
@@ -355,7 +488,7 @@ EM.ACTIONS['contact-save'] = async el => {
 };
 EM.ACTIONS['contact-del'] = async el => {
   const k = D.contacts.find(x => x.id === el.dataset.id);
-  if (!confirm(`Remove ${k.name} from this client?`)) return;
+  if (!confirm(`Remove ${k.name} from ${CL()[k.client_id] ? CL()[k.client_id].name : 'here'}?`)) return;
   try { await API('DELETE', '/api/contacts/' + k.id); D.contacts = D.contacts.filter(x => x.id !== k.id); D.opportunities.forEach(o => { if (o.contact_id === k.id) o.contact_id = ''; }); EM.toast(`${esc(k.name)} removed.`); EM.rerender(); } catch (x) { EM.toast(esc(x.message)); }
 };
 
@@ -398,11 +531,11 @@ EM.VIEWS.opps = arg => {
   const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>
     <div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !['Won', 'Lost'].includes(o.stage) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}</div>`;
   return `<div class="stack">
-    <div class="row between"><div class="stack-s"><div class="kicker">Linked to clients</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
+    <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
       <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
     ${subtabs('#/opps', p, ps.map(k => [k, `${PIPELINES[k].plural} <span class="muted">${D.opportunities.filter(o => o.pipeline === k).length}</span>`]))}
     ${all.length ? `<div class="board">${stages.map(s => { const ls = all.filter(o => o.stage === s); return `<div class="lane"><h4><span>${esc(s)}</span><span class="muted">${ls.length}</span></h4>${D.access.prices && ls.some(o => o.value) ? `<div class="small muted">${inr(ls.reduce((a, o) => a + (Number(o.value) || 0), 0))}</div>` : ''}${ls.map(card).join('')}</div>`; }).join('')}</div>`
-      : empty(`No ${esc(PIPELINES[p].plural.toLowerCase())} yet`, 'Add one from here or from a client page. Each one is linked to a client.', `<button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button>`)}</div>`;
+      : empty(`No ${esc(PIPELINES[p].plural.toLowerCase())} yet`, 'Add one from here, or from a dealer, an architect firm or a person.', `<button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button>`)}</div>`;
 };
 EM.VIEWS.opps.title = () => 'Opportunities';
 document.addEventListener('change', e => { if (e.target.id === 'opp-mine') { EM.oppMine = e.target.checked; EM.rerender(); } });
@@ -431,7 +564,7 @@ EM.VIEWS.opp.title = id => (D.opportunities.find(x => x.id === id) || { title: '
 function openOppForm(o, keep) {
   const v = keep || (o ? { ...o, ...o.extra } : { owner_id: me().id });
   const clients = D.clients.filter(c => PIPES_FOR[KINDS[c.kind].group].some(p => pipesAllowed().includes(p))).sort((a, b) => a.name.localeCompare(b.name));
-  if (!clients.length) return EM.modal(`<h2>Add an opportunity</h2><p class="muted">An opportunity belongs to a client. Add the client first.</p><div class="row" style="margin-top:14px"><button class="btn primary" data-act="client-add">+ Add client</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+  if (!clients.length) return EM.modal(`<h2>Add an opportunity</h2><p class="muted">An opportunity belongs to a dealer, an architect firm or a person. Add one first.</p><div class="row" style="margin-top:14px">${addButtons()}<button class="btn" data-act="close-modal">Cancel</button></div>`);
   const client = CL()[v.client_id] || clients[0];
   const pipes = PIPES_FOR[KINDS[client.kind].group].filter(p => pipesAllowed().includes(p) || (o && o.pipeline === p));
   const pipeline = pipes.includes(v.pipeline) ? v.pipeline : pipes[0];
@@ -501,13 +634,14 @@ EM.ACTIONS['opp-del'] = async el => {
    uploads only that file; the server refuses the other company's file too. */
 const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 const IMP = { tpl: null, file: null, rows: [], results: null, done: null, error: '' };
-const tplsHere = () => Object.values(TEMPLATES).filter(t => canDiv(t.division) && (EM.div === 'both' || EM.div === t.division));
+/* both files always side by side for anyone who works in both companies, whatever the top switch says */
+const tplsHere = () => Object.values(TEMPLATES).filter(t => canDiv(t.division));
 const SHEET_NOTE = {
   dealers: 'Each dealer, distributor and sub-dealer company: where it is, the areas it covers, its rating, then the rest.',
   dealer_people: 'Everyone who works at those companies: role, what they handle, name, mobile, email.',
   architects: 'Each architect firm, or solo architect: where it is, its rating, then the rest.',
   architect_people: 'Everyone who works at those firms: role, what they handle, name, mobile, email.',
-  clients: 'Clients who are not under any dealer or architect: individuals, or individual firms.',
+  clients: 'People with no company: individuals, or a firm on its own.',
   ego_lists: 'Your own product categories and warehouses, for the stock module that comes next.',
 };
 EM.VIEWS.import = () => {

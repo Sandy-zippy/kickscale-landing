@@ -395,8 +395,8 @@ const SHEETS = {
     heads: { ...ORG_HEADS, name: 'Architect firm name', kind: 'Firm or solo architect (Design firm or Architect)', areas_covered: 'Areas they work in' } },
   architect_people: PEOPLE('architect_people', 'Architect people', 'Firm', ['design_firm', 'architect']),
 };
-const CLIENTS_SHEET = kind => ({ id: 'clients', sheet: 'Clients', tab: 'clients', kinds: [kind], first: ['name', 'client_type', 'mobile', 'whatsapp', 'email', 'city', 'locality'], skip: ['architect_id'],
-  heads: { email: 'Email ID', name: 'Client name (person or firm)', client_type: 'Individual or what kind of firm', city: 'City', locality: 'Area', owner_id: 'Who looks after them at EGO (username or name)', mobile: 'Mobile number (10 digits)' } });
+const CLIENTS_SHEET = kind => ({ id: 'clients', sheet: 'People (no company)', tab: 'clients', kinds: [kind], first: ['name', 'client_type', 'mobile', 'whatsapp', 'email', 'city', 'locality'], skip: ['architect_id'],
+  heads: { email: 'Email ID', name: 'Person or firm name', client_type: 'Individual or what kind of firm', city: 'City', locality: 'Area', owner_id: 'Who looks after them at EGO (username or name)', mobile: 'Mobile number (10 digits)' } });
 const TEMPLATES = {
   ws: { id: 'ws', company: 'EGO Premium', division: 'wholesale', version: 'EGO-WS-1', file: 'EGO-Premium-Upload-Template.xlsx',
     sheets: [SHEETS.dealers, SHEETS.dealer_people, SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('direct'), LISTS_SHEET] },
