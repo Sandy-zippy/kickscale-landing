@@ -78,7 +78,7 @@ const CLIENT_FIELDS = [
   { key: 'areas_covered', label: 'Areas they cover', type: 'cities', groups: ORGS, section: 'Basics' },
   { key: 'other_offices', label: 'Other offices or branches (areas)', type: 'text', groups: ORGS, section: 'Basics' },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true, col: true, groups: ALL, section: 'Basics' },
-  { key: 'source', label: 'Came from', type: 'select', opts: SOURCES, col: true, groups: ALL, section: 'Basics' },
+  { key: 'source', label: 'Source', type: 'select', opts: SOURCES, col: true, groups: ALL, section: 'Basics' },
   { key: 'status', label: 'Status', type: 'select', opts: ['Active', 'Prospect', 'Inactive'], col: true, groups: ALL, section: 'Basics' },
 
   { key: 'legal_name', label: 'Legal name (as on GST)', type: 'text', groups: ['dealer', 'firm'], section: 'Business' },
@@ -151,7 +151,7 @@ const OPP_FIELDS = [
   { key: 'area_sqft', label: 'Area (sq ft)', type: 'number' },
   { key: 'application', label: 'Room or application', type: 'text' },
   { key: 'budget', label: 'Budget band', type: 'select', opts: ['Under 2 lakh', '2 to 5 lakh', '5 to 10 lakh', 'Above 10 lakh'] },
-  { key: 'source', label: 'Came from', type: 'select', opts: SOURCES },
+  { key: 'source', label: 'Source', type: 'select', opts: SOURCES },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true },
   { key: 'contact_id', label: 'Point of contact', type: 'contact' },
   { key: 'next_action', label: 'Next action', type: 'text' },
@@ -472,35 +472,52 @@ function cleanFields(fields, input, ctx) {
    mapping (compared after normHeader), so headers are generated here and nowhere else.
    `first` puts the columns a person fills first at the front: who they are, where,
    and the rating; every remaining field of the kind follows in registry order. */
-const ORG_FIRST = ['name', 'kind', 'mobile', 'whatsapp', 'email', 'city', 'locality', 'areas_covered', 'other_offices'];
-const ORG_HEADS = { email: 'Email ID', city: 'City of main office', locality: 'Area of main office', address: 'Full address of main office', owner_id: 'Who looks after them at EGO (username or name)', mobile: 'Office mobile (10 digits)' };
-const PEOPLE = (id, sheet, of, kinds) => ({ id, sheet, tab: 'contacts', kinds, heads: {
-  client_key: `${of} (name exactly as on the ${of === 'Company' ? 'Dealer companies' : 'Architect firms'} sheet, or its mobile or GST)`,
+/* Each file asks only for the basics, in the order of the add form (3 Oct): company,
+   point of contact, address, areas, business. Everything else is filled in EGO Master
+   afterwards. A company is reached through its point of contact, so the contact sits
+   on the company's own row and its mobile becomes the company's mobile.
+   A column may draw its dropdown from another sheet of the same file (`ref`), from the
+   team (`owner`), or from a fixed list (`opts`): the same lists the app's dropdowns use. */
+const POC_COLS = [
+  { key: 'poc_name', type: 'text', req: true, header: 'Point of contact name *' },
+  { key: 'poc_designation', type: 'select', opts: DESIGNATIONS, header: 'Point of contact role' },
+  { key: 'poc_responsibilities', type: 'text', header: 'Point of contact responsibilities' },
+  { key: 'poc_mobile', type: 'mobile', req: true, header: 'Point of contact mobile (10 digits) *' },
+  { key: 'poc_email', type: 'email', header: 'Point of contact email ID' },
+];
+const POC_KEYS = POC_COLS.map(c => c.key);
+const ORG_HEADS = { email: 'Email ID', city: 'City of main office', locality: 'Area of main office', address: 'Full address of main office', owner_id: 'Who looks after them at EGO', areas_covered: 'Areas they cover' };
+const PEOPLE = (id, sheet, of, kinds, from) => ({ id, sheet, tab: 'contacts', kinds, refs: { client_key: [from, 'name'] }, heads: {
+  client_key: `${of} (pick from the ${from} sheet, or type its mobile or GST)`,
   name: 'Person name', designation: 'Role', responsibilities: 'Responsibilities (what they handle)', mobile: 'Mobile number (10 digits)',
   whatsapp: 'WhatsApp number, if different', email: 'Email ID', is_primary: 'Main person to talk to (Yes or No)' } });
-
 const SHEETS = {
-  dealers: { id: 'dealers', sheet: 'Dealer companies', tab: 'clients', kinds: ['distributor', 'dealer', 'sub_dealer'], first: [...ORG_FIRST, 'grade'],
-    heads: { ...ORG_HEADS, name: 'Dealer company name', kind: 'Type (Distributor, Dealer or Sub-dealer)', parent_id: 'Buys through (name, mobile or GST of their distributor or dealer)' } },
-  dealer_people: PEOPLE('dealer_people', 'Dealer people', 'Company', ['distributor', 'dealer', 'sub_dealer']),
-  architects: { id: 'architects', sheet: 'Architect firms', tab: 'clients', kinds: ['design_firm', 'architect'], first: [...ORG_FIRST, 'rating'], skip: ['firm_id'],
+  dealers: { id: 'dealers', sheet: 'Dealer companies', tab: 'clients', kinds: ['distributor', 'dealer', 'sub_dealer'], poc: true,
+    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'grade', 'parent_id', 'source', 'status', 'since', 'credit_limit', 'priority200'],
+    refs: { parent_id: ['Dealer companies', 'name'] },
+    heads: { ...ORG_HEADS, name: 'Dealer company name', kind: 'Type (Distributor, Dealer or Sub-dealer)', parent_id: 'Buys through (pick their distributor or dealer)' } },
+  dealer_people: PEOPLE('dealer_people', 'Dealer people', 'Company', ['distributor', 'dealer', 'sub_dealer'], 'Dealer companies'),
+  architects: { id: 'architects', sheet: 'Architect firms', tab: 'clients', kinds: ['design_firm', 'architect'], poc: true,
+    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'rating', 'source', 'status', 'since', 'relationship'],
     heads: { ...ORG_HEADS, name: 'Architect firm name', kind: 'Firm or solo architect (Design firm or Architect)', areas_covered: 'Areas they work in' } },
-  architect_people: PEOPLE('architect_people', 'Architect people', 'Firm', ['design_firm', 'architect']),
+  architect_people: PEOPLE('architect_people', 'Architect people', 'Firm', ['design_firm', 'architect'], 'Architect firms'),
 };
-const CLIENTS_SHEET = kind => ({ id: 'clients', sheet: 'People (no company)', tab: 'clients', kinds: [kind], first: ['name', 'client_type', 'mobile', 'whatsapp', 'email', 'city', 'locality'], skip: ['architect_id'],
-  heads: { email: 'Email ID', name: 'Person or firm name', client_type: 'Individual or what kind of firm', city: 'City', locality: 'Area', owner_id: 'Who looks after them at EGO (username or name)', mobile: 'Mobile number (10 digits)' } });
+const CLIENTS_SHEET = kind => ({ id: 'clients', sheet: 'People (no company)', tab: 'clients', kinds: [kind],
+  only: ['name', 'client_type', 'mobile', 'whatsapp', 'email', 'address', 'locality', 'city', 'pincode', 'owner_id', 'source', 'status'],
+  heads: { email: 'Email ID', name: 'Person or firm name', client_type: 'Individual or what kind of firm', city: 'City', locality: 'Area', owner_id: 'Who looks after them at EGO', mobile: 'Mobile number (10 digits)' } });
 const TEMPLATES = {
-  ws: { id: 'ws', company: 'EGO Premium', division: 'wholesale', version: 'EGO-WS-1', file: 'EGO-Premium-Upload-Template.xlsx',
+  ws: { id: 'ws', company: 'EGO Premium', division: 'wholesale', version: 'EGO-WS-2', file: 'EGO-Premium-Upload-Template.xlsx',
     sheets: [SHEETS.dealers, SHEETS.dealer_people, SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('direct')] },
-  bige: { id: 'bige', company: 'Big E', division: 'retail', version: 'BIGE-1', file: 'Big-E-Upload-Template.xlsx',
+  bige: { id: 'bige', company: 'Big E', division: 'retail', version: 'BIGE-2', file: 'Big-E-Upload-Template.xlsx',
     sheets: [SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('retail')] },
   /* the shared inventory: the same file whichever company uploads it */
-  inv: { id: 'inv', company: 'Inventory', division: 'both', version: 'EGO-INV-2', file: 'EGO-Inventory-Upload-Template.xlsx', sheets: [
+  inv: { id: 'inv', company: 'Inventory', division: 'both', version: 'EGO-INV-3', file: 'EGO-Inventory-Upload-Template.xlsx', sheets: [
     { id: 'categories', sheet: 'Categories', tab: 'categories' },
-    { id: 'collections', sheet: 'Collections', tab: 'collections', first: ['category', 'name', 'sqft_per_box', 'sqm_per_box', 'pcs_per_box'],
-      heads: { category: 'Category (as on the Categories sheet)', name: 'Collection name (e.g. Divine)', sqft_per_box: 'Box size in square feet', sqm_per_box: 'Box size in square metres (fill this OR square feet)' } },
+    { id: 'collections', sheet: 'Collections', tab: 'collections', only: ['category', 'name', 'sqft_per_box', 'sqm_per_box', 'pcs_per_box', 'size_mm', 'thickness_mm', 'wear_layer'],
+      refs: { category: ['Categories', 'name'] },
+      heads: { category: 'Category (pick from the Categories sheet)', name: 'Collection name (e.g. Divine)', sqft_per_box: 'Box size in square feet', sqm_per_box: 'Box size in square metres (fill this OR square feet)' } },
     { id: 'warehouses', sheet: 'Warehouses', tab: 'warehouses' },
-    { id: 'stock', sheet: 'Designs & stock', tab: 'stock' },
+    { id: 'stock', sheet: 'Designs & stock', tab: 'stock', refs: { category: ['Categories', 'name'], collection: ['Collections', 'name'], warehouse: ['Warehouses', 'name'] } },
   ] },
 };
 const templateFor = division => Object.values(TEMPLATES).find(t => t.division === division);
@@ -509,34 +526,29 @@ const templateFor = division => Object.values(TEMPLATES).find(t => t.division ==
    in the file, worked out from the collection's box size, and is never imported. */
 const CATEGORY_COLS = [{ key: 'name', type: 'text', req: true, header: 'Category name *' }];
 const STOCK_COLS = [
-  { key: 'category', type: 'text', header: 'Category' },
-  { key: 'collection', type: 'text', req: true, header: 'Collection (as on the Collections sheet) *' },
+  { key: 'category', type: 'text', header: 'Category (pick)' },
+  { key: 'collection', type: 'text', req: true, header: 'Collection (pick from the Collections sheet) *' },
   { key: 'name', type: 'text', req: true, header: 'Design name *' },
   { key: 'code', type: 'text', header: 'Design code (if any)' },
   { key: 'sub_type', type: 'select', opts: SUB_TYPES, header: 'Type (Plank, Tile, Herringbone...)' },
   { key: 'colour', type: 'text', header: 'Colour or shade' },
-  { key: 'warehouse', type: 'text', header: 'Warehouse (as on the Warehouses sheet)' },
+  { key: 'warehouse', type: 'text', header: 'Warehouse (pick from the Warehouses sheet)' },
   { key: 'boxes', type: 'number', header: 'Boxes in this warehouse today' },
   { key: 'calc_sqft', type: 'calc', header: 'Square feet in this warehouse (worked out, do not type)' },
-  { key: 'low_stock', type: 'number', header: 'Warn below (boxes)' },
-  { key: 'image', type: 'text', header: 'Photo link' },
   { key: 'status', type: 'select', opts: ['Active', 'Discontinued'], header: 'Status' },
 ];
 const HINT = { decimal: '', mobile: ' (10 digits)', multi: ' (separate with commas)', cats: ' (separate with commas)', cities: ' (cities, separate with commas)', date: ' (DD/MM/YYYY)', owner: ' (username or name)', pincode: ' (6 digits)' };
 function templateColumns(t) {
-  const heads = t.heads || {};
-  const col = f => ({ key: f.key, type: f.type, opts: f.opts, req: !!f.req, header: (heads[f.key] || f.label + (f.type === 'link' ? ' (name, mobile or GST)' : HINT[f.type] || '')) + (f.req ? ' *' : '') });
-  if (t.tab === 'stock') return STOCK_COLS;
+  const heads = t.heads || {}, refs = t.refs || {};
+  const col = f => ({ key: f.key, type: f.type, opts: f.opts, req: !!f.req, ref: refs[f.key], header: (heads[f.key] || f.label + (f.type === 'link' ? ' (name, mobile or GST)' : HINT[f.type] || '')) + (f.req ? ' *' : '') });
+  const withRefs = cols => cols.map(c => ({ ...c, ref: c.ref || refs[c.key] }));
+  if (t.tab === 'stock') return withRefs(STOCK_COLS);
   if (t.tab === 'categories') return CATEGORY_COLS;
-  const own = { collections: COLLECTION_FIELDS, warehouses: WAREHOUSE_FIELDS }[t.tab];
-  if (own) { const order = t.first || [], rank = f => order.includes(f.key) ? order.indexOf(f.key) : order.length;
-    return own.map((f, i) => [f, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([f]) => col(f)); }
-  if (t.tab === 'contacts') return [{ key: 'client_key', type: 'text', req: true, header: heads.client_key + ' *' }, ...CONTACT_FIELDS.map(col)];
-  const keys = new Set(t.kinds.flatMap(k => fieldsFor(k).map(f => f.key)));
-  const fields = CLIENT_FIELDS.filter(f => keys.has(f.key) && !(t.skip || []).includes(f.key) && !(f.key === 'kind' && t.kinds.length === 1));
-  const order = t.first || [], rank = f => order.includes(f.key) ? order.indexOf(f.key) : order.length;
-  return fields.map((f, i) => [f, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1])
-    .map(([f]) => f.key === 'kind' ? { ...col(f), opts: t.kinds } : col(f));
+  if (t.tab === 'contacts') return [{ key: 'client_key', type: 'text', req: true, ref: refs.client_key, header: heads.client_key + ' *' }, ...CONTACT_FIELDS.map(col)];
+  const pool = t.tab === 'clients' ? CLIENT_FIELDS.filter(f => t.kinds.some(k => fieldsFor(k).includes(f))) : { collections: COLLECTION_FIELDS, warehouses: WAREHOUSE_FIELDS }[t.tab];
+  if (!t.only) return pool.map(col);
+  /* the basics only, in the order given; the point of contact goes where 'POC' stands */
+  return t.only.flatMap(k => k === 'POC' ? POC_COLS : pool.filter(f => f.key === k && !(k === 'kind' && t.kinds.length === 1)).map(f => k === 'kind' ? { ...col(f), opts: t.kinds } : col(f)));
 }
 const normHeader = h => String(h == null ? '' : h).replace(/\*/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 /* an example row is shown in every sheet and never imported */

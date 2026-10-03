@@ -1026,7 +1026,7 @@ async function readWorkbook(file, tpl) {
   /* the same company or person twice in one file: the second is an error, not a silent update */
   const seen = new Map();
   for (const r of rows) {
-    const keys = r.tab === 'clients' ? [normMobile(r.data.mobile).value, normGst(r.data.gst)].filter(Boolean).map(k => 'c:' + k)
+    const keys = r.tab === 'clients' ? [normMobile(r.data.mobile || r.data.poc_mobile).value, normGst(r.data.gst)].filter(Boolean).map(k => 'c:' + k)
       : r.tab === 'contacts' ? ['k:' + String(r.data.client_key).trim().toLowerCase() + '|' + (normMobile(r.data.mobile).value || '')]
         : ['categories', 'collections', 'warehouses'].includes(r.tab) ? [r.tab + ':' + r.name.toLowerCase()]
           : r.tab === 'stock' ? ['s:' + String(r.data.collection || '').trim().toLowerCase() + '|' + r.name.toLowerCase() + '|' + String(r.data.warehouse || '').trim().toLowerCase()] : [];
@@ -1040,7 +1040,7 @@ const pendingKeys = () => {
   const o = {};
   IMP.rows.filter(r => r.tab === 'clients' && !r.local).forEach(r => {
     const kind = String(r.data.kind || '');
-    [normMobile(r.data.mobile).value, normGst(r.data.gst)].filter(Boolean).forEach(k => { o[k] = kind; });
+    [normMobile(r.data.mobile || r.data.poc_mobile).value, normGst(r.data.gst)].filter(Boolean).forEach(k => { o[k] = kind; });
     if (r.name) o['n:' + r.name.toLowerCase()] = kind;
   });
   /* the inventory file: collections, designs and warehouses it creates */
