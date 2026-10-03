@@ -8,7 +8,7 @@
    dropdowns. A field added here appears in the form, the 360 page, the server's
    validation and the upload template together, or it is not added at all. */
 
-const CATS = ['LVT', 'SPC', 'Laminate', 'Engineered', 'WPC Tile Deck', 'WPC Plank / Outdoor', 'PVC Soffit & Cladding'];
+const CATS = ['LVT', 'SPC', 'Laminate', 'Engineered', 'Hywood', 'WPC Tile Deck', 'WPC Plank / Outdoor', 'PVC Soffit & Cladding'];
 
 /* kind -> which division owns it. Architects and design firms sit in BOTH
    (29 Sep meeting: wholesale needs its own architect database too). */
@@ -50,7 +50,6 @@ const DEFAULT_LISTS = {
     ['Kolkata', 'East'], ['Indore', 'Central'],
   ].map(([city, region]) => ({ city, region })),
   categories: CATS,
-  warehouses: [],   /* { name, city, address } */
   lost_reasons: ['Price', 'Chose a competitor', 'Architect specified another brand', 'Project on hold', 'Delivery timeline', 'Credit terms', 'No response', 'Other'],
 };
 const REGIONS = ['West', 'South', 'North', 'East', 'Central'];
@@ -334,6 +333,17 @@ function cleanValue(f, v, ctx, whole) {
       for (const x of arr) { const hit = matchOpt(f.opts, x); if (hit == null) return { error: `"${x}" is not in the list` }; if (!out.includes(hit)) out.push(hit); }
       return { value: out };
     }
+    case 'cat': {
+      if (v === '') return { value: '' };
+      const hit = (lists.categories || CATS).find(c => c.toLowerCase() === String(v).toLowerCase());
+      return hit ? { value: hit } : { error: `"${v}" is not a product category (the Owner adds categories in Lists and stages)` };
+    }
+    case 'decimal': {
+      const n = toNum(v);
+      if (n == null) return { value: null };
+      if (Number.isNaN(n) || n < 0) return { error: 'is not a number' };
+      return { value: Math.round(n * 1000) / 1000 };
+    }
     case 'cats': return cleanValue({ ...f, type: 'multi', opts: lists.categories || CATS }, v, ctx, whole);
     case 'cities': return cleanValue({ ...f, type: 'multi', opts: lists.cities.map(c => c.city) }, v, ctx, whole);
     case 'city': {
@@ -373,6 +383,76 @@ function matchOpt(opts, v, labels) {
 const optLabel = (f, o) => f.key === 'kind' ? KINDS[o].label : f.key === 'pipeline' ? PIPELINES[o].label : o;
 const regionOf = (lists, city) => { const c = (lists || DEFAULT_LISTS).cities.find(x => x.city === city); return c ? c.region : ''; };
 
+/* ---------------------------------------------------------------- inventory (3 Oct)
+
+   ONE inventory for EGO Premium and Big E. Category > collection > design, as on
+   egopremium.com: the technical specs belong to the COLLECTION, a design is a name,
+   a code and a photo. Stock is counted in boxes per design per warehouse, and only
+   ever changes through a stock move (in, out, transfer, opening), so every number
+   has a who, a when and a reason. */
+const STOCK_ROLES = ['owner', 'director', 'ws_warehouse'];
+const SUB_TYPES = ['Plank', 'Tile', 'Herringbone', 'Chevron', 'Board', 'Profile', 'Other'];
+const COLLECTION_FIELDS = [
+  { key: 'category', label: 'Category', type: 'cat', req: true, col: true, section: 'Collection' },
+  { key: 'name', label: 'Collection name', type: 'text', req: true, col: true, section: 'Collection' },
+  { key: 'size_mm', label: 'Size (mm)', type: 'text', section: 'Specifications' },
+  { key: 'thickness_mm', label: 'Thickness', type: 'text', section: 'Specifications' },
+  { key: 'wear_layer', label: 'Wear layer', type: 'text', section: 'Specifications' },
+  { key: 'construction', label: 'Construction or layers', type: 'text', section: 'Specifications' },
+  { key: 'core', label: 'Core or base', type: 'text', section: 'Specifications' },
+  { key: 'ac_rating', label: 'AC rating', type: 'select', opts: ['AC3', 'AC4', 'AC5', 'AC6'], section: 'Specifications' },
+  { key: 'use_class', label: 'Class of use', type: 'text', section: 'Specifications' },
+  { key: 'finish', label: 'Surface or finish', type: 'text', section: 'Specifications' },
+  { key: 'edges', label: 'Edges', type: 'text', section: 'Specifications' },
+  { key: 'click_system', label: 'Click system', type: 'text', section: 'Specifications' },
+  { key: 'underlay', label: 'Underlay', type: 'text', section: 'Specifications' },
+  { key: 'water', label: 'Water resistance', type: 'text', section: 'Specifications' },
+  { key: 'fire_rating', label: 'Fire rating', type: 'text', section: 'Specifications' },
+  { key: 'slip', label: 'Slip resistance', type: 'text', section: 'Specifications' },
+  { key: 'acoustics', label: 'Acoustics', type: 'text', section: 'Specifications' },
+  { key: 'emissions', label: 'Emissions', type: 'text', section: 'Specifications' },
+  { key: 'warranty_res', label: 'Warranty, residential (years)', type: 'number', section: 'Warranty' },
+  { key: 'warranty_com', label: 'Warranty, commercial (years)', type: 'number', section: 'Warranty' },
+  { key: 'pcs_per_box', label: 'Pieces per box', type: 'number', section: 'Packing' },
+  { key: 'sqm_per_box', label: 'Square metres per box', type: 'decimal', section: 'Packing' },
+  { key: 'weight_box_kg', label: 'Weight per box (kg)', type: 'decimal', section: 'Packing' },
+  { key: 'boxes_per_pallet', label: 'Boxes per pallet', type: 'number', section: 'Packing' },
+  { key: 'price_sqft', label: 'Price per sq ft (₹)', type: 'money', section: 'Packing' },
+  { key: 'catalogue_url', label: 'Catalogue link', type: 'text', section: 'Packing' },
+  { key: 'notes', label: 'Notes', type: 'textarea', section: 'Packing' },
+];
+const PRODUCT_FIELDS = [
+  { key: 'collection_id', label: 'Collection', type: 'collection', req: true, col: true },
+  { key: 'name', label: 'Design name', type: 'text', req: true, col: true },
+  { key: 'code', label: 'Design code', type: 'text', col: true },
+  { key: 'sub_type', label: 'Type', type: 'select', opts: SUB_TYPES, col: true },
+  { key: 'colour', label: 'Colour or shade', type: 'text' },
+  { key: 'image', label: 'Photo link', type: 'text' },
+  { key: 'low_stock', label: 'Warn below (boxes)', type: 'number' },
+  { key: 'status', label: 'Status', type: 'select', opts: ['Active', 'Discontinued'], col: true },
+];
+const WAREHOUSE_FIELDS = [
+  { key: 'name', label: 'Warehouse name', type: 'text', req: true },
+  { key: 'city', label: 'City', type: 'text' },
+  { key: 'address', label: 'Address', type: 'textarea' },
+];
+const MOVE_KINDS = { in: 'Stock in', out: 'Stock out', transfer: 'Transfer', opening: 'Opening stock' };
+const SQFT = 10.7639;
+const sqftOf = (boxes, sqm) => sqm ? Math.round(boxes * sqm * SQFT) : null;
+/* one cleaner for the three: unknown keys are dropped, money and specs go in extra */
+function cleanFields(fields, input, ctx) {
+  const errors = [], rec = { extra: {} };
+  for (const f of fields) {
+    const r = cleanValue(f, input[f.key], ctx, input);
+    if (r.error) { errors.push(`${f.label} ${r.error}`); continue; }
+    const empty = r.value === '' || r.value == null;
+    if (f.req && empty) { errors.push(`${f.label} is compulsory`); continue; }
+    if (f.col || fields === WAREHOUSE_FIELDS) rec[f.key] = empty ? (['number', 'money', 'decimal'].includes(f.type) ? null : '') : r.value;
+    else if (!empty) rec.extra[f.key] = r.value;
+  }
+  return { rec, errors };
+}
+
 /* ---------------------------------------------------------------- the Excel templates
 
    TWO files, one per company (3 Oct): EGO Premium uploads only in Wholesale, Big E
@@ -386,7 +466,7 @@ const PEOPLE = (id, sheet, of, kinds) => ({ id, sheet, tab: 'contacts', kinds, h
   client_key: `${of} (name exactly as on the ${of === 'Company' ? 'Dealer companies' : 'Architect firms'} sheet, or its mobile or GST)`,
   name: 'Person name', designation: 'Role', responsibilities: 'Responsibilities (what they handle)', mobile: 'Mobile number (10 digits)',
   whatsapp: 'WhatsApp number, if different', email: 'Email ID', is_primary: 'Main person to talk to (Yes or No)' } });
-const LISTS_SHEET = { id: 'ego_lists', sheet: 'Products & warehouses', tab: 'lists' };
+
 const SHEETS = {
   dealers: { id: 'dealers', sheet: 'Dealer companies', tab: 'clients', kinds: ['distributor', 'dealer', 'sub_dealer'], first: [...ORG_FIRST, 'grade'],
     heads: { ...ORG_HEADS, name: 'Dealer company name', kind: 'Type (Distributor, Dealer or Sub-dealer)', parent_id: 'Buys through (name, mobile or GST of their distributor or dealer)' } },
@@ -399,22 +479,31 @@ const CLIENTS_SHEET = kind => ({ id: 'clients', sheet: 'People (no company)', ta
   heads: { email: 'Email ID', name: 'Person or firm name', client_type: 'Individual or what kind of firm', city: 'City', locality: 'Area', owner_id: 'Who looks after them at EGO (username or name)', mobile: 'Mobile number (10 digits)' } });
 const TEMPLATES = {
   ws: { id: 'ws', company: 'EGO Premium', division: 'wholesale', version: 'EGO-WS-1', file: 'EGO-Premium-Upload-Template.xlsx',
-    sheets: [SHEETS.dealers, SHEETS.dealer_people, SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('direct'), LISTS_SHEET] },
+    sheets: [SHEETS.dealers, SHEETS.dealer_people, SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('direct')] },
   bige: { id: 'bige', company: 'Big E', division: 'retail', version: 'BIGE-1', file: 'Big-E-Upload-Template.xlsx',
-    sheets: [SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('retail'), LISTS_SHEET] },
+    sheets: [SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('retail')] },
+  /* the shared inventory: the same file whichever company uploads it */
+  inv: { id: 'inv', company: 'Inventory', division: 'both', version: 'EGO-INV-1', file: 'EGO-Inventory-Upload-Template.xlsx', sheets: [
+    { id: 'collections', sheet: 'Collections', tab: 'collections', heads: { category: 'Category (LVT, SPC, Laminate...)', name: 'Collection name (e.g. Divine)' } },
+    { id: 'designs', sheet: 'Designs', tab: 'products', heads: { collection_id: 'Collection (name exactly as on the Collections sheet)', name: 'Design name', code: 'Design code (if any)', sub_type: 'Type (Plank, Tile, Herringbone...)' } },
+    { id: 'warehouses', sheet: 'Warehouses', tab: 'warehouses' },
+    { id: 'opening', sheet: 'Opening stock', tab: 'opening' },
+  ] },
 };
 const templateFor = division => Object.values(TEMPLATES).find(t => t.division === division);
-const LIST_COLS = [
-  { key: 'category', type: 'text', header: 'Product category' },
-  { key: 'wh_name', type: 'text', header: 'Warehouse name' },
-  { key: 'wh_city', type: 'text', header: 'Warehouse city' },
-  { key: 'wh_address', type: 'text', header: 'Warehouse address' },
+const OPENING_COLS = [
+  { key: 'product', type: 'text', req: true, header: 'Design (code, or name exactly as on the Designs sheet) *' },
+  { key: 'collection', type: 'text', header: 'Collection (only needed when two designs share a name)' },
+  { key: 'warehouse', type: 'text', req: true, header: 'Warehouse (name exactly as on the Warehouses sheet) *' },
+  { key: 'boxes', type: 'number', req: true, header: 'Boxes in stock today *' },
 ];
-const HINT = { mobile: ' (10 digits)', multi: ' (separate with commas)', cats: ' (separate with commas)', cities: ' (cities, separate with commas)', date: ' (DD/MM/YYYY)', owner: ' (username or name)', pincode: ' (6 digits)' };
+const HINT = { decimal: '', mobile: ' (10 digits)', multi: ' (separate with commas)', cats: ' (separate with commas)', cities: ' (cities, separate with commas)', date: ' (DD/MM/YYYY)', owner: ' (username or name)', pincode: ' (6 digits)' };
 function templateColumns(t) {
   const heads = t.heads || {};
   const col = f => ({ key: f.key, type: f.type, opts: f.opts, req: !!f.req, header: (heads[f.key] || f.label + (f.type === 'link' ? ' (name, mobile or GST)' : HINT[f.type] || '')) + (f.req ? ' *' : '') });
-  if (t.tab === 'lists') return LIST_COLS;
+  if (t.tab === 'opening') return OPENING_COLS;
+  const own = { collections: COLLECTION_FIELDS, products: PRODUCT_FIELDS, warehouses: WAREHOUSE_FIELDS }[t.tab];
+  if (own) return own.map(f => ({ ...col(f), type: f.type === 'collection' ? 'text' : f.type }));
   if (t.tab === 'contacts') return [{ key: 'client_key', type: 'text', req: true, header: heads.client_key + ' *' }, ...CONTACT_FIELDS.map(col)];
   const keys = new Set(t.kinds.flatMap(k => fieldsFor(k).map(f => f.key)));
   const fields = CLIENT_FIELDS.filter(f => keys.has(f.key) && !(t.skip || []).includes(f.key) && !(f.key === 'kind' && t.kinds.length === 1));

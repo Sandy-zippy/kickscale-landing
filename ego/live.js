@@ -19,7 +19,7 @@ const holds = () => D.access.scope !== 'none';
 const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.user.division;
 function allowedTab(t) {
   if (['home', 'account', 'soon'].includes(t)) return true;
-  if (['clients', 'people', 'opps', 'import'].includes(t)) return holds();
+  if (['clients', 'people', 'opps', 'import', 'inventory'].includes(t)) return holds();
   if (t === 'dealers') return holds() && canDiv('wholesale');
   if (t === 'architects') return holds();
   if (t === 'team') return D.access.users;
@@ -28,12 +28,12 @@ function allowedTab(t) {
 }
 EM.div = D.user.division === 'both' ? 'both' : D.user.division;
 EM.navTabs = () => ({
-  main: [['home', 'Home'], ['dealers', 'Dealers'], ['architects', 'Architects'], ['people', 'People'], ['opps', 'Opportunities'], ['import', 'Import from Excel']]
+  main: [['home', 'Home'], ['dealers', 'Dealers'], ['architects', 'Architects'], ['people', 'People'], ['opps', 'Opportunities'], ['inventory', 'Inventory'], ['import', 'Import from Excel']]
     .filter(([k]) => allowedTab(k) && !(k === 'dealers' && EM.div === 'retail')),
   shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
 Object.assign(ICON, {
-  opps: ICON.leads, architects: ICON.firms, people: ICON.clients, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
+  opps: ICON.leads, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
 });
@@ -99,6 +99,9 @@ function fieldHtml(f, v, p, opt = {}) {
       return G.select(f, v, p, opts);
     }
     case 'cats': return fieldHtml({ ...f, type: 'multi', opts: D.lists.categories }, v, p);
+    case 'cat': return G.select(f, v, p, D.lists.categories.map(c => [c, c]));
+    case 'decimal': return G.wrap(f, p, `<input class="input" type="number" min="0" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`);
+    case 'collection': return G.select(f, v, p, INVD().collections.map(c => [c.id, `${c.name} · ${c.category}`]));
     case 'cities': return fieldHtml({ ...f, type: 'multi', opts: D.lists.cities.map(c => c.city) }, v, p);
     case 'multi': return G.wrap(f, p, `<div class="checks" id="${p}-${f.key}" role="group" aria-label="${esc(f.label)}">${f.opts.map(o => `<label class="chip"><input type="checkbox" name="${f.key}" value="${esc(o)}" ${(Array.isArray(v) ? v : []).includes(o) ? 'checked' : ''}> ${esc(o)}</label>`).join('')}</div>`, true);
     case 'stage': return G.select(f, v, p, ((D.lists.stages || {})[opt.pipeline] || []).map(s => [s, s]), false);
@@ -173,12 +176,12 @@ const SOON = {
   ads: ['Ad and portal leads', 'Meta, Google, IndiaMART and JustDial lead feeds.'],
   ai: ['AI lead screening and the call agent', 'The leads feed above, a telephony number and DLT registration.'],
   targets: ['Targets, schemes and Priority 200 scores', 'Sales from Tally, so achievement is never typed by hand.'],
-  stock: ['Stock, fulfilment and production', 'Tally stock items and godowns.'],
+  stock: ['Fulfilment and production', 'Tally. Stock itself is kept in Inventory until Tally is connected.'],
 };
 const notConnectedCard = () => `<section class="card stack-s"><h3>Not connected yet</h3><p class="small muted">These parts of EGO Master show no figures until the system that feeds them is connected. Nothing here is estimated.</p>
   ${table(['Part', 'Waits for', ''], Object.values(SOON).map(([a, b]) => [esc(a), esc(b), '<span class="badge warn">Not connected yet</span>']))}</section>`;
 /* the demo's screens, if a bookmark or an old link reaches them */
-const DEMO_ROUTES = { orders: 'sales', worder: 'sales', order: 'sales', fulfilment: 'stock', fulfil: 'stock', production: 'stock', po: 'stock', stock: 'stock', targets: 'targets', schemes: 'targets', p200: 'targets', champions: 'targets', complaints: 'sales', leads: 'ads', lead: 'ads', projects: 'sales', project: 'sales', installation: 'stock', inbox: 'whatsapp', approvals: 'sales', cockpit: 'targets', automations: 'whatsapp', ai: 'ai', integrations: 'ai', app: 'visits', map: 'ai', tech: 'ai' };
+const DEMO_ROUTES = { orders: 'sales', worder: 'sales', order: 'sales', fulfilment: 'stock', fulfil: 'stock', production: 'stock', po: 'stock', targets: 'targets', schemes: 'targets', p200: 'targets', champions: 'targets', complaints: 'sales', leads: 'ads', lead: 'ads', projects: 'sales', project: 'sales', installation: 'stock', inbox: 'whatsapp', approvals: 'sales', cockpit: 'targets', automations: 'whatsapp', ai: 'ai', integrations: 'ai', app: 'visits', map: 'ai', tech: 'ai' };
 for (const [r, k] of Object.entries(DEMO_ROUTES)) {
   EM.VIEWS[r] = () => `<div class="stack" style="max-width:720px"><span class="badge warn">Not connected yet</span><h1>${esc(SOON[k][0])}</h1><p class="muted">This part of EGO Master waits for: ${esc(SOON[k][1])} Until then it shows nothing rather than sample figures.</p><div class="row"><a class="btn primary" href="#/people">People</a><a class="btn" href="#/home">Home</a></div></div>`;
   EM.VIEWS[r].tab = 'soon';
@@ -629,20 +632,182 @@ EM.ACTIONS['opp-del'] = async el => {
   try { await API('DELETE', '/api/opportunities/' + o.id); D.opportunities = D.opportunities.filter(x => x.id !== o.id); D.history = D.history.filter(h => h.opp_id !== o.id); location.hash = '#/opps/' + o.pipeline; } catch (x) { EM.toast(esc(x.message)); }
 };
 
+/* ---------------------------------------------------------------- inventory
+   One inventory for EGO Premium and Big E. Stock is boxes per design per warehouse,
+   and changes only through a stock move, so every figure has who, when and why. */
+const INVD = () => D.inventory || { collections: [], products: [], warehouses: [], stock: [] };
+const canStockUI = () => STOCK_ROLES.includes(me().role);
+const colOf = p => INVD().collections.find(c => c.id === p.collection_id) || { name: '', category: '', extra: {} };
+const boxesOf = (pid, wid) => INVD().stock.filter(x => x.product_id === pid && (!wid || x.warehouse_id === wid)).reduce((a, x) => a + x.boxes, 0);
+const sqftFor = (p, boxes) => sqftOf(boxes, colOf(p).extra.sqm_per_box);
+const num = n => n == null ? '' : Number(n).toLocaleString('en-IN');
+const sqftTxt = (p, b) => { const f = sqftFor(p, b); return f == null ? '<span class="muted">box size not set</span>' : num(f) + ' sq ft'; };
+const totalSqft = list => list.reduce((a, [p, b]) => a + (sqftFor(p, b) || 0), 0);
+const INV_TABS = [['overview', 'Overview'], ['designs', 'Designs'], ['collections', 'Collections'], ['warehouses', 'Warehouses']];
+EM.invQ = ''; EM.invCat = '';
+EM.VIEWS.inventory = arg => {
+  const I = INVD(), tab = INV_TABS.find(t => t[0] === arg) ? arg : 'overview';
+  const head = `<div class="row between"><div class="stack-s"><div class="kicker">Shared by EGO Premium and Big E</div><h1>Inventory</h1><p class="muted">${canStockUI() ? 'Stock changes only through Stock in, Stock out or Transfer, so every number has a who and a when.' : 'You can see the inventory. Stock is changed by the Owner, a Director or Warehouse & Dispatch.'}</p></div>
+    ${canStockUI() ? `<div class="row"><a class="btn" href="#/import">Import from Excel</a><button class="btn" data-act="col-add">+ Collection</button><button class="btn" data-act="prod-add">+ Design</button><button class="btn" data-act="wh-add">+ Warehouse</button><button class="btn primary" data-act="move-add">Stock in / out</button></div>` : ''}</div>
+    ${subtabs('#/inventory', tab, INV_TABS.map(([k, l]) => [k, `${l}${k === 'designs' ? ` <span class="muted">${I.products.length}</span>` : k === 'collections' ? ` <span class="muted">${I.collections.length}</span>` : k === 'warehouses' ? ` <span class="muted">${I.warehouses.length}</span>` : ''}`]))}`;
+  const body = { overview: invOverview, designs: invDesigns, collections: invCollections, warehouses: invWarehouses }[tab]();
+  return `<div class="stack">${head}${body}</div>`;
+};
+EM.VIEWS.inventory.title = () => 'Inventory';
+EM.VIEWS.stock = EM.VIEWS.inventory;
+EM.VIEWS.stock.title = () => 'Inventory';
+function invOverview() {
+  const I = INVD();
+  if (!I.products.length && !I.warehouses.length) return empty('Nothing in the inventory yet', 'Fill the Inventory file (collections, designs, warehouses and today\'s stock) and upload it, or add them here one by one.', canStockUI() ? '<a class="btn primary" href="#/import">Import from Excel</a><button class="btn" data-act="col-add">+ Collection</button>' : '');
+  const all = I.products.map(p => [p, boxesOf(p.id)]);
+  const cats = [...new Set(I.collections.map(c => c.category))];
+  const low = I.products.filter(p => p.status !== 'Discontinued' && p.extra.low_stock != null && boxesOf(p.id) < p.extra.low_stock);
+  const noBox = I.collections.filter(c => !c.extra.sqm_per_box).length;
+  return `<div class="grid g4">${tile('Categories', cats.length, '', '#/inventory/collections')}${tile('Collections', I.collections.length, '', '#/inventory/collections')}${tile('Designs', I.products.length, `${I.products.filter(p => p.status === 'Discontinued').length} discontinued`, '#/inventory/designs')}${tile('Warehouses', I.warehouses.length, '', '#/inventory/warehouses')}
+      ${tile('Boxes in stock', num(all.reduce((a, [, b]) => a + b, 0)), '', '#/inventory/designs')}${tile('Square feet in stock', num(totalSqft(all)), noBox ? `${noBox} collection${noBox === 1 ? '' : 's'} without box size` : '', '#/inventory/designs')}${tile('Below their warning level', low.length, '', '#/inventory/designs')}</div>
+    <div class="grid g2"><section class="card stack-s"><h3>By warehouse</h3>${table(['Warehouse', 'City', 'Designs in stock', 'Boxes', 'Sq ft'], I.warehouses.map(w => { const l = I.products.map(p => [p, boxesOf(p.id, w.id)]).filter(([, b]) => b); return { href: '#/inventory/warehouses', cells: [`<b>${esc(w.name)}</b>`, esc(w.city || ''), l.length, num(l.reduce((a, [, b]) => a + b, 0)), num(totalSqft(l))] }; }))}</section>
+      <section class="card stack-s"><h3>By category</h3>${table(['Category', 'Collections', 'Designs', 'Boxes', 'Sq ft'], cats.map(c => { const cs = I.collections.filter(x => x.category === c).map(x => x.id), l = I.products.filter(p => cs.includes(p.collection_id)).map(p => [p, boxesOf(p.id)]); return [`<b>${esc(c)}</b>`, cs.length, l.length, num(l.reduce((a, [, b]) => a + b, 0)), num(totalSqft(l))]; }))}</section></div>
+    ${low.length ? `<section class="card stack-s"><h3>Below their warning level</h3>${table(['Design', 'Collection', 'Boxes', 'Warn below'], low.map(p => ({ href: '#/product/' + p.id, cells: [`<b>${esc(p.name)}</b>`, esc(colOf(p).name), boxesOf(p.id), p.extra.low_stock] })))}</section>` : ''}`;
+}
+function invDesigns() {
+  const I = INVD(), q = EM.invQ.toLowerCase();
+  const rows = I.products.filter(p => (!EM.invCat || colOf(p).category === EM.invCat) && (!q || `${p.name} ${p.code} ${colOf(p).name} ${p.extra.colour || ''}`.toLowerCase().includes(q)));
+  return `<div class="row"><label class="field" style="max-width:340px"><span class="small muted">Search</span><input class="input" id="invq" value="${esc(EM.invQ)}" placeholder="Design, code, collection or colour"></label>
+      <label class="field" style="max-width:240px"><span class="small muted">Category</span><select class="input" id="invcat"><option value="">All categories</option>${[...new Set(I.collections.map(c => c.category))].map(c => `<option ${c === EM.invCat ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></label></div>
+    ${I.products.length ? table(['Design', 'Code', 'Collection', 'Category', 'Type', 'Boxes', 'Sq ft', 'Status'], rows.slice(0, 400).map(p => { const b = boxesOf(p.id); return { href: '#/product/' + p.id,
+      cells: [`<b>${esc(p.name)}</b>`, esc(p.code || ''), esc(colOf(p).name), esc(colOf(p).category), esc(p.sub_type || ''), p.extra.low_stock != null && b < p.extra.low_stock ? `<span class="badge bad">${b}</span>` : b, sqftTxt(p, b), p.status === 'Discontinued' ? '<span class="badge plain">Discontinued</span>' : ''] }; }))
+      : empty('No designs yet', 'Add a collection first, then its designs, or upload the Inventory file.')}`;
+}
+function invCollections() {
+  const I = INVD();
+  return I.collections.length ? table(['Collection', 'Category', 'Designs', 'Size', 'Thickness', 'Wear layer', 'm² per box', 'Boxes in stock'], I.collections.map(c => { const ps = I.products.filter(p => p.collection_id === c.id); return { href: '#/collection/' + c.id,
+    cells: [`<b>${esc(c.name)}</b>`, esc(c.category), ps.length, esc(c.extra.size_mm || ''), esc(c.extra.thickness_mm || ''), esc(c.extra.wear_layer || ''), c.extra.sqm_per_box ?? '<span class="muted">not set</span>', num(ps.reduce((a, p) => a + boxesOf(p.id), 0))] }; }))
+    : empty('No collections yet', 'A collection holds the specifications its designs share: size, thickness, wear layer, box contents.', canStockUI() ? '<button class="btn primary" data-act="col-add">+ Collection</button>' : '');
+}
+function invWarehouses() {
+  const I = INVD();
+  return I.warehouses.length ? `<div class="stack">${I.warehouses.map(w => { const l = I.products.map(p => [p, boxesOf(p.id, w.id)]).filter(([, b]) => b);
+    return `<section class="card stack-s"><div class="row between"><div><h3>${esc(w.name)}</h3><p class="small muted">${esc([w.city, w.address].filter(Boolean).join(' · '))}</p></div>${canStockUI() ? `<button class="btn sm ghost" data-act="wh-edit" data-id="${w.id}">Edit</button>` : ''}</div>
+      ${kv([['Designs in stock', String(l.length)], ['Boxes', num(l.reduce((a, [, b]) => a + b, 0))], ['Sq ft', num(totalSqft(l))]])}
+      ${l.length ? table(['Design', 'Collection', 'Boxes', 'Sq ft'], l.slice(0, 200).map(([p, b]) => ({ href: '#/product/' + p.id, cells: [`<b>${esc(p.name)}</b>`, esc(colOf(p).name), b, sqftTxt(p, b)] }))) : '<p class="small muted">Nothing in stock here yet.</p>'}</section>`; }).join('')}</div>`
+    : empty('No warehouses yet', 'Add each warehouse: name, city and address.', canStockUI() ? '<button class="btn primary" data-act="wh-add">+ Warehouse</button>' : '');
+}
+document.addEventListener('input', e => { if (e.target.id === 'invq') { EM.invQ = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#invq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+document.addEventListener('change', e => { if (e.target.id === 'invcat') { EM.invCat = e.target.value; EM.rerender(); } });
+
+const specRows = (c, sections) => COLLECTION_FIELDS.filter(f => !['category', 'name'].includes(f.key) && (!sections || sections.includes(f.section)) && (D.access.prices || f.type !== 'money')).map(f => [esc(f.label), showVal(f, c.extra[f.key])]);
+EM.VIEWS.product = id => {
+  const p = INVD().products.find(x => x.id === id);
+  if (!p) return `<div class="stack"><h1>Design not found</h1><a class="btn" href="#/inventory/designs">Designs</a></div>`;
+  const c = colOf(p), I = INVD(), total = boxesOf(p.id);
+  return `<div class="stack">${crumbs(['Inventory', '#/inventory/designs'], [p.name])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(p.name)}</h1><div class="row"><a class="badge info plain" href="#/collection/${c.id}">${esc(c.name)}</a><span class="badge plain">${esc(c.category)}</span>${p.sub_type ? `<span class="badge plain">${esc(p.sub_type)}</span>` : ''}${p.code ? `<span class="small muted">${esc(p.code)}</span>` : ''}${p.status === 'Discontinued' ? '<span class="badge warn">Discontinued</span>' : ''}</div>
+      <p class="muted">${num(total)} boxes in stock · ${sqftTxt(p, total)}</p></div>
+      ${canStockUI() ? `<div class="row"><button class="btn" data-act="prod-edit" data-id="${p.id}">Edit</button><button class="btn primary" data-act="move-add" data-product="${p.id}">Stock in / out</button>${isOwner() ? `<button class="btn ghost" data-act="prod-del" data-id="${p.id}">Delete</button>` : ''}</div>` : ''}</div>
+    <div class="grid g2">${p.extra.image ? `<section class="card"><img src="${esc(p.extra.image)}" alt="${esc(p.name)}" style="width:100%;border-radius:10px;display:block" loading="lazy"></section>` : ''}
+      <section class="card stack-s"><h3>Stock by warehouse</h3>${I.warehouses.length ? table(['Warehouse', 'Boxes', 'Sq ft'], I.warehouses.map(w => { const b = boxesOf(p.id, w.id); return [esc(w.name), b, sqftTxt(p, b)]; })) : '<p class="small muted">No warehouses yet.</p>'}
+        ${kv([['Colour or shade', esc(p.extra.colour || '') || NOTSET], ['Warn below', p.extra.low_stock != null ? p.extra.low_stock + ' boxes' : NOTSET]])}</section>
+      <section class="card stack-s"><h3>Specifications (from ${esc(c.name)})</h3>${kv(specRows(c, ['Specifications', 'Warranty']))}</section>
+      <section class="card stack-s"><h3>Packing</h3>${kv(specRows(c, ['Packing']))}</section></div>
+    <section class="stack-s"><h3>Stock history</h3><div id="moves"><p class="muted">Loading…</p></div></section></div>`;
+};
+EM.VIEWS.product.tab = 'inventory';
+EM.VIEWS.product.title = id => (INVD().products.find(x => x.id === id) || { name: 'Design' }).name;
+EM.VIEWS.product.after = async id => {
+  try {
+    const r = await API('GET', '/api/stock?product=' + encodeURIComponent(id)), box = qs('#moves');
+    if (box) box.innerHTML = r.moves.length ? table(['When', 'What', 'Warehouse', 'Boxes', 'By', 'Note'], r.moves.map(m => [ds(m.at.slice(0, 10)), esc(MOVE_KINDS[m.kind]), esc(m.warehouse || ''), m.boxes > 0 ? '+' + m.boxes : String(m.boxes), esc(m.by_name || ''), esc(m.note || '')])) : '<p class="small muted">No stock moves yet.</p>';
+  } catch (x) { const box = qs('#moves'); if (box) box.textContent = x.message; }
+};
+EM.VIEWS.collection = id => {
+  const c = INVD().collections.find(x => x.id === id);
+  if (!c) return `<div class="stack"><h1>Collection not found</h1><a class="btn" href="#/inventory/collections">Collections</a></div>`;
+  const ps = INVD().products.filter(p => p.collection_id === id);
+  return `<div class="stack">${crumbs(['Inventory', '#/inventory/collections'], [c.name])}
+    <div class="row between"><div class="stack-s"><h1>${esc(c.name)}</h1><div class="row"><span class="badge info plain">${esc(c.category)}</span><span class="small muted">${ps.length} designs</span></div></div>
+      ${canStockUI() ? `<div class="row"><button class="btn" data-act="col-edit" data-id="${c.id}">Edit</button><button class="btn primary" data-act="prod-add" data-collection="${c.id}">+ Design</button></div>` : ''}</div>
+    <div class="grid g2"><section class="card stack-s"><h3>Specifications</h3>${kv(specRows(c, ['Specifications', 'Warranty']))}</section><section class="card stack-s"><h3>Packing</h3>${kv(specRows(c, ['Packing']))}</section></div>
+    <section class="stack-s"><h3>Designs</h3>${ps.length ? table(['Design', 'Code', 'Type', 'Boxes', 'Sq ft'], ps.map(p => { const b = boxesOf(p.id); return { href: '#/product/' + p.id, cells: [`<b>${esc(p.name)}</b>`, esc(p.code || ''), esc(p.sub_type || ''), b, sqftTxt(p, b)] }; })) : '<p class="small muted">No designs yet.</p>'}</section></div>`;
+};
+EM.VIEWS.collection.tab = 'inventory';
+EM.VIEWS.collection.title = id => (INVD().collections.find(x => x.id === id) || { name: 'Collection' }).name;
+
+/* the three forms share one shape: fields from schema.js, saved through /api/<table> */
+function invForm(table, rec, keep) {
+  const F = { collections: COLLECTION_FIELDS, products: PRODUCT_FIELDS, warehouses: WAREHOUSE_FIELDS }[table], what = { collections: 'collection', products: 'design', warehouses: 'warehouse' }[table];
+  const v = keep || (rec ? { ...rec, ...(rec.extra || {}) } : {});
+  const fields = F.filter(f => D.access.prices || f.type !== 'money'), secs = [...new Set(fields.map(f => f.section || ''))];
+  if (table === 'products' && !INVD().collections.length) return EM.modal(`<h2>Add a design</h2><p class="muted">A design belongs to a collection. Add the collection first.</p><div class="row" style="margin-top:14px"><button class="btn primary" data-act="col-add">+ Collection</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+  EM.modal(`<h2>${rec ? 'Edit ' + esc(rec.name) : 'Add a ' + what}</h2>
+    <form id="ivf" class="stack" onsubmit="return false" style="margin-top:14px" data-table="${table}" data-id="${rec ? rec.id : ''}">
+      ${secs.map(sc => `<fieldset class="fs">${sc ? `<legend>${esc(sc)}</legend>` : ''}<div class="fgrid">${fields.filter(f => (f.section || '') === sc).map(f => fieldHtml(f, v[f.key], 'ivf')).join('')}</div></fieldset>`).join('')}
+      ${errBox('ivf-err')}<div class="row sticky-actions"><button class="btn primary" data-act="inv-save">${rec ? 'Save changes' : 'Add ' + what}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+}
+EM.ACTIONS['col-add'] = () => invForm('collections');
+EM.ACTIONS['col-edit'] = el => invForm('collections', INVD().collections.find(x => x.id === el.dataset.id));
+EM.ACTIONS['prod-add'] = el => invForm('products', null, { collection_id: el.dataset.collection || '', status: 'Active' });
+EM.ACTIONS['prod-edit'] = el => invForm('products', INVD().products.find(x => x.id === el.dataset.id));
+EM.ACTIONS['wh-add'] = () => invForm('warehouses');
+EM.ACTIONS['wh-edit'] = el => invForm('warehouses', INVD().warehouses.find(x => x.id === el.dataset.id));
+EM.ACTIONS['inv-save'] = async el => {
+  const form = qs('#ivf'), table = form.dataset.table, F = { collections: COLLECTION_FIELDS, products: PRODUCT_FIELDS, warehouses: WAREHOUSE_FIELDS }[table];
+  const input = readForm(form, F);
+  const { errors } = cleanFields(F, input, ctxLocal());
+  if (errors.length) return showErr('ivf-err', errors);
+  if (form.dataset.id) input.id = form.dataset.id;
+  busy(el, true);
+  try {
+    const r = await API('POST', '/api/' + table, input);
+    D.inventory = r.inventory; EM.closeModal(); EM.toast(`<b>${esc(input.name)} saved</b>`);
+    location.hash = table === 'products' ? '#/product/' + r.id : table === 'collections' ? '#/collection/' + r.id : '#/inventory/warehouses'; EM.rerender();
+  } catch (x) { busy(el, false); showErr('ivf-err', x.errors || x.message); }
+};
+EM.ACTIONS['prod-del'] = async el => {
+  const p = INVD().products.find(x => x.id === el.dataset.id);
+  if (!confirm(`Delete ${p.name}?`)) return;
+  try { await API('DELETE', '/api/products/' + p.id); D.inventory.products = D.inventory.products.filter(x => x.id !== p.id); location.hash = '#/inventory/designs'; } catch (x) { EM.toast(esc(x.message)); }
+};
+/* stock in, stock out, transfer */
+EM.ACTIONS['move-add'] = el => {
+  const I = INVD();
+  if (!I.products.length || !I.warehouses.length) return EM.modal(`<h2>Stock in or out</h2><p class="muted">Add at least one design and one warehouse first.</p><div class="row" style="margin-top:14px"><button class="btn" data-act="close-modal">Close</button></div>`);
+  const sel = (id, label, opts, v) => `<div class="field"><label for="${id}">${label}</label><select class="input" id="${id}">${opts.map(([k, l]) => `<option value="${esc(k)}" ${k === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
+  const whs = I.warehouses.map(w => [w.id, w.name]);
+  EM.modal(`<h2>Stock in, out or transfer</h2><p class="muted small">Counted in boxes. Every move is kept with your name and the time.</p>
+    <form id="mvf" class="stack" onsubmit="return false" style="margin-top:14px"><div class="fgrid">
+      ${sel('mv-kind', 'What happened', [['in', 'Stock in (arrived)'], ['out', 'Stock out (dispatched or sold)'], ['transfer', 'Transfer between warehouses']], 'in')}
+      ${sel('mv-product', 'Design', I.products.slice().sort((a, b) => a.name.localeCompare(b.name)).map(p => [p.id, `${p.name} · ${colOf(p).name}`]), el.dataset.product || '')}
+      ${sel('mv-wh', 'Warehouse', whs, whs[0][0])}
+      ${sel('mv-to', 'Move to (transfer only)', [['', 'Not a transfer'], ...whs], '')}
+      <div class="field"><label for="mv-boxes">Boxes</label><input class="input" id="mv-boxes" type="number" min="1" step="1" inputmode="numeric"></div>
+      <div class="field span2"><label for="mv-note">Note (invoice, order, reason)</label><input class="input" id="mv-note"></div></div>
+      ${errBox('mv-err')}<div class="row"><button class="btn primary" data-act="move-save">Save stock move</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+};
+EM.ACTIONS['move-save'] = async el => {
+  const b = { kind: qs('#mv-kind').value, product_id: qs('#mv-product').value, warehouse_id: qs('#mv-wh').value, to_warehouse_id: qs('#mv-to').value, boxes: Number(qs('#mv-boxes').value), note: qs('#mv-note').value };
+  if (!Number.isInteger(b.boxes) || b.boxes <= 0) return showErr('mv-err', 'Boxes must be a whole number above 0.');
+  busy(el, true);
+  try { const r = await API('POST', '/api/stock', b); D.inventory = r.inventory; EM.closeModal(); EM.toast(`<b>${esc(MOVE_KINDS[b.kind])} saved</b><ul><li>${b.boxes} boxes</li></ul>`); EM.rerender(); }
+  catch (x) { busy(el, false); showErr('mv-err', x.message); }
+};
+
 /* ---------------------------------------------------------------- import from Excel
    Two templates, one per company. Each company's card downloads its own file and
    uploads only that file; the server refuses the other company's file too. */
 const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 const IMP = { tpl: null, file: null, rows: [], results: null, done: null, error: '' };
 /* both files always side by side for anyone who works in both companies, whatever the top switch says */
-const tplsHere = () => Object.values(TEMPLATES).filter(t => canDiv(t.division));
+const tplsHere = () => Object.values(TEMPLATES).filter(t => t.id === 'inv' ? STOCK_ROLES.includes(me().role) : canDiv(t.division));
 const SHEET_NOTE = {
   dealers: 'Each dealer, distributor and sub-dealer company: where it is, the areas it covers, its rating, then the rest.',
   dealer_people: 'Everyone who works at those companies: role, what they handle, name, mobile, email.',
   architects: 'Each architect firm, or solo architect: where it is, its rating, then the rest.',
   architect_people: 'Everyone who works at those firms: role, what they handle, name, mobile, email.',
   clients: 'People with no company: individuals, or a firm on its own.',
-  ego_lists: 'Your own product categories and warehouses, for the stock module that comes next.',
+  collections: 'Each collection (Divine, Delta...) with its category and specifications: size, thickness, wear layer, box contents and the rest.',
+  designs: 'Every design in those collections: name, code, type, colour, photo link.',
+  warehouses: 'Every warehouse: name, city, address.',
+  opening: 'How many boxes of each design are in each warehouse today.',
 };
 EM.VIEWS.import = () => {
   const r = IMP.results, cnt = s => r ? r.filter(x => x.status === s).length : 0;
@@ -650,7 +815,7 @@ EM.VIEWS.import = () => {
   const ts = tplsHere();
   return `<div class="stack">
     <div class="stack-s"><div class="kicker">Bulk upload</div><h1>Import from Excel</h1><p class="muted" style="max-width:760px">EGO Premium and Big E each have their own file. Download the file for your company, fill it, and upload it in the same card. Nothing is saved until you have seen every row: each one shows as <b>new</b>, <b>update</b> (already saved) or <b>error</b> with the reason. Uploading the same file again only updates.</p></div>
-    <div class="grid g2">${ts.map(t => `<section class="card stack-s" data-template="${t.id}"><div class="kicker">${esc(t.division === 'wholesale' ? 'Wholesale' : 'Retail')}</div><h3>${esc(t.company)} file</h3>
+    <div class="grid g2">${ts.map(t => `<section class="card stack-s" data-template="${t.id}"><div class="kicker">${esc(t.id === 'inv' ? 'Shared by EGO Premium and Big E' : t.division === 'wholesale' ? 'Wholesale' : 'Retail')}</div><h3>${esc(t.company)} file</h3>
       <ol class="small" style="margin:0;padding-left:18px">${t.sheets.map(sh => `<li><b>${esc(sh.sheet)}</b>: ${esc(SHEET_NOTE[sh.id])}</li>`).join('')}</ol>
       <p class="small muted">Compulsory columns end with a star. The grey EXAMPLE rows are skipped.</p>
       <a class="btn" href="${t.file}" download>1. Download the ${esc(t.company)} file</a>
@@ -700,7 +865,7 @@ async function readWorkbook(file, tpl) {
       if (line.every(x => String(x).trim() === '')) return;
       const data = {};
       map.forEach((c, j) => { if (c) data[c.key] = line[j]; });
-      const name = String(data.name || data.category || data.wh_name || '').trim();
+      const name = t.tab === 'opening' ? `${String(data.product || '').trim()} · ${String(data.warehouse || '').trim()}` : String(data.name || '').trim();
       if (name.toUpperCase().startsWith(EXAMPLE_MARK)) return;
       if (t.tab === 'clients' && t.kinds.length === 1) data.kind = t.kinds[0];
       group.push({ tab: t.tab, sheet: t.id, sheetName: t.sheet, row: i + 2, data, name });
@@ -716,7 +881,10 @@ async function readWorkbook(file, tpl) {
   const seen = new Map();
   for (const r of rows) {
     const keys = r.tab === 'clients' ? [normMobile(r.data.mobile).value, normGst(r.data.gst)].filter(Boolean).map(k => 'c:' + k)
-      : r.tab === 'contacts' ? ['k:' + String(r.data.client_key).trim().toLowerCase() + '|' + (normMobile(r.data.mobile).value || '')] : [];
+      : r.tab === 'contacts' ? ['k:' + String(r.data.client_key).trim().toLowerCase() + '|' + (normMobile(r.data.mobile).value || '')]
+        : r.tab === 'collections' || r.tab === 'warehouses' ? [r.tab + ':' + r.name.toLowerCase()]
+          : r.tab === 'products' ? ['p:' + String(r.data.collection_id || '').trim().toLowerCase() + '|' + r.name.toLowerCase()]
+            : r.tab === 'opening' ? ['o:' + r.name.toLowerCase()] : [];
     for (const k of keys) { if (seen.has(k)) { r.local = `same as ${seen.get(k).sheetName} row ${seen.get(k).row} in this file`; break; } }
     if (!r.local) keys.forEach(k => seen.set(k, r));
   }
@@ -729,6 +897,13 @@ const pendingKeys = () => {
     const kind = String(r.data.kind || '');
     [normMobile(r.data.mobile).value, normGst(r.data.gst)].filter(Boolean).forEach(k => { o[k] = kind; });
     if (r.name) o['n:' + r.name.toLowerCase()] = kind;
+  });
+  /* the inventory file: collections, designs and warehouses it creates */
+  const low = v => String(v == null ? '' : v).trim().toLowerCase();
+  IMP.rows.filter(r => !r.local).forEach(r => {
+    if (r.tab === 'collections') o['col:' + low(r.data.name)] = 1;
+    if (r.tab === 'warehouses') o['wh:' + low(r.data.name)] = 1;
+    if (r.tab === 'products') { o['prod:' + low(r.data.name)] = 1; if (low(r.data.code)) o['prod:' + low(r.data.code)] = 1; }
   });
   return o;
 };
@@ -755,7 +930,7 @@ EM.ACTIONS['imp-save'] = async el => {
   const prog = (n, of) => { const p = qs('#imp-prog'); if (p) p.textContent = `Saved ${n} of ${of}…`; };
   const done = { added: 0, updated: 0, skipped: IMP.results.length - todo.length };
   try {
-    for (const tab of ['clients', 'contacts', 'lists']) {
+    for (const tab of ['clients', 'contacts', 'collections', 'products', 'warehouses', 'opening']) {
       const res = await sendRows(todo.filter(r => r.tab === tab), false, prog);
       for (const r of res) { if (r.status === 'new') done.added++; else if (r.status === 'update') done.updated++; else done.skipped++; }
       const failed = res.filter(r => r.status === 'error');
@@ -859,19 +1034,18 @@ EM.ACTIONS['staff-off-go'] = async el => {
 EM.VIEWS.lists = () => {
   if (!isOwner()) return EM.noAccess('Only an Owner edits the lists and stages.');
   const L = D.lists;
-  return `<div class="stack"><div class="stack-s"><h1>Lists &amp; stages</h1><p class="muted" style="max-width:760px">The stages of each pipeline, the cities, the lost reasons, and EGO's product categories and warehouses. One per line. The last two stages of every pipeline stay Won and Lost. A city already used by a client cannot be removed.</p></div>
+  return `<div class="stack"><div class="stack-s"><h1>Lists &amp; stages</h1><p class="muted" style="max-width:760px">The stages of each pipeline, the cities, the lost reasons, and EGO's product categories. One per line. The last two stages of every pipeline stay Won and Lost. A city already used by a client cannot be removed.</p></div>
     <form id="lf2" class="stack" onsubmit="return false"><div class="grid g3">${Object.keys(PIPELINES).map(p => `<div class="field"><label for="ls-${p}">${esc(PIPELINES[p].label)} stages</label><textarea class="input" rows="11" id="ls-${p}" name="${p}">${esc(L.stages[p].join('\n'))}</textarea></div>`).join('')}</div>
       <div class="grid g2"><div class="field"><label for="ls-cities">Cities (City, Region)</label><textarea class="input" rows="12" id="ls-cities" name="cities">${esc(L.cities.map(c => c.city + ', ' + c.region).join('\n'))}</textarea><span class="small muted">Regions: ${REGIONS.join(', ')}</span></div>
       <div class="field"><label for="ls-lost">Lost reasons</label><textarea class="input" rows="12" id="ls-lost" name="lost">${esc(L.lost_reasons.join('\n'))}</textarea></div></div>
       <div class="grid g2"><div class="field"><label for="ls-cats">Product categories (${L.categories.length})</label><textarea class="input" rows="10" id="ls-cats" name="cats">${esc(L.categories.join('\n'))}</textarea><span class="small muted">EGO's own categories. They fill every product list.</span></div>
-      <div class="field"><label for="ls-wh">Warehouses (${L.warehouses.length}): Name, City, Address</label><textarea class="input" rows="10" id="ls-wh" name="wh" placeholder="Bhiwandi godown, Thane, Gala 12, Mankoli Naka">${esc(L.warehouses.map(w => [w.name, w.city, w.address].filter(Boolean).join(', ')).join('\n'))}</textarea><span class="small muted">For the stock module that comes next.</span></div></div>
+      <div class="field"><span class="small muted">Warehouses</span><p class="small">Warehouses, designs and stock live in <a href="#/inventory/warehouses">Inventory</a>.</p></div></div>
       ${errBox('ls-err')}<div class="row"><button class="btn primary" data-act="lists-save">Save lists</button></div></form></div>`;
 };
 EM.VIEWS.lists.title = () => 'Lists & stages';
 EM.ACTIONS['lists-save'] = async el => {
   const lines = id => qs(id).value.split('\n').map(s => s.trim()).filter(Boolean);
-  const b = { stages: Object.fromEntries(Object.keys(PIPELINES).map(p => [p, lines('#ls-' + p)])), cities: lines('#ls-cities').map(l => { const [city, region] = l.split(',').map(s => (s || '').trim()); return { city, region }; }), lost_reasons: lines('#ls-lost'),
-    categories: lines('#ls-cats'), warehouses: lines('#ls-wh').map(l => { const [name, city, ...rest] = l.split(',').map(s => s.trim()); return { name, city: city || '', address: rest.join(', ') }; }) };
+  const b = { stages: Object.fromEntries(Object.keys(PIPELINES).map(p => [p, lines('#ls-' + p)])), cities: lines('#ls-cities').map(l => { const [city, region] = l.split(',').map(s => (s || '').trim()); return { city, region }; }), lost_reasons: lines('#ls-lost'), categories: lines('#ls-cats') };
   busy(el, true);
   try { const r = await API('POST', '/api/lists', b); D.lists = r.lists; busy(el, false); EM.toast('Lists saved.'); EM.rerender(); } catch (x) { busy(el, false); showErr('ls-err', x.message); }
 };
