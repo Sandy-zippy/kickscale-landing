@@ -167,6 +167,11 @@ const fieldsFor = kind => {
   return CLIENT_FIELDS.filter(f => f.groups.includes(g) && (!f.kinds || f.kinds.includes(kind)));
 };
 
+/* The unit a number is entered in, shown beside the box (₹ … /- for money is automatic).
+   Kept apart from the labels so the Excel headers stay exactly as they are. */
+const UNITS = { display_area_sqft: 'sq ft', warehouse_sqft: 'sq ft', area_sqft: 'sq ft', contact_every_days: 'days', team_size: 'people', dealer_salespeople: 'people',
+  own_installers: 'people', warranty_res: 'years', warranty_com: 'years', pcs_per_box: 'pieces', sqft_per_box: 'sq ft', sqm_per_box: 'm²', weight_box_kg: 'kg', boxes_per_pallet: 'boxes', low_stock: 'boxes' };
+
 /* ---------------------------------------------------------------- normalising */
 
 const DIALS = ['+91', '+971', '+966', '+974', '+968', '+965', '+973', '+1', '+44', '+61', '+65', '+977', '+94', '+880'];

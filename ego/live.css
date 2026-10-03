@@ -15,3 +15,28 @@ body.gated #gate { display: grid; place-items: center; min-height: 100vh; paddin
 .sticky-actions { position: sticky; bottom: -24px; background: var(--ge-bg); padding: 12px 0; }
 .empty { border-style: dashed; }
 .side-note.live .dot { background: var(--ok); }
+
+/* native pickers (the calendar on a date) follow the theme, so their icon shows on dark */
+:root { color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; } }
+:root[data-theme="dark"] { color-scheme: dark; }
+input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .85; }
+/* ₹ … /-, sq ft, kg beside the box */
+.adorn { display: flex; align-items: stretch; border: 1px solid var(--ge-border); border-radius: var(--r-sm, 10px); background: var(--ge-surface); overflow: hidden; }
+.adorn .input { border: 0; border-radius: 0; flex: 1; min-width: 0; background: transparent; }
+.adorn .pre, .adorn .suf { display: grid; place-items: center; padding: 0 10px; color: var(--ge-text-muted); background: var(--ge-surface-2); font-size: 13px; white-space: nowrap; }
+.adorn:focus-within { outline: 2px solid var(--ge-primary); outline-offset: -1px; }
+/* the multi-select dropdown */
+.ms-btn { text-align: left; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.ms-pop { margin-top: 6px; border: 1px solid var(--ge-border); border-radius: var(--r-sm, 10px); padding: 8px; background: var(--ge-surface); display: grid; gap: 2px; max-height: 280px; overflow: auto; }
+.ms-pop[hidden] { display: none; }
+.ms-opt { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+.ms-opt:hover { background: var(--ge-surface-2); }
+.ms-opt[hidden] { display: none; }
+/* the kind of record, chosen at the top of the form */
+.seg-kind { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg-kind label { display: inline-flex; gap: 8px; align-items: center; padding: 8px 14px; border: 1px solid var(--ge-border); border-radius: 999px; cursor: pointer; }
+.seg-kind label:has(input:checked) { border-color: var(--ge-primary); background: var(--ge-surface-2); font-weight: 600; }
+.more { border: 1px dashed var(--ge-border); border-radius: var(--r); padding: 10px 14px; }
+.more > summary { cursor: pointer; font-weight: 600; }
+.more[open] > summary { margin-bottom: 10px; }

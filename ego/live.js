@@ -74,8 +74,18 @@ function splitMobile(v) {
   const dial = DIAL_CODES.slice().sort((a, b) => b.length - a.length).find(c => s.startsWith(c)) || '+91';
   return { dial, num: s.slice(dial.length) };
 }
+/* a unit shown beside the box replaces the "(₹)" or "(sq ft)" in the label, so it is said once */
+const unitOf = f => f.type === 'money' ? 'money' : UNITS[f.key] || '';
+const formLabel = f => unitOf(f) ? f.label.replace(/\s*\((₹|sq ft|days|kg|years|boxes)[^)]*\)\s*$/, '') : f.label;
 const G = {
-  wrap: (f, p, inner, wide) => `<div class="field${wide ? ' span2' : ''}" data-field="${f.key}"><label for="${p}-${f.key}">${esc(f.label)}${f.req ? ' *' : ''}</label>${inner}</div>`,
+  wrap: (f, p, inner, wide) => `<div class="field${wide ? ' span2' : ''}" data-field="${f.key}"><label for="${p}-${f.key}">${esc(formLabel(f))}${f.req ? ' *' : ''}</label>${inner}</div>`,
+  /* ₹ … /- around money, the unit after an area, a size or a count */
+  adorn: (f, input) => { const u = unitOf(f); return u ? `<div class="adorn" data-unit="${esc(u)}">${u === 'money' ? '<span class="pre">₹</span>' : ''}${input}<span class="suf">${u === 'money' ? '/-' : esc(u)}</span></div>` : input; },
+  /* several values: a dropdown with ticks and a search, not a wall of chips */
+  multi: (f, v, p, opts) => { const sel = Array.isArray(v) ? v : [];
+    return G.wrap(f, p, `<div class="ms" data-ms="${f.key}"><button type="button" class="input ms-btn" id="${p}-${f.key}" aria-expanded="false">${sel.length ? esc(sel.join(', ')) : '<span class="muted">Choose…</span>'}</button>
+      <div class="ms-pop" hidden><input class="input ms-q" placeholder="Search" aria-label="Search ${esc(f.label)}">${opts.map(o => `<label class="ms-opt"><input type="checkbox" name="${f.key}" value="${esc(o)}" ${sel.includes(o) ? 'checked' : ''}> ${esc(o)}</label>`).join('')}
+      <div class="row"><button type="button" class="btn sm ms-done">Done</button><span class="small muted ms-n">${sel.length} chosen</span></div></div></div>`, true); },
   mobile: (f, v, p) => { const m = splitMobile(v); return G.wrap(f, p, `<div class="mob" data-mobile="${f.key}"><select class="input dial" name="${f.key}_dial" aria-label="Country code for ${esc(f.label)}">${DIAL_CODES.map(c => `<option ${c === m.dial ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="${p}-${f.key}" name="${f.key}" inputmode="tel" autocomplete="off" value="${esc(m.num)}" placeholder="10-digit mobile"></div>`); },
   select: (f, v, p, opts, blank = true) => G.wrap(f, p, `<select class="input" id="${p}-${f.key}" name="${f.key}"${f.key === 'designation' ? ' data-designation' : ''}>${blank ? '<option value="">Choose</option>' : ''}${opts.map(([k, l]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`),
 };
@@ -85,8 +95,8 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'mobile': return G.mobile(f, v, p);
     case 'textarea': return G.wrap(f, p, `<textarea class="input" rows="2" id="${p}-${f.key}" name="${f.key}">${esc(v)}</textarea>`, true);
     case 'email': return G.wrap(f, p, `<input class="input" type="email" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`);
-    case 'number': case 'money': return G.wrap(f, p, `<input class="input" type="number" min="0" step="${f.type === 'money' ? '0.01' : '1'}" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`);
-    case 'date': return G.wrap(f, p, `<input class="input" type="date" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`);
+    case 'number': case 'money': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="${f.type === 'money' ? '0.01' : '1'}" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
+    case 'date': return G.wrap(f, p, `<input class="input" type="date" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}" placeholder="DD/MM/YYYY">`);
     case 'yesno': return G.select(f, v === true ? 'Yes' : v === false ? 'No' : v, p, [['Yes', 'Yes'], ['No', 'No']]);
     case 'select': return G.select(f, v, p, f.opts.map(o => [o, optLabel(f, o)]), !f.req);
     case 'city': return G.select(f, v, p, D.lists.cities.map(c => [c.city, `${c.city} · ${c.region}`]));
@@ -100,10 +110,10 @@ function fieldHtml(f, v, p, opt = {}) {
     }
     case 'cats': return fieldHtml({ ...f, type: 'multi', opts: D.lists.categories }, v, p);
     case 'cat': return G.select(f, v, p, D.lists.categories.map(c => [c, c]));
-    case 'decimal': return G.wrap(f, p, `<input class="input" type="number" min="0" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`);
+    case 'decimal': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
     case 'collection': return G.select(f, v, p, INVD().collections.map(c => [c.id, `${c.name} · ${c.category}`]));
     case 'cities': return fieldHtml({ ...f, type: 'multi', opts: D.lists.cities.map(c => c.city) }, v, p);
-    case 'multi': return G.wrap(f, p, `<div class="checks" id="${p}-${f.key}" role="group" aria-label="${esc(f.label)}">${f.opts.map(o => `<label class="chip"><input type="checkbox" name="${f.key}" value="${esc(o)}" ${(Array.isArray(v) ? v : []).includes(o) ? 'checked' : ''}> ${esc(o)}</label>`).join('')}</div>`, true);
+    case 'multi': return G.multi(f, v, p, f.opts);
     case 'stage': return G.select(f, v, p, ((D.lists.stages || {})[opt.pipeline] || []).map(s => [s, s]), false);
     case 'lost': return G.select(f, v, p, D.lists.lost_reasons.map(s => [s, s]));
     case 'contact': return G.select(f, v, p, D.contacts.filter(k => k.client_id === opt.client).map(k => [k.id, `${k.name}${k.designation ? ' · ' + k.designation : ''}`]));
@@ -111,14 +121,31 @@ function fieldHtml(f, v, p, opt = {}) {
     default: return G.wrap(f, p, `<input class="input" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`);
   }
 }
-function readForm(form, fields) {
-  const fd = new FormData(form), o = {};
+function readForm(root, fields) {
+  const mine = name => [...root.querySelectorAll(`[name="${name}"]`)].filter(el => !el.disabled && (el.closest('[data-scope]') || root) === root);
+  const o = {};
   for (const f of fields) {
-    if (['multi', 'cats', 'cities'].includes(f.type)) o[f.key] = fd.getAll(f.key);
-    else { o[f.key] = fd.has(f.key) ? String(fd.get(f.key)) : ''; if (f.type === 'mobile') o[f.key + '_dial'] = String(fd.get(f.key + '_dial') || '+91'); }
+    const els = mine(f.key);
+    if (['multi', 'cats', 'cities'].includes(f.type)) o[f.key] = els.filter(el => el.checked).map(el => el.value);
+    else if (els.some(el => el.type === 'radio')) o[f.key] = (els.find(el => el.checked) || { value: '' }).value;
+    else { o[f.key] = els.length ? String(els[0].value) : ''; if (f.type === 'mobile') o[f.key + '_dial'] = (mine(f.key + '_dial')[0] || { value: '+91' }).value || '+91'; }
   }
   return o;
 }
+/* the multi-select dropdown */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.ms-btn, .ms-done');
+  document.querySelectorAll('.ms-pop:not([hidden])').forEach(p => { if (!p.parentElement.contains(e.target) || (btn && btn.classList.contains('ms-done') && p.contains(btn))) { p.hidden = true; p.parentElement.querySelector('.ms-btn').setAttribute('aria-expanded', 'false'); } });
+  if (btn && btn.classList.contains('ms-btn')) { const pop = btn.nextElementSibling, open = pop.hidden; pop.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) pop.querySelector('.ms-q').focus(); }
+});
+document.addEventListener('change', e => {
+  const ms = e.target.closest && e.target.closest('.ms');
+  if (!ms || e.target.type !== 'checkbox') return;
+  const sel = [...ms.querySelectorAll('input[type=checkbox]:checked')].map(x => x.value);
+  ms.querySelector('.ms-btn').innerHTML = sel.length ? esc(sel.join(', ')) : '<span class="muted">Choose…</span>';
+  ms.querySelector('.ms-n').textContent = sel.length + ' chosen';
+});
+document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('ms-q')) { const q = e.target.value.toLowerCase(); e.target.parentElement.querySelectorAll('.ms-opt').forEach(l => { l.hidden = q && !l.textContent.toLowerCase().includes(q); }); } });
 /* a mobile is shown and edited with its code, so the form gives back +<code><number> */
 const withDials = (o, fields) => { for (const f of fields) if (f.type === 'mobile' && o[f.key]) { const r = normMobile(o[f.key], o[f.key + '_dial']); if (r.value) o[f.key] = r.value; } return o; };
 function showVal(f, v) {
@@ -216,7 +243,7 @@ function orgList(org, arg) {
   const rating = c => org === 'dealer' ? c.grade : (c.extra || {}).rating;
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">${org === 'dealer' ? 'Distributors, dealers and sub-dealers, each with its team' : 'Architect firms and solo architects, each with its team'}</div><h1>${title}</h1><p class="muted">${rows.length} of ${all.length} · ${esc(scopeLabel())}</p></div>
-      <div class="row"><a class="btn" href="#/import">Import from Excel</a><button class="btn primary" data-act="org-add" data-org="${org}">+ Add ${org === 'dealer' ? 'dealer' : 'architect firm'}</button></div></div>
+      <div class="row" style="flex-wrap:wrap"><a class="btn" href="#/import">Import from Excel</a>${(org === 'dealer' ? DEALER_KINDS : ARCH_KINDS).map((k, i) => `<button class="btn ${(tab[2].length === 1 ? tab[2][0] === k : i === (org === 'dealer' ? 1 : 0)) ? 'primary' : ''}" data-act="org-add" data-kind="${k}">+ Add ${esc(kindName(k).toLowerCase())}</button>`).join('')}</div></div>
     ${subtabs(base, tab[0], subs.map(([k, l, ks]) => [k, `${l} <span class="muted">${all.filter(c => ks.includes(c.kind)).length}</span>`]))}
     ${searchBox('Company name, city, mobile, GST or reference')}
     ${all.length ? (rows.length ? table(['Company', 'Type', 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
@@ -291,7 +318,7 @@ document.addEventListener('change', e => {
   if (!e.target.matches('[data-company-pick]') || e.target.value !== '__new') return;
   /* a company not on the list: open the company form with this person already in its team */
   const form = qs('#pf'), org = form.dataset.org, person = withDials(readForm(form, CONTACT_FIELDS), CONTACT_FIELDS);
-  openClientForm(null, org === 'dealer' ? 'dealer' : 'design_firm', null, org === 'dealer' ? DEALER_KINDS : ARCH_KINDS, Object.values(person).some(v => v && v !== '+91') ? [person] : [{}]);
+  openClientForm(null, org === 'dealer' ? 'dealer' : 'design_firm', null, org === 'dealer' ? DEALER_KINDS : ARCH_KINDS, null, person);
 });
 EM.ACTIONS['person-save'] = async el => {
   const form = qs('#pf'), company = form.querySelector('[data-company-pick]').value;
@@ -307,41 +334,64 @@ EM.ACTIONS['person-save'] = async el => {
     location.hash = `#/client/${company}/contacts`; EM.rerender();
   } catch (x) { busy(el, false); showErr('pf-err', x.errors || x.message); }
 };
-EM.ACTIONS['org-add'] = el => openClientForm(null, el.dataset.org === 'dealer' ? 'dealer' : 'design_firm', null, el.dataset.org === 'dealer' ? DEALER_KINDS : ARCH_KINDS, [{}]);
+EM.ACTIONS['org-add'] = el => { const k = el.dataset.kind || (el.dataset.org === 'dealer' ? 'dealer' : 'design_firm'); openClientForm(null, k, null, DEALER_KINDS.includes(k) ? DEALER_KINDS : ARCH_KINDS); };
 
 /* the add / edit form: the type decides the fields */
-/* The add / edit form: the type decides the fields. `only` limits the types offered
-   (a dealer form offers the three dealer types). A NEW dealer or architect firm gets a
-   people block under it: as many people as they like, saved with the company. */
+/* The add / edit form: the type decides the fields. `only` limits the types offered.
+   A dealer or an architect firm is laid out in the order the team thinks in (3 Oct):
+   company, point of contact, address, areas, business. Everything else waits under
+   "More details", to be filled now or later. The company's mobile is its point of
+   contact's: a company is always reached through a person. */
 const FAMILIES = [DEALER_KINDS, ARCH_KINDS, PERSONAL_KINDS];
-const kindName = k => PERSONAL_KINDS.includes(k) ? `Personal contact · ${DIVS[KINDS[k].division].co}` : `${KINDS[k].label} · ${KINDS[k].division === 'both' ? 'EGO Premium or Big E' : DIVS[KINDS[k].division].co}`;
-const personRow = (i, v = {}) => `<form class="card stack-s pf-row" data-i="${i}" onsubmit="return false"><div class="row between"><b>Person ${i + 1}</b><button class="btn sm ghost" data-act="ppl-del" data-i="${i}">Remove</button></div>
-  <div class="fgrid">${CONTACT_FIELDS.map(f => fieldHtml(f, v[f.key], 'pp' + i)).join('')}</div></form>`;
-function openClientForm(c, kind, keep, only, people) {
+const kindName = k => PERSONAL_KINDS.includes(k) ? `Personal contact · ${DIVS[KINDS[k].division].co}` : k === 'architect' ? 'Solo architect' : k === 'design_firm' ? 'Architect firm' : KINDS[k].label;
+const ORG_LAYOUT = [
+  ['Company details', ['name', 'legal_name', 'gst']],
+  ['Address', ['address', 'locality', 'city', 'pincode']],
+  ['Area details', ['areas_covered', 'other_offices']],
+  ['Business details', ['owner_id', 'grade', 'rating', 'parent_id', 'source', 'status', 'since', 'credit_limit', 'priority200', 'relationship', 'connected_dealers']],
+];
+const POC_FIELDS = CONTACT_FIELDS.filter(f => f.key !== 'is_primary');
+const personRow = (i, v = {}) => `<form class="card stack-s pf-row" data-scope data-i="${i}" onsubmit="return false"><div class="row between"><b>Another person</b><button class="btn sm ghost" data-act="ppl-del" data-i="${i}">Remove</button></div>
+  <div class="fgrid">${POC_FIELDS.map(f => fieldHtml(f, v[f.key], 'pp' + i)).join('')}</div></form>`;
+const fsHtml = (title, inner) => `<fieldset class="fs"><legend>${esc(title)}</legend>${inner}</fieldset>`;
+function openClientForm(c, kind, keep, only, people, poc) {
   const fam = c ? FAMILIES.find(f => f.includes(c.kind)) : null;
   const kinds = c ? fam.filter(k => canDiv(KINDS[k].division)) : (only || kindsAllowed()).filter(k => kindsAllowed().includes(k));
   kind = kinds.includes(kind) ? kind : (c ? c.kind : kinds[0]);
   const v = keep || (c ? { ...c, ...c.extra } : { owner_id: me().id, status: 'Active' });
-  const fields = showFields(fieldsFor(kind)).filter(f => f.key !== 'kind');
-  const sections = [...new Set(fields.map(f => f.section))];
+  const all = showFields(fieldsFor(kind)).filter(f => f.key !== 'kind');
   const org = DEALER_KINDS.includes(kind) ? 'dealer' : ARCH_KINDS.includes(kind) ? 'architect' : null;
-  const noun = org === 'dealer' ? 'dealer' : org === 'architect' ? 'architect firm' : 'person';
-  const team = !c && org ? (people && people.length ? people : [{}]) : null;
-  EM.modal(`<h2>${c ? 'Edit ' + esc(c.name) : `Add a ${noun}`}</h2>
-    <p class="muted small">${org ? 'Company details first, then the people who work there. ' : ''}Compulsory fields end with a star. The same mobile or GST number cannot be saved twice in one company.</p>
-    <form id="cf" class="stack" onsubmit="return false" style="margin-top:14px" data-id="${c ? c.id : ''}" data-only="${(only || []).join(',')}">
-      ${org ? '<h3>Company details</h3>' : ''}
-      <div class="fgrid">${G.select(CLIENT_FIELDS[0], kind, 'cf', kinds.map(k => [k, kindName(k)]), false).replace('<select', '<select data-kind-pick')}
-        ${KINDS[kind].division === 'both' && D.user.division === 'both' ? G.select({ key: 'division', label: 'Which company keeps this record' }, v.division || (EM.div === 'both' ? 'both' : EM.div), 'cf', [['wholesale', 'EGO Premium'], ['retail', 'Big E'], ['both', 'Both companies']], false) : ''}</div>
-      ${sections.map(s => `<fieldset class="fs"><legend>${esc(s)}</legend><div class="fgrid">${fields.filter(f => f.section === s).map(f => fieldHtml(f, v[f.key], 'cf', { self: c && c.id })).join('')}</div></fieldset>`).join('')}
-    </form>
-    ${team ? `<div class="stack-s" style="margin-top:18px"><h3>People at this ${noun}</h3><p class="small muted">Name, role, what they handle, mobile and email. Leave a block empty to skip it. More people can be added later from the company page.</p>
-      <div id="ppl" class="stack-s">${team.map((pv, i) => personRow(i, pv)).join('')}</div><div class="row"><button class="btn" data-act="ppl-add">+ Add another person</button></div></div>` : ''}
+  const noun = org ? kindName(kind).toLowerCase() : 'person';
+  const fh = f => fieldHtml(f, v[f.key], 'cf', { self: c && c.id });
+  const kindPick = `<div class="field span2"><span class="small muted">${org ? 'What are you adding?' : 'Type'}</span><div class="seg-kind" role="radiogroup" aria-label="Type">${kinds.map(k => `<label><input type="radio" name="kind" value="${k}" data-kind-pick ${k === kind ? 'checked' : ''}> ${esc(kindName(k))}</label>`).join('')}</div></div>
+    ${KINDS[kind].division === 'both' && D.user.division === 'both' ? G.select({ key: 'division', label: 'Which company keeps this record' }, v.division || (EM.div === 'both' ? 'both' : EM.div), 'cf', [['wholesale', 'EGO Premium'], ['retail', 'Big E'], ['both', 'Both companies']], false) : ''}`;
+  let body;
+  if (org) {
+    const placed = new Set(), pick = keys => keys.map(k => all.find(f => f.key === k)).filter(Boolean).map(f => (placed.add(f.key), f));
+    /* editing: the company's own numbers stay editable; adding: its mobile comes from the point of contact */
+    const contactKeys = ['mobile', 'whatsapp', 'mobile_alt', 'email'];
+    if (!c) placed.add('mobile');
+    const secs = ORG_LAYOUT.map(([t, keys]) => [t, pick(t === 'Company details' && c ? [...keys, ...contactKeys] : keys)]);
+    const rest = all.filter(f => !placed.has(f.key)), restSecs = [...new Set(rest.map(f => f.section))];
+    const pocBlock = c ? '' : fsHtml('Point of contact', `<p class="small muted">The person you deal with. Their mobile is the company's mobile, and they become the main person in its team.</p>
+      <div id="pocf" data-scope class="fgrid">${POC_FIELDS.map(f => fieldHtml({ ...f, req: f.key === 'name' || f.key === 'mobile' }, (poc || {})[f.key], 'poc')).join('')}</div>`);
+    body = fsHtml(secs[0][0], `<div class="fgrid">${kindPick}${secs[0][1].map(fh).join('')}</div>`) + pocBlock
+      + secs.slice(1).filter(([, fs]) => fs.length).map(([t, fs]) => fsHtml(t, `<div class="fgrid">${fs.map(fh).join('')}</div>`)).join('')
+      + (rest.length ? `<details class="more"><summary>More details (optional): ${esc(restSecs.join(', ').toLowerCase())}</summary><div class="stack-s">${restSecs.map(sc => fsHtml(sc, `<div class="fgrid">${rest.filter(f => f.section === sc).map(fh).join('')}</div>`)).join('')}</div></details>` : '')
+      + (c ? '' : `<details class="more" ${people && people.length ? 'open' : ''}><summary>More people at this ${esc(noun)} (optional)</summary><div id="ppl" class="stack-s">${(people || []).map((pv, i) => personRow(i, pv)).join('')}</div><div class="row" style="margin-top:8px"><button class="btn sm" data-act="ppl-add">+ Add a person</button></div></details>`);
+  } else {
+    const sections = [...new Set(all.map(f => f.section))];
+    body = `<div class="fgrid">${kindPick}</div>` + sections.map(sc => fsHtml(sc, `<div class="fgrid">${all.filter(f => f.section === sc).map(fh).join('')}</div>`)).join('');
+  }
+  EM.modal(`<h2>${c ? 'Edit ' + esc(c.name) : `Add a ${esc(noun)}`}</h2>
+    <p class="muted small">Compulsory fields end with a star.${org && !c ? ' Fill the five parts below; the rest can wait and be added later from its page.' : ''}</p>
+    <div id="cf" data-scope class="stack" style="margin-top:14px" data-id="${c ? c.id : ''}" data-only="${(only || []).join(',')}">${body}</div>
     ${errBox('cf-err')}
-    <div class="row sticky-actions" style="margin-top:14px"><button class="btn primary" data-act="client-save">${c ? 'Save changes' : `Add ${noun}`}</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+    <div class="row sticky-actions" style="margin-top:14px"><button class="btn primary" data-act="client-save">${c ? 'Save changes' : `Add ${esc(noun)}`}</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
 }
-const readPeople = () => [...document.querySelectorAll('#ppl .pf-row')].map(f => withDials(readForm(f, CONTACT_FIELDS), CONTACT_FIELDS))
-  .filter(pv => CONTACT_FIELDS.some(f => f.type !== 'yesno' && String(pv[f.key] || '').trim()));
+const readPeople = () => [...document.querySelectorAll('#ppl .pf-row')].map(f => withDials(readForm(f, POC_FIELDS), POC_FIELDS))
+  .filter(pv => POC_FIELDS.some(f => String(pv[f.key] || '').trim() && !(f.type === 'mobile' && pv[f.key] === '')));
+const readPoc = () => qs('#pocf') ? withDials(readForm(qs('#pocf'), POC_FIELDS), POC_FIELDS) : null;
 EM.ACTIONS['ppl-add'] = () => { const box = qs('#ppl'), n = box.querySelectorAll('.pf-row').length; box.insertAdjacentHTML('beforeend', personRow(n)); };
 EM.ACTIONS['ppl-del'] = el => { const f = el.closest('.pf-row'); if (f) f.remove(); };
 document.addEventListener('change', e => {
@@ -351,30 +401,38 @@ document.addEventListener('change', e => {
   const dv = form.querySelector('[name="division"]'); if (dv) prev.division = dv.value;
   for (const f of CLIENT_FIELDS) if (f.type === 'mobile' && prev[f.key]) { const r = normMobile(prev[f.key], prev[f.key + '_dial']); if (r.value) prev[f.key] = r.value; }
   const only = form.dataset.only ? form.dataset.only.split(',') : null;
-  openClientForm(c, e.target.value, prev, only, qs('#ppl') ? readPeople() : null);
+  openClientForm(c, e.target.value, prev, only, qs('#ppl') ? readPeople() : null, readPoc());
 });
 EM.ACTIONS['client-add'] = el => openClientForm(null, el.dataset.kind);
 EM.ACTIONS['client-edit'] = el => openClientForm(CL()[el.dataset.id], CL()[el.dataset.id].kind);
 EM.ACTIONS['client-save'] = async el => {
-  const form = qs('#cf'), id = form.dataset.id, kind = form.querySelector('[data-kind-pick]').value;
+  const form = qs('#cf'), id = form.dataset.id, kind = (form.querySelector('[data-kind-pick]:checked') || {}).value;
   const input = readForm(form, fieldsFor(kind));
   input.kind = kind;
   const dv = form.querySelector('[name="division"]');
   if (dv) input.division = dv.value;
   else if (KINDS[kind].division === 'both' && !id) input.division = EM.div;
-  const { errors } = cleanClient(input, ctxLocal());
-  const people = qs('#ppl') ? readPeople() : [];
-  people.forEach((pv, i) => { const r = cleanContact(pv, {}); if (r.errors.length) errors.push(`Person ${i + 1}: ${r.errors.join(', ')}`); });
+  const poc = readPoc(), pre = [], people = qs('#ppl') ? readPeople() : [];
+  if (poc) {   /* the company is reached through its point of contact */
+    const r = cleanContact(poc, {});
+    r.errors.forEach(x => pre.push('Point of contact: ' + x));
+    if (!r.errors.length) { input.mobile = poc.mobile; if (!input.whatsapp) input.whatsapp = poc.whatsapp || ''; if (!input.email) input.email = poc.email || ''; }
+  }
+  let { errors } = cleanClient(input, ctxLocal());
+  if (poc) errors = errors.filter(x => !/^Mobile /.test(x));   // said once, as the point of contact's
+  errors = [...pre, ...errors];
+  people.forEach((pv, i) => { const r = cleanContact(pv, {}); if (r.errors.length) errors.push(`Person ${i + 2}: ${r.errors.join(', ')}`); });
   if (errors.length) return showErr('cf-err', errors);
   if (id) input.id = id;
-  if (people.length) input.people = people;
+  const team = poc ? [{ ...poc, is_primary: 'Yes' }, ...people] : people;
+  if (team.length) input.people = team;
   busy(el, true);
   try {
     const r = await API('POST', '/api/clients', input);
     upsertLocal(D.clients, r.client);
     if (r.contacts) D.contacts = D.contacts.filter(k => k.client_id !== r.client.id).concat(r.contacts);
     EM.closeModal();
-    EM.toast(`<b>${esc(r.client.name)} ${r.created ? 'added' : 'saved'}</b><ul><li>${esc(kindLabel(r.client.kind))} · ${esc(r.client.city)} · ${esc(r.client.ref || '')}</li>${r.created && people.length ? `<li>${people.length} ${people.length === 1 ? 'person' : 'people'} added to the team</li>` : ''}<li>Saved to EGO Master</li></ul>`);
+    EM.toast(`<b>${esc(r.client.name)} ${r.created ? 'added' : 'saved'}</b><ul><li>${esc(kindLabel(r.client.kind))} · ${esc(r.client.city)} · ${esc(r.client.ref || '')}</li>${r.created && team.length ? `<li>${team.length} ${team.length === 1 ? 'person' : 'people'} in the team${poc ? `, ${esc(poc.name)} as the point of contact` : ''}</li>` : ''}<li>Saved to EGO Master</li></ul>`);
     location.hash = `#/client/${r.client.id}`; EM.rerender();
   } catch (x) { busy(el, false); showErr('cf-err', x.errors || x.message); }
 };
@@ -645,7 +703,7 @@ EM.invF = { wh: '', cat: '', col: '', q: '' };
 const F = () => EM.invF;
 /* the filter, applied once: which designs, which warehouses */
 const fProducts = () => INVD().products.filter(p => { const c = colOf(p), q = F().q.toLowerCase(); return (!F().cat || c.category === F().cat) && (!F().col || c.id === F().col) && (!q || `${p.name} ${p.code} ${c.name} ${p.extra.colour || ''}`.toLowerCase().includes(q)); });
-const fWarehouses = () => INVD().warehouses;
+const fWarehouses = () => INVD().warehouses.filter(w => !F().wh || w.id === F().wh);
 const boxesOf = (pid, wid) => INVD().stock.filter(x => x.product_id === pid && (wid ? x.warehouse_id === wid : (!F().wh || x.warehouse_id === F().wh))).reduce((a, x) => a + x.boxes, 0);
 const sqftFor = (p, boxes) => sqftOf(boxes, colOf(p).extra.sqm_per_box);
 const sqftTxt = (p, b) => { const f = sqftFor(p, b); return f == null ? '<span class="muted">box size not set</span>' : num(f); };
