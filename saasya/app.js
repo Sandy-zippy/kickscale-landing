@@ -41,8 +41,10 @@
     if (!boot || !window.SAASYA_MARK) return;
     clearTimeout(bootTimer);
     boot.className = quick ? 'quick' : '';
-    boot.innerHTML = '<div class="bmark">' + window.SAASYA_MARK('run') + '</div>' +
-                     '<div class="bword">Saasya&nbsp;<i>Men</i></div>';
+    boot.innerHTML = '<div class="cloth" data-cloth></div>' +
+                     '<div class="bmark">' + window.SAASYA_MARK('run') + '</div>' +
+                     '<div class="bword">Saasya&nbsp;<em class="ser">Men</em></div>';
+    if (window.SAASYA_CLOTH) window.SAASYA_CLOTH(boot.querySelector('[data-cloth]'));
   }
   function hideBoot(quick) {
     if (!boot) return;
@@ -55,18 +57,25 @@
   }
 
   function drawGate() {
-    var D = GE.D, html = '';
+    var D = GE.D, html = '', n = 0;
     var order = ['Owner','BDM','Operations manager','Accounts','Stylist','Salesperson','Master'];
     order.forEach(function (role) {
       GE.by(D.people, 'role', role).forEach(function (p) {
         var ini = p.name.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2);
-        html += '<button data-signin="' + p.id + '"><span class="av">' + ini + '</span>' +
+        html += '<button class="appear" style="--d:' + (0.46 + n++ * 0.045).toFixed(3) + 's" ' +
+                'data-signin="' + p.id + '"><span class="av">' + ini + '</span>' +
                 '<span><b>' + GE.esc(p.name) + '</b><span>' + GE.esc(p.role) +
                 (p.craft ? ' · ' + GE.esc(p.craft) : '') + '</span></span>' +
                 '<span class="go">\u203a</span></button>';
       });
     });
     document.getElementById('who').innerHTML = html;
+    var g = document.getElementById('gate'), d = 0;
+    [].forEach.call(g.querySelectorAll('.gcard>.appear'), function (el) {
+      el.style.setProperty('--d', (d += 0.075).toFixed(3) + 's');
+    });
+    serif(g);
+    g.classList.add('go');
   }
 
   function drawFrame() {
@@ -74,7 +83,7 @@
     NAV.forEach(function (it) {
       if (it.grp) { html += '<div class="grp" data-grp>' + it.grp + '</div>'; return; }
       if (!GE.allowed(it.r)) return;
-      html += '<a href="' + it.r + '">' + it.n + '</a>';
+      html += '<a class="appear" href="' + it.r + '">' + it.n + '</a>';
     });
     var nav = document.getElementById('nav');
     nav.innerHTML = html;
@@ -83,6 +92,11 @@
       var n = g.nextElementSibling;
       if (!n || n.hasAttribute('data-grp')) g.remove();
     });
+    var d = 0;
+    [].forEach.call(nav.querySelectorAll('a'), function (el) {
+      el.style.setProperty('--d', (d += 0.028).toFixed(3) + 's');
+    });
+    document.querySelector('.side').classList.add('go');
     document.getElementById('me').innerHTML =
       '<b>' + GE.esc(me.name) + '</b><span>' + GE.esc(me.role) + '</span>' +
       '<button data-act="signout">Sign out</button> ' +
@@ -96,6 +110,56 @@
     var t = el.tagName;
     return t === 'BUTTON' || t === 'A' || t === 'INPUT' || t === 'SELECT' || t === 'TEXTAREA';
   }
+  /* One italic serif phrase against a wall of Inter: the last word of a title.
+     It happens in the DOM, so every view function keeps returning plain text. */
+  function serif(root) {
+    [].forEach.call(root.querySelectorAll('h1'), function (h) {
+      if (h.getAttribute('data-ser') || h.children.length) return;
+      var t = h.textContent.trim(), i = t.lastIndexOf(' ');
+      if (i < 1 || t.length - i > 22) return;
+      h.setAttribute('data-ser', '1');
+      h.textContent = t.slice(0, i + 1);
+      var em = document.createElement('em');
+      em.className = 'ser';
+      em.textContent = t.slice(i + 1);
+      h.appendChild(em);
+    });
+  }
+
+  /* Each element carries its own delay. .appear rests visible, so this is flavour,
+     never the thing standing between the client and the screen. */
+  function stage(root) {
+    var i = 0;
+    function tag(el) {
+      el.classList.add('appear');
+      el.style.setProperty('--d', (Math.min(i++, 12) * 0.042).toFixed(3) + 's');
+    }
+    [].forEach.call(root.children, function (el) {
+      var c = ' ' + el.className + ' ';
+      if (/ (kpis|board|grid) /.test(c)) [].forEach.call(el.children, tag);
+      else tag(el);
+    });
+  }
+
+  /* If nothing is actually animating two frames after a render, force every
+     element to its finished state. A screen must never be hidden by a stalled
+     animation engine. */
+  function settle(root) {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        var els = root.querySelectorAll('.appear');
+        var live = false;
+        [].forEach.call(els, function (el) {
+          if (el.getAnimations && el.getAnimations().length) live = true;
+        });
+        if (!live) [].forEach.call(els, function (el) { el.classList.add('is-in'); });
+      });
+    });
+  }
+  document.addEventListener('animationend', function (e) {
+    if (/^in-/.test(e.animationName)) e.target.classList.add('is-in');
+  }, true);
+
   function wire(root) {
     [].forEach.call(root.querySelectorAll('[data-act],[data-signin]'), function (el) {
       if (native(el) || el.hasAttribute('tabindex')) return;
@@ -114,15 +178,23 @@
     }
     var shell = document.getElementById('shell');
     shell.innerHTML = view();
+    shell.setAttribute('data-route', r.split('?')[0]);
     wire(shell);
+    serif(shell);
     /* the screen arrives once per route. Typing in a search box re-renders the same
        route, and a screen that re-enters on every keystroke would flicker. */
     shell.classList.remove('enter');
-    if (r !== lastRoute) shell.classList.add('enter');
+    if (r !== lastRoute) { stage(shell); shell.classList.add('enter'); settle(shell); }
     lastRoute = r;
+    /* toggle, never rewrite: re-adding .appear would restart the sidebar's
+       entrance animation on every single click */
     [].forEach.call(document.querySelectorAll('#nav a'), function (a) {
-      a.className = (a.getAttribute('href') === r) ? 'on' : '';
+      a.classList.toggle('on', a.getAttribute('href') === r);
     });
+    /* the nav scrolls on a short screen and on a phone: never leave the screen
+       you are on sitting half off the end of it */
+    var on = document.querySelector('#nav a.on');
+    if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     window.scrollTo(0, 0);
     document.querySelector('.main').scrollTop = 0;
   }
@@ -136,6 +208,7 @@
     var b = document.getElementById('dbody');
     b.innerHTML = html;
     wire(b);
+    serif(b);
     document.getElementById('drawer').classList.add('on');
   };
   GE.closeDrawer = function () { document.getElementById('drawer').classList.remove('on'); };
@@ -153,6 +226,7 @@
       html + '</div>';
     modal.classList.add('on');
     wire(modal);
+    serif(modal);
   };
   GE.closeModal = function () { if (modal) modal.classList.remove('on'); };
 

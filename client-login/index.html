@@ -330,6 +330,15 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
   .mod,.q{break-inside:avoid}
 }
 </style>
+<style>
+#safilm{position:absolute;inset:0;overflow:hidden;z-index:0;background:#0a0b0a;pointer-events:none}
+#safilm video{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .9s ease}
+#safilm::after{content:"";position:absolute;inset:0;background:
+  linear-gradient(180deg,rgba(10,11,10,.62),rgba(10,11,10,.78) 55%,rgba(10,11,10,.92))}
+#salogin{position:relative}
+#salogin .gate-card{position:relative;z-index:1}
+@media (prefers-reduced-motion: reduce){#safilm video{display:none}}
+</style>
 </head>
 <body>
 
@@ -470,6 +479,7 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
 
 <!-- SAASYA MEN LOGIN -->
 <div id="salogin" class="gatewrap hidden">
+  <div id="safilm" aria-hidden="true"></div>
   <div class="gate-card">
     <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
     <div class="gate-eyebrow">Saasya Men &times; Zippyscale</div>
@@ -1906,12 +1916,34 @@ function showRoyalePick(){
   document.getElementById('rclogin').classList.add('hidden');
   document.getElementById('rcpick').classList.remove('hidden');
 }
+/* The Saasya gate runs a film behind it. It is 9.5 MB, so it is built only when
+   that one gate opens, never on the portal, and it removes itself if it cannot
+   play. A client who asked for less motion gets the still ground instead. */
+let saasyaFilmUp = false;
+function saasyaFilm(){
+  if(saasyaFilmUp) return;
+  saasyaFilmUp = true;
+  if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const host = document.getElementById('safilm');
+  if(!host) return;
+  const v = document.createElement('video');
+  v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+  v.setAttribute('playsinline',''); v.setAttribute('aria-hidden','true');
+  v.preload = 'metadata';
+  v.src = 'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260818_072341_50851634-bbc3-4c33-9acc-7647d4db44aa.mp4';
+  v.addEventListener('playing', ()=>{ v.style.opacity = '1'; });
+  v.addEventListener('error', ()=>{ v.remove(); });
+  host.appendChild(v);
+  const p = v.play();
+  if(p && p.catch) p.catch(()=>{ v.remove(); });
+}
 function goClientLogin(key){
   hideGates();
   const [gate,err,first] = GATES[key] || ['clientlogin','lerr','u'];
   document.getElementById(gate).classList.remove('hidden');
   document.getElementById(err).textContent='';
   document.getElementById(first).focus();
+  if(key==='saasya') saasyaFilm();
 }
 const CARCART = { user:"carcart", pass:"Carcart@hyd26" };
 function tryCarCart(){
