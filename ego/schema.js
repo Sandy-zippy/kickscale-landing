@@ -26,7 +26,7 @@ const KINDS = {
 const KIND_BY_LABEL = Object.fromEntries(Object.entries(KINDS).map(([k, v]) => [v.label.toLowerCase(), k]));
 
 const PIPELINES = {
-  wholesale: { label: 'Wholesale opportunity', plural: 'Wholesale opportunities', division: 'wholesale' },
+  wholesale: { label: 'Wholesale opportunity', plural: 'Wholesale opportunities', division: 'wholesale', won: 'Payment collected', credit: 'Invoiced', lines: true },
   retail_lead: { label: 'Retail lead', plural: 'Retail leads', division: 'retail' },
   retail_project: { label: 'Retail project', plural: 'Retail projects', division: 'retail' },
 };
@@ -39,7 +39,7 @@ const SOURCES = ['Meta Ads', 'Google Ads', 'Website', 'WhatsApp', 'IndiaMART', '
    settings once edited; these only apply to a fresh database. */
 const DEFAULT_LISTS = {
   stages: {
-    wholesale: ['New', 'Screening', 'Contacted', 'Qualified', 'Passed on', 'Dealer accepted', 'Quotation', 'Won', 'Lost'],
+    wholesale: ['New', 'Contacted', 'Qualified', 'Quotation', 'Invoiced', 'Payment collected', 'Lost', 'Nurturing'],
     retail_lead: ['New', 'Contacted', 'Qualified', 'Appointment', 'Site visit', 'Sample', 'Quote', 'Won', 'Lost'],
     retail_project: ['New project', 'Qualified', 'Sample', 'Specification', 'Approval', 'Quotation', 'Negotiation', 'Won', 'Lost'],
   },
@@ -160,6 +160,12 @@ const OPP_FIELDS = [
   { key: 'lost_reason', label: 'Lost reason', type: 'lost' },
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ];
+/* The stage that counts as won: for a wholesale sale it is Payment collected (4 Oct), and
+   that is where it passes to fulfilment. Lost is lost everywhere; Nurturing stays open. */
+const wonStage = p => (PIPELINES[p] && PIPELINES[p].won) || 'Won';
+const isClosed = (p, st) => st === wonStage(p) || st === 'Lost';
+/* stages a sales board cannot lose or rename: the won stage, Lost, and where credit is checked */
+const lockedStages = p => [PIPELINES[p] && PIPELINES[p].credit, wonStage(p), 'Lost'].filter(Boolean);
 const OPP_COLS = ['pipeline', 'title', 'stage', 'value', 'owner_id', 'contact_id', 'next_action', 'next_date', 'lost_reason', 'source'];
 
 const fieldsFor = kind => {
@@ -589,9 +595,7 @@ const optsOf = (f, lists) => (f.list && lists && lists[f.list]) || f.opts;
    out at dispatch, adding it when production arrives), so they can be moved around but
    never renamed or removed, like Won and Lost. Every other stage is free. */
 const OPS = {
-  order_stages: { label: 'Wholesale order stages', note: 'Confirmed checks the credit limit. Fulfilment starts by itself when the order reaches the last stage.',
-    list: ['Order received', 'Confirmed', 'Invoiced', 'Payment collected'], locked: ['Order received', 'Confirmed'] },
-  fulfilment_stages: { label: 'Order fulfilment stages', note: 'Stock check is where boxes are set aside from the warehouses. Dispatched takes them out of stock.',
+  fulfilment_stages: { label: 'Fulfilment stages (wholesale)', note: 'Starts by itself when a wholesale opportunity reaches Payment collected. Stock check is where boxes are set aside from the warehouses; whatever is not goes to production. Dispatched takes them out of stock.',
     list: ['Design & MOQ verified', 'Stock check', 'Allocated', 'Waiting on production', 'Packed', 'Dispatched', 'Delivered'], locked: ['Stock check', 'Allocated', 'Waiting on production', 'Packed', 'Dispatched', 'Delivered'] },
   production_stages: { label: 'Production order stages', note: 'Received at warehouse adds the boxes to stock; they are then given to the orders waiting for them.',
     list: ['Production order placed', 'In production', 'Quality check', 'Shipped', 'In transit', 'Received at warehouse', 'Allocated & closed'], locked: ['Production order placed', 'Received at warehouse', 'Allocated & closed'] },
