@@ -80,7 +80,7 @@ const EM = {
     addEventListener('hashchange', () => EM.render());
     document.addEventListener('click', e => {
       const el = e.target.closest('[data-act]');
-      if (el && EM.ACTIONS[el.dataset.act]) { e.preventDefault(); EM.ACTIONS[el.dataset.act](el, e); }
+      if (el && EM.ACTIONS[el.dataset.act]) { e.preventDefault(); if (EM.guard && !EM.guard(el)) return; EM.ACTIONS[el.dataset.act](el, e); }
       const row = !el && e.target.closest('[data-href]');
       if (row) location.hash = row.dataset.href;
     });

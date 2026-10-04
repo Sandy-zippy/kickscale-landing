@@ -83,3 +83,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .near-err { position: fixed; z-index: 2100; max-width: min(360px, 92vw); background: var(--ge-danger); color: #fff; font-size: 12.5px; line-height: 1.4; padding: 8px 11px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,.3); cursor: pointer; }
 /* what is this? */
 #hover-help { position: fixed; z-index: 2200; max-width: 300px; background: var(--ge-surface); color: var(--ge-text); border: 1px solid var(--ge-border); border-radius: 10px; padding: 9px 11px; font-size: 12.5px; line-height: 1.45; box-shadow: 0 12px 34px rgba(0,0,0,.3); pointer-events: none; }
+
+/* Both: to look at; buttons that change something are hidden by hideChangeButtons() */
+[hidden] { display: none !important; }   /* hidden means hidden, in the page and in pop-ups */

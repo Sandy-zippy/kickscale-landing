@@ -30,6 +30,32 @@ function allowedTab(t) {
   return false;
 }
 EM.div = D.user.division === 'both' ? 'both' : D.user.division;
+/* "Both" puts EGO Premium and Big E together to LOOK at (4 Oct). Nothing is added, changed,
+   moved or deleted there: to change anything, switch to one company. One guard sits in front of
+   every button; the buttons themselves are hidden in Both. */
+const SEG = { wholesale: 'EGO Premium', retail: 'Big E', both: 'Both companies' };
+const segBadge = div => `<span class="badge plain" data-seg>${esc(SEG[div] || div)}</span>`;
+const isBothView = () => EM.div === 'both' && D.user.division === 'both';
+const LOOK_ACTS = new Set(['div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
+  /* the people who log in and their own password are account matters, not company data */
+  'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass']);
+/* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
+const hideChangeButtons = root => { if (!isBothView() || !root) return; root.querySelectorAll('[data-act]').forEach(b => { if (!LOOK_ACTS.has(b.dataset.act)) b.setAttribute('hidden', ''); }); root.querySelectorAll('input[type="file"], #move-stage, [data-list-only]').forEach(x => x.setAttribute('hidden', '')); };
+EM.guard = el => {
+  if (!isBothView() || LOOK_ACTS.has(el.dataset.act)) return true;
+  bubbleNear(el, 'Both shows EGO Premium and Big E together, to look at. Switch to Wholesale · EGO or Retail · Big E to add or change anything.');
+  return false;
+};
+const baseModal = EM.modal.bind(EM);
+EM.modal = html => { baseModal(html); hideChangeButtons(qs('#overlay')); };
+const baseRender = EM.render.bind(EM);
+EM.render = (...a) => {
+  baseRender(...a);
+  const both = isBothView();
+  qs('#shell').classList.toggle('view-both', both);
+  hideChangeButtons(qs('#view'));
+  if (both && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
+};
 EM.navTabs = () => ({
   main: [['home', 'Home'], ['dealers', 'Dealers'], ['architects', 'Architects'], ['people', 'People'], ['opps', 'Opportunities'], ['orderbook', 'Orders'], ['orders', 'Fulfilment'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel']]
     .filter(([k]) => allowedTab(k) && !(['dealers', 'orders', 'p200'].includes(k) && EM.div === 'retail') && !(k === 'installation' && EM.div === 'wholesale')),
@@ -261,7 +287,7 @@ function orgList(org, arg) {
     ${subtabs(base, tab[0], subs.map(([k, l, ks]) => [k, `${l} <span class="muted">${all.filter(c => ks.includes(c.kind)).length}</span>`]))}
     ${searchBox('Company name, city, mobile, GST or reference')}
     ${all.length ? (rows.length ? table(['Company', 'Type', 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
-      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}${c.parent_id && CL()[c.parent_id] ? ' · under ' + esc(CL()[c.parent_id].name) : ''}</div>`, esc(kindLabel(c.kind)), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
+      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}${c.parent_id && CL()[c.parent_id] ? ' · under ' + esc(CL()[c.parent_id].name) : ''}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
       + (rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing matches that search.</p>')
       : empty(`No ${title.toLowerCase()} yet`, `Add the company and its people in one go, or fill the Excel file and upload it.`, `<button class="btn primary" data-act="org-add" data-org="${org}">+ Add ${org === 'dealer' ? 'dealer' : 'architect firm'}</button><a class="btn" href="#/import">Import from Excel</a>`)}
   </div>`;
@@ -294,7 +320,7 @@ EM.VIEWS.people = arg => {
     ${subtabs('#/people', tab[0], subs.map(([k, l]) => [k, `${l} <span class="muted">${k === 'all' ? all.length : all.filter(x => x.type === k).length}</span>`]))}
     ${searchBox('Name, role, company, mobile or email')}
     ${all.length ? (rows.length ? table(['Name', 'Role', 'Belongs to', 'Type', 'Mobile', 'Email'], rows.slice(0, 400).map(x => ({ href: x.href,
-      cells: [`<b>${esc(x.name)}</b>${x.resp ? `<div class="small muted">${esc(x.resp)}</div>` : ''}`, esc(x.role), x.company ? esc(x.company.name) : '<span class="muted">Personal</span>', esc(TYPE[x.type]), esc(fmtMobile(x.mobile)), esc(x.email)] })))
+      cells: [`<b>${esc(x.name)}</b>${x.resp ? `<div class="small muted">${esc(x.resp)}</div>` : ''}${EM.div === 'both' ? segBadge(x.company ? x.company.division : (CL()[x.id] || {}).division) : ''}`, esc(x.role), x.company ? esc(x.company.name) : '<span class="muted">Personal</span>', esc(TYPE[x.type]), esc(fmtMobile(x.mobile)), esc(x.email)] })))
       + (rows.length > 400 ? `<p class="small muted">Showing 400 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing matches that search.</p>')
       : empty('No people yet', 'Add a dealer or an architect firm with its team, or add a personal contact.', addButtons())}
   </div>`;
@@ -378,7 +404,7 @@ function openClientForm(c, kind, keep, only, people, poc) {
   const noun = org ? kindName(kind).toLowerCase() : 'person';
   const fh = f => fieldHtml(f, v[f.key], 'cf', { self: c && c.id });
   const kindPick = `<div class="field span2"><span class="small muted">${org ? 'What are you adding?' : 'Type'}</span><div class="seg-kind" role="radiogroup" aria-label="Type">${kinds.map(k => `<label><input type="radio" name="kind" value="${k}" data-kind-pick ${k === kind ? 'checked' : ''}> ${esc(kindName(k))}</label>`).join('')}</div></div>
-    ${KINDS[kind].division === 'both' && D.user.division === 'both' ? G.select({ key: 'division', label: 'Which company keeps this record' }, v.division || (EM.div === 'both' ? 'both' : EM.div), 'cf', [['wholesale', 'EGO Premium'], ['retail', 'Big E'], ['both', 'Both companies']], false) : ''}`;
+    ${KINDS[kind].division === 'both' ? `<div class="field"><span class="small muted">Kept by</span><div>${segBadge(c ? c.division : EM.div)}</div></div>` : ''}`;
   let body;
   if (org) {
     const placed = new Set(), pick = keys => keys.map(k => all.find(f => f.key === k)).filter(Boolean).map(f => (placed.add(f.key), f));
@@ -1204,14 +1230,17 @@ EM.ACTIONS['snag-close-go'] = el => opsAct(el, `snags/${el.dataset.id}/close`, {
 
 /* ---- complaints */
 EM.VIEWS.complaints = arg => {
-  const CS = OS_('complaint_statuses'), all = OPSD().complaints.filter(inDiv), tab = CS.includes(arg) ? arg : 'all', rows = all.filter(c => tab === 'all' || c.status === tab);
+  const CS = OS_('complaint_statuses'), all = OPSD().complaints.filter(inDiv).filter(c => !EM.cseg || c.division === EM.cseg), tab = CS.includes(arg) ? arg : 'all', rows = all.filter(c => tab === 'all' || c.status === tab);
   return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="muted">Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
     ${stageBoard(CS, all, c => c.status, c => `<a class="card stack-s" style="text-decoration:none" href="#/complaint/${c.id}"><b>${esc(c.ref)}</b><span class="small">${esc(c.type)}</span><span class="small muted">${esc(clientName(c.client_id))}</span></a>`)}
     ${subtabs('#/complaints', tab, [['all', `All <span class="muted">${all.length}</span>`], ...CS.map(s => [s, `${esc(s)} <span class="muted">${all.filter(c => c.status === s).length}</span>`])])}
-    ${rows.length ? table(['Complaint', 'From', 'Kind', 'Severity', 'Status', 'Handled by', 'Logged'], rows.map(c => ({ href: '#/complaint/' + c.id, cells: [`<b>${esc(c.ref)}</b>`, esc(clientName(c.client_id)), esc(c.type), esc(c.severity), `<span class="badge ${c.status === lastOf(CS) ? 'ok' : 'warn'}">${esc(c.status)}</span>`, esc(staffName(c.owner_id)), ds(c.created_at.slice(0, 10))] })))
+    ${EM.div === 'both' ? `<label class="field" style="max-width:260px"><span class="small muted">Company</span><select class="input" id="cseg"><option value="">EGO Premium and Big E</option><option value="wholesale" ${EM.cseg === 'wholesale' ? 'selected' : ''}>EGO Premium (wholesale)</option><option value="retail" ${EM.cseg === 'retail' ? 'selected' : ''}>Big E (retail)</option></select></label>` : ''}
+    ${rows.length ? table(['Complaint', 'Company', 'From', 'Kind', 'Severity', 'Status', 'Handled by', 'Logged'], rows.map(c => ({ href: '#/complaint/' + c.id, cells: [`<b>${esc(c.ref)}</b>`, segBadge(c.division), esc(clientName(c.client_id)), esc(c.type), esc(c.severity), `<span class="badge ${c.status === lastOf(CS) ? 'ok' : 'warn'}">${esc(c.status)}</span>`, esc(staffName(c.owner_id)), ds(c.created_at.slice(0, 10))] })))
       : '<p class="small muted">No complaints here.</p>'}</div>`;
 };
 EM.VIEWS.complaints.title = () => 'Complaints';
+EM.cseg = '';
+document.addEventListener('change', e => { if (e.target.id === 'cseg') { EM.cseg = e.target.value; EM.rerender(); } });
 EM.ACTIONS['cmp-add'] = el => {
   const cs = D.clients.filter(inDiv).sort((a, b) => a.name.localeCompare(b.name));
   EM.modal(`<h2>Log a complaint</h2><div class="fgrid" style="margin-top:12px">
@@ -1249,7 +1278,7 @@ EM.VIEWS.approvals = arg => {
   const href = a => a.entity === 'opp' ? '#/opp/' + a.record_id : a.entity === 'order' ? '#/order/' + a.record_id : a.entity === 'complaint' ? '#/complaint/' + a.record_id : '#/approvals';
   return `<div class="stack"><div class="stack-s"><div class="kicker">Credit, discounts, complaint settlements</div><h1>Approvals</h1><p class="muted">A request goes to whoever's limit covers it (limits in Lists & stages › Rules and numbers). The Owner has no limit.</p></div>
     ${subtabs('#/approvals', tab, ['Pending', 'Approved', 'Rejected'].map(s => [s, `${s} <span class="muted">${all.filter(a => a.status === s).length}</span>`]))}
-    ${rows.length ? table(['What', 'Amount', 'Asked by', 'When', ''], rows.map(a => [`<a href="${href(a)}"><b>${esc((D.lists.rules.approvals[a.kind] || { label: a.kind }).label)}</b></a><div class="small muted">${esc(a.reason)}</div>`, apAmt(a), esc(staffName(a.requested_by)), ds(a.created_at.slice(0, 10)),
+    ${rows.length ? table(['What', 'Company', 'Amount', 'Asked by', 'When', ''], rows.map(a => [`<a href="${href(a)}"><b>${esc((D.lists.rules.approvals[a.kind] || { label: a.kind }).label)}</b></a><div class="small muted">${esc(a.reason)}</div>`, segBadge(a.division), apAmt(a), esc(staffName(a.requested_by)), ds(a.created_at.slice(0, 10)),
       a.status === 'Pending' ? (myLimit(a.kind) >= a.amount ? `<button class="btn sm primary" data-act="ap-yes" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="ap-no" data-id="${a.id}">Reject</button>` : '<span class="small muted">Above your limit</span>') : `${esc(staffName(a.decided_by))}${a.decision_note ? ' · ' + esc(a.decision_note) : ''}`]))
       : empty(`Nothing ${tab.toLowerCase()}`, 'Requests appear here when an order goes over a credit limit, a discount is above someone\'s limit, or a complaint settlement is large.')}</div>`;
 };
@@ -1785,7 +1814,7 @@ function buildOrders() {
 }
 const givenBy = x => { const c = CL()[x.client_id] || {}, k = D.contacts.find(y => y.id === x.contact_id), arch = c.architect_id && CL()[c.architect_id];
   return `<a href="#/client/${x.client_id}">${esc(c.name || 'Outside your view')}</a> <span class="small muted">${esc(kindLabel(c.kind || ''))}</span>${k ? `<div class="small">${esc(k.name)}${k.designation ? ' · ' + esc(k.designation) : ''}</div>` : ''}${arch ? `<div class="small muted">Architect: ${esc(arch.name)}</div>` : ''}`; };
-EM.ob = EM.ob || { period: 'all', from: '', to: '', kind: '', state: '', q: '' };
+EM.ob = EM.ob || { period: 'all', from: '', to: '', seg: '', kind: '', state: '', q: '' };
 /* THE date filter: every list filtered by a date uses this one, and it always offers Custom dates (4 Oct) */
 const PERIODS = [['all', 'All time'], ['today', 'Today'], ['month', 'This month'], ['last', 'Last month'], ['year', 'This financial year'], ['lastyear', 'Last financial year'], ['custom', 'Custom dates']];
 const dayIST = ts => ts ? new Date(Date.parse(ts.endsWith('Z') || ts.includes('+') ? ts : ts.replace(' ', 'T') + 'Z') + 5.5 * 36e5).toISOString().slice(0, 10) : '';
@@ -1808,15 +1837,16 @@ function inPeriod(ts, p, from, to) {
 }
 EM.VIEWS.orderbook = () => {
   const f = EM.ob, all = buildOrders();
-  const rows = all.filter(x => inPeriod(x.won_at, f.period, f.from, f.to) && (!f.kind || x.kind === f.kind || (f.kind === 'dealer' && DEALER_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'architect' && ARCH_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'personal' && PERSONAL_KINDS.includes((CL()[x.client_id] || {}).kind)))
+  const segOf = x => x.kind === 'Wholesale' ? 'wholesale' : 'retail';
+  const rows = all.filter(x => (EM.div === 'both' || segOf(x) === EM.div) && (!f.seg || segOf(x) === f.seg) && inPeriod(x.won_at, f.period, f.from, f.to) && (!f.kind || x.kind === f.kind || (f.kind === 'dealer' && DEALER_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'architect' && ARCH_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'personal' && PERSONAL_KINDS.includes((CL()[x.client_id] || {}).kind)))
     && (!f.state || (f.state === 'done' ? x.done : !x.done)) && (!f.q || `${x.ref} ${x.title} ${clientName(x.client_id)}`.toLowerCase().includes(f.q.toLowerCase())));
   const sel = (k, label, opts) => `<label class="field" style="min-width:170px"><span class="small muted">${label}</span><select class="input" data-ob="${k}">${opts.map(([v, l]) => `<option value="${v}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   return `<div class="stack"><div class="stack-s"><div class="kicker">Every order, live and old</div><h1>Orders</h1><p class="muted" style="max-width:760px">Every sale that was won, whenever it was: where it is now, when each stage happened and who moved it, who gave it, who closed it and who processed it. The boards show only what is live; this keeps everything.</p></div>
-    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${dateFilter(f, 'ob', 'When it was won')}${sel('kind', 'From', [['', 'Everyone'], ['dealer', 'Dealers'], ['architect', 'Architects'], ['personal', 'Personal contacts'], ['Wholesale', 'Wholesale sales'], ['Retail', 'Retail sales']])}${sel('state', 'Where it is', [['', 'Live and done'], ['live', 'Still live'], ['done', 'Delivered or completed']])}
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${dateFilter(f, 'ob', 'When it was won')}${EM.div === 'both' ? sel('seg', 'Company', [['', 'EGO Premium and Big E'], ['wholesale', 'EGO Premium (wholesale)'], ['retail', 'Big E (retail)']]) : ''}${sel('kind', 'From', [['', 'Everyone'], ['dealer', 'Dealers'], ['architect', 'Architects'], ['personal', 'Personal contacts']])}${sel('state', 'Where it is', [['', 'Live and done'], ['live', 'Still live'], ['done', 'Delivered or completed']])}
       <label class="field" style="flex:1;min-width:200px"><span class="small muted">Search</span><input class="input" id="obq" value="${esc(f.q)}" placeholder="Order number, sale or company"></label></div>
     <div class="grid g4">${tile('Orders', rows.length)}${tile('Still live', rows.filter(x => !x.done).length)}${tile('Delivered or completed', rows.filter(x => x.done).length)}${D.access.prices ? tile('Value', inr0(rows.reduce((a, x) => a + (Number(x.value) || 0), 0))) : ''}</div>
     ${rows.length ? table(['Order', 'Won on', 'Given by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Processed by', 'Delivered or completed'], rows.slice(0, 500).map(x => ({ href: x.href,
-      cells: [`<b>${esc(x.ref || '')}</b><div class="small">${esc(x.title)}</div><span class="small muted">${x.kind}</span>`, whenTxt(x.won_at), givenBy(x), ...(D.access.prices ? [inr0(x.value)] : []),
+      cells: [`<b>${esc(x.ref || '')}</b><div class="small">${esc(x.title)}</div>${segBadge(x.kind === 'Wholesale' ? 'wholesale' : 'retail')}`, whenTxt(x.won_at), givenBy(x), ...(D.access.prices ? [inr0(x.value)] : []),
         `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>`, esc(staffName(x.closed_by)), esc(x.processed_by.map(staffName).join(', ')) || '<span class="muted">Not started</span>', x.done_at ? whenTxt(x.done_at) : ''] })))
       + (rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : '')
       : empty('No orders for this filter', 'An order appears here when a sale is won: a wholesale sale at its won stage, a retail sale when won.')}</div>`;

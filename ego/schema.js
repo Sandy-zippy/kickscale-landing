@@ -405,7 +405,8 @@ const regionOf = (lists, city) => { const c = (lists || DEFAULT_LISTS).cities.fi
    a code and a photo. Stock is counted in boxes per design per warehouse, and only
    ever changes through a stock move (in, out, transfer, opening), so every number
    has a who, a when and a reason. */
-const STOCK_ROLES = ['owner', 'director', 'ws_warehouse'];
+/* who changes the ONE inventory, from either company: EGO Premium's warehouse, Big E's heads (4 Oct) */
+const STOCK_ROLES = ['owner', 'director', 'ws_warehouse', 'rt_head', 'rt_project'];
 const SUB_TYPES = ['Plank', 'Tile', 'Herringbone', 'Chevron', 'Board', 'Profile', 'Other'];
 const COLLECTION_FIELDS = [
   { key: 'category', label: 'Category', type: 'cat', req: true, col: true, section: 'Collection' },
