@@ -162,10 +162,13 @@ const OPP_FIELDS = [
 ];
 /* The stage that counts as won: for a wholesale sale it is Payment collected (4 Oct), and
    that is where it passes to fulfilment. Lost is lost everywhere; Nurturing stays open. */
-const wonStage = p => (PIPELINES[p] && PIPELINES[p].won) || 'Won';
-const isClosed = (p, st) => st === wonStage(p) || st === 'Lost';
-/* stages a sales board cannot lose or rename: the won stage, Lost, and where credit is checked */
-const lockedStages = p => [PIPELINES[p] && PIPELINES[p].credit, wonStage(p), 'Lost'].filter(Boolean);
+/* A stage that drives the processing has a ROLE (its first name) and a current NAME: the
+   Owner may unlock and rename it, and the logic follows the role, never the words. */
+const nm = (lists, set, role) => ((lists && lists.names && lists.names[set]) || {})[role] || role;
+const wonStage = (p, lists) => nm(lists, 'stages.' + p, (PIPELINES[p] && PIPELINES[p].won) || 'Won');
+const lostStage = (p, lists) => nm(lists, 'stages.' + p, 'Lost');
+const creditStage = (p, lists) => PIPELINES[p] && PIPELINES[p].credit ? nm(lists, 'stages.' + p, PIPELINES[p].credit) : null;
+const isClosed = (p, st, lists) => st === wonStage(p, lists) || st === lostStage(p, lists);
 const OPP_COLS = ['pipeline', 'title', 'stage', 'value', 'owner_id', 'contact_id', 'next_action', 'next_date', 'lost_reason', 'source'];
 
 const fieldsFor = kind => {
@@ -296,8 +299,9 @@ function cleanOpp(input, ctx) {
     if (OPP_COLS.includes(f.key)) rec[f.key] = empty ? (f.type === 'money' ? null : '') : r.value;
     else if (!empty) rec.extra[f.key] = r.value;
   }
-  if (rec.stage === 'Lost' && !rec.lost_reason) errors.push('Lost reason is compulsory when the stage is Lost');
-  if (rec.stage !== 'Lost') rec.lost_reason = '';
+  const lost = lostStage(pipe, ctx && ctx.lists);
+  if (rec.stage === lost && !rec.lost_reason) errors.push(`Lost reason is compulsory when the stage is ${lost}`);
+  if (rec.stage !== lost) rec.lost_reason = '';
   return { rec, errors };
 }
 
@@ -634,3 +638,13 @@ const levelLimit = (rules, kind, role) => { const l = APPROVER_LEVEL[role]; if (
 const opsStages = (lists, k) => ((lists || {}).ops || {})[k] || OPS[k].list;
 const lastOf = a => a[a.length - 1];
 const DISCOUNT_FIELD = { key: 'discount_pct', label: 'Discount (%)', type: 'decimal' };
+
+/* the roles each stage set has (by their first names), and what is locked to begin with */
+const ROLE_SETS = {
+  'stages.wholesale': ['Invoiced', 'Payment collected', 'Lost', 'Nurturing'],
+  'stages.retail_lead': ['Won', 'Lost'], 'stages.retail_project': ['Won', 'Lost'],
+  ...Object.fromEntries(Object.entries(OPS).map(([k, v]) => ['ops.' + k, v.locked])),
+};
+const roleNames = (lists, set) => (ROLE_SETS[set] || []).map(r => nm(lists, set, r));
+/* every item of every list can be locked or unlocked; the roles start locked */
+const locksOf = (lists, set) => (lists && lists.locks && lists.locks[set]) || roleNames(lists, set).filter(n => !/^Nurturing$/.test(n));

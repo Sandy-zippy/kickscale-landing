@@ -182,9 +182,9 @@ EM.VIEWS.home = () => {
   if (!holds()) return `<div class="stack">${who}<p class="muted">Your role manages people and access, not business records.</p><div class="row">${allowedTab('team') ? '<a class="btn primary" href="#/team">Team &amp; access</a>' : ''}</div></div>`;
   const cs = D.clients.filter(inDiv), os = D.opportunities.filter(inDiv), t = today(), month = t.slice(0, 7);
   const n = k => cs.filter(c => c.kind === k).length;
-  const open = os.filter(o => !isClosed(o.pipeline, o.stage));
+  const open = os.filter(o => !isClosed(o.pipeline, o.stage, D.lists));
   const due = [...open.filter(o => o.next_date && o.next_date <= t)];
-  const won = os.filter(o => o.stage === wonStage(o.pipeline) && (o.closed_at || '').slice(0, 7) === month);
+  const won = os.filter(o => o.stage === wonStage(o.pipeline, D.lists) && (o.closed_at || '').slice(0, 7) === month);
   const sum = a => a.reduce((s, o) => s + (Number(o.value) || 0), 0);
   const groups = [
     ['wholesale', 'Dealers', DEALER_KINDS, '#/dealers'],
@@ -239,7 +239,7 @@ const addButtons = () => [
   allowedTab('dealers') && kindsAllowed().includes('dealer') ? '<button class="btn primary" data-act="org-add" data-org="dealer">+ Add dealer</button>' : '',
   '<button class="btn primary" data-act="org-add" data-org="architect">+ Add architect firm</button>',
   '<button class="btn" data-act="person-add">+ Add person</button>', '<a class="btn" href="#/import">Import from Excel</a>'].join('');
-const wonValue = id => D.opportunities.filter(o => o.client_id === id && o.stage === wonStage(o.pipeline)).reduce((a, o) => a + (Number(o.value) || 0), 0);
+const wonValue = id => D.opportunities.filter(o => o.client_id === id && o.stage === wonStage(o.pipeline, D.lists)).reduce((a, o) => a + (Number(o.value) || 0), 0);
 EM.clientQ = '';
 const searchBox = ph => `<label class="field" style="max-width:420px"><span class="small muted">Search</span><input class="input" id="cq" value="${esc(EM.clientQ)}" placeholder="${ph}"></label>`;
 const matches = (txt, mobiles) => { const q = EM.clientQ.toLowerCase(), qd = q.replace(/\D/g, ''); return !q || txt.toLowerCase().includes(q) || (qd.length >= 4 && mobiles.some(m => String(m || '').includes(qd))); };
@@ -250,7 +250,7 @@ function orgList(org, arg) {
   const tab = subs.find(t => t[0] === arg) || subs[0];
   const all = D.clients.filter(c => all0.includes(c.kind) && inDiv(c));
   const rows = all.filter(c => tab[2].includes(c.kind) && matches(`${c.name} ${c.city} ${c.ref || ''} ${c.gst}`, [c.mobile]));
-  const team = id => D.contacts.filter(k => k.client_id === id).length, open = id => D.opportunities.filter(o => o.client_id === id && !isClosed(o.pipeline, o.stage)).length;
+  const team = id => D.contacts.filter(k => k.client_id === id).length, open = id => D.opportunities.filter(o => o.client_id === id && !isClosed(o.pipeline, o.stage, D.lists)).length;
   const title = org === 'dealer' ? 'Dealers' : 'Architects', base = '#/' + (org === 'dealer' ? 'dealers' : 'architects');
   const rating = c => org === 'dealer' ? c.grade : (c.extra || {}).rating;
   return `<div class="stack">
@@ -485,7 +485,7 @@ function clientOverview(c) {
 }
 /* what this company brings, counted only from saved opportunities */
 function businessCard(c) {
-  const ops = D.opportunities.filter(o => o.client_id === c.id), won = ops.filter(o => o.stage === wonStage(o.pipeline)), open = ops.filter(o => !isClosed(o.pipeline, o.stage));
+  const ops = D.opportunities.filter(o => o.client_id === c.id), won = ops.filter(o => o.stage === wonStage(o.pipeline, D.lists)), open = ops.filter(o => !isClosed(o.pipeline, o.stage, D.lists));
   const sum = a => a.reduce((t, o) => t + (Number(o.value) || 0), 0);
   const by = {};
   for (const o of won) { const k = o.contact_id || ''; by[k] = (by[k] || 0) + (Number(o.value) || 0); }
@@ -507,7 +507,7 @@ function clientOpps(c, cts, ops) {
 }
 const oppTable = ops => table(['Opportunity', 'Pipeline', 'Stage', ...(D.access.prices ? ['Value'] : []), 'Owner', 'Next action'], ops.map(o => ({ href: `#/opp/${o.id}`,
   cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(o.ref || '')}</div>`, esc(PIPELINES[o.pipeline].label), stageBadge(o.stage), ...(D.access.prices ? [money(o.value)] : []), esc(staffName(o.owner_id)), o.next_date ? `${esc(o.next_action || '')} · ${ds(o.next_date)}` : esc(o.next_action || '')] })));
-const stageBadge = s => `<span class="badge ${Object.keys(PIPELINES).some(p => wonStage(p) === s) ? 'ok' : s === 'Lost' ? 'bad' : 'info'}">${esc(s)}</span>`;
+const stageBadge = s => `<span class="badge ${Object.keys(PIPELINES).some(p => wonStage(p, D.lists) === s) ? 'ok' : Object.keys(PIPELINES).some(p => lostStage(p, D.lists) === s) ? 'bad' : 'info'}">${esc(s)}</span>`;
 function clientDocs(c, cts, ops, docs) {
   return `<div class="stack-s"><form id="df" class="card stack-s" onsubmit="return false"><h3>Add a document</h3><div class="fgrid">
       <div class="field"><label for="df-type">What it is</label><select class="input" id="df-type" name="type">${DOC_TYPES.map(t => `<option>${t}</option>`).join('')}</select></div>
@@ -601,7 +601,7 @@ EM.VIEWS.opps = arg => {
   const stages = D.lists.stages[p] || [];
   const t = today();
   const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>
-    <div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}</div>`;
+    <div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}</div>`;
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
       <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
@@ -618,14 +618,14 @@ EM.VIEWS.opp = id => {
   const c = CL()[o.client_id] || { name: 'Client outside your view' }, v = { ...o, ...o.extra };
   const stages = D.lists.stages[o.pipeline] || [], hist = D.history.filter(h => h.opp_id === id);
   const at = stages.indexOf(o.stage);
-  const fields = showFields(OPP_FIELDS).filter(f => !['pipeline', 'title', 'stage', 'contact_id'].includes(f.key) && (f.key !== 'lost_reason' || o.stage === 'Lost'));
+  const fields = showFields(OPP_FIELDS).filter(f => !['pipeline', 'title', 'stage', 'contact_id'].includes(f.key) && (f.key !== 'lost_reason' || o.stage === lostStage(o.pipeline, D.lists)));
   const contact = D.contacts.find(k => k.id === o.contact_id);
   return `<div class="stack">${crumbs(['Opportunities', `#/opps/${o.pipeline}`], [o.title])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.title)}</h1>
       <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}<span class="small muted">${esc(o.ref || '')}</span></div>
       <p class="muted"><a href="#/client/${o.client_id}">${esc(c.name)}</a>${contact ? ` · ${esc(contact.name)} ${esc(fmtMobile(contact.mobile))}` : ''}</p></div>
-      <div class="row">${o.stage === wonStage(o.pipeline) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}<button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${isOwner() ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
-    <section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== 'Lost' ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>
+      <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}<button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${isOwner() ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
+    <section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>
       <div class="row"><select class="input" id="move-stage" aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
     ${PIPELINES[o.pipeline].lines ? oppLinesCard(o) : ''}
     <div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, v[f.key])]))}</section>
@@ -701,14 +701,14 @@ const oppInput = o => ({ ...o.extra, id: o.id, client_id: o.client_id, pipeline:
 EM.ACTIONS['opp-move'] = async el => {
   const o = D.opportunities.find(x => x.id === el.dataset.id), to = qs('#move-stage').value;
   if (to === o.stage) return;
-  if (to === 'Lost') return EM.modal(`<h2>Why was it lost?</h2><p class="muted">A lost reason is compulsory.</p><div class="field" style="margin-top:12px"><label for="lost-pick">Lost reason *</label><select class="input" id="lost-pick"><option value="">Choose</option>${D.lists.lost_reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>${errBox('lost-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="opp-lost" data-id="${o.id}">Mark as lost</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+  if (to === lostStage(o.pipeline, D.lists)) return EM.modal(`<h2>Why was it lost?</h2><p class="muted">A lost reason is compulsory.</p><div class="field" style="margin-top:12px"><label for="lost-pick">Lost reason *</label><select class="input" id="lost-pick"><option value="">Choose</option>${D.lists.lost_reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>${errBox('lost-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="opp-lost" data-id="${o.id}">Mark as lost</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
   const r = await saveOpp({ ...oppInput(o), stage: to }, el, 'move-err');
   if (r) { EM.toast(`Moved to <b>${esc(to)}</b>.`); EM.rerender(); } else EM.toast('Could not move it. ' + esc((qs('#move-err') || {}).textContent || ''));
 };
 EM.ACTIONS['opp-lost'] = async el => {
   const o = D.opportunities.find(x => x.id === el.dataset.id), why = qs('#lost-pick').value;
   if (!why) return showErr('lost-err', 'Choose the reason.');
-  const r = await saveOpp({ ...oppInput(o), stage: 'Lost', lost_reason: why }, el, 'lost-err');
+  const r = await saveOpp({ ...oppInput(o), stage: lostStage(o.pipeline, D.lists), lost_reason: why }, el, 'lost-err');
   if (r) { EM.closeModal(); EM.toast('Marked as lost: ' + esc(why)); EM.rerender(); }
 };
 EM.ACTIONS['opp-del'] = async el => {
@@ -969,6 +969,7 @@ EM.ACTIONS['move-save'] = async el => {
    when stock is short. Big E: installation sites with steps, readiness and snags. Both:
    complaints and approvals. Priority 200 ranks the dealers from what is saved here.
    Every stage set is edited in Lists & stages; the locked stages carry the logic. */
+const FN = r => nm(D.lists, 'ops.fulfilment_stages', r), PNn = r => nm(D.lists, 'ops.production_stages', r);   // a stage by its role, whatever it is called now
 const OPSD = () => D.ops || { orders: [], lines: [], allocations: [], production: [], waits: [], sites: [], snags: [], complaints: [], approvals: [] };
 const OS_ = k => opsStages(D.lists, k);
 const prodName = id => { const p = INVD().products.find(x => x.id === id); return p ? `${p.name}${p.code ? ' · ' + p.code : ''}` : 'Design'; };
@@ -992,15 +993,15 @@ const waitsOf = (pred) => OPSD().waits.filter(pred);
 const poRef = id => (OPSD().production.find(p => p.id === id) || { ref: 'PO' }).ref;
 const oppOf = o => D.opportunities.find(x => x.id === o.opp_id);
 /* the whole road, from the first contact to the dealer's door, said once at the top */
-const flowStrip = () => { const W = D.lists.stages.wholesale || [], FS = OS_('fulfilment_stages'), PS = OS_('production_stages'), won = wonStage('wholesale');
+const flowStrip = () => { const W = D.lists.stages.wholesale || [], FS = OS_('fulfilment_stages'), PS = OS_('production_stages'), won = wonStage('wholesale', D.lists);
   const chip = (t, cls) => `<span class="badge ${cls || 'plain'}">${esc(t)}</span>`, arrow = '<span class="muted">→</span>';
   return `<section class="card stack-s" data-flow><h3>How a wholesale sale moves</h3>
-    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">1. Opportunities (the sale)</b>${W.filter(x => !['Lost', 'Nurturing'].includes(x)).map(x => chip(x, x === 'Invoiced' ? 'warn' : x === won ? 'ok' : '')).join(arrow)}</div>
-    <p class="small muted">The designs, boxes and rate are typed on the opportunity; the money is worked out. At <b>Invoiced</b> the credit limit is checked. At <b>${esc(won)}</b> the sale comes here by itself. Lost and Nurturing stay in Opportunities.</p>
-    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">2. Fulfilment</b>${FS.map(x => chip(x, x === 'Stock check' ? 'warn' : x === 'Dispatched' ? 'info' : '')).join(arrow)}</div>
-    <p class="small muted">At <b>Stock check</b> each design is compared with what is free in every warehouse; you choose how many boxes to take from each. What you do not take goes to production. <b>Dispatched</b> takes the boxes out of the inventory.</p>
-    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">3. Production (only for what was short)</b>${PS.map(x => chip(x, x === 'Received at warehouse' ? 'warn' : '')).join(arrow)}</div>
-    <p class="small muted">One production order can serve several sales of the same design. <b>Received at warehouse</b> adds the boxes to stock; <b>Allocated &amp; closed</b> gives each waiting sale its share, oldest first, and they move on by themselves.</p></section>`; };
+    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">1. Opportunities (the sale)</b>${W.filter(x => ![lostStage('wholesale', D.lists), nm(D.lists, 'stages.wholesale', 'Nurturing')].includes(x)).map(x => chip(x, x === creditStage('wholesale', D.lists) ? 'warn' : x === won ? 'ok' : '')).join(arrow)}</div>
+    <p class="small muted">The designs, boxes and rate are typed on the opportunity; the money is worked out. At <b>${esc(creditStage('wholesale', D.lists))}</b> the credit limit is checked. At <b>${esc(won)}</b> the sale comes here by itself. ${esc(lostStage('wholesale', D.lists))} and ${esc(nm(D.lists, 'stages.wholesale', 'Nurturing'))} stay in Opportunities.</p>
+    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">2. Fulfilment</b>${FS.map(x => chip(x, x === FN('Stock check') ? 'warn' : x === FN('Dispatched') ? 'info' : '')).join(arrow)}</div>
+    <p class="small muted">At <b>${esc(FN('Stock check'))}</b> each design is compared with what is free in every warehouse; you choose how many boxes to take from each. What you do not take goes to production. <b>${esc(FN('Dispatched'))}</b> takes the boxes out of the inventory.</p>
+    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">3. Production (only for what was short)</b>${PS.map(x => chip(x, x === PNn('Received at warehouse') ? 'warn' : '')).join(arrow)}</div>
+    <p class="small muted">One production order can serve several sales of the same design. <b>${esc(PNn('Received at warehouse'))}</b> adds the boxes to stock; <b>${esc(PNn('Allocated & closed'))}</b> gives each waiting sale its share, oldest first, and they move on by themselves.</p></section>`; };
 EM.VIEWS.orders = arg => {
   const tab = ORD_TABS.find(t => t[0] === arg) ? arg : 'fulfilment', O = OPSD();
   const lineSum = id => O.lines.filter(l => l.order_id === id);
@@ -1010,7 +1011,7 @@ EM.VIEWS.orders = arg => {
     ${subtabs('#/orders', tab, ORD_TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : O.production.length}</span>`]))}`;
   let body;
   if (tab === 'fulfilment') {
-    body = `${O.orders.length ? '' : `<p class="small muted">Nothing in fulfilment yet. A wholesale opportunity comes here when it reaches ${esc(wonStage('wholesale'))}.</p>`}${stageBoard(OS_('fulfilment_stages'), O.orders, o => o.ful_stage, ordCard)}
+    body = `${O.orders.length ? '' : `<p class="small muted">Nothing in fulfilment yet. A wholesale opportunity comes here when it reaches ${esc(wonStage('wholesale', D.lists))}.</p>`}${stageBoard(OS_('fulfilment_stages'), O.orders, o => o.ful_stage, ordCard)}
       ${O.orders.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Boxes', ...(D.access.prices ? ['Value'] : []), 'Stage', 'Production orders'], O.orders.map(o => ({ href: '#/order/' + o.id,
         cells: [`<b>${esc(o.ref)}</b><div class="small muted">${ds(o.created_at.slice(0, 10))}</div>`, esc((oppOf(o) || { title: '' }).title), esc(clientName(o.client_id)), num(lineSum(o.id).reduce((a, l) => a + l.boxes, 0)), ...(D.access.prices ? [inr0(o.total)] : []),
           `<span class="badge info">${esc(o.ful_stage)}</span>`, esc([...new Set(waitsOf(w => w.order_id === o.id).map(w => poRef(w.po_id)))].join(', '))] }))) : ''}`;
@@ -1031,7 +1032,7 @@ function oppLinesCard(o) {
   return `<section class="card stack-s" data-opp-lines><div class="row between"><h3>Designs, boxes and rate</h3>${ord ? `<a class="btn sm primary" href="#/order/${ord.id}">In fulfilment: ${esc(ord.ref)} · ${esc(ord.ful_stage)}</a>` : ''}</div>
     ${ls.length ? table(['Design', 'Boxes', ...(D.access.prices ? ['Rate per box', 'Amount'] : []), 'Free in the warehouses now'], ls.map(l => [`<b>${esc(prodName(l.product_id))}</b>`, num(l.boxes), ...(D.access.prices ? [inr0(l.rate), inr0(l.amount)] : []), num(INVD().warehouses.reduce((a, w) => a + Math.max(0, freeAt(l.product_id, w.id)), 0))]))
       + (D.access.prices ? `<p class="small">${ex.discount_pct ? `Discount ${ex.discount_pct}% · ` : ''}Subtotal ${inr0(ex.subtotal)} + GST ${ex.gst_pct ?? D.lists.rules.gst_pct}% = <b>${inr0(o.value)}</b></p>` : '')
-      : `<p class="small muted">No designs yet. Edit the opportunity to add the designs, boxes and rate; they are needed before ${esc(PIPELINES[o.pipeline].credit)}.</p>`}
+      : `<p class="small muted">No designs yet. Edit the opportunity to add the designs, boxes and rate; they are needed before ${esc(creditStage(o.pipeline, D.lists))}.</p>`}
     ${pend.length ? `<div class="callout warn"><b>Waiting for approval.</b> ${pend.map(a => esc(a.reason)).join(' · ')} <a href="#/approvals">Approvals</a></div>` : ''}
     ${apprs.filter(a => a.status !== 'Pending').map(a => `<p class="small muted">${esc((D.lists.rules.approvals[a.kind] || { label: a.kind }).label)}: <b>${esc(a.status)}</b> by ${esc(staffName(a.decided_by))}${a.decision_note ? ' · ' + esc(a.decision_note) : ''}</p>`).join('')}</section>`;
 }
@@ -1057,7 +1058,7 @@ EM.VIEWS.order = id => {
   const FS = OS_('fulfilment_stages'), lines = O.lines.filter(l => l.order_id === id), WH = INVD().warehouses, opp = oppOf(o);
   const al = l => O.allocations.filter(a => a.line_id === l.id), got = l => al(l).reduce((a, x) => a + x.boxes, 0);
   const wl = l => O.waits.filter(w => w.line_id === l.id), waiting = l => wl(l).filter(w => !w.done).reduce((a, w) => a + w.boxes, 0);
-  const atCheck = ['Stock check', 'Waiting on production'].includes(o.ful_stage);
+  const atCheck = [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage);
   const mineAt = (l, w) => al(l).filter(a => a.warehouse_id === w.id && !a.dispatched).reduce((a, x) => a + x.boxes, 0);
   return `<div class="stack">${crumbs(['Fulfilment', '#/orders'], [o.ref])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'an opportunity'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · payment collected ${ds(o.created_at.slice(0, 10))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
@@ -1127,8 +1128,8 @@ EM.VIEWS.po.title = id => (OPSD().production.find(x => x.id === id) || { ref: 'P
 EM.VIEWS.po.after = id => showLog('production', id, '#log-p');
 EM.ACTIONS['po-next'] = el => {
   const id = el.dataset.id, to = el.dataset.to, p = OPSD().production.find(x => x.id === id);
-  if (to === 'Received at warehouse' || to === 'Shipped') return EM.modal(`<h2>${esc(to)}</h2><div class="fgrid" style="margin-top:12px">
-      ${to === 'Received at warehouse' ? `<div class="field"><label for="po-wh">Arrived at</label><select class="input" id="po-wh">${INVD().warehouses.map(w => `<option value="${w.id}">${esc(w.name)}</option>`).join('')}</select></div><div class="field"><label for="po-rec">Boxes received</label><input class="input" id="po-rec" type="number" min="0" step="1" value="${p.boxes}"></div>` : ''}
+  if (to === PNn('Received at warehouse') || to === 'Shipped') return EM.modal(`<h2>${esc(to)}</h2><div class="fgrid" style="margin-top:12px">
+      ${to === PNn('Received at warehouse') ? `<div class="field"><label for="po-wh">Arrived at</label><select class="input" id="po-wh">${INVD().warehouses.map(w => `<option value="${w.id}">${esc(w.name)}</option>`).join('')}</select></div><div class="field"><label for="po-rec">Boxes received</label><input class="input" id="po-rec" type="number" min="0" step="1" value="${p.boxes}"></div>` : ''}
       <div class="field"><label for="po-ct">Container number</label><input class="input" id="po-ct" value="${esc(p.container || '')}"></div></div>${errBox('po-err')}
     <div class="row" style="margin-top:12px"><button class="btn primary" data-act="po-next-go" data-id="${id}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
   return opsAct(el, `production/${id}/next`, {}, `<b>${esc(to)}</b>`);
@@ -1260,7 +1261,7 @@ function p200Score(c) {
   const months = Math.max(1, (Date.now() - Date.parse(fy0)) / (30.44 * 864e5)), ytdTarget = ex.target_12m ? ex.target_12m * Math.min(12, months) / 12 : 0;
   const actual = fyOrders.reduce((a, o) => a + (o.subtotal || 0), 0);
   const cats = new Set(fyOrders.flatMap(o => O.lines.filter(l => l.order_id === o.id).map(l => colOf(INVD().products.find(p => p.id === l.product_id) || {}).category)).filter(Boolean));
-  const unpaidOld = D.opportunities.some(o => o.client_id === c.id && o.pipeline === 'wholesale' && o.stage === PIPELINES.wholesale.credit && (Date.now() - Date.parse((o.updated_at || o.created_at) + 'Z')) / 864e5 > R.payment_days);
+  const unpaidOld = D.opportunities.some(o => o.client_id === c.id && o.pipeline === 'wholesale' && o.stage === creditStage('wholesale', D.lists) && (Date.now() - Date.parse((o.updated_at || o.created_at) + 'Z')) / 864e5 > R.payment_days);
   const recent = orders.some(o => (Date.now() - Date.parse(o.created_at + 'Z')) / 864e5 <= 90) || D.opportunities.some(o => o.client_id === c.id && (Date.now() - Date.parse((o.updated_at || o.created_at) + 'Z')) / 864e5 <= 90);
   const parts = { sales: ytdTarget ? Math.min(1, actual / ytdTarget) * W.sales : 0, breadth: D.lists.categories.length ? Math.min(1, cats.size / D.lists.categories.length) * W.breadth : 0,
     payments: unpaidOld ? W.payments / 3 : W.payments, display: ex.showroom ? W.display : 0, activity: recent ? W.activity : 0 };
@@ -1283,7 +1284,7 @@ EM.VIEWS.p200 = arg => {
 EM.VIEWS.p200.title = () => 'Priority 200';
 
 /* ---- Lists & stages: the operations stage sets and the rules */
-const OPS_LIST_GROUP = () => ['Operations stages', 'The stages of the processing side. The locked stages (🔒) carry the logic: they can be moved, not renamed or removed. Every other stage can be renamed, added, removed or reordered.', Object.entries(OPS).map(([k, v]) => ['ops.' + k, v.label])];
+const OPS_LIST_GROUP = () => ['Operations stages', 'The stages of the processing side. Any item can be locked or unlocked. ⚙ marks the stages that run the processing: unlock one to rename it (the processing follows the new name); they cannot be removed, and they keep their order.', Object.entries(OPS).map(([k, v]) => ['ops.' + k, v.label])];
 EM.ACTIONS['rules-open'] = () => {
   const R = D.lists.rules, n = (id, label, v, unit) => `<div class="field"><label for="ru-${id}">${label}</label>${G.adorn(unit === '₹' ? { type: 'money', key: id } : { key: 'x' }, `<input class="input" type="number" min="0" step="any" id="ru-${id}" value="${v}">`).replace('class="suf">undefined<', `class="suf">${unit || ''}<`).replace('<span class="suf"></span>', '')}</div>`;
   EM.modal(`<h2>Rules and numbers</h2><p class="muted small">The numbers the processing uses. Changes apply from the next order, approval or score.</p>
@@ -1603,7 +1604,7 @@ EM.ACTIONS['staff-off-go'] = async el => {
    records holding the old name follow), move up or down, add, remove. A value that
    saved records still use cannot be removed; the server says how many use it. */
 const LISTS_UI = () => [
-  ['Sales stages', 'The stages of each opportunity board. The locked stages (🔒) carry the logic: the won stage (Payment collected for wholesale, where fulfilment starts), Lost, and Invoiced (where the credit limit is checked). Move them, but do not rename or remove them.', Object.keys(PIPELINES).map(p => [`stages.${p}`, PIPELINES[p].label])],
+  ['Sales stages', 'The stages of each opportunity board. Any item can be locked or unlocked. ⚙ marks the stages that run the processing (where the sale is won and fulfilment starts, Lost, and where the credit limit is checked): unlock them to rename them; they cannot be removed.', Object.keys(PIPELINES).map(p => [`stages.${p}`, PIPELINES[p].label])],
   ...(typeof OPS_LIST_GROUP === 'function' ? [OPS_LIST_GROUP()] : []),
   ...LIST_GROUPS.map(([t, ls]) => [t, '', ls]),
   ['Places', 'A city belongs to a region; the region decides which regional manager sees a record.', [['cities', 'Cities and their regions']]],
@@ -1616,18 +1617,35 @@ EM.VIEWS.lists = () => {
     <section class="stack-s"><h3>Rules and numbers</h3><p class="small muted">GST, production quantities, when an order is overdue, approval limits, Priority 200 levels and weights.</p>
       <div class="grid g3"><button class="card stack-s" style="text-align:left;cursor:pointer" data-act="rules-open"><b>Rules and numbers</b><span class="small muted">GST ${D.lists.rules.gst_pct}% · MOQ ${D.lists.rules.moq_boxes} boxes · ${Object.keys(D.lists.rules.approvals).length} approval limits · ${D.lists.rules.p200.tiers.length} Priority 200 levels</span></button></div></section>
     ${LISTS_UI().map(([title, note, ls]) => `<section class="stack-s"><h3>${esc(title)}</h3>${note ? `<p class="small muted">${esc(note)}</p>` : ''}
-      <div class="grid g3">${ls.map(([k, l]) => { const it = listItems(k); return `<button class="card stack-s" style="text-align:left;cursor:pointer" data-act="list-open" data-key="${esc(k)}"><b>${esc(l)}</b><span class="small muted">${it.length} · ${esc((k === 'cities' ? it.map(c => c.city) : it).slice(0, 4).join(', '))}${it.length > 4 ? '…' : ''}</span></button>`; }).join('')}</div></section>`).join('')}</div>`;
+      <div class="grid g3">${ls.map(([k, l]) => { const it = listItems(k); return `<button class="card stack-s" style="text-align:left;cursor:pointer" data-act="list-open" data-key="${esc(k)}"><b>${esc(l)}</b><span class="small muted">${it.length} · ${esc((k === 'cities' ? it.map(c => c.city) : it).slice(0, 4).join(', '))}${it.length > 4 ? '…' : ''}</span>${locksOf(D.lists, k).length ? `<span class="small">🔒 ${locksOf(D.lists, k).filter(x => (k === 'cities' ? it.map(c => c.city) : it).includes(x)).length} locked</span>` : ''}</button>`; }).join('')}</div></section>`).join('')}</div>`;
 };
 EM.VIEWS.lists.title = () => 'Lists & stages';
 const listLabel = key => LISTS_UI().flatMap(([, , ls]) => ls).find(([k]) => k === key)?.[1] || key;
-const listRow = (key, v, i) => key === 'cities'
-  ? `<div class="row lrow" data-from="${esc(v ? v.city : '')}"><span class="small muted" style="width:22px">${i + 1}</span><input class="input" data-l="to" value="${esc(v ? v.city : '')}" aria-label="City" style="flex:1"><select class="input" data-l="region" aria-label="Region" style="width:130px">${REGIONS.map(r => `<option ${v && v.region === r ? 'selected' : ''}>${r}</option>`).join('')}</select>${listBtns()}</div>`
-  : `<div class="row lrow" data-from="${esc(v || '')}"><span class="small muted" style="width:22px">${i + 1}</span><input class="input" data-l="to" value="${esc(v || '')}" aria-label="Item" style="flex:1"${isLocked(key, v) ? ' readonly title="Locked: the processing depends on it"' : ''}>${isLocked(key, v) ? '<span title="Locked" aria-label="Locked">🔒</span>' + listBtns().replace(/<button class="btn sm ghost" data-act="lrow-del"[^>]*>✕<\/button>/, '') : listBtns()}</div>`;
-const isLocked = (key, v) => (key.startsWith('stages.') && lockedStages(key.slice(7)).includes(v)) || (key.startsWith('ops.') && OPS[key.slice(4)] && OPS[key.slice(4)].locked.includes(v));
-const listBtns = () => '<button class="btn sm ghost" data-act="lrow-up" aria-label="Move up">↑</button><button class="btn sm ghost" data-act="lrow-down" aria-label="Move down">↓</button><button class="btn sm ghost" data-act="lrow-del" aria-label="Remove">✕</button>';
+/* one row: a lock switch, the name (read-only while locked), move up and down, remove.
+   A row with a role (it runs the processing) shows ⚙ and can be renamed once unlocked, never removed. */
+const listRow = (key, v, i) => {
+  const name = key === 'cities' ? (v ? v.city : '') : (v || ''), locked = !!v && isLocked(key, name), role = !!v && isRole(key, name);
+  return `<div class="row lrow${locked ? ' is-locked' : ''}" data-from="${esc(name)}" data-role="${role ? 1 : ''}"><span class="small muted" style="width:22px">${i + 1}</span>
+    <button class="btn sm ghost lock" data-act="lrow-lock" aria-pressed="${locked}" aria-label="${locked ? 'Locked: press to unlock' : 'Unlocked: press to lock'}" title="${locked ? 'Locked: press to unlock' : 'Unlocked: press to lock'}">${locked ? '🔒' : '🔓'}</button>
+    <input class="input" data-l="to" value="${esc(name)}" aria-label="${key === 'cities' ? 'City' : 'Item'}" style="flex:1"${locked ? ' readonly' : ''}>
+    ${key === 'cities' ? `<select class="input" data-l="region" aria-label="Region" style="width:130px"${locked ? ' disabled' : ''}>${REGIONS.map(r => `<option ${v && v.region === r ? 'selected' : ''}>${r}</option>`).join('')}</select>` : ''}
+    ${role ? '<span title="Runs the processing: it can be renamed when unlocked, never removed" aria-label="Runs the processing">⚙</span>' : ''}
+    <button class="btn sm ghost" data-act="lrow-up" aria-label="Move up">↑</button><button class="btn sm ghost" data-act="lrow-down" aria-label="Move down">↓</button>
+    <button class="btn sm ghost" data-act="lrow-del" aria-label="Remove"${locked || role ? ' hidden' : ''}>✕</button></div>`;
+};
+const isLocked = (key, v) => locksOf(D.lists, key).includes(v);
+const isRole = (key, v) => roleNames(D.lists, key).includes(v);
+EM.ACTIONS['lrow-lock'] = el => {
+  const r = el.closest('.lrow'), lock = !r.classList.contains('is-locked');
+  r.classList.toggle('is-locked', lock);
+  el.textContent = lock ? '🔒' : '🔓'; el.setAttribute('aria-pressed', String(lock)); el.title = el.ariaLabel = lock ? 'Locked: press to unlock' : 'Unlocked: press to lock';
+  r.querySelector('[data-l="to"]').readOnly = lock;
+  const rg = r.querySelector('[data-l="region"]'); if (rg) rg.disabled = lock;
+  r.querySelector('[data-act="lrow-del"]').hidden = lock || !!r.dataset.role;
+};
 EM.ACTIONS['list-open'] = el => {
   const key = el.dataset.key, it = listItems(key);
-  EM.modal(`<h2>${esc(listLabel(key))}</h2><p class="muted small">Type over an item to rename it; the records that have it follow. ↑ ↓ change the order. ✕ removes it (only if nothing uses it).</p>
+  EM.modal(`<h2>${esc(listLabel(key))}</h2><p class="muted small">🔒 locked: it cannot be renamed or removed. Press the lock to unlock it, then type over it to rename it; the records that have it follow. ↑ ↓ change the order. ✕ removes it (only if nothing uses it). ⚙ runs the processing: it can be renamed once unlocked, never removed. Press Save to keep the changes, locks included.</p>
     <div id="lrows" class="stack-s" style="margin-top:12px" data-key="${esc(key)}">${it.map((v, i) => listRow(key, v, i)).join('')}</div>
     <div class="row" style="margin-top:8px"><button class="btn sm" data-act="lrow-add">+ Add</button></div>${errBox('l-err')}
     <div class="row sticky-actions" style="margin-top:12px"><button class="btn primary" data-act="list-save">Save</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
@@ -1639,7 +1657,7 @@ EM.ACTIONS['lrow-up'] = el => { const r = el.closest('.lrow'); if (r.previousEle
 EM.ACTIONS['lrow-down'] = el => { const r = el.closest('.lrow'); if (r.nextElementSibling) r.parentNode.insertBefore(r.nextElementSibling, r); renumber(); };
 EM.ACTIONS['list-save'] = async el => {
   const box = qs('#lrows'), key = box.dataset.key;
-  const items = [...box.querySelectorAll('.lrow')].map(r => ({ from: r.dataset.from || null, to: r.querySelector('[data-l="to"]').value.trim(), city: r.querySelector('[data-l="to"]').value.trim(), region: (r.querySelector('[data-l="region"]') || {}).value })).filter(i => i.to);
+  const items = [...box.querySelectorAll('.lrow')].map(r => ({ from: r.dataset.from || null, to: r.querySelector('[data-l="to"]').value.trim(), city: r.querySelector('[data-l="to"]').value.trim(), region: (r.querySelector('[data-l="region"]') || {}).value, locked: r.classList.contains('is-locked') })).filter(i => i.to);
   busy(el, true);
   try {
     const r = await API('POST', '/api/lists/' + encodeURIComponent(key), { items });

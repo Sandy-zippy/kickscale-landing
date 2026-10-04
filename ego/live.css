@@ -44,3 +44,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 /* a stage board scrolls inside itself, never the page */
 .board { max-width: 100%; min-width: 0; }
 .stack > .board, .stack-s > .board { width: 100%; }
+
+/* the list editor: a locked row looks settled */
+.lrow.is-locked .input { opacity: .75; }
+.lrow .lock { min-width: 38px; }
