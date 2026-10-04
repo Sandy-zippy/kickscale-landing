@@ -24,19 +24,19 @@ function allowedTab(t) {
   if (t === 'architects') return holds();
   if (t === 'orders' || t === 'p200') return holds() && canDiv('wholesale');
   if (t === 'installation') return holds() && canDiv('retail');
-  if (t === 'complaints' || t === 'approvals') return holds();
+  if (t === 'complaints' || t === 'approvals' || t === 'orderbook') return holds();
   if (t === 'team') return D.access.users;
   if (t === 'lists') return isOwner();
   return false;
 }
 EM.div = D.user.division === 'both' ? 'both' : D.user.division;
 EM.navTabs = () => ({
-  main: [['home', 'Home'], ['dealers', 'Dealers'], ['architects', 'Architects'], ['people', 'People'], ['opps', 'Opportunities'], ['orders', 'Fulfilment'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel']]
+  main: [['home', 'Home'], ['dealers', 'Dealers'], ['architects', 'Architects'], ['people', 'People'], ['opps', 'Opportunities'], ['orderbook', 'Orders'], ['orders', 'Fulfilment'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel']]
     .filter(([k]) => allowedTab(k) && !(['dealers', 'orders', 'p200'].includes(k) && EM.div === 'retail') && !(k === 'installation' && EM.div === 'wholesale')),
   shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
 Object.assign(ICON, {
-  opps: ICON.leads, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, p200: ICON.targets, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
+  opps: ICON.leads, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, p200: ICON.targets, orderbook: ICON.orders || ICON.leads, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
 });
@@ -458,8 +458,9 @@ EM.VIEWS.client = arg => {
   if (!c) return `<div class="stack"><h1>Not found</h1><p class="muted">It may have been deleted, or it is outside your view.</p><a class="btn" href="#/people">People</a></div>`;
   const cts = D.contacts.filter(k => k.client_id === id), ops = D.opportunities.filter(o => o.client_id === id), docs = D.documents.filter(d => d.client_id === id);
   const org = ['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group);
-  const tabs = [['overview', 'Overview'], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
-  const body = { overview: clientOverview, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>' }[tab] || clientOverview;
+  const nOrd = buildOrders().filter(x => x.client_id === id).length;
+  const tabs = [['overview', 'Overview'], ['orders', `Orders (${nOrd})`], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
+  const body = { overview: clientOverview, orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>' }[tab] || clientOverview;
   const home = homeOf(c);
   return `<div class="stack">${crumbs(home, [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
@@ -608,8 +609,9 @@ EM.VIEWS.opps = arg => {
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
       <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
     ${subtabs('#/opps', p, ps.map(k => [k, `${PIPELINES[k].plural} <span class="muted">${D.opportunities.filter(o => o.pipeline === k).length}</span>`]))}
+    <p class="small muted">The board shows what is live. A won or lost one stays until the end of the month it closed in; every order, old and new, is in <a href="#/orderbook">Orders</a>.</p>
     ${all.length ? '' : `<p class="small muted">No ${esc(PIPELINES[p].plural.toLowerCase())} yet. Add one from here, or from a dealer, an architect firm or a person. The stages below come from Lists & stages.</p>`}
-    ${stageBoard(stages, all, o => o.stage, card, ls => D.access.prices && ls.some(o => o.value) ? `<div class="small muted">${inr(ls.reduce((a, o) => a + (Number(o.value) || 0), 0))}</div>` : '')}</div>`;
+    ${stageBoard(stages, all.filter(o => !isClosed(o.pipeline, o.stage, D.lists) || thisMonth(o.closed_at || o.updated_at)), o => o.stage, card, ls => D.access.prices && ls.some(o => o.value) ? `<div class="small muted">${inr(ls.reduce((a, o) => a + (Number(o.value) || 0), 0))}</div>` : '')}</div>`;
 };
 EM.VIEWS.opps.title = () => 'Opportunities';
 document.addEventListener('change', e => { if (e.target.id === 'opp-mine') { EM.oppMine = e.target.checked; EM.rerender(); } });
@@ -1013,8 +1015,9 @@ EM.VIEWS.orders = arg => {
     ${subtabs('#/orders', tab, ORD_TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : O.production.length}</span>`]))}`;
   let body;
   if (tab === 'fulfilment') {
-    body = `${O.orders.length ? '' : `<p class="small muted">Nothing in fulfilment yet. A wholesale opportunity comes here when it reaches ${esc(wonStage('wholesale', D.lists))}.</p>`}${stageBoard(OS_('fulfilment_stages'), O.orders, o => o.ful_stage, ordCard)}
-      ${O.orders.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Boxes', ...(D.access.prices ? ['Value'] : []), 'Stage', 'Production orders'], O.orders.map(o => ({ href: '#/order/' + o.id,
+    const liveO = O.orders.filter(o => o.ful_stage !== lastOf(OS_('fulfilment_stages')) || thisMonth(stageAt(o.id, o.ful_stage)));
+    body = `<p class="small muted">The board shows what is live. A delivered order stays in ${esc(lastOf(OS_('fulfilment_stages')))} until the end of the month it was delivered in; every order, old and new, is in <a href="#/orderbook">Orders</a>.</p>${O.orders.length ? '' : `<p class="small muted">Nothing in fulfilment yet. A wholesale opportunity comes here when it reaches ${esc(wonStage('wholesale', D.lists))}.</p>`}${stageBoard(OS_('fulfilment_stages'), liveO, o => o.ful_stage, ordCard)}
+      ${liveO.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Boxes', ...(D.access.prices ? ['Value'] : []), 'Stage', 'Production orders'], liveO.map(o => ({ href: '#/order/' + o.id,
         cells: [`<b>${esc(o.ref)}</b><div class="small muted">${ds(o.created_at.slice(0, 10))}</div>`, esc((oppOf(o) || { title: '' }).title), esc(clientName(o.client_id)), num(lineSum(o.id).reduce((a, l) => a + l.boxes, 0)), ...(D.access.prices ? [inr0(o.total)] : []),
           `<span class="badge info">${esc(o.ful_stage)}</span>`, esc([...new Set(waitsOf(w => w.order_id === o.id).map(w => poRef(w.po_id)))].join(', '))] }))) : ''}`;
   } else {
@@ -1075,11 +1078,11 @@ EM.VIEWS.order = id => {
         esc(al(l).filter(a => !a.po_id).map(a => `${(WH.find(w => w.id === a.warehouse_id) || {}).name}: ${a.boxes}${a.dispatched ? ' (dispatched)' : ''}`).join(', ')) || '<span class="muted">None</span>',
         wl(l).length ? wl(l).map(w => `<a href="#/po/${w.po_id}">${esc(poRef(w.po_id))}</a>: ${w.boxes} ${w.done ? '<span class="badge ok">arrived, set aside</span>' : '<span class="badge warn">waiting</span>'}`).join('<br>') : '<span class="muted">None</span>',
         ...(D.access.prices ? [inr0(l.rate), inr0(l.amount)] : [])]))}</section>
-    <section class="stack-s"><h3>Fulfilment history</h3><div id="log-f"><p class="muted">Loading…</p></div></section></div>`;
+    ${orderStory(o)}</div>`;
 };
 EM.VIEWS.order.tab = 'orders';
 EM.VIEWS.order.title = id => (OPSD().orders.find(x => x.id === id) || { ref: 'Fulfilment' }).ref;
-EM.VIEWS.order.after = id => showLog('fulfilment', id, '#log-f');
+
 EM.ACTIONS['ful-next'] = el => opsAct(el, `orders/${el.dataset.id}/ful-next`, {}, '<b>Fulfilment moved on</b>');
 /* setting boxes aside: per line, per warehouse, never more than is free */
 const freeAt = (pid, wid) => INVD().stock.filter(x => x.product_id === pid && x.warehouse_id === wid).reduce((a, x) => a + x.boxes, 0) - OPSD().allocations.filter(a => a.product_id === pid && a.warehouse_id === wid && !a.dispatched).reduce((a, x) => a + x.boxes, 0);
@@ -1753,6 +1756,79 @@ window.addEventListener('unhandledrejection', e => window.EGOREPORT(e.reason));
 setTimeout(loadNotifs, 300);
 setInterval(loadNotifs, 60000);
 
+/* ---------------------------------------------------------------- Orders: every order, live and old
+   The boards show only what is live (a closed sale or a delivered order stays until the end of
+   its month). Orders keeps every one, from any month or year, with its whole story: each stage
+   with date, time and who; who gave it, who closed it, who processed it; the designs, the
+   warehouses, production and dispatch. Each order also shows on the company's page. */
+const ymIST = ts => ts ? new Date(Date.parse(ts.endsWith('Z') || ts.includes('+') ? ts : ts.replace(' ', 'T') + 'Z') + 5.5 * 36e5).toISOString().slice(0, 7) : '';
+const thisMonth = ts => !!ts && ymIST(ts) === ymIST(new Date().toISOString());
+const stageAt = (orderId, stage) => { const l = (OPSD().logs || []).filter(x => x.record_id === orderId && x.to_stage === stage).pop(); return l ? l.at : ''; };
+const whenTxt = ts => ts ? `${ds(ts.slice(0, 10))} ${new Date(Date.parse(ts.endsWith('Z') ? ts : ts.replace(' ', 'T') + 'Z') + 5.5 * 36e5).toISOString().slice(11, 16)}` : '';
+/* one list of every order: a wholesale sale (its fulfilment) or a won retail sale (its installation) */
+function buildOrders() {
+  const O = OPSD(), FS = OS_('fulfilment_stages'), out = [];
+  for (const o of O.orders) {
+    const opp = oppOf(o) || {}, h = D.history.filter(x => x.opp_id === o.opp_id), won = h.filter(x => x.to_stage === wonStage('wholesale', D.lists)).pop(), logs = (O.logs || []).filter(l => l.record_id === o.id);
+    out.push({ id: o.id, kind: 'Wholesale', ref: o.ref, title: opp.title || o.notes || '', client_id: o.client_id, contact_id: opp.contact_id || '', opp_id: o.opp_id, value: o.total,
+      won_at: (won && won.at) || o.created_at, closed_by: won ? won.by_staff : o.created_by, processed_by: [...new Set(logs.map(l => l.by_staff).filter(Boolean))], owner_id: o.owner_id,
+      stage: o.ful_stage, done_at: stageAt(o.id, lastOf(FS)), done: o.ful_stage === lastOf(FS), boxes: O.lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0), href: '#/order/' + o.id });
+  }
+  for (const p of Object.keys(PIPELINES).filter(k => !PIPELINES[k].lines)) for (const opp of D.opportunities.filter(x => x.pipeline === p && x.stage === wonStage(p, D.lists))) {
+    const h = D.history.filter(x => x.opp_id === opp.id), won = h.filter(x => x.to_stage === opp.stage).pop(), sites = O.sites.filter(x => x.opp_id === opp.id), SS = OS_('site_steps');
+    const last = sites.map(x => x.step).sort((a, b) => SS.indexOf(a) - SS.indexOf(b))[0];
+    out.push({ id: opp.id, kind: 'Retail', ref: opp.ref, title: opp.title, client_id: opp.client_id, contact_id: opp.contact_id || '', opp_id: opp.id, value: opp.value,
+      won_at: (won && won.at) || opp.closed_at || opp.updated_at, closed_by: won ? won.by_staff : opp.owner_id, processed_by: [...new Set(sites.map(x => x.owner_id))], owner_id: opp.owner_id,
+      stage: sites.length ? last : 'Won, no site yet', done_at: sites.length && sites.every(x => x.actual_end) ? sites.map(x => x.actual_end).sort().pop() : '', done: !!(sites.length && sites.every(x => x.actual_end)), boxes: null, href: '#/opp/' + opp.id });
+  }
+  return out.sort((a, b) => (b.won_at || '').localeCompare(a.won_at || ''));
+}
+const givenBy = x => { const c = CL()[x.client_id] || {}, k = D.contacts.find(y => y.id === x.contact_id), arch = c.architect_id && CL()[c.architect_id];
+  return `<a href="#/client/${x.client_id}">${esc(c.name || 'Outside your view')}</a> <span class="small muted">${esc(kindLabel(c.kind || ''))}</span>${k ? `<div class="small">${esc(k.name)}${k.designation ? ' · ' + esc(k.designation) : ''}</div>` : ''}${arch ? `<div class="small muted">Architect: ${esc(arch.name)}</div>` : ''}`; };
+EM.ob = EM.ob || { period: 'all', kind: '', state: '', q: '' };
+const PERIODS = [['all', 'All time'], ['month', 'This month'], ['last', 'Last month'], ['year', 'This financial year'], ['lastyear', 'Last financial year']];
+function inPeriod(ts, p) {
+  if (p === 'all') return true; if (!ts) return false;
+  const ym = ymIST(ts), now = ymIST(new Date().toISOString()), [y, m] = now.split('-').map(Number), fy = m >= 4 ? y : y - 1;
+  const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
+  if (p === 'month') return ym === now; if (p === 'last') return ym === prev;
+  if (p === 'year') return ym >= `${fy}-04` && ym <= `${fy + 1}-03`; if (p === 'lastyear') return ym >= `${fy - 1}-04` && ym <= `${fy}-03`;
+  return true;
+}
+EM.VIEWS.orderbook = () => {
+  const f = EM.ob, all = buildOrders();
+  const rows = all.filter(x => inPeriod(x.won_at, f.period) && (!f.kind || x.kind === f.kind || (f.kind === 'dealer' && DEALER_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'architect' && ARCH_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'personal' && PERSONAL_KINDS.includes((CL()[x.client_id] || {}).kind)))
+    && (!f.state || (f.state === 'done' ? x.done : !x.done)) && (!f.q || `${x.ref} ${x.title} ${clientName(x.client_id)}`.toLowerCase().includes(f.q.toLowerCase())));
+  const sel = (k, label, opts) => `<label class="field" style="min-width:170px"><span class="small muted">${label}</span><select class="input" data-ob="${k}">${opts.map(([v, l]) => `<option value="${v}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  return `<div class="stack"><div class="stack-s"><div class="kicker">Every order, live and old</div><h1>Orders</h1><p class="muted" style="max-width:760px">Every sale that was won, whenever it was: where it is now, when each stage happened and who moved it, who gave it, who closed it and who processed it. The boards show only what is live; this keeps everything.</p></div>
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${sel('period', 'When it was won', PERIODS)}${sel('kind', 'From', [['', 'Everyone'], ['dealer', 'Dealers'], ['architect', 'Architects'], ['personal', 'Personal contacts'], ['Wholesale', 'Wholesale sales'], ['Retail', 'Retail sales']])}${sel('state', 'Where it is', [['', 'Live and done'], ['live', 'Still live'], ['done', 'Delivered or completed']])}
+      <label class="field" style="flex:1;min-width:200px"><span class="small muted">Search</span><input class="input" id="obq" value="${esc(f.q)}" placeholder="Order number, sale or company"></label></div>
+    <div class="grid g4">${tile('Orders', rows.length)}${tile('Still live', rows.filter(x => !x.done).length)}${tile('Delivered or completed', rows.filter(x => x.done).length)}${D.access.prices ? tile('Value', inr0(rows.reduce((a, x) => a + (Number(x.value) || 0), 0))) : ''}</div>
+    ${rows.length ? table(['Order', 'Won on', 'Given by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Processed by', 'Delivered or completed'], rows.slice(0, 500).map(x => ({ href: x.href,
+      cells: [`<b>${esc(x.ref || '')}</b><div class="small">${esc(x.title)}</div><span class="small muted">${x.kind}</span>`, whenTxt(x.won_at), givenBy(x), ...(D.access.prices ? [inr0(x.value)] : []),
+        `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>`, esc(staffName(x.closed_by)), esc(x.processed_by.map(staffName).join(', ')) || '<span class="muted">Not started</span>', x.done_at ? whenTxt(x.done_at) : ''] })))
+      + (rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : '')
+      : empty('No orders for this filter', 'An order appears here when a sale is won: a wholesale sale at its won stage, a retail sale when won.')}</div>`;
+};
+EM.VIEWS.orderbook.title = () => 'Orders';
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.ob; if (k) { EM.ob[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'obq') { EM.ob.q = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#obq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+/* one order's whole story: the sale stages and the fulfilment stages, each with date, time and who */
+function orderStory(o) {
+  const x = buildOrders().find(y => y.id === o.id) || {}, opp = oppOf(o);
+  const sale = D.history.filter(h => h.opp_id === o.opp_id).map(h => ({ at: h.at, part: 'Sale', from: h.from_stage, to: h.to_stage, by: h.by_staff, note: h.note }));
+  const ful = (OPSD().logs || []).filter(l => l.record_id === o.id).map(l => ({ at: l.at, part: 'Fulfilment', from: l.from_stage, to: l.to_stage, by: l.by_staff, note: l.note }));
+  const story = [...sale, ...ful].sort((a, b) => (a.at || '').localeCompare(b.at || ''));
+  return `<div class="grid g2"><section class="card stack-s" data-people><h3>Who</h3>${kv([['Given by', givenBy(x)], ['Looked after by', esc(staffName(o.owner_id))], ['Closed by', esc(staffName(x.closed_by)) + (x.won_at ? ` <span class="small muted">${whenTxt(x.won_at)}</span>` : '')], ['Processed by', esc((x.processed_by || []).map(staffName).join(', ')) || NOTSET], ['Delivered', x.done_at ? whenTxt(x.done_at) : NOTSET]])}${opp ? `<a class="btn sm" href="#/opp/${opp.id}">The sale: ${esc(opp.title)}</a>` : ''}</section>
+    <section class="card stack-s" data-story><h3>The whole story</h3>${story.length ? table(['When', 'Part', 'Stage', 'By', 'Note'], story.map(e => [whenTxt(e.at), esc(e.part), `${e.from ? `<span class="muted">${esc(e.from)} →</span> ` : ''}<b>${esc(e.to)}</b>`, esc(staffName(e.by)), esc(e.note || '')])) : '<p class="small muted">Nothing yet.</p>'}</section></div>`;
+}
+/* a company's or a person's orders, with the totals */
+function clientOrders(c) {
+  const rows = buildOrders().filter(x => x.client_id === c.id), done = rows.filter(x => x.done), fy = rows.filter(x => inPeriod(x.won_at, 'year')), sum = a => a.reduce((t, x) => t + (Number(x.value) || 0), 0);
+  return `<div class="stack-s"><div class="grid g4">${tile('Orders', rows.length)}${tile('This financial year', fy.length, D.access.prices && fy.length ? inr0(sum(fy)) : '')}${tile('Delivered or completed', done.length)}${D.access.prices ? tile('All-time value', inr0(sum(rows))) : ''}</div>
+    ${rows.length ? table(['Order', 'Won on', 'Brought by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Delivered or completed'], rows.map(x => ({ href: x.href, cells: [`<b>${esc(x.ref || '')}</b><div class="small">${esc(x.title)}</div>`, whenTxt(x.won_at), esc((D.contacts.find(k => k.id === x.contact_id) || {}).name || ''), ...(D.access.prices ? [inr0(x.value)] : []), `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>`, esc(staffName(x.closed_by)), x.done_at ? whenTxt(x.done_at) : ''] })))
+      : `<p class="small muted">No orders from ${esc(c.name)} yet. Every won sale shows here, live and old.</p>`}</div>`;
+}
 /* ---------------------------------------------------------------- mistakes, shown where they are
    A message that names a field ("Mobile has 9 digits") is put in a small bubble just above that
    field, which turns red; the person sees the mistake where it is. A message that names no field
@@ -1863,7 +1939,7 @@ const ACT_HELP = {
 };
 const NAV_HELP = { home: 'Today at a glance: counts, next actions due, what is not connected yet.', dealers: 'Distributors, dealers and sub-dealers, each with its team, sales and business.',
   architects: 'Architect firms and solo architects, each with its team.', people: 'Everyone: the people at every company, and personal contacts.', opps: 'The sales boards. A wholesale sale runs here until Payment collected.',
-  orders: 'After the payment: the stock check, setting boxes aside, production for what is short, dispatch.', installation: 'Big E installation sites, step by step.', complaints: 'Complaints, from logged to resolved.',
+  orders: 'After the payment: the stock check, setting boxes aside, production for what is short, dispatch.', orderbook: 'Every order, live and old: when each stage happened, who gave it, who closed it, who processed it.', installation: 'Big E installation sites, step by step.', complaints: 'Complaints, from logged to resolved.',
   approvals: 'Credit, discounts and settlements waiting for someone whose limit covers them.', p200: 'The dealers EGO develops first, scored from saved sales.', inventory: 'Categories, collections, designs, warehouses and stock.',
   import: 'Upload the Excel files: EGO Premium, Big E and Inventory.', team: 'The people who use EGO Master and what each role may see.', lists: 'Every dropdown and every stage, editable, with locks.', account: 'Your password.' };
 function helpFor(t) {
