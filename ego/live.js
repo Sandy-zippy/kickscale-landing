@@ -1785,10 +1785,21 @@ function buildOrders() {
 }
 const givenBy = x => { const c = CL()[x.client_id] || {}, k = D.contacts.find(y => y.id === x.contact_id), arch = c.architect_id && CL()[c.architect_id];
   return `<a href="#/client/${x.client_id}">${esc(c.name || 'Outside your view')}</a> <span class="small muted">${esc(kindLabel(c.kind || ''))}</span>${k ? `<div class="small">${esc(k.name)}${k.designation ? ' · ' + esc(k.designation) : ''}</div>` : ''}${arch ? `<div class="small muted">Architect: ${esc(arch.name)}</div>` : ''}`; };
-EM.ob = EM.ob || { period: 'all', kind: '', state: '', q: '' };
-const PERIODS = [['all', 'All time'], ['month', 'This month'], ['last', 'Last month'], ['year', 'This financial year'], ['lastyear', 'Last financial year']];
-function inPeriod(ts, p) {
+EM.ob = EM.ob || { period: 'all', from: '', to: '', kind: '', state: '', q: '' };
+/* THE date filter: every list filtered by a date uses this one, and it always offers Custom dates (4 Oct) */
+const PERIODS = [['all', 'All time'], ['today', 'Today'], ['month', 'This month'], ['last', 'Last month'], ['year', 'This financial year'], ['lastyear', 'Last financial year'], ['custom', 'Custom dates']];
+const dayIST = ts => ts ? new Date(Date.parse(ts.endsWith('Z') || ts.includes('+') ? ts : ts.replace(' ', 'T') + 'Z') + 5.5 * 36e5).toISOString().slice(0, 10) : '';
+function dateFilter(st, key, label) {   // st: the screen's filter state; key: which re-render it belongs to
+  const custom = st.period === 'custom';
+  return `<label class="field" style="min-width:170px"><span class="small muted">${esc(label)}</span><select class="input" data-df="${key}" data-dfk="period">${PERIODS.map(([v, l]) => `<option value="${v}" ${st.period === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
+    ${custom ? `<label class="field" style="min-width:150px"><span class="small muted">From</span><input class="input" type="date" data-df="${key}" data-dfk="from" value="${esc(st.from || '')}" aria-label="From date"></label><label class="field" style="min-width:150px"><span class="small muted">To</span><input class="input" type="date" data-df="${key}" data-dfk="to" value="${esc(st.to || '')}" aria-label="To date"></label>` : ''}`;
+}
+const DF_STATE = { ob: () => EM.ob, co: () => EM.co };
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.df; if (!k || !DF_STATE[k]) return; DF_STATE[k]()[e.target.dataset.dfk] = e.target.value; EM.rerender(); });
+function inPeriod(ts, p, from, to) {
   if (p === 'all') return true; if (!ts) return false;
+  if (p === 'custom') { const d = dayIST(ts); return (!from || d >= from) && (!to || d <= to); }
+  if (p === 'today') return dayIST(ts) === dayIST(new Date().toISOString());
   const ym = ymIST(ts), now = ymIST(new Date().toISOString()), [y, m] = now.split('-').map(Number), fy = m >= 4 ? y : y - 1;
   const prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
   if (p === 'month') return ym === now; if (p === 'last') return ym === prev;
@@ -1797,11 +1808,11 @@ function inPeriod(ts, p) {
 }
 EM.VIEWS.orderbook = () => {
   const f = EM.ob, all = buildOrders();
-  const rows = all.filter(x => inPeriod(x.won_at, f.period) && (!f.kind || x.kind === f.kind || (f.kind === 'dealer' && DEALER_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'architect' && ARCH_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'personal' && PERSONAL_KINDS.includes((CL()[x.client_id] || {}).kind)))
+  const rows = all.filter(x => inPeriod(x.won_at, f.period, f.from, f.to) && (!f.kind || x.kind === f.kind || (f.kind === 'dealer' && DEALER_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'architect' && ARCH_KINDS.includes((CL()[x.client_id] || {}).kind)) || (f.kind === 'personal' && PERSONAL_KINDS.includes((CL()[x.client_id] || {}).kind)))
     && (!f.state || (f.state === 'done' ? x.done : !x.done)) && (!f.q || `${x.ref} ${x.title} ${clientName(x.client_id)}`.toLowerCase().includes(f.q.toLowerCase())));
   const sel = (k, label, opts) => `<label class="field" style="min-width:170px"><span class="small muted">${label}</span><select class="input" data-ob="${k}">${opts.map(([v, l]) => `<option value="${v}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   return `<div class="stack"><div class="stack-s"><div class="kicker">Every order, live and old</div><h1>Orders</h1><p class="muted" style="max-width:760px">Every sale that was won, whenever it was: where it is now, when each stage happened and who moved it, who gave it, who closed it and who processed it. The boards show only what is live; this keeps everything.</p></div>
-    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${sel('period', 'When it was won', PERIODS)}${sel('kind', 'From', [['', 'Everyone'], ['dealer', 'Dealers'], ['architect', 'Architects'], ['personal', 'Personal contacts'], ['Wholesale', 'Wholesale sales'], ['Retail', 'Retail sales']])}${sel('state', 'Where it is', [['', 'Live and done'], ['live', 'Still live'], ['done', 'Delivered or completed']])}
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${dateFilter(f, 'ob', 'When it was won')}${sel('kind', 'From', [['', 'Everyone'], ['dealer', 'Dealers'], ['architect', 'Architects'], ['personal', 'Personal contacts'], ['Wholesale', 'Wholesale sales'], ['Retail', 'Retail sales']])}${sel('state', 'Where it is', [['', 'Live and done'], ['live', 'Still live'], ['done', 'Delivered or completed']])}
       <label class="field" style="flex:1;min-width:200px"><span class="small muted">Search</span><input class="input" id="obq" value="${esc(f.q)}" placeholder="Order number, sale or company"></label></div>
     <div class="grid g4">${tile('Orders', rows.length)}${tile('Still live', rows.filter(x => !x.done).length)}${tile('Delivered or completed', rows.filter(x => x.done).length)}${D.access.prices ? tile('Value', inr0(rows.reduce((a, x) => a + (Number(x.value) || 0), 0))) : ''}</div>
     ${rows.length ? table(['Order', 'Won on', 'Given by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Processed by', 'Delivered or completed'], rows.slice(0, 500).map(x => ({ href: x.href,
@@ -1823,9 +1834,10 @@ function orderStory(o) {
     <section class="card stack-s" data-story><h3>The whole story</h3>${story.length ? table(['When', 'Part', 'Stage', 'By', 'Note'], story.map(e => [whenTxt(e.at), esc(e.part), `${e.from ? `<span class="muted">${esc(e.from)} →</span> ` : ''}<b>${esc(e.to)}</b>`, esc(staffName(e.by)), esc(e.note || '')])) : '<p class="small muted">Nothing yet.</p>'}</section></div>`;
 }
 /* a company's or a person's orders, with the totals */
+EM.co = EM.co || { period: 'all', from: '', to: '' };
 function clientOrders(c) {
-  const rows = buildOrders().filter(x => x.client_id === c.id), done = rows.filter(x => x.done), fy = rows.filter(x => inPeriod(x.won_at, 'year')), sum = a => a.reduce((t, x) => t + (Number(x.value) || 0), 0);
-  return `<div class="stack-s"><div class="grid g4">${tile('Orders', rows.length)}${tile('This financial year', fy.length, D.access.prices && fy.length ? inr0(sum(fy)) : '')}${tile('Delivered or completed', done.length)}${D.access.prices ? tile('All-time value', inr0(sum(rows))) : ''}</div>
+  const f = EM.co, rows = buildOrders().filter(x => x.client_id === c.id && inPeriod(x.won_at, f.period, f.from, f.to)), done = rows.filter(x => x.done), fy = rows.filter(x => inPeriod(x.won_at, 'year')), sum = a => a.reduce((t, x) => t + (Number(x.value) || 0), 0);
+  return `<div class="stack-s"><div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${dateFilter(f, 'co', 'When it was won')}</div><div class="grid g4">${tile('Orders', rows.length)}${tile('This financial year', fy.length, D.access.prices && fy.length ? inr0(sum(fy)) : '')}${tile('Delivered or completed', done.length)}${D.access.prices ? tile('All-time value', inr0(sum(rows))) : ''}</div>
     ${rows.length ? table(['Order', 'Won on', 'Brought by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Delivered or completed'], rows.map(x => ({ href: x.href, cells: [`<b>${esc(x.ref || '')}</b><div class="small">${esc(x.title)}</div>`, whenTxt(x.won_at), esc((D.contacts.find(k => k.id === x.contact_id) || {}).name || ''), ...(D.access.prices ? [inr0(x.value)] : []), `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>`, esc(staffName(x.closed_by)), x.done_at ? whenTxt(x.done_at) : ''] })))
       : `<p class="small muted">No orders from ${esc(c.name)} yet. Every won sale shows here, live and old.</p>`}</div>`;
 }
