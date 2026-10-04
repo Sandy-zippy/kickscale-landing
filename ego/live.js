@@ -40,7 +40,7 @@ Object.assign(ICON, {
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
 });
-EM.topExtras = () => bellHtml() + (D.user.division === 'both' ? `<div class="seg divsw" role="tablist" aria-label="Division">${[['both', 'Both'], ['wholesale', 'Wholesale · EGO'], ['retail', 'Retail · Big E']].map(([k, l]) => `<button role="tab" aria-selected="${EM.div === k}" class="${EM.div === k ? 'on' : ''}" data-act="div" data-d="${k}">${l}</button>`).join('')}</div>` : '')
+EM.topExtras = () => (D.user.division === 'both' ? `<div class="seg divsw" role="tablist" aria-label="Division">${[['both', 'Both'], ['wholesale', 'Wholesale · EGO'], ['retail', 'Retail · Big E']].map(([k, l]) => `<button role="tab" aria-selected="${EM.div === k}" class="${EM.div === k ? 'on' : ''}" data-act="div" data-d="${k}">${l}</button>`).join('')}</div>` : '')
   + '<button class="btn sm ghost" data-act="sign-out">Sign out</button>';
 EM.ACTIONS.div = el => { EM.div = el.dataset.d; EM.rerender(); };
 EM.ACTIONS['sign-out'] = () => window.EGOAPI.signOut();
@@ -73,7 +73,9 @@ const empty = (title, body, actions = '') => `<div class="card empty stack-s"><h
 const tile = (k, v, sub, href) => `<${href ? `a href="${href}"` : 'div'} class="card stat ${href ? 'tile' : ''}" style="text-decoration:none"><div class="kicker">${k}</div><div class="num">${v}</div>${sub ? `<span class="small muted">${sub}</span>` : ''}</${href ? 'a' : 'div'}>`;
 const busy = (el, on) => { if (el) { el.disabled = on; if (on) el.dataset.label = el.textContent, el.textContent = 'Saving…'; else if (el.dataset.label) el.textContent = el.dataset.label; } };
 const errBox = id => `<div class="small err" id="${id}" role="alert"></div>`;
-const showErr = (id, errs) => { const el = qs('#' + id); if (el) el.innerHTML = (Array.isArray(errs) ? errs : [errs]).map(esc).join('<br>'); };
+const showErr = (id, errs) => { const el = qs('#' + id), list = (Array.isArray(errs) ? errs : [errs]).filter(Boolean).map(String);
+  const left = markFieldErrors(el ? (el.closest('#overlay') || document) : document, list);   // each mistake appears just above its field
+  if (el) el.innerHTML = left.map(esc).join('<br>'); };
 const greet = () => { const h = new Date(Date.now() + 5.5 * 36e5).getUTCHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
 
 /* ---------------------------------------------------------------- the shared field helpers
@@ -679,7 +681,7 @@ async function saveOpp(input, el, errId) {
     if (PIPELINES[r.opportunity.pipeline].lines) { const fresh = await API('GET', '/api/bootstrap'); Object.assign(D, fresh); }
     return r;
   } catch (x) {
-    busy(el, false); showErr(errId, x.errors || x.message);
+    busy(el, false); EM._lastErr = (x.errors || [x.message]).join(' '); showErr(errId, x.errors || x.message);
     if (PIPELINES[input.pipeline] && PIPELINES[input.pipeline].lines) { try { Object.assign(D, await API('GET', '/api/bootstrap')); } catch (e) { } }   // a refused move may still have raised an approval
     return null;
   }
@@ -703,7 +705,7 @@ EM.ACTIONS['opp-move'] = async el => {
   if (to === o.stage) return;
   if (to === lostStage(o.pipeline, D.lists)) return EM.modal(`<h2>Why was it lost?</h2><p class="muted">A lost reason is compulsory.</p><div class="field" style="margin-top:12px"><label for="lost-pick">Lost reason *</label><select class="input" id="lost-pick"><option value="">Choose</option>${D.lists.lost_reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>${errBox('lost-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="opp-lost" data-id="${o.id}">Mark as lost</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
   const r = await saveOpp({ ...oppInput(o), stage: to }, el, 'move-err');
-  if (r) { EM.toast(`Moved to <b>${esc(to)}</b>.`); EM.rerender(); } else EM.toast('Could not move it. ' + esc((qs('#move-err') || {}).textContent || ''));
+  if (r) { EM.toast(`Moved to <b>${esc(to)}</b>.`); EM.rerender(); } else bubbleNear(qs('[data-act="opp-move"]') || el, EM._lastErr || 'Could not move it.');
 };
 EM.ACTIONS['opp-lost'] = async el => {
   const o = D.opportunities.find(x => x.id === el.dataset.id), why = qs('#lost-pick').value;
@@ -981,7 +983,7 @@ const refreshOps = async () => { const fresh = await API('GET', '/api/bootstrap'
 const opsAct = async (el, path, body, okMsg, errId) => {
   busy(el, true);
   try { const r = await API('POST', '/api/ops/' + path, body || {}); EM.closeModal(); if (okMsg) EM.toast(okMsg); await refreshOps(); return r; }
-  catch (x) { busy(el, false); if (errId && qs('#' + errId)) showErr(errId, x.message); else EM.toast(`<b>Not done</b><ul><li>${esc(x.message)}</li></ul>`); await refreshOps(); return null; }
+  catch (x) { busy(el, false); if (errId && qs('#' + errId)) showErr(errId, x.message); else bubbleNear(el, x.message); await refreshOps(); return null; }
 };
 async function showLog(entity, id, box) {
   try { const r = await API('GET', `/api/ops/log?entity=${entity}&id=${encodeURIComponent(id)}`), el = qs(box); if (el) el.innerHTML = r.log.length ? table(['When', 'From', 'To', 'By', 'Note'], r.log.map(l => [ds(l.at.slice(0, 10)), esc(l.from_stage || ''), `<b>${esc(l.to_stage)}</b>`, esc(l.by_name || ''), esc(l.note || '')])) : '<p class="small muted">Nothing yet.</p>'; } catch (x) { }
@@ -1701,28 +1703,46 @@ async function saveListNow(el, key, items, propagate, errId = 'l-err') {
    true right now come with every load; recorded ones are unread until marked read. */
 EM.notif = EM.notif || { live: [], internal: [], external: [], sources: [], seen_at: '' };
 const unreadN = () => { const N = EM.notif; return N.live.length + [...N.internal, ...N.external].filter(n => n.created_at > (N.seen_at || '')).length; };
-const bellHtml = () => { const n = unreadN(); return `<button class="btn sm ghost bell" data-act="notif-open" aria-label="Notifications${n ? `, ${n} need attention` : ''}" title="Notifications">🔔${n ? `<i class="nbadge" data-bell-n>${n}</i>` : '<i class="nbadge" data-bell-n hidden></i>'}</button>`; };
+const BELL_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+const bellHtml = () => { const n = unreadN(); return `<button class="iconbtn bell" data-act="notif-open" aria-haspopup="dialog" aria-label="Notifications${n ? `, ${n} need attention` : ''}">${BELL_SVG}<i class="nbadge" data-bell-n ${n ? '' : 'hidden'}>${n}</i></button>`; };
+EM.brandExtras = bellHtml;
 async function loadNotifs() {
   try { EM.notif = await API('GET', '/api/notifications'); } catch (x) { return; }
   const b = qs('[data-bell-n]'), n = unreadN();
   if (b) { b.textContent = n; b.hidden = !n; }
+  refreshPop();
   if (location.hash.startsWith('#/notifications')) EM.rerender();
 }
 const LV = { action: ['Needs you', 'warn'], warn: ['Heads-up', 'warn'], error: ['Not working', 'bad'], info: ['Done', 'info'] };
-const notifRow = (n, isNew) => `<a class="card stack-s" style="text-decoration:none${isNew ? ';border-color:var(--ge-primary)' : ''}" href="${esc(n.link || '#/notifications')}" data-notif><div class="row between"><b>${esc(n.title)}</b><span class="badge ${LV[n.level][1]}">${LV[n.level][0]}</span></div>${n.body ? `<span class="small">${esc(n.body)}</span>` : ''}<span class="small muted">${n.created_at ? ds(n.created_at.slice(0, 10)) + ' ' + n.created_at.slice(11, 16) + (n.by_name ? ' · ' + esc(n.by_name) : '') : 'Right now'}${isNew ? ' · new' : ''}</span></a>`;
+const notifRow = (n, isNew) => `<a class="np-item${isNew ? ' is-new' : ''}" href="${esc(n.link || '#/notifications')}" data-notif><span class="np-dot ${LV[n.level][1]}" aria-hidden="true"></span><span class="np-text"><span class="np-title">${esc(n.title)}</span>${n.body ? `<span class="np-body">${esc(n.body)}</span>` : ''}<span class="np-meta">${LV[n.level][0]} · ${n.created_at ? ds(n.created_at.slice(0, 10)) + ' ' + n.created_at.slice(11, 16) + (n.by_name ? ' · ' + esc(n.by_name) : '') : 'right now'}${isNew ? ' · new' : ''}</span></span></a>`;
 function notifBody(tab) {
   const N = EM.notif, seen = N.seen_at || '';
-  if (tab === 'external') return `<p class="small muted">Messages and leads that arrive from outside EGO Master. Nothing is connected yet, so nothing arrives here yet.</p>${N.external.map(n => notifRow(n, n.created_at > seen)).join('')}${table(['Source', 'Status'], N.sources.map(([a, b]) => [esc(a), `<span class="badge warn">${esc(b)}</span>`]))}`;
-  return `${N.live.length ? `<h4>Right now</h4><div class="stack-s">${N.live.map(n => notifRow(n, false)).join('')}</div>` : ''}<h4>Recorded</h4><div class="stack-s">${N.internal.length ? N.internal.map(n => notifRow(n, n.created_at > seen)).join('') : '<p class="small muted">Nothing yet.</p>'}</div>`;
+  if (tab === 'external') return `<p class="np-note">Leads and messages that arrive from outside EGO Master.</p>${N.external.map(n => notifRow(n, n.created_at > seen)).join('')}${N.sources.map(([a, b]) => `<div class="np-src"><span>${esc(a)}</span><span class="badge warn">${esc(b)}</span></div>`).join('')}`;
+  return `${N.live.length ? `<div class="np-head">Right now</div>${N.live.map(n => notifRow(n, false)).join('')}` : ''}<div class="np-head">Recorded</div>${N.internal.length ? N.internal.map(n => notifRow(n, n.created_at > seen)).join('') : '<p class="np-note">Nothing yet.</p>'}`;
 }
 const notifTabs = tab => { const N = EM.notif, ni = N.live.length + N.internal.filter(n => n.created_at > (N.seen_at || '')).length, ne = N.external.filter(n => n.created_at > (N.seen_at || '')).length;
-  return `<div class="row" role="tablist">${[['internal', 'Internal', ni], ['external', 'External', ne]].map(([k, l, c]) => `<button class="btn sm ${k === tab ? 'primary' : ''}" role="tab" aria-selected="${k === tab}" data-act="notif-tab" data-tab="${k}">${l}${c ? ` (${c})` : ''}</button>`).join('')}</div>`; };
+  return `<div class="np-tabs" role="tablist">${[['internal', 'Internal', ni], ['external', 'External', ne]].map(([k, l, c]) => `<button class="np-tab${k === tab ? ' on' : ''}" role="tab" aria-selected="${k === tab}" data-act="notif-tab" data-tab="${k}">${l}${c ? `<i>${c}</i>` : ''}</button>`).join('')}</div>`; };
 EM.notifTab = 'internal';
-EM.ACTIONS['notif-open'] = () => { EM.modal(`<div class="row between"><h2>Notifications</h2><a class="btn sm" href="#/notifications" data-act="close-modal">Open the full page</a></div>${notifTabs(EM.notifTab)}<div class="stack-s" style="margin-top:12px" id="notif-list">${notifBody(EM.notifTab)}</div>
-  <div class="row sticky-actions" style="margin-top:12px"><button class="btn" data-act="notif-seen">Mark all as read</button><button class="btn ghost" data-act="close-modal">Close</button></div>`); loadNotifs(); };
-EM.ACTIONS['notif-tab'] = el => { EM.notifTab = el.dataset.tab; if (location.hash.startsWith('#/notifications')) return EM.rerender(); EM.ACTIONS['notif-open'](); };
-EM.ACTIONS['notif-seen'] = async () => { try { await API('POST', '/api/notifications/seen'); } catch (x) { } await loadNotifs(); const l = qs('#notif-list'); if (l) l.innerHTML = notifBody(EM.notifTab); EM.rerender(); };
-EM.VIEWS.notifications = () => `<div class="stack"><div class="row between"><div class="stack-s"><h1>Notifications</h1><p class="muted">Internal: the system end to end. External: what arrives from outside.</p></div><button class="btn" data-act="notif-seen">Mark all as read</button></div>${notifTabs(EM.notifTab)}<div class="stack-s">${notifBody(EM.notifTab)}</div></div>`;
+/* the pop-up: a small panel under the bell, not a page */
+const popHtml = () => `<div class="np-top"><b>Notifications</b><a class="np-link" href="#/notifications" data-act="notif-close">Full page</a></div>${notifTabs(EM.notifTab)}<div class="np-list" id="notif-list">${notifBody(EM.notifTab)}</div><div class="np-foot"><button class="np-link" data-act="notif-seen">Mark all as read</button></div>`;
+function placePop() {
+  const pop = qs('#notif-pop'), bell = qs('.bell'); if (!pop || !bell) return;
+  const r = bell.getBoundingClientRect(), w = Math.min(380, window.innerWidth - 16);
+  pop.style.width = w + 'px'; pop.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left)) + 'px'; pop.style.top = (r.bottom + 8) + 'px';
+}
+EM.ACTIONS['notif-open'] = () => {
+  if (qs('#notif-pop')) return EM.ACTIONS['notif-close']();
+  const pop = document.createElement('div'); pop.id = 'notif-pop'; pop.setAttribute('role', 'dialog'); pop.setAttribute('aria-label', 'Notifications'); pop.innerHTML = popHtml();
+  document.body.appendChild(pop); placePop(); loadNotifs();
+};
+EM.ACTIONS['notif-close'] = () => { const p = qs('#notif-pop'); if (p) p.remove(); };
+const refreshPop = () => { const p = qs('#notif-pop'); if (p) { p.innerHTML = popHtml(); placePop(); } };
+EM.ACTIONS['notif-tab'] = el => { EM.notifTab = el.dataset.tab; if (location.hash.startsWith('#/notifications')) return EM.rerender(); refreshPop(); };
+EM.ACTIONS['notif-seen'] = async () => { try { await API('POST', '/api/notifications/seen'); } catch (x) { } await loadNotifs(); refreshPop(); if (location.hash.startsWith('#/notifications')) EM.rerender(); };
+document.addEventListener('click', e => { const p = qs('#notif-pop'); if (p && !p.contains(e.target) && !e.target.closest('.bell')) p.remove(); if (p && e.target.closest('[data-notif]')) p.remove(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') EM.ACTIONS['notif-close'](); });
+window.addEventListener('resize', placePop);
+EM.VIEWS.notifications = () => `<div class="stack" style="max-width:760px"><div class="row between"><div class="stack-s"><h1>Notifications</h1><p class="muted">Internal: the system end to end. External: what arrives from outside.</p></div><button class="btn" data-act="notif-seen">Mark all as read</button></div>${notifTabs(EM.notifTab)}<div class="np-list np-page">${notifBody(EM.notifTab)}</div></div>`;
 EM.VIEWS.notifications.title = () => 'Notifications';
 EM.VIEWS.notifications.tab = 'home';
 /* a screen that fails in someone's browser is reported to the Internal feed */
@@ -1732,6 +1752,151 @@ window.addEventListener('error', e => window.EGOREPORT(e.error || e.message));
 window.addEventListener('unhandledrejection', e => window.EGOREPORT(e.reason));
 setTimeout(loadNotifs, 300);
 setInterval(loadNotifs, 60000);
+
+/* ---------------------------------------------------------------- mistakes, shown where they are
+   A message that names a field ("Mobile has 9 digits") is put in a small bubble just above that
+   field, which turns red; the person sees the mistake where it is. A message that names no field
+   stays under the form. A refused action ("waiting for approval") pops up above the button pressed. */
+const ALL_FIELDS = () => [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS, ...WAREHOUSE_FIELDS];
+function markFieldErrors(root, msgs) {
+  root.querySelectorAll('.ferr').forEach(x => x.remove()); root.querySelectorAll('.field.has-err').forEach(x => x.classList.remove('has-err'));
+  const left = [];
+  let first = null;
+  for (const m0 of msgs) {
+    let scope = root, m = m0;
+    const pre = m.match(/^(Point of contact|Person (\d+)|Design line (\d+)|Warehouse line (\d+)): ?/i);
+    if (pre) {
+      m = m.slice(pre[0].length);
+      if (/^Point of contact/i.test(pre[1])) scope = root.querySelector('#pocf') || root;
+      else if (pre[2]) scope = root.querySelectorAll('#ppl .pf-row')[Number(pre[2]) - 2] || root;
+      else if (pre[3]) scope = root.querySelectorAll('#olines .ordline')[Number(pre[3]) - 1] || root;
+      else if (pre[4]) scope = root.querySelectorAll('#slines .stockline')[Number(pre[4]) - 1] || root;
+    }
+    const low = m.toLowerCase(), cands = [];
+    for (const fe of scope.querySelectorAll('.field[data-field]')) {
+      const key = fe.dataset.field, shown = (fe.querySelector('label') || {}).textContent || '', f = ALL_FIELDS().find(x => x.key === key);
+      for (const lab of [shown.replace(/\s*\*$/, ''), f && f.label].filter(Boolean)) if (low.startsWith(lab.toLowerCase() + ' ') || low.startsWith(lab.toLowerCase() + ':')) cands.push([lab.length, fe]);
+    }
+    if (/^point of contact/i.test(m0) && !cands.length && scope.querySelector('[data-field="mobile"]')) cands.push([1, scope.querySelector('[data-field="mobile"]')]);
+    const hit = cands.sort((a, b) => b[0] - a[0])[0];
+    if (!hit) { left.push(m0); continue; }
+    const fe = hit[1];
+    fe.classList.add('has-err');
+    fe.insertAdjacentHTML('afterbegin', `<div class="ferr" role="alert">${esc(m.charAt(0).toUpperCase() + m.slice(1))}</div>`);
+    if (!first) first = fe;
+  }
+  if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  return left;
+}
+document.addEventListener('input', e => { const fe = e.target.closest && e.target.closest('.field.has-err'); if (fe) { fe.classList.remove('has-err'); const b = fe.querySelector('.ferr'); if (b) b.remove(); } });
+/* a refused action: a bubble just above the button that was pressed */
+function bubbleNear(el, msg) {
+  document.querySelectorAll('.near-err').forEach(x => x.remove());
+  if (!el || !el.getBoundingClientRect) return EM.toast(`<b>Not done</b><ul><li>${esc(msg)}</li></ul>`);
+  const r = el.getBoundingClientRect(), b = document.createElement('div');
+  b.className = 'near-err'; b.setAttribute('role', 'alert'); b.textContent = msg;
+  document.body.appendChild(b);
+  const w = b.offsetWidth, h = b.offsetHeight;
+  b.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+  b.style.top = Math.max(8, r.top - h - 10) + 'px';
+  setTimeout(() => b.remove(), 7000);
+  b.addEventListener('click', () => b.remove());
+}
+
+/* ---------------------------------------------------------------- what is this? (hover for 2 seconds)
+   Rest the pointer on a field, a button, a menu item, a stage or a card for two seconds and a
+   small note says what it is and what it does. */
+const FIELD_HELP = {
+  kind: 'What this record is: distributor, dealer, sub-dealer, architect firm, solo architect or a personal contact. It decides which fields are asked.',
+  name: 'The name the team knows it by. For a company, the trading name; the legal name has its own field.',
+  client_type: 'For a person with no company: an individual, or what kind of firm (builder, hotel, corporate...). The choices are edited in Lists & stages.',
+  mobile: 'The main mobile, with its country code. The same mobile cannot be saved twice in one company (EGO Premium or Big E).',
+  whatsapp: 'The WhatsApp number, if it is not the mobile. Messages will go here once WhatsApp is connected.',
+  mobile_alt: 'A second number to reach them on.', email: 'Their email address.',
+  city: 'The city of the main office. The city decides the region, and the region decides which regional manager sees the record.',
+  locality: 'The area or locality inside the city.', pincode: 'The 6-digit pincode.', address: 'The full postal address.',
+  areas_covered: 'The cities this company sells in or works in. Pick several from the list.', other_offices: 'Other offices or branches, by area.',
+  owner_id: 'The person at EGO who looks after this record. Field sales and telesales see only the records they look after.',
+  source: 'Where this record came from (Meta ads, a walk-in, a referral...). The choices are edited in Lists & stages.',
+  status: 'Active, Prospect or Inactive: whether you are doing business with them now.', legal_name: 'The registered name, exactly as on the GST certificate.',
+  gst: 'The 15-character GST number. The same GST cannot be saved twice in one company.', parent_id: 'For a sub-dealer: the distributor or dealer it buys through.',
+  grade: 'The dealer rating (Platinum, A, B, C). It is shown everywhere the dealer appears and helps decide who gets production first.',
+  priority200: 'Yes puts this dealer in Priority 200, the list of dealers EGO develops first. Its score is worked out from saved sales.',
+  since: 'The date they started working with EGO.', credit_limit: 'The most they may owe at once. At Invoiced, unpaid invoices plus the new sale are checked against it; above it, the sale waits for approval.',
+  telesales_id: 'The telesales person who calls this dealer.', specialist_id: 'The product specialist who supports this dealer.', contact_every_days: 'How often someone should call or visit, in days.',
+  categories: 'The product categories this dealer buys today.', categories_missing: 'Categories they do not buy yet: the chance to sell more.',
+  brands_sold: 'Other brands they sell.', competitors: 'The main competitors near them.', customer_types: 'Who this dealer sells to.', project_partner: 'Whether they take on project work with EGO.',
+  showroom: 'Whether they have a showroom. A showroom adds to the Priority 200 score.', display_area_sqft: 'The display area in their showroom.', warehouse_sqft: 'Their own warehouse space.',
+  dealer_salespeople: 'How many salespeople they have.', own_installers: 'How many installers they have.', service_capable: 'Whether they can install and service on their own.',
+  current_business: 'Their yearly business with EGO, as they told you.', target_12m: 'The target for the next 12 months. Priority 200 compares sales with this target, so far this year.',
+  potential_3y: 'What they could do with EGO in 3 years.', potential_note: 'A short note on that potential.', firm_id: 'The architect firm this architect belongs to.',
+  position: 'The architect\'s position in the firm.', specialisation: 'The kind of projects they specialise in.', focus: 'Residential, corporate, hospitality or retail.', team_size: 'How many people work at the firm.',
+  rating: 'The architect rating (A, B, C), if you rate architects.', potential: 'How much business they could bring: high, medium or low.', design500: 'Whether they are in the Design 500 programme.',
+  relationship: 'Whether EGO works with them directly or through a dealer.', connected_dealers: 'The dealers they buy through.', architect_id: 'The architect or firm behind this client.',
+  campaign: 'The campaign that brought this client.', condition_tag: 'Hot, warm or cold: how likely they are to buy soon.', last_contact: 'When someone last spoke to them.',
+  next_action: 'What happens next, in a few words. It shows on Home when it is due.', next_date: 'When the next action is due. Past this date it shows as overdue in the bell.', notes: 'Anything else worth remembering.',
+  designation: 'The person\'s role at the company. The choices are edited in Lists & stages.', responsibilities: 'What this person handles, in a few words.', is_primary: 'The main person to talk to at this company. Only one per company.',
+  pipeline: 'Which board the opportunity is on: wholesale, retail lead or retail project.', title: 'A short name for this sale.', stage: 'Where the sale stands. The stages are edited in Lists & stages.',
+  value: 'The value in rupees. For a wholesale sale it is worked out from its designs, boxes and rate.', products: 'The product categories in this sale.', area_sqft: 'The area in square feet.',
+  application: 'The room or use.', budget: 'The budget band.', contact_id: 'The person at the company who brought this sale.', expected_close: 'When you expect it to close.', lost_reason: 'Why it was lost. Compulsory at Lost.',
+  category: 'The kind of floor: LVT, SPC, Laminate... Categories are added with + Category or in Lists & stages.', sqft_per_box: 'The area one box covers, in square feet. Fill this or square metres; the other is worked out. Stock in square feet is worked out from it.',
+  sqm_per_box: 'The area one box covers, in square metres. Fill this or square feet.', pcs_per_box: 'How many planks or tiles are in one box.', low_stock: 'Warn below this many boxes: the bell gives a heads-up when stock drops under it.',
+  collection_id: 'The collection this design belongs to; it takes the collection\'s box size and specifications.', code: 'The design code, if it has one. A code can be used only once.',
+  sub_type: 'Plank, tile, herringbone, chevron...', image: 'A link to the design\'s photo.',
+};
+const TYPE_HELP = { mobile: 'A 10-digit mobile; the country code is on the left.', money: 'An amount in rupees.', date: 'Pick the date from the calendar.', select: 'Pick one from the list.', multi: 'Pick one or more from the list.', cats: 'Pick one or more categories.', cities: 'Pick one or more cities.', yesno: 'Yes or No.', number: 'A whole number.', decimal: 'A number; decimals are fine.', email: 'An email address.' };
+const ACT_HELP = {
+  'org-add': 'Add a company with its point of contact, address, areas and business details. Everything else can be added later.', 'person-add': 'Add a person: at a dealer, at an architect firm, or a personal contact.',
+  'opp-add': 'Start a sale. For wholesale, type the designs, boxes and rate; the total is worked out.', 'opp-move': 'Move this sale to the stage chosen on the left. Some stages check things first (designs, credit, approvals).',
+  'opp-edit': 'Change this sale\'s details and designs.', 'client-edit': 'Change this record\'s details.', 'client-save': 'Save. Anything wrong is shown just above the field.',
+  'ful-next': 'Move this fulfilment to its next stage. At the stock check every design must be covered first.', 'alloc-open': 'Set boxes aside: for each design, how many to take from each warehouse.',
+  'al-suggest': 'Fill from the warehouses with the most free boxes first.', 'al-prod': 'Whatever this design is still short of goes on a production order.', 'al-save': 'Save how many boxes are set aside from each warehouse.',
+  'po-next': 'Move this production order on. Received at warehouse adds the boxes to stock.', 'po-add': 'Place a production order directly.',
+  'move-add': 'Record stock coming in, going out, or moving between warehouses. Every move keeps who and when.', 'cat-add': 'Add a product category, then its collections, then its designs.',
+  'col-add': 'Add a collection: its category, box size and specifications.', 'prod-add': 'Add a design, with the warehouses it is in and the boxes there today.', 'wh-add': 'Add a warehouse.',
+  'site-add': 'Add an installation site for a client.', 'site-next': 'Move this site to its next step. Some steps check first: a crew, the readiness list, no open snag, the sign-off.',
+  'cmp-add': 'Log a complaint.', 'ap-yes': 'Approve this request.', 'ap-no': 'Reject this request, with a reason.', 'list-open': 'Open this list to rename, reorder, lock or remove its items.',
+  'lrow-lock': 'Lock or unlock this item. Locked: it cannot be renamed or removed.', 'lrow-up': 'Move this item up.', 'lrow-down': 'Move this item down.', 'lrow-del': 'Remove this item (only if nothing uses it).',
+  'list-save': 'Save. If the change touches saved records or Excel files, you are shown what first and asked.', 'rules-open': 'GST, production quantities, approval limits, Priority 200 levels and weights.',
+  'notif-open': 'Notifications: Internal (the system) and External (from outside).', 'notif-seen': 'Mark the recorded notifications as read.', 'div': 'Show EGO Premium (wholesale), Big E (retail) or both.',
+  'sign-out': 'Sign out of EGO Master.', 'contact-add': 'Add a person to this company\'s team.', 'snag-add': 'Record a snag on this site.', 'snag-close': 'Close this snag, saying how it was put right.',
+};
+const NAV_HELP = { home: 'Today at a glance: counts, next actions due, what is not connected yet.', dealers: 'Distributors, dealers and sub-dealers, each with its team, sales and business.',
+  architects: 'Architect firms and solo architects, each with its team.', people: 'Everyone: the people at every company, and personal contacts.', opps: 'The sales boards. A wholesale sale runs here until Payment collected.',
+  orders: 'After the payment: the stock check, setting boxes aside, production for what is short, dispatch.', installation: 'Big E installation sites, step by step.', complaints: 'Complaints, from logged to resolved.',
+  approvals: 'Credit, discounts and settlements waiting for someone whose limit covers them.', p200: 'The dealers EGO develops first, scored from saved sales.', inventory: 'Categories, collections, designs, warehouses and stock.',
+  import: 'Upload the Excel files: EGO Premium, Big E and Inventory.', team: 'The people who use EGO Master and what each role may see.', lists: 'Every dropdown and every stage, editable, with locks.', account: 'Your password.' };
+function helpFor(t) {
+  const own = t.closest('[data-help]'); if (own) return [own, own.dataset.help];
+  const fe = t.closest('.field[data-field]');
+  if (fe) { const f = ALL_FIELDS().find(x => x.key === fe.dataset.field), lab = ((fe.querySelector('label') || {}).textContent || '').replace(/\s*\*$/, '');
+    return [fe, `<b>${esc(lab)}</b><br>${esc(FIELD_HELP[fe.dataset.field] || (f ? TYPE_HELP[f.type] || '' : ''))}${f && f.req ? '<br><span class="muted">Compulsory.</span>' : ''}${f && f.list ? '<br><span class="muted">The choices are in Lists & stages.</span>' : ''}`]; }
+  const act = t.closest('[data-act]'); if (act && ACT_HELP[act.dataset.act]) return [act, esc(ACT_HELP[act.dataset.act])];
+  const nav = t.closest('.navcard'); if (nav) { const k = (nav.getAttribute('href') || '').slice(2); return NAV_HELP[k] ? [nav, `<b>${esc(nav.textContent.trim())}</b><br>${esc(NAV_HELP[k])}`] : null; }
+  const lane = t.closest('.lane[data-stage]'); if (lane && !t.closest('a, .mini')) return [lane, `<b>${esc(lane.dataset.stage)}</b><br>${lane.querySelectorAll('a, .mini').length} here. The stages and their order come from Lists & stages.`];
+  const opp = t.closest('[data-href^="#/opp/"], a[href^="#/opp/"]');
+  if (opp) { const o = D.opportunities.find(x => x.id === (opp.dataset.href || opp.getAttribute('href')).split('/')[2]); if (o) return [opp, `<b>${esc(o.title)}</b><br>${esc((CL()[o.client_id] || {}).name || '')} · ${esc(o.stage)}${D.access.prices && o.value ? ' · ' + money(o.value) : ''}<br>${esc(o.next_action || '')}${o.next_date ? ' by ' + ds(o.next_date) : ''}<br><span class="muted">Click to open it.</span>`]; }
+  const row = t.closest('tr[data-href], a.card[href^="#/"]'); if (row) return [row, 'Click to open it.'];
+  return null;
+}
+let hoverT = null, hoverEl = null;
+const hideHelp = () => { clearTimeout(hoverT); hoverT = null; hoverEl = null; const h = qs('#hover-help'); if (h) h.remove(); };
+document.addEventListener('mouseover', e => {
+  if (e.pointerType === 'touch' || !e.target.closest) return;
+  const hit = helpFor(e.target);
+  if (!hit) { if (hoverEl && !hoverEl.contains(e.target)) hideHelp(); return; }
+  if (hit[0] === hoverEl) return;
+  hideHelp(); hoverEl = hit[0];
+  const x = e.clientX, y = e.clientY, html = hit[1];
+  hoverT = setTimeout(() => {   // two seconds of resting on it
+    const h = document.createElement('div'); h.id = 'hover-help'; h.setAttribute('role', 'tooltip'); h.innerHTML = html; document.body.appendChild(h);
+    const w = h.offsetWidth, hh = h.offsetHeight;
+    h.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, x + 12)) + 'px';
+    h.style.top = (y + 18 + hh > window.innerHeight ? Math.max(8, y - hh - 12) : y + 18) + 'px';
+  }, 2000);
+});
+for (const ev of ['mousedown', 'keydown', 'scroll', 'wheel']) document.addEventListener(ev, hideHelp, true);
+document.addEventListener('mouseout', e => { if (hoverEl && !hoverEl.contains(e.relatedTarget)) hideHelp(); });
 
 /* ---------------------------------------------------------------- my account */
 EM.VIEWS.account = () => `<div class="stack" style="max-width:560px"><div class="stack-s"><h1>My account</h1><p class="muted">${esc(me().name)} · ${esc(me().login)} · ${esc(acc().name)}</p></div>

@@ -109,7 +109,7 @@ const EM = {
     qs('#shell').classList.toggle('folded', EM.folded());
     qs('#side').innerHTML = `
       <div class="side-top"><button class="iconbtn menubtn" data-act="menu" aria-label="${EM.folded() ? 'Open' : 'Close'} the menu" aria-expanded="${!EM.folded()}">${ICON.menu}</button>
-      <a class="brand" href="#/home" aria-label="EGO Master home">${LOGO(24)}<span class="brand-name">Master</span></a></div>
+      <a class="brand" href="#/home" aria-label="EGO Master home">${LOGO(24)}<span class="brand-name">Master</span></a>${EM.brandExtras ? EM.brandExtras() : ''}</div>
       <div class="side-user">
         <span class="avatar">${esc((me().name || '?').split(' ').map(w => w[0]).slice(0, 2).join(''))}</span>
         <span class="grow"><b>${esc(me().name)}</b><span class="small muted">${esc(acc().name)}</span></span>
