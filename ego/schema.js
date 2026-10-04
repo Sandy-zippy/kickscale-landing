@@ -581,3 +581,52 @@ const LIST_USES = (() => {
 })();
 for (const f of [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS]) if (f.list && !DEFAULT_LISTS[f.list]) DEFAULT_LISTS[f.list] = f.opts;
 const optsOf = (f, lists) => (f.list && lists && lists[f.list]) || f.opts;
+
+/* ---------------------------------------------------------------- operations (4 Oct)
+
+   The processing side, as agreed in the demo. Each stage set is editable in Lists &
+   stages; the LOCKED stages carry the logic (a credit check, allocating stock, taking it
+   out at dispatch, adding it when production arrives), so they can be moved around but
+   never renamed or removed, like Won and Lost. Every other stage is free. */
+const OPS = {
+  order_stages: { label: 'Wholesale order stages', note: 'Confirmed checks the credit limit. Fulfilment starts by itself when the order reaches the last stage.',
+    list: ['Order received', 'Confirmed', 'Invoiced', 'Payment collected'], locked: ['Order received', 'Confirmed'] },
+  fulfilment_stages: { label: 'Order fulfilment stages', note: 'Stock check is where boxes are set aside from the warehouses. Dispatched takes them out of stock.',
+    list: ['Design & MOQ verified', 'Stock check', 'Allocated', 'Waiting on production', 'Packed', 'Dispatched', 'Delivered'], locked: ['Stock check', 'Allocated', 'Waiting on production', 'Packed', 'Dispatched', 'Delivered'] },
+  production_stages: { label: 'Production order stages', note: 'Received at warehouse adds the boxes to stock; they are then given to the orders waiting for them.',
+    list: ['Production order placed', 'In production', 'Quality check', 'Shipped', 'In transit', 'Received at warehouse', 'Allocated & closed'], locked: ['Production order placed', 'Received at warehouse', 'Allocated & closed'] },
+  site_steps: { label: 'Installation steps (retail sites)', note: 'Installer allocated needs a crew, Site readiness needs every item ready, Snagging needs no open snag, Sign-off needs the client\'s sign-off.',
+    list: ['Site identified', 'Survey scheduled', 'Survey completed', 'Measurement & BOQ', 'Commercial approval', 'Installer allocated', 'Material confirmed', 'Material dispatched', 'Material received',
+      'Site readiness', 'Installation scheduled', 'Installation started', 'Work in progress', 'Snagging', 'Installation completed', 'Sign-off & handover', 'Billing & installer payment', 'Warranty / service'],
+    locked: ['Installer allocated', 'Site readiness', 'Installation started', 'Snagging', 'Installation completed', 'Sign-off & handover'] },
+  complaint_statuses: { label: 'Complaint statuses', note: 'Resolved needs a resolution.', list: ['Open', 'In progress', 'Resolved'], locked: ['Open', 'Resolved'] },
+};
+const OPS_LISTS = [['complaint_types', 'Complaint types', ['Product · swelling', 'Product · colour variation', 'Product · click joint damage', 'Installation · gaps / uneven', 'Installation · squeaking', 'Delivery · damaged boxes', 'Delivery · short supply', 'Service · slow response']],
+  ['complaint_channels', 'Complaint channels', ['WhatsApp', 'Phone', 'Dealer', 'Email', 'Field visit']], ['severities', 'Severity', ['Low', 'Medium', 'High']],
+  ['snag_types', 'Snag types', ['Uneven joint', 'Gap at skirting', 'Scratch / chip', 'Squeaking', 'Colour variation', 'Swelling near wet area']],
+  ['readiness_items', 'Site readiness checklist', ['Civil & electrical work complete', 'Subfloor level (±3 mm / 2 m)', 'Moisture below limit', 'Painting / false ceiling done', 'Secure storage for material', 'Lift / access for material', 'Site contact available']],
+  ['delay_reasons', 'Site delay reasons', ['Customer / site not ready', 'Material shortage', 'Installer unavailable', 'Transport', 'Design / measurement change']]];
+DEFAULT_LISTS.ops = Object.fromEntries(Object.entries(OPS).map(([k, v]) => [k, v.list]));
+for (const [k, , v] of OPS_LISTS) DEFAULT_LISTS[k] = v;
+LIST_GROUPS.push(['Operations lists', OPS_LISTS.map(([k, l]) => [k, l])]);
+Object.assign(LIST_LABEL, Object.fromEntries(OPS_LISTS.map(([k, l]) => [k, l])));
+
+/* the numbers the processing uses, all editable in Lists & stages > Rules and numbers */
+const DEFAULT_RULES = {
+  gst_pct: 18, moq_boxes: 500, production_round_boxes: 50, production_eta_days: 45, payment_days: 45,
+  /* approvals: who may say yes up to what. Owner: no limit. */
+  approvals: {
+    credit: { label: 'Credit above the limit', unit: '₹', levels: { manager: 100000, head: 500000, director: 1500000 } },
+    discount: { label: 'Dealer discount', unit: '%', levels: { manager: 1, head: 3, director: 5 } },
+    complaint: { label: 'Complaint settlement', unit: '₹', levels: { manager: 15000, head: 75000, director: 200000 } },
+  },
+  complaint_settle_from: 15000,
+  p200: { tiers: [{ name: 'A', min: 70 }, { name: 'B', min: 50 }, { name: 'C', min: 30 }, { name: 'Watchlist', min: 0 }],
+    weights: { sales: 40, breadth: 20, payments: 15, display: 10, activity: 15 } },
+};
+DEFAULT_LISTS.rules = DEFAULT_RULES;
+const APPROVER_LEVEL = { owner: 'owner', director: 'director', ws_head: 'head', rt_head: 'head', ws_rm: 'manager', rt_project: 'manager' };
+const levelLimit = (rules, kind, role) => { const l = APPROVER_LEVEL[role]; if (l === 'owner') return Infinity; const a = rules.approvals[kind]; return l && a ? a.levels[l] || 0 : 0; };
+const opsStages = (lists, k) => ((lists || {}).ops || {})[k] || OPS[k].list;
+const lastOf = a => a[a.length - 1];
+const DISCOUNT_FIELD = { key: 'discount_pct', label: 'Discount (%)', type: 'decimal' };
