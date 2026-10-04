@@ -66,7 +66,7 @@ const ORGS = ['dealer', 'architect', 'firm'];
 const CLIENT_FIELDS = [
   { key: 'kind', label: 'Type', type: 'select', opts: Object.keys(KINDS), req: true, col: true, groups: ALL, section: 'Basics' },
   { key: 'name', label: 'Name', type: 'text', req: true, col: true, groups: ALL, section: 'Basics' },
-  { key: 'client_type', label: 'Client type', type: 'select', opts: ['Individual', 'Homeowner', 'Builder', 'Contractor', 'Hotel', 'Corporate', 'Retail chain', 'Institution', 'Other firm'], req: true, groups: ['retail', 'direct'], section: 'Basics' },
+  { key: 'client_type', list: 'client_types', label: 'Client type', type: 'select', opts: ['Individual', 'Homeowner', 'Builder', 'Contractor', 'Hotel', 'Corporate', 'Retail chain', 'Institution', 'Other firm'], req: true, groups: ['retail', 'direct'], section: 'Basics' },
   { key: 'mobile', label: 'Mobile', type: 'mobile', req: true, col: true, groups: ALL, section: 'Basics' },
   { key: 'whatsapp', label: 'WhatsApp number', type: 'mobile', col: true, groups: ALL, section: 'Basics' },
   { key: 'mobile_alt', label: 'Alternate mobile', type: 'mobile', col: true, groups: ALL, section: 'Basics' },
@@ -78,13 +78,13 @@ const CLIENT_FIELDS = [
   { key: 'areas_covered', label: 'Areas they cover', type: 'cities', groups: ORGS, section: 'Basics' },
   { key: 'other_offices', label: 'Other offices or branches (areas)', type: 'text', groups: ORGS, section: 'Basics' },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true, col: true, groups: ALL, section: 'Basics' },
-  { key: 'source', label: 'Source', type: 'select', opts: SOURCES, col: true, groups: ALL, section: 'Basics' },
-  { key: 'status', label: 'Status', type: 'select', opts: ['Active', 'Prospect', 'Inactive'], col: true, groups: ALL, section: 'Basics' },
+  { key: 'source', list: 'sources', label: 'Source', type: 'select', opts: SOURCES, col: true, groups: ALL, section: 'Basics' },
+  { key: 'status', list: 'client_statuses', label: 'Status', type: 'select', opts: ['Active', 'Prospect', 'Inactive'], col: true, groups: ALL, section: 'Basics' },
 
   { key: 'legal_name', label: 'Legal name (as on GST)', type: 'text', groups: ['dealer', 'firm'], section: 'Business' },
   { key: 'gst', label: 'GST number', type: 'gst', col: true, groups: ['dealer', 'firm', 'retail', 'direct'], section: 'Business' },
   { key: 'parent_id', label: 'Buys through', type: 'link', to: ['distributor', 'dealer'], col: true, groups: ['dealer'], kinds: ['dealer', 'sub_dealer'], section: 'Business' },
-  { key: 'grade', label: 'Dealer rating', type: 'select', opts: ['Platinum', 'A', 'B', 'C'], col: true, groups: ['dealer'], section: 'Business' },
+  { key: 'grade', list: 'dealer_grades', label: 'Dealer rating', type: 'select', opts: ['Platinum', 'A', 'B', 'C'], col: true, groups: ['dealer'], section: 'Business' },
   { key: 'priority200', label: 'Priority 200', type: 'yesno', groups: ['dealer'], section: 'Business' },
   { key: 'since', label: 'Working with EGO since', type: 'date', groups: ['dealer', 'firm'], section: 'Business' },
   { key: 'credit_limit', label: 'Credit limit (₹)', type: 'money', groups: ['dealer'], section: 'Business' },
@@ -96,7 +96,7 @@ const CLIENT_FIELDS = [
   { key: 'categories_missing', label: 'Categories not bought yet', type: 'cats', groups: ['dealer'], section: 'Products and market' },
   { key: 'brands_sold', label: 'Other brands they sell', type: 'text', groups: ['dealer'], section: 'Products and market' },
   { key: 'competitors', label: 'Main competitors nearby', type: 'text', groups: ['dealer'], section: 'Products and market' },
-  { key: 'customer_types', label: 'They sell to', type: 'multi', opts: ['Homeowners', 'Builders', 'Architects and designers', 'Contractors', 'Corporate offices', 'Hotels', 'Institutions'], groups: ['dealer'], section: 'Products and market' },
+  { key: 'customer_types', list: 'customer_types', label: 'They sell to', type: 'multi', opts: ['Homeowners', 'Builders', 'Architects and designers', 'Contractors', 'Corporate offices', 'Hotels', 'Institutions'], groups: ['dealer'], section: 'Products and market' },
   { key: 'project_partner', label: 'Project partner', type: 'select', opts: ['Yes', 'No', 'Maybe'], groups: ['dealer'], section: 'Products and market' },
 
   { key: 'showroom', label: 'Has a showroom', type: 'yesno', groups: ['dealer'], section: 'Infrastructure' },
@@ -112,19 +112,19 @@ const CLIENT_FIELDS = [
   { key: 'potential_note', label: 'Potential note', type: 'text', groups: ['dealer'], section: 'Potential' },
 
   { key: 'firm_id', label: 'Design firm', type: 'link', to: ['design_firm'], col: true, groups: ['architect'], section: 'Practice' },
-  { key: 'position', label: 'Position', type: 'select', opts: ['Principal', 'Partner', 'Senior architect', 'Architect', 'Interior designer', 'Other'], groups: ['architect'], section: 'Practice' },
-  { key: 'specialisation', label: 'Specialisation', type: 'select', opts: ['Luxury villas', 'Apartments', 'Workplace', 'Retail fit-outs', 'Hospitality', 'Institutional', 'Other'], groups: ['architect', 'firm'], section: 'Practice' },
-  { key: 'focus', label: 'Focus', type: 'select', opts: ['Residential', 'Corporate', 'Hospitality', 'Retail', 'Mixed'], groups: ['architect', 'firm'], section: 'Practice' },
+  { key: 'position', list: 'positions', label: 'Position', type: 'select', opts: ['Principal', 'Partner', 'Senior architect', 'Architect', 'Interior designer', 'Other'], groups: ['architect'], section: 'Practice' },
+  { key: 'specialisation', list: 'specialisations', label: 'Specialisation', type: 'select', opts: ['Luxury villas', 'Apartments', 'Workplace', 'Retail fit-outs', 'Hospitality', 'Institutional', 'Other'], groups: ['architect', 'firm'], section: 'Practice' },
+  { key: 'focus', list: 'focus_areas', label: 'Focus', type: 'select', opts: ['Residential', 'Corporate', 'Hospitality', 'Retail', 'Mixed'], groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'team_size', label: 'Team size', type: 'number', groups: ['firm'], section: 'Practice' },
-  { key: 'rating', label: 'Architect rating', type: 'select', opts: ['A', 'B', 'C'], groups: ['architect', 'firm'], section: 'Practice' },
-  { key: 'potential', label: 'Potential', type: 'select', opts: ['High', 'Medium', 'Low'], groups: ['architect', 'firm'], section: 'Practice' },
+  { key: 'rating', list: 'architect_ratings', label: 'Architect rating', type: 'select', opts: ['A', 'B', 'C'], groups: ['architect', 'firm'], section: 'Practice' },
+  { key: 'potential', list: 'potentials', label: 'Potential', type: 'select', opts: ['High', 'Medium', 'Low'], groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'design500', label: 'Design 500 member', type: 'yesno', groups: ['architect', 'firm'], section: 'Practice' },
-  { key: 'relationship', label: 'Relationship', type: 'select', opts: ['EGO direct', 'Via dealer'], groups: ['architect'], section: 'Practice' },
+  { key: 'relationship', list: 'relationships', label: 'Relationship', type: 'select', opts: ['EGO direct', 'Via dealer'], groups: ['architect'], section: 'Practice' },
   { key: 'connected_dealers', label: 'Connected dealers', type: 'text', groups: ['architect'], section: 'Practice' },
 
   { key: 'architect_id', label: 'Architect', type: 'link', to: ['architect', 'design_firm'], col: true, groups: ['retail'], section: 'Retail' },
   { key: 'campaign', label: 'Campaign', type: 'text', groups: ['retail'], section: 'Retail' },
-  { key: 'condition_tag', label: 'Condition tag', type: 'select', opts: ['Hot', 'Warm', 'Cold'], groups: ['retail'], section: 'Retail' },
+  { key: 'condition_tag', list: 'condition_tags', label: 'Condition tag', type: 'select', opts: ['Hot', 'Warm', 'Cold'], groups: ['retail'], section: 'Retail' },
 
   { key: 'last_contact', label: 'Last contact', type: 'date', groups: ['architect', 'firm'], section: 'Follow-up' },
   { key: 'next_action', label: 'Next action', type: 'text', groups: ALL, section: 'Follow-up' },
@@ -134,7 +134,7 @@ const CLIENT_FIELDS = [
 
 const CONTACT_FIELDS = [
   { key: 'name', label: 'Name', type: 'text', req: true },
-  { key: 'designation', label: 'Role', type: 'select', opts: DESIGNATIONS },
+  { key: 'designation', list: 'roles', label: 'Role', type: 'select', opts: DESIGNATIONS },
   { key: 'responsibilities', label: 'Responsibilities', type: 'text' },
   { key: 'mobile', label: 'Mobile', type: 'mobile', req: true },
   { key: 'whatsapp', label: 'WhatsApp number', type: 'mobile' },
@@ -150,8 +150,8 @@ const OPP_FIELDS = [
   { key: 'products', label: 'Products', type: 'cats' },
   { key: 'area_sqft', label: 'Area (sq ft)', type: 'number' },
   { key: 'application', label: 'Room or application', type: 'text' },
-  { key: 'budget', label: 'Budget band', type: 'select', opts: ['Under 2 lakh', '2 to 5 lakh', '5 to 10 lakh', 'Above 10 lakh'] },
-  { key: 'source', label: 'Source', type: 'select', opts: SOURCES },
+  { key: 'budget', list: 'budget_bands', label: 'Budget band', type: 'select', opts: ['Under 2 lakh', '2 to 5 lakh', '5 to 10 lakh', 'Above 10 lakh'] },
+  { key: 'source', list: 'sources', label: 'Source', type: 'select', opts: SOURCES },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true },
   { key: 'contact_id', label: 'Point of contact', type: 'contact' },
   { key: 'next_action', label: 'Next action', type: 'text' },
@@ -329,13 +329,13 @@ function cleanValue(f, v, ctx, whole) {
     }
     case 'select': {
       if (v === '') return { value: '' };
-      const hit = matchOpt(f.opts, v, f.key === 'kind' ? KINDS : f.key === 'pipeline' ? PIPELINES : null);
+      const hit = matchOpt(optsOf(f, lists), v, f.key === 'kind' ? KINDS : f.key === 'pipeline' ? PIPELINES : null);
       return hit == null ? { error: `"${v}" is not in the list` } : { value: hit };
     }
     case 'multi': {
       const arr = Array.isArray(v) ? v : String(v).split(/[,;]/).map(s => s.trim()).filter(Boolean);
       const out = [];
-      for (const x of arr) { const hit = matchOpt(f.opts, x); if (hit == null) return { error: `"${x}" is not in the list` }; if (!out.includes(hit)) out.push(hit); }
+      for (const x of arr) { const hit = matchOpt(optsOf(f, lists), x); if (hit == null) return { error: `"${x}" is not in the list` }; if (!out.includes(hit)) out.push(hit); }
       return { value: out };
     }
     case 'cat': {
@@ -411,7 +411,7 @@ const COLLECTION_FIELDS = [
   { key: 'wear_layer', label: 'Wear layer', type: 'text', section: 'Specifications' },
   { key: 'construction', label: 'Construction or layers', type: 'text', section: 'Specifications' },
   { key: 'core', label: 'Core or base', type: 'text', section: 'Specifications' },
-  { key: 'ac_rating', label: 'AC rating', type: 'select', opts: ['AC3', 'AC4', 'AC5', 'AC6'], section: 'Specifications' },
+  { key: 'ac_rating', list: 'ac_ratings', label: 'AC rating', type: 'select', opts: ['AC3', 'AC4', 'AC5', 'AC6'], section: 'Specifications' },
   { key: 'use_class', label: 'Class of use', type: 'text', section: 'Specifications' },
   { key: 'finish', label: 'Surface or finish', type: 'text', section: 'Specifications' },
   { key: 'edges', label: 'Edges', type: 'text', section: 'Specifications' },
@@ -431,7 +431,7 @@ const PRODUCT_FIELDS = [
   { key: 'collection_id', label: 'Collection', type: 'collection', req: true, col: true },
   { key: 'name', label: 'Design name', type: 'text', req: true, col: true },
   { key: 'code', label: 'Design code', type: 'text', col: true },
-  { key: 'sub_type', label: 'Type', type: 'select', opts: SUB_TYPES, col: true },
+  { key: 'sub_type', list: 'design_types', label: 'Type', type: 'select', opts: SUB_TYPES, col: true },
   { key: 'colour', label: 'Colour or shade', type: 'text' },
   { key: 'image', label: 'Photo link', type: 'text' },
   { key: 'low_stock', label: 'Warn below (boxes)', type: 'number' },
@@ -480,7 +480,7 @@ function cleanFields(fields, input, ctx) {
    team (`owner`), or from a fixed list (`opts`): the same lists the app's dropdowns use. */
 const POC_COLS = [
   { key: 'poc_name', type: 'text', req: true, header: 'Point of contact name *' },
-  { key: 'poc_designation', type: 'select', opts: DESIGNATIONS, header: 'Point of contact role' },
+  { key: 'poc_designation', list: 'roles', type: 'select', opts: DESIGNATIONS, header: 'Point of contact role' },
   { key: 'poc_responsibilities', type: 'text', header: 'Point of contact responsibilities' },
   { key: 'poc_mobile', type: 'mobile', req: true, header: 'Point of contact mobile (10 digits) *' },
   { key: 'poc_email', type: 'email', header: 'Point of contact email ID' },
@@ -530,7 +530,7 @@ const STOCK_COLS = [
   { key: 'collection', type: 'text', req: true, header: 'Collection (pick from the Collections sheet) *' },
   { key: 'name', type: 'text', req: true, header: 'Design name *' },
   { key: 'code', type: 'text', header: 'Design code (if any)' },
-  { key: 'sub_type', type: 'select', opts: SUB_TYPES, header: 'Type (Plank, Tile, Herringbone...)' },
+  { key: 'sub_type', list: 'design_types', type: 'select', opts: SUB_TYPES, header: 'Type (Plank, Tile, Herringbone...)' },
   { key: 'colour', type: 'text', header: 'Colour or shade' },
   { key: 'warehouse', type: 'text', header: 'Warehouse (pick from the Warehouses sheet)' },
   { key: 'boxes', type: 'number', header: 'Boxes in this warehouse today' },
@@ -540,7 +540,7 @@ const STOCK_COLS = [
 const HINT = { decimal: '', mobile: ' (10 digits)', multi: ' (separate with commas)', cats: ' (separate with commas)', cities: ' (cities, separate with commas)', date: ' (DD/MM/YYYY)', owner: ' (username or name)', pincode: ' (6 digits)' };
 function templateColumns(t) {
   const heads = t.heads || {}, refs = t.refs || {};
-  const col = f => ({ key: f.key, type: f.type, opts: f.opts, req: !!f.req, ref: refs[f.key], header: (heads[f.key] || f.label + (f.type === 'link' ? ' (name, mobile or GST)' : HINT[f.type] || '')) + (f.req ? ' *' : '') });
+  const col = f => ({ key: f.key, type: f.type, opts: f.opts, list: f.list, req: !!f.req, ref: refs[f.key], header: (heads[f.key] || f.label + (f.type === 'link' ? ' (name, mobile or GST)' : HINT[f.type] || '')) + (f.req ? ' *' : '') });
   const withRefs = cols => cols.map(c => ({ ...c, ref: c.ref || refs[c.key] }));
   if (t.tab === 'stock') return withRefs(STOCK_COLS);
   if (t.tab === 'categories') return CATEGORY_COLS;
@@ -553,3 +553,31 @@ function templateColumns(t) {
 const normHeader = h => String(h == null ? '' : h).replace(/\*/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 /* an example row is shown in every sheet and never imported */
 const EXAMPLE_MARK = 'EXAMPLE';
+
+/* ---------------------------------------------------------------- the editable lists (4 Oct)
+
+   Every dropdown the team may want to change is a named list in settings, edited in
+   Lists & stages. A field names its list (`list: 'sources'`); its `opts` above are only
+   the starting values for a fresh database. The kind of record, the pipeline, Yes/No
+   and a design's Active/Discontinued stay fixed: the app's logic depends on them. */
+const LIST_GROUPS = [
+  ['People and companies', [['sources', 'Sources'], ['roles', 'Roles (people at a company)'], ['client_types', 'Kinds of personal client'], ['client_statuses', 'Status'], ['dealer_grades', 'Dealer ratings'],
+    ['architect_ratings', 'Architect ratings'], ['positions', 'Architect positions'], ['specialisations', 'Specialisations'], ['focus_areas', 'Focus'], ['potentials', 'Potential'],
+    ['relationships', 'Relationship (architects)'], ['customer_types', 'Who dealers sell to'], ['condition_tags', 'Condition tags (retail)']]],
+  ['Opportunities', [['lost_reasons', 'Lost reasons'], ['budget_bands', 'Budget bands']]],
+  ['Inventory', [['categories', 'Product categories'], ['design_types', 'Design types'], ['ac_ratings', 'AC ratings']]],
+];
+const LIST_LABEL = Object.fromEntries(LIST_GROUPS.flatMap(([, ls]) => ls));
+const fieldList = f => f.list || (f.type === 'cats' || f.type === 'cat' ? 'categories' : f.type === 'cities' || f.type === 'city' ? 'cities' : f.type === 'lost' ? 'lost_reasons' : null);
+/* which saved values use a list: table, field, whether it is a column or inside `extra`, and whether it holds several */
+const LIST_USES = (() => {
+  const out = {}, add = (table, fields, isCol) => fields.forEach(f => { const k = fieldList(f); if (k) (out[k] = out[k] || []).push({ table, key: f.key, col: isCol(f), multi: ['multi', 'cats', 'cities'].includes(f.type) }); });
+  add('clients', CLIENT_FIELDS, f => !!f.col);
+  add('contacts', CONTACT_FIELDS, () => true);
+  add('opportunities', OPP_FIELDS, f => OPP_COLS.includes(f.key));
+  add('collections', COLLECTION_FIELDS, f => !!f.col);
+  add('products', PRODUCT_FIELDS, f => !!f.col);
+  return out;
+})();
+for (const f of [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS]) if (f.list && !DEFAULT_LISTS[f.list]) DEFAULT_LISTS[f.list] = f.opts;
+const optsOf = (f, lists) => (f.list && lists && lists[f.list]) || f.opts;

@@ -98,7 +98,7 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'number': case 'money': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="${f.type === 'money' ? '0.01' : '1'}" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
     case 'date': return G.wrap(f, p, `<input class="input" type="date" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}" placeholder="DD/MM/YYYY">`);
     case 'yesno': return G.select(f, v === true ? 'Yes' : v === false ? 'No' : v, p, [['Yes', 'Yes'], ['No', 'No']]);
-    case 'select': return G.select(f, v, p, f.opts.map(o => [o, optLabel(f, o)]), !f.req);
+    case 'select': return G.select(f, v, p, optsOf(f, D.lists).map(o => [o, optLabel(f, o)]), !f.req);
     case 'city': return G.select(f, v, p, D.lists.cities.map(c => [c.city, `${c.city} · ${c.region}`]));
     case 'owner': {
       const ppl = D.staff.filter(s => s.active && (D.access.scope !== 'own' || s.id === me().id));
@@ -113,7 +113,7 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'decimal': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
     case 'collection': return G.select(f, v, p, INVD().collections.map(c => [c.id, `${c.name} · ${c.category}`]));
     case 'cities': return fieldHtml({ ...f, type: 'multi', opts: D.lists.cities.map(c => c.city) }, v, p);
-    case 'multi': return G.multi(f, v, p, f.opts);
+    case 'multi': return G.multi(f, v, p, optsOf(f, D.lists));
     case 'stage': return G.select(f, v, p, ((D.lists.stages || {})[opt.pipeline] || []).map(s => [s, s]), false);
     case 'lost': return G.select(f, v, p, D.lists.lost_reasons.map(s => [s, s]));
     case 'contact': return G.select(f, v, p, D.contacts.filter(k => k.client_id === opt.client).map(k => [k.id, `${k.name}${k.designation ? ' · ' + k.designation : ''}`]));
@@ -324,7 +324,7 @@ EM.ACTIONS['person-save'] = async el => {
   const form = qs('#pf'), company = form.querySelector('[data-company-pick]').value;
   if (!company || company === '__new') return showErr('pf-err', 'Choose the company this person works at.');
   const input = withDials(readForm(form, CONTACT_FIELDS), CONTACT_FIELDS);
-  const { errors } = cleanContact(input, {});
+  const { errors } = cleanContact(input, ctxLocal());
   if (errors.length) return showErr('pf-err', errors);
   busy(el, true);
   try {
@@ -414,14 +414,14 @@ EM.ACTIONS['client-save'] = async el => {
   else if (KINDS[kind].division === 'both' && !id) input.division = EM.div;
   const poc = readPoc(), pre = [], people = qs('#ppl') ? readPeople() : [];
   if (poc) {   /* the company is reached through its point of contact */
-    const r = cleanContact(poc, {});
+    const r = cleanContact(poc, ctxLocal());
     r.errors.forEach(x => pre.push('Point of contact: ' + x));
     if (!r.errors.length) { input.mobile = poc.mobile; if (!input.whatsapp) input.whatsapp = poc.whatsapp || ''; if (!input.email) input.email = poc.email || ''; }
   }
   let { errors } = cleanClient(input, ctxLocal());
   if (poc) errors = errors.filter(x => !/^Mobile /.test(x));   // said once, as the point of contact's
   errors = [...pre, ...errors];
-  people.forEach((pv, i) => { const r = cleanContact(pv, {}); if (r.errors.length) errors.push(`Person ${i + 2}: ${r.errors.join(', ')}`); });
+  people.forEach((pv, i) => { const r = cleanContact(pv, ctxLocal()); if (r.errors.length) errors.push(`Person ${i + 2}: ${r.errors.join(', ')}`); });
   if (errors.length) return showErr('cf-err', errors);
   if (id) input.id = id;
   const team = poc ? [{ ...poc, is_primary: 'Yes' }, ...people] : people;
@@ -937,6 +937,60 @@ EM.ACTIONS['move-save'] = async el => {
   catch (x) { busy(el, false); showErr('mv-err', x.message); }
 };
 
+/* ---------------------------------------------------------------- the Excel files, with today's lists
+   The files are built once, but the lists change in Lists & stages and the team changes in
+   Team & access. On download the hidden Lists sheet is refilled with today's values and every
+   dropdown's range is stretched to fit, so the Excel lists always equal the app's. */
+const JSZIP_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+const loadJs = (src, test) => new Promise((ok, bad) => { if (test()) return ok(); const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = () => bad(new Error('Could not load a helper. Check the internet connection.')); document.head.appendChild(el); });
+const todayList = key => key === 'team' ? D.staff.filter(x => x.active).map(x => x.name) : key === 'cities' ? D.lists.cities.map(c => c.city) : D.lists[key];
+const xmlEsc = v => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+async function personalTemplate(file) {
+  await loadJs(JSZIP_URL, () => window.JSZip);
+  const zip = await window.JSZip.loadAsync(await (await fetch(file, { cache: 'no-store' })).arrayBuffer());
+  const wbx = await zip.file('xl/workbook.xml').async('string'), rels = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+  const rid = (wbx.match(/<sheet[^>]*name="Lists"[^>]*r:id="([^"]+)"/) || [])[1];
+  const target = rid && (rels.match(new RegExp(`Id="${rid}"[^>]*Target="([^"]+)"`)) || rels.match(new RegExp(`Target="([^"]+)"[^>]*Id="${rid}"`)) || [])[1];
+  if (!target) return zip.generateAsync({ type: 'blob' });
+  const path = 'xl/' + target.replace(/^\/?xl\//, ''), sx = await zip.file(path).async('string');
+  const sst = zip.file('xl/sharedStrings.xml') ? [...(await zip.file('xl/sharedStrings.xml').async('string')).matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m => [...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x => x[1]).join('')) : [];
+  /* read the sheet as columns of values */
+  const cols = {};
+  for (const m of sx.matchAll(/<c r="([A-Z]+)(\d+)"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+    const [, c, r, attrs, inner = ''] = m, t = (attrs.match(/t="(\w+)"/) || [])[1];
+    const raw = t === 'inlineStr' ? (inner.match(/<t[^>]*>([\s\S]*?)<\/t>/) || [])[1] : (inner.match(/<v>([\s\S]*?)<\/v>/) || [])[1];
+    const v = t === 's' ? sst[+raw] : raw;
+    (cols[c] = cols[c] || [])[+r - 1] = v;
+  }
+  const ends = {};
+  for (const [c, vals] of Object.entries(cols)) {
+    const head = vals[0] || '-', now = head.startsWith('@') && todayList(head.slice(1).replace(/&amp;/g, '&'));
+    if (now && now.length) cols[c] = [head, ...now.map(xmlEsc)];
+    ends[c] = cols[c].filter(x => x != null).length;
+  }
+  const letters = Object.keys(cols).sort((a, b) => a.length - b.length || a.localeCompare(b)), max = Math.max(...Object.values(ends));
+  let data = '<sheetData>';
+  for (let r = 1; r <= max; r++) data += `<row r="${r}">` + letters.filter(c => cols[c][r - 1] != null).map(c => `<c r="${c}${r}" t="inlineStr"><is><t>${cols[c][r - 1]}</t></is></c>`).join('') + '</row>';
+  zip.file(path, sx.replace(/<sheetData>[\s\S]*<\/sheetData>|<sheetData\/>/, data + '</sheetData>').replace(/<dimension[^>]*\/>/, ''));
+  /* every dropdown that reads a Lists column now reaches its new last row */
+  for (const f of Object.keys(zip.files).filter(n => /^xl\/worksheets\/sheet\d+\.xml$/.test(n) && n !== path)) {
+    const x = await zip.file(f).async('string');
+    const y = x.replace(/Lists!\$([A-Z]+)\$2:\$([A-Z]+)\$(\d+)/g, (m, a, b) => `Lists!$${a}$2:$${b}$${Math.max(2, ends[a] || 2)}`);
+    if (y !== x) zip.file(f, y);
+  }
+  return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+}
+window.personalTemplate = personalTemplate;
+document.addEventListener('click', async e => {
+  const a = e.target.closest('a[download][href$=".xlsx"]');
+  if (!a) return;
+  e.preventDefault();
+  try {
+    const blob = await personalTemplate(a.getAttribute('href')), url = URL.createObjectURL(blob), link = document.createElement('a');
+    link.href = url; link.download = a.getAttribute('href'); document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } catch (x) { location.href = a.getAttribute('href'); }   // the plain file is still correct, only without today's list changes
+});
+
 /* ---------------------------------------------------------------- import from Excel
    Two templates, one per company. Each company's card downloads its own file and
    uploads only that file; the server refuses the other company's file too. */
@@ -1176,24 +1230,51 @@ EM.ACTIONS['staff-off-go'] = async el => {
   } catch (x) { busy(el, false); showErr('off-err', x.message); }
 };
 
-/* ---------------------------------------------------------------- lists & stages (Owner) */
+/* ---------------------------------------------------------------- lists & stages (Owner)
+   Every list and stage set the app uses, each edited on its own: rename in place (the
+   records holding the old name follow), move up or down, add, remove. A value that
+   saved records still use cannot be removed; the server says how many use it. */
+const LISTS_UI = () => [
+  ['Sales stages', 'The stages of each opportunity board. The last two stay Won and Lost.', Object.keys(PIPELINES).map(p => [`stages.${p}`, PIPELINES[p].label])],
+  ...(typeof OPS_LIST_GROUP === 'function' ? [OPS_LIST_GROUP()] : []),
+  ...LIST_GROUPS.map(([t, ls]) => [t, '', ls]),
+  ['Places', 'A city belongs to a region; the region decides which regional manager sees a record.', [['cities', 'Cities and their regions']]],
+];
+const listItems = key => key.startsWith('stages.') ? D.lists.stages[key.slice(7)] : key.startsWith('ops.') ? (D.lists.ops || {})[key.slice(4)] || [] : key === 'cities' ? D.lists.cities : D.lists[key] || [];
+EM.listOpen = EM.listOpen || '';
 EM.VIEWS.lists = () => {
   if (!isOwner()) return EM.noAccess('Only an Owner edits the lists and stages.');
-  const L = D.lists;
-  return `<div class="stack"><div class="stack-s"><h1>Lists &amp; stages</h1><p class="muted" style="max-width:760px">The stages of each pipeline, the cities, the lost reasons, and EGO's product categories. One per line. The last two stages of every pipeline stay Won and Lost. A city already used by a client cannot be removed.</p></div>
-    <form id="lf2" class="stack" onsubmit="return false"><div class="grid g3">${Object.keys(PIPELINES).map(p => `<div class="field"><label for="ls-${p}">${esc(PIPELINES[p].label)} stages</label><textarea class="input" rows="11" id="ls-${p}" name="${p}">${esc(L.stages[p].join('\n'))}</textarea></div>`).join('')}</div>
-      <div class="grid g2"><div class="field"><label for="ls-cities">Cities (City, Region)</label><textarea class="input" rows="12" id="ls-cities" name="cities">${esc(L.cities.map(c => c.city + ', ' + c.region).join('\n'))}</textarea><span class="small muted">Regions: ${REGIONS.join(', ')}</span></div>
-      <div class="field"><label for="ls-lost">Lost reasons</label><textarea class="input" rows="12" id="ls-lost" name="lost">${esc(L.lost_reasons.join('\n'))}</textarea></div></div>
-      <div class="grid g2"><div class="field"><label for="ls-cats">Product categories (${L.categories.length})</label><textarea class="input" rows="10" id="ls-cats" name="cats">${esc(L.categories.join('\n'))}</textarea><span class="small muted">EGO's own categories. They fill every product list.</span></div>
-      <div class="field"><span class="small muted">Warehouses</span><p class="small">Warehouses, designs and stock live in <a href="#/inventory/warehouses">Inventory</a>.</p></div></div>
-      ${errBox('ls-err')}<div class="row"><button class="btn primary" data-act="lists-save">Save lists</button></div></form></div>`;
+  return `<div class="stack"><div class="stack-s"><h1>Lists &amp; stages</h1><p class="muted" style="max-width:780px">Every dropdown and every stage in EGO Master comes from here. Rename an item and every record that has it changes too. Move items up or down to change their order in the dropdowns and on the boards. An item that saved records still use cannot be removed: rename it, or change those records first.</p></div>
+    ${LISTS_UI().map(([title, note, ls]) => `<section class="stack-s"><h3>${esc(title)}</h3>${note ? `<p class="small muted">${esc(note)}</p>` : ''}
+      <div class="grid g3">${ls.map(([k, l]) => { const it = listItems(k); return `<button class="card stack-s" style="text-align:left;cursor:pointer" data-act="list-open" data-key="${esc(k)}"><b>${esc(l)}</b><span class="small muted">${it.length} · ${esc((k === 'cities' ? it.map(c => c.city) : it).slice(0, 4).join(', '))}${it.length > 4 ? '…' : ''}</span></button>`; }).join('')}</div></section>`).join('')}</div>`;
 };
 EM.VIEWS.lists.title = () => 'Lists & stages';
-EM.ACTIONS['lists-save'] = async el => {
-  const lines = id => qs(id).value.split('\n').map(s => s.trim()).filter(Boolean);
-  const b = { stages: Object.fromEntries(Object.keys(PIPELINES).map(p => [p, lines('#ls-' + p)])), cities: lines('#ls-cities').map(l => { const [city, region] = l.split(',').map(s => (s || '').trim()); return { city, region }; }), lost_reasons: lines('#ls-lost'), categories: lines('#ls-cats') };
+const listLabel = key => LISTS_UI().flatMap(([, , ls]) => ls).find(([k]) => k === key)?.[1] || key;
+const listRow = (key, v, i) => key === 'cities'
+  ? `<div class="row lrow" data-from="${esc(v ? v.city : '')}"><span class="small muted" style="width:22px">${i + 1}</span><input class="input" data-l="to" value="${esc(v ? v.city : '')}" aria-label="City" style="flex:1"><select class="input" data-l="region" aria-label="Region" style="width:130px">${REGIONS.map(r => `<option ${v && v.region === r ? 'selected' : ''}>${r}</option>`).join('')}</select>${listBtns()}</div>`
+  : `<div class="row lrow" data-from="${esc(v || '')}"><span class="small muted" style="width:22px">${i + 1}</span><input class="input" data-l="to" value="${esc(v || '')}" aria-label="Item" style="flex:1"${key.startsWith('stages.') && ['Won', 'Lost'].includes(v) ? ' readonly title="Won and Lost stay as they are"' : ''}>${listBtns()}</div>`;
+const listBtns = () => '<button class="btn sm ghost" data-act="lrow-up" aria-label="Move up">↑</button><button class="btn sm ghost" data-act="lrow-down" aria-label="Move down">↓</button><button class="btn sm ghost" data-act="lrow-del" aria-label="Remove">✕</button>';
+EM.ACTIONS['list-open'] = el => {
+  const key = el.dataset.key, it = listItems(key);
+  EM.modal(`<h2>${esc(listLabel(key))}</h2><p class="muted small">Type over an item to rename it; the records that have it follow. ↑ ↓ change the order. ✕ removes it (only if nothing uses it).</p>
+    <div id="lrows" class="stack-s" style="margin-top:12px" data-key="${esc(key)}">${it.map((v, i) => listRow(key, v, i)).join('')}</div>
+    <div class="row" style="margin-top:8px"><button class="btn sm" data-act="lrow-add">+ Add</button></div>${errBox('l-err')}
+    <div class="row sticky-actions" style="margin-top:12px"><button class="btn primary" data-act="list-save">Save</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+const renumber = () => document.querySelectorAll('#lrows .lrow').forEach((r, i) => { r.firstElementChild.textContent = i + 1; });
+EM.ACTIONS['lrow-add'] = () => { const box = qs('#lrows'); box.insertAdjacentHTML('beforeend', listRow(box.dataset.key, null, box.children.length)); box.lastElementChild.querySelector('input').focus(); };
+EM.ACTIONS['lrow-del'] = el => { el.closest('.lrow').remove(); renumber(); };
+EM.ACTIONS['lrow-up'] = el => { const r = el.closest('.lrow'); if (r.previousElementSibling) r.parentNode.insertBefore(r, r.previousElementSibling); renumber(); };
+EM.ACTIONS['lrow-down'] = el => { const r = el.closest('.lrow'); if (r.nextElementSibling) r.parentNode.insertBefore(r.nextElementSibling, r); renumber(); };
+EM.ACTIONS['list-save'] = async el => {
+  const box = qs('#lrows'), key = box.dataset.key;
+  const items = [...box.querySelectorAll('.lrow')].map(r => ({ from: r.dataset.from || null, to: r.querySelector('[data-l="to"]').value.trim(), city: r.querySelector('[data-l="to"]').value.trim(), region: (r.querySelector('[data-l="region"]') || {}).value })).filter(i => i.to);
   busy(el, true);
-  try { const r = await API('POST', '/api/lists', b); D.lists = r.lists; busy(el, false); EM.toast('Lists saved.'); EM.rerender(); } catch (x) { busy(el, false); showErr('ls-err', x.message); }
+  try {
+    const r = await API('POST', '/api/lists/' + encodeURIComponent(key), { items });
+    D.lists = r.lists; EM.closeModal(); EM.toast(`<b>${esc(listLabel(key))} saved</b>${r.renamed ? `<ul><li>${r.renamed} renamed, ${r.records} record${r.records === 1 ? '' : 's'} updated</li></ul>` : ''}`);
+    if (r.records) { const fresh = await API('GET', '/api/bootstrap'); window.EGOLIVE.refresh(fresh); } else EM.rerender();
+  } catch (x) { busy(el, false); showErr('l-err', x.message); }
 };
 
 /* ---------------------------------------------------------------- my account */
