@@ -40,7 +40,7 @@ Object.assign(ICON, {
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
 });
-EM.topExtras = () => (D.user.division === 'both' ? `<div class="seg divsw" role="tablist" aria-label="Division">${[['both', 'Both'], ['wholesale', 'Wholesale · EGO'], ['retail', 'Retail · Big E']].map(([k, l]) => `<button role="tab" aria-selected="${EM.div === k}" class="${EM.div === k ? 'on' : ''}" data-act="div" data-d="${k}">${l}</button>`).join('')}</div>` : '')
+EM.topExtras = () => bellHtml() + (D.user.division === 'both' ? `<div class="seg divsw" role="tablist" aria-label="Division">${[['both', 'Both'], ['wholesale', 'Wholesale · EGO'], ['retail', 'Retail · Big E']].map(([k, l]) => `<button role="tab" aria-selected="${EM.div === k}" class="${EM.div === k ? 'on' : ''}" data-act="div" data-d="${k}">${l}</button>`).join('')}</div>` : '')
   + '<button class="btn sm ghost" data-act="sign-out">Sign out</button>';
 EM.ACTIONS.div = el => { EM.div = el.dataset.d; EM.rerender(); };
 EM.ACTIONS['sign-out'] = () => window.EGOAPI.signOut();
@@ -1297,6 +1297,10 @@ EM.ACTIONS['rules-open'] = () => {
 EM.ACTIONS['p2t-add'] = () => qs('#p2t').insertAdjacentHTML('beforeend', '<div class="row p2t"><input class="input" data-t="name" style="max-width:180px" aria-label="Level name"><input class="input" type="number" min="0" max="100" data-t="min" style="max-width:120px" aria-label="From score"><button class="btn sm ghost" data-act="p2t-del">✕</button></div>');
 EM.ACTIONS['p2t-del'] = el => el.closest('.p2t').remove();
 EM.ACTIONS['rules-save'] = async el => {
+  if (!el.dataset.sure) {   /* what a change of the numbers affects, before it is saved */
+    const err = qs('#ru-err'); if (err) err.innerHTML = '<div class="callout"><b>Before saving:</b> new numbers apply from the next sale, approval or score. Saved sales keep the numbers they were made with; pending approvals are decided against the new limits; every Priority 200 dealer is re-scored. Press Save again to confirm.</div>';
+    el.dataset.sure = '1'; el.textContent = 'Save, I understand'; return;
+  }
   const v = id => Number(qs('#ru-' + id).value), R = D.lists.rules;
   const rules = { ...R, gst_pct: v('gst'), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'),
     approvals: Object.fromEntries(Object.keys(R.approvals).map(k => [k, { levels: Object.fromEntries([...document.querySelectorAll(`[data-ap="${k}"]`)].map(i => [i.dataset.lv, Number(i.value)])) }])),
@@ -1658,13 +1662,76 @@ EM.ACTIONS['lrow-down'] = el => { const r = el.closest('.lrow'); if (r.nextEleme
 EM.ACTIONS['list-save'] = async el => {
   const box = qs('#lrows'), key = box.dataset.key;
   const items = [...box.querySelectorAll('.lrow')].map(r => ({ from: r.dataset.from || null, to: r.querySelector('[data-l="to"]').value.trim(), city: r.querySelector('[data-l="to"]').value.trim(), region: (r.querySelector('[data-l="region"]') || {}).value, locked: r.classList.contains('is-locked') })).filter(i => i.to);
+  const before = listItems(key).map(v => key === 'cities' ? v.city : v);
+  const changes = items.some(i => i.from && i.from !== i.to) || before.some(v => !items.some(i => i.from === v));
+  if (!changes) return saveListNow(el, key, items, true);
+  /* a rename or a removal touches other things: show what, and ask before anything is saved */
+  busy(el, true);
+  let imp;
+  try { imp = (await API('POST', '/api/lists/' + encodeURIComponent(key), { items, dry: true })).impact; } catch (x) { busy(el, false); return showErr('l-err', x.message); }
+  EM._pendingList = { key, items };
+  const T = { opportunities: 'opportunities', clients: 'dealers, architects and people', contacts: 'people in teams', orders: 'fulfilments', production_orders: 'production orders', sites: 'installation sites', complaints: 'complaints', snags: 'snags', collections: 'collections', products: 'designs' };
+  const rec = r => Object.entries(r).map(([t, n]) => `${n} ${T[t] || t}`).join(', ') || 'no saved record';
+  EM.modal(`<h2>Before saving: what this change touches</h2><p class="muted small">${esc(listLabel(key))}</p>
+    <div class="stack-s" style="margin-top:12px" data-impact>
+      ${imp.renames.map(r => `<div class="callout"><b>"${esc(r.from)}" becomes "${esc(r.to)}"</b><br><span class="small">Saved records with it: ${esc(rec(r.records))}.${r.role ? ' It runs the processing; the processing follows the new name.' : ''}</span></div>`).join('')}
+      ${imp.removes.map(r => `<div class="callout warn"><b>"${esc(r.value)}" is removed</b><br><span class="small">${Object.keys(r.records).length ? `Still used by ${esc(rec(r.records))}: it will be refused.` : 'Nothing uses it.'}</span></div>`).join('')}
+      ${imp.board ? `<p class="small"><b>Screens:</b> ${esc(imp.board)}.</p>` : ''}
+      ${imp.files.length ? `<p class="small"><b>Excel files:</b> ${imp.files.map(esc).join('; ')}. Downloads from now on carry the new list; a file already filled with the old name is refused for that column until it is re-typed.</p>` : ''}
+      <p class="small"><b>Automations:</b> ${esc(imp.automations)}</p></div>
+    ${errBox('li-err')}
+    <div class="row sticky-actions" style="margin-top:12px;flex-wrap:wrap">${imp.renames.length ? `<button class="btn primary" data-act="list-go" data-prop="1">Change them too</button><button class="btn" data-act="list-go" data-prop="0">Only here, I will change the rest by hand</button>` : `<button class="btn primary" data-act="list-go" data-prop="1">Save</button>`}<button class="btn ghost" data-act="list-back">Back</button></div>`);
+};
+EM.ACTIONS['list-go'] = el => { const P = EM._pendingList; if (P) saveListNow(el, P.key, P.items, el.dataset.prop === '1', 'li-err'); };
+EM.ACTIONS['list-back'] = () => { const P = EM._pendingList; if (P) { EM.ACTIONS['list-open']({ dataset: { key: P.key } }); } };
+async function saveListNow(el, key, items, propagate, errId = 'l-err') {
   busy(el, true);
   try {
-    const r = await API('POST', '/api/lists/' + encodeURIComponent(key), { items });
-    D.lists = r.lists; EM.closeModal(); EM.toast(`<b>${esc(listLabel(key))} saved</b>${r.renamed ? `<ul><li>${r.renamed} renamed, ${r.records} record${r.records === 1 ? '' : 's'} updated</li></ul>` : ''}`);
+    const r = await API('POST', '/api/lists/' + encodeURIComponent(key), { items, propagate });
+    D.lists = r.lists; EM.closeModal(); EM._pendingList = null;
+    EM.toast(`<b>${esc(listLabel(key))} saved</b>${r.renamed ? `<ul><li>${propagate ? `${r.renamed} renamed, ${r.records} record${r.records === 1 ? '' : 's'} changed with it` : `${r.renamed} renamed here only; the records are in the bell to change by hand`}</li></ul>` : ''}`);
     if (r.records) { const fresh = await API('GET', '/api/bootstrap'); window.EGOLIVE.refresh(fresh); } else EM.rerender();
-  } catch (x) { busy(el, false); showErr('l-err', x.message); }
-};
+    loadNotifs();
+  } catch (x) { busy(el, false); showErr(errId, x.message); }
+}
+
+/* ---------------------------------------------------------------- notifications: the bell
+   Internal: the system end to end (added, changed with impact, failing, waiting, low, overdue).
+   External: anything arriving from outside (leads, WhatsApp, email, Tally). Heads-ups that are
+   true right now come with every load; recorded ones are unread until marked read. */
+EM.notif = EM.notif || { live: [], internal: [], external: [], sources: [], seen_at: '' };
+const unreadN = () => { const N = EM.notif; return N.live.length + [...N.internal, ...N.external].filter(n => n.created_at > (N.seen_at || '')).length; };
+const bellHtml = () => { const n = unreadN(); return `<button class="btn sm ghost bell" data-act="notif-open" aria-label="Notifications${n ? `, ${n} need attention` : ''}" title="Notifications">🔔${n ? `<i class="nbadge" data-bell-n>${n}</i>` : '<i class="nbadge" data-bell-n hidden></i>'}</button>`; };
+async function loadNotifs() {
+  try { EM.notif = await API('GET', '/api/notifications'); } catch (x) { return; }
+  const b = qs('[data-bell-n]'), n = unreadN();
+  if (b) { b.textContent = n; b.hidden = !n; }
+  if (location.hash.startsWith('#/notifications')) EM.rerender();
+}
+const LV = { action: ['Needs you', 'warn'], warn: ['Heads-up', 'warn'], error: ['Not working', 'bad'], info: ['Done', 'info'] };
+const notifRow = (n, isNew) => `<a class="card stack-s" style="text-decoration:none${isNew ? ';border-color:var(--ge-primary)' : ''}" href="${esc(n.link || '#/notifications')}" data-notif><div class="row between"><b>${esc(n.title)}</b><span class="badge ${LV[n.level][1]}">${LV[n.level][0]}</span></div>${n.body ? `<span class="small">${esc(n.body)}</span>` : ''}<span class="small muted">${n.created_at ? ds(n.created_at.slice(0, 10)) + ' ' + n.created_at.slice(11, 16) + (n.by_name ? ' · ' + esc(n.by_name) : '') : 'Right now'}${isNew ? ' · new' : ''}</span></a>`;
+function notifBody(tab) {
+  const N = EM.notif, seen = N.seen_at || '';
+  if (tab === 'external') return `<p class="small muted">Messages and leads that arrive from outside EGO Master. Nothing is connected yet, so nothing arrives here yet.</p>${N.external.map(n => notifRow(n, n.created_at > seen)).join('')}${table(['Source', 'Status'], N.sources.map(([a, b]) => [esc(a), `<span class="badge warn">${esc(b)}</span>`]))}`;
+  return `${N.live.length ? `<h4>Right now</h4><div class="stack-s">${N.live.map(n => notifRow(n, false)).join('')}</div>` : ''}<h4>Recorded</h4><div class="stack-s">${N.internal.length ? N.internal.map(n => notifRow(n, n.created_at > seen)).join('') : '<p class="small muted">Nothing yet.</p>'}</div>`;
+}
+const notifTabs = tab => { const N = EM.notif, ni = N.live.length + N.internal.filter(n => n.created_at > (N.seen_at || '')).length, ne = N.external.filter(n => n.created_at > (N.seen_at || '')).length;
+  return `<div class="row" role="tablist">${[['internal', 'Internal', ni], ['external', 'External', ne]].map(([k, l, c]) => `<button class="btn sm ${k === tab ? 'primary' : ''}" role="tab" aria-selected="${k === tab}" data-act="notif-tab" data-tab="${k}">${l}${c ? ` (${c})` : ''}</button>`).join('')}</div>`; };
+EM.notifTab = 'internal';
+EM.ACTIONS['notif-open'] = () => { EM.modal(`<div class="row between"><h2>Notifications</h2><a class="btn sm" href="#/notifications" data-act="close-modal">Open the full page</a></div>${notifTabs(EM.notifTab)}<div class="stack-s" style="margin-top:12px" id="notif-list">${notifBody(EM.notifTab)}</div>
+  <div class="row sticky-actions" style="margin-top:12px"><button class="btn" data-act="notif-seen">Mark all as read</button><button class="btn ghost" data-act="close-modal">Close</button></div>`); loadNotifs(); };
+EM.ACTIONS['notif-tab'] = el => { EM.notifTab = el.dataset.tab; if (location.hash.startsWith('#/notifications')) return EM.rerender(); EM.ACTIONS['notif-open'](); };
+EM.ACTIONS['notif-seen'] = async () => { try { await API('POST', '/api/notifications/seen'); } catch (x) { } await loadNotifs(); const l = qs('#notif-list'); if (l) l.innerHTML = notifBody(EM.notifTab); EM.rerender(); };
+EM.VIEWS.notifications = () => `<div class="stack"><div class="row between"><div class="stack-s"><h1>Notifications</h1><p class="muted">Internal: the system end to end. External: what arrives from outside.</p></div><button class="btn" data-act="notif-seen">Mark all as read</button></div>${notifTabs(EM.notifTab)}<div class="stack-s">${notifBody(EM.notifTab)}</div></div>`;
+EM.VIEWS.notifications.title = () => 'Notifications';
+EM.VIEWS.notifications.tab = 'home';
+/* a screen that fails in someone's browser is reported to the Internal feed */
+let lastReport = 0;
+window.EGOREPORT = (err, where) => { if (Date.now() - lastReport < 10000) return; lastReport = Date.now(); API('POST', '/api/notifications/error', { message: String((err && err.message) || err).slice(0, 300), where: where || location.hash }).catch(() => {}); };
+window.addEventListener('error', e => window.EGOREPORT(e.error || e.message));
+window.addEventListener('unhandledrejection', e => window.EGOREPORT(e.reason));
+setTimeout(loadNotifs, 300);
+setInterval(loadNotifs, 60000);
 
 /* ---------------------------------------------------------------- my account */
 EM.VIEWS.account = () => `<div class="stack" style="max-width:560px"><div class="stack-s"><h1>My account</h1><p class="muted">${esc(me().name)} · ${esc(me().login)} · ${esc(acc().name)}</p></div>

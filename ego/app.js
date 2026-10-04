@@ -99,7 +99,7 @@ const EM = {
     let body;
     if (view.div && !canDiv(view.div)) body = EM.noAccess(`This screen belongs to ${DIVS[view.div].name} (${DIVS[view.div].co}).`);
     else if (!allowedTab(tab)) body = EM.noAccess('This area is not part of your role.');
-    else { try { body = view(arg); } catch (err) { console.error(err); body = `<div class="stack"><h1>This screen hit a problem</h1><p class="muted">${esc(err.message)}</p><a class="btn" href="#/home">Home</a></div>`; } }
+    else { try { body = view(arg); } catch (err) { console.error(err); if (window.EGOREPORT) window.EGOREPORT(err, r); body = `<div class="stack"><h1>This screen hit a problem</h1><p class="muted">${esc(err.message)}</p><a class="btn" href="#/home">Home</a></div>`; } }
     const nav = EM.navTabs();
     const link = ([k, l]) => `<a href="#/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`;
     const items = [...nav.main, ...nav.shared];
