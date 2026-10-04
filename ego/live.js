@@ -60,6 +60,15 @@ const inDiv = r => EM.div === 'both' || r.division === 'both' || r.division === 
 const showFields = list => list.filter(f => D.access.prices || f.type !== 'money');
 const upsertLocal = (arr, rec) => { const i = arr.findIndex(x => x.id === rec.id); if (i >= 0) arr[i] = rec; else arr.push(rec); return rec; };
 const ctxLocal = () => ({ lists: D.lists, staffIds: new Set(D.staff.filter(s => s.active).map(s => s.id)) });
+/* Every stage set shows as a board with ALL its stages, in the order set in Lists & stages,
+   whether or not anything is in them yet. A stage since removed from the list still shows
+   while records sit in it, so nothing disappears. */
+function stageBoard(stages, items, stageOf, card, laneExtra) {
+  const all = [...stages];
+  for (const x of items) if (stageOf(x) && !all.includes(stageOf(x))) all.push(stageOf(x));
+  return `<div class="board" data-board>${all.map(sname => { const ls = items.filter(x => stageOf(x) === sname);
+    return `<div class="lane" data-stage="${esc(sname)}"><h4><span>${esc(sname)}</span><span class="muted">${ls.length}</span></h4>${laneExtra ? laneExtra(ls) : ''}${ls.map(card).join('') || '<div class="small muted">Nothing here</div>'}</div>`; }).join('')}</div>`;
+}
 const empty = (title, body, actions = '') => `<div class="card empty stack-s"><h3>${title}</h3><p class="muted">${body}</p>${actions ? `<div class="row">${actions}</div>` : ''}</div>`;
 const tile = (k, v, sub, href) => `<${href ? `a href="${href}"` : 'div'} class="card stat ${href ? 'tile' : ''}" style="text-decoration:none"><div class="kicker">${k}</div><div class="num">${v}</div>${sub ? `<span class="small muted">${sub}</span>` : ''}</${href ? 'a' : 'div'}>`;
 const busy = (el, on) => { if (el) { el.disabled = on; if (on) el.dataset.label = el.textContent, el.textContent = 'Saving…'; else if (el.dataset.label) el.textContent = el.dataset.label; } };
@@ -589,8 +598,7 @@ EM.VIEWS.opps = arg => {
   if (!ps.length) return EM.noAccess('No pipeline is open to your role.');
   const p = ps.includes(arg) ? arg : ps[0];
   const all = D.opportunities.filter(o => o.pipeline === p && (!EM.oppMine || o.owner_id === me().id));
-  const stages = [...(D.lists.stages[p] || [])];
-  for (const o of all) if (!stages.includes(o.stage)) stages.push(o.stage);   // a stage the Owner has since removed still shows
+  const stages = D.lists.stages[p] || [];
   const t = today();
   const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>
     <div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !['Won', 'Lost'].includes(o.stage) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}</div>`;
@@ -598,8 +606,8 @@ EM.VIEWS.opps = arg => {
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
       <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
     ${subtabs('#/opps', p, ps.map(k => [k, `${PIPELINES[k].plural} <span class="muted">${D.opportunities.filter(o => o.pipeline === k).length}</span>`]))}
-    ${all.length ? `<div class="board">${stages.map(s => { const ls = all.filter(o => o.stage === s); return `<div class="lane"><h4><span>${esc(s)}</span><span class="muted">${ls.length}</span></h4>${D.access.prices && ls.some(o => o.value) ? `<div class="small muted">${inr(ls.reduce((a, o) => a + (Number(o.value) || 0), 0))}</div>` : ''}${ls.map(card).join('')}</div>`; }).join('')}</div>`
-      : empty(`No ${esc(PIPELINES[p].plural.toLowerCase())} yet`, 'Add one from here, or from a dealer, an architect firm or a person.', `<button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button>`)}</div>`;
+    ${all.length ? '' : `<p class="small muted">No ${esc(PIPELINES[p].plural.toLowerCase())} yet. Add one from here, or from a dealer, an architect firm or a person. The stages below come from Lists & stages.</p>`}
+    ${stageBoard(stages, all, o => o.stage, card, ls => D.access.prices && ls.some(o => o.value) ? `<div class="small muted">${inr(ls.reduce((a, o) => a + (Number(o.value) || 0), 0))}</div>` : '')}</div>`;
 };
 EM.VIEWS.opps.title = () => 'Opportunities';
 document.addEventListener('change', e => { if (e.target.id === 'opp-mine') { EM.oppMine = e.target.checked; EM.rerender(); } });
@@ -975,22 +983,23 @@ EM.VIEWS.orders = arg => {
   let body;
   if (tab === 'orders') {
     const rows = O.orders.filter(o => !EM.ordQ || `${o.ref} ${clientName(o.client_id)}`.toLowerCase().includes(EM.ordQ.toLowerCase()));
-    body = `${searchOrd()}${rows.length ? table(['Order', 'Dealer', 'Designs', 'Boxes', ...(D.access.prices ? ['Value'] : []), 'Stage', 'Fulfilment', ''], rows.map(o => ({ href: '#/order/' + o.id,
+    body = `${stageBoard(OS_('order_stages'), rows, o => o.stage, ordCard)}${searchOrd()}${rows.length ? table(['Order', 'Dealer', 'Designs', 'Boxes', ...(D.access.prices ? ['Value'] : []), 'Stage', 'Fulfilment', ''], rows.map(o => ({ href: '#/order/' + o.id,
       cells: [`<b>${esc(o.ref)}</b><div class="small muted">${ds(o.created_at.slice(0, 10))}</div>`, esc(clientName(o.client_id)), lineSum(o.id).length, num(lineSum(o.id).reduce((a, l) => a + l.boxes, 0)), ...(D.access.prices ? [inr0(o.total)] : []),
         stageBadge2(o.stage), o.ful_stage ? `<span class="badge info">${esc(o.ful_stage)}</span>` : '<span class="muted">Not started</span>', pendingFor('order', o.id).length ? '<span class="badge warn">Waiting for approval</span>' : o.credit_hold ? '<span class="badge bad">Credit hold</span>' : ''] })))
       : empty('No orders yet', 'Take an order for a dealer: the designs, the boxes and the rate. A won wholesale opportunity can become an order too.', '<button class="btn primary" data-act="order-add">+ New order</button>')}`;
   } else if (tab === 'fulfilment') {
     const FS = OS_('fulfilment_stages'), list = O.orders.filter(o => o.ful_stage);
-    body = list.length ? `<div class="board">${FS.map(s => { const ls = list.filter(o => o.ful_stage === s); return `<div class="lane"><h4><span>${esc(s)}</span><span class="muted">${ls.length}</span></h4>${ls.map(o => `<a class="card stack-s" style="text-decoration:none" href="#/order/${o.id}"><b>${esc(o.ref)}</b><span class="small">${esc(clientName(o.client_id))}</span><span class="small muted">${num(lineSum(o.id).reduce((a, l) => a + l.boxes, 0))} boxes</span></a>`).join('')}</div>`; }).join('')}</div>`
-      : empty('Nothing in fulfilment yet', `An order enters fulfilment when it reaches ${esc(lastOf(OS_('order_stages')))}.`);
+    body = `${list.length ? '' : `<p class="small muted">Nothing in fulfilment yet. An order enters it when it reaches ${esc(lastOf(OS_('order_stages')))}.</p>`}${stageBoard(FS, list, o => o.ful_stage, ordCard)}`;
   } else {
-    body = O.production.length ? table(['Production order', 'Design', 'Boxes', 'Stage', 'Expected', 'Waiting orders', 'Warehouse'], O.production.map(p => ({ href: '#/po/' + p.id,
+    body = stageBoard(OS_('production_stages'), O.production, p => p.stage, p => `<a class="card stack-s" style="text-decoration:none" href="#/po/${p.id}"><b>${esc(p.ref)}</b><span class="small">${esc(prodName(p.product_id))}</span><span class="small muted">${num(p.boxes)} boxes${p.eta ? ' · ' + ds(p.eta) : ''}</span></a>`)
+      + (O.production.length ? table(['Production order', 'Design', 'Boxes', 'Stage', 'Expected', 'Waiting orders', 'Warehouse'], O.production.map(p => ({ href: '#/po/' + p.id,
       cells: [`<b>${esc(p.ref)}</b>${p.container ? `<div class="small muted">${esc(p.container)}</div>` : ''}`, esc(prodName(p.product_id)), num(p.boxes), `<span class="badge info">${esc(p.stage)}</span>`, p.eta ? ds(p.eta) : '', O.waits.filter(w => w.po_id === p.id).length, esc((INVD().warehouses.find(w => w.id === p.warehouse_id) || {}).name || '')] })))
-      : empty('No production orders', 'A production order is made from an order whose stock is short, or placed directly.', canStockUI() ? '<button class="btn primary" data-act="po-add">+ Production order</button>' : '');
+      : `<p class="small muted">No production orders yet. One is made from an order whose stock is short, or placed directly.</p>`);
   }
   return `<div class="stack">${head}${body}</div>`;
 };
 EM.VIEWS.orders.title = () => 'Orders';
+const ordCard = o => `<a class="card stack-s" style="text-decoration:none" href="#/order/${o.id}"><b>${esc(o.ref)}</b><span class="small">${esc(clientName(o.client_id))}</span><span class="small muted">${num(OPSD().lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0))} boxes</span></a>`;
 const stageBadge2 = s => `<span class="badge ${s === lastOf(OS_('order_stages')) ? 'ok' : 'info'}">${esc(s)}</span>`;
 const searchOrd = () => `<label class="field" style="max-width:360px"><span class="small muted">Search</span><input class="input" id="ordq" value="${esc(EM.ordQ)}" placeholder="Order number or dealer"></label>`;
 document.addEventListener('input', e => { if (e.target.id === 'ordq') { EM.ordQ = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#ordq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
@@ -1121,8 +1130,9 @@ EM.ACTIONS['po-save'] = async el => { const r = await opsAct(el, 'production', {
 EM.VIEWS.installation = () => {
   const S = OPSD().sites.filter(inDiv), SS = OS_('site_steps');
   return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">Big E · from survey to handover</div><h1>Installation</h1><p class="muted">Each site moves through the installation steps. Some steps check before they let you on: a crew, the readiness checklist, no open snag, the client's sign-off.</p></div><button class="btn primary" data-act="site-add">+ Site</button></div>
+    ${stageBoard(SS, S, x => x.step, x => `<a class="card stack-s" style="text-decoration:none" href="#/site/${x.id}"><b>${esc(x.ref)}</b><span class="small">${esc(x.name)}</span><span class="small muted">${esc(clientName(x.client_id))}</span></a>`)}
     ${S.length ? table(['Site', 'Client', 'Area', 'Step', 'Crew', 'Open snags', 'Planned start'], S.map(x => ({ href: '#/site/' + x.id, cells: [`<b>${esc(x.ref)}</b> ${esc(x.name)}`, esc(clientName(x.client_id)), x.sqft ? num(x.sqft) + ' sq ft' : '', `<span class="badge info">${esc(x.step)}</span> <span class="small muted">${SS.indexOf(x.step) + 1}/${SS.length}</span>`, esc(x.crew || ''), OPSD().snags.filter(n => n.site_id === x.id && n.status === 'Open').length || '', x.planned_start ? ds(x.planned_start) : ''] })))
-      : empty('No installation sites yet', 'Add a site for a client: a flat, a floor, a project. A won retail project can become a site too.', '<button class="btn primary" data-act="site-add">+ Site</button>')}</div>`;
+      : '<p class="small muted">No installation sites yet. Add a site for a client: a flat, a floor, a project. A won retail project can become a site too.</p>'}</div>`;
 };
 EM.VIEWS.installation.title = () => 'Installation';
 EM.ACTIONS['site-add'] = el => {
@@ -1172,9 +1182,10 @@ EM.ACTIONS['snag-close-go'] = el => opsAct(el, `snags/${el.dataset.id}/close`, {
 EM.VIEWS.complaints = arg => {
   const CS = OS_('complaint_statuses'), all = OPSD().complaints.filter(inDiv), tab = CS.includes(arg) ? arg : 'all', rows = all.filter(c => tab === 'all' || c.status === tab);
   return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="muted">Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
+    ${stageBoard(CS, all, c => c.status, c => `<a class="card stack-s" style="text-decoration:none" href="#/complaint/${c.id}"><b>${esc(c.ref)}</b><span class="small">${esc(c.type)}</span><span class="small muted">${esc(clientName(c.client_id))}</span></a>`)}
     ${subtabs('#/complaints', tab, [['all', `All <span class="muted">${all.length}</span>`], ...CS.map(s => [s, `${esc(s)} <span class="muted">${all.filter(c => c.status === s).length}</span>`])])}
     ${rows.length ? table(['Complaint', 'From', 'Kind', 'Severity', 'Status', 'Handled by', 'Logged'], rows.map(c => ({ href: '#/complaint/' + c.id, cells: [`<b>${esc(c.ref)}</b>`, esc(clientName(c.client_id)), esc(c.type), esc(c.severity), `<span class="badge ${c.status === lastOf(CS) ? 'ok' : 'warn'}">${esc(c.status)}</span>`, esc(staffName(c.owner_id)), ds(c.created_at.slice(0, 10))] })))
-      : empty('No complaints here', 'Log a complaint from a dealer, an architect or a client.', '<button class="btn primary" data-act="cmp-add">+ Complaint</button>')}</div>`;
+      : '<p class="small muted">No complaints here.</p>'}</div>`;
 };
 EM.VIEWS.complaints.title = () => 'Complaints';
 EM.ACTIONS['cmp-add'] = el => {

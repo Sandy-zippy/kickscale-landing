@@ -40,3 +40,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .more { border: 1px dashed var(--ge-border); border-radius: var(--r); padding: 10px 14px; }
 .more > summary { cursor: pointer; font-weight: 600; }
 .more[open] > summary { margin-bottom: 10px; }
+
+/* a stage board scrolls inside itself, never the page */
+.board { max-width: 100%; min-width: 0; }
+.stack > .board, .stack-s > .board { width: 100%; }
