@@ -43,7 +43,7 @@ function d(s) { if (!s) return 'to be set'; var p = String(s).slice(0, 10).split
 function row(l, rr, cls) { return '<div class="row ' + (cls || '') + '"><div class="l">' + l + '</div><div class="r">' + rr + '</div></div>'; }
 function draw(x, at) {
   var m = x.money || {}, h = '<div class="top"><img src="assets/logo.png" alt="Saasya Men"><div><b>SAASYA MEN</b><span>Your order, as it stands right now</span></div></div>';
-  h += '<h1>' + e(x.client) + ' <i>' + e(x.order) + '</i></h1><div class="sub">' + e(x.type) + (x.occasion ? ' · ' + e(x.occasion) : '') + ' · styled by ' + e(x.stylist) + '</div>';
+  h += '<h1>' + e(x.client) + ' <i>' + e(x.order) + '</i></h1><div class="sub">' + [x.type, x.occasion, 'styled by ' + x.stylist].filter(Boolean).map(e).join(' · ') + '</div>';
   h += '<div class="dates"><div><label>Event</label><b>' + d(x.event_date) + '</b></div><div><label>Trial</label><b>' + d(x.trial) + '</b></div><div><label>Delivery</label><b>' + d(x.delivery) + '</b></div><div><label>Where it is</label><b>' + e(x.stage) + '</b></div></div>';
   h += '<h2>Your garments</h2>';
   (x.garments || []).forEach(function (g) { h += row('<b>' + e(g.kind) + '</b><div class="sub">' + e(g.fabric) + '</div><span class="pill">' + e(g.stage) + '</span>', r(g.value)); });
