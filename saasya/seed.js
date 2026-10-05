@@ -93,7 +93,7 @@ function SEED() {
     ],
 
     orders: [
-      { id:'O-1041', client:'C-01', family:'F-01', vertical:'in-house', type:'Our own bespoke', stage:'In operations',
+      { id:'O-1041', ops:'p-deb', client:'C-01', family:'F-01', vertical:'in-house', type:'Our own bespoke', stage:'In operations',
         value:485000, cuts:[{ label:'Discount', amount:15000 }],
         source:'Referral', salesperson:'p-rohit', stylist:'p-farhan',
         booked:'2026-09-12', advance_at:'2026-09-18',
@@ -103,7 +103,7 @@ function SEED() {
                  {stage:'Quotation provided',by:'p-rohit',at:'2026-09-16T10:10'},{stage:'Advance taken',by:'p-rohit',at:'2026-09-18T13:00'},
                  {stage:'Measurements',by:'p-farhan',at:'2026-09-19T17:05'},{stage:'In operations',by:'p-deb',at:'2026-09-20T18:30'}] },
 
-      { id:'O-1042', client:'C-02', family:'F-01', vertical:'in-house', type:'Our own bespoke', stage:'In operations',
+      { id:'O-1042', ops:'p-deb', client:'C-02', family:'F-01', vertical:'in-house', type:'Our own bespoke', stage:'In operations',
         value:135000, cuts:[],
         source:'Existing client', salesperson:'p-rohit', stylist:'p-farhan',
         booked:'2026-09-28', advance_at:'2026-10-01',

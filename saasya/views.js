@@ -453,7 +453,7 @@
   };
 
   A.newMeas = function (id) {
-    var p = id.split('|'), cid = p[0], kind = p[1] || GE.KINDS[0];
+    var p = id.split('|'), cid = p[0], kind = p[1] || measKindFor(cid);
     var last = by(D().meas, 'client', cid).filter(function (m) { return m.kind === kind; })
                  .sort(function (a, b) { return a.at < b.at ? 1 : -1; })[0];
     var h = '<h2>A new set</h2><p class="sub">' + esc(cname(cid)) + '. The last set stays where it is.</p>' +
@@ -462,12 +462,22 @@
       '</select></div><div class="f"><label>Why it is being taken again</label><select id="msWhy">' +
       GE.MEAS_WHY.map(function (w) { return '<option' + (last ? '' : (w === 'First set' ? ' selected' : '')) + '>' + w + '</option>'; }).join('') +
       '</select></div></div>' +
-      '<div class="two"><div class="f"><label>Date</label><input type="date" id="msAt" value="' + GE.TODAY + '"></div>' +
+      '<div class="two"><div class="f"><label>Date</label><input type="date" id="msAt" value="' + GE.localToday() + '"></div>' +
       '<div class="f"><label>Unit</label><select id="msUnit"><option>inches</option><option>centimetres</option></select></div></div>' +
       '<div class="card pad" id="msFields">' + measFields(kind, last) + '</div>' +
       '<button class="btn gold" data-act="saveMeas" data-id="' + cid + '">Save the set</button>';
     GE.modal(h);
   };
+  /* the garment a new set is for, when nobody said: his first live garment with no set, else his
+     first live garment, else the first kind. A kurta order opens on Kurta. */
+  function measKindFor(cid) {
+    var mine = D().orders.filter(function (o) { return o.client === cid && o.stage !== 'Delivered' && o.stage !== 'Lost'; });
+    var kinds = [];
+    mine.forEach(function (o) { garmentsOf(o.id).forEach(function (g) { if (g.make === 'custom' && kinds.indexOf(g.kind) < 0) kinds.push(g.kind); }); });
+    var has = function (k) { return by(D().meas, 'client', cid).some(function (m) { return m.kind === k; }); };
+    return kinds.filter(function (k) { return !has(k); })[0] || kinds[0] || GE.KINDS[0];
+  }
+  GE.measKindFor = measKindFor;
   function measFields(kind, last) {
     return (GE.MEAS[kind] || []).map(function (f) {
       var v = last && last.vals[f] != null ? last.vals[f] : '';
@@ -747,7 +757,8 @@
                 .sort(function (a, b) { return a.at < b.at ? 1 : -1; })[0];
       h += '<div class="rung"><div class="n">' + (s ? '✓' : '!') + '</div><div><b>' + esc(kind) + '</b>' +
         '<p>' + (s ? 'set of ' + d(s.at) + ', ' + esc(s.why) : '<b>no set. It cannot move on without one.</b>') + '</p></div>' +
-        '<div>' + (s ? '<button class="mini" data-act="openMeas" data-id="' + o.client + '|' + esc(kind) + '">See it</button>' : '') + '</div></div>';
+        '<div>' + (s ? '<button class="mini" data-act="openMeas" data-id="' + o.client + '|' + esc(kind) + '">See it</button>'
+          : '<button class="mini" data-act="newMeas" data-id="' + o.client + '|' + esc(kind) + '">Take the ' + esc(kind.split(' / ')[0].toLowerCase()) + ' set</button>') + '</div></div>';
     });
     if (!Object.keys(used).length) h += '<p class="sub empty">Nothing to measure yet.</p>';
     h += '</div>';
@@ -1034,7 +1045,7 @@
     o[p[1]] = p[1] === 'outfits' ? (Number(el.value) || 0) : el.value; GE.save();
     GE.toast(p[1] === 'event' ? 'Occasion: ' + (el.value || 'not known yet') + '.' : 'Saved.');
   };
-  A.pickOrderStage = function (id, el) { A.setOrderStage(id + '|' + el.value); A.openOrder(id); };
+  A.pickOrderStage = function (id, el) { A.setOrderStage(id + '|' + el.value); GE.save(); A.openOrder(id); };   /* save: the client's link follows at once */
   A.setOrderStage = function (id) {
     var p = id.split('|'), o = one(D().orders, p[0]);
     if (p[1] === 'In operations') {
@@ -1042,7 +1053,7 @@
         return g.make === 'custom' && !by(D().meas, 'client', o.client)
           .filter(function (m) { return m.kind === g.kind; }).length;
       });
-      if (missing.length) { GE.toast('No measurement set for ' + missing[0].kind + '. It cannot move on.'); return; }
+      if (missing.length) { GE.toast(missing[0].kind + ' has no measurement set, so it cannot go to operations. Take the set first: it opens on ' + missing[0].kind + '.'); return; }
     }
     GE.moveOrder(p[0], p[1]);
     A.openOrder(p[0]);
@@ -1236,7 +1247,7 @@
     });
     var gs = all.filter(function (g) {
       var o = one(D().orders, g.order);
-      return GE.matches(q('#/floor'), [g.kind, g.order, cname(o.client), g.stage, pname(g.master),
+      return GE.matches(q('#/floor'), [g.kind, g.order, cname(o.client), g.stage, pname(g.master), pname(o.stylist), o.ops ? pname(o.ops) : '',
         GE.fabricsOf(g).map(function (u) { return fname(u.fabric); }).join(' ')]);
     });
     var h = head('Our operations', 'Every in-house garment, who is holding it and for how long. The stage is the garment’s, not the order’s. A delivered order leaves this floor.');
@@ -1247,32 +1258,35 @@
       kpi(all.filter(function (g) { return g.due && days(GE.TODAY, g.due) < 0; }).length, 'Past their date', '') +
       kpi(all.filter(function (g) { return GE.sittingFor(g) > 7; }).length, 'Sat over a week', 'at one stage') +
       '</div>';
-    h += searchBar('#/floor', 'Search a garment, a client, a master, a fabric', gs.length, all.length);
-    if (GE.can('invoices'))
-      h += '<div class="note">Pending collection shows on this floor so the manager knows before a piece ' +
-           'goes out. A master never sees it.</div>';
-    h += '<div class="card">' + garmentTable(gs, true) + '</div>';
+    h += searchBar('#/floor', 'Search a garment, a client, a stylist, a master, a fabric', gs.length, all.length);
+    h += '<div class="card">' + garmentTable(gs, false, true) + '</div>';
     return h;
   };
 
-  function garmentTable(gs, withPending) {
+  /* floor: the operations dashboard, which names who is on it and every date (5 Oct), no money */
+  function garmentTable(gs, withPending, floor) {
     var showMoney = withPending && GE.can('invoices');
-    var h = '<table><thead><tr><th>Garment</th><th>Order</th><th>Client</th><th>Master</th>' +
-      '<th>Stage</th><th>Sat</th><th>Due</th>' + (showMoney ? '<th class="num">Pending</th>' : '') +
-      '<th></th></tr></thead><tbody>';
+    var h = '<table' + (floor ? ' class="floortab"' : '') + '><thead><tr><th>Garment</th>' + (floor ? '<th>Client · order</th>' : '<th>Order</th><th>Client</th>') + (floor ? '<th>Stylist</th>' : '') + '<th>Master</th>' +
+      (floor ? '<th>Operations</th><th>Stage</th>' : '<th>Stage</th><th>Sat</th>') + (floor ? '<th>Trial</th>' : '') + '<th>Due</th>' + (floor ? '<th>Delivery</th>' : '') +
+      (showMoney ? '<th class="num">Pending</th>' : '') + (floor ? '' : '<th></th>') + '</tr></thead><tbody>';
+    var dd = function (x) { return x ? (floor ? d(x).replace(/ \d\d$/, '') : d(x)) : '—'; };
     gs.slice().sort(function (a, b) { return (a.due || '9') < (b.due || '9') ? -1 : 1; }).forEach(function (g) {
       var o = one(D().orders, g.order);
       h += '<tr class="click" data-act="openGarment" data-id="' + g.id + '">' +
         '<td><b>' + esc(g.kind) + '</b>' + (g.note ? '<div class="sub">' + esc(g.note) + '</div>' : '') + '</td>' +
-        '<td>' + g.order + '</td><td>' + esc(cname(o.client)) + '</td>' +
+        (floor ? '<td>' + esc(cname(o.client)) + '<div class="sub">' + g.order + '</div></td>' : '<td>' + g.order + '</td><td>' + esc(cname(o.client)) + '</td>') +
+        (floor ? '<td>' + esc(pname(o.stylist)) + '</td>' : '') +
         '<td>' + esc(g.master ? pname(g.master) : 'nobody') + '</td>' +
-        '<td>' + stagePill(g.stage) + '</td>' +
-        '<td>' + GE.sittingFor(g) + 'd' + (GE.sittingFor(g) > 7 ? ' ' + pill('held', 'bad') : '') + '</td>' +
-        '<td>' + d(g.due) + (g.due && days(GE.TODAY, g.due) < 0 ? ' ' + pill('late', 'bad') : '') + '</td>' +
+        (floor ? '<td>' + esc(o.ops ? pname(o.ops) : 'nobody') + '</td>' : '') +
+        (floor ? '<td>' + stagePill(g.stage) + '<div class="sub">' + GE.sittingFor(g) + 'd here' + (GE.sittingFor(g) > 7 ? ' ' + pill('held', 'bad') : '') + '</div></td>'
+          : '<td>' + stagePill(g.stage) + '</td><td>' + GE.sittingFor(g) + 'd' + (GE.sittingFor(g) > 7 ? ' ' + pill('held', 'bad') : '') + '</td>') +
+        (floor ? '<td>' + dd(o.trial) + '</td>' : '') +
+        '<td>' + dd(g.due) + (g.due && days(GE.TODAY, g.due) < 0 ? ' ' + pill('late', 'bad') : '') + '</td>' +
+        (floor ? '<td>' + dd(o.delivery) + '</td>' : '') +
         (showMoney ? '<td class="num">' + rupees(Math.max(0, GE.orderMoney(o.id).pending)) + '</td>' : '') +
-        '<td><button class="mini">Open</button></td></tr>';
+        (floor ? '' : '<td><button class="mini">Open</button></td>') + '</tr>';
     });
-    if (!gs.length) h += '<tr><td colspan="9" class="sub">Nothing here.</td></tr>';
+    if (!gs.length) h += '<tr><td colspan="13" class="sub">Nothing here.</td></tr>';
     return h + '</tbody></table>';
   }
 
