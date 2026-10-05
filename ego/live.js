@@ -56,8 +56,16 @@ EM.render = (...a) => {
   hideChangeButtons(qs('#view'));
   if (both && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
+const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
+const NAV_TAIL = ['complaints', 'approvals', 'p200', 'inventory', 'import'];
+// Menu order per view, as Bhargav set it on 5 Oct.
+const NAV_ORDER = {
+  wholesale: ['home', 'people', 'architects', 'dealers', 'opps', 'orders', 'orderbook', ...NAV_TAIL],
+  retail: ['home', 'people', 'architects', 'opps', 'orderbook', 'installation', ...NAV_TAIL],
+  both: ['home', 'people', 'dealers', 'architects', 'orderbook', 'opps', 'orders', 'installation', ...NAV_TAIL],
+};
 EM.navTabs = () => ({
-  main: [['home', 'Home'], ['dealers', 'Dealers'], ['architects', 'Architects'], ['people', 'People'], ['opps', 'Opportunities'], ['orderbook', 'Orders'], ['orders', 'Fulfilment'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel']]
+  main: (NAV_ORDER[EM.div] || NAV_ORDER.both).map(k => [k, NAV_LABEL[k]])
     .filter(([k]) => allowedTab(k) && !(['dealers', 'orders', 'p200'].includes(k) && EM.div === 'retail') && !(k === 'installation' && EM.div === 'wholesale')),
   shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
