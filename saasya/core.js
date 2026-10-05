@@ -70,6 +70,23 @@ var GE = (function () {
   var MEAS_WHY = ['First set','Trial 1','Trial 2','He has lost weight','He has put on weight',
                   'He wants it looser','He wants it slimmer','Master corrected it','Alteration after delivery'];
 
+  /* the occasion, picked not typed (5 Oct). Grouped so the dropdown reads like the calendar of a wedding. */
+  var OCCASIONS = [
+    ['Wedding functions', ['Wedding','Engagement / Sagai','Roka / Tilak','Haldi','Mehendi','Sangeet','Cocktail','Reception','Ashirbad','Aiburobhat','Bou Bhat','Saree ceremony']],
+    ['Festivities', ['Durga Puja','Diwali','Eid','Navratri','Christmas','New Year','Poila Baisakh']],
+    ['Other', ['Anniversary','Birthday','Party','Corporate / formal','Everyday wear','Other']]
+  ];
+  /* the date on the machine, not the sample story's "today": a payment is taken today */
+  function localToday() { var t = new Date(); return new Date(t.getTime() - t.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+  /* the reference on a payment screenshot: a labelled id first (UTR, UPI ref, transaction id,
+     cheque no), else a bare 12-digit UPI number */
+  function extractRef(text) {
+    var t = String(text || '').replace(/[\u2010-\u2015]/g, '-');
+    var lab = /(UTR(?:\s*(?:No|Number))?|UPI\s*(?:Ref(?:erence)?|transaction)\s*(?:No|ID|Number)?|Ref(?:erence)?\s*(?:No|ID|Number)|Transaction\s*(?:ID|No|Number|Reference)|Txn\s*(?:ID|No)|Google\s*transaction\s*ID|Cheque\s*(?:No|Number))\.?\s*[:#-]?\s*([A-Z0-9][A-Z0-9-]{5,30})/i.exec(t);
+    if (lab && /\d/.test(lab[2])) return lab[2].replace(/-+$/, '');
+    var bare = /(?:^|\D)(\d{12})(?!\d)/.exec(t.replace(/(\d)\s(?=\d)/g, '$1'));
+    return bare ? bare[1] : '';
+  }
   var SOURCES = ['Walk-in','Referral','Instagram','WhatsApp enquiry','Meta ad','Google','Wedding planner',
                  'Existing client','Outreach by Mark'];
 
@@ -604,7 +621,7 @@ var GE = (function () {
     SELL: SELL, HOUSE: HOUSE, DESIGNER: DESIGNER, STAGE_MEANS: STAGE_MEANS,
     ORDER_TYPES: ORDER_TYPES,
     KINDS: KINDS, MEAS: MEAS, MEAS_WHY: MEAS_WHY, SOURCES: SOURCES,
-    PAY_METHODS: PAY_METHODS, CUT_LABELS: CUT_LABELS, ADD_LABELS: ADD_LABELS, OUR_DESIGN_TYPES: OUR_DESIGN_TYPES, COST_KINDS: COST_KINDS,
+    PAY_METHODS: PAY_METHODS, OCCASIONS: OCCASIONS, localToday: localToday, extractRef: extractRef, CUT_LABELS: CUT_LABELS, ADD_LABELS: ADD_LABELS, OUR_DESIGN_TYPES: OUR_DESIGN_TYPES, COST_KINDS: COST_KINDS,
     FOLLOW_METHODS: FOLLOW_METHODS, PERIODS: PERIODS, ROLES: ROLES,
     uid: uid, rupees: rupees, lakh: lakh, d: d, dt: dt, days: days, esc: esc,
     sum: sum, by: by, one: one,

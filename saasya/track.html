@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Your Saasya Men order</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#fbf8f2;--ink:#1d1a16;--mut:#6b6257;--gold:#a9835a;--gold-ink:#7a5e41;--line:#e6dccb;--wash:#f1e9dc}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--paper:#12130f;--ink:#efe9df;--mut:#a59c8f;--gold:#b8946a;--gold-ink:#cfae86;--line:#2b2c26;--wash:#1c1d18}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 Inter,Arial,sans-serif}
+.w{max-width:720px;margin:0 auto;padding:28px 16px 60px}
+.top{display:flex;align-items:center;gap:14px;border-bottom:2px solid var(--gold);padding-bottom:16px}
+.top img{width:56px;height:56px;object-fit:contain;background:#1d1a16;border-radius:10px;padding:5px}
+.top b{display:block;letter-spacing:.18em;font-size:17px}.top span{color:var(--mut);font-size:13px}
+h1{font:400 34px/1.15 'Instrument Serif',serif;margin:22px 0 4px}h1 i{color:var(--gold-ink)}
+.sub{color:var(--mut);font-size:13px}
+.dates{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px 0}
+.dates div{background:var(--wash);border-radius:10px;padding:10px 12px}
+.dates label,h2{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-ink);font-weight:500}
+.dates b{font-weight:500}
+h2{margin:26px 0 8px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row .l{min-width:0}.row .r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:12px;border:1px solid var(--gold);color:var(--gold-ink);border-radius:999px;padding:1px 9px;margin-top:3px}
+.tot{font-weight:600}.pend{font-size:19px;font-weight:600;border-bottom:0}
+.foot{margin-top:26px;color:var(--mut);font-size:12px}
+.err{margin-top:40px;text-align:center;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="w" id="app"><p class="err">Loading your order…</p></div>
+<script>
+/* The client's live order. Reads the snapshot the showroom keeps up to date; everything is escaped. */
+var API = 'https://saasya-share.zippyscale-cockpit-server.workers.dev/o/';
+var T = location.hash.replace(/^#/, '');
+var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function e(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
+function r(n) { return '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN'); }
+function d(s) { if (!s) return 'to be set'; var p = String(s).slice(0, 10).split('-'); return +p[2] + ' ' + MON[+p[1] - 1] + ' ' + p[0]; }
+function row(l, rr, cls) { return '<div class="row ' + (cls || '') + '"><div class="l">' + l + '</div><div class="r">' + rr + '</div></div>'; }
+function draw(x, at) {
+  var m = x.money || {}, h = '<div class="top"><img src="assets/logo.png" alt="Saasya Men"><div><b>SAASYA MEN</b><span>Your order, as it stands right now</span></div></div>';
+  h += '<h1>' + e(x.client) + ' <i>' + e(x.order) + '</i></h1><div class="sub">' + e(x.type) + (x.occasion ? ' · ' + e(x.occasion) : '') + ' · styled by ' + e(x.stylist) + '</div>';
+  h += '<div class="dates"><div><label>Event</label><b>' + d(x.event_date) + '</b></div><div><label>Trial</label><b>' + d(x.trial) + '</b></div><div><label>Delivery</label><b>' + d(x.delivery) + '</b></div><div><label>Where it is</label><b>' + e(x.stage) + '</b></div></div>';
+  h += '<h2>Your garments</h2>';
+  (x.garments || []).forEach(function (g) { h += row('<b>' + e(g.kind) + '</b><div class="sub">' + e(g.fabric) + '</div><span class="pill">' + e(g.stage) + '</span>', r(g.value)); });
+  (x.extras || []).forEach(function (g) { h += row('<b>' + e(g.label) + '</b><div class="sub">' + e(g.note) + (g.due ? ' · by ' + d(g.due) : '') + '</div>', r(g.amount)); });
+  if (!(x.garments || []).length && !(x.extras || []).length) h += '<p class="sub">Your stylist is still putting the garments together.</p>';
+  h += '<h2>The money</h2>' + row('Order value', r(m.value));
+  (m.adds || []).forEach(function (c) { h += row('Add: ' + e(c.label), '+ ' + r(c.amount)); });
+  (m.cuts || []).forEach(function (c) { h += row('Less: ' + e(c.label), '− ' + r(c.amount)); });
+  h += row('Net order value', r(m.net), 'tot') + row('GST at ' + Math.round((m.rate || 0) * 100) + '%', '+ ' + r(m.gst)) + row('Total payable', r(m.total), 'tot');
+  h += '<h2>Your payments</h2>';
+  (x.payments || []).forEach(function (p) { h += row(d(p.at) + ' · ' + e(p.kind) + '<div class="sub">' + e(p.method) + ' · invoice ' + e(p.invoice) + '</div>', r(p.amount)); });
+  if (!(x.payments || []).length) h += '<p class="sub">Nothing received yet.</p>';
+  h += row('Pending at delivery', r(m.pending), 'pend');
+  h += '<p class="foot">Updated ' + new Date(at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) + '. This page refreshes itself: keep the link, there is no need for a new PDF each time. Questions? Speak to ' + e(x.stylist) + '.</p>';
+  document.getElementById('app').innerHTML = h;
+  document.title = 'Saasya Men · ' + x.order;
+}
+function load() {
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(T)) { document.getElementById('app').innerHTML = '<p class="err">This link is not complete. Ask Saasya Men to send it again.</p>'; return; }
+  fetch(API + T, { cache: 'no-store' }).then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+    .then(function (j) { draw(j.data, j.at); }, function () { document.getElementById('app').innerHTML = '<p class="err">We could not find this order. Ask Saasya Men to send the link again.</p>'; });
+}
+load(); setInterval(load, 30000);
+</script>
+</body>
+</html>
