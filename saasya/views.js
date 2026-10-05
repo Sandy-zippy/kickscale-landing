@@ -92,12 +92,18 @@
   /* ---------- the money on one order, drawn the same way everywhere ---------- */
 
   function moneyBlock(m, editable) {
+    var oid = m.order && m.order.id;
     var h = '<table class="mon"><tbody>' +
-      '<tr><td>Order value <span class="sub">the whole engagement, before tax</span></td>' +
+      '<tr><td>Order value <span class="sub">the garments and other items, before tax</span></td>' +
       '<td>' + rupees(m.value) + '</td></tr>';
+    (m.adds || []).forEach(function (c, i) {
+      h += '<tr class="add"><td>Add: ' + esc(c.label) +
+        (editable ? ' <button class="mini" data-act="dropAdd" data-id="' + oid + '|' + i + '" title="Take this charge off">&times;</button>' : '') +
+        '</td><td>+ ' + rupees(c.amount) + '</td></tr>';
+    });
     (m.cuts || []).forEach(function (c, i) {
       h += '<tr class="cut"><td>Less: ' + esc(c.label) +
-        (editable ? ' <button class="mini" data-act="dropCut" data-id="' + m.order.id + '|' + i +
+        (editable ? ' <button class="mini" data-act="dropCut" data-id="' + oid + '|' + i +
           '" title="Take this deduction off">&times;</button>' : '') +
         '</td><td>− ' + rupees(c.amount) + '</td></tr>';
     });
@@ -108,9 +114,9 @@
       '</span></td><td>− ' + rupees(m.paid) + '</td></tr>' +
       '<tr class="pend"><td>Pending at delivery</td><td>' + rupees(m.pending) + '</td></tr>' +
       '</tbody></table>';
-    if (editable) h += '<div style="margin-top:12px"><button class="mini" data-act="addCut" data-id="' +
-      m.order.id + '">Add a deduction</button> <span class="hint">as many as you need. ' +
-      'A deduction has no payment mode. A payment does.</span></div>';
+    if (editable) h += '<div style="margin-top:12px"><button class="mini" data-act="addCharge" data-id="' + oid + '">Add a charge</button> ' +
+      '<button class="mini" data-act="addCut" data-id="' + oid + '">Add a deduction</button> <span class="hint">charges (delivery, porter, extra design) go on, deductions come off, both before GST. ' +
+      'Neither has a payment mode. A payment does.</span></div>';
     return h;
   }
 
@@ -568,6 +574,7 @@
     var o = one(D().orders, id); if (!o) return;
     var gs = garmentsOf(o.id);
     var m = GE.orderMoney(o.id), mg = GE.marginOf(o.id), cost = GE.costOf(o.id);
+    var own = GE.OUR_DESIGN_TYPES.indexOf(o.type) > -1, opsRole = ['Owner', 'BDM', 'Operations manager'].indexOf(GE.me().role) > -1;
 
     var h = '<h1>' + o.id + ' · ' + esc(cname(o.client)) + '</h1>' +
       '<p class="sub">' + esc(o.type || 'type not set yet') +
@@ -576,16 +583,16 @@
       ' · sold by ' + esc(pname(o.salesperson)) + ', styled by ' + esc(pname(o.stylist)) + '</p>';
 
     h += '<div class="kpis">' +
-      kpi(GE.moneyShort(o.value || o.estimate || 0), o.value ? 'Order value' : 'Estimate',
-          o.value ? 'before tax, and it does not move' : 'nothing signed yet') +
+      kpi(GE.moneyShort(m.value || o.estimate || 0), m.value ? 'Order value' : 'Estimate',
+          m.value ? 'the garments and other items, before tax' : 'no garment priced yet') +
       kpi(GE.moneyShort(m.pending), 'Pending at delivery', 'of ' + (GE.can('money') ? rupees(m.total) : '•••') + ' payable') +
       kpi(gs.length, 'Garments', 'each with its own master and date') +
       kpi(d(o.delivery), 'Delivery promised', o.trial ? 'trial ' + d(o.trial) : 'no trial set') +
       (GE.can('cost') ? kpi(GE.moneyShort(cost.total), 'Cost so far', 'fabric plus every line') : '') +
       '</div>';
 
-    /* what kind of order this is */
-    h += '<div class="card"><div class="cardhead"><h3>What kind of order</h3>' +
+    /* 1. what kind of order */
+    h += '<div class="card" data-sec="kind"><div class="cardhead"><h3>1 · What kind of order</h3>' +
       '<span class="sub">ours or theirs, readymade or made to measure</span></div>' +
       '<div class="two"><div class="f"><label>Type of order</label>' +
       '<select data-change="setOrderType" data-id="' + o.id + '">' +
@@ -593,22 +600,24 @@
       GE.ORDER_TYPES.map(function (t) {
         return '<option' + (t === o.type ? ' selected' : '') + '>' + t + '</option>'; }).join('') +
       '</select></div>' +
-      '<div class="f"><label>Made from one of our designs</label>' +
-      '<select data-change="setFromDesign" data-id="' + o.id + '">' +
-      '<option value="">A fresh design</option>' +
-      D().readymade.filter(function (r) { return r.owner === 'Sasya'; }).map(function (r) {
-        return '<option value="' + r.id + '"' + (r.id === o.from_design ? ' selected' : '') + '>' +
-          esc(r.code + ' · ' + r.name + ' · ' + rupees(r.price)) + '</option>'; }).join('') +
-      '</select><div class="hint">Picking one fills the price in. Measurements are still taken, ' +
-      'whether it is made new or altered.</div></div></div>' +
-      (o.vertical === 'designer' ? '<div class="f"><label>Which designer</label><select data-change="setDesigner" data-id="' + o.id + '">' +
+      (o.vertical === 'designer' ?
+        '<div class="f"><label>Which designer</label><select data-change="setDesigner" data-id="' + o.id + '">' +
         D().designers.map(function (g) {
           return '<option value="' + g.id + '"' + (g.id === o.designer ? ' selected' : '') + '>' +
-            esc(g.name) + ', ' + g.margin + '% to us</option>'; }).join('') + '</select></div>' : '') +
-      '</div>';
+            esc(g.name) + ', ' + g.margin + '% to us</option>'; }).join('') + '</select></div>'
+      : own ?
+        '<div class="f"><label>Made from one of our designs</label>' +
+        '<select data-change="setFromDesign" data-id="' + o.id + '">' +
+        '<option value="">A fresh design</option>' +
+        D().readymade.filter(function (r) { return r.owner === 'Sasya'; }).map(function (r) {
+          return '<option value="' + r.id + '"' + (r.id === o.from_design ? ' selected' : '') + '>' +
+            esc(r.code + ' · ' + r.name + ' · ' + rupees(r.price)) + '</option>'; }).join('') +
+        '</select><div class="hint">Picking one adds it as a garment at its price. Measurements are still taken.</div></div>'
+      : '<div class="f"><label>&nbsp;</label><div class="sub">Choose the type first.</div></div>') +
+      '</div></div>';
 
-    /* the stage ladder */
-    h += '<div class="card"><div class="cardhead"><h3>Where it has got to</h3>' +
+    /* 2. dates and stage */
+    h += '<div class="card" data-sec="stage"><div class="cardhead"><h3>2 · Dates and stage</h3>' +
       '<span class="sub">trial and delivery are set here, in the showroom, not on the floor</span></div>' +
       '<div class="three">' +
       '<div class="f"><label>Trial date</label><input type="date" value="' + (o.trial || '') +
@@ -620,68 +629,86 @@
         (o.expected_in || '') + '" data-change="setOrderDate" data-id="' + o.id + '|expected_in"></div>' :
       '<div class="f"><label>Occasion</label><input value="' + esc(o.event) + '" disabled></div>') +
       '</div>' +
+      '<div class="two">' + fld('Stylist (owner of the order)', pname(o.stylist)) +
+      '<div class="f"><label>Operations person on it</label>' + (opsRole ?
+        '<select data-change="setOrderOps" data-id="' + o.id + '"><option value="">Nobody yet</option>' + opsPeople().map(function (p) {
+          return '<option value="' + p.id + '"' + (p.id === o.ops ? ' selected' : '') + '>' + esc(p.name) + ' · ' + esc(p.role) + '</option>'; }).join('') + '</select>'
+        : '<div>' + esc(o.ops ? pname(o.ops) : 'Not given yet') + '</div>') + '</div></div>' +
       '<div class="chips">' + GE.SELL.map(function (st) {
         return '<span class="chip' + (st === o.stage ? ' on' : '') + '" data-act="setOrderStage" data-id="' +
           o.id + '|' + st + '" title="' + esc(GE.STAGE_MEANS[st] || '') + '">' + st + '</span>';
       }).join('') + '</div>' +
       '<p class="hint">' + esc(GE.STAGE_MEANS[o.stage] || '') + '</p></div>';
 
-    /* the money */
-    if (GE.can('money')) {
-      h += '<div class="card"><div class="cardhead"><h3>The money</h3>' +
-        '<button class="mini" data-act="setOrderValue" data-id="' + o.id + '">Set the order value</button></div>' +
-        moneyBlock(m, true) +
-        '<div style="margin-top:14px" class="cardhead"><h4>Payments taken</h4>' +
-        (GE.can('invoices') ? '<button class="mini" data-act="newInvoice" data-id="' + o.id +
-          '">Raise an invoice</button>' : '') + '</div>';
-      var invs = by(D().invoices, 'order', o.id);
-      h += '<table><thead><tr><th>Invoice</th><th>What for</th><th class="num">Asked for</th>' +
-        '<th class="num">Paid</th><th>How</th><th></th></tr></thead><tbody>';
-      invs.forEach(function (i) {
-        var pays = by(D().payins, 'invoice', i.id);
-        h += '<tr><td><b>' + i.id + '</b><div class="sub">' + d(i.issued) + '</div></td>' +
-          '<td>' + esc(i.kind) + '</td><td class="num">' + rupees(i.amount) + '</td>' +
-          '<td class="num">' + rupees(GE.paidOn(i.id)) + '</td>' +
-          '<td class="sub">' + esc(pays.map(function (p) { return p.method; }).join(', ') || 'nothing yet') + '</td>' +
-          '<td>' + (GE.can('invoices') ? '<button class="mini" data-act="openInvoice" data-id="' + i.id +
-            '">Open</button>' : '') + '</td></tr>';
-      });
-      if (!invs.length) h += '<tr><td colspan="6" class="sub">Nothing raised yet.</td></tr>';
-      h += '</tbody></table></div>';
-    }
-
-    /* the garments */
-    h += '<div class="card"><div class="cardhead"><h3>The garments</h3>' +
-      '<button class="mini" data-act="addGarment" data-id="' + o.id + '">Add a garment</button></div>';
+    /* 3. the garments, each with its value, and anything else being added */
+    h += '<div class="card" data-sec="garments"><div class="cardhead"><h3>3 · The garments</h3><div>' +
+      '<button class="mini" data-act="addGarment" data-id="' + o.id + '">Add a garment</button> ' +
+      '<button class="mini" data-act="addExtra" data-id="' + o.id + '">Add something else</button></div></div>';
     gs.forEach(function (g) {
-      var fl = GE.fabricsOf(g);
-      h += '<div class="card" style="background:#fbf8f2;margin-bottom:10px">' +
+      var fl = GE.fabricsOf(g), sug = GE.garmentSuggest(g), val = GE.garmentValue(g);
+      h += '<div class="card gcard" data-garment="' + g.id + '">' +
         '<div class="cardhead"><div><h4>' + esc(g.kind) + ' <span class="sub">' +
         (g.make === 'readymade' ? 'readymade' : 'custom') + '</span></h4>' +
         '<p class="sub">' + esc(g.note || '') + '</p></div>' +
         '<div>' + stagePill(g.stage) + ' <button class="mini" data-act="openGarment" data-id="' + g.id +
         '">Open</button></div></div>' +
-        '<div class="three">' + fld('With', g.master ? pname(g.master) : (g.designer ? dgname(g.designer) : 'nobody yet')) +
+        '<div class="three">' + fld('Master', g.master ? pname(g.master) : (g.designer ? dgname(g.designer) : 'not given yet')) +
         fld('Due back', d(g.due)) + fld('Metres in all', GE.metresOf(g) ? GE.metresOf(g).toFixed(1) + ' m' : '—') +
         '</div>';
-      h += '<div class="f"><label>Fabric, as many as it takes</label>';
-      if (!fl.length) h += '<div class="sub">None chosen yet.</div>';
-      fl.forEach(function (u, i) {
-        var f = one(D().fabrics, u.fabric);
-        h += '<div class="upl"><span class="f1">' + fabThumb(f) + ' <b>' + esc(fname(u.fabric)) + '</b>' +
-          '<input type="number" step="0.1" style="width:76px" value="' + u.metres +
-          '" data-change="setFabMetres" data-id="' + g.id + '|' + i + '"> m' +
-          (GE.can('cost') && f ? ' <span class="sub">' + rupees(f.cost * u.metres) + '</span>' : '') +
-          ' <button class="mini" data-act="dropFab" data-id="' + g.id + '|' + i + '">&times;</button>' +
-          '</span></div>';
-      });
-      h += '<div style="margin-top:8px"><button class="mini" data-act="addFab" data-id="' + g.id +
-        '">Add another fabric</button></div></div>';
+      if (o.vertical !== 'designer') {
+        h += '<div class="f"><label>Fabric, as many as it takes</label>';
+        if (!fl.length) h += '<div class="sub">None chosen yet.</div>';
+        fl.forEach(function (u, i) {
+          var f = one(D().fabrics, u.fabric);
+          h += '<div class="upl"><span class="f1">' + fabThumb(f) + ' <b>' + esc(fname(u.fabric)) + '</b>' +
+            '<input type="number" step="0.1" style="width:76px" value="' + u.metres +
+            '" data-change="setFabMetres" data-id="' + g.id + '|' + i + '"> m' +
+            (GE.can('cost') && f ? ' <span class="sub">cost ' + rupees(f.cost * u.metres) + '</span>' : '') +
+            ' <button class="mini" data-act="dropFab" data-id="' + g.id + '|' + i + '">&times;</button>' +
+            '</span></div>';
+        });
+        h += '<div style="margin-top:8px"><button class="mini" data-act="addFab" data-id="' + g.id +
+          '">Add another fabric</button></div></div>';
+      }
+      if (GE.can('money')) h += '<div class="gval" data-gval="' + g.id + '"><div><label>Value of this garment</label><b>' + rupees(val) + '</b>' +
+        '<div class="sub">' + (g.price != null ? (g.price_by === 'agreed' ? 'as agreed' : g.price_by === 'design' ? 'the price of our design' : g.price_by === 'designer' ? 'the designer\'s price' : 'set by hand') +
+          (o.vertical !== 'designer' && sug.amount ? ' · the library says ' + rupees(sug.amount) : '') : 'from the fabric library: ' + esc(sug.why)) + '</div></div>' +
+        '<div><button class="mini" data-act="setGarmentPrice" data-id="' + g.id + '">Change it</button>' +
+        (g.price != null && o.vertical !== 'designer' && sug.amount ? ' <button class="mini" data-act="useLibraryPrice" data-id="' + g.id + '">Use the library price</button>' : '') + '</div></div>';
       h += uploadBlock(g);
       h += '</div>';
     });
-    if (!gs.length) h += '<p class="sub">No garments yet. They get added once the advance is in.</p>';
+    (o.extras || []).forEach(function (x, i) {
+      h += '<div class="card gcard" data-extra="' + i + '"><div class="cardhead"><div><h4>' + esc(x.label) + ' <span class="sub">something else</span></h4>' +
+        '<p class="sub">' + esc(x.note || '') + (x.due ? ' · wanted by ' + d(x.due) : '') + '</p></div>' +
+        '<div>' + (GE.can('money') ? '<b>' + rupees(x.amount) + '</b> ' : '') + '<button class="mini" data-act="dropExtra" data-id="' + o.id + '|' + i + '" title="Take it off">&times;</button></div></div></div>';
+    });
+    if (!gs.length && !(o.extras || []).length) h += '<p class="sub">No garments yet. Add each garment: the outfit, the fabric, and its value follows from the fabric library.</p>';
+    if (GE.can('money') && m.lines.listed) h += '<p class="gsum">Garments ' + rupees(m.lines.garmentsTotal) +
+      ((o.extras || []).length ? ' + other items ' + rupees(m.lines.extrasTotal) : '') + ' = <b>order value ' + rupees(m.value) + '</b></p>';
     h += '</div>';
+
+    /* 4. the money: from the garments, plus charges, less deductions, GST on top, payments, pending */
+    if (GE.can('money')) {
+      h += '<div class="card" data-sec="money"><div class="cardhead"><h3>4 · The money</h3>' +
+        '<div><button class="mini" data-act="orderPdf" data-id="' + o.id + '">Download the order PDF</button></div></div>' +
+        moneyBlock(m, true) +
+        '<div style="margin-top:14px" class="cardhead"><h4>5 · Payments</h4>' +
+        '<button class="btn gold" data-act="orderPay" data-id="' + o.id + '">Record a payment</button></div>';
+      var invs = by(D().invoices, 'order', o.id);
+      h += '<table><thead><tr><th>When</th><th>What</th><th class="num">Amount</th><th>How</th><th>Reference</th><th>Invoice</th><th></th></tr></thead><tbody>';
+      var rows = 0;
+      invs.forEach(function (i) {
+        by(D().payins, 'invoice', i.id).forEach(function (p) {
+          rows++;
+          h += '<tr><td>' + d(p.at) + '</td><td>' + esc(p.kind || i.kind) + '</td><td class="num">' + rupees(p.amount) + '</td>' +
+            '<td>' + esc(p.method) + '</td><td class="sub">' + esc(p.ref || '') + '</td><td><b>' + i.id + '</b></td>' +
+            '<td><button class="mini" data-act="invoicePdf" data-id="' + i.id + '">Invoice PDF</button></td></tr>';
+        });
+      });
+      if (!rows) h += '<tr><td colspan="7" class="sub">Nothing paid yet. Record the advance: its mode is kept, and its invoice is made from it.</td></tr>';
+      h += '</tbody></table><p class="hint">Record a payment, and its invoice is made from it, ready as a PDF. What is left shows as pending.</p></div>';
+    }
 
     /* measurements used */
     h += '<div class="card"><div class="cardhead"><h3>Measurements used</h3>' +
@@ -794,6 +821,7 @@
     o.type = el.value;
     o.vertical = el.value.indexOf('Third-party') === 0 ? 'designer' : 'in-house';
     if (o.vertical === 'designer' && !o.designer) o.designer = D().designers[0].id;
+    if (GE.OUR_DESIGN_TYPES.indexOf(o.type) < 0) o.from_design = '';   /* our own designs belong to our own orders only */
     GE.save(); A.openOrder(id);
     GE.toast('Set to ' + (el.value || 'not chosen') + '.');
   };
@@ -804,20 +832,112 @@
   A.setFromDesign = function (id, el) {
     var o = one(D().orders, id), r = one(D().readymade, el.value);
     o.from_design = el.value;
-    if (r) { o.value = r.price; GE.toast('Price filled in from ' + r.code + '. Measurements are still taken.'); }
+    if (r) {   /* our design becomes a garment on the order, at its price */
+      D().garments.push({ id: GE.uid('G-'), order: o.id, kind: r.kind, make: 'custom', stage: 'Not started', master: '', fabrics: [],
+        due: o.delivery || '', designer: '', note: 'From our design ' + r.code + ', ' + r.name, price: r.price, price_by: 'design', samples: [], designform: [],
+        history: [{ stage: 'Not started', by: GE.me().id, at: GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5) }] });
+      GE.toast(r.code + ' added as a garment at ' + rupees(r.price) + '. Measurements are still taken.');
+    }
     GE.save(); A.openOrder(id);
   };
-  A.setOrderValue = function (id) {
-    var o = one(D().orders, id);
-    GE.modal('<h2>Order value</h2><p class="sub">' + o.id + '. Before tax, and it is the whole engagement.</p>' +
-      '<div class="f"><label>Order value</label><input type="number" id="ovVal" value="' + (o.value || o.estimate || 0) + '"></div>' +
-      '<button class="btn gold" data-act="saveOrderValue" data-id="' + o.id + '">Save it</button>');
+  /* who can be the operations person on an order */
+  function opsPeople() { return D().people.filter(function (p) { return ['Operations manager', 'Owner', 'BDM'].indexOf(p.role) > -1; }); }
+  A.setOrderOps = function (id, el) {
+    var o = one(D().orders, id); o.ops = el.value;
+    (o.history = o.history || []).push({ stage: o.stage, by: GE.me().id, at: GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5), note: 'Operations person: ' + (el.value ? pname(el.value) : 'nobody') });
+    GE.save(); GE.toast(el.value ? pname(el.value) + ' is on this order for operations.' : 'Nobody from operations on it now.');
   };
-  A.saveOrderValue = function (id) {
-    var o = one(D().orders, id);
-    o.value = Number(document.getElementById('ovVal').value) || 0;
+  /* something other than a garment: a brooch, a stole, anything, with a note, a date and its price */
+  A.addExtra = function (id) {
+    GE.modal('<h2>Add something else</h2><p class="sub">Anything that is not a garment: a brooch, a pocket square, a stole, a turban. Its price is typed here.</p>' +
+      '<div class="two"><div class="f"><label>What it is</label><input id="xLabel" placeholder="Brooch"></div>' +
+      '<div class="f"><label>Price</label><input type="number" id="xAmt"></div></div>' +
+      '<div class="two"><div class="f"><label>Wanted by</label><input type="date" id="xDue"></div>' +
+      '<div class="f"><label>Note</label><input id="xNote" placeholder="Antique gold, to go on the sherwani"></div></div>' +
+      '<button class="btn gold" data-act="saveExtra" data-id="' + id + '">Add it</button>');
+  };
+  A.saveExtra = function (id) {
+    var o = one(D().orders, id), lab = document.getElementById('xLabel').value.trim(), amt = Number(document.getElementById('xAmt').value) || 0;
+    if (!lab) { GE.toast('Say what it is.'); return; }
+    o.extras = o.extras || [];
+    o.extras.push({ id: GE.uid('X-'), label: lab, amount: amt, due: document.getElementById('xDue').value, note: document.getElementById('xNote').value });
     GE.save(); GE.closeModal(); A.openOrder(id);
-    GE.toast('Set. Deductions come off this, GST goes on top, and what is left is pending.');
+    GE.toast(lab + ' added. The order value is now ' + rupees(GE.orderMoney(id).value) + '.');
+  };
+  A.dropExtra = function (id) {
+    var p = id.split('|'), o = one(D().orders, p[0]);
+    o.extras.splice(Number(p[1]), 1); GE.save(); A.openOrder(p[0]);
+    GE.toast('Taken off. The order value moved with it.');
+  };
+  /* a charge added on top: delivery, porter, extra design work */
+  A.addCharge = function (id) {
+    GE.modal('<h2>Add a charge</h2><p class="sub">Added to the order value before GST.</p>' +
+      '<div class="two"><div class="f"><label>What kind</label><select id="chLabel">' +
+      GE.ADD_LABELS.map(function (c) { return '<option>' + c + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f"><label>How much</label><input type="number" id="chAmt"></div></div>' +
+      '<div class="f"><label>Call it something else, if you like</label><input id="chOwn" placeholder="Delivery to Alipore"></div>' +
+      '<button class="btn gold" data-act="saveCharge" data-id="' + id + '">Add it</button>');
+  };
+  A.saveCharge = function (id) {
+    var o = one(D().orders, id), amt = Number(document.getElementById('chAmt').value) || 0;
+    if (amt <= 0) { GE.toast('Put an amount in.'); return; }
+    o.adds = o.adds || [];
+    o.adds.push({ label: document.getElementById('chOwn').value.trim() || document.getElementById('chLabel').value, amount: amt });
+    GE.save(); GE.closeModal(); A.openOrder(id);
+    var m = GE.orderMoney(id);
+    GE.toast('Net ' + rupees(m.net) + ', GST ' + rupees(m.gst) + ', payable ' + rupees(m.total) + ', pending ' + rupees(m.pending) + '.');
+  };
+  A.dropAdd = function (id) {
+    var p = id.split('|'), o = one(D().orders, p[0]);
+    o.adds.splice(Number(p[1]), 1); GE.save(); A.openOrder(p[0]);
+    GE.toast('Taken off. The pending figure has moved with it.');
+  };
+  /* a garment's value: from the fabric library unless the stylist sets it */
+  A.setGarmentPrice = function (id) {
+    var g = one(D().garments, id), o = one(D().orders, g.order), sug = GE.garmentSuggest(g);
+    GE.modal('<h2>Value of this garment</h2><p class="sub">' + esc(g.kind) + ' on ' + g.order + '. ' +
+      (o.vertical === 'designer' ? 'The designer\'s price for this piece.' : 'The fabric library suggests ' + rupees(sug.amount) + ': ' + esc(sug.why) + '.') + '</p>' +
+      '<div class="f"><label>Value, before tax</label><input type="number" id="gpVal" value="' + GE.garmentValue(g) + '"></div>' +
+      '<button class="btn gold" data-act="saveGarmentPrice" data-id="' + g.id + '">Save it</button>');
+  };
+  A.saveGarmentPrice = function (id) {
+    var g = one(D().garments, id), o = one(D().orders, g.order);
+    g.price = Number(document.getElementById('gpVal').value) || 0; g.price_by = o.vertical === 'designer' ? 'designer' : 'hand';
+    GE.save(); GE.closeModal(); A.openOrder(g.order);
+    GE.toast('Set. The order value is now ' + rupees(GE.orderMoney(g.order).value) + '.');
+  };
+  A.useLibraryPrice = function (id) {
+    var g = one(D().garments, id); delete g.price; delete g.price_by;
+    GE.save(); A.openOrder(g.order);
+    GE.toast('Back on the fabric library price: ' + rupees(GE.garmentValue(g)) + '. It follows the fabric from now on.');
+  };
+  /* a payment is recorded on the order, with its mode; its invoice is made from it */
+  A.orderPay = function (id) {
+    var o = one(D().orders, id), m = GE.orderMoney(id), first = !by(D().invoices, 'order', id).length;
+    if (!m.value) { GE.toast('Add the garments first: the payment is taken against their value.'); return; }
+    GE.modal('<h2>Record a payment</h2><p class="sub">' + o.id + ' · total payable ' + rupees(m.total) + ' · paid ' + rupees(m.paid) + ' · <b>pending ' + rupees(m.pending) + '</b></p>' +
+      '<div class="two"><div class="f"><label>Amount received</label><input type="number" id="opAmt" value="' + Math.max(0, m.pending) + '"></div>' +
+      '<div class="f"><label>What it is</label><select id="opKind">' + ['Advance', 'Part payment', 'Full and final'].map(function (k) {
+        return '<option' + (k === (first ? 'Advance' : 'Part payment') ? ' selected' : '') + '>' + k + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="two"><div class="f"><label>How it came in</label><select id="opMethod">' + GE.PAY_METHODS.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f"><label>When</label><input type="date" id="opAt" value="' + GE.TODAY + '"></div></div>' +
+      '<div class="f"><label>Reference</label><input id="opRef" placeholder="UPI reference, cheque number, receipt number"></div>' +
+      '<div class="f"><label>Billed to</label><input id="opTo" value="' + esc(cname(o.client)) + '"></div>' +
+      '<button class="btn gold" data-act="saveOrderPay" data-id="' + id + '">Record it, and make its invoice</button>');
+  };
+  A.saveOrderPay = function (id) {
+    var o = one(D().orders, id), amt = Number(document.getElementById('opAmt').value) || 0;
+    if (amt <= 0) { GE.toast('Put an amount in.'); return; }
+    var kind = document.getElementById('opKind').value, at = document.getElementById('opAt').value || GE.TODAY;
+    var num = 'INV-' + (2663 + D().invoices.length);
+    D().invoices.push({ id: num, order: o.id, client: o.client, billed_to: document.getElementById('opTo').value || cname(o.client), parent: '',
+      amount: amt, kind: kind === 'Full and final' ? 'Final' : kind, issued: at, due: at, scope: garmentsOf(o.id).map(function (g) { return g.kind; }).join(', ') });
+    D().payins.push({ id: GE.uid('PI-'), invoice: num, amount: amt, kind: kind, method: document.getElementById('opMethod').value, at: at,
+      ref: document.getElementById('opRef').value, by: GE.me().id });
+    if (kind === 'Advance' && !o.advance_at) o.advance_at = at;
+    GE.save(); GE.closeModal(); A.openOrder(id);
+    var m = GE.orderMoney(id);
+    GE.toast(rupees(amt) + ' recorded as ' + kind.toLowerCase() + '. Invoice ' + num + ' is ready as a PDF. Pending is now ' + rupees(m.pending) + '.');
   };
 
   A.addCut = function (id) {
@@ -880,7 +1000,7 @@
 
     var h = '<h1>' + esc(g.kind) + '</h1><p class="sub">' + g.order + ' · ' + esc(cname(o.client)) +
       ' · ' + (g.make === 'readymade' ? 'readymade' : 'custom') +
-      (g.master ? ' · with ' + esc(pname(g.master)) : '') +
+      ' · styled by ' + esc(pname(o.stylist)) +
       (g.designer ? ' · at ' + esc(dgname(g.designer)) : '') + '</p>';
 
     h += '<div class="kpis">' + kpi(d(g.due), 'Due back', days(GE.TODAY, g.due) < 0 ? 'past it' :
@@ -888,6 +1008,19 @@
       kpi(GE.sittingFor(g) + ' days', 'At this stage', g.stage) +
       kpi(GE.metresOf(g) ? GE.metresOf(g).toFixed(1) + ' m' : '—', 'Fabric on it',
           GE.fabricsOf(g).length + ' bunch' + (GE.fabricsOf(g).length === 1 ? '' : 'es')) + '</div>';
+
+    /* who is on it: operations gives the master and names who looks after it */
+    var giver = ['Owner', 'BDM', 'Operations manager'].indexOf(GE.me().role) > -1;
+    h += '<div class="card" data-sec="who"><div class="cardhead"><h3>Who is on it</h3><span class="sub">given by operations</span></div><div class="three">' +
+      fld('Stylist (owner of the order)', pname(o.stylist)) +
+      (o.vertical === 'designer' ? fld('Made at', dgname(g.designer)) :
+      '<div class="f"><label>Master</label>' + (giver ? '<select data-change="setGarmentMaster" data-id="' + g.id + '"><option value="">Nobody yet</option>' +
+        by(D().people, 'role', 'Master').map(function (p) { return '<option value="' + p.id + '"' + (p.id === g.master ? ' selected' : '') + '>' + esc(p.name) + (p.craft ? ' · ' + esc(p.craft) : '') + '</option>'; }).join('') + '</select>'
+        : '<div>' + esc(g.master ? pname(g.master) : 'Not given yet') + '</div>') + '</div>') +
+      '<div class="f"><label>Operations person</label>' + (giver ? '<select data-change="setOrderOps" data-id="' + o.id + '"><option value="">Nobody yet</option>' +
+        opsPeople().map(function (p) { return '<option value="' + p.id + '"' + (p.id === o.ops ? ' selected' : '') + '>' + esc(p.name) + ' · ' + esc(p.role) + '</option>'; }).join('') + '</select>'
+        : '<div>' + esc(o.ops ? pname(o.ops) : 'Not given yet') + '</div>') + '</div></div>' +
+      '<p class="hint">When the master hands it on or moves it from his own screen, this changes with it.</p></div>';
 
     /* what has to be made, and out of what */
     h += '<div class="card"><div class="cardhead"><h3>What has to be made</h3>' +
@@ -961,6 +1094,13 @@
     GE.drawer(h);
   };
 
+  A.setGarmentMaster = function (id, el) {
+    var g = one(D().garments, id), from = g.master;
+    g.master = el.value;
+    (g.history = g.history || []).push({ handover: true, from: from, to: el.value, note: 'Given by operations', by: GE.me().id, at: GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5) });
+    GE.save(); A.openGarment(id);
+    GE.toast(el.value ? 'Given to ' + pname(el.value) + '. It is on his screen now.' : 'Taken off the master.');
+  };
   A.moveGarment = function (id) {
     var p = id.split('|');
     GE.moveGarment(p[0], p[1]);
@@ -1189,6 +1329,8 @@
         kpi(all.filter(function (f) { return f.sat_days >= 120; }).length, 'Not moved in 120 days', 'The Shelf calls this dead') +
         '</div>';
     }
+    if (GE.can('cost')) h += '<div class="card" data-sec="rule"><div class="cardhead"><h3>How a garment is priced</h3></div><p>A garment\'s value comes from the price set for that outfit on its cloth (open a bunch to set them). Where no price is set, charge ' +
+      '<input type="number" min="1" step="0.5" style="width:70px" value="' + (D().priceRule.multiplier || 6) + '" data-change="setPriceRule" aria-label="Times the fabric cost"> times the cost of the fabric used, rounded to the nearest ₹500.</p></div>';
     h += searchBar('#/fabric', 'Search a brand, a colour, a pattern, a vendor', list.length, all.length);
     h += '<div class="grid">';
     list.forEach(function (f) {
@@ -1235,6 +1377,16 @@
       ' metre notify mark and ' + (v ? v.name : 'the vendor') + ' takes ' + f.procure_days +
       ' days. Order it today or the next sherwani waits.</div>';
     h += '</div>';
+    if (GE.can('stock') === true) {
+      h += '<div class="card" data-sec="prices"><div class="cardhead"><h3>What we charge for each outfit</h3><span class="sub">in this cloth, before tax</span></div><table><tbody>';
+      GE.KINDS.forEach(function (k) {
+        var auto = GE.garmentSuggest({ kind: k, fabrics: [] }), rule = Math.round(f.cost * 3 * (D().priceRule.multiplier || 6) / 500) * 500;
+        h += '<tr><td>' + esc(k) + '</td><td style="width:170px"><input type="number" placeholder="rule: ' + rupees(rule) + ' at 3 m" value="' + (f.prices[k] || '') +
+          '" data-change="setFabPrice" data-id="' + f.id + '|' + esc(k) + '" aria-label="Price for a ' + esc(k) + '"></td></tr>';
+      });
+      h += '</tbody></table><p class="hint">When a stylist picks this cloth for an outfit, the garment\'s value comes from here. Left empty, the rule applies: ' +
+        (D().priceRule.multiplier || 6) + ' times the cost of the fabric used (' + rupees(f.cost) + ' a metre). The rule is set on the fabric library page.</p></div>';
+    }
     h += '<div class="card"><h3>What it has gone into</h3><table><thead><tr><th>Garment</th><th>Order</th>' +
       '<th class="num">Metres</th><th>Stage</th></tr></thead><tbody>';
     used.forEach(function (u) {
@@ -1247,6 +1399,15 @@
     GE.drawer(h);
   };
 
+  A.setFabPrice = function (id, el) {
+    var p = id.split('|'), f = one(D().fabrics, p[0]), v = Number(el.value) || 0;
+    if (v > 0) f.prices[p[1]] = v; else delete f.prices[p[1]];
+    GE.save(); GE.toast(v > 0 ? 'A ' + p[1].split(' / ')[0].toLowerCase() + ' in ' + f.brand + ' ' + f.colour + ' is now ' + rupees(v) + '.' : 'Back on the rule for that outfit.');
+  };
+  A.setPriceRule = function (id, el) {
+    D().priceRule.multiplier = Math.max(1, Number(el.value) || 6); GE.save();
+    GE.toast('Garments without a set price are now ' + D().priceRule.multiplier + ' times their fabric cost.');
+  };
   A.fabPhoto = function (id) {
     GE.modal('<h2>The photograph of the cloth</h2>' +
       '<p class="sub">A photograph beats a colour chip: the weave and the sheen are what a client picks on.</p>' +
@@ -1556,9 +1717,65 @@
     GE.closeModal();
     GE.toast('Taken. Pending on ' + i.order + ' is now ' + rupees(m.pending) + '.');
   };
-  A.pdf = function (id) {
-    GE.toast(id + ': the built system draws the real PDF, on their own letterhead, with the ₹ sign in the font.');
+  A.pdf = function (id) { A.invoicePdf(id); };
+  /* the invoice, on Saasya Men's letterhead. One for each payment (its invoice), one for the
+     whole order. Drawn as a page and turned into a PDF in the browser, so the ₹ is the real one. */
+  var HOUSE_INFO = { name: 'SAASYA MEN', line: 'A house of Sasya', addr: '23a Shakespeare Sarani, Kolkata 700017, West Bengal', gstin: 'GSTIN to be filled in', phone: '+91 33 0000 0000', mail: 'hello@saasya.co' };
+  function invoiceHtml(o, inv) {
+    var m = GE.orderMoney(o.id), c = one(D().clients, o.client) || {}, gs = garmentsOf(o.id);
+    var pays = []; by(D().invoices, 'order', o.id).forEach(function (i) { by(D().payins, 'invoice', i.id).forEach(function (p) { pays.push({ i: i, p: p }); }); });
+    var r = function (n) { return '₹' + Math.round(n || 0).toLocaleString('en-IN'); };
+    var row = function (a, b, c2, cls) { return '<tr class="' + (cls || '') + '"><td>' + a + '</td><td class="d">' + (b || '') + '</td><td class="n">' + c2 + '</td></tr>'; };
+    var lines = gs.map(function (g, n) { return row((n + 1) + '. ' + esc(g.kind), esc(GE.fabricsOf(g).map(function (u) { return fname(u.fabric) + (u.metres ? ' · ' + u.metres + ' m' : ''); }).join(', ') || (g.note || '')), r(GE.garmentValue(g))); }).join('') +
+      (o.extras || []).map(function (x) { return row(esc(x.label), esc(x.note || '') + (x.due ? ' · by ' + d(x.due) : ''), r(x.amount)); }).join('');
+    var half = Math.round(m.gst / 2);
+    return '<div class="inv"><div class="ih"><div class="il"><img src="assets/logo.png" alt="Saasya Men"><div><b>' + HOUSE_INFO.name + '</b><span>' + HOUSE_INFO.line + '</span></div></div>' +
+      '<div class="ir"><b>' + (inv ? 'TAX INVOICE' : 'ORDER AND INVOICE') + '</b><span>' + (inv ? inv.id + ' · ' + d(inv.issued) : 'Order ' + o.id + ' · ' + d(GE.TODAY)) + '</span></div></div>' +
+      '<div class="ia"><div><label>From</label><b>' + HOUSE_INFO.name + '</b><span>' + HOUSE_INFO.addr + '</span><span>' + HOUSE_INFO.phone + ' · ' + HOUSE_INFO.mail + '</span><span>' + HOUSE_INFO.gstin + '</span></div>' +
+      '<div><label>Billed to</label><b>' + esc(inv ? inv.billed_to : c.name) + '</b><span>' + esc(c.phone || '') + '</span><span>' + esc(famName(c.family)) + '</span><span>Order ' + o.id + (o.event ? ' · ' + esc(o.event) : '') + (o.delivery ? ' · delivery ' + d(o.delivery) : '') + '</span></div></div>' +
+      (inv ? '<div class="ib">This invoice is for <b>' + esc(inv.kind === 'Final' ? 'the full and final payment' : inv.kind.toLowerCase()) + '</b> of <b>' + r(inv.amount) + '</b>, received against order ' + o.id + '.</div>' : '') +
+      '<table class="it"><thead><tr><th>Item</th><th>Fabric and detail</th><th class="n">Amount</th></tr></thead><tbody>' + lines +
+      row('<b>Order value</b>', '', '<b>' + r(m.value) + '</b>', 'sum') +
+      (m.adds || []).map(function (x) { return row('Add: ' + esc(x.label), '', '+ ' + r(x.amount)); }).join('') +
+      (m.cuts || []).map(function (x) { return row('Less: ' + esc(x.label), '', '− ' + r(x.amount)); }).join('') +
+      row('<b>Net order value</b>', '', '<b>' + r(m.net) + '</b>', 'sum') +
+      row('CGST at ' + (m.rate * 50) + '%', '', '+ ' + r(half)) + row('SGST at ' + (m.rate * 50) + '%', '', '+ ' + r(m.gst - half)) +
+      row('<b>Total payable</b>', '', '<b>' + r(m.total) + '</b>', 'tot') + '</tbody></table>' +
+      '<table class="it"><thead><tr><th>Payments received</th><th>How</th><th class="n">Amount</th></tr></thead><tbody>' +
+      (pays.length ? pays.map(function (x) { return row(d(x.p.at) + ' · ' + esc(x.p.kind || x.i.kind) + ' · ' + x.i.id + (inv && x.i.id === inv.id ? ' (this invoice)' : ''), esc(x.p.method) + (x.p.ref ? ' · ' + esc(x.p.ref) : ''), r(x.p.amount)); }).join('') : row('Nothing received yet', '', r(0))) +
+      row('<b>Pending at delivery</b>', '', '<b>' + r(m.pending) + '</b>', 'tot') + '</tbody></table>' +
+      '<div class="if"><div>Thank you for choosing Saasya Men. Garments are made to your measurements; alterations within 30 days of delivery are on us. Payments by cheque are subject to realisation.</div><div class="sg">For SAASYA MEN<br><br>Authorised signatory</div></div></div>';
+  }
+  var INV_CSS = '.inv{width:760px;padding:40px 44px;background:#fbf8f2;color:#1d1a16;font:13px/1.5 Inter,Arial,sans-serif}.inv .ih{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #a9835a;padding-bottom:16px}' +
+    '.inv .il{display:flex;gap:14px;align-items:center}.inv .il img{width:64px;height:64px;object-fit:contain;background:#1d1a16;border-radius:8px;padding:6px}.inv .il b{display:block;font-size:20px;letter-spacing:.18em}.inv .il span,.inv .ir span{color:#6b6257;font-size:12px}' +
+    '.inv .ir{text-align:right}.inv .ir b{display:block;font-size:16px;letter-spacing:.14em;color:#7a5e41}.inv .ia{display:flex;gap:30px;margin:18px 0}.inv .ia>div{flex:1}.inv .ia label{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7a5e41}' +
+    '.inv .ia b{display:block;font-size:14px}.inv .ia span{display:block;color:#4a433b;font-size:12px}.inv .ib{background:#f1e9dc;border-left:3px solid #a9835a;padding:9px 12px;margin-bottom:14px}.inv table.it{width:100%;border-collapse:collapse;margin-bottom:16px}' +
+    '.inv .it th{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7a5e41;border-bottom:1px solid #d9cdb9;padding:6px 4px}.inv .it td{padding:6px 4px;border-bottom:1px solid #eee5d6;vertical-align:top}.inv .it td.d{color:#6b6257;font-size:12px}' +
+    '.inv th,.inv td{color:#1d1a16!important;opacity:1!important;font-weight:inherit}.inv .it th{color:#7a5e41!important}.inv .it td.d{color:#6b6257!important}.inv b{color:inherit}.inv .n{text-align:right;white-space:nowrap}.inv .it tr.sum td{border-top:1px solid #d9cdb9}.inv .it tr.tot td{border-top:2px solid #a9835a;font-size:14px}.inv .if{display:flex;justify-content:space-between;gap:30px;color:#6b6257;font-size:11px;margin-top:20px}.inv .sg{text-align:right;color:#1d1a16;min-width:180px}';
+  function makePdf(html, file) {
+    var box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1';
+    box.innerHTML = '<style>' + INV_CSS + '</style>' + html;
+    document.body.appendChild(box);
+    var go = function () {
+      window.html2pdf().set({ margin: 0, filename: file, image: { type: 'jpeg', quality: 0.96 }, html2canvas: { scale: 2, backgroundColor: '#fbf8f2', useCORS: true },
+        jsPDF: { unit: 'px', format: [760, 1075], orientation: 'portrait', hotfixes: ['px_scaling'] } }).from(box.querySelector('.inv')).save()
+        .then(function () { box.remove(); }, function () { box.remove(); GE.toast('The PDF could not be made here. Check the internet connection.'); });
+    };
+    if (window.html2pdf) return go();
+    var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+    sc.onload = go; sc.onerror = function () { box.remove(); GE.toast('The PDF maker could not load. Check the internet connection.'); }; document.head.appendChild(sc);
+  }
+  A.invoicePdf = function (id) {
+    var inv = one(D().invoices, id); if (!inv) return;
+    makePdf(invoiceHtml(one(D().orders, inv.order), inv), 'Saasya-Men-' + inv.id + '.pdf');
+    GE.toast('Making ' + inv.id + ' as a PDF…');
   };
+  A.orderPdf = function (id) {
+    makePdf(invoiceHtml(one(D().orders, id), null), 'Saasya-Men-' + id + '.pdf');
+    GE.toast('Making the PDF of ' + id + '…');
+  };
+  GE.invoiceHtml = invoiceHtml; GE.INV_CSS = INV_CSS;
 
   A.newInvoice = function (oid) {
     var orders = GE.myOrders().filter(function (o) { return o.value > 0; });
@@ -2207,29 +2424,39 @@
   };
 
   A.addGarment = function (oid) {
-    var o = one(D().orders, oid);
+    var o = one(D().orders, oid), designer = o.vertical === 'designer';
     GE.modal('<h2>Add a garment to ' + esc(oid) + '</h2>' +
-      '<div class="two"><div class="f"><label>What it is</label><select id="agKind">' +
+      '<div class="two"><div class="f"><label>What it is</label><select id="agKind" data-change="agPrice">' +
       GE.KINDS.map(function (k) { return '<option>' + k + '</option>'; }).join('') + '</select></div>' +
       '<div class="f"><label>Made how</label><select id="agMake">' +
       '<option value="custom">Custom, to his measurements</option>' +
       '<option value="readymade">Readymade, altered here</option></select></div></div>' +
-      (o.vertical === 'in-house' ?
-      '<div class="two"><div class="f"><label>Which master</label><select id="agMaster"><option value="">Nobody yet</option>' +
-      by(D().people, 'role', 'Master').map(function (p) {
-        return '<option value="' + p.id + '">' + esc(p.name) + (p.craft ? ' · ' + esc(p.craft) : '') + '</option>'; }).join('') +
-      '</select></div>' +
-      '<div class="f"><label>First fabric</label><select id="agFab"><option value="">None yet</option>' +
+      (designer ?
+      '<div class="two"><div class="f"><label>The designer\'s price</label><input type="number" id="agPriceIn"></div>' +
+      '<div class="f"><label>Back from the designer by</label><input type="date" id="agDue"></div></div>' :
+      '<div class="two"><div class="f"><label>Fabric</label><select id="agFab" data-change="agPrice"><option value="">None yet</option>' +
       D().fabrics.map(function (f) {
         return '<option value="' + f.id + '">' + esc(f.brand + ' ' + f.colour) + ', ' +
           GE.stockOf(f.id).hand.toFixed(1) + ' m left</option>'; }).join('') + '</select>' +
-      '<div class="hint">More can be added on the garment itself: lining, contrast, whatever it takes.</div></div></div>' +
-      '<div class="two"><div class="f"><label>Metres</label><input type="number" step="0.1" id="agM" value="3"></div>' +
-      '<div class="f"><label>Back by</label><input type="date" id="agDue"></div></div>' :
-      '<div class="f"><label>Back from the designer by</label><input type="date" id="agDue"></div>') +
+      '<div class="hint">More can be added on the garment itself: lining, contrast, whatever it takes.</div></div>' +
+      '<div class="f"><label>Metres</label><input type="number" step="0.1" id="agM" value="3" data-change="agPrice"></div></div>' +
+      '<div class="two"><div class="f"><label>Value of this garment</label><input type="number" id="agPriceIn"><div class="hint" id="agWhy">Choose the fabric: the value comes from the fabric library.</div></div>' +
+      '<div class="f"><label>Back by</label><input type="date" id="agDue" value="' + (o.delivery || '') + '"></div></div>') +
       '<div class="f"><label>Note for whoever makes it</label><textarea id="agNote" rows="2"></textarea></div>' +
+      '<p class="hint">The master is given by operations once the order is on the floor.</p>' +
       '<button class="btn gold" data-act="saveGarment" data-id="' + esc(oid) + '">Add it</button>');
+    A.agPrice();
   };
+  /* the suggested value, live, as the outfit, the fabric and the metres change */
+  A.agPrice = function () {
+    var f = document.getElementById('agFab'), out = document.getElementById('agPriceIn'), why = document.getElementById('agWhy');
+    if (!f || !out) return;
+    var g = { kind: document.getElementById('agKind').value, fabrics: f.value ? [{ fabric: f.value, metres: Number(document.getElementById('agM').value) || 0 }] : [] };
+    var s = GE.garmentSuggest(g);
+    if (!out.dataset.touched) out.value = s.amount || '';
+    if (why) why.textContent = s.amount ? 'From the fabric library: ' + s.why + '. Change it if this one is different.' : 'Choose the fabric: the value comes from the fabric library.';
+  };
+  document.addEventListener('input', function (e) { if (e.target && e.target.id === 'agPriceIn') e.target.dataset.touched = '1'; });
   A.saveGarment = function (oid) {
     var o = one(D().orders, oid);
     var el = function (i) { return document.getElementById(i); };
@@ -2237,15 +2464,17 @@
     var fabs = [];
     if (el('agFab') && el('agFab').value)
       fabs.push({ fabric: el('agFab').value, metres: Number(el('agM').value) || 0 });
-    D().garments.push({ id: GE.uid('G-'), order: oid, kind: el('agKind').value,
-      make: el('agMake').value, stage: first,
-      master: el('agMaster') ? el('agMaster').value : '',
-      fabrics: fabs,
+    var g = { id: GE.uid('G-'), order: oid, kind: el('agKind').value,
+      make: el('agMake').value, stage: first, master: '', fabrics: fabs,
       due: el('agDue').value, designer: o.vertical === 'designer' ? o.designer : '',
       note: el('agNote').value, samples: [], designform: [],
-      history: [{ stage: first, by: GE.me().id, at: GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5) }] });
+      history: [{ stage: first, by: GE.me().id, at: GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5) }] };
+    var typed = Number(el('agPriceIn') && el('agPriceIn').value) || 0, sug = GE.garmentSuggest(g).amount;
+    if (o.vertical === 'designer') { g.price = typed; g.price_by = 'designer'; }
+    else if (typed && typed !== sug) { g.price = typed; g.price_by = 'hand'; }   /* otherwise it follows the library */
+    D().garments.push(g);
     GE.save(); GE.closeModal(); A.openOrder(oid);
-    GE.toast('Added. It has its own stage, its own fabric and its own date from here on.');
+    GE.toast('Added at ' + rupees(GE.garmentValue(g)) + '. The order value is now ' + rupees(GE.orderMoney(oid).value) + '.');
   };
 
   A.newFollow = function (oid) {

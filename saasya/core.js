@@ -75,7 +75,10 @@ var GE = (function () {
 
   var PAY_METHODS = ['Cash','UPI (GPay / PhonePe / Razorpay)','Net transfer','Credit card','Debit card','Cheque'];
 
-  var CUT_LABELS = ['Advance already paid','Discount','To be paid at handover'];
+  var CUT_LABELS = ['Discount','Festive offer','Loyalty adjustment','Goodwill'];
+  /* added on top of the garments (5 Oct): more designs, delivery, porter, anything agreed */
+  var ADD_LABELS = ['Extra design work','Delivery charges','Porter / courier','Express making','Other'];
+  var OUR_DESIGN_TYPES = ['Our own bespoke','Our own readymade','Our own custom-made'];
 
   var COST_KINDS = ['Fabric','Stitching','Designing','Embroidery / handwork','Porter / courier',
                     'Third-party stitching','Other'];
@@ -148,12 +151,32 @@ var GE = (function () {
   function load() {
     try {
       var raw = localStorage.getItem(KEY);
-      if (raw) { var o = JSON.parse(raw); if (o && o.v === 2) { D = o; return; } }
+      if (raw) { var o = JSON.parse(raw); if (o && o.v === 2) { D = o; migrate(); return; } }
     } catch (e) {}
     D = SEED();           /* seed.js defines window.SEED */
-    save();
+    migrate(); save();
   }
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
+  /* the stored order value always equals its garments and other items, so every screen that reads
+     it (targets, households, accounting) is right without knowing how it is worked out */
+  function syncValues() { (D.orders || []).forEach(function (o) { var L = orderLines(o); if (L.listed) o.value = L.garmentsTotal + L.extrasTotal; }); }
+  function save() { syncValues(); try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
+  /* 5 Oct: the order value is the garments' values (and the other items), never typed. A saved
+     copy from before gets the new fields, and an old order's value is shared out over its
+     garments so every total stays exactly what it was. Safe to run twice. */
+  function migrate() {
+    D.priceRule = D.priceRule || { multiplier: 6 };
+    (D.fabrics || []).forEach(function (f) { f.prices = f.prices || {}; });
+    (D.orders || []).forEach(function (o) {
+      o.adds = o.adds || []; o.extras = o.extras || []; o.cuts = o.cuts || []; if (o.ops == null) o.ops = '';
+      var gs = by(D.garments, 'order', o.id), priced = gs.filter(function (g) { return g.price != null; });
+      if (!(Number(o.value) > 0) || priced.length || o.extras.length) return;
+      if (!gs.length) { o.extras.push({ id: uid('X-'), label: 'As agreed', note: 'The value agreed before garments were listed', due: o.delivery || '', amount: Number(o.value) }); return; }
+      /* shared in proportion to what the library would charge for each, so a shirt is not priced like a sherwani */
+      var w = gs.map(function (g) { return garmentSuggest(g).amount || 1; }), wt = w.reduce(function (a, b) { return a + b; }, 0), left = Number(o.value);
+      gs.forEach(function (g, i) { g.price = i === gs.length - 1 ? left : Math.round(Number(o.value) * w[i] / wt / 500) * 500; left -= g.price; g.price_by = 'agreed'; });
+    });
+    syncValues();
+  }
   function reset() { try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); }
 
   /* ---------- who is signed in, and what they may see ---------- */
@@ -256,18 +279,41 @@ var GE = (function () {
   function cutsTotal(o) {
     return sum((o && o.cuts) || [], function (c) { return Number(c.amount) || 0; });
   }
+  function addsTotal(o) {
+    return sum((o && o.adds) || [], function (c) { return Number(c.amount) || 0; });
+  }
+  /* what a garment is charged, suggested from the fabric library: the price set for that outfit
+     in its first fabric, or, where none is set, the cost of all its fabric times the house rule */
+  function garmentSuggest(g) {
+    var fl = fabricsOf(g), f0 = fl.length ? one(D.fabrics, fl[0].fabric) : null;
+    if (f0 && f0.prices && Number(f0.prices[g.kind]) > 0)
+      return { amount: Number(f0.prices[g.kind]), why: f0.brand + ' ' + f0.colour + ', the price set for a ' + g.kind.split(' / ')[0].toLowerCase() };
+    var cost = sum(fl, function (u) { var f = one(D.fabrics, u.fabric); return f ? f.cost * (Number(u.metres) || 0) : 0; });
+    var k = (D.priceRule && Number(D.priceRule.multiplier)) || 6;
+    if (!cost) return { amount: 0, why: 'no fabric chosen yet' };
+    return { amount: Math.round(cost * k / 500) * 500, why: k + ' times the fabric cost (' + rupees(Math.round(cost)) + '), rounded to the nearest 500' };
+  }
+  function garmentValue(g) { return g.price != null ? Number(g.price) || 0 : garmentSuggest(g).amount; }
+  /* the order value: every garment's value and every other item, added up. An order with neither
+     (a test, or one not yet listed) falls back to the value it was given. */
+  function orderLines(o) {
+    var gs = o ? by(D.garments, 'order', o.id) : [], ex = (o && o.extras) || [];
+    return { garments: gs, extras: ex, garmentsTotal: sum(gs, garmentValue), extrasTotal: sum(ex, function (x) { return Number(x.amount) || 0; }), listed: gs.length + ex.length > 0 };
+  }
   function orderMoney(orderId, gstRate) {
     var o = typeof orderId === 'object' ? orderId : one(D.orders, orderId);
     var rate = gstRate == null ? (D.gst == null ? 0.18 : D.gst) : gstRate;
-    var value = Number(o && o.value) || 0;
+    var L = orderLines(o);
+    var value = L.listed ? L.garmentsTotal + L.extrasTotal : (Number(o && o.value) || 0);
+    var adds = addsTotal(o);
     var cuts = cutsTotal(o);
-    var net = Math.max(0, value - cuts);
+    var net = Math.max(0, value + adds - cuts);
     var gst = Math.round(net * rate);
     var total = net + gst;
     var invs = o ? by(D.invoices, 'order', o.id) : [];
     var billed = sum(invs, function (i) { return Number(i.amount) || 0; });
     var paid = sum(invs, function (i) { return paidOn(i.id); });
-    return { order: o, value: value, cuts: (o && o.cuts) || [], cutsTotal: cuts,
+    return { order: o, value: value, lines: L, adds: (o && o.adds) || [], addsTotal: adds, cuts: (o && o.cuts) || [], cutsTotal: cuts,
              net: net, gst: gst, rate: rate, total: total,
              billed: billed, paid: paid, pending: total - paid };
   }
@@ -558,7 +604,7 @@ var GE = (function () {
     SELL: SELL, HOUSE: HOUSE, DESIGNER: DESIGNER, STAGE_MEANS: STAGE_MEANS,
     ORDER_TYPES: ORDER_TYPES,
     KINDS: KINDS, MEAS: MEAS, MEAS_WHY: MEAS_WHY, SOURCES: SOURCES,
-    PAY_METHODS: PAY_METHODS, CUT_LABELS: CUT_LABELS, COST_KINDS: COST_KINDS,
+    PAY_METHODS: PAY_METHODS, CUT_LABELS: CUT_LABELS, ADD_LABELS: ADD_LABELS, OUR_DESIGN_TYPES: OUR_DESIGN_TYPES, COST_KINDS: COST_KINDS,
     FOLLOW_METHODS: FOLLOW_METHODS, PERIODS: PERIODS, ROLES: ROLES,
     uid: uid, rupees: rupees, lakh: lakh, d: d, dt: dt, days: days, esc: esc,
     sum: sum, by: by, one: one,
@@ -567,7 +613,7 @@ var GE = (function () {
     ROUTE_OK: ROUTE_OK, allowed: allowed,
     myOrders: myOrders,
     payableOf: payableOf, payableOn: payableOn, payableGrossOf: payableGrossOf,
-    orderMoney: orderMoney, cutsTotal: cutsTotal,
+    orderMoney: orderMoney, cutsTotal: cutsTotal, addsTotal: addsTotal, garmentSuggest: garmentSuggest, garmentValue: garmentValue, orderLines: orderLines, migrate: migrate, syncValues: syncValues,
     paidOn: paidOn, invoiceDue: invoiceDue, invoiceLeft: invoiceLeft,
     costOf: costOf, marginOf: marginOf, stockOf: stockOf,
     fabricsOf: fabricsOf, metresOf: metresOf, handOver: handOver,
