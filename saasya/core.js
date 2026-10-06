@@ -87,6 +87,19 @@ var GE = (function () {
     var bare = /(?:^|\D)(\d{12})(?!\d)/.exec(t.replace(/(\d)\s(?=\d)/g, '$1'));
     return bare ? bare[1] : '';
   }
+  /* the country code on every mobile (6 Oct): picked, never typed. India first. */
+  var COUNTRY_CODES = [['+91','India'],['+971','UAE'],['+1','USA / Canada'],['+44','UK'],['+65','Singapore'],['+852','Hong Kong'],
+    ['+966','Saudi Arabia'],['+974','Qatar'],['+968','Oman'],['+973','Bahrain'],['+965','Kuwait'],['+61','Australia'],['+64','New Zealand'],
+    ['+977','Nepal'],['+880','Bangladesh'],['+94','Sri Lanka'],['+49','Germany'],['+33','France'],['+39','Italy'],['+81','Japan']];
+  /* a mobile is a code and digits; India must be 10 digits starting 6 to 9, elsewhere 6 to 14 */
+  function phoneOk(code, digits) {
+    var n = String(digits || '').replace(/\D/g, '');
+    return code === '+91' ? /^[6-9]\d{9}$/.test(n) : /^\d{6,14}$/.test(n);
+  }
+  function phoneJoin(code, digits) {
+    var n = String(digits || '').replace(/\D/g, '');
+    return code + ' ' + (code === '+91' && n.length === 10 ? n.slice(0, 5) + ' ' + n.slice(5) : n);
+  }
   var SOURCES = ['Walk-in','Referral','Instagram','WhatsApp enquiry','Meta ad','Google','Wedding planner',
                  'Existing client','Outreach by Mark'];
 
@@ -621,7 +634,7 @@ var GE = (function () {
     SELL: SELL, HOUSE: HOUSE, DESIGNER: DESIGNER, STAGE_MEANS: STAGE_MEANS,
     ORDER_TYPES: ORDER_TYPES,
     KINDS: KINDS, MEAS: MEAS, MEAS_WHY: MEAS_WHY, SOURCES: SOURCES,
-    PAY_METHODS: PAY_METHODS, OCCASIONS: OCCASIONS, localToday: localToday, extractRef: extractRef, CUT_LABELS: CUT_LABELS, ADD_LABELS: ADD_LABELS, OUR_DESIGN_TYPES: OUR_DESIGN_TYPES, COST_KINDS: COST_KINDS,
+    PAY_METHODS: PAY_METHODS, COUNTRY_CODES: COUNTRY_CODES, phoneOk: phoneOk, phoneJoin: phoneJoin, OCCASIONS: OCCASIONS, localToday: localToday, extractRef: extractRef, CUT_LABELS: CUT_LABELS, ADD_LABELS: ADD_LABELS, OUR_DESIGN_TYPES: OUR_DESIGN_TYPES, COST_KINDS: COST_KINDS,
     FOLLOW_METHODS: FOLLOW_METHODS, PERIODS: PERIODS, ROLES: ROLES,
     uid: uid, rupees: rupees, lakh: lakh, d: d, dt: dt, days: days, esc: esc,
     sum: sum, by: by, one: one,

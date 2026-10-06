@@ -10,7 +10,29 @@
   function dgname(id) { var g = one(D().designers, id); return g ? g.name : '—'; }
   function fname(id) { var f = one(D().fabrics, id); return f ? f.brand + ' ' + f.colour : '—'; }
   function garmentsOf(oid) { return by(D().garments, 'order', oid); }
-  function famName(fid) { var f = one(D().families, fid); return f ? f.name + ', ' + f.area : '—'; }
+  function famName(fid) { var f = one(D().families, fid); return f ? f.name + (f.area ? ', ' + f.area : '') : '—'; }
+  /* a client with no household is a household of one: never pooled with other clients who have none */
+  function famOrdersOf(c) {
+    if (!c.family) return by(D().orders, 'client', c.id);
+    var ids = by(D().clients, 'family', c.family).map(function (k) { return k.id; });
+    return D().orders.filter(function (o) { return ids.indexOf(o.client) > -1; });
+  }
+  GE.famOrdersOf = famOrdersOf;
+  /* every mobile in the app: a country-code dropdown and the number, read back as one */
+  function phoneField(id, label, value) {
+    var m = /^(\+\d{1,4})\s*(.*)$/.exec(value || ''), code = m ? m[1] : '+91', rest = m ? m[2] : '';
+    return '<div class="f"><label>' + (label || 'Mobile') + '</label><div class="phone">' +
+      '<select id="' + id + 'Cc" aria-label="Country code">' + GE.COUNTRY_CODES.map(function (c) {
+        return '<option value="' + c[0] + '"' + (c[0] === code ? ' selected' : '') + '>' + c[0] + ' ' + c[1] + '</option>'; }).join('') + '</select>' +
+      '<input id="' + id + '" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="98300 12345" value="' + esc(rest) + '"></div>' +
+      '<div class="hint">Pick the country, then the number without the code.</div></div>';
+  }
+  function readPhone(id, need) {
+    var code = document.getElementById(id + 'Cc').value, n = document.getElementById(id).value;
+    if (!String(n).replace(/\D/g, '')) return need ? null : '';
+    if (!GE.phoneOk(code, n)) return null;
+    return GE.phoneJoin(code, n);
+  }
   function head(t, sub, right) {
     return '<div class="ph"><div><h1>' + t + '</h1>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>' +
            '<div>' + (right || '') + '</div></div>';
@@ -229,7 +251,7 @@
     list.forEach(function (c) {
       var mine = by(D().orders, 'client', c.id);
       var running = mine.filter(function (o) { return o.stage !== 'Delivered' && o.stage !== 'Lost'; });
-      var fam = D().orders.filter(function (o) { return o.family === c.family; });
+      var fam = famOrdersOf(c);
       h += '<tr class="click" data-act="openClient" data-id="' + c.id + '">' +
         '<td><b>' + esc(c.name) + '</b>' + (c.relation ? '<div class="sub">' + esc(c.relation) + '</div>' : '') + '</td>' +
         '<td class="sub">' + esc(c.phone) + '</td>' +
@@ -249,17 +271,17 @@
     var c = one(D().clients, id);
     if (!c) return;
     var fam = one(D().families, c.family);
-    var kin = by(D().clients, 'family', c.family).filter(function (x) { return x.id !== c.id; });
+    var kin = c.family ? by(D().clients, 'family', c.family).filter(function (x) { return x.id !== c.id; }) : [];
     var orders = by(D().orders, 'client', c.id);
     var running = orders.filter(function (o) { return o.stage !== 'Delivered' && o.stage !== 'Lost'; });
-    var famOrders = D().orders.filter(function (o) { return o.family === c.family; });
+    var famOrders = famOrdersOf(c);
     var sets = by(D().meas, 'client', c.id);
     var mine = sum(orders, function (o) { return o.value; });
     var pending = sum(orders, function (o) { return Math.max(0, GE.orderMoney(o.id).pending); });
 
     var h = '<h1>' + esc(c.name) + '</h1>' +
       '<p class="sub">' + esc(c.relation || '') + (c.relation ? ' · ' : '') +
-      esc(fam ? fam.name + ', ' + fam.area : '') + ' · ' + esc(c.phone) + '</p>';
+      esc(fam ? famName(fam.id) + ' · ' : '') + esc(c.phone) + '</p>';
 
     h += '<div class="kpis">' +
       kpi(GE.moneyShort(mine), 'His revenue to date', orders.length + ' orders') +
@@ -269,20 +291,26 @@
       kpi(GE.moneyShort(pending), 'Still to come in', 'across his open orders') + '</div>';
 
     h += '<div class="card"><div class="three">' +
-      fld('Phone', c.phone) + fld('Email', c.email || '—') + fld('How he found us', c.source) +
-      fld('Birthday', d(c.dob)) + fld('Anniversary', d(c.anniversary)) +
+      fld('Phone', c.phone) + fld('Email', c.email || '—') + fld('Source', c.source) +
+      '<div class="f"><label>Birthday</label><input type="date" value="' + (c.dob || '') + '" data-change="saveClientField" data-id="' + c.id + '|dob"></div>' +
+      '<div class="f"><label>Anniversary</label><input type="date" value="' + (c.anniversary || '') + '" data-change="saveClientField" data-id="' + c.id + '|anniversary"></div>' +
       fld('Stylist', pname(c.stylist)) +
       '</div><div class="f"><label>Note</label><textarea rows="2" data-change="saveClientNote" data-id="' +
       c.id + '">' + esc(c.note) + '</textarea></div></div>';
 
     /* the household, a segment inside the client, not a screen of its own */
-    h += '<div class="card"><div class="cardhead"><div><h3>Household</h3>' +
-      '<p class="sub">' + esc(fam ? fam.name + ' of ' + fam.area : '') +
+    h += '<div class="card" data-sec="household"><div class="cardhead"><div><h3>Household</h3>' +
+      '<p class="sub">' + esc(fam ? fam.name + (fam.area ? ' of ' + fam.area : '') : 'Not part of a household yet') +
       (fam && fam.note ? ' · ' + esc(fam.note) : '') + '</p></div>' +
       '<div style="text-align:right"><b>' + GE.moneyShort(sum(famOrders, function (o) { return o.value; })) +
       '</b><div class="sub">lifetime, the family</div></div></div>';
-    if (!kin.length) h += '<p class="sub">Nobody else on this household yet.</p>';
-    else {
+    h += '<div class="two"><div class="f"><label>' + (fam ? 'Household' : 'Add him to a household') + '</label><select data-change="setHousehold" data-id="' + c.id + '">' +
+      '<option value="">' + (fam ? 'Not in a household' : 'Choose a household') + '</option>' +
+      D().families.map(function (f) { return '<option value="' + f.id + '"' + (f.id === c.family ? ' selected' : '') + '>' + esc(famName(f.id)) + '</option>'; }).join('') +
+      '<option value="__new">+ Add a new household</option></select></div>' +
+      '<div class="f"><label>Who he is in it</label><input value="' + esc(c.relation || '') + '" placeholder="Son, the groom" data-change="saveClientField" data-id="' + c.id + '|relation"></div></div>';
+    if (fam && !kin.length) h += '<p class="sub">Nobody else on this household yet.</p>';
+    else if (fam) {
       h += '<table><thead><tr><th>Who</th><th>In the family</th><th>Orders</th>' +
         '<th class="num">Lifetime</th><th></th></tr></thead><tbody>';
       kin.forEach(function (k) {
@@ -413,6 +441,38 @@
     var p = id.split('|');
     GE.toast(p[0].charAt(0).toUpperCase() + p[0].slice(1) + ' ' + p[1] +
       ': in the built system this opens the real file from storage.');
+  };
+  A.saveClientField = function (id, el) {
+    var p = id.split('|'), c = one(D().clients, p[0]); if (!c) return;
+    c[p[1]] = el.value; GE.save(); GE.toast('Saved.');
+  };
+  A.setHousehold = function (id, el) {
+    var c = one(D().clients, id); if (!c) return;
+    if (el.value === '__new') { A.newHousehold(id); el.value = c.family || ''; return; }
+    linkHousehold(c, el.value);
+    GE.toast(el.value ? c.name + ' is now in the ' + famName(el.value) + ' household.' : c.name + ' is not in a household now.');
+  };
+  function linkHousehold(c, fid) {
+    c.family = fid;
+    by(D().orders, 'client', c.id).forEach(function (o) { o.family = fid; });   /* his orders move with him */
+    GE.save(); A.openClient(c.id);
+  }
+  A.newHousehold = function (cid) {
+    var c = one(D().clients, cid);
+    GE.modal('<h2>A new household</h2><p class="sub">' + esc(c.name) + ' goes into it. Others can be added from their own records.</p>' +
+      '<div class="two"><div class="f"><label>Household name</label><input id="nhName" value="' + esc(c.name.split(' ').slice(-1)[0]) + '"></div>' +
+      '<div class="f"><label>Area</label><input id="nhArea" placeholder="Alipore"></div></div>' +
+      '<div class="f"><label>Who he is in it</label><input id="nhRel" placeholder="Son, the groom" value="' + esc(c.relation || '') + '"></div>' +
+      '<button class="btn gold" data-act="saveHousehold" data-id="' + cid + '">Add the household</button>');
+  };
+  A.saveHousehold = function (cid) {
+    var c = one(D().clients, cid), name = document.getElementById('nhName').value.trim();
+    if (!name) { GE.toast('Give the household a name.'); return; }
+    var fid = GE.uid('F-');
+    D().families.push({ id: fid, name: name, area: document.getElementById('nhArea').value.trim(), note: '' });
+    c.relation = document.getElementById('nhRel').value;
+    GE.closeModal(); linkHousehold(c, fid);
+    GE.toast('The ' + name + ' household is added, with ' + c.name + ' in it.');
   };
   A.saveClientNote = function (id, el) {
     var c = one(D().clients, id); if (!c) return;
@@ -2231,7 +2291,7 @@
         label = got + '%';
       } else if (t.per === 'stylist') {
         got = Object.keys(GE.closedIn(w).filter(function (o) { return o.stylist === t.who; })
-          .reduce(function (a, o) { a[o.family] = 1; return a; }, {})).length;
+          .reduce(function (a, o) { a[o.family || o.client] = 1; return a; }, {})).length;
         label = got + ' households';
       } else {
         var del = D().orders.filter(function (o) { return o.stage === 'Delivered'; });
@@ -2507,7 +2567,7 @@
       D().people.filter(function (p) { return p.role === 'Stylist' || p.role === 'Salesperson'; })
         .map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('') +
       '</select></div></div>' +
-      '<div class="two"><div class="f"><label>How he found us</label><select id="noSrc">' +
+      '<div class="two"><div class="f"><label>Source</label><select id="noSrc">' +
       GE.SOURCES.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></div>' +
       '<div class="f"><label>What it might be worth</label><input type="number" id="noEst" value="150000"></div></div>' +
       '<div class="two"><div class="f"><label>The occasion</label>' + occasionSelect('noEvent', 'Wedding') + '</div>' +
@@ -2538,35 +2598,47 @@
     GE.toast(id + ' is on the showroom at Stylist. The Doorman chases it if it goes quiet for five days.');
   };
 
+  /* what the showroom needs on day one (6 Oct): the man, how he came, who has him, the occasion and its
+     dates, and where in the sale he is. Adding him opens his opportunity at that stage.
+     Household and birthday live on his own record. */
+  var START_STAGES = ['Stylist', 'Shown designs', 'Quotation provided', 'Advance taken', 'Measurements'];
   A.newClient = function () {
-    GE.modal('<h2>Add a client</h2><p class="sub">One person. The household is a link on his record, not a merged one.</p>' +
-      '<div class="two"><div class="f"><label>Name</label><input id="ncName"></div>' +
-      '<div class="f"><label>Mobile</label><input id="ncPhone" placeholder="+91 "></div></div>' +
-      '<div class="two"><div class="f"><label>Household</label><select id="ncFam">' +
-      D().families.map(function (f) { return '<option value="' + f.id + '">' + esc(f.name) + ', ' + esc(f.area) + '</option>'; }).join('') +
-      '<option value="new">A new household</option></select></div>' +
-      '<div class="f"><label>Who he is in it</label><input id="ncRel" placeholder="Son, the groom"></div></div>' +
-      '<div class="two"><div class="f"><label>How he found us</label><select id="ncSrc">' +
+    GE.modal('<h2>Add a client</h2><p class="sub">One person. His household and birthday go on his own record.</p>' +
+      '<div class="two"><div class="f"><label>Name</label><input id="ncName" autocomplete="off"></div>' + phoneField('ncPhone', 'Mobile') + '</div>' +
+      '<div class="two"><div class="f"><label>Source</label><select id="ncSrc">' +
       GE.SOURCES.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></div>' +
-      '<div class="f"><label>Birthday</label><input type="date" id="ncDob"></div></div>' +
+      '<div class="f"><label>Assign a stylist</label><select id="ncStylist">' +
+      D().people.filter(function (p) { return p.role === 'Stylist' || p.role === 'Salesperson'; })
+        .map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + ' · ' + esc(p.role) + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="two"><div class="f"><label>Occasion</label>' + occasionSelect('ncEvent', 'Wedding') + '</div>' +
+      '<div class="f"><label>Sales stage</label><select id="ncStage">' +
+      START_STAGES.map(function (st) { return '<option>' + st + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="two"><div class="f"><label>Date of the occasion</label><input type="date" id="ncEventAt"></div>' +
+      '<div class="f"><label>Delivery wanted by</label><input type="date" id="ncDelivery"></div></div>' +
       '<div class="f"><label>Note</label><textarea id="ncNote" rows="2" placeholder="Walked in at four, asking about a bandhgala."></textarea></div>' +
       '<button class="btn gold" data-act="saveClient">Add him</button>');
   };
   A.saveClient = function () {
-    var name = document.getElementById('ncName').value.trim();
+    var v = function (i) { return document.getElementById(i).value; };
+    var name = v('ncName').trim();
     if (!name) { GE.toast('A name first.'); return; }
-    var fam = document.getElementById('ncFam').value;
-    if (fam === 'new') {
-      fam = GE.uid('F-');
-      D().families.push({ id: fam, name: name.split(' ').slice(-1)[0], area: '', note: '' });
-    }
+    var phone = readPhone('ncPhone', true);
+    if (phone === null) { GE.toast(v('ncPhoneCc') === '+91' ? 'An Indian mobile is 10 digits, starting 6, 7, 8 or 9.' : 'Check the mobile number: 6 to 14 digits, without the country code.'); return; }
+    var dup = D().clients.filter(function (c) { return c.phone && c.phone.replace(/\D/g, '') === phone.replace(/\D/g, ''); })[0];
+    if (dup) { GE.toast(dup.name + ' already has this number. Open him from Clients.'); return; }
+    var stylist = v('ncStylist'), stage = v('ncStage'), now = GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5);
     var id = GE.uid('C-');
-    D().clients.push({ id: id, family: fam, name: name, relation: document.getElementById('ncRel').value,
-      phone: document.getElementById('ncPhone').value, email: '', dob: document.getElementById('ncDob').value,
-      anniversary: '', source: document.getElementById('ncSrc').value,
-      stylist: 'p-farhan', salesperson: GE.me().id, note: document.getElementById('ncNote').value });
+    D().clients.push({ id: id, family: '', name: name, relation: '', phone: phone, email: '', dob: '', anniversary: '',
+      source: v('ncSrc'), stylist: stylist, salesperson: GE.me().role === 'Salesperson' ? GE.me().id : stylist, note: v('ncNote') });
+    var oid = 'O-' + (1053 + D().orders.length);
+    var hist = [{ stage: 'Stylist', by: GE.me().id, at: now }];
+    if (stage !== 'Stylist') hist.push({ stage: stage, by: GE.me().id, at: now });
+    D().orders.push({ id: oid, client: id, family: '', vertical: 'in-house', type: '', stage: stage, value: 0, cuts: [], adds: [], extras: [], ops: '',
+      estimate: 0, source: v('ncSrc'), salesperson: GE.me().role === 'Salesperson' ? GE.me().id : stylist, stylist: stylist, designer: '',
+      booked: GE.TODAY, advance_at: stage === 'Advance taken' ? GE.TODAY : '', event: v('ncEvent'), event_date: v('ncEventAt'), outfits: 0,
+      delivery: v('ncDelivery'), trial: '', note: v('ncNote'), history: hist });
     GE.save(); GE.closeModal(); GE.go('#/clients'); A.openClient(id);
-    GE.toast('Added. His measurements are his own, and the household is on his record.');
+    GE.toast(name + ' is added, with ' + pname(stylist) + ', and ' + oid + ' is open at ' + stage + '.');
   };
 
   A.addGarment = function (oid) {
@@ -2684,7 +2756,7 @@
       Object.keys(GE.ROLES).map(function (r) { return '<option>' + r + '</option>'; }).join('') + '</select></div></div>' +
       '<div class="two"><div class="f"><label>Reports to</label><select id="npRep">' +
       D().people.map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('') +
-      '</select></div><div class="f"><label>Mobile</label><input id="npPhone" placeholder="+91 "></div></div>' +
+      '</select></div>' + phoneField('npPhone', 'Mobile') + '</div>' +
       '<div class="f"><label>Login name</label><input id="npLogin"></div>' +
       '<p class="hint">The password is issued by the owner, never set here and never shown on a screen.</p>' +
       '<button class="btn gold" data-act="savePerson">Add them</button>');
@@ -2692,8 +2764,10 @@
   A.savePerson = function () {
     var g = function (i) { return document.getElementById(i).value; };
     if (!g('npName')) { GE.toast('A name first.'); return; }
+    var ph = readPhone('npPhone', false);
+    if (ph === null) { GE.toast(g('npPhoneCc') === '+91' ? 'An Indian mobile is 10 digits, starting 6, 7, 8 or 9.' : 'Check the mobile number: 6 to 14 digits, without the country code.'); return; }
     D().people.push({ id: GE.uid('p-'), name: g('npName'), role: g('npRole'), login: g('npLogin'),
-      phone: g('npPhone'), reports: g('npRep'), lines: ['In-house'] });
+      phone: ph, reports: g('npRep'), lines: ['In-house'] });
     GE.save(); GE.closeModal(); GE.go('#/team');
     GE.toast('Added. What they can reach comes from their role.');
   };
