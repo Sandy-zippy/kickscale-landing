@@ -18,6 +18,9 @@
     return D().orders.filter(function (o) { return ids.indexOf(o.client) > -1; });
   }
   GE.famOrdersOf = famOrdersOf;
+  GE.ui = { head: function () { return head.apply(null, arguments); }, kpi: function () { return kpi.apply(null, arguments); }, pill: function () { return pill.apply(null, arguments); },
+    q: function (r) { return q(r); }, searchBar: function () { return searchBar.apply(null, arguments); }, fld: function () { return fld.apply(null, arguments); },
+    cname: cname, pname: pname, dgname: dgname, stagePill: function (s) { return stagePill(s); } };
   /* every mobile in the app: a country-code dropdown and the number, read back as one */
   function phoneField(id, label, value) {
     var m = /^(\+\d{1,4})\s*(.*)$/.exec(value || ''), code = m ? m[1] : '+91', rest = m ? m[2] : '';
@@ -891,8 +894,8 @@
         });
       });
       gs.forEach(function (g) {
-        var r = g.piece && one(D().readymade, g.piece);
-        if (r && r.cost_to_make) h += '<tr><td>Readymade piece</td><td>' + esc(pieceName(g.piece)) + '</td><td class="sub">from the readymade stock</td><td class="num">' + GE.money(r.cost_to_make) + '</td></tr>';
+        var r = g.piece && GE.pieceOf(g.piece);
+        if (r && GE.pieceCost(r)) h += '<tr><td>Readymade piece</td><td>' + esc(pieceName(g.piece)) + '</td><td class="sub">' + (r.source === 'consignment' ? 'the designer\'s share, 70% before GST' : 'from the readymade stock') + '</td><td class="num">' + GE.money(GE.pieceCost(r)) + '</td></tr>';
       });
       cost.lines.forEach(function (l) {
         var lg = l.garment && one(D().garments, l.garment);
@@ -999,7 +1002,7 @@
     }
     GE.save(); A.openOrder(id);
   };
-  function pieceName(id) { var r = one(D().readymade, id); return r ? (r.code ? r.code + ' · ' : '') + r.name + (r.size ? ', size ' + r.size : '') : ''; }
+  function pieceName(id) { var r = GE.pieceOf(id); return r ? (r.barcode ? r.barcode + ' · ' : r.code ? r.code + ' · ' : '') + r.name + (r.size ? ', size ' + r.size : '') : ''; }
   GE.pieceName = pieceName;
   /* an order's value in one line: its garments of that line (an order not yet listed counts whole, by its type) */
   function lineValue(o, line) {
@@ -1288,8 +1291,8 @@
         var f = one(D().fabrics, u.fabric); if (!f || !u.metres) return;
         h += '<tr><td>Fabric</td><td>' + esc(f.brand + ' ' + f.colour) + ', ' + u.metres + ' m</td><td class="sub">from the fabric library</td><td class="num">' + rupees(f.cost * u.metres) + '</td></tr>';
       });
-      var gr = g.piece && one(D().readymade, g.piece);
-      if (gr && gr.cost_to_make) h += '<tr><td>Readymade piece</td><td>' + esc(pieceName(g.piece)) + '</td><td class="sub">from the readymade stock</td><td class="num">' + rupees(gr.cost_to_make) + '</td></tr>';
+      var gr = g.piece && GE.pieceOf(g.piece);
+      if (gr && GE.pieceCost(gr)) h += '<tr><td>Readymade piece</td><td>' + esc(pieceName(g.piece)) + '</td><td class="sub">from the readymade stock</td><td class="num">' + rupees(GE.pieceCost(gr)) + '</td></tr>';
       by(D().costlines, 'garment', g.id).forEach(function (l) {
         h += '<tr><td>' + esc(l.kind) + '</td><td>' + esc(l.label || '') + (l.file ? ' <span class="sub">· ' + esc(l.file) + '</span>' : '') + '</td><td>' + esc(l.person ? pname(l.person) : 'Outside / a vendor') +
           '<div class="sub">by ' + esc(pname(l.by)) + ', ' + d(l.at) + '</div></td><td class="num">' + rupees(l.amount) + '</td></tr>';
@@ -2825,15 +2828,17 @@
     if (id === 'agFab') A.agPrice();
   };
   function pieceOptions(t, owner) {
-    t = (t || '').toLowerCase();
-    return D().readymade.filter(function (r) { return (owner == null || r.owner === owner) && (!t || [r.code, r.name, r.kind, dgname(r.owner), r.size].join(' ').toLowerCase().indexOf(t) > -1); })
-      .map(function (r) { return '<option value="' + r.id + '">' + esc((r.code ? r.code + ' · ' : '') + r.name) + ' · size ' + esc(r.size || '—') +
-        ' · ' + esc(r.owner === 'Sasya' ? 'ours' : dgname(r.owner)) + (r.warehouse ? ' · ' + esc(r.warehouse) : '') + ' · ' + rupees(r.price) + '</option>'; }).join('');
+    t = (t || '').toLowerCase().trim();
+    return D().pieces.filter(function (p) { return p.status === 'in stock' && (owner == null || p.supplier === owner) &&
+        (!t || [p.barcode, p.name, p.kind, p.size, GE.whoSupplies(p.supplier)].join(' ').toLowerCase().indexOf(t) > -1); })
+      .map(function (p) { return '<option value="' + p.id + '">' + esc(p.barcode + ' · ' + p.name) + ' · size ' + esc(p.size || '—') +
+        ' · ' + esc(p.location) + ' · ' + rupees(GE.piecePrice(p)) + ' + GST</option>'; }).join('');
   }
   function agOwner() { var f = document.getElementById('agFrom'); return f && f.value ? f.value : 'Sasya'; }
   A.pieceFind = function (id, el) {
-    var sel = document.getElementById('agPiece'), opts = pieceOptions(el.value, agOwner());
-    sel.innerHTML = '<option value="">Choose the piece</option>' + (opts || '<option value="">Nothing matches</option>');
+    var sel = document.getElementById('agPiece'), hit = GE.findBarcode(el.value);
+    var opts = hit && hit.status === 'in stock' && hit.supplier === agOwner() ? pieceOptions(hit.barcode, agOwner()) : pieceOptions(el.value, agOwner());
+    sel.innerHTML = '<option value="">Choose the piece</option>' + (opts || '<option value="">Nothing in stock matches</option>');
     if (opts && el.value) sel.selectedIndex = 1;
     A.agPrice();
   };
@@ -2851,9 +2856,9 @@
       '<option value="custom">Custom, to his measurements</option>' +
       '<option value="readymade">Readymade, from stock</option></select></div><div></div></div>' +
       '<div id="agReady" hidden><div class="f"><label>Which readymade piece</label>' +
-      '<input type="search" id="agPieceFind" class="pickfind" placeholder="Type a code, a name or a size" data-input="pieceFind" autocomplete="off">' +
+      '<input type="search" id="agPieceFind" class="pickfind" placeholder="Scan the barcode, or type a name or a size" data-input="pieceFind" autocomplete="off">' +
       '<select id="agPiece" data-change="agPrice"><option value="">Choose the piece</option></select>' +
-      '<div class="hint">Straight from the readymade stock: its price becomes the garment\'s value. No metres.</div></div></div>' +
+      '<div class="hint">Only pieces in stock from this maker. It is held for him now and leaves stock when he takes it. No metres.</div></div></div>' +
       '<div id="agCustom"><div class="two"><div class="f"><label>Fabric</label>' + fabricPicker('agFab') +
       '<div class="hint">More can be added on the garment itself: lining, contrast, whatever it takes.</div></div>' +
       '<div class="f"><label>Metres</label><input type="number" step="0.1" id="agM" value="3" data-change="agPrice"></div></div>' +
@@ -2898,7 +2903,7 @@
         g.rate = Number($('agRate').value) || 0; g.design = Number($('agDesign').value) || 0;
       }
     }
-    if (ready && g.piece) { var r = one(D().readymade, g.piece); if (r && r.kind) { $('agKind').value = r.kind; g.kind = r.kind; } }
+    if (ready && g.piece) { var r = GE.pieceOf(g.piece); if (r && r.kind) { $('agKind').value = r.kind; g.kind = r.kind; } }
     var sg = GE.garmentSuggest(g);
     if (!out.dataset.touched) out.value = sg.amount || '';
     if (why) why.textContent = sg.amount ? (ready ? 'The piece\'s price from the readymade stock. ' : 'From the fabric library: ' + sg.why + '. ') + 'Change it if this one is different.'

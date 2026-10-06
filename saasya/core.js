@@ -187,13 +187,64 @@ var GE = (function () {
   }
   /* the stored order value always equals its garments and other items, so every screen that reads
      it (targets, households, accounting) is right without knowing how it is worked out */
+  /* ---------- stock: pieces ----------
+     A piece is reserved while an outfit on an order points at it, sold when that outfit or its
+     order is delivered, and back in stock if the outfit or the order goes. Derived on every save,
+     so sales and stock cannot drift apart. */
+  function pieceOf(id) { return one(D.pieces || [], id) || one(D.readymade || [], id); }
+  function supplierMargin(sup) { var dz = one(D.designers || [], sup); return dz ? Number(dz.margin) || 30 : 30; }
+  function pieceCost(p) {   /* what the piece costs us: consignment is the designer's share of the price before GST */
+    if (!p) return 0;
+    if (p.source === 'consignment') return Math.round((Number(p.price_ex) || 0) * (100 - supplierMargin(p.supplier)) / 100);
+    return Number(p.cost_ex != null ? p.cost_ex : p.cost_to_make) || 0;
+  }
+  function piecePrice(p) { return p ? Number(p.price_ex != null ? p.price_ex : p.price) || 0 : 0; }
+  function withGst(n, pct) { return Math.round((Number(n) || 0) * (1 + (pct == null ? 18 : Number(pct)) / 100)); }
+  function syncPieces() {
+    var held = {};
+    (D.garments || []).forEach(function (g) {
+      var p = g.piece && one(D.pieces || [], g.piece); if (!p) return;
+      var o = one(D.orders, g.order); held[p.id] = 1;
+      var done = g.stage === 'Delivered' || (o && o.stage === 'Delivered');
+      if (done && p.status !== 'sold') { p.status = 'sold'; p.sold_at = p.sold_at || localToday(); }
+      else if (!done && p.status !== 'on approval') { p.status = 'reserved'; p.sold_at = ''; }
+      p.order = g.order; p.garment = g.id;
+    });
+    (D.pieces || []).forEach(function (p) {   /* an outfit or order that went releases its piece */
+      if (!held[p.id] && p.garment && (p.status === 'reserved' || (p.status === 'sold' && p.order))) {
+        p.status = 'in stock'; p.order = ''; p.garment = ''; p.sold_at = '';
+      }
+    });
+  }
+  function nextBarcode(at) {
+    var ym = String(at || localToday()).slice(2, 7).replace('-', ''), n = 0;
+    (D.pieces || []).forEach(function (p) { var m = /-(\d{4})$/.exec(p.barcode || ''); if (m) n = Math.max(n, Number(m[1])); });
+    return 'SM' + ym + '-' + ('000' + (n + 1)).slice(-4);
+  }
+  /* receive goods: one record per piece, each with its own barcode */
+  function receivePieces(spec) {
+    var sizes = String(spec.sizes || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+    var qty = sizes.length || Math.max(1, Number(spec.qty) || 1), made = [];
+    for (var i = 0; i < qty; i++) {
+      var p = { id: uid('P-'), barcode: nextBarcode(spec.at), name: spec.name, code: spec.code || '', kind: spec.kind, size: sizes[i] || spec.size || '',
+        colour: spec.colour || '', supplier: spec.supplier || 'Sasya', source: spec.source, purchase: spec.purchase || '',
+        cost_ex: spec.source === 'consignment' ? 0 : Number(spec.cost_ex) || 0, price_ex: Number(spec.price_ex) || 0, gst: spec.gst == null ? 18 : Number(spec.gst),
+        received: spec.at || localToday(), location: spec.location || 'Store', status: 'in stock', order: '', garment: '', sold_at: '', returned_at: '', design: spec.design || '',
+        history: [{ what: 'Received', by: ME ? ME.id : 'system', at: (spec.at || localToday()) + 'T' + clock() }] };
+      D.pieces.push(p); made.push(p);
+    }
+    save(); return made;
+  }
+  function findBarcode(code) { code = String(code || '').trim().toUpperCase(); return (D.pieces || []).filter(function (p) { return p.barcode.toUpperCase() === code; })[0] || null; }
   function syncValues() { (D.orders || []).forEach(function (o) { var L = orderLines(o); if (L.listed) o.value = L.garmentsTotal + L.extrasTotal; }); }
-  function save() { syncValues(); try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
+  function save() { syncValues(); syncPieces(); try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
   /* 5 Oct: the order value is the garments' values (and the other items), never typed. A saved
      copy from before gets the new fields, and an old order's value is shared out over its
      garments so every total stays exactly what it was. Safe to run twice. */
   function migrate() {
     D.priceRule = D.priceRule || { multiplier: 6 };
+    /* 6 Oct: stock. Every physical piece is one record with a barcode; purchases own them. */
+    if (!D.pieces || !D.purchases) { var sd = (typeof SEED === 'function') ? SEED() : {}; D.pieces = D.pieces || sd.pieces || []; D.purchases = D.purchases || sd.purchases || []; }
     /* 6 Oct: an outfit in a cloth is charged per metre, plus its design charge. An old flat
        outfit price becomes a per-metre charge at 3 metres, with no design charge. */
     (D.fabrics || []).forEach(function (f) {
@@ -270,6 +321,7 @@ var GE = (function () {
     '#/mine':            function () { return !!can('ops'); },
     '#/fabric':          function () { return !!can('stock'); },
     '#/readymade':       function () { return can('stock') === true; },
+    '#/stock':           function () { return can('stock') === true; },
     '#/invoices':        function () { return !!can('invoices'); },
     '#/payables':        function () { return !!can('invoices'); },
     '#/costsheet':       function () { return !!can('cost'); },
@@ -333,7 +385,7 @@ var GE = (function () {
     return { per_m: set ? Number(r.per_m) : (f ? f.cost * k : 0), design: Number(r.design) || 0, set: set, rule: k };
   }
   function garmentSuggest(g) {
-    if (g.piece) { var r = one(D.readymade, g.piece); if (r) return { amount: Number(r.price) || 0, why: 'the readymade piece ' + (r.code || r.name) + ', at its price' }; }
+    if (g.piece) { var r = pieceOf(g.piece); if (r) return { amount: piecePrice(r), why: 'the readymade piece ' + (r.barcode || r.code || r.name) + ', at its price before GST' }; }
     var fl = fabricsOf(g), parts = [], cloth = 0;
     fl.forEach(function (u, i) {
       var f = one(D.fabrics, u.fabric); if (!f) return;
@@ -395,7 +447,7 @@ var GE = (function () {
       });
     });
     var pieces = 0;   /* a readymade piece costs what it cost us to make or buy */
-    by(D.garments, 'order', orderId).forEach(function (g) { var r = g.piece && one(D.readymade, g.piece); if (r) pieces += Number(r.cost_to_make) || 0; });
+    by(D.garments, 'order', orderId).forEach(function (g) { var r = g.piece && pieceOf(g.piece); if (r) pieces += pieceCost(r); });
     var rest = sum(lines, function (l) { return l.amount; });
     return { fabric: fab, pieces: pieces, lines: lines, other: rest, total: fab + pieces + rest };
   }
@@ -705,7 +757,8 @@ var GE = (function () {
     sum: sum, by: by, one: one,
     load: load, save: save, reset: reset,
     me: me, signIn: signIn, signOut: signOut, can: can, money: money, moneyShort: moneyShort,
-    ROUTE_OK: ROUTE_OK, allowed: allowed,
+    ROUTE_OK: ROUTE_OK, pieceOf: pieceOf, pieceCost: pieceCost, piecePrice: piecePrice, withGst: withGst, syncPieces: syncPieces,
+    nextBarcode: nextBarcode, receivePieces: receivePieces, findBarcode: findBarcode, supplierMargin: supplierMargin, allowed: allowed,
     myOrders: myOrders,
     payableOf: payableOf, payableOn: payableOn, payableGrossOf: payableGrossOf,
     orderMoney: orderMoney, rateFor: rateFor, cutsTotal: cutsTotal, addsTotal: addsTotal, garmentSuggest: garmentSuggest, garmentValue: garmentValue, orderLines: orderLines, migrate: migrate, syncValues: syncValues,

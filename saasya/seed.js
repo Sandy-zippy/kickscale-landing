@@ -1,8 +1,49 @@
 /* Hand-written sample data. One story: a December wedding, a designer who has gone
    quiet, a bunch of silk running out, and a bill nobody has chased.
    Every client here is invented. None of it is Sasya's own. */
-function SEED() {
+/* stock: every physical piece, each with its own barcode, owned by the purchase it came in on */
+function SEED_STOCK() {
+  var pieces = [], n = 0;
+  function add(purchase, supplier, source, at, name, kind, sizes, cost, price, design, sold, returned) {
+    sizes.forEach(function (sz, i) {
+      n++;
+      var st = sold && sold[i] ? 'sold' : returned && returned[i] ? 'returned' : 'in stock';
+      pieces.push({ id:'P-' + ('000' + n).slice(-4), barcode:'SM' + at.slice(2, 7).replace('-', '') + '-' + ('000' + n).slice(-4),
+        name:name, code:'', kind:kind, size:sz, colour:'', supplier:supplier, source:source, purchase:purchase,
+        cost_ex: source === 'consignment' ? 0 : cost, price_ex:price, gst:18, received:at, location: n % 5 === 0 ? 'Godown' : 'Store',
+        status:st, order:'', garment:'', sold_at: st === 'sold' ? sold[i] : '', returned_at: st === 'returned' ? returned[i] : '', design:design || '',
+        history:[{ what:'Received', by:'p-deb', at:at + 'T11:00' }] });
+    });
+  }
+  /* on-order from JJ Valaya: 8 in, one sold before the cockpit, one sent back after 7 days */
+  add('PUR-01','D-02','on-order','2026-08-20','Black sherwani, dori work','Sherwani',['40','42','42','44'],110000,185000,'R-02',[0,'2026-09-15'],[0,0,0,'2026-08-27']);
+  add('PUR-01','D-02','on-order','2026-08-20','Ivory achkan, zardozi','Sherwani',['40','42'],95000,160000,'');
+  add('PUR-01','D-02','on-order','2026-08-20','Velvet bandhgala, midnight','Suit jacket / blazer / bandhgala',['40','42'],70000,118000,'');
+  /* on-order from Rohit Gandhi + Rahul Khanna */
+  add('PUR-02','D-05','on-order','2026-09-10','Tuxedo, shawl lapel','Suit jacket / blazer / bandhgala',['38','40','42','44'],60000,98000,'',[0,0,'2026-09-28']);
+  /* consignment, not ours until sold */
+  add('CON-01','D-01','consignment','2026-09-01','Bandhgala, ink blue','Suit jacket / blazer / bandhgala',['40','42'],0,125000,'R-05',['2026-09-22']);
+  add('CON-01','D-01','consignment','2026-09-01','Asymmetric kurta set','Kurta',['40','42','44'],0,88000,'');
+  add('CON-02','D-04','consignment','2026-09-15','Draped kurta, charcoal','Kurta',['38','40','42'],0,142000,'R-03');
+  /* our own make */
+  add('','Sasya','own','2026-09-14','Ivory linen bandhgala','Suit jacket / blazer / bandhgala',['40','42'],29500,68000,'R-01');
+  add('','Sasya','own','2026-08-13','Navy tuxedo, grosgrain lapel','Suit jacket / blazer / bandhgala',['38'],41000,95000,'R-04');
+  add('','Sasya','own','2026-09-27','Bandhgala, bottle green raw silk','Suit jacket / blazer / bandhgala',['40','42'],34000,82000,'R-06');
   return {
+    pieces: pieces,
+    purchases: [
+      { id:'PUR-01', type:'on-order', supplier:'D-02', at:'2026-08-20', credit_days:60, advance:300000, bill:'JJV/2026/0412', note:'Festive buy, eight pieces' },
+      { id:'PUR-02', type:'on-order', supplier:'D-05', at:'2026-09-10', credit_days:60, advance:100000, bill:'RGRK/SM/88', note:'' },
+      { id:'CON-01', type:'consignment', supplier:'D-01', at:'2026-09-01', credit_days:0, advance:0, bill:'', note:'Sent on goodwill for the season' },
+      { id:'CON-02', type:'consignment', supplier:'D-04', at:'2026-09-15', credit_days:0, advance:0, bill:'', note:'' }
+    ]
+  };
+}
+function SEED() {
+  var STOCK = SEED_STOCK();
+  return {
+    pieces: STOCK.pieces,
+    purchases: STOCK.purchases,
     v: 2,
     unit: 'inches',
     gst: 0.18,
