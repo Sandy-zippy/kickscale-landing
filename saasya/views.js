@@ -2099,7 +2099,7 @@
     makePdf(invoiceHtml(one(D().orders, id), null), 'Saasya-Men-' + id + '.pdf');
     GE.toast('Making the PDF of ' + id + '…');
   };
-  GE.invoiceHtml = invoiceHtml; GE.INV_CSS = INV_CSS;
+  GE.invoiceHtml = invoiceHtml; GE.INV_CSS = INV_CSS; GE.makePdf = makePdf; GE.HOUSE_INFO = HOUSE_INFO;
 
   A.newInvoice = function (oid) {
     var orders = GE.myOrders().filter(function (o) { return o.value > 0; });
@@ -2177,10 +2177,9 @@
         '</td></tr>';
     });
     h += '</tbody></table></div>';
-    h += '<div class="note"><b>The arithmetic, on a round number.</b> A piece is charged at ' + rupees(100000) +
-      ' including tax. GST at 18% of that is ' + rupees(18000) + ', leaving ' + rupees(82000) +
-      '. On a 30% designer the house keeps ' + rupees(24600) + ' and ' + rupees(57400) +
-      ' is theirs. Every row above is that same sum, on the total that order was charged.</div>';
+    h += '<div class="note"><b>The arithmetic, on a round number.</b> A piece is charged ' + rupees(118000) +
+      ' including GST, which is ' + rupees(100000) + ' before GST. On a 30% designer the house keeps ' + rupees(30000) + ' and ' + rupees(70000) +
+      ' is theirs: the split is always on the price before GST. Every row above is that same sum, on what that order was charged.</div>';
     return h;
   };
   A.payDesigner = function (id) {

@@ -235,6 +235,47 @@ var GE = (function () {
     }
     save(); return made;
   }
+  /* ---------- purchases: on-order and consignment ----------
+     On-order: we owe for what has SOLD, at its cost after GST, less the advance and what has been
+     paid; returned pieces owe nothing. Consignment: nothing is ours until it sells; then the
+     designer's share is (100 - margin)% of the price BEFORE GST (30/70 for most). */
+  function piecesOf(purId) { return (D.pieces || []).filter(function (p) { return p.purchase === purId; }); }
+  function paidOn(sup, purId) {
+    return sum((D.supplier_payments || []).filter(function (x) { return x.supplier === sup && (purId == null || x.purchase === purId); }), function (x) { return Number(x.amount) || 0; });
+  }
+  function purchaseSummary(purId) {
+    var pur = one(D.purchases || [], purId); if (!pur) return null;
+    var ps = piecesOf(purId), st = function (s) { return ps.filter(function (p) { return p.status === s; }); };
+    var sold = st('sold'), ret = st('returned'), hand = ps.filter(function (p) { return p.status !== 'sold' && p.status !== 'returned'; });
+    var inc = function (p) { return withGst(p.cost_ex, p.gst); };
+    var pays = (D.supplier_payments || []).filter(function (x) { return x.purchase === purId; });
+    var advPays = pays.filter(function (x) { return x.advance; });
+    var adv = advPays.length ? sum(advPays, function (x) { return Number(x.amount) || 0; }) : Number(pur.advance) || 0;   /* the advance is a payment, counted once */
+    var soldCost = sum(sold, inc), paid = sum(pays.filter(function (x) { return !x.advance; }), function (x) { return Number(x.amount) || 0; });
+    var due = pur.credit_days ? addDays(pur.at, pur.credit_days) : '';
+    return { purchase: pur, pieces: ps, sold: sold, returned: ret, onHand: hand,
+      costIn: sum(ps, inc), costReturned: sum(ret, inc), costOnHand: sum(hand, inc), soldCost: soldCost, soldPrice: sum(sold, function (p) { return withGst(p.price_ex, p.gst); }),
+      advance: adv, paid: paid, owed: Math.max(0, soldCost - adv - paid), credit: Math.max(0, adv + paid - soldCost),
+      due: due, daysLeft: due ? days(localToday(), due) : null };
+  }
+  function addDays(dt, n) { var x = new Date(dt + 'T00:00:00'); x.setDate(x.getDate() + Number(n || 0)); return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+  function consignmentLine(p) {
+    var m = supplierMargin(p.supplier), pre = Number(p.price_ex) || 0, ours = Math.round(pre * m / 100);
+    return { piece: p, pre: pre, gst: withGst(pre, p.gst) - pre, mrp: withGst(pre, p.gst), margin: m, ours: ours, theirs: pre - ours };
+  }
+  function consignmentSummary(sup, from, to) {
+    var ps = (D.pieces || []).filter(function (p) { return p.source === 'consignment' && p.supplier === sup; });
+    var inWin = function (dt) { return dt && (!from || dt >= from) && (!to || dt <= to); };
+    var sold = ps.filter(function (p) { return p.status === 'sold' && inWin(p.sold_at); }).map(consignmentLine);
+    var allSold = ps.filter(function (p) { return p.status === 'sold'; }).map(consignmentLine);
+    var bills = (D.supplier_bills || []).filter(function (b) { return b.supplier === sup && b.kind === 'consignment'; });
+    var billed = sum(bills, function (b) { return Number(b.amount) || 0; }), paid = sum((D.supplier_payments || []).filter(function (x) { return x.supplier === sup && x.kind === 'consignment'; }), function (x) { return Number(x.amount) || 0; });
+    return { supplier: sup, pieces: ps, sold: sold, onHand: ps.filter(function (p) { return p.status === 'in stock' || p.status === 'on approval' || p.status === 'reserved'; }),
+      returned: ps.filter(function (p) { return p.status === 'returned'; }),
+      pre: sum(sold, function (l) { return l.pre; }), gst: sum(sold, function (l) { return l.gst; }), mrp: sum(sold, function (l) { return l.mrp; }),
+      ours: sum(sold, function (l) { return l.ours; }), theirs: sum(sold, function (l) { return l.theirs; }),
+      theirsAll: sum(allSold, function (l) { return l.theirs; }), billed: billed, paid: paid, toPay: Math.max(0, billed - paid), notBilled: Math.max(0, sum(allSold, function (l) { return l.theirs; }) - billed) };
+  }
   function findBarcode(code) { code = String(code || '').trim().toUpperCase(); return (D.pieces || []).filter(function (p) { return p.barcode.toUpperCase() === code; })[0] || null; }
   function syncValues() { (D.orders || []).forEach(function (o) { var L = orderLines(o); if (L.listed) o.value = L.garmentsTotal + L.extrasTotal; }); }
   function save() { syncValues(); syncPieces(); try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
@@ -244,6 +285,7 @@ var GE = (function () {
   function migrate() {
     D.priceRule = D.priceRule || { multiplier: 6 };
     /* 6 Oct: stock. Every physical piece is one record with a barcode; purchases own them. */
+    D.supplier_bills = D.supplier_bills || []; D.supplier_payments = D.supplier_payments || [];
     if (!D.pieces || !D.purchases) { var sd = (typeof SEED === 'function') ? SEED() : {}; D.pieces = D.pieces || sd.pieces || []; D.purchases = D.purchases || sd.purchases || []; }
     /* 6 Oct: an outfit in a cloth is charged per metre, plus its design charge. An old flat
        outfit price becomes a per-metre charge at 3 metres, with no design charge. */
@@ -322,6 +364,8 @@ var GE = (function () {
     '#/fabric':          function () { return !!can('stock'); },
     '#/readymade':       function () { return can('stock') === true; },
     '#/stock':           function () { return can('stock') === true; },
+    '#/purchases':       function () { return !!can('invoices'); },
+    '#/consignment':     function () { return !!can('invoices'); },
     '#/invoices':        function () { return !!can('invoices'); },
     '#/payables':        function () { return !!can('invoices'); },
     '#/costsheet':       function () { return !!can('cost'); },
@@ -337,8 +381,7 @@ var GE = (function () {
 
   /* ---------- the money model, his own arithmetic ---------- */
 
-  /* 1,00,000 gross -> 18,000 GST -> 82,000 net -> designer margin 30% to us
-     -> Sasya keeps 24,600, designer is owed 57,400 */
+  /* the designer split: see payableOf, on the price before GST */
   function payableGrossOf(p) {           /* the client-facing total, GST inside, for HIS garments only */
     var o = one(D.orders, p && p.order);
     if (!o) return Number(p && p.gross) || 0;
@@ -349,10 +392,12 @@ var GE = (function () {
   }
   function payableOn(p) { return payableOf(payableGrossOf(p), p.margin, D.gst); }
 
+  /* 6 Oct, decided: the designer split is on the price BEFORE GST. A total of 1,18,000 with GST
+     inside is 1,00,000 before GST; a 30% designer leaves us 30,000 and is owed 70,000. */
   function payableOf(gross, marginPct, gstRate) {
     gross = Number(gross) || 0;
-    var gst = Math.round(gross * (gstRate == null ? 0.18 : gstRate));
-    var net = gross - gst;
+    var net = Math.round(gross / (1 + (gstRate == null ? 0.18 : gstRate)));
+    var gst = gross - net;
     var ours = Math.round(net * (Number(marginPct) || 0) / 100);
     return { gross: gross, gst: gst, net: net, ours: ours, payable: net - ours };
   }
@@ -758,7 +803,7 @@ var GE = (function () {
     load: load, save: save, reset: reset,
     me: me, signIn: signIn, signOut: signOut, can: can, money: money, moneyShort: moneyShort,
     ROUTE_OK: ROUTE_OK, pieceOf: pieceOf, pieceCost: pieceCost, piecePrice: piecePrice, withGst: withGst, syncPieces: syncPieces,
-    nextBarcode: nextBarcode, receivePieces: receivePieces, findBarcode: findBarcode, supplierMargin: supplierMargin, allowed: allowed,
+    nextBarcode: nextBarcode, piecesOf: piecesOf, purchaseSummary: purchaseSummary, consignmentSummary: consignmentSummary, consignmentLine: consignmentLine, addDays: addDays, paidOn: paidOn, receivePieces: receivePieces, findBarcode: findBarcode, supplierMargin: supplierMargin, allowed: allowed,
     myOrders: myOrders,
     payableOf: payableOf, payableOn: payableOn, payableGrossOf: payableGrossOf,
     orderMoney: orderMoney, rateFor: rateFor, cutsTotal: cutsTotal, addsTotal: addsTotal, garmentSuggest: garmentSuggest, garmentValue: garmentValue, orderLines: orderLines, migrate: migrate, syncValues: syncValues,

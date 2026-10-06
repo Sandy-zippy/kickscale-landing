@@ -44,6 +44,14 @@ function SEED() {
   return {
     pieces: STOCK.pieces,
     purchases: STOCK.purchases,
+    /* what designers have billed us, and what accounts has paid (paid in Tally, recorded here) */
+    supplier_bills: [
+      { id:'SB-01', supplier:'D-01', kind:'consignment', bill_no:'SNC/CON/0917', at:'2026-10-02', amount:87500, note:'For the ink blue bandhgala sold on 22 Sep' }
+    ],
+    supplier_payments: [
+      { id:'SP-01', supplier:'D-02', kind:'on-order', purchase:'PUR-01', amount:300000, at:'2026-08-20', mode:'Net transfer', ref:'HDFC/NEFT/55120', note:'Advance with the order', advance:true },
+      { id:'SP-02', supplier:'D-05', kind:'on-order', purchase:'PUR-02', amount:100000, at:'2026-09-10', mode:'Net transfer', ref:'HDFC/NEFT/58817', note:'Advance with the order', advance:true }
+    ],
     v: 2,
     unit: 'inches',
     gst: 0.18,

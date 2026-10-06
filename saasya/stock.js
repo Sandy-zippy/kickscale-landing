@@ -172,6 +172,8 @@
         credit_days: t === 'on-order' ? Number(v('rgCredit')) || 60 : 0, advance: t === 'on-order' ? Number(v('rgAdv')) || 0 : 0, bill: v('rgBill'), note: '' };
       while (one(D().purchases, pur.id)) pur.id += 'b';
       D().purchases.push(pur); spec.purchase = pur.id;
+      if (pur.advance > 0) (D().supplier_payments = D().supplier_payments || []).push({ id: GE.uid('SP-'), supplier: pur.supplier, kind: 'on-order', purchase: pur.id,
+        amount: pur.advance, at: at, mode: 'Net transfer', ref: '', note: 'Advance with the order', advance: true, by: GE.me().id });
     }
     var made = GE.receivePieces(spec);
     if (g) { g.piece = made[0].id; made[0].history[0].what = 'Received from ' + GE.ui.dgname(g.designer) + ' for ' + g.order; GE.moveGarment(g.id, 'Received and checked'); GE.save(); }
