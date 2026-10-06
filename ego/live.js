@@ -22,7 +22,7 @@ function allowedTab(t) {
   if (['clients', 'people', 'opps', 'import', 'inventory'].includes(t)) return holds();
   if (t === 'dealers') return holds() && canDiv('wholesale');
   if (t === 'architects') return holds();
-  if (t === 'orders' || t === 'p200') return holds() && canDiv('wholesale');
+  if (t === 'orders' || t === 'p200' || t === 'schemes') return holds() && canDiv('wholesale');
   if (t === 'installation') return holds() && canDiv('retail');
   if (t === 'complaints' || t === 'approvals' || t === 'orderbook') return holds();
   if (t === 'team') return D.access.users;
@@ -56,21 +56,21 @@ EM.render = (...a) => {
   hideChangeButtons(qs('#view'));
   if (both && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
-const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
+const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
 const NAV_TAIL = ['complaints', 'approvals', 'p200', 'inventory', 'import'];
 // Menu order per view, as Bhargav set it on 5 Oct.
 const NAV_ORDER = {
-  wholesale: ['home', 'people', 'architects', 'dealers', 'opps', 'orders', 'orderbook', ...NAV_TAIL],
+  wholesale: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', ...NAV_TAIL],
   retail: ['home', 'people', 'architects', 'opps', 'orderbook', 'installation', ...NAV_TAIL],
-  both: ['home', 'people', 'dealers', 'architects', 'orderbook', 'opps', 'orders', 'installation', ...NAV_TAIL],
+  both: ['home', 'people', 'dealers', 'architects', 'orderbook', 'opps', 'schemes', 'orders', 'installation', ...NAV_TAIL],
 };
 EM.navTabs = () => ({
   main: (NAV_ORDER[EM.div] || NAV_ORDER.both).map(k => [k, NAV_LABEL[k]])
-    .filter(([k]) => allowedTab(k) && !(['dealers', 'orders', 'p200'].includes(k) && EM.div === 'retail') && !(k === 'installation' && EM.div === 'wholesale')),
+    .filter(([k]) => allowedTab(k) && !(['dealers', 'orders', 'p200', 'schemes'].includes(k) && EM.div === 'retail') && !(k === 'installation' && EM.div === 'wholesale')),
   shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
 Object.assign(ICON, {
-  opps: ICON.leads, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, p200: ICON.targets, orderbook: ICON.orders || ICON.leads, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
+  opps: ICON.leads, schemes: ICON.targets, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, p200: ICON.targets, orderbook: ICON.orders || ICON.leads, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
 });
@@ -130,9 +130,10 @@ const G = {
   /* ₹ … /- around money, the unit after an area, a size or a count */
   adorn: (f, input) => { const u = unitOf(f); return u ? `<div class="adorn" data-unit="${esc(u)}">${u === 'money' ? '<span class="pre">₹</span>' : ''}${input}<span class="suf">${u === 'money' ? '/-' : esc(u)}</span></div>` : input; },
   /* several values: a dropdown with ticks and a search, not a wall of chips */
-  multi: (f, v, p, opts) => { const sel = Array.isArray(v) ? v : [];
-    return G.wrap(f, p, `<div class="ms" data-ms="${f.key}"><button type="button" class="input ms-btn" id="${p}-${f.key}" aria-expanded="false">${sel.length ? esc(sel.join(', ')) : '<span class="muted">Choose…</span>'}</button>
-      <div class="ms-pop" hidden><input class="input ms-q" placeholder="Search" aria-label="Search ${esc(f.label)}">${opts.map(o => `<label class="ms-opt"><input type="checkbox" name="${f.key}" value="${esc(o)}" ${sel.includes(o) ? 'checked' : ''}> ${esc(o)}</label>`).join('')}
+  /* opts: plain values, or [value, label] pairs (a record picked by id, shown by name) */
+  multi: (f, v, p, opts) => { const sel = Array.isArray(v) ? v : [], kv2 = opts.map(o => Array.isArray(o) ? o : [o, o]);
+    return G.wrap(f, p, `<div class="ms" data-ms="${f.key}"><button type="button" class="input ms-btn" id="${p}-${f.key}" aria-expanded="false">${sel.length ? esc(kv2.filter(([o]) => sel.includes(o)).map(([, l]) => l).join(', ')) : '<span class="muted">Choose…</span>'}</button>
+      <div class="ms-pop" hidden><input class="input ms-q" placeholder="Search" aria-label="Search ${esc(f.label)}">${kv2.map(([o, l]) => `<label class="ms-opt"><input type="checkbox" name="${f.key}" value="${esc(o)}" ${sel.includes(o) ? 'checked' : ''}> ${esc(l)}</label>`).join('')}
       <div class="row"><button type="button" class="btn sm ms-done">Done</button><span class="small muted ms-n">${sel.length} chosen</span></div></div></div>`, true); },
   mobile: (f, v, p) => { const m = splitMobile(v); return G.wrap(f, p, `<div class="mob" data-mobile="${f.key}"><select class="input dial" name="${f.key}_dial" aria-label="Country code for ${esc(f.label)}">${DIAL_CODES.map(c => `<option ${c === m.dial ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="${p}-${f.key}" name="${f.key}" inputmode="tel" autocomplete="off" value="${esc(m.num)}" placeholder="10-digit mobile"></div>`); },
   select: (f, v, p, opts, blank = true) => G.wrap(f, p, `<select class="input" id="${p}-${f.key}" name="${f.key}"${f.key === 'designation' ? ' data-designation' : ''}>${blank ? '<option value="">Choose</option>' : ''}${opts.map(([k, l]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`),
@@ -189,7 +190,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   const ms = e.target.closest && e.target.closest('.ms');
   if (!ms || e.target.type !== 'checkbox') return;
-  const sel = [...ms.querySelectorAll('input[type=checkbox]:checked')].map(x => x.value);
+  const sel = [...ms.querySelectorAll('input[type=checkbox]:checked')].map(x => x.closest('label').textContent.trim());
   ms.querySelector('.ms-btn').innerHTML = sel.length ? esc(sel.join(', ')) : '<span class="muted">Choose…</span>';
   ms.querySelector('.ms-n').textContent = sel.length + ' chosen';
 });
@@ -240,7 +241,7 @@ EM.VIEWS.home = () => {
     ${notConnectedCard()}</div>`;
 };
 EM.VIEWS.home.title = () => 'Home';
-const scopeLabel = () => ({ all: 'sees both companies', division: `sees all of ${D.user.division === 'both' ? 'both companies' : DIVS[D.user.division].name}`, region: `sees the ${D.user.region || ''} region`, own: 'sees the records you own', none: 'no business records' })[acc().scope] || '';
+const scopeLabel = () => ({ all: 'sees both companies', division: `sees all of ${D.user.division === 'both' ? 'both companies' : DIVS[D.user.division].name}`, region: `sees the ${D.user.region || ''} region`, own: 'sees your records and those of everyone who reports to you', none: 'no business records' })[acc().scope] || '';
 
 /* What is still to come, said plainly instead of shown as numbers. */
 const SOON = {
@@ -250,13 +251,13 @@ const SOON = {
   whatsapp: ['WhatsApp messages', 'The WhatsApp Business number and Meta approval.'],
   ads: ['Ad and portal leads', 'Meta, Google, IndiaMART and JustDial lead feeds.'],
   ai: ['AI lead screening and the call agent', 'The leads feed above, a telephony number and DLT registration.'],
-  targets: ['Targets, schemes and Priority 200 scores', 'Sales from Tally, so achievement is never typed by hand.'],
+  targets: ['Targets and Priority 200 scores from invoices', 'Sales from Tally, so achievement is never typed by hand.'],
   stock: ['Fulfilment and production', 'Tally. Stock itself is kept in Inventory until Tally is connected.'],
 };
 const notConnectedCard = () => `<section class="card stack-s"><h3>Not connected yet</h3><p class="small muted">These parts of EGO Master show no figures until the system that feeds them is connected. Nothing here is estimated.</p>
   ${table(['Part', 'Waits for', ''], Object.values(SOON).map(([a, b]) => [esc(a), esc(b), '<span class="badge warn">Not connected yet</span>']))}</section>`;
 /* the demo's screens, if a bookmark or an old link reaches them */
-const DEMO_ROUTES = { worder: 'sales', fulfil: 'stock', targets: 'targets', schemes: 'targets', champions: 'targets', leads: 'ads', lead: 'ads', projects: 'sales', project: 'sales', inbox: 'whatsapp', cockpit: 'targets', automations: 'whatsapp', ai: 'ai', integrations: 'ai', app: 'visits', map: 'ai', tech: 'ai' };
+const DEMO_ROUTES = { worder: 'sales', fulfil: 'stock', targets: 'targets', champions: 'targets', leads: 'ads', lead: 'ads', projects: 'sales', project: 'sales', inbox: 'whatsapp', cockpit: 'targets', automations: 'whatsapp', ai: 'ai', integrations: 'ai', app: 'visits', map: 'ai', tech: 'ai' };
 for (const [r, k] of Object.entries(DEMO_ROUTES)) {
   EM.VIEWS[r] = () => `<div class="stack" style="max-width:720px"><span class="badge warn">Not connected yet</span><h1>${esc(SOON[k][0])}</h1><p class="muted">This part of EGO Master waits for: ${esc(SOON[k][1])} Until then it shows nothing rather than sample figures.</p><div class="row"><a class="btn primary" href="#/people">People</a><a class="btn" href="#/home">Home</a></div></div>`;
   EM.VIEWS[r].tab = 'soon';
@@ -294,8 +295,8 @@ function orgList(org, arg) {
       <div class="row" style="flex-wrap:wrap"><a class="btn" href="#/import">Import from Excel</a>${(org === 'dealer' ? DEALER_KINDS : ARCH_KINDS).map((k, i) => `<button class="btn ${(tab[2].length === 1 ? tab[2][0] === k : i === (org === 'dealer' ? 1 : 0)) ? 'primary' : ''}" data-act="org-add" data-kind="${k}">+ Add ${esc(kindName(k).toLowerCase())}</button>`).join('')}</div></div>
     ${subtabs(base, tab[0], subs.map(([k, l, ks]) => [k, `${l} <span class="muted">${all.filter(c => ks.includes(c.kind)).length}</span>`]))}
     ${searchBox('Company name, city, mobile, GST or reference')}
-    ${all.length ? (rows.length ? table(['Company', 'Type', 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
-      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}${c.parent_id && CL()[c.parent_id] ? ' · under ' + esc(CL()[c.parent_id].name) : ''}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
+    ${all.length ? (rows.length ? table(['Company', 'Type', ...(org === 'dealer' ? ['Served by'] : []), 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
+      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), ...(org === 'dealer' ? [c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? esc(CL()[c.parent_id].name) : '<span class="badge bad">No distributor</span>') : 'EGO Premium'] : []), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
       + (rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing matches that search.</p>')
       : empty(`No ${title.toLowerCase()} yet`, `Add the company and its people in one go, or fill the Excel file and upload it.`, `<button class="btn primary" data-act="org-add" data-org="${org}">+ Add ${org === 'dealer' ? 'dealer' : 'architect firm'}</button><a class="btn" href="#/import">Import from Excel</a>`)}
   </div>`;
@@ -396,9 +397,10 @@ const ORG_LAYOUT = [
   ['Company details', ['name', 'legal_name', 'gst']],
   ['Address', ['address', 'locality', 'city', 'pincode']],
   ['Area details', ['areas_covered', 'other_offices']],
-  ['Business details', ['owner_id', 'grade', 'rating', 'parent_id', 'source', 'status', 'since', 'credit_limit', 'priority200', 'relationship', 'connected_dealers']],
+  ['Business details', ['parent_id', 'owner_id', 'grade', 'rating', 'source', 'status', 'since', 'credit_limit', 'priority200', 'relationship', 'connected_dealers']],
 ];
 const POC_FIELDS = CONTACT_FIELDS.filter(f => f.key !== 'is_primary');
+const SERVE_NOTE = { dealer: 'A dealer orders from EGO Premium directly, order by order.', sub_dealer: 'A sub-dealer is a retailer served by a distributor: choose the distributor first.', distributor: 'A distributor keeps stock, has an assigned area and answers for its sales against the target. Its sub-dealers buy from it.' };
 const personRow = (i, v = {}) => `<form class="card stack-s pf-row" data-scope data-i="${i}" onsubmit="return false"><div class="row between"><b>Another person</b><button class="btn sm ghost" data-act="ppl-del" data-i="${i}">Remove</button></div>
   <div class="fgrid">${POC_FIELDS.map(f => fieldHtml(f, v[f.key], 'pp' + i)).join('')}</div></form>`;
 const fsHtml = (title, inner) => `<fieldset class="fs"><legend>${esc(title)}</legend>${inner}</fieldset>`;
@@ -407,7 +409,7 @@ function openClientForm(c, kind, keep, only, people, poc) {
   const kinds = c ? fam.filter(k => canDiv(KINDS[k].division)) : (only || kindsAllowed()).filter(k => kindsAllowed().includes(k));
   kind = kinds.includes(kind) ? kind : (c ? c.kind : kinds[0]);
   const v = keep || (c ? { ...c, ...c.extra } : { owner_id: me().id, status: 'Active' });
-  const all = showFields(fieldsFor(kind)).filter(f => f.key !== 'kind');
+  const all = showFields(fieldsFor(kind)).filter(f => f.key !== 'kind').map(f => ({ ...f, label: labelFor(f, kind) }));
   const org = DEALER_KINDS.includes(kind) ? 'dealer' : ARCH_KINDS.includes(kind) ? 'architect' : null;
   const noun = org ? kindName(kind).toLowerCase() : 'person';
   const fh = f => fieldHtml(f, v[f.key], 'cf', { self: c && c.id });
@@ -424,7 +426,7 @@ function openClientForm(c, kind, keep, only, people, poc) {
     const pocBlock = c ? '' : fsHtml('Point of contact', `<p class="small muted">The person you deal with. Their mobile is the company's mobile, and they become the main person in its team.</p>
       <div id="pocf" data-scope class="fgrid">${POC_FIELDS.map(f => fieldHtml({ ...f, req: f.key === 'name' || f.key === 'mobile' }, (poc || {})[f.key], 'poc')).join('')}</div>`);
     body = fsHtml(secs[0][0], `<div class="fgrid">${kindPick}${secs[0][1].map(fh).join('')}</div>`) + pocBlock
-      + secs.slice(1).filter(([, fs]) => fs.length).map(([t, fs]) => fsHtml(t, `<div class="fgrid">${fs.map(fh).join('')}</div>`)).join('')
+      + secs.slice(1).filter(([, fs]) => fs.length).map(([t, fs]) => fsHtml(t, `${t === 'Business details' && SERVE_NOTE[kind] ? `<p class="small muted" data-serve-note>${SERVE_NOTE[kind]}</p>` : ''}<div class="fgrid">${fs.map(fh).join('')}</div>`)).join('')
       + (rest.length ? `<details class="more"><summary>More details (optional): ${esc(restSecs.join(', ').toLowerCase())}</summary><div class="stack-s">${restSecs.map(sc => fsHtml(sc, `<div class="fgrid">${rest.filter(f => f.section === sc).map(fh).join('')}</div>`)).join('')}</div></details>` : '')
       + (c ? '' : `<details class="more" ${people && people.length ? 'open' : ''}><summary>More people at this ${esc(noun)} (optional)</summary><div id="ppl" class="stack-s">${(people || []).map((pv, i) => personRow(i, pv)).join('')}</div><div class="row" style="margin-top:8px"><button class="btn sm" data-act="ppl-add">+ Add a person</button></div></details>`);
   } else {
@@ -504,6 +506,9 @@ EM.VIEWS.client = arg => {
     ${subtabs(`#/client/${id}`, tab, tabs)}
     ${body(c, cts, ops, docs)}</div>`;
 };
+/* who serves a dealer company (onboarding answers): a sub-dealer its distributor, a dealer EGO directly */
+const servedBy = c => c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? `<a href="#/client/${c.parent_id}">${esc(CL()[c.parent_id].name)}</a> <span class="small muted">distributor</span>` : '<span class="badge bad">No distributor chosen</span>')
+  : c.kind === 'dealer' ? 'EGO Premium directly' : c.kind === 'distributor' ? 'EGO Premium directly (serves its sub-dealers)' : '';
 const homeOf = c => DEALER_KINDS.includes(c.kind) ? ['Dealers', '#/dealers'] : ARCH_KINDS.includes(c.kind) ? ['Architects', '#/architects'] : ['People', '#/people'];
 /* the menu highlights the portal the record belongs to */
 Object.defineProperty(EM.VIEWS.client, 'tab', { get() { const c = CL()[(location.hash.split('/')[2] || '')]; return c ? homeOf(c)[1].slice(2) : 'people'; } });
@@ -514,10 +519,11 @@ function clientOverview(c) {
   const v = { ...c, ...c.extra }, fields = showFields(fieldsFor(c.kind)).filter(f => f.key !== 'kind');
   const sections = [...new Set(fields.map(f => f.section))];
   const kids = D.clients.filter(x => x.parent_id === c.id || x.firm_id === c.id || x.architect_id === c.id);
-  return `<div class="grid g2">${sections.map(s => `<section class="card stack-s"><h3>${esc(s)}</h3>${kv(fields.filter(f => f.section === s).map(f => [esc(f.label), showVal(f, v[f.key])]))}</section>`).join('')}
+  return `<div class="grid g2">${DEALER_KINDS.includes(c.kind) ? `<section class="card stack-s" data-served><h3>Who serves them</h3>${kv([['Served by', servedBy(c)], ...(c.kind === 'distributor' ? [['Sub-dealers they serve', String(kids.filter(x => x.kind === 'sub_dealer').length)], ['Assigned area', showVal({ type: 'cities' }, v.areas_covered)]] : [])])}</section>` : ''}
+    ${sections.map(s => `<section class="card stack-s"><h3>${esc(s)}</h3>${kv(fields.filter(f => f.section === s).map(f => [esc(labelFor(f, c.kind)), showVal(f, v[f.key])]))}</section>`).join('')}
     ${['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group) ? businessCard(c) : ''}
     ${KINDS[c.kind].group === 'dealer' ? `<section class="card stack-s"><h3>Sales, outstanding and orders</h3><span class="badge warn">Not connected yet</span><p class="small muted">These come from Tally invoices once Tally is connected. Nothing is shown until then, so no figure here is ever typed or estimated.</p></section>` : ''}
-    ${kids.length ? `<section class="card stack-s"><h3>Linked to ${esc(c.name)}</h3>${table(['Name', 'Type', 'City'], kids.map(x => ({ href: `#/client/${x.id}`, cells: [esc(x.name), esc(kindLabel(x.kind)), esc(x.city)] })))}</section>` : ''}
+    ${kids.length ? `<section class="card stack-s"><h3>${c.kind === 'distributor' ? 'Sub-dealers they serve' : 'Linked to ' + esc(c.name)}</h3>${table(['Name', 'Type', 'City'], kids.map(x => ({ href: `#/client/${x.id}`, cells: [esc(x.name), esc(kindLabel(x.kind)), esc(x.city)] })))}</section>` : ''}
     ${c.prices_hidden ? '<p class="small muted">Money fields are hidden for your role.</p>' : ''}</div>`;
 }
 /* what this company brings, counted only from saved opportunities */
@@ -656,7 +662,7 @@ EM.VIEWS.opp = id => {
   const c = CL()[o.client_id] || { name: 'Client outside your view' }, v = { ...o, ...o.extra };
   const stages = D.lists.stages[o.pipeline] || [], hist = D.history.filter(h => h.opp_id === id);
   const at = stages.indexOf(o.stage);
-  const fields = showFields(OPP_FIELDS).filter(f => !['pipeline', 'title', 'stage', 'contact_id'].includes(f.key) && (f.key !== 'lost_reason' || o.stage === lostStage(o.pipeline, D.lists)));
+  const fields = showFields(oppFieldsFor(o.pipeline)).filter(f => !['pipeline', 'title', 'stage', 'contact_id'].includes(f.key) && (!LOST_KEYS.includes(f.key) || o.stage === lostStage(o.pipeline, D.lists)));
   const contact = D.contacts.find(k => k.id === o.contact_id);
   return `<div class="stack">${crumbs(['Opportunities', `#/opps/${o.pipeline}`], [o.title])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.title)}</h1>
@@ -681,17 +687,20 @@ function openOppForm(o, keep) {
   const pipeline = pipes.includes(v.pipeline) ? v.pipeline : pipes[0];
   const stages = D.lists.stages[pipeline] || [];
   if (!stages.includes(v.stage)) v.stage = stages[0];
-  const withLines = PIPELINES[pipeline].lines, fields = showFields(OPP_FIELDS).filter(f => f.key !== 'pipeline' && !(withLines && f.key === 'value'));
+  const withLines = PIPELINES[pipeline].lines, fields = showFields(oppFieldsFor(pipeline)).filter(f => f.key !== 'pipeline' && !(withLines && f.key === 'value') && (!LOST_KEYS.includes(f.key) || v.stage === lostStage(pipeline, D.lists)));
   const lines0 = (v.lines || (o ? (OPSD().oppLines || []).filter(l => l.opp_id === o.id) : [])), inFul = o && OPSD().orders.some(x => x.opp_id === o.id);
   EM.modal(`<h2>${o ? 'Edit opportunity' : 'Add an opportunity'}</h2>
     <form id="of" class="stack" onsubmit="return false" style="margin-top:14px" data-id="${o ? o.id : ''}"><div class="fgrid">
       ${o ? `<div class="field"><label>Client</label><input class="input" value="${esc(client.name)}" disabled><input type="hidden" name="client_id" value="${client.id}"></div>`
     : `<div class="field"><label for="of-client_id">Client *</label><select class="input" id="of-client_id" name="client_id" data-opp-redraw>${clients.map(c => `<option value="${c.id}" ${c.id === client.id ? 'selected' : ''}>${esc(c.name)} · ${esc(kindLabel(c.kind))}</option>`).join('')}</select></div>`}
       ${G.select(OPP_FIELDS[0], pipeline, 'of', pipes.map(p => [p, PIPELINES[p].label]), false).replace('<select', '<select data-opp-redraw')}
-      ${fields.map(f => fieldHtml(f, v[f.key], 'of', { pipeline, client: client.id })).join('')}</div>
+      ${fields.map(f => { const h = fieldHtml(f, v[f.key], 'of', { pipeline, client: client.id }); return f.key === 'stage' ? h.replace('<select', '<select data-opp-redraw') : h; }).join('')}</div>
       ${withLines && !inFul ? `<fieldset class="fs"><legend>Designs, boxes and rate</legend><p class="small muted">Type the boxes and the rate per box; the amount, GST (${D.lists.rules.gst_pct}%) and total are worked out. The total is the opportunity's value.</p>
         <div id="olines" class="stack-s">${(lines0.length ? lines0 : [{}]).map((l, i) => ordLine(i, l)).join('')}</div><div class="row"><button class="btn sm" data-act="ol-add">+ Another design</button></div>
-        ${D.access.prices ? `<div class="fgrid"><div class="field"><label for="ord-disc">Discount</label><div class="adorn" data-unit="%"><input class="input" type="number" min="0" max="100" step="0.1" id="ord-disc" value="${esc(v.discount_pct ?? 0)}"><span class="suf">%</span></div></div></div>` : ''}<div id="ord-total" class="small"></div></fieldset>` : ''}
+        ${D.access.prices ? `<div class="fgrid"><div class="field"><label for="ord-disc">Discount</label><div class="adorn" data-unit="%"><input class="input" type="number" min="0" max="100" step="0.1" id="ord-disc" value="${esc(v.discount_pct ?? 0)}"><span class="suf">%</span></div></div></div>
+        <div class="stack-s" data-charges><b class="small">Other charges</b><p class="small muted">Installation, porter or loading, transport, skirting, accessories: say what each is for and the amount. They are added before GST.</p>
+          <datalist id="chg-hints">${CHARGE_HINTS.map(h => `<option value="${esc(h)}">`).join('')}</datalist>
+          <div id="ochg" class="stack-s">${(v.charges || []).map((c, i) => chgLine(i, c)).join('')}</div><div class="row"><button class="btn sm" data-act="chg-add">+ Add a charge</button></div></div>` : ''}<div id="ord-total" class="small"></div></fieldset>` : ''}
       ${errBox('of-err')}<div class="row sticky-actions"><button class="btn primary" data-act="opp-save">${o ? 'Save changes' : 'Add opportunity'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
 document.addEventListener('change', e => {
@@ -700,6 +709,7 @@ document.addEventListener('change', e => {
   const keep = withDials(readForm(form, OPP_FIELDS), OPP_FIELDS);
   keep.client_id = form.querySelector('[name=client_id]').value;
   if (qs('#olines')) { keep.lines = readOrder(); keep.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0); }
+  if (qs('#ochg')) keep.charges = readCharges();
   if (e.target.name === 'client_id') { keep.pipeline = ''; keep.contact_id = ''; }
   openOppForm(o, keep);
 });
@@ -729,6 +739,7 @@ EM.ACTIONS['opp-save'] = async el => {
   if (qs('#olines')) {
     input.lines = readOrder(); input.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0);
     if (input.lines.some(l => !l.product_id || !Number.isInteger(l.boxes) || l.boxes <= 0)) return showErr('of-err', 'Every design line needs a design and a whole number of boxes (or remove the line).');
+    if (qs('#ochg')) { input.charges = readCharges(); const bad = input.charges.findIndex(c => !c.label || !(c.amount > 0)); if (bad >= 0) return showErr('of-err', `Charge ${bad + 1}: say what it is for and the amount (or remove it).`); }
   }
   const r = await saveOpp(input, el, 'of-err');
   if (!r) return;
@@ -739,14 +750,18 @@ const oppInput = o => ({ ...o.extra, id: o.id, client_id: o.client_id, pipeline:
 EM.ACTIONS['opp-move'] = async el => {
   const o = D.opportunities.find(x => x.id === el.dataset.id), to = qs('#move-stage').value;
   if (to === o.stage) return;
-  if (to === lostStage(o.pipeline, D.lists)) return EM.modal(`<h2>Why was it lost?</h2><p class="muted">A lost reason is compulsory.</p><div class="field" style="margin-top:12px"><label for="lost-pick">Lost reason *</label><select class="input" id="lost-pick"><option value="">Choose</option>${D.lists.lost_reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>${errBox('lost-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="opp-lost" data-id="${o.id}">Mark as lost</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+  if (to === lostStage(o.pipeline, D.lists)) return EM.modal(`<h2>Why was it lost?</h2><p class="muted">Choose the reason, then say exactly what happened. Both are compulsory.</p>
+    <div class="field" style="margin-top:12px" data-field="lost_reason"><label for="lost-pick">Lost reason *</label><select class="input" id="lost-pick"><option value="">Choose</option>${D.lists.lost_reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>
+    <div class="field" style="margin-top:12px" data-field="lost_detail"><label for="lost-detail">The details *</label><textarea class="input" id="lost-detail" rows="3" placeholder="e.g. Needed 300 boxes of Oak in 10 days; we had 120 and the next container is 6 weeks away"></textarea></div>
+    ${errBox('lost-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="opp-lost" data-id="${o.id}">Mark as lost</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
   const r = await saveOpp({ ...oppInput(o), stage: to }, el, 'move-err');
   if (r) { EM.toast(`Moved to <b>${esc(to)}</b>.`); EM.rerender(); } else bubbleNear(qs('[data-act="opp-move"]') || el, EM._lastErr || 'Could not move it.');
 };
 EM.ACTIONS['opp-lost'] = async el => {
-  const o = D.opportunities.find(x => x.id === el.dataset.id), why = qs('#lost-pick').value;
-  if (!why) return showErr('lost-err', 'Choose the reason.');
-  const r = await saveOpp({ ...oppInput(o), stage: lostStage(o.pipeline, D.lists), lost_reason: why }, el, 'lost-err');
+  const o = D.opportunities.find(x => x.id === el.dataset.id), why = qs('#lost-pick').value, detail = qs('#lost-detail').value.trim();
+  if (!why) return showErr('lost-err', 'Lost reason is compulsory when the stage is ' + lostStage(o.pipeline, D.lists));
+  if (!detail) return showErr('lost-err', 'Lost: the details are compulsory when the stage is ' + lostStage(o.pipeline, D.lists));
+  const r = await saveOpp({ ...oppInput(o), stage: lostStage(o.pipeline, D.lists), lost_reason: why, lost_detail: detail }, el, 'lost-err');
   if (r) { EM.closeModal(); EM.toast('Marked as lost: ' + esc(why)); EM.rerender(); }
 };
 EM.ACTIONS['opp-del'] = async el => {
@@ -1025,7 +1040,7 @@ async function showLog(entity, id, box) {
   try { const r = await API('GET', `/api/ops/log?entity=${entity}&id=${encodeURIComponent(id)}`), el = qs(box); if (el) el.innerHTML = r.log.length ? table(['When', 'From', 'To', 'By', 'Note'], r.log.map(l => [ds(l.at.slice(0, 10)), esc(l.from_stage || ''), `<b>${esc(l.to_stage)}</b>`, esc(l.by_name || ''), esc(l.note || '')])) : '<p class="small muted">Nothing yet.</p>'; } catch (x) { }
 }
 
-/* ---- fulfilment (wholesale): the sale is the opportunity; at Payment collected it comes here */
+/* ---- fulfilment (wholesale): the sale is the opportunity; at Order confirmed it comes here */
 const ORD_TABS = [['fulfilment', 'Fulfilment'], ['production', 'Production']];
 const waitsOf = (pred) => OPSD().waits.filter(pred);
 const poRef = id => (OPSD().production.find(p => p.id === id) || { ref: 'PO' }).ref;
@@ -1034,16 +1049,16 @@ const oppOf = o => D.opportunities.find(x => x.id === o.opp_id);
 const flowStrip = () => { const W = D.lists.stages.wholesale || [], FS = OS_('fulfilment_stages'), PS = OS_('production_stages'), won = wonStage('wholesale', D.lists);
   const chip = (t, cls) => `<span class="badge ${cls || 'plain'}">${esc(t)}</span>`, arrow = '<span class="muted">→</span>';
   return `<section class="card stack-s" data-flow><h3>How a wholesale sale moves</h3>
-    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">1. Opportunities (the sale)</b>${W.filter(x => ![lostStage('wholesale', D.lists), nm(D.lists, 'stages.wholesale', 'Nurturing')].includes(x)).map(x => chip(x, x === creditStage('wholesale', D.lists) ? 'warn' : x === won ? 'ok' : '')).join(arrow)}</div>
-    <p class="small muted">The designs, boxes and rate are typed on the opportunity; the money is worked out. At <b>${esc(creditStage('wholesale', D.lists))}</b> the credit limit is checked. At <b>${esc(won)}</b> the sale comes here by itself. ${esc(lostStage('wholesale', D.lists))} and ${esc(nm(D.lists, 'stages.wholesale', 'Nurturing'))} stay in Opportunities.</p>
-    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">2. Fulfilment</b>${FS.map(x => chip(x, x === FN('Stock check') ? 'warn' : x === FN('Dispatched') ? 'info' : '')).join(arrow)}</div>
-    <p class="small muted">At <b>${esc(FN('Stock check'))}</b> each design is compared with what is free in every warehouse; you choose how many boxes to take from each. What you do not take goes to production. <b>${esc(FN('Dispatched'))}</b> takes the boxes out of the inventory.</p>
+    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">1. Opportunities (the sale)</b>${W.filter(x => ![lostStage('wholesale', D.lists), nm(D.lists, 'stages.wholesale', 'Nurturing')].includes(x)).map(x => chip(x, x === won ? 'ok' : '')).join(arrow)}</div>
+    <p class="small muted">The designs, boxes, rate and other charges are typed on the opportunity; the money is worked out. At <b>${esc(won)}</b> the sale comes here by itself. ${esc(lostStage('wholesale', D.lists))} and ${esc(nm(D.lists, 'stages.wholesale', 'Nurturing'))} stay in Opportunities.</p>
+    <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">2. Fulfilment</b>${FS.map(x => chip(x, [FN('Stock check'), FN('Invoiced')].includes(x) ? 'warn' : x === FN('Payment received') ? 'ok' : x === FN('Dispatched') ? 'info' : '')).join(arrow)}</div>
+    <p class="small muted">At <b>${esc(FN('Stock check'))}</b> each design is compared with what is free in the warehouses and the boxes are blocked. Whatever is missing is named, design by design, and goes on a production order; the sale waits for it, then is blocked from what arrives. <b>${esc(FN('Payment received'))}</b> records the advance or the full payment. <b>${esc(FN('Invoiced'))}</b> checks the credit limit. <b>${esc(FN('Dispatched'))}</b> takes the boxes out of the inventory.</p>
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">3. Production (only for what was short)</b>${PS.map(x => chip(x, x === PNn('Received at warehouse') ? 'warn' : '')).join(arrow)}</div>
     <p class="small muted">One production order can serve several sales of the same design. <b>${esc(PNn('Received at warehouse'))}</b> adds the boxes to stock; <b>${esc(PNn('Allocated & closed'))}</b> gives each waiting sale its share, oldest first, and they move on by themselves.</p></section>`; };
 EM.VIEWS.orders = arg => {
   const tab = ORD_TABS.find(t => t[0] === arg) ? arg : 'fulfilment', O = OPSD();
   const lineSum = id => O.lines.filter(l => l.order_id === id);
-  const head = `<div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">EGO Premium · after the payment, to the dealer's door</div><h1>Fulfilment</h1></div>
+  const head = `<div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">EGO Premium · from the confirmed order to the dealer's door</div><h1>Fulfilment</h1></div>
     <div class="row">${tab === 'production' && canStockUI() ? '<button class="btn" data-act="po-add">+ Production order</button>' : ''}<a class="btn" href="#/opps/wholesale">Wholesale opportunities</a></div></div>
     ${flowStrip()}
     ${subtabs('#/orders', tab, ORD_TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : O.production.length}</span>`]))}`;
@@ -1064,14 +1079,18 @@ EM.VIEWS.orders = arg => {
   return `<div class="stack">${head}${body}</div>`;
 };
 EM.VIEWS.orders.title = () => 'Fulfilment';
-const ordCard = o => `<a class="card stack-s" style="text-decoration:none" href="#/order/${o.id}"><b>${esc(o.ref)}</b><span class="small">${esc(clientName(o.client_id))}</span><span class="small muted">${num(OPSD().lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0))} boxes</span></a>`;
+/* what an order still misses: per line, ordered − blocked − on production */
+const shortLines = id => { const O = OPSD(); return O.lines.filter(l => l.order_id === id).map(l => { const got = O.allocations.filter(a => a.line_id === l.id).reduce((a, x) => a + x.boxes, 0), wait = O.waits.filter(w => w.line_id === l.id && !w.done).reduce((a, w) => a + w.boxes, 0); return { l, got, wait, miss: Math.max(0, l.boxes - got - wait) }; }); };
+const missingOf = id => shortLines(id).reduce((a, x) => a + x.miss, 0);
+const ordCard = o => { const miss = [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage) ? missingOf(o.id) : 0;
+  return `<a class="card stack-s" style="text-decoration:none" href="#/order/${o.id}"><b>${esc(o.ref)}</b><span class="small">${esc(clientName(o.client_id))}</span><span class="small muted">${num(OPSD().lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0))} boxes</span>${miss ? `<span class="badge bad">Short ${num(miss)} boxes</span>` : ''}${o.credit_hold ? '<span class="badge warn">Credit hold</span>' : ''}</a>`; };
 /* the designs on a wholesale opportunity, with the money worked out */
 function oppLinesCard(o) {
   const ls = (OPSD().oppLines || []).filter(l => l.opp_id === o.id), ex = o.extra || {}, ord = OPSD().orders.find(x => x.opp_id === o.id), pend = pendingFor('opp', o.id), apprs = OPSD().approvals.filter(a => a.entity === 'opp' && a.record_id === o.id);
   return `<section class="card stack-s" data-opp-lines><div class="row between"><h3>Designs, boxes and rate</h3>${ord ? `<a class="btn sm primary" href="#/order/${ord.id}">In fulfilment: ${esc(ord.ref)} · ${esc(ord.ful_stage)}</a>` : ''}</div>
     ${ls.length ? table(['Design', 'Boxes', ...(D.access.prices ? ['Rate per box', 'Amount'] : []), 'Free in the warehouses now'], ls.map(l => [`<b>${esc(prodName(l.product_id))}</b>`, num(l.boxes), ...(D.access.prices ? [inr0(l.rate), inr0(l.amount)] : []), num(INVD().warehouses.reduce((a, w) => a + Math.max(0, freeAt(l.product_id, w.id)), 0))]))
-      + (D.access.prices ? `<p class="small">${ex.discount_pct ? `Discount ${ex.discount_pct}% · ` : ''}Subtotal ${inr0(ex.subtotal)} + GST ${ex.gst_pct ?? D.lists.rules.gst_pct}% = <b>${inr0(o.value)}</b></p>` : '')
-      : `<p class="small muted">No designs yet. Edit the opportunity to add the designs, boxes and rate; they are needed before ${esc(creditStage(o.pipeline, D.lists))}.</p>`}
+      + (D.access.prices ? `<p class="small" data-money>${moneyLine(ex)} = <b>${inr0(o.value)}</b></p>` : (ex.charges || []).length ? `<p class="small muted">Other charges: ${ex.charges.map(c => esc(c.label)).join(', ')}</p>` : '')
+      : `<p class="small muted">No designs yet. Edit the opportunity to add the designs, boxes and rate; they are needed before ${esc(wonStage(o.pipeline, D.lists))}.</p>`}
     ${pend.length ? `<div class="callout warn"><b>Waiting for approval.</b> ${pend.map(a => esc(a.reason)).join(' · ')} <a href="#/approvals">Approvals</a></div>` : ''}
     ${apprs.filter(a => a.status !== 'Pending').map(a => `<p class="small muted">${esc((D.lists.rules.approvals[a.kind] || { label: a.kind }).label)}: <b>${esc(a.status)}</b> by ${esc(staffName(a.decided_by))}${a.decision_note ? ' · ' + esc(a.decision_note) : ''}</p>`).join('')}</section>`;
 }
@@ -1082,11 +1101,19 @@ const ordLine = (i, v = {}) => { const I = INVD(), byCol = I.collections.map(c =
     <div class="field"><label for="ol-b-${i}">Boxes</label>${G.adorn({ key: 'low_stock' }, `<input class="input" type="number" min="1" step="1" id="ol-b-${i}" data-ol="b" value="${esc(v.boxes || '')}">`)}</div>
     ${D.access.prices ? `<div class="field"><label for="ol-r-${i}">Rate per box</label>${G.adorn({ type: 'money', key: 'rate' }, `<input class="input" type="number" min="0" step="0.01" id="ol-r-${i}" data-ol="r" value="${esc(v.rate || '')}">`)}</div>` : ''}
     <div class="field"><button class="btn sm ghost" data-act="ol-del">Remove</button></div></div>`; };
+const LOST_KEYS = ['lost_reason', 'lost_detail'];
+const chgLine = (i, c = {}) => `<div class="fgrid chgline" data-i="${i}" style="align-items:end"><div class="field span2"><label for="chg-l-${i}">What it is for</label><input class="input" id="chg-l-${i}" data-chg="l" list="chg-hints" value="${esc(c.label || '')}" placeholder="e.g. Installation"></div>
+  <div class="field"><label for="chg-a-${i}">Amount</label>${G.adorn({ type: 'money', key: 'charge' }, `<input class="input" type="number" min="0" step="0.01" id="chg-a-${i}" data-chg="a" value="${esc(c.amount || '')}">`)}</div><div class="field"><button class="btn sm ghost" data-act="chg-del">Remove</button></div></div>`;
+const readCharges = () => [...document.querySelectorAll('#ochg .chgline')].map(l => ({ label: l.querySelector('[data-chg="l"]').value.trim(), amount: Number(l.querySelector('[data-chg="a"]').value || 0) })).filter(c => c.label || c.amount);
+EM.ACTIONS['chg-add'] = () => { const box = qs('#ochg'); box.insertAdjacentHTML('beforeend', chgLine(box.children.length)); box.lastElementChild.querySelector('input').focus(); };
+EM.ACTIONS['chg-del'] = el => { el.closest('.chgline').remove(); const f = qs('#of'); if (f) f.dispatchEvent(new Event('input', { bubbles: true })); };
+const moneyLine = ex => { const ch = (ex.charges || []).filter(c => c.amount != null);
+  return `${ex.discount_pct ? `Discount ${ex.discount_pct}% · ` : ''}${ch.length ? ch.map(c => `${esc(c.label)} ${inr0(c.amount)}`).join(' · ') + ' · ' : ''}Taxable ${inr0(ex.subtotal)} + GST ${ex.gst_pct ?? D.lists.rules.gst_pct}%`; };
 const readOrder = () => [...document.querySelectorAll('#olines .ordline')].map(l => ({ product_id: l.querySelector('[data-ol="p"]').value, boxes: Number(l.querySelector('[data-ol="b"]').value), rate: Number((l.querySelector('[data-ol="r"]') || { value: 0 }).value || 0) })).filter(l => l.product_id || l.boxes);
 document.addEventListener('input', e => {
   if (!e.target.closest || !e.target.closest('#ordf, #of')) return;
-  const ls = readOrder(), gross = ls.reduce((a, l) => a + (l.boxes || 0) * (l.rate || 0), 0), disc = Number((qs('#ord-disc') || { value: 0 }).value || 0), sub = gross * (1 - disc / 100), t = qs('#ord-total');
-  if (t && D.access.prices) t.textContent = `${ls.reduce((a, l) => a + (l.boxes || 0), 0)} boxes · ${inr0(sub)} + GST ${D.lists.rules.gst_pct}% = ${inr0(sub * (1 + D.lists.rules.gst_pct / 100))}`;
+  const ls = readOrder(), gross = ls.reduce((a, l) => a + (l.boxes || 0) * (l.rate || 0), 0), disc = Number((qs('#ord-disc') || { value: 0 }).value || 0), chg = readCharges().reduce((a, c) => a + (c.amount || 0), 0), sub = gross * (1 - disc / 100) + chg, t = qs('#ord-total');
+  if (t && D.access.prices) t.textContent = `${ls.reduce((a, l) => a + (l.boxes || 0), 0)} boxes · designs ${inr0(gross * (1 - disc / 100))}${chg ? ` + charges ${inr0(chg)}` : ''} = ${inr0(sub)} + GST ${D.lists.rules.gst_pct}% = ${inr0(sub * (1 + D.lists.rules.gst_pct / 100))}`;
 });
 EM.ACTIONS['ol-add'] = () => { const box = qs('#olines'); box.insertAdjacentHTML('beforeend', ordLine(box.children.length)); };
 EM.ACTIONS['ol-del'] = el => { const l = el.closest('.ordline'); if (document.querySelectorAll('#olines .ordline').length > 1) l.remove(); };
@@ -1100,30 +1127,78 @@ EM.VIEWS.order = id => {
   const atCheck = [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage);
   const mineAt = (l, w) => al(l).filter(a => a.warehouse_id === w.id && !a.dispatched).reduce((a, x) => a + x.boxes, 0);
   return `<div class="stack">${crumbs(['Fulfilment', '#/orders'], [o.ref])}
-    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'an opportunity'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · payment collected ${ds(o.created_at.slice(0, 10))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'an opportunity'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · order confirmed ${ds(o.created_at.slice(0, 10))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
       ${o.ful_stage !== lastOf(FS) ? `<button class="btn primary" data-act="ful-next" data-id="${id}">Move fulfilment on</button>` : ''}</div>
-    <section class="card stack-s">${stageChips(FS, o.ful_stage)}</section>
-    <section class="card stack-s" data-stockcheck><div class="row between"><h3>Stock check: each design against the warehouses</h3>${atCheck ? `<button class="btn" data-act="alloc-open" data-id="${id}">Set boxes aside</button>` : ''}</div>
-      <p class="small muted">Free = in the warehouse and not set aside for another sale. Still to cover = ordered − set aside − on a production order; it must be 0 before the sale moves past Stock check.</p>
-      ${table(['Design', 'Ordered', ...WH.map(w => esc(w.name) + ' <span class="muted">free</span>'), 'Set aside', 'On production', 'Still to cover'], lines.map(l => { const left = l.boxes - got(l) - waiting(l);
-        return [`<b>${esc(prodName(l.product_id))}</b>`, num(l.boxes), ...WH.map(w => `${num(Math.max(0, freeAt(l.product_id, w.id) + mineAt(l, w)))}${mineAt(l, w) ? ` <span class="badge ok">${mineAt(l, w)} set aside</span>` : ''}`), num(got(l)), waiting(l) ? num(waiting(l)) : '', left > 0 ? `<span class="badge bad">${left}</span>` : '<span class="badge ok">0</span>']; }))}</section>
+    <section class="card stack-s">${stageChips(FS, o.ful_stage)}${o.credit_hold ? `<div class="callout warn"><b>On credit hold.</b> Waiting for the credit approval before ${esc(FN('Invoiced'))}. <a href="#/approvals">Approvals</a></div>` : ''}</section>
+    ${shortBox(o)}
+    <section class="card stack-s" data-stockcheck><div class="row between"><h3>Stock check: each design against the warehouses</h3>${atCheck ? `<button class="btn" data-act="alloc-open" data-id="${id}">Block boxes</button>` : ''}</div>
+      <p class="small muted">Free = in the warehouse and not blocked for another sale. Missing = ordered − blocked − on a production order; it must be 0 before the sale moves past ${esc(FN('Stock check'))}.</p>
+      ${table(['Design', 'Ordered', ...WH.map(w => esc(w.name) + ' <span class="muted">free</span>'), 'Blocked', 'On production', 'Missing'], lines.map(l => { const left = l.boxes - got(l) - waiting(l);
+        return [`<b>${esc(prodName(l.product_id))}</b>`, num(l.boxes), ...WH.map(w => `${num(Math.max(0, freeAt(l.product_id, w.id) + mineAt(l, w)))}${mineAt(l, w) ? ` <span class="badge ok">${mineAt(l, w)} blocked</span>` : ''}`), num(got(l)), waiting(l) ? num(waiting(l)) : '', left > 0 ? `<span class="badge bad">${left}</span>` : '<span class="badge ok">0</span>']; }))}</section>
+    ${payCard(o)}
     <section class="card stack-s" data-sources><h3>Where each design's boxes come from</h3>
       ${table(['Design', 'From a warehouse', 'From production', ...(D.access.prices ? ['Rate', 'Amount'] : [])], lines.map(l => [`<b>${esc(prodName(l.product_id))}</b>`,
         esc(al(l).filter(a => !a.po_id).map(a => `${(WH.find(w => w.id === a.warehouse_id) || {}).name}: ${a.boxes}${a.dispatched ? ' (dispatched)' : ''}`).join(', ')) || '<span class="muted">None</span>',
-        wl(l).length ? wl(l).map(w => `<a href="#/po/${w.po_id}">${esc(poRef(w.po_id))}</a>: ${w.boxes} ${w.done ? '<span class="badge ok">arrived, set aside</span>' : '<span class="badge warn">waiting</span>'}`).join('<br>') : '<span class="muted">None</span>',
+        wl(l).length ? wl(l).map(w => `<a href="#/po/${w.po_id}">${esc(poRef(w.po_id))}</a>: ${w.boxes} ${w.done ? '<span class="badge ok">arrived, blocked</span>' : '<span class="badge warn">waiting</span>'}`).join('<br>') : '<span class="muted">None</span>',
         ...(D.access.prices ? [inr0(l.rate), inr0(l.amount)] : [])]))}</section>
     ${orderStory(o)}</div>`;
 };
 EM.VIEWS.order.tab = 'orders';
 EM.VIEWS.order.title = id => (OPSD().orders.find(x => x.id === id) || { ref: 'Fulfilment' }).ref;
 
-EM.ACTIONS['ful-next'] = el => opsAct(el, `orders/${el.dataset.id}/ful-next`, {}, '<b>Fulfilment moved on</b>');
+/* the red box at the stock check: blocked, and exactly what is missing, design by design */
+function shortBox(o) {
+  if (![FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage)) return '';
+  const S = shortLines(o.id), miss = S.filter(x => x.miss > 0), R = D.lists.rules, total = miss.reduce((a, x) => a + x.miss, 0);
+  if (!miss.length) return o.ful_stage === FN('Waiting on production') ? `<section class="callout" data-short><b>Waiting on production.</b> Nothing else is missing: the sale moves to ${esc(FN('Blocked'))} by itself when the production order arrives and is allocated.</section>` : `<section class="callout ok" data-short><b>Everything is covered.</b> Move fulfilment on.</section>`;
+  const free = l => INVD().warehouses.reduce((a, w) => a + Math.max(0, freeAt(l.product_id, w.id)), 0), code = l => { const p = INVD().products.find(x => x.id === l.product_id); return p && p.code ? ` <span class="muted">${esc(p.code)}</span>` : ''; };
+  return `<section class="card stack-s short-box" data-short style="border-color:var(--bad, #c0392b)"><div class="row between"><h3 style="color:var(--bad, #c0392b)">Blocked: short of ${num(total)} box${total === 1 ? '' : 'es'}</h3>
+      <button class="btn primary" data-act="prod-all" data-id="${o.id}">Place production order for everything missing</button></div>
+    <p class="small">Why it cannot move on: these designs do not have enough free boxes in the warehouses. Block what is free, and put what is missing on a production order (at least ${num(R.moq_boxes)} boxes, rounded up to ${num(R.production_round_boxes)}; an open production order of the same design is joined instead).</p>
+    ${table(['Design', 'Ordered', 'Free in the warehouses', 'Blocked', 'On production', 'Missing'], miss.map(x => [`<b>${esc(prodName(x.l.product_id))}</b>${code(x.l)}`, num(x.l.boxes), num(free(x.l)), num(x.got), x.wait ? num(x.wait) : '', `<span class="badge bad">${num(x.miss)}</span>`]))}</section>`;
+}
+/* the money: total, what came in, what is still due; payments one by one */
+function payCard(o) {
+  if (!D.access.prices) return '';
+  const ex = o.extra || {}, pays = ex.payments || [], due = Math.max(0, (o.total || 0) - (o.paid || 0)), FS = OS_('fulfilment_stages');
+  return `<section class="card stack-s" data-pay><div class="row between"><h3>Payment and invoice</h3>${FS.indexOf(o.ful_stage) >= FS.indexOf(FN('PI sent')) || pays.length ? `<button class="btn sm" data-act="pay-add" data-id="${o.id}">+ Record a payment</button>` : ''}</div>
+    <p class="small">${moneyLine(ex)} = <b>${inr0(o.total)}</b></p>
+    ${kv([['Received', inr0(o.paid || 0)], ['Still due', due > 0 ? `<b>${inr0(due)}</b>` : '<span class="badge ok">Paid in full</span>'], ['Invoiced', o.invoiced_at ? whenTxt(o.invoiced_at) : NOTSET]])}
+    ${pays.length ? table(['Received on', 'Amount', 'Note', 'By'], pays.map(p => [ds(p.on), inr0(p.amount), esc(p.note || ''), esc(staffName(p.by))])) : `<p class="small muted">No payment yet. At ${esc(FN('Payment received'))} the advance or the full payment is recorded.</p>`}</section>`;
+}
+EM.ACTIONS['ful-next'] = el => {
+  const o = OPSD().orders.find(x => x.id === el.dataset.id), FS = OS_('fulfilment_stages'), i = FS.indexOf(o.ful_stage);
+  /* the step into Payment received asks how much came in */
+  if (FS[i + 1] === FN('Payment received') && D.access.prices) return payModal(o, true);
+  return opsAct(el, `orders/${el.dataset.id}/ful-next`, {}, '<b>Fulfilment moved on</b>');
+};
+const payModal = (o, step) => { const due = Math.max(0, (o.total || 0) - (o.paid || 0));
+  EM.modal(`<h2>${step ? esc(FN('Payment received')) : 'Record a payment'}</h2><p class="muted">${esc(o.ref)} · ${esc(clientName(o.client_id))}. Total ${inr0(o.total)}, received so far ${inr0(o.paid || 0)}, still due ${inr0(due)}.</p>
+    <div class="fgrid" style="margin-top:12px"><div class="field"><label for="pay-a">Amount received (advance or full) *</label>${G.adorn({ type: 'money', key: 'pay' }, `<input class="input" type="number" min="0" step="0.01" id="pay-a" value="${due || ''}">`)}</div>
+      <div class="field"><label for="pay-on">Received on</label><input class="input" type="date" id="pay-on" value="${today()}"></div><div class="field span2"><label for="pay-n">Note</label><input class="input" id="pay-n" placeholder="e.g. 50% advance by NEFT"></div></div>
+    ${errBox('pay-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="pay-save" data-id="${o.id}" data-step="${step ? 1 : ''}">${step ? 'Record and move on' : 'Record payment'}</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
+EM.ACTIONS['pay-add'] = el => payModal(OPSD().orders.find(x => x.id === el.dataset.id), false);
+EM.ACTIONS['pay-save'] = async el => {
+  const body = { amount: Number(qs('#pay-a').value || 0), on: qs('#pay-on').value, note: qs('#pay-n').value };
+  if (!(body.amount > 0)) return showErr('pay-err', 'Type the amount received.');
+  const r = await opsAct(el, `orders/${el.dataset.id}/${el.dataset.step ? 'ful-next' : 'pay'}`, body, `<b>${inr0(body.amount)} recorded</b>`, 'pay-err');
+  if (r) EM.closeModal();
+};
+EM.ACTIONS['prod-all'] = el => {
+  const o = OPSD().orders.find(x => x.id === el.dataset.id), miss = shortLines(o.id).filter(x => x.miss > 0), R = D.lists.rules, PS = OS_('production_stages'), recI = PS.indexOf(PNn('Received at warehouse'));
+  const plan = miss.map(x => { const open = OPSD().production.find(p => p.product_id === x.l.product_id && PS.indexOf(p.stage) < recI);
+    return [esc(prodName(x.l.product_id)), num(x.miss), open ? `Joins ${esc(open.ref)}` : `New order of ${num(Math.max(R.moq_boxes, Math.ceil(x.miss / R.production_round_boxes) * R.production_round_boxes))} boxes`]; });
+  EM.modal(`<h2>Production for everything missing</h2><p class="muted">${esc(o.ref)}: ${num(miss.reduce((a, x) => a + x.miss, 0))} boxes across ${miss.length} design${miss.length === 1 ? '' : 's'}. The sale then waits on production and is blocked from what arrives.</p>
+    ${table(['Design', 'Missing', 'Production order'], plan)}${errBox('pa-all-err')}
+    <div class="row" style="margin-top:14px"><button class="btn primary" data-act="prod-all-go" data-id="${o.id}">Place production order</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+EM.ACTIONS['prod-all-go'] = async el => { const r = await opsAct(el, `orders/${el.dataset.id}/production`, { all: true }, '<b>Production order placed</b> for everything missing', 'pa-all-err'); if (r) EM.closeModal(); };
 /* setting boxes aside: per line, per warehouse, never more than is free */
 const freeAt = (pid, wid) => INVD().stock.filter(x => x.product_id === pid && x.warehouse_id === wid).reduce((a, x) => a + x.boxes, 0) - OPSD().allocations.filter(a => a.product_id === pid && a.warehouse_id === wid && !a.dispatched).reduce((a, x) => a + x.boxes, 0);
 EM.ACTIONS['alloc-open'] = el => {
   const id = el.dataset.id, O = OPSD(), lines = O.lines.filter(l => l.order_id === id), WH = INVD().warehouses;
   const mine = (l, w) => O.allocations.filter(a => a.line_id === l.id && a.warehouse_id === w.id && !a.dispatched).reduce((a, x) => a + x.boxes, 0);
-  EM.modal(`<h2>Set boxes aside</h2><p class="muted small">For each design, how many boxes to take from each warehouse. "Free" is what is there and not set aside for another order. Whatever cannot be covered can go to production.</p>
+  EM.modal(`<h2>Block boxes</h2><p class="muted small">For each design, how many boxes to take from each warehouse. "Free" is what is there and not blocked for another order. Whatever cannot be covered can go to production.</p>
     <div class="stack" style="margin-top:12px">${lines.map(l => { const wait = O.waits.filter(w => w.line_id === l.id && !w.done).reduce((a, w) => a + w.boxes, 0);
       return `<fieldset class="fs" data-line="${l.id}" data-need="${l.boxes - wait}"><legend>${esc(prodName(l.product_id))} · ${l.boxes} boxes${wait ? ` (${wait} waiting on production)` : ''}</legend><div class="fgrid">${WH.map(w => `<div class="field"><label for="al-${l.id}-${w.id}">${esc(w.name)} <span class="muted">(free ${Math.max(0, freeAt(l.product_id, w.id) + mine(l, w))})</span></label><input class="input" type="number" min="0" step="1" id="al-${l.id}-${w.id}" data-wh="${w.id}" data-free="${Math.max(0, freeAt(l.product_id, w.id) + mine(l, w))}" value="${mine(l, w) || ''}"></div>`).join('')}</div>
         <div class="row"><span class="small" data-left>Still to cover: <b>${l.boxes - wait - O.allocations.filter(a => a.line_id === l.id && !a.dispatched).reduce((a, x) => a + x.boxes, 0)}</b></span><button class="btn sm" data-act="al-suggest" data-line="${l.id}">Suggest</button><button class="btn sm ghost" data-act="al-prod" data-order="${id}" data-line="${l.id}">Send the rest to production</button></div></fieldset>`; }).join('')}</div>
@@ -1140,7 +1215,7 @@ EM.ACTIONS['al-suggest'] = el => {   // fill from the warehouses with the most f
 };
 EM.ACTIONS['al-save'] = el => {
   const allocs = [...document.querySelectorAll('fieldset[data-line]')].flatMap(fs => [...fs.querySelectorAll('input[data-wh]')].map(i => ({ line_id: fs.dataset.line, warehouse_id: i.dataset.wh, boxes: Number(i.value || 0) })));
-  return opsAct(el, `orders/${el.dataset.id}/allocate`, { allocs }, '<b>Boxes set aside</b>', 'al-err');
+  return opsAct(el, `orders/${el.dataset.id}/allocate`, { allocs }, '<b>Boxes blocked</b>', 'al-err');
 };
 EM.ACTIONS['al-prod'] = async el => {
   const allocs = [...el.closest('fieldset').querySelectorAll('input[data-wh]')].map(i => ({ line_id: el.dataset.line, warehouse_id: i.dataset.wh, boxes: Number(i.value || 0) }));
@@ -1159,7 +1234,7 @@ EM.VIEWS.po = id => {
     <section class="card stack-s">${stageChips(PS, p.stage)}</section>
     <section class="card stack-s"><h3>The sales this production order serves</h3>
       <p class="small">${num(p.boxes)} boxes ordered from production · ${num(forSales)} for the sales below · ${num(Math.max(0, p.boxes - forSales))} spare, which go into stock when received.</p>
-      ${waits.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Boxes for it', 'Status'], waits.map(w => { const o = OPSD().orders.find(x => x.id === w.order_id) || {}; return { href: '#/order/' + w.order_id, cells: [`<b>${esc(o.ref || '')}</b>`, esc((oppOf(o) || { title: '' }).title), esc(clientName(o.client_id)), num(w.boxes), w.done ? '<span class="badge ok">Arrived, set aside</span>' : '<span class="badge warn">Waiting</span>'] }; })) : '<p class="small muted">No sale is waiting for it; everything it brings goes into stock.</p>'}</section>
+      ${waits.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Boxes for it', 'Status'], waits.map(w => { const o = OPSD().orders.find(x => x.id === w.order_id) || {}; return { href: '#/order/' + w.order_id, cells: [`<b>${esc(o.ref || '')}</b>`, esc((oppOf(o) || { title: '' }).title), esc(clientName(o.client_id)), num(w.boxes), w.done ? '<span class="badge ok">Arrived, blocked</span>' : '<span class="badge warn">Waiting</span>'] }; })) : '<p class="small muted">No sale is waiting for it; everything it brings goes into stock.</p>'}</section>
     <section class="stack-s"><h3>History</h3><div id="log-p"><p class="muted">Loading…</p></div></section></div>`;
 };
 EM.VIEWS.po.tab = 'orders';
@@ -1303,7 +1378,8 @@ function p200Score(c) {
   const months = Math.max(1, (Date.now() - Date.parse(fy0)) / (30.44 * 864e5)), ytdTarget = ex.target_12m ? ex.target_12m * Math.min(12, months) / 12 : 0;
   const actual = fyOrders.reduce((a, o) => a + (o.subtotal || 0), 0);
   const cats = new Set(fyOrders.flatMap(o => O.lines.filter(l => l.order_id === o.id).map(l => colOf(INVD().products.find(p => p.id === l.product_id) || {}).category)).filter(Boolean));
-  const unpaidOld = D.opportunities.some(o => o.client_id === c.id && o.pipeline === 'wholesale' && o.stage === creditStage('wholesale', D.lists) && (Date.now() - Date.parse((o.updated_at || o.created_at) + 'Z')) / 864e5 > R.payment_days);
+  /* an invoice still not fully paid after the payment days (invoices are raised in fulfilment since 6 Oct) */
+  const unpaidOld = orders.some(o => o.invoiced_at && (o.total || 0) - (o.paid || 0) > 0.5 && (Date.now() - Date.parse(o.invoiced_at.endsWith('Z') ? o.invoiced_at : o.invoiced_at + 'Z')) / 864e5 > R.payment_days);
   const recent = orders.some(o => (Date.now() - Date.parse(o.created_at + 'Z')) / 864e5 <= 90) || D.opportunities.some(o => o.client_id === c.id && (Date.now() - Date.parse((o.updated_at || o.created_at) + 'Z')) / 864e5 <= 90);
   const parts = { sales: ytdTarget ? Math.min(1, actual / ytdTarget) * W.sales : 0, breadth: D.lists.categories.length ? Math.min(1, cats.size / D.lists.categories.length) * W.breadth : 0,
     payments: unpaidOld ? W.payments / 3 : W.payments, display: ex.showroom ? W.display : 0, activity: recent ? W.activity : 0 };
@@ -1324,6 +1400,101 @@ EM.VIEWS.p200 = arg => {
       : empty(arg === 'candidates' ? 'No other dealers' : 'No dealer is in Priority 200 yet', 'Set "Priority 200" to Yes on a dealer\'s page (Business details), or in the Excel file.')}</div>`;
 };
 EM.VIEWS.p200.title = () => 'Priority 200';
+
+/* ---- dealer schemes (6 Oct): as EGO runs them. A target over a period, approved by the Owner or a
+   Director, settled at the end. Each dealer's progress is counted from orders invoiced inside the
+   period (before GST); nothing is typed. Dealers hear their progress on WhatsApp or by email. */
+const SCH = () => D.schemes || { list: [], dealers: [] };
+const dayOf = ts => ts ? dayIST(ts) : '';
+function schemeMembers(sc) {
+  const dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind));
+  if (sc.who === 'chosen') { const ids = new Set(SCH().dealers.filter(x => x.scheme_id === sc.id).map(x => x.client_id)); return dealers.filter(c => ids.has(c.id)); }
+  if (sc.who === 'rating') return dealers.filter(c => (sc.ratings || []).includes(c.grade));
+  return dealers;
+}
+function schemeRows(sc) {
+  const O = OPSD();
+  return schemeMembers(sc).map(c => {
+    const inv = O.orders.filter(o => o.client_id === c.id && o.invoiced_at && dayOf(o.invoiced_at) >= sc.start_on && dayOf(o.invoiced_at) <= sc.end_on);
+    const achieved = inv.reduce((a, o) => a + (o.subtotal || 0), 0), first = O.orders.filter(o => o.client_id === c.id).map(o => dayOf(o.created_at)).sort()[0];
+    const settle = SCH().dealers.find(x => x.scheme_id === sc.id && x.client_id === c.id && x.settled);
+    return { c, achieved, pct: sc.target ? Math.round(achieved / sc.target * 100) : 0, won: achieved >= sc.target, isNew: !!(first && first >= sc.start_on && first <= sc.end_on && inv.length), settle };
+  }).sort((a, b) => b.pct - a.pct || a.c.name.localeCompare(b.c.name));
+}
+const schemeState = sc => sc.status === 'Draft' ? ['Draft: waiting for approval', 'warn'] : sc.status === 'Settled' ? ['Settled', 'ok'] : today() < sc.start_on ? [`Approved: starts ${ds(sc.start_on)}`, 'info'] : today() <= sc.end_on ? ['Running', 'info'] : ['Ended: to settle', 'warn'];
+const canSch = list => list.includes(me().role);
+EM.VIEWS.schemes = () => {
+  const L = SCH().list;
+  return `<div class="stack"><div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">EGO Premium · dealer schemes</div><h1>Schemes</h1>
+      <p class="muted" style="max-width:780px">A target over a period, as EGO runs them today (a 7-month dealer scheme). Approved by the Owner or a Director, settled at the end by the Owner, a Director or Wholesale Finance. Each dealer's progress is counted from orders invoiced inside the period, before GST; nothing is typed.</p></div>
+      ${canSch(SCHEME_EDIT) ? '<button class="btn primary" data-act="sch-add">+ Draw up a scheme</button>' : ''}</div>
+    ${L.length ? table(['Scheme', 'Period', ...(D.access.prices ? ['Target per dealer'] : []), 'Dealers', 'Reached the target', 'Status'], L.map(sc => { const rows = schemeRows(sc), st = schemeState(sc);
+      return { href: '#/scheme/' + sc.id, cells: [`<b>${esc(sc.name)}</b><div class="small muted">${esc(sc.ref || '')}</div>`, `${ds(sc.start_on)} to ${ds(sc.end_on)}`, ...(D.access.prices ? [inr0(sc.target)] : []), num(rows.length), D.access.prices ? num(rows.filter(r => r.won).length) : '<span class="muted">Hidden</span>', `<span class="badge ${st[1]}">${esc(st[0])}</span>`] }; }))
+      : empty('No schemes yet', 'Draw up the scheme running today: its period, the target per dealer, which dealers, and the reward. It runs once the Owner or a Director approves it.', canSch(SCHEME_EDIT) ? '<button class="btn primary" data-act="sch-add">+ Draw up a scheme</button>' : '')}</div>`;
+};
+EM.VIEWS.schemes.title = () => 'Schemes';
+EM.VIEWS.scheme = id => {
+  const sc = SCH().list.find(x => x.id === id);
+  if (!sc) return `<div class="stack"><h1>Scheme not found</h1><a class="btn" href="#/schemes">Schemes</a></div>`;
+  const rows = schemeRows(sc), st = schemeState(sc), P = D.access.prices, ended = today() > sc.end_on;
+  const msg = r => `Dear ${r.c.name}, your progress on the EGO Premium scheme "${sc.name}" (${ds(sc.start_on)} to ${ds(sc.end_on)}): ₹${Math.round(r.achieved).toLocaleString('en-IN')} of ₹${Math.round(sc.target).toLocaleString('en-IN')} (${r.pct}%).${r.won ? ' Target reached, congratulations!' : ` ₹${Math.round(sc.target - r.achieved).toLocaleString('en-IN')} to go.`}${sc.reward ? ' Reward: ' + sc.reward + '.' : ''} EGO Premium`;
+  const send = r => { const w = String(r.c.whatsapp || r.c.mobile || '').replace(/\D/g, ''), t = encodeURIComponent(msg(r));
+    return `${w ? `<a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${t}">WhatsApp</a>` : ''}${r.c.email ? `<a class="btn sm ghost" href="mailto:${esc(r.c.email)}?subject=${encodeURIComponent('Your progress: ' + sc.name)}&body=${t}">Email</a>` : ''}`; };
+  return `<div class="stack">${crumbs(['Schemes', '#/schemes'], [sc.name])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(sc.name)}</h1><div class="row"><span class="badge ${st[1]}">${esc(st[0])}</span><span class="small muted">${esc(sc.ref || '')}</span></div></div>
+      <div class="row">${sc.status === 'Draft' && canSch(SCHEME_EDIT) ? `<button class="btn" data-act="sch-edit" data-id="${id}">Edit</button>` : ''}${sc.status === 'Draft' && canSch(SCHEME_APPROVE) ? `<button class="btn primary" data-act="sch-approve" data-id="${id}">Approve</button>` : ''}${sc.status === 'Approved' && ended && canSch(SCHEME_SETTLE) ? `<button class="btn primary" data-act="sch-settle" data-id="${id}">Settle</button>` : ''}${isOwner() ? `<button class="btn ghost" data-act="sch-del" data-id="${id}">Delete</button>` : ''}</div></div>
+    <div class="grid g4">${tile('Dealers in it', num(rows.length))}${P ? tile('Reached the target', num(rows.filter(r => r.won).length)) : ''}${P ? tile('New dealers activated', num(rows.filter(r => r.isNew).length), 'first order inside the period') : ''}${P ? tile('Invoiced in the period', inr0(rows.reduce((a, r) => a + r.achieved, 0)), 'before GST') : ''}</div>
+    <section class="card stack-s"><h3>The scheme</h3>${kv([['Period', `${ds(sc.start_on)} to ${ds(sc.end_on)}`], ...(P ? [['Target per dealer', inr0(sc.target)]] : []), ['For', esc(SCHEME_WHO[sc.who]) + (sc.who === 'rating' ? ': ' + esc((sc.ratings || []).join(', ')) : '')], ['Reward', esc(sc.reward || '') || NOTSET], ['Notes', esc(sc.notes || '') || NOTSET],
+      ['Drawn up by', esc(staffName(sc.created_by))], ['Approved by', sc.approved_by ? `${esc(staffName(sc.approved_by))} · ${whenTxt(sc.approved_at)}` : NOTSET], ['Settled by', sc.settled_by ? `${esc(staffName(sc.settled_by))} · ${whenTxt(sc.settled_at)}` : NOTSET]])}</section>
+    <section class="card stack-s"><h3>Each dealer's progress</h3><p class="small muted">Counted from orders invoiced between ${ds(sc.start_on)} and ${ds(sc.end_on)}, before GST. Send each dealer their progress on WhatsApp or by email.</p>
+      ${rows.length ? table(['Dealer', 'Rating', ...(P ? ['Invoiced', '% of target'] : []), 'Status', ...(sc.status === 'Settled' ? ['Settlement'] : []), ...(P ? ['Send progress'] : [])], rows.map(r => [`<a href="#/client/${r.c.id}"><b>${esc(r.c.name)}</b></a><div class="small muted">${esc(kindLabel(r.c.kind))} · ${esc(r.c.city)}</div>`, esc(r.c.grade || ''),
+        ...(P ? [inr0(r.achieved), `${r.pct}%`] : []), P ? (r.won ? '<span class="badge ok">Reached</span>' : '<span class="badge plain">Not yet</span>') + (r.isNew ? ' <span class="badge info">New dealer</span>' : '') : '', ...(sc.status === 'Settled' ? [esc((r.settle || {}).settle_note || '')] : []), ...(P ? [send(r)] : [])]))
+        : '<p class="muted">No dealer matches this scheme yet.</p>'}</section></div>`;
+};
+EM.VIEWS.scheme.tab = 'schemes';
+EM.VIEWS.scheme.title = id => (SCH().list.find(x => x.id === id) || { name: 'Scheme' }).name;
+const addMonths = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCMonth(x.getUTCMonth() + n); x.setUTCDate(x.getUTCDate() - 1); return x.toISOString().slice(0, 10); };
+function openSchemeForm(sc) {
+  const v = sc ? { ...sc, dealers: SCH().dealers.filter(x => x.scheme_id === sc.id).map(x => x.client_id) } : { start_on: today(), end_on: addMonths(today(), 7), who: 'all', ratings: [], dealers: [] };
+  const dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind)).sort((a, b) => a.name.localeCompare(b.name)).map(c => [c.id, `${c.name} · ${kindLabel(c.kind)} · ${c.city}`]);
+  EM.modal(`<h2>${sc ? 'Edit ' + esc(sc.name) : 'Draw up a scheme'}</h2><p class="muted small">It runs once the Owner or a Director approves it. Compulsory fields end with a star.</p>
+    <form id="scf" class="stack" onsubmit="return false" style="margin-top:14px"><div class="fgrid">
+      <div class="field span2" data-field="sch_name"><label for="scf-name">Scheme name *</label><input class="input" id="scf-name" value="${esc(v.name || '')}" placeholder="e.g. 7-month dealer scheme, Oct to Apr"></div>
+      <div class="field"><label for="scf-start">Starts on *</label><input class="input" type="date" id="scf-start" value="${esc(v.start_on)}"></div>
+      <div class="field"><label for="scf-end">Ends on *</label><input class="input" type="date" id="scf-end" value="${esc(v.end_on)}"></div>
+      <div class="field"><label for="scf-target">Target per dealer *</label>${G.adorn({ type: 'money', key: 'target' }, `<input class="input" type="number" min="0" step="1" id="scf-target" value="${esc(v.target || '')}">`)}</div>
+      ${G.select({ key: 'who', label: 'Which dealers', req: true }, v.who, 'scf', Object.entries(SCHEME_WHO), false).replace('<select', '<select data-sch-who')}
+      <div data-sch-part="rating" ${v.who === 'rating' ? '' : 'hidden'} class="span2">${G.multi({ key: 'ratings', label: 'Dealer ratings' }, v.ratings, 'scf', D.lists.dealer_grades || [])}</div>
+      <div data-sch-part="chosen" ${v.who === 'chosen' ? '' : 'hidden'} class="span2">${G.multi({ key: 'dealers', label: 'Dealers' }, v.dealers, 'scf', dealers)}</div>
+      <div class="field span2"><label for="scf-reward">Reward</label><input class="input" id="scf-reward" value="${esc(v.reward || '')}" placeholder="e.g. 2% credit note, or a trip"></div>
+      <div class="field span2"><label for="scf-notes">Notes</label><textarea class="input" id="scf-notes" rows="2">${esc(v.notes || '')}</textarea></div></div>
+      ${errBox('scf-err')}<div class="row sticky-actions"><button class="btn primary" data-act="sch-save" data-id="${sc ? sc.id : ''}">${sc ? 'Save' : 'Save as draft'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+}
+document.addEventListener('change', e => { if (!e.target.matches('[data-sch-who]')) return; document.querySelectorAll('[data-sch-part]').forEach(x => { x.hidden = x.dataset.schPart !== e.target.value; }); });
+EM.ACTIONS['sch-add'] = () => openSchemeForm(null);
+EM.ACTIONS['sch-edit'] = el => openSchemeForm(SCH().list.find(x => x.id === el.dataset.id));
+const schReload = async () => { Object.assign(D, await API('GET', '/api/bootstrap')); };
+EM.ACTIONS['sch-save'] = async el => {
+  const f = qs('#scf'), pick = n => [...f.querySelectorAll(`[name="${n}"]:checked`)].map(x => x.value);
+  const b = { name: qs('#scf-name').value, start_on: qs('#scf-start').value, end_on: qs('#scf-end').value, target: Number(qs('#scf-target').value || 0), who: f.querySelector('[data-sch-who]').value, ratings: pick('ratings'), dealers: pick('dealers'), reward: qs('#scf-reward').value, notes: qs('#scf-notes').value };
+  if (el.dataset.id) b.id = el.dataset.id;
+  busy(el, true);
+  try { const r = await API('POST', '/api/schemes', b); await schReload(); EM.closeModal(); EM.toast(`<b>${esc(b.name)}</b> saved. ${el.dataset.id ? '' : 'It runs once the Owner or a Director approves it.'}`); location.hash = '#/scheme/' + r.id; EM.rerender(); }
+  catch (x) { busy(el, false); showErr('scf-err', x.errors || x.message); }
+};
+EM.ACTIONS['sch-approve'] = async el => { busy(el, true); try { await API('POST', `/api/schemes/${el.dataset.id}/approve`, {}); await schReload(); EM.toast('<b>Scheme approved</b>'); EM.rerender(); } catch (x) { busy(el, false); bubbleNear(el, x.message); } };
+EM.ACTIONS['sch-settle'] = el => {
+  const sc = SCH().list.find(x => x.id === el.dataset.id), won = schemeRows(sc).filter(r => r.won);
+  EM.modal(`<h2>Settle ${esc(sc.name)}</h2><p class="muted">${won.length} dealer${won.length === 1 ? '' : 's'} reached the target. Say how each one is settled (credit note, cheque, trip…).</p>
+    <div class="stack-s" style="margin-top:12px">${won.map(r => `<div class="field"><label for="st-${r.c.id}">${esc(r.c.name)} · ${inr0(r.achieved)}</label><input class="input" id="st-${r.c.id}" data-settle="${r.c.id}" placeholder="How it was settled"></div>`).join('') || '<p class="small muted">Nobody reached the target; settling closes the scheme.</p>'}</div>
+    ${errBox('st-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="sch-settle-go" data-id="${sc.id}">Settle the scheme</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+EM.ACTIONS['sch-settle-go'] = async el => {
+  const notes = Object.fromEntries([...document.querySelectorAll('[data-settle]')].map(x => [x.dataset.settle, x.value]));
+  busy(el, true);
+  try { await API('POST', `/api/schemes/${el.dataset.id}/settle`, { notes }); await schReload(); EM.closeModal(); EM.toast('<b>Scheme settled</b>'); EM.rerender(); } catch (x) { busy(el, false); showErr('st-err', x.message); }
+};
+EM.ACTIONS['sch-del'] = async el => { const sc = SCH().list.find(x => x.id === el.dataset.id); if (!confirm(`Delete ${sc.name}?`)) return; try { await API('DELETE', '/api/schemes/' + sc.id); await schReload(); location.hash = '#/schemes'; } catch (x) { bubbleNear(el, x.message); } };
 
 /* ---- Lists & stages: the operations stage sets and the rules */
 const OPS_LIST_GROUP = () => ['Operations stages', 'The stages of the processing side. Any item can be locked or unlocked. ⚙ marks the stages that run the processing: unlock one to rename it (the processing follows the new name); they cannot be removed, and they keep their order.', Object.entries(OPS).map(([k, v]) => ['ops.' + k, v.label])];
@@ -1546,7 +1717,8 @@ EM.ACTIONS['imp-save'] = async el => {
   const done = { added: 0, updated: 0, skipped: IMP.results.length - todo.length };
   try {
     for (const tab of ['clients', 'contacts', 'categories', 'collections', 'warehouses', 'stock']) {
-      const res = await sendRows(todo.filter(r => r.tab === tab), false, prog);
+      /* distributors go first, so a sub-dealer in the same file finds the distributor that serves it */
+      const res = await sendRows(todo.filter(r => r.tab === tab).sort((x, y) => (String(y.data.kind).toLowerCase().startsWith('distributor') ? 1 : 0) - (String(x.data.kind).toLowerCase().startsWith('distributor') ? 1 : 0)), false, prog);
       for (const r of res) { if (r.status === 'new') done.added++; else if (r.status === 'update') done.updated++; else done.skipped++; }
       const failed = res.filter(r => r.status === 'error');
       failed.forEach(f => { const x = IMP.results.find(y => y.sheet === f.sheet && y.row === f.row); if (x) Object.assign(x, { status: 'error', reason: f.reason }); });
@@ -1598,10 +1770,11 @@ function openStaffForm(s) {
     ${s ? '' : `<div class="field"><label for="sf-login">Username *</label><input class="input" id="sf-login" name="login" autocapitalize="none" placeholder="e.g. priya.sales"></div>
     <div class="field"><label for="sf-pass">Temporary password *</label><div class="mob"><input class="input" id="sf-pass" name="password" value="${genPass()}"><button class="btn sm" type="button" data-act="staff-gen">New</button></div><span class="small muted">They choose their own at first sign-in.</span></div>`}
     <div class="field"><label for="sf-role">Role *</label><select class="input" id="sf-role" name="role">${roles.map(r => `<option value="${r.id}" ${s && s.role === r.id ? 'selected' : ''}>${esc(r.name)} · ${divName(r.division)}</option>`).join('')}</select></div>
-    <div class="field"><label for="sf-region">Region (for regional roles)</label><select class="input" id="sf-region" name="region"><option value="">None</option>${REGIONS.map(x => `<option ${s && s.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+    <div class="field"><label for="sf-region">Region *</label><select class="input" id="sf-region" name="region"><option value="">Choose</option>${REGIONS.map(x => `<option ${s && s.region === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
     ${fieldHtml(STAFF_MOBILE, s ? s.mobile : '', 'sf')}
     <div class="field"><label for="sf-email">Email</label><input class="input" id="sf-email" name="email" type="email" value="${esc(s ? s.email : '')}"></div>
-    <div class="field"><label for="sf-rep">Reports to</label><select class="input" id="sf-rep" name="reports_to"><option value="">Nobody</option>${D.staff.filter(x => x.active && (!s || x.id !== s.id)).map(x => `<option value="${x.id}" ${s && s.reports_to === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div></div>
+    <div class="field"><label for="sf-rep">Reports to *</label><select class="input" id="sf-rep" name="reports_to"><option value="">Choose their manager</option>${D.staff.filter(x => x.active && (!s || x.id !== s.id)).map(x => `<option value="${x.id}" ${s && s.reports_to === x.id ? 'selected' : ''}>${esc(x.name)} · ${esc(roleName(x.role))}</option>`).join('')}</select></div>
+    <p class="small muted span2">Region and Reports to are compulsory for everyone except the Owner, a Director and the CRM Administrator. A person sees their own records; their manager sees theirs too, and so on up the line.</p></div>
     ${errBox('sf-err')}<div class="row"><button class="btn primary" data-act="staff-save" data-id="${s ? s.id : ''}">${s ? 'Save' : 'Add person'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
 EM.ACTIONS['staff-gen'] = () => { qs('#sf-pass').value = genPass(); };
@@ -1941,14 +2114,14 @@ const FIELD_HELP = {
   mobile_alt: 'A second number to reach them on.', email: 'Their email address.',
   city: 'The city of the main office. The city decides the region, and the region decides which regional manager sees the record.',
   locality: 'The area or locality inside the city.', pincode: 'The 6-digit pincode.', address: 'The full postal address.',
-  areas_covered: 'The cities this company sells in or works in. Pick several from the list.', other_offices: 'Other offices or branches, by area.',
+  areas_covered: 'The cities this company sells in or works in. For a distributor, its assigned area: it answers for the sales there against its target.', other_offices: 'Other offices or branches, by area.',
   owner_id: 'The person at EGO who looks after this record. Field sales and telesales see only the records they look after.',
   source: 'Where this record came from (Meta ads, a walk-in, a referral...). The choices are edited in Lists & stages.',
   status: 'Active, Prospect or Inactive: whether you are doing business with them now.', legal_name: 'The registered name, exactly as on the GST certificate.',
-  gst: 'The 15-character GST number. The same GST cannot be saved twice in one company.', parent_id: 'For a sub-dealer: the distributor or dealer it buys through.',
+  gst: 'The 15-character GST number. The same GST cannot be saved twice in one company.', parent_id: 'For a sub-dealer: the distributor that serves it. Compulsory, and only a distributor can be chosen. A dealer buys from EGO Premium directly.',
   grade: 'The dealer rating (Platinum, A, B, C). It is shown everywhere the dealer appears and helps decide who gets production first.',
   priority200: 'Yes puts this dealer in Priority 200, the list of dealers EGO develops first. Its score is worked out from saved sales.',
-  since: 'The date they started working with EGO.', credit_limit: 'The most they may owe at once. At Invoiced, unpaid invoices plus the new sale are checked against it; above it, the sale waits for approval.',
+  since: 'The date they started working with EGO.', credit_limit: 'The most they may owe at once. At Invoiced, what is still unpaid on the order plus their other unpaid invoices is checked against it; above it, the order waits for approval.',
   telesales_id: 'The telesales person who calls this dealer.', specialist_id: 'The product specialist who supports this dealer.', contact_every_days: 'How often someone should call or visit, in days.',
   categories: 'The product categories this dealer buys today.', categories_missing: 'Categories they do not buy yet: the chance to sell more.',
   brands_sold: 'Other brands they sell.', competitors: 'The main competitors near them.', customer_types: 'Who this dealer sells to.', project_partner: 'Whether they take on project work with EGO.',
@@ -1964,7 +2137,8 @@ const FIELD_HELP = {
   designation: 'The person\'s role at the company. The choices are edited in Lists & stages.', responsibilities: 'What this person handles, in a few words.', is_primary: 'The main person to talk to at this company. Only one per company.',
   pipeline: 'Which board the opportunity is on: wholesale, retail lead or retail project.', title: 'A short name for this sale.', stage: 'Where the sale stands. The stages are edited in Lists & stages.',
   value: 'The value in rupees. For a wholesale sale it is worked out from its designs, boxes and rate.', products: 'The product categories in this sale.', area_sqft: 'The area in square feet.',
-  application: 'The room or use.', budget: 'The budget band.', contact_id: 'The person at the company who brought this sale.', expected_close: 'When you expect it to close.', lost_reason: 'Why it was lost. Compulsory at Lost.',
+  application: 'The room or use.', budget: 'The budget band.', contact_id: 'The person at the company who brought this sale.', expected_close: 'When you expect it to close.', lost_reason: 'Why it was lost, from the list. Compulsory at Lost.', lost_detail: 'Exactly what happened, in your words: which design, how many boxes, what the client chose instead. Compulsory at Lost.',
+  billing_address: 'The address the invoice goes to.', delivery_address: 'Where the boxes are delivered, if not the billing address.', payment_terms: 'e.g. 50% advance, balance before dispatch.', delivery_terms: 'e.g. ex-warehouse Bhiwandi, or delivered to site.', delivery_time: 'When the client needs it.', terms: 'The terms and conditions printed on the quotation.',
   category: 'The kind of floor: LVT, SPC, Laminate... Categories are added with + Category or in Lists & stages.', sqft_per_box: 'The area one box covers, in square feet. Fill this or square metres; the other is worked out. Stock in square feet is worked out from it.',
   sqm_per_box: 'The area one box covers, in square metres. Fill this or square feet.', pcs_per_box: 'How many planks or tiles are in one box.', low_stock: 'Warn below this many boxes: the bell gives a heads-up when stock drops under it.',
   collection_id: 'The collection this design belongs to; it takes the collection\'s box size and specifications.', code: 'The design code, if it has one. A code can be used only once.',
@@ -1975,8 +2149,11 @@ const ACT_HELP = {
   'org-add': 'Add a company with its point of contact, address, areas and business details. Everything else can be added later.', 'person-add': 'Add a person: at a dealer, at an architect firm, or a personal contact.',
   'opp-add': 'Start a sale. For wholesale, type the designs, boxes and rate; the total is worked out.', 'opp-move': 'Move this sale to the stage chosen on the left. Some stages check things first (designs, credit, approvals).',
   'opp-edit': 'Change this sale\'s details and designs.', 'client-edit': 'Change this record\'s details.', 'client-save': 'Save. Anything wrong is shown just above the field.',
-  'ful-next': 'Move this fulfilment to its next stage. At the stock check every design must be covered first.', 'alloc-open': 'Set boxes aside: for each design, how many to take from each warehouse.',
-  'al-suggest': 'Fill from the warehouses with the most free boxes first.', 'al-prod': 'Whatever this design is still short of goes on a production order.', 'al-save': 'Save how many boxes are set aside from each warehouse.',
+  'ful-next': 'Move this fulfilment to its next stage. At the stock check every design must be blocked or on production; the step into Payment received asks for the amount; Invoiced checks the credit limit.',
+  'prod-all': 'Put every missing box of this order on a production order: one press for all designs. An open production order of the same design is joined.', 'pay-add': 'Record a payment that came in: the advance, an instalment or the balance.',
+  'pay-save': 'Save the payment. It can never be more than what is still due.', 'chg-add': 'Add a charge besides the designs: installation, porter, transport…', 'chg-del': 'Remove this charge.',
+  'sch-add': 'Draw up a dealer scheme: the period, the target per dealer, which dealers and the reward.', 'sch-approve': 'Approve this scheme (Owner or Director). It then runs over its period.', 'sch-settle': 'Close the scheme after it ends, with how each winner was settled.', 'alloc-open': 'Block boxes: for each design, how many to take from each warehouse.',
+  'al-suggest': 'Fill from the warehouses with the most free boxes first.', 'al-prod': 'Whatever this design is still short of goes on a production order.', 'al-save': 'Save how many boxes are blocked in each warehouse.',
   'po-next': 'Move this production order on. Received at warehouse adds the boxes to stock.', 'po-add': 'Place a production order directly.',
   'move-add': 'Record stock coming in, going out, or moving between warehouses. Every move keeps who and when.', 'cat-add': 'Add a product category, then its collections, then its designs.',
   'col-add': 'Add a collection: its category, box size and specifications.', 'prod-add': 'Add a design, with the warehouses it is in and the boxes there today.', 'wh-add': 'Add a warehouse.',
@@ -1988,8 +2165,8 @@ const ACT_HELP = {
   'sign-out': 'Sign out of EGO Master.', 'contact-add': 'Add a person to this company\'s team.', 'snag-add': 'Record a snag on this site.', 'snag-close': 'Close this snag, saying how it was put right.',
 };
 const NAV_HELP = { home: 'Today at a glance: counts, next actions due, what is not connected yet.', dealers: 'Distributors, dealers and sub-dealers, each with its team, sales and business.',
-  architects: 'Architect firms and solo architects, each with its team.', people: 'Everyone: the people at every company, and personal contacts.', opps: 'The sales boards. A wholesale sale runs here until Payment collected.',
-  orders: 'After the payment: the stock check, setting boxes aside, production for what is short, dispatch.', orderbook: 'Every order, live and old: when each stage happened, who gave it, who closed it, who processed it.', installation: 'Big E installation sites, step by step.', complaints: 'Complaints, from logged to resolved.',
+  architects: 'Architect firms and solo architects, each with its team.', people: 'Everyone: the people at every company, and personal contacts.', opps: 'The sales boards. A wholesale sale runs here until Order confirmed.', schemes: 'Dealer schemes: a target over a period, progress counted from invoiced orders.',
+  orders: 'From the confirmed order: stock check and blocking, production for what is missing, PI, payment, invoice, dispatch.', orderbook: 'Every order, live and old: when each stage happened, who gave it, who closed it, who processed it.', installation: 'Big E installation sites, step by step.', complaints: 'Complaints, from logged to resolved.',
   approvals: 'Credit, discounts and settlements waiting for someone whose limit covers them.', p200: 'The dealers EGO develops first, scored from saved sales.', inventory: 'Categories, collections, designs, warehouses and stock.',
   import: 'Upload the Excel files: EGO Premium, Big E and Inventory.', team: 'The people who use EGO Master and what each role may see.', lists: 'Every dropdown and every stage, editable, with locks.', account: 'Your password.' };
 function helpFor(t) {

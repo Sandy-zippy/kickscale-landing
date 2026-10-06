@@ -8,7 +8,8 @@
    dropdowns. A field added here appears in the form, the 360 page, the server's
    validation and the upload template together, or it is not added at all. */
 
-const CATS = ['LVT', 'SPC', 'Laminate', 'Engineered', 'Hywood', 'WPC Tile Deck', 'WPC Plank / Outdoor', 'PVC Soffit & Cladding'];
+/* EGO's own list (onboarding answers, 5 Oct): Big E also sells PVC soffit, cladding and bamboo */
+const CATS = ['LVT', 'SPC', 'Laminate', 'Engineered', 'Hywood', 'WPC Tile Deck', 'WPC Plank Deck', 'PVC Soffit & Cladding', 'Bamboo Deck', 'Bamboo Cladding / Soffit'];
 
 /* kind -> which division owns it. Architects and design firms sit in BOTH
    (29 Sep meeting: wholesale needs its own architect database too). */
@@ -26,20 +27,21 @@ const KINDS = {
 const KIND_BY_LABEL = Object.fromEntries(Object.entries(KINDS).map(([k, v]) => [v.label.toLowerCase(), k]));
 
 const PIPELINES = {
-  wholesale: { label: 'Wholesale opportunity', plural: 'Wholesale opportunities', division: 'wholesale', won: 'Payment collected', credit: 'Invoiced', lines: true },
+  /* 6 Oct, EGO's own order: the sale ends at Order confirmed; stock is blocked, the PI sent, the money taken and the invoice raised in fulfilment */
+  wholesale: { label: 'Wholesale opportunity', plural: 'Wholesale opportunities', division: 'wholesale', won: 'Order confirmed', lines: true },
   retail_lead: { label: 'Retail lead', plural: 'Retail leads', division: 'retail' },
   retail_project: { label: 'Retail project', plural: 'Retail projects', division: 'retail' },
 };
 /* which pipelines a client of each group may have */
 const PIPES_FOR = { dealer: ['wholesale'], direct: ['wholesale'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'retail_lead', 'retail_project'], firm: ['wholesale', 'retail_lead', 'retail_project'] };
 
-const SOURCES = ['Meta Ads', 'Google Ads', 'Website', 'WhatsApp', 'IndiaMART', 'JustDial', 'QR code', 'Walk-in', 'Referral', 'Field visit', 'Architect', 'Existing relationship', 'Other'];
+const SOURCES = ['Meta Ads', 'Google Ads', 'Website', 'WhatsApp', 'IndiaMART', 'JustDial', 'Runo', 'Sales Diary', 'QR code', 'Walk-in', 'Referral', 'Field visit', 'Architect', 'Existing relationship', 'Other'];
 
 /* Defaults for the lists the Owner can edit in Lists & stages. Stored in
    settings once edited; these only apply to a fresh database. */
 const DEFAULT_LISTS = {
   stages: {
-    wholesale: ['New', 'Contacted', 'Qualified', 'Quotation', 'Invoiced', 'Payment collected', 'Lost', 'Nurturing'],
+    wholesale: ['New', 'Contacted', 'Qualified', 'Quotation', 'Order confirmed', 'Lost', 'Nurturing'],
     retail_lead: ['New', 'Contacted', 'Qualified', 'Appointment', 'Site visit', 'Sample', 'Quote', 'Won', 'Lost'],
     retail_project: ['New project', 'Qualified', 'Sample', 'Specification', 'Approval', 'Quotation', 'Negotiation', 'Won', 'Lost'],
   },
@@ -50,7 +52,7 @@ const DEFAULT_LISTS = {
     ['Kolkata', 'East'], ['Indore', 'Central'],
   ].map(([city, region]) => ({ city, region })),
   categories: CATS,
-  lost_reasons: ['Price', 'Chose a competitor', 'Architect specified another brand', 'Project on hold', 'Delivery timeline', 'Credit terms', 'No response', 'Other'],
+  lost_reasons: ['Stock not available', 'Price', 'Colour not available', 'Size not available', 'Chose a competitor', 'Architect specified another brand', 'Project on hold', 'Delivery timeline', 'Credit terms', 'No response', 'Other'],
 };
 const REGIONS = ['West', 'South', 'North', 'East', 'Central'];
 
@@ -75,7 +77,7 @@ const CLIENT_FIELDS = [
   { key: 'locality', label: 'Area or locality', type: 'text', groups: ALL, section: 'Basics' },
   { key: 'pincode', label: 'Pincode', type: 'pincode', groups: ALL, section: 'Basics' },
   { key: 'address', label: 'Address', type: 'textarea', groups: ALL, section: 'Basics' },
-  { key: 'areas_covered', label: 'Areas they cover', type: 'cities', groups: ORGS, section: 'Basics' },
+  { key: 'areas_covered', label: 'Areas they cover', klabel: { distributor: 'Assigned area (they answer for its sales)' }, type: 'cities', groups: ORGS, section: 'Basics' },
   { key: 'other_offices', label: 'Other offices or branches (areas)', type: 'text', groups: ORGS, section: 'Basics' },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true, col: true, groups: ALL, section: 'Basics' },
   { key: 'source', list: 'sources', label: 'Source', type: 'select', opts: SOURCES, col: true, groups: ALL, section: 'Basics' },
@@ -83,7 +85,8 @@ const CLIENT_FIELDS = [
 
   { key: 'legal_name', label: 'Legal name (as on GST)', type: 'text', groups: ['dealer', 'firm'], section: 'Business' },
   { key: 'gst', label: 'GST number', type: 'gst', col: true, groups: ['dealer', 'firm', 'retail', 'direct'], section: 'Business' },
-  { key: 'parent_id', label: 'Buys through', type: 'link', to: ['distributor', 'dealer'], col: true, groups: ['dealer'], kinds: ['dealer', 'sub_dealer'], section: 'Business' },
+  /* a sub-dealer is a retailer served by a distributor; a dealer buys from EGO directly (onboarding answers) */
+  { key: 'parent_id', label: 'Distributor who serves them', type: 'link', to: ['distributor'], req: true, col: true, groups: ['dealer'], kinds: ['sub_dealer'], section: 'Business' },
   { key: 'grade', list: 'dealer_grades', label: 'Dealer rating', type: 'select', opts: ['Platinum', 'A', 'B', 'C'], col: true, groups: ['dealer'], section: 'Business' },
   { key: 'priority200', label: 'Priority 200', type: 'yesno', groups: ['dealer'], section: 'Business' },
   { key: 'since', label: 'Working with EGO since', type: 'date', groups: ['dealer', 'firm'], section: 'Business' },
@@ -158,9 +161,21 @@ const OPP_FIELDS = [
   { key: 'next_date', label: 'Next action date', type: 'date' },
   { key: 'expected_close', label: 'Expected close', type: 'date' },
   { key: 'lost_reason', label: 'Lost reason', type: 'lost' },
+  { key: 'lost_detail', label: 'Lost: the details', type: 'textarea' },
+  /* what EGO writes on an order or quotation (onboarding answers); wholesale only */
+  { key: 'billing_address', label: 'Billing address', type: 'textarea', pipes: ['wholesale'] },
+  { key: 'delivery_address', label: 'Delivery address', type: 'textarea', pipes: ['wholesale'] },
+  { key: 'payment_terms', label: 'Payment terms', type: 'text', pipes: ['wholesale'] },
+  { key: 'delivery_terms', label: 'Delivery terms', type: 'text', pipes: ['wholesale'] },
+  { key: 'delivery_time', label: 'Delivery time', type: 'text', pipes: ['wholesale'] },
+  { key: 'terms', label: 'Terms and conditions', type: 'textarea', pipes: ['wholesale'] },
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ];
-/* The stage that counts as won: for a wholesale sale it is Payment collected (4 Oct), and
+const oppFieldsFor = p => OPP_FIELDS.filter(f => !f.pipes || f.pipes.includes(p));
+const labelFor = (f, kind) => (f.klabel && f.klabel[kind]) || f.label;
+/* the charges a wholesale order may carry besides its designs, typed as "what for" + amount */
+const CHARGE_HINTS = ['Installation', 'Porter / loading', 'Transport', 'Skirting / profile', 'Film / foam', 'Accessories'];
+/* The stage that counts as won: for a wholesale sale it is Order confirmed (6 Oct), and
    that is where it passes to fulfilment. Lost is lost everywhere; Nurturing stays open. */
 /* A stage that drives the processing has a ROLE (its first name) and a current NAME: the
    Owner may unlock and rename it, and the logic follows the role, never the words. */
@@ -291,7 +306,7 @@ function cleanOpp(input, ctx) {
   const pipe = PIPELINES[input.pipeline] ? input.pipeline : Object.keys(PIPELINES).find(k => PIPELINES[k].label.toLowerCase() === String(input.pipeline || '').trim().toLowerCase());
   input = { ...input, pipeline: pipe };
   if (!PIPELINES[pipe]) return { rec: null, errors: ['pipeline is not one of: ' + Object.values(PIPELINES).map(p => p.label).join(', ')] };
-  for (const f of OPP_FIELDS) {
+  for (const f of oppFieldsFor(pipe)) {
     const r = cleanValue(f, input[f.key], ctx, input);
     if (r.error) { errors.push(`${f.label} ${r.error}`); continue; }
     const empty = r.value === '' || r.value == null || (Array.isArray(r.value) && !r.value.length);
@@ -301,7 +316,8 @@ function cleanOpp(input, ctx) {
   }
   const lost = lostStage(pipe, ctx && ctx.lists);
   if (rec.stage === lost && !rec.lost_reason) errors.push(`Lost reason is compulsory when the stage is ${lost}`);
-  if (rec.stage !== lost) rec.lost_reason = '';
+  if (rec.stage === lost && !rec.extra.lost_detail) errors.push(`Lost: the details are compulsory when the stage is ${lost}`);
+  if (rec.stage !== lost) { rec.lost_reason = ''; delete rec.extra.lost_detail; }
   return { rec, errors };
 }
 
@@ -506,7 +522,7 @@ const SHEETS = {
   dealers: { id: 'dealers', sheet: 'Dealer companies', tab: 'clients', kinds: ['distributor', 'dealer', 'sub_dealer'], poc: true,
     only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'grade', 'parent_id', 'source', 'status', 'since', 'credit_limit', 'priority200'],
     refs: { parent_id: ['Dealer companies', 'name'] },
-    heads: { ...ORG_HEADS, name: 'Dealer company name', kind: 'Type (Distributor, Dealer or Sub-dealer)', parent_id: 'Buys through (pick their distributor or dealer)' } },
+    heads: { ...ORG_HEADS, name: 'Dealer company name', kind: 'Type (Distributor, Dealer or Sub-dealer)', areas_covered: 'Areas they cover (a distributor: its assigned area)', parent_id: 'Distributor who serves them (sub-dealers only: pick the distributor)' } },
   dealer_people: PEOPLE('dealer_people', 'Dealer people', 'Company', ['distributor', 'dealer', 'sub_dealer'], 'Dealer companies'),
   architects: { id: 'architects', sheet: 'Architect firms', tab: 'clients', kinds: ['design_firm', 'architect'], poc: true,
     only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'rating', 'source', 'status', 'since', 'relationship'],
@@ -517,7 +533,7 @@ const CLIENTS_SHEET = kind => ({ id: 'clients', sheet: 'People (no company)', ta
   only: ['name', 'client_type', 'mobile', 'whatsapp', 'email', 'address', 'locality', 'city', 'pincode', 'owner_id', 'source', 'status'],
   heads: { email: 'Email ID', name: 'Person or firm name', client_type: 'Individual or what kind of firm', city: 'City', locality: 'Area', owner_id: 'Who looks after them at EGO', mobile: 'Mobile number (10 digits)' } });
 const TEMPLATES = {
-  ws: { id: 'ws', company: 'EGO Premium', division: 'wholesale', version: 'EGO-WS-2', file: 'EGO-Premium-Upload-Template.xlsx',
+  ws: { id: 'ws', company: 'EGO Premium', division: 'wholesale', version: 'EGO-WS-3', file: 'EGO-Premium-Upload-Template.xlsx',
     sheets: [SHEETS.dealers, SHEETS.dealer_people, SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('direct')] },
   bige: { id: 'bige', company: 'Big E', division: 'retail', version: 'BIGE-2', file: 'Big-E-Upload-Template.xlsx',
     sheets: [SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('retail')] },
@@ -551,7 +567,8 @@ const STOCK_COLS = [
 const HINT = { decimal: '', mobile: ' (10 digits)', multi: ' (separate with commas)', cats: ' (separate with commas)', cities: ' (cities, separate with commas)', date: ' (DD/MM/YYYY)', owner: ' (username or name)', pincode: ' (6 digits)' };
 function templateColumns(t) {
   const heads = t.heads || {}, refs = t.refs || {};
-  const col = f => ({ key: f.key, type: f.type, opts: f.opts, list: f.list, req: !!f.req, ref: refs[f.key], header: (heads[f.key] || f.label + (f.type === 'link' ? ' (name, mobile or GST)' : HINT[f.type] || '')) + (f.req ? ' *' : '') });
+  /* a field compulsory for only some kinds on the sheet (a sub-dealer's distributor) gets no star: its header says when */
+  const col = f => ({ key: f.key, type: f.type, opts: f.opts, list: f.list, req: !!f.req && !f.kinds, ref: refs[f.key], header: (heads[f.key] || f.label + (f.type === 'link' ? ' (name, mobile or GST)' : HINT[f.type] || '')) + (f.req && !f.kinds ? ' *' : '') });
   const withRefs = cols => cols.map(c => ({ ...c, ref: c.ref || refs[c.key] }));
   if (t.tab === 'stock') return withRefs(STOCK_COLS);
   if (t.tab === 'categories') return CATEGORY_COLS;
@@ -600,8 +617,10 @@ const optsOf = (f, lists) => (f.list && lists && lists[f.list]) || f.opts;
    out at dispatch, adding it when production arrives), so they can be moved around but
    never renamed or removed, like Won and Lost. Every other stage is free. */
 const OPS = {
-  fulfilment_stages: { label: 'Fulfilment stages (wholesale)', note: 'Starts by itself when a wholesale opportunity reaches Payment collected. Stock check is where boxes are set aside from the warehouses; whatever is not goes to production. Dispatched takes them out of stock.',
-    list: ['Design & MOQ verified', 'Stock check', 'Allocated', 'Waiting on production', 'Packed', 'Dispatched', 'Delivered'], locked: ['Stock check', 'Allocated', 'Waiting on production', 'Packed', 'Dispatched', 'Delivered'] },
+  /* EGO's own order (onboarding answers, 6 Oct): stock checked, blocked, PI emailed, advance or full
+     payment, invoiced, dispatched, delivered. Not in stock: blocked from the coming production against an advance. */
+  fulfilment_stages: { label: 'Fulfilment stages (wholesale)', note: 'Starts by itself when a wholesale opportunity reaches Order confirmed. Stock check blocks boxes in the warehouses; what is missing goes on a production order. Payment received takes the advance or full payment, Invoiced checks the credit limit, Dispatched takes the boxes out of stock.',
+    list: ['Stock check', 'Blocked', 'Waiting on production', 'PI sent', 'Payment received', 'Invoiced', 'Packed', 'Dispatched', 'Delivered'], locked: ['Stock check', 'Blocked', 'Waiting on production', 'Payment received', 'Invoiced', 'Dispatched', 'Delivered'] },
   production_stages: { label: 'Production order stages', note: 'Received at warehouse adds the boxes to stock; they are then given to the orders waiting for them.',
     list: ['Production order placed', 'In production', 'Quality check', 'Shipped', 'In transit', 'Received at warehouse', 'Allocated & closed'], locked: ['Production order placed', 'Received at warehouse', 'Allocated & closed'] },
   site_steps: { label: 'Installation steps (retail sites)', note: 'Installer allocated needs a crew, Site readiness needs every item ready, Snagging needs no open snag, Sign-off needs the client\'s sign-off.',
@@ -640,9 +659,19 @@ const opsStages = (lists, k) => ((lists || {}).ops || {})[k] || OPS[k].list;
 const lastOf = a => a[a.length - 1];
 const DISCOUNT_FIELD = { key: 'discount_pct', label: 'Discount (%)', type: 'decimal' };
 
+/* ---------------------------------------------------------------- dealer schemes (6 Oct)
+
+   As EGO runs them (onboarding answers): a target over a period (today a 7-month dealer
+   scheme), approved by management, settled at the end. Progress is counted from invoiced
+   orders, never typed. */
+const SCHEME_APPROVE = ['owner', 'director'];
+const SCHEME_SETTLE = ['owner', 'director', 'ws_finance'];
+const SCHEME_EDIT = ['owner', 'director', 'ws_head', 'ws_finance'];
+const SCHEME_WHO = { all: 'Every dealer, distributor and sub-dealer', chosen: 'The dealers chosen below', rating: 'Dealers with these ratings' };
+
 /* the roles each stage set has (by their first names), and what is locked to begin with */
 const ROLE_SETS = {
-  'stages.wholesale': ['Invoiced', 'Payment collected', 'Lost', 'Nurturing'],
+  'stages.wholesale': ['Order confirmed', 'Lost', 'Nurturing'],
   'stages.retail_lead': ['Won', 'Lost'], 'stages.retail_project': ['Won', 'Lost'],
   ...Object.fromEntries(Object.entries(OPS).map(([k, v]) => ['ops.' + k, v.locked])),
 };
