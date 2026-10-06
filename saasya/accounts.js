@@ -237,4 +237,259 @@
     var r = GE.reports.consignment(sup);
     xls('Saasya-Men-' + who(sup).replace(/[^A-Za-z]+/g, '-') + '-' + month() + '.xlsx', [{ name: 'Sold ' + month(), rows: [r.heads].concat(r.rows).concat([['Total', '', '', ''].concat(r.totals)]) }]);
   };
+
+  /* ================= Rewards: credit notes and gift coupons, used once ================= */
+  var RKINDS = { 'Credit note': 'SMCN', 'Gift coupon': 'SMGC', 'Reward': 'SMRW' };
+  function canIssue() { return ['Owner', 'BDM', 'Accounts'].indexOf(GE.me().role) > -1; }
+  function rState(r) { return r.used ? 'used on ' + r.used.order : (r.valid_until && r.valid_until < GE.localToday() ? 'expired' : 'open'); }
+  V['#/rewards'] = function () {
+    var all = D().rewards, open = all.filter(function (r) { return rState(r) === 'open'; });
+    var list = all.filter(function (r) { return GE.matches(U.q('#/rewards'), [r.code, r.kind, U.cname(r.client), r.reason, r.order]); });
+    var h = U.head('Rewards', 'Credit notes for a damaged piece or an issue, gift coupons and rewards. Each has a code; it is used once, in full, as a payment on an order.',
+      canIssue() ? '<button class="btn gold" data-act="newReward">Issue a credit note or coupon</button>' : '');
+    h += '<div class="kpis">' + U.kpi(open.length, 'Open', rupees(sum(open, function (r) { return r.amount; })) + ' waiting to be used') +
+      U.kpi(all.filter(function (r) { return r.used; }).length, 'Used', rupees(sum(all.filter(function (r) { return r.used; }), function (r) { return r.amount; }))) +
+      U.kpi(open.filter(function (r) { return r.valid_until && GE.days(GE.localToday(), r.valid_until) <= 30; }).length, 'Running out in 30 days', '') + '</div>';
+    h += U.searchBar('#/rewards', 'Search a code, a client, a reason', list.length, all.length);
+    h += '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Code</th><th>What</th><th>Client</th><th>Why</th><th>Against</th><th>Valid until</th><th class="num">Amount</th><th>State</th><th></th></tr></thead><tbody>';
+    list.slice().sort(function (a, b) { return a.issued < b.issued ? 1 : -1; }).forEach(function (r) {
+      var st = rState(r);
+      h += '<tr><td><code>' + esc(r.code) + '</code><div class="sub">' + d(r.issued) + '</div></td><td>' + esc(r.kind) + '</td><td>' + esc(U.cname(r.client)) + '</td><td class="sub">' + esc(r.reason) + '</td>' +
+        '<td>' + esc(r.order || '—') + '</td><td>' + (r.valid_until ? d(r.valid_until) : '—') + '</td><td class="num">' + rupees(r.amount) + '</td>' +
+        '<td>' + U.pill(st, st === 'open' ? 'ok' : st === 'expired' ? 'bad' : '') + (r.used ? '<div class="sub">' + d(r.used.at) + ' · ' + esc(r.used.doc) + '</div>' : '') + '</td>' +
+        '<td><button class="mini" data-act="rewardPdf" data-id="' + r.id + '">PDF</button></td></tr>';
+    });
+    if (!list.length) h += '<tr><td colspan="9" class="sub">None yet.</td></tr>';
+    return h + '</tbody></table></div><p class="hint">To use one: Record a payment on his order, choose "Credit note / gift coupon" and type the code. It comes off what is pending and cannot be used again.</p>';
+  };
+  A.newReward = function () {
+    if (!canIssue()) return;
+    var later = new Date(); later.setMonth(later.getMonth() + 6);
+    GE.modal('<h2>Issue a credit note or coupon</h2>' +
+      '<div class="two"><div class="f"><label>What it is</label><select id="rwKind">' + Object.keys(RKINDS).map(function (k) { return '<option>' + k + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f"><label>Amount</label><input type="number" id="rwAmt"></div></div>' +
+      '<div class="f"><label>For which client</label><select id="rwClient">' + D().clients.slice().sort(function (a, b) { return a.name < b.name ? -1 : 1; }).map(function (c) { return '<option value="' + c.id + '">' + esc(c.name) + ' · ' + esc(c.phone || '') + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f"><label>Why</label><input id="rwWhy" placeholder="The collar thread came loose; goodwill for the wait; Diwali gift"></div>' +
+      '<div class="two"><div class="f"><label>Against an order or invoice (optional)</label><input id="rwRef" placeholder="O-1045 or INV-2641"></div>' +
+      '<div class="f"><label>Valid until</label><input type="date" id="rwUntil" value="' + new Date(later.getTime() - later.getTimezoneOffset() * 60000).toISOString().slice(0, 10) + '"></div></div>' +
+      '<button class="btn gold" data-act="saveReward">Issue it</button>');
+  };
+  A.saveReward = function () {
+    if (!canIssue()) { GE.toast('Only the owner, the BDM or accounts can issue these.'); return; }
+    var v = function (i) { return document.getElementById(i).value; }, amt = Number(v('rwAmt')) || 0, ref = String(v('rwRef') || '').trim().toUpperCase();
+    if (amt <= 0) { GE.toast('Put an amount in.'); return; }
+    if (!String(v('rwWhy')).trim()) { GE.toast('Say why it is being given.'); return; }
+    if (ref && !one(D().orders, ref) && !one(D().invoices, ref)) { GE.toast('There is no order or invoice ' + ref + '.'); return; }
+    var pre = RKINDS[v('rwKind')], n = 1001 + D().rewards.filter(function (r) { return r.code.indexOf(pre) === 0; }).length, code = pre + '-' + n;
+    while (GE.rewardByCode(code)) code = pre + '-' + (++n);
+    var r = { id: GE.uid('RW-'), code: code, kind: v('rwKind'), client: v('rwClient'), amount: amt, reason: v('rwWhy'), order: ref, issued: GE.localToday(), valid_until: v('rwUntil'), used: null, by: GE.me().id };
+    D().rewards.push(r); GE.save(); GE.closeModal(); GE.refresh();
+    GE.toast(r.kind + ' ' + code + ' for ' + rupees(amt) + ' issued to ' + U.cname(r.client) + '.');
+  };
+  A.rewardPdf = function (id) {
+    var r = one(D().rewards, id); if (!r) return;
+    var c = one(D().clients, r.client) || {};
+    GE.makePdf('<div class="inv"><div class="ih"><div class="il"><img src="assets/logo.png" alt="Saasya Men"><div><b>SAASYA MEN</b><span>' + esc(GE.HOUSE_INFO.line) + '</span></div></div>' +
+      '<div class="ir"><b>' + esc(r.kind.toUpperCase()) + '</b><span>' + esc(r.code) + ' · ' + d(r.issued) + '</span></div></div>' +
+      '<div class="ib" style="margin-top:24px;font-size:15px">Mr. ' + esc((c.name || '').split(' ').slice(-1)[0]) + ', this ' + esc(r.kind.toLowerCase()) + ' is worth <b>' + rupees(r.amount) + '</b> against your next order with us' +
+      (r.valid_until ? ', until ' + d(r.valid_until) : '') + '. Quote the code <b>' + esc(r.code) + '</b>. It is used once, in full.</div>' +
+      '<p style="color:#6b6257">' + esc(r.reason) + (r.order ? ' · against ' + esc(r.order) : '') + '</p><div class="if"><div>' + esc(GE.HOUSE_INFO.addr) + '</div><div class="sg">For SAASYA MEN<br><br>Authorised signatory</div></div></div>',
+      'Saasya-Men-' + r.code + '.pdf');
+  };
+
+  /* ================= Money in and out: every rupee, one place, ready for Tally ================= */
+  var EXP_CATS = ['Porter / courier', 'Electricity (current bill)', 'Rent', 'Salaries and wages', 'Repairs and maintenance', 'Marketing', 'Packaging', 'Travel', 'Miscellaneous'];
+  var BUY_CATS = { 'Fabric purchase': 'fabric', 'On-order purchase': 'on-order', 'Consignment payment': 'consignment' };
+  function orderBlock(oid) {
+    var gs = by(D().garments, 'order', oid), v = { 'Readymade sale, in-house': 0, 'Bespoke sale, in-house': 0, 'Third-party designer sale': 0 };
+    gs.forEach(function (g) { v[GE.isThird(g) ? 'Third-party designer sale' : g.piece ? 'Readymade sale, in-house' : 'Bespoke sale, in-house'] += GE.garmentValue(g); });
+    var best = Object.keys(v).sort(function (a, b) { return v[b] - v[a]; })[0];
+    return v[best] ? best : 'Bespoke sale, in-house';
+  }
+  function orderConcern(oid) {
+    var ds = uniq(by(D().garments, 'order', oid).filter(GE.isThird).map(function (g) { return U.dgname(g.designer); }));
+    return ds.length ? ds.join(', ') : 'Saasya Men';
+  }
+  function ledger() {
+    var rows = [];
+    D().payins.forEach(function (p) {
+      var inv = one(D().invoices, p.invoice); if (!inv) return;
+      var coupon = /coupon/i.test(p.method || '');
+      rows.push({ at: p.at, dir: 'in', block: coupon ? 'Credit note or coupon used' : orderBlock(inv.order), party: U.cname(inv.client), concern: orderConcern(inv.order),
+        ref: inv.id + (p.ref ? ' · ' + p.ref : ''), mode: p.method, amount: Number(p.amount) || 0, order: inv.order, doc: inv.doc === 'receipt' ? 'Receipt' : 'GST invoice', src: 'payin', id: p.id });
+    });
+    (D().supplier_payments || []).forEach(function (x) {
+      var blk = x.kind === 'fabric' ? 'Fabric purchase' : x.kind === 'consignment' ? 'Consignment payment' : 'On-order purchase';
+      rows.push({ at: x.at, dir: 'out', block: blk, party: who(x.supplier), concern: who(x.supplier), ref: (x.purchase ? x.purchase + ' · ' : '') + (x.ref || ''), mode: x.mode, amount: Number(x.amount) || 0, note: x.advance ? 'Advance' : (x.note || ''), src: 'supplier', id: x.id });
+    });
+    (D().expenses || []).forEach(function (x) {
+      rows.push({ at: x.at, dir: 'out', block: x.category, party: x.payee, concern: '—', ref: x.ref || '', mode: x.mode, amount: Number(x.amount) || 0, gst: Number(x.gst) || 0, note: x.note || '', src: 'expense', id: x.id });
+    });
+    return rows.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+  }
+  GE.ledger = ledger; GE.orderBlock = orderBlock;
+  var PRESETS = ['This month', 'Last month', 'This quarter', 'This financial year', 'Everything', 'Custom dates'];
+  function range() {
+    var F = GE.Q['#/money.f'] || {}, t = GE.localToday(), y = +t.slice(0, 4), m = +t.slice(5, 7);
+    var pad = function (n) { return ('0' + n).slice(-2); }, last = function (yy, mm) { return new Date(yy, mm, 0).getDate(); };
+    switch (F.preset || 'This month') {
+      case 'Last month': var lm = m === 1 ? 12 : m - 1, ly = m === 1 ? y - 1 : y; return [ly + '-' + pad(lm) + '-01', ly + '-' + pad(lm) + '-' + last(ly, lm)];
+      case 'This quarter': var q0 = Math.floor((m - 1) / 3) * 3 + 1; return [y + '-' + pad(q0) + '-01', y + '-' + pad(q0 + 2) + '-' + last(y, q0 + 2)];
+      case 'This financial year': var fy = m >= 4 ? y : y - 1; return [fy + '-04-01', (fy + 1) + '-03-31'];
+      case 'Everything': return ['', ''];
+      case 'Custom dates': return [F.from || '', F.to || ''];
+      default: return [y + '-' + pad(m) + '-01', y + '-' + pad(m) + '-' + last(y, m)];
+    }
+  }
+  function filtered() {
+    var F = GE.Q['#/money.f'] || {}, r = range(), tab = GE.Q['#/money.tab'] || 'Money in';
+    return ledger().filter(function (x) {
+      return (!r[0] || x.at >= r[0]) && (!r[1] || x.at <= r[1]) &&
+        (tab === 'Everything' || (tab === 'Money in' ? x.dir === 'in' : tab === 'Money out' ? x.dir === 'out' : true)) &&
+        (!F.block || x.block === F.block) && (!F.party || x.party === F.party) && (!F.concern || x.concern.indexOf(F.concern) > -1) &&
+        GE.matches(U.q('#/money'), [x.party, x.block, x.ref, x.mode, x.concern, x.note]);
+    });
+  }
+  GE.moneyFiltered = filtered; GE.moneyRange = range;
+  V['#/money'] = function () {
+    var F = GE.Q['#/money.f'] || {}, tab = GE.Q['#/money.tab'] || 'Money in', all = ledger(), r = range(), rows = filtered();
+    var inWin = all.filter(function (x) { return (!r[0] || x.at >= r[0]) && (!r[1] || x.at <= r[1]); });
+    var tin = sum(inWin.filter(function (x) { return x.dir === 'in'; }), function (x) { return x.amount; }), tout = sum(inWin.filter(function (x) { return x.dir === 'out'; }), function (x) { return x.amount; });
+    var h = U.head('Money in and out', 'Every rupee that came in and went out, in one place: sales collections, designer and fabric payments, and every expense. Filter it, report it, send it to Tally.',
+      '<button class="btn gold" data-act="newExpense">Record money out</button> <button class="btn alt" data-act="tallyExport">Export for Tally</button>');
+    h += '<div class="kpis">' + U.kpi(GE.lakh(tin), 'Money in', r[0] ? d(r[0]) + ' to ' + d(r[1]) : 'everything') + U.kpi(GE.lakh(tout), 'Money out', 'payments and expenses') +
+      U.kpi(GE.lakh(tin - tout), 'Net', tin >= tout ? 'more in than out' : 'more out than in') + '</div>';
+    h += '<div class="tabs">' + ['Money in', 'Money out', 'Everything', 'Reports'].map(function (t) { return '<button class="' + (t === tab ? 'on' : '') + '" data-act="moneyTab" data-id="' + t + '">' + t + '</button>'; }).join('') + '</div>';
+    var blocks = uniq(all.map(function (x) { return x.block; })).sort(), parties = uniq(all.map(function (x) { return x.party; })).sort();
+    var concerns = uniq([].concat.apply([], all.map(function (x) { return x.concern.split(', '); })).filter(function (c) { return c && c !== '—'; })).sort();
+    h += '<div class="card filters"><div class="filtergrid">' +
+      sel('preset', 'Dates', PRESETS, F.preset || 'This month') +
+      ((F.preset || '') === 'Custom dates' ? '<div class="f"><label>From</label><input type="date" value="' + (F.from || '') + '" data-change="moneyF" data-id="from"></div><div class="f"><label>To</label><input type="date" value="' + (F.to || '') + '" data-change="moneyF" data-id="to"></div>' : '') +
+      sel('block', 'What it was', [''].concat(blocks), F.block || '', 'Every kind') + sel('party', 'Client, vendor or designer', [''].concat(parties), F.party || '', 'Everyone') +
+      sel('concern', 'Brand or designer', [''].concat(concerns), F.concern || '', 'Every brand') + '</div>' +
+      ((F.block || F.party || F.concern || (F.preset && F.preset !== 'This month')) ? '<button class="mini" data-act="moneyClear">Clear the filters</button>' : '') + '</div>';
+    if (tab === 'Reports') return h + reportsHtml(inWin);
+    h += U.searchBar('#/money', 'Search a party, a reference, a mode', rows.length, rows.length);
+    h += '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Date</th><th>In or out</th><th>What it was</th><th>Who</th><th>Brand or designer</th><th>Reference</th><th>How</th><th class="num">Amount</th></tr></thead><tbody>';
+    rows.forEach(function (x) {
+      h += '<tr><td>' + d(x.at) + '</td><td>' + U.pill(x.dir === 'in' ? 'in' : 'out', x.dir === 'in' ? 'ok' : 'warn') + '</td><td>' + esc(x.block) + (x.doc ? '<div class="sub">' + esc(x.doc) + '</div>' : x.note ? '<div class="sub">' + esc(x.note) + '</div>' : '') + '</td>' +
+        '<td>' + esc(x.party) + '</td><td class="sub">' + esc(x.concern) + '</td><td class="sub">' + esc(x.ref) + '</td><td class="sub">' + esc(x.mode || '') + '</td>' +
+        '<td class="num">' + (x.dir === 'out' ? '− ' : '') + rupees(x.amount) + '</td></tr>';
+    });
+    if (!rows.length) h += '<tr><td colspan="8" class="sub">Nothing in these filters.</td></tr>';
+    h += '<tr class="tot"><td colspan="7"><b>' + rows.length + ' entries</b></td><td class="num"><b>' + rupees(sum(rows, function (x) { return x.dir === 'in' ? x.amount : -x.amount; })) + '</b></td></tr>';
+    return h + '</tbody></table></div><p class="hint">Money in is recorded where it happens, on the order. Money out is recorded here, or on a purchase or consignment. Payments are made in Tally; the cockpit records them.</p>';
+  };
+  function sel(k, label, opts, cur, blank) {
+    return '<div class="f"><label>' + label + '</label><select data-change="moneyF" data-id="' + k + '">' + opts.map(function (o) {
+      return '<option value="' + esc(o) + '"' + (o === cur ? ' selected' : '') + '>' + esc(o || blank || 'All') + '</option>'; }).join('') + '</select></div>';
+  }
+  A.moneyTab = function (t) { GE.Q['#/money.tab'] = t; GE.refresh(); };
+  A.moneyF = function (k, el) { var F = GE.Q['#/money.f'] = GE.Q['#/money.f'] || {}; F[k] = el.value; GE.refresh(); };
+  A.moneyClear = function () { GE.Q['#/money.f'] = {}; GE.refresh(); };
+  function reportsHtml(rows) {
+    var byKey = function (k) { var m = {}; rows.forEach(function (x) { var key = x[k] || '—'; m[key] = m[key] || { inn: 0, out: 0, n: 0 }; m[key][x.dir === 'in' ? 'inn' : 'out'] += x.amount; m[key].n++; }); return m; };
+    var tbl = function (title, m, act) {
+      return '<div class="card" style="overflow-x:auto"><div class="cardhead"><h3>' + title + '</h3></div><table><thead><tr><th>' + title.split(' by ')[1] + '</th><th class="num">Entries</th><th class="num">In</th><th class="num">Out</th><th></th></tr></thead><tbody>' +
+        Object.keys(m).sort().map(function (k) { return '<tr><td>' + esc(k) + '</td><td class="num">' + m[k].n + '</td><td class="num">' + rupees(m[k].inn) + '</td><td class="num">' + rupees(m[k].out) + '</td>' +
+          '<td>' + (act ? '<button class="mini" data-act="' + act + 'Pdf" data-id="' + esc(k) + '">PDF</button> <button class="mini" data-act="' + act + 'Xls" data-id="' + esc(k) + '">Excel</button>' : '') + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    };
+    var h = tbl('Money by what it was', byKey('block'), 'block') + tbl('Money by client, vendor or designer', byKey('party'), 'party');
+    var invs = D().invoices.filter(function (i) { var r = range(); return i.doc !== 'receipt' && (!r[0] || i.issued >= r[0]) && (!r[1] || i.issued <= r[1]); });
+    var sold = D().pieces.filter(function (p) { var r = range(); return p.status === 'sold' && (!r[0] || p.sold_at >= r[0]) && (!r[1] || p.sold_at <= r[1]); });
+    var bySup = {}; sold.forEach(function (p) { var k = who(p.supplier); bySup[k] = bySup[k] || { n: 0, v: 0 }; bySup[k].n++; bySup[k].v += GE.piecePrice(p); });
+    var top = Object.keys(bySup).sort(function (a, b) { return bySup[b].v - bySup[a].v; }).slice(0, 5);
+    h += '<div class="card"><div class="cardhead"><h3>Sales analysis</h3><span class="sub">readymade pieces sold in these dates</span></div><table><thead><tr><th>Top suppliers</th><th class="num">Pieces sold</th><th class="num">Sale before GST</th></tr></thead><tbody>' +
+      (top.length ? top.map(function (k) { return '<tr><td>' + esc(k) + '</td><td class="num">' + bySup[k].n + '</td><td class="num">' + rupees(bySup[k].v) + '</td></tr>'; }).join('') : '<tr><td colspan="3" class="sub">No pieces sold in these dates.</td></tr>') +
+      '</tbody></table><p class="hint">' + invs.length + ' GST invoices in these dates.</p></div>';
+    var sups = D().designers.concat(D().vendors);
+    h += '<div class="card"><div class="cardhead"><h3>Supplier bill report</h3><span class="sub">bills in, what was bought, sold and still owed, as of today</span></div><div style="overflow-x:auto"><table><thead><tr><th>Supplier</th><th class="num">Bills</th><th class="num">Bill value</th><th class="num">Purchase value</th><th class="num">Sold, before GST</th><th class="num">Paid</th><th class="num">Closing balance</th><th></th></tr></thead><tbody>';
+    sups.forEach(function (sp) {
+      var x = supplierBills(sp.id); if (!x.bills) return;
+      h += '<tr><td>' + esc(sp.name) + '</td><td class="num">' + x.bills + '</td><td class="num">' + rupees(x.billValue) + '</td><td class="num">' + rupees(x.purchase) + '</td><td class="num">' + rupees(x.soldPre) + '</td><td class="num">' + rupees(x.paid) + '</td><td class="num"><b>' + rupees(x.balance) + '</b></td>' +
+        '<td><button class="mini" data-act="partyPdf" data-id="' + esc(sp.name) + '">PDF</button> <button class="mini" data-act="partyXls" data-id="' + esc(sp.name) + '">Excel</button></td></tr>';
+    });
+    return h + '</tbody></table></div></div>';
+  }
+  /* one supplier: every bill, what it was worth, what sold, what was paid, what is left */
+  function supplierBills(sid) {
+    var purs = D().purchases.filter(function (p) { return p.supplier === sid; }), cb = (D().supplier_bills || []).filter(function (b) { return b.supplier === sid; });
+    var purchase = 0, billValue = 0, owed = 0;
+    purs.forEach(function (p) {
+      if (p.type === 'fabric') { purchase += Number(p.amount) || 0; billValue += Number(p.amount) || 0; owed += Number(p.amount) || 0; }
+      else if (p.type === 'on-order') { var x = GE.purchaseSummary(p.id); purchase += x.costIn; billValue += x.costIn; owed += x.soldCost; }
+    });
+    billValue += sum(cb, function (b) { return Number(b.amount) || 0; }); owed += sum(cb, function (b) { return Number(b.amount) || 0; });
+    var paid = sum((D().supplier_payments || []).filter(function (x) { return x.supplier === sid; }), function (x) { return Number(x.amount) || 0; });
+    var soldPre = sum(D().pieces.filter(function (p) { return p.supplier === sid && p.status === 'sold'; }), GE.piecePrice);
+    return { bills: purs.filter(function (p) { return p.type !== 'consignment'; }).length + cb.length, billValue: billValue, purchase: purchase, soldPre: soldPre, paid: paid, balance: owed - paid };
+  }
+  GE.supplierBills = supplierBills;
+  function reportOf(key, val) {
+    var rows = filtered().concat([]).filter(function (x) { return x[key] === val; });
+    if (!rows.length) { var r = range(); rows = ledger().filter(function (x) { return x[key] === val && (!r[0] || x.at >= r[0]) && (!r[1] || x.at <= r[1]); }); }
+    return { heads: ['Date', 'In or out', 'What it was', 'Who', 'Brand or designer', 'Reference', 'How', 'Amount'],
+      rows: rows.map(function (x) { return [d(x.at), x.dir === 'in' ? 'In' : 'Out', x.block, x.party, x.concern, x.ref, x.mode || '', x.dir === 'in' ? x.amount : -x.amount]; }) };
+  }
+  function rangeLabel() { var r = range(); return r[0] ? d(r[0]) + ' to ' + d(r[1]) : 'all dates'; }
+  ['block', 'party'].forEach(function (k) {
+    A[k + 'Pdf'] = function (v) { var r = reportOf(k, v); GE.makePdf(sheetDoc('MONEY IN AND OUT', v + ' · ' + rangeLabel(), r.heads, r.rows, [sum(r.rows, function (x) { return x[7]; })], ''), 'Saasya-Men-' + v.replace(/[^A-Za-z0-9]+/g, '-') + '.pdf'); };
+    A[k + 'Xls'] = function (v) { var r = reportOf(k, v); xls('Saasya-Men-' + v.replace(/[^A-Za-z0-9]+/g, '-') + '.xlsx', [{ name: 'Entries', rows: [r.heads].concat(r.rows) }]); };
+  });
+  A.newExpense = function () {
+    GE.modal('<h2>Record money out</h2><p class="sub">An expense, or a payment to a vendor or designer. Paid in Tally or cash; recorded here.</p>' +
+      '<div class="two"><div class="f"><label>What it was</label><select id="exCat" data-change="exSwitch">' + Object.keys(BUY_CATS).concat(EXP_CATS).map(function (c) { return '<option>' + c + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f"><label>Paid on</label><input type="date" id="exAt" value="' + GE.localToday() + '"></div></div>' +
+      '<div class="f" id="exSupWrap"><label>To which vendor or designer</label><select id="exSup">' + D().designers.concat(D().vendors).map(function (x) { return '<option value="' + x.id + '">' + esc(x.name) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f" id="exPayeeWrap" hidden><label>Paid to</label><input id="exPayee" placeholder="CESC Limited"></div>' +
+      '<div class="three"><div class="f"><label>Amount</label><input type="number" id="exAmt"></div><div class="f"><label>GST in it</label><input type="number" id="exGst" value="0"></div>' +
+      '<div class="f"><label>How</label><select id="exMode">' + MODES.map(function (m) { return '<option>' + m + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="two"><div class="f"><label>Tally voucher or reference</label><input id="exRef"></div><div class="f"><label>The bill</label><input type="file" id="exFile" accept="image/*,application/pdf"></div></div>' +
+      '<div class="f"><label>Note</label><input id="exNote"></div>' +
+      '<button class="btn gold" data-act="saveExpense">Record it</button>');
+    A.exSwitch();
+  };
+  A.exSwitch = function () { var c = document.getElementById('exCat').value, buy = !!BUY_CATS[c]; document.getElementById('exSupWrap').hidden = !buy; document.getElementById('exPayeeWrap').hidden = buy; };
+  A.saveExpense = function () {
+    var v = function (i) { var e = document.getElementById(i); return e ? e.value : ''; }, amt = Number(v('exAmt')) || 0, c = v('exCat');
+    if (amt <= 0) { GE.toast('Put an amount in.'); return; }
+    if (BUY_CATS[c]) {
+      D().supplier_payments.push({ id: GE.uid('SP-'), supplier: v('exSup'), kind: BUY_CATS[c], purchase: '', amount: amt, at: v('exAt') || GE.localToday(), mode: v('exMode'), ref: v('exRef'), note: v('exNote'), advance: false, by: GE.me().id });
+    } else {
+      if (!String(v('exPayee')).trim()) { GE.toast('Who was it paid to?'); return; }
+      var f = document.getElementById('exFile'), file = f && f.files && f.files[0];
+      D().expenses.push({ id: GE.uid('EX-'), at: v('exAt') || GE.localToday(), category: c, payee: v('exPayee'), amount: amt, gst: Number(v('exGst')) || 0, mode: v('exMode'), ref: v('exRef'), note: v('exNote'), file: file ? file.name : '', by: GE.me().id });
+    }
+    GE.save(); GE.closeModal(); GE.Q['#/money.tab'] = 'Money out'; GE.refresh(); GE.toast(rupees(amt) + ' out, recorded as ' + c.toLowerCase() + '.');
+  };
+  /* Tally: one workbook, a sheet per voucher type, for the dates and filters on screen */
+  function tallyBook() {
+    var r = range(), win = function (dt) { return (!r[0] || dt >= r[0]) && (!r[1] || dt <= r[1]); };
+    var rows = filtered().length ? filtered() : [];
+    var receipts = [['Date', 'Voucher type', 'Voucher no', 'Party ledger', 'Ledger', 'Amount', 'Mode', 'Narration']], payments = receipts[0].slice().concat([]);
+    payments = [['Date', 'Voucher type', 'Voucher no', 'Party ledger', 'Ledger', 'Amount', 'GST', 'Mode', 'Narration']];
+    ledger().filter(function (x) { return win(x.at); }).forEach(function (x) {
+      if (x.dir === 'in') receipts.push([x.at, 'Receipt', x.ref.split(' · ')[0], x.party, x.block, x.amount, x.mode || '', x.order ? 'Against order ' + x.order : '']);
+      else payments.push([x.at, 'Payment', x.ref || x.id, x.party, x.block, x.amount, x.gst || 0, x.mode || '', x.note || '']);
+    });
+    var sales = [['Date', 'Voucher type', 'Invoice no', 'Party ledger', 'Ledger', 'Taxable value', 'GST rate', 'CGST', 'SGST', 'Invoice total']];
+    D().invoices.filter(function (i) { return i.doc !== 'receipt' && win(i.issued); }).forEach(function (i) {
+      var m = GE.orderMoney(i.order), share = m.total ? (Number(i.amount) || 0) / m.total : 0;
+      (m.gstParts || []).forEach(function (gp) { var g = Math.round(gp.gst * share); sales.push([i.issued, 'Sales', i.id, U.cname(i.client), orderBlock(i.order), Math.round(gp.base * share), gp.rate + '%', Math.round(g / 2), g - Math.round(g / 2), i.amount]); });
+    });
+    var purchases = [['Date', 'Voucher type', 'Bill no', 'Party ledger', 'Ledger', 'Purchase value', 'Note']];
+    D().purchases.filter(function (p) { return win(p.at); }).forEach(function (p) {
+      var val = p.type === 'fabric' ? Number(p.amount) || 0 : p.type === 'on-order' ? GE.purchaseSummary(p.id).costIn : 0;
+      purchases.push([p.at, p.type === 'consignment' ? 'Memo (consignment, not a purchase)' : 'Purchase', p.bill || p.id, who(p.supplier), p.type === 'fabric' ? 'Fabric purchase' : p.type === 'on-order' ? 'On-order purchase' : 'Consignment received', val, p.note || '']);
+    });
+    (D().supplier_bills || []).filter(function (b) { return win(b.at); }).forEach(function (b) { purchases.push([b.at, 'Purchase', b.bill_no, who(b.supplier), 'Consignment, sold pieces billed', b.amount, b.note || '']); });
+    return { receipts: receipts, payments: payments, sales: sales, purchases: purchases };
+  }
+  GE.tallyBook = tallyBook;
+  A.tallyExport = function () {
+    var b = tallyBook(), r = range();
+    xls('Saasya-Men-Tally-' + (r[0] || 'all') + (r[1] ? '-to-' + r[1] : '') + '.xlsx', [{ name: 'Receipts', rows: b.receipts }, { name: 'Payments', rows: b.payments }, { name: 'Sales', rows: b.sales }, { name: 'Purchases', rows: b.purchases }]);
+    GE.toast('Tally workbook: ' + (b.receipts.length - 1) + ' receipts, ' + (b.payments.length - 1) + ' payments, ' + (b.sales.length - 1) + ' sales lines, ' + (b.purchases.length - 1) + ' purchases.');
+  };
+  A.tally = A.tallyExport;
 })();

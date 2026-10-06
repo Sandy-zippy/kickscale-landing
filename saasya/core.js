@@ -276,6 +276,26 @@ var GE = (function () {
       ours: sum(sold, function (l) { return l.ours; }), theirs: sum(sold, function (l) { return l.theirs; }),
       theirsAll: sum(allSold, function (l) { return l.theirs; }), billed: billed, paid: paid, toPay: Math.max(0, billed - paid), notBilled: Math.max(0, sum(allSold, function (l) { return l.theirs; }) - billed) };
   }
+  /* is everything on the order with us? A designer custom outfit not yet received, or our own
+     outfit whose fabric is not in stock, means no: take a receipt, not a GST invoice. */
+  function garmentInStock(g) {
+    if (isThird(g)) return !!g.piece;
+    if (g.piece) return true;
+    var ok = true;
+    fabricsOf(g).forEach(function (u) { var st = stockOf(u.fabric); if (st.hand + 0.001 < (Number(u.metres) || 0)) ok = false; });
+    return ok;
+  }
+  function orderInStock(oid) { var gs = by(D.garments, 'order', oid); return gs.length > 0 && gs.every(garmentInStock); }
+  function advRule() { var a = one(D.agents || [], 'advancewatch'); var r = (a && a.rules) || {}; return { pct: Number(r.designer_pct) || 75, days: r.designer_days == null ? 7 : Number(r.designer_days), fabric: Number(r.fabric_pct) || 70 }; }
+  function rewardByCode(code) { code = String(code || '').trim().toUpperCase(); return (D.rewards || []).filter(function (r) { return r.code.toUpperCase() === code; })[0] || null; }
+  function rewardCheck(code, oid) {
+    var r = rewardByCode(code);
+    if (!r) return { ok: false, why: 'No credit note or gift coupon has the code ' + code + '.' };
+    if (r.used) return { ok: false, why: r.code + ' was already used on ' + r.used.order + ' on ' + d(r.used.at) + '. It cannot be used twice.' };
+    if (r.valid_until && r.valid_until < localToday()) return { ok: false, why: r.code + ' ran out on ' + d(r.valid_until) + '.' };
+    var o = one(D.orders, oid); if (r.client && o && r.client !== o.client) { var c = one(D.clients, r.client); return { ok: false, why: r.code + ' belongs to ' + (c ? c.name : 'another client') + '.' }; }
+    return { ok: true, reward: r };
+  }
   function findBarcode(code) { code = String(code || '').trim().toUpperCase(); return (D.pieces || []).filter(function (p) { return p.barcode.toUpperCase() === code; })[0] || null; }
   function syncValues() { (D.orders || []).forEach(function (o) { var L = orderLines(o); if (L.listed) o.value = L.garmentsTotal + L.extrasTotal; }); }
   function save() { syncValues(); syncPieces(); try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
@@ -286,6 +306,25 @@ var GE = (function () {
     D.priceRule = D.priceRule || { multiplier: 6 };
     /* 6 Oct: stock. Every physical piece is one record with a barcode; purchases own them. */
     D.supplier_bills = D.supplier_bills || []; D.supplier_payments = D.supplier_payments || [];
+    D.rewards = D.rewards || []; D.expenses = D.expenses || [];
+    if (!D.stitching) { var sd0 = (typeof SEED === 'function') ? SEED() : {}; D.stitching = sd0.stitching || []; if (!D.expenses.length) D.expenses = sd0.expenses || []; if (!D.rewards.length) D.rewards = sd0.rewards || []; }
+    if (!D.priceRule.markup) D.priceRule.markup = 1.6;
+    (D.stitching || []).forEach(function (x) { if (KINDS.indexOf(x.kind) < 0) KINDS.push(x.kind); });   /* an outfit added to the stitching menu can be ordered */
+    /* 6 Oct: the fabric library is the vendors' catalogue; our own stock is lots bought on bills.
+       An old store/godown figure becomes an opening lot, topped up by what has already been cut,
+       so the metres on hand read exactly as before. */
+    if (!D.fabric_lots) {
+      D.fabric_lots = [];
+      (D.fabrics || []).forEach(function (f) {
+        var st = f.stock || {}, cut = consumedOf(f.id);
+        if ((Number(st.Store) || 0) + (Number(st.Godown) || 0) + cut > 0) {
+          D.fabric_lots.push({ id: 'FL-' + f.id + '-S', fabric: f.id, vendor: f.vendor, at: '2026-09-01', metres: (Number(st.Store) || 0) + cut, cost_m: f.cost, gst: 5, bill: 'Opening stock', location: 'Store', purchase: '' });
+          if (Number(st.Godown) > 0) D.fabric_lots.push({ id: 'FL-' + f.id + '-G', fabric: f.id, vendor: f.vendor, at: '2026-09-01', metres: Number(st.Godown), cost_m: f.cost, gst: 5, bill: 'Opening stock', location: 'Godown', purchase: '' });
+        }
+        if (!f.sell_m) f.sell_m = Math.round(f.cost * 1.6 / 100) * 100;
+        if (f.at_vendor == null) f.at_vendor = 60;
+      });
+    }
     if (!D.pieces || !D.purchases) { var sd = (typeof SEED === 'function') ? SEED() : {}; D.pieces = D.pieces || sd.pieces || []; D.purchases = D.purchases || sd.purchases || []; }
     /* 6 Oct: an outfit in a cloth is charged per metre, plus its design charge. An old flat
        outfit price becomes a per-metre charge at 3 metres, with no design charge. */
@@ -365,6 +404,10 @@ var GE = (function () {
     '#/readymade':       function () { return can('stock') === true; },
     '#/stock':           function () { return can('stock') === true; },
     '#/purchases':       function () { return !!can('invoices'); },
+    '#/fabricstock':     function () { return can('stock') === true; },
+    '#/stitching':       function () { return can('stock') === true; },
+    '#/rewards':         function () { return can('orders') !== 'mine'; },
+    '#/money':           function () { return !!can('invoices'); },
     '#/consignment':     function () { return !!can('invoices'); },
     '#/invoices':        function () { return !!can('invoices'); },
     '#/payables':        function () { return !!can('invoices'); },
@@ -424,24 +467,38 @@ var GE = (function () {
   /* what we charge for an outfit in a cloth: a charge per metre (so a bigger man pays for the
      cloth he takes) and a design charge for the outfit. Set on the bunch by the owner or BDM;
      where no per-metre charge is set, the house rule: so many times the cost per metre. */
+  /* our selling price a metre for a fabric; where none is set, its cost times the markup rule */
+  function sellOf(f) { return f ? (Number(f.sell_m) > 0 ? Number(f.sell_m) : Math.round((Number(f.cost) || 0) * ((D.priceRule && Number(D.priceRule.markup)) || 1.6) / 100) * 100) : 0; }
+  function stitchOf(kind) { var s = one((D.stitching || []).map(function (x) { x.id = x.kind; return x; }), kind) || {}; return { stitch: Number(s.stitch) || 0, design: Number(s.design) || 0, set: !!s.kind }; }
   function rateFor(f, kind) {
     var r = (f && f.rates && f.rates[kind]) || {}, k = (D.priceRule && Number(D.priceRule.multiplier)) || 6;
     var set = Number(r.per_m) > 0;
     return { per_m: set ? Number(r.per_m) : (f ? f.cost * k : 0), design: Number(r.design) || 0, set: set, rule: k };
   }
+  /* 6 Oct: an outfit is FABRIC (metres x our selling price a metre, 5% GST) + STITCHING + DESIGN
+     (from the stitching menu, 18% GST), each shown on its own. Figures agreed at sale stay on the garment. */
   function garmentSuggest(g) {
-    if (g.piece) { var r = pieceOf(g.piece); if (r) return { amount: piecePrice(r), why: 'the readymade piece ' + (r.barcode || r.code || r.name) + ', at its price before GST' }; }
+    if (g.piece) { var r = pieceOf(g.piece); if (r) return { amount: piecePrice(r), fabric: 0, stitch: 0, design: 0, why: 'the readymade piece ' + (r.barcode || r.code || r.name) + ', at its price before GST' }; }
     var fl = fabricsOf(g), parts = [], cloth = 0;
     fl.forEach(function (u, i) {
       var f = one(D.fabrics, u.fabric); if (!f) return;
-      var rt = rateFor(f, g.kind), pm = i === 0 && g.rate != null ? Number(g.rate) : rt.per_m, m = Number(u.metres) || 0;
+      var pm = i === 0 && g.rate != null ? Number(g.rate) : sellOf(f), m = Number(u.metres) || 0;
       cloth += pm * m;
-      parts.push(m + ' m of ' + f.brand + ' ' + f.colour + ' at ' + rupees(pm) + ' a metre' + (i === 0 && g.rate == null && !rt.set ? ' (' + rt.rule + ' times its cost)' : ''));
+      parts.push(m + ' m of ' + f.brand + ' ' + f.colour + ' at ' + rupees(pm) + ' a metre');
     });
-    if (!parts.length) return { amount: 0, why: 'no fabric chosen yet' };
-    var f0 = one(D.fabrics, fl[0].fabric), design = g.design != null ? Number(g.design) || 0 : rateFor(f0, g.kind).design;
-    return { amount: Math.round(cloth + design), cloth: Math.round(cloth), design: design,
-      why: parts.join(', ') + (design ? ', plus ' + rupees(design) + ' design charge' : '') };
+    if (!parts.length) return { amount: 0, fabric: 0, stitch: 0, design: 0, why: 'no fabric chosen yet' };
+    var sm = stitchOf(g.kind), stitch = g.stitch != null ? Number(g.stitch) || 0 : sm.stitch, design = g.design != null ? Number(g.design) || 0 : sm.design;
+    cloth = Math.round(cloth);
+    return { amount: cloth + stitch + design, fabric: cloth, stitch: stitch, design: design,
+      why: parts.join(', ') + (stitch ? ', stitching ' + rupees(stitch) : '') + (design ? ', design ' + rupees(design) : '') };
+  }
+  /* the GST parts of a garment: fabric at 5%, stitching and design at 18%; a piece at its own rate;
+     a price set by hand or agreed stays one figure at 18% */
+  function garmentParts(g) {
+    if (g.price != null) { var pc = g.piece && pieceOf(g.piece); return [{ amt: Number(g.price) || 0, rate: pc && pc.gst != null ? Number(pc.gst) : 18, what: 'outfit' }]; }
+    var sg = garmentSuggest(g);
+    if (g.piece) { var p2 = pieceOf(g.piece); return [{ amt: sg.amount, rate: p2 && p2.gst != null ? Number(p2.gst) : 18, what: 'readymade' }]; }
+    return [{ amt: sg.fabric, rate: 5, what: 'fabric' }, { amt: sg.stitch + sg.design, rate: 18, what: 'stitching and design' }].filter(function (x) { return x.amt > 0; });
   }
   function garmentValue(g) { return g.price != null ? Number(g.price) || 0 : garmentSuggest(g).amount; }
   /* the order value: every garment's value and every other item, added up. An order with neither
@@ -458,13 +515,24 @@ var GE = (function () {
     var adds = addsTotal(o);
     var cuts = cutsTotal(o);
     var net = Math.max(0, value + adds - cuts);
-    var gst = Math.round(net * rate);
+    /* GST by part: fabric at 5%, the rest at 18%; deductions come off every part in proportion */
+    var parts = [];
+    if (L.listed) {
+      L.garments.forEach(function (g) { garmentParts(g).forEach(function (pt) { parts.push(pt); }); });
+      (o.extras || []).forEach(function (x) { parts.push({ amt: Number(x.amount) || 0, rate: rate * 100, what: x.label }); });
+    } else parts.push({ amt: value, rate: rate * 100, what: 'order' });
+    if (adds) parts.push({ amt: adds, rate: rate * 100, what: 'charges' });
+    var gross = sum(parts, function (x) { return x.amt; }), keep = gross ? net / gross : 0, byRate = {};
+    parts.forEach(function (x) { var k = String(x.rate); byRate[k] = (byRate[k] || 0) + x.amt * keep; });
+    var gstParts = Object.keys(byRate).map(function (k) { return { rate: Number(k), base: Math.round(byRate[k]), gst: Math.round(byRate[k] * Number(k) / 100) }; })
+      .sort(function (a, b) { return a.rate - b.rate; });
+    var gst = sum(gstParts, function (x) { return x.gst; });
     var total = net + gst;
     var invs = o ? by(D.invoices, 'order', o.id) : [];
     var billed = sum(invs, function (i) { return Number(i.amount) || 0; });
     var paid = sum(invs, function (i) { return paidOn(i.id); });
     return { order: o, value: value, lines: L, adds: (o && o.adds) || [], addsTotal: adds, cuts: (o && o.cuts) || [], cutsTotal: cuts,
-             net: net, gst: gst, rate: rate, total: total,
+             net: net, gst: gst, rate: rate, total: total, gstParts: gstParts,
              billed: billed, paid: paid, pending: total - paid };
   }
 
@@ -504,16 +572,32 @@ var GE = (function () {
   }
 
   /* fabric: opening - consumed - reserved = on hand */
+  /* metres already cut: a garment at or past Cut has taken its fabric off the shelf */
+  function consumedOf(fid) {
+    var used = 0;
+    (D.garments || []).forEach(function (g) {
+      if (isThird(g) || HOUSE.indexOf(g.stage) < HOUSE.indexOf('Cut')) return;
+      fabricsOf(g).forEach(function (u) { if (u.fabric === fid) used += Number(u.metres) || 0; });
+    });
+    return Math.round(used * 100) / 100;
+  }
+  /* our own fabric stock: lots bought in, less what has been cut; reserved = promised to garments not cut yet */
   function stockOf(fid) {
-    var f = one(D.fabrics, fid); if (!f) return { hand: 0, reserved: 0, store: 0, godown: 0 };
-    var reserved = 0;
-    D.garments.forEach(function (g) {
-      if (HOUSE.indexOf(g.stage) >= HOUSE.indexOf('Cut')) return;
+    var f = one(D.fabrics, fid); if (!f) return { hand: 0, reserved: 0, store: 0, godown: 0, available: 0, in: 0, cut: 0 };
+    var lots = (D.fabric_lots || []).filter(function (l) { return l.fabric === fid; });
+    var inS = sum(lots.filter(function (l) { return l.location !== 'Godown'; }), function (l) { return Number(l.metres) || 0; });
+    var inG = sum(lots.filter(function (l) { return l.location === 'Godown'; }), function (l) { return Number(l.metres) || 0; });
+    var cut = consumedOf(fid), reserved = 0;
+    (D.garments || []).forEach(function (g) {
+      if (isThird(g) || HOUSE.indexOf(g.stage) >= HOUSE.indexOf('Cut')) return;
+      var o = one(D.orders, g.order); if (!o || o.stage === 'Lost') return;
       fabricsOf(g).forEach(function (u) { if (u.fabric === fid) reserved += Number(u.metres) || 0; });
     });
-    return { store: f.stock.Store, godown: f.stock.Godown,
-             hand: f.stock.Store + f.stock.Godown, reserved: reserved,
-             low: (f.stock.Store + f.stock.Godown) <= f.threshold };
+    var store = Math.round(Math.max(0, inS - cut) * 10) / 10, godown = Math.round((inG - Math.max(0, cut - inS)) * 10) / 10;
+    var hand = Math.round((inS + inG - cut) * 10) / 10;
+    var costIn = sum(lots, function (l) { return (Number(l.metres) || 0) * (Number(l.cost_m) || 0); }), mIn = inS + inG;
+    return { store: store, godown: godown, hand: hand, reserved: Math.round(reserved * 10) / 10, available: Math.round((hand - reserved) * 10) / 10,
+             in: mIn, cut: cut, lots: lots, avgCost: mIn ? Math.round(costIn / mIn) : f.cost, low: hand <= f.threshold };
   }
 
   /* ---------- stages ---------- */
@@ -578,7 +662,7 @@ var GE = (function () {
       var found = AGENT_RULES[a.id] ? AGENT_RULES[a.id](a.rules) : [];
       found.forEach(function (f) {
         out.push({ agent: a.id, agentName: a.name, mode: a.mode, what: f.what,
-                   why: f.why, ref: f.ref, route: f.route, level: f.level || 'warn' });
+                   why: f.why, ref: f.ref, route: f.route, level: f.level || 'warn', stylist: f.stylist, salesperson: f.salesperson });
       });
     });
     return out;
@@ -657,6 +741,30 @@ var GE = (function () {
                  why: f.vendor + ' takes ' + f.procure_days + ' days to deliver, so order now',
                  ref: f.id, route: '#/fabric', level: s.hand === 0 ? 'bad' : 'warn' };
       });
+    },
+    /* 75% within a week of placing a designer custom piece; 70% once fabric we were waiting for is in */
+    advancewatch: function (r) {
+      var out = [], pct = Number(r.designer_pct) || 75, dd = r.designer_days == null ? 7 : Number(r.designer_days), fp = Number(r.fabric_pct) || 70;
+      D.orders.forEach(function (o) {
+        if (o.stage === 'Delivered' || o.stage === 'Lost') return;
+        var gs = by(D.garments, 'order', o.id), m = orderMoney(o.id); if (!m.total) return;
+        var c = one(D.clients, o.client) || {}, mr = c.name ? 'Mr. ' + c.name.split(' ').slice(-1)[0] : 'the client';
+        var placed = gs.filter(function (g) { return isThird(g) && !g.piece && g.make !== 'readymade'; });
+        if (placed.length) {
+          var since = placed.map(function (g) { return (g.history && g.history[0] && g.history[0].at || o.booked || TODAY).slice(0, 10); }).sort()[0];
+          var need = Math.round(m.total * pct / 100) - m.paid;
+          if (need > 0 && days(since, localToday()) >= dd)
+            out.push({ what: 'Collect ' + rupees(need) + ' from ' + mr + ' on ' + o.id + ' to reach ' + pct + '%', why: placed.length + ' designer piece' + (placed.length === 1 ? '' : 's') + ' placed ' + days(since, localToday()) + ' days ago; the designer is held until it is paid',
+              ref: o.id, route: '#/order', level: 'bad', stylist: o.stylist, salesperson: o.salesperson });
+        }
+        var waited = gs.filter(function (g) { return g.awaited_fabric && !isThird(g) && HOUSE.indexOf(g.stage) < HOUSE.indexOf('Cut'); });
+        if (waited.length && waited.every(garmentInStock)) {
+          var need2 = Math.round(m.total * fp / 100) - m.paid;
+          if (need2 > 0) out.push({ what: 'The fabric is in: collect ' + rupees(need2) + ' from ' + mr + ' on ' + o.id + ' to reach ' + fp + '%', why: 'cutting waits for it',
+            ref: o.id, route: '#/order', level: 'bad', stylist: o.stylist, salesperson: o.salesperson });
+        }
+      });
+      return out;
     },
     collector: function (r) {
       return D.invoices.filter(function (i) {
@@ -803,7 +911,8 @@ var GE = (function () {
     load: load, save: save, reset: reset,
     me: me, signIn: signIn, signOut: signOut, can: can, money: money, moneyShort: moneyShort,
     ROUTE_OK: ROUTE_OK, pieceOf: pieceOf, pieceCost: pieceCost, piecePrice: piecePrice, withGst: withGst, syncPieces: syncPieces,
-    nextBarcode: nextBarcode, piecesOf: piecesOf, purchaseSummary: purchaseSummary, consignmentSummary: consignmentSummary, consignmentLine: consignmentLine, addDays: addDays, paidOn: paidOn, receivePieces: receivePieces, findBarcode: findBarcode, supplierMargin: supplierMargin, allowed: allowed,
+    nextBarcode: nextBarcode, sellOf: sellOf, stitchOf: stitchOf, garmentParts: garmentParts, consumedOf: consumedOf,
+    garmentInStock: garmentInStock, orderInStock: orderInStock, advRule: advRule, rewardByCode: rewardByCode, rewardCheck: rewardCheck, piecesOf: piecesOf, purchaseSummary: purchaseSummary, consignmentSummary: consignmentSummary, consignmentLine: consignmentLine, addDays: addDays, paidOn: paidOn, receivePieces: receivePieces, findBarcode: findBarcode, supplierMargin: supplierMargin, allowed: allowed,
     myOrders: myOrders,
     payableOf: payableOf, payableOn: payableOn, payableGrossOf: payableGrossOf,
     orderMoney: orderMoney, rateFor: rateFor, cutsTotal: cutsTotal, addsTotal: addsTotal, garmentSuggest: garmentSuggest, garmentValue: garmentValue, orderLines: orderLines, migrate: migrate, syncValues: syncValues,

@@ -42,6 +42,25 @@ function SEED_STOCK() {
 function SEED() {
   var STOCK = SEED_STOCK();
   return {
+    /* what we charge to stitch each outfit, and its design charge; GST 18% on both */
+    stitching: [
+      { kind:'Suit jacket / blazer / bandhgala', stitch:22000, design:12000 },
+      { kind:'Trousers / breeches', stitch:6000, design:2000 },
+      { kind:'Shirt', stitch:4500, design:1500 },
+      { kind:'Kurta', stitch:8000, design:3000 },
+      { kind:'Sherwani', stitch:28000, design:20000 },
+      { kind:'Churidar / pyjama', stitch:4000, design:1000 },
+      { kind:'Waistcoat / Nehru jacket', stitch:9000, design:4000 }
+    ],
+    rewards: [
+      { id:'RW-01', code:'SMCN-1001', kind:'Credit note', client:'C-05', amount:15000, reason:'A seam opened on the Valaya bandhgala at the reception', order:'O-1045', issued:'2026-10-01', valid_until:'2027-03-31', used:null, by:'p-rachit' },
+      { id:'RW-02', code:'SMGC-2001', kind:'Gift coupon', client:'C-01', amount:10000, reason:'Wedding season gift', order:'', issued:'2026-09-20', valid_until:'2026-12-31', used:null, by:'p-ananya' }
+    ],
+    expenses: [
+      { id:'EX-01', at:'2026-10-01', category:'Porter / courier', payee:'Rahim Porter Services', amount:2400, gst:0, mode:'Cash', ref:'', note:'Godown to store, week 40', by:'p-deb' },
+      { id:'EX-02', at:'2026-10-03', category:'Electricity (current bill)', payee:'CESC Limited', amount:18650, gst:0, mode:'Net transfer', ref:'CESC/0925', note:'September bill', by:'p-sunita' },
+      { id:'EX-03', at:'2026-10-04', category:'Miscellaneous', payee:'Park Street Stationers', amount:3200, gst:576, mode:'UPI (GPay / PhonePe / Razorpay)', ref:'UPI-77812', note:'Garment bags and tags', by:'p-sunita' }
+    ],
     pieces: STOCK.pieces,
     purchases: STOCK.purchases,
     /* what designers have billed us, and what accounts has paid (paid in Tally, recorded here) */
@@ -337,28 +356,25 @@ function SEED() {
     ],
 
     fabrics: [
-      { id:'F-01', brand:'Ermenegildo Zegna', vendor:'V-01', book:'Trofeo 600', pattern:'Plain twill',
+      { id:'F-01', sell_m:16500, at_vendor:140, brand:'Ermenegildo Zegna', vendor:'V-01', book:'Trofeo 600', pattern:'Plain twill',
         colour:'Navy', hex:'#1e2a44', img:'', cost:9800, threshold:6, procure_days:21,
-        rates:{ 'Suit jacket / blazer / bandhgala':{ per_m:30000, design:15000 }, 'Trousers / breeches':{ per_m:9000, design:3000 }, 'Waistcoat / Nehru jacket':{ per_m:12000, design:5000 } },
         stock:{ Store:8.4, Godown:12.0 }, sat_days:18, sold_90:26 },
-      { id:'F-02', brand:'Loro Piana', vendor:'V-02', book:'Raw silk', pattern:'Slub',
+      { id:'F-02', sell_m:24000, at_vendor:35, brand:'Loro Piana', vendor:'V-02', book:'Raw silk', pattern:'Slub',
         colour:'Ivory', hex:'#e8ded0', img:'', cost:14500, threshold:5, procure_days:28,
-        rates:{ 'Sherwani':{ per_m:28000, design:25000 }, 'Kurta':{ per_m:16000, design:5000 }, 'Churidar / pyjama':{ per_m:9000, design:2000 }, 'Suit jacket / blazer / bandhgala':{ per_m:40000, design:20000 } },
         stock:{ Store:3.2, Godown:1.5 }, sat_days:9, sold_90:17 },
-      { id:'F-03', brand:'Scabal', vendor:'V-03', book:'Super 150s', pattern:'Herringbone',
+      { id:'F-03', sell_m:12500, at_vendor:90, brand:'Scabal', vendor:'V-03', book:'Super 150s', pattern:'Herringbone',
         colour:'Charcoal', hex:'#343a40', img:'', cost:7600, threshold:6, procure_days:24,
-        rates:{ 'Suit jacket / blazer / bandhgala':{ per_m:20000, design:15000 }, 'Trousers / breeches':{ per_m:7000, design:3000 }, 'Waistcoat / Nehru jacket':{ per_m:9000, design:5000 } },
         stock:{ Store:11.0, Godown:9.0 }, sat_days:42, sold_90:18 },
-      { id:'F-04', brand:'Dormeuil', vendor:'V-04', book:'Amadeus 365', pattern:'Plain',
+      { id:'F-04', sell_m:15000, at_vendor:60, brand:'Dormeuil', vendor:'V-04', book:'Amadeus 365', pattern:'Plain',
         colour:'Midnight blue', hex:'#141c33', img:'', cost:8200, threshold:5, procure_days:26,
         stock:{ Store:6.6, Godown:4.0 }, sat_days:27, sold_90:12 },
-      { id:'F-05', brand:'Cerruti 1881', vendor:'V-05', book:'Linea', pattern:'Birdseye',
+      { id:'F-05', sell_m:9000, at_vendor:120, brand:'Cerruti 1881', vendor:'V-05', book:'Linea', pattern:'Birdseye',
         colour:'Stone grey', hex:'#9aa0a6', img:'', cost:5400, threshold:8, procure_days:18,
         stock:{ Store:14.0, Godown:22.0 }, sat_days:168, sold_90:2 },
-      { id:'F-06', brand:'Thomas Mason', vendor:'V-06', book:'Journey', pattern:'Poplin',
+      { id:'F-06', sell_m:4800, at_vendor:300, brand:'Thomas Mason', vendor:'V-06', book:'Journey', pattern:'Poplin',
         colour:'White', hex:'#f7f7f4', img:'', cost:2100, threshold:20, procure_days:14,
         stock:{ Store:34.0, Godown:48.0 }, sat_days:4, sold_90:61 },
-      { id:'F-07', brand:'Bemberg', vendor:'V-06', book:'Cupro lining', pattern:'Plain',
+      { id:'F-07', sell_m:1200, at_vendor:500, brand:'Bemberg', vendor:'V-06', book:'Cupro lining', pattern:'Plain',
         colour:'Ivory', hex:'#efe8db', img:'', cost:650, threshold:20, procure_days:14,
         stock:{ Store:26.0, Godown:40.0 }, sat_days:3, sold_90:48 }
     ],
@@ -528,6 +544,11 @@ function SEED() {
         job:'a designer owed money for too long, and their ageing stock',
         rules:{ age_days:30 },
         rule_labels:{ age_days:'Raise a payable older than this many days' } },
+      { id:'advancewatch',  name:'The Advance Watch', mode:'suggest',
+        job:'an order where the advance has not reached what the house asks before work starts',
+        rules:{ designer_pct:75, designer_days:7, fabric_pct:70 },
+        rule_labels:{ designer_pct:'Designer custom: collect this % before the outfit comes in', designer_days:'Days after placing it with the designer',
+                      fabric_pct:'Bespoke waiting for fabric: collect this % once the fabric is in' } },
       { id:'shelf',         name:'The Shelf', mode:'suggest',
         job:'what is not moving and what is: dead fabric, dead readymade, and the winners',
         rules:{ dead_fabric_days:120, dead_piece_days:90 },
