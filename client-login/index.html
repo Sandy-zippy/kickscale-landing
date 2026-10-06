@@ -548,25 +548,62 @@ const CREDENTIALS = { user:"ego-admin", pass:"ego2026" };
 /* ============== SYNC BACKEND (Google Sheet via Apps Script) ============== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbzgM8OpFgdE-Z6LpJlDNURK-db41ponHfiTsj0CRHY57DPcGCZo7b5X-cN2vxZQTfvlwQ/exec';
 const CLIENT_ID = 'ego';
-function apiGet(){
-  if (!API_URL) return Promise.resolve(null);
-  return fetch(`${API_URL}?client=${CLIENT_ID}`).then(r => r.json()).catch(() => null);
+/* Apps Script calls fail now and then in a browser ("Failed to fetch", seen 6 Oct).
+   So every call retries, a failed save is queued and retried until it lands, and every
+   answer is also kept in this browser, so nothing typed is ever lost. */
+const sleepMs = ms => new Promise(r => setTimeout(r, ms));
+async function apiCall(opts, tries){
+  for (let i = 0; i < tries; i++){
+    try {
+      const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 45000);
+      const url = opts ? API_URL : `${API_URL}?client=${CLIENT_ID}&t=${Date.now()}`;
+      const r = await fetch(url, { ...(opts || {}), signal: ctl.signal }); clearTimeout(t);
+      const j = await r.json(); if (j && j.ok) return j;
+    } catch(e) {}
+    if (i < tries - 1) await sleepMs(1500 * (i + 1));
+  }
+  return null;
 }
-function apiPost(payload){
+function apiGet(){ return API_URL ? apiCall(null, 4) : Promise.resolve(null); }
+function apiPost(payload, tries){
   if (!API_URL) return Promise.resolve(null);
-  return fetch(API_URL, {
+  return apiCall({
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids a CORS preflight to Apps Script
     body: JSON.stringify({ client: CLIENT_ID, ...payload }),
-  }).then(r => r.json()).catch(() => null);
+  }, tries || 3);
 }
-function debounce(fn, ms){
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+const LOCAL_KEY = 'ego-portal-answers';
+function localBackup(){ try { localStorage.setItem(LOCAL_KEY, JSON.stringify(STATE)); } catch(e){} }
+function localRead(){ try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}') || {}; } catch(e){ return {}; } }
+const PENDING = {};   // key -> {section, value}: typed but not yet confirmed by the server
+const TIMERS = {};    // one debounce per answer, so moving to the next question never drops the last one
+function saveAnswerDebounced(section, qid, value){
+  PENDING[qid] = { section, value }; localBackup(); saveStatus();
+  clearTimeout(TIMERS[qid]); TIMERS[qid] = setTimeout(() => sendOne(qid), 700);
 }
-const saveAnswerDebounced = debounce((section, qid, value) => {
-  apiPost({ action: 'saveAnswer', section, qid, value });
-}, 700);
+async function sendOne(qid){
+  const job = PENDING[qid]; if (!job) return true;
+  const ok = await apiPost({ action: 'saveAnswer', section: job.section, qid, value: job.value });
+  if (ok && PENDING[qid] === job) delete PENDING[qid];
+  saveStatus(); return !!ok;
+}
+async function flushPending(){
+  Object.keys(TIMERS).forEach(k => clearTimeout(TIMERS[k]));
+  await Promise.all(Object.keys(PENDING).map(sendOne));
+  return !Object.keys(PENDING).length;
+}
+setInterval(() => { if (Object.keys(PENDING).length) flushPending(); }, 15000);
+function saveStatus(){
+  let b = document.getElementById('savebar');
+  if (!b){ b = document.createElement('div'); b.id = 'savebar'; b.setAttribute('role', 'status');
+    b.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:50;padding:8px 14px;border-radius:999px;font:500 13px Inter,sans-serif;background:#111;color:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18);display:none';
+    document.body.appendChild(b); }
+  const n = Object.keys(PENDING).length;
+  b.style.display = n ? 'block' : 'none';
+  b.textContent = n === 1 ? 'Saving 1 answer…' : `Saving ${n} answers… (kept safe on this device until they reach us)`;
+}
+window.addEventListener('beforeunload', e => { if (Object.keys(PENDING).length){ e.preventDefault(); e.returnValue = ''; } });
 
 /* ================= DATA MODEL (one complete EGO Master build) =================
    Shapes kept deliberately stable so the PDF engine below (extractBlocks) keeps
@@ -1457,11 +1494,20 @@ function renderTab(){
 function goHome(){ renderHome(); }
 
 async function submitBuild(btn){
+  const label = btn ? btn.textContent : '';
   if(btn){ btn.disabled=true; btn.textContent='Submitting…'; }
-  await apiPost({action:'submitSection', section:'build'});
+  await flushPending();
+  let pdf = '';
+  try { pdf = buildPdf().output('datauristring').split(',')[1]; } catch(e) {}
+  const at = new Date().toISOString();
+  const res = await apiPost({ action:'submitAll', section:'build', answers: STATE, json: buildExport(), pdf, submittedAt: at }, 4);
+  if(!res){
+    if(btn){ btn.disabled=false; btn.textContent=label; }
+    alert('Your answers are safe on this device, but the submission did not reach Zippyscale. Please check your internet and press Submit again.');
+    return;
+  }
   SECTIONS.build='submitted';
-  ALL_SUBMITTED_AT=new Date().toISOString();
-  await apiPost({action:'submitAll'});
+  ALL_SUBMITTED_AT=at;
   renderThankYou();
 }
 
@@ -1478,7 +1524,7 @@ function renderThankYou(){
 }
 
 /* ================= EXPORT ================= */
-function exportAnswers(){
+function buildExport(){
   const out={brand:'EGO Premium × Big E: Complete Build Plan',generated:new Date().toISOString(),answers:{}};
   SECTION_ORDER.forEach(k=>{
     const S=DATA.sections[k];
@@ -1491,6 +1537,10 @@ function exportAnswers(){
     });
   });
   out.changeRequests = loadCRs();
+  return out;
+}
+function exportAnswers(){
+  const out=buildExport();
   const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download='ego-premium-build-plan-answers.json'; a.click();
@@ -1988,14 +2038,28 @@ async function tryLogin(){
     hideGates();
     document.getElementById('app').classList.remove('hidden');
     document.getElementById('view').innerHTML = '<p style="text-align:center;color:var(--muted);padding:60px 0">Loading your saved answers…</p>';
-    const saved = await apiGet();
-    if (saved && saved.ok) {
-      Object.assign(STATE, saved.answers || {});
-      Object.keys(saved.sections || {}).forEach(k => { SECTIONS[k] = saved.sections[k].status; });
-      ALL_SUBMITTED_AT = saved.allSubmittedAt || null;
-    }
-    renderHome();
+    await loadSaved();
   } else { document.getElementById('lerr').textContent='Wrong username or password. Check with Zippyscale.'; }
+}
+async function loadSaved(){
+  document.getElementById('view').innerHTML = '<p style="text-align:center;color:var(--muted);padding:60px 0">Loading your saved answers…</p>';
+  const saved = await apiGet();
+  if (!saved){
+    document.getElementById('view').innerHTML = `<section class="hero" style="text-align:center"><h1 style="font-size:26px">We could not load your saved answers</h1>
+      <p>Your answers are not lost. The connection to our server did not respond. Please check your internet and try again.</p>
+      <button class="btn-finish" style="margin-top:16px" onclick="loadSaved()">Try again &rarr;</button></section>`;
+    return;
+  }
+  Object.assign(STATE, saved.answers || {});
+  Object.keys(saved.sections || {}).forEach(k => { SECTIONS[k] = saved.sections[k].status; });
+  ALL_SUBMITTED_AT = saved.allSubmittedAt || null;
+  // Anything typed on this device that never reached the server is sent now.
+  const local = localRead();
+  Object.keys(local).forEach(k => {
+    if (String(local[k] || '').trim() && !String(STATE[k] || '').trim()){ STATE[k] = local[k]; saveAnswerDebounced('build', k, local[k]); }
+  });
+  localBackup();
+  renderHome();
 }
 function logout(){ location.reload(); }
 document.getElementById('p').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
