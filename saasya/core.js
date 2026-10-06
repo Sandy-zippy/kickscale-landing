@@ -9,8 +9,7 @@ var GE = (function () {
               'In operations','Trial','Alteration','Ready','Delivered','Lost'];
 
   /* the six kinds of order, in his own words */
-  var ORDER_TYPES = ['Our own bespoke','Our own readymade','Our own custom-made',
-                     'Third-party readymade','Third-party custom-made','Third-party order'];
+  var ORDER_TYPES = ['Our own bespoke','Our own readymade','Third-party readymade','Third-party custom-made'];
 
   var HOUSE = ['Not started','Design confirmed','Fabric sourced','Cut','Stitching',
                'Embroidery / handwork','Finishing','Checking','Reworking','Ready','Delivered'];
@@ -108,10 +107,10 @@ var GE = (function () {
   var CUT_LABELS = ['Discount','Festive offer','Loyalty adjustment','Goodwill'];
   /* added on top of the garments (5 Oct): more designs, delivery, porter, anything agreed */
   var ADD_LABELS = ['Extra design work','Delivery charges','Porter / courier','Express making','Other'];
-  var OUR_DESIGN_TYPES = ['Our own bespoke','Our own readymade','Our own custom-made'];
+  var OUR_DESIGN_TYPES = ['Our own bespoke','Our own readymade'];
 
-  var COST_KINDS = ['Fabric','Stitching','Designing','Embroidery / handwork','Porter / courier',
-                    'Third-party stitching','Other'];
+  var COST_KINDS = ['Fabric','Readymade piece','Marking','Cutting','Stitching','Designing','Embroidery / handwork','Karigari / extra work',
+                    'Finishing','Buttons and trims','Porter / courier','Third-party stitching','Other'];
 
   var FOLLOW_METHODS = ['Phone call','WhatsApp','In person','Email','Online meet'];
 
@@ -315,6 +314,7 @@ var GE = (function () {
   /* what a garment is charged, suggested from the fabric library: the price set for that outfit
      in its first fabric, or, where none is set, the cost of all its fabric times the house rule */
   function garmentSuggest(g) {
+    if (g.piece) { var r = one(D.readymade, g.piece); if (r) return { amount: Number(r.price) || 0, why: 'the readymade piece ' + (r.code || r.name) + ', at its price' }; }
     var fl = fabricsOf(g), f0 = fl.length ? one(D.fabrics, fl[0].fabric) : null;
     if (f0 && f0.prices && Number(f0.prices[g.kind]) > 0)
       return { amount: Number(f0.prices[g.kind]), why: f0.brand + ' ' + f0.colour + ', the price set for a ' + g.kind.split(' / ')[0].toLowerCase() };
@@ -371,8 +371,10 @@ var GE = (function () {
         if (f && u.metres) fab += f.cost * u.metres;
       });
     });
+    var pieces = 0;   /* a readymade piece costs what it cost us to make or buy */
+    by(D.garments, 'order', orderId).forEach(function (g) { var r = g.piece && one(D.readymade, g.piece); if (r) pieces += Number(r.cost_to_make) || 0; });
     var rest = sum(lines, function (l) { return l.amount; });
-    return { fabric: fab, lines: lines, other: rest, total: fab + rest };
+    return { fabric: fab, pieces: pieces, lines: lines, other: rest, total: fab + pieces + rest };
   }
   function marginOf(orderId) {
     var o = one(D.orders, orderId), c = costOf(orderId);

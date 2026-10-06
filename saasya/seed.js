@@ -161,7 +161,7 @@ function SEED() {
                  {stage:'Quotation provided',by:'p-pallavi',at:'2026-09-29T17:00'},{stage:'Advance taken',by:'p-pallavi',at:'2026-10-01T11:00'},
                  {stage:'Measurements',by:'p-farhan',at:'2026-10-01T11:10'},{stage:'In operations',by:'p-deb',at:'2026-10-01T11:20'}] },
 
-      { id:'O-1050', client:'C-02', family:'F-01', vertical:'in-house', type:'Our own custom-made', stage:'Measurements',
+      { id:'O-1050', client:'C-02', family:'F-01', vertical:'in-house', type:'Our own bespoke', stage:'Measurements',
         value:95000, cuts:[],
         source:'Existing client', salesperson:'p-rohit', stylist:'p-farhan',
         booked:'2026-10-01', advance_at:'2026-10-02', from_design:'R-01',
