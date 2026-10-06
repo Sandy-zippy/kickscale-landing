@@ -1160,7 +1160,11 @@
   }
 
   function render() {
-    if (!D.session) { $('#login').hidden = false; $('#app').hidden = true; return; }
+    /* ⚠️ THE ONLY GATE. D.session lives in localStorage, so on its own it let
+       anyone open the cached book after the server session had ended (or with
+       no token at all). On a server build, no token means the sign-in screen. */
+    var serverOut = window.API && API.configured() && !API.signedIn();
+    if (!D.session || serverOut) { $('#login').hidden = false; $('#app').hidden = true; return; }
     $('#login').hidden = true; $('#app').hidden = false;
 
     var hash = location.hash || '#/home';
@@ -3395,7 +3399,7 @@
            may hold an evening's typing done while signed out. Flush first, and
            _synced catches whatever the flush could not send. */
         flushFirst().then(function () { return API.pull(); }).then(adoptRemote).catch(function (e) {
-          if (e && e.unauthorised) { paintLogin(); return; }
+          if (e && e.unauthorised) { paintLogin(); render(); return; }
           /* offline: carry on with the cache rather than locking them out */
           render();
         });
