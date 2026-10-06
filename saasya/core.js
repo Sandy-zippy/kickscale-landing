@@ -194,7 +194,13 @@ var GE = (function () {
      garments so every total stays exactly what it was. Safe to run twice. */
   function migrate() {
     D.priceRule = D.priceRule || { multiplier: 6 };
-    (D.fabrics || []).forEach(function (f) { f.prices = f.prices || {}; });
+    /* 6 Oct: an outfit in a cloth is charged per metre, plus its design charge. An old flat
+       outfit price becomes a per-metre charge at 3 metres, with no design charge. */
+    (D.fabrics || []).forEach(function (f) {
+      f.rates = f.rates || {};
+      Object.keys(f.prices || {}).forEach(function (k) { if (!f.rates[k] && Number(f.prices[k]) > 0) f.rates[k] = { per_m: Math.round(f.prices[k] / 3 / 100) * 100, design: 0 }; });
+      delete f.prices;
+    });
     (D.orders || []).forEach(function (o) {
       o.adds = o.adds || []; o.extras = o.extras || []; o.cuts = o.cuts || []; if (o.ops == null) o.ops = '';
       if (o.vertical === 'designer' && o.designer) by(D.garments, 'order', o.id).forEach(function (g) { if (!g.designer) g.designer = o.designer; });
@@ -318,15 +324,27 @@ var GE = (function () {
   }
   /* what a garment is charged, suggested from the fabric library: the price set for that outfit
      in its first fabric, or, where none is set, the cost of all its fabric times the house rule */
+  /* what we charge for an outfit in a cloth: a charge per metre (so a bigger man pays for the
+     cloth he takes) and a design charge for the outfit. Set on the bunch by the owner or BDM;
+     where no per-metre charge is set, the house rule: so many times the cost per metre. */
+  function rateFor(f, kind) {
+    var r = (f && f.rates && f.rates[kind]) || {}, k = (D.priceRule && Number(D.priceRule.multiplier)) || 6;
+    var set = Number(r.per_m) > 0;
+    return { per_m: set ? Number(r.per_m) : (f ? f.cost * k : 0), design: Number(r.design) || 0, set: set, rule: k };
+  }
   function garmentSuggest(g) {
     if (g.piece) { var r = one(D.readymade, g.piece); if (r) return { amount: Number(r.price) || 0, why: 'the readymade piece ' + (r.code || r.name) + ', at its price' }; }
-    var fl = fabricsOf(g), f0 = fl.length ? one(D.fabrics, fl[0].fabric) : null;
-    if (f0 && f0.prices && Number(f0.prices[g.kind]) > 0)
-      return { amount: Number(f0.prices[g.kind]), why: f0.brand + ' ' + f0.colour + ', the price set for a ' + g.kind.split(' / ')[0].toLowerCase() };
-    var cost = sum(fl, function (u) { var f = one(D.fabrics, u.fabric); return f ? f.cost * (Number(u.metres) || 0) : 0; });
-    var k = (D.priceRule && Number(D.priceRule.multiplier)) || 6;
-    if (!cost) return { amount: 0, why: 'no fabric chosen yet' };
-    return { amount: Math.round(cost * k / 500) * 500, why: k + ' times the fabric cost (' + rupees(Math.round(cost)) + '), rounded to the nearest 500' };
+    var fl = fabricsOf(g), parts = [], cloth = 0;
+    fl.forEach(function (u, i) {
+      var f = one(D.fabrics, u.fabric); if (!f) return;
+      var rt = rateFor(f, g.kind), pm = i === 0 && g.rate != null ? Number(g.rate) : rt.per_m, m = Number(u.metres) || 0;
+      cloth += pm * m;
+      parts.push(m + ' m of ' + f.brand + ' ' + f.colour + ' at ' + rupees(pm) + ' a metre' + (i === 0 && g.rate == null && !rt.set ? ' (' + rt.rule + ' times its cost)' : ''));
+    });
+    if (!parts.length) return { amount: 0, why: 'no fabric chosen yet' };
+    var f0 = one(D.fabrics, fl[0].fabric), design = g.design != null ? Number(g.design) || 0 : rateFor(f0, g.kind).design;
+    return { amount: Math.round(cloth + design), cloth: Math.round(cloth), design: design,
+      why: parts.join(', ') + (design ? ', plus ' + rupees(design) + ' design charge' : '') };
   }
   function garmentValue(g) { return g.price != null ? Number(g.price) || 0 : garmentSuggest(g).amount; }
   /* the order value: every garment's value and every other item, added up. An order with neither
@@ -690,7 +708,7 @@ var GE = (function () {
     ROUTE_OK: ROUTE_OK, allowed: allowed,
     myOrders: myOrders,
     payableOf: payableOf, payableOn: payableOn, payableGrossOf: payableGrossOf,
-    orderMoney: orderMoney, cutsTotal: cutsTotal, addsTotal: addsTotal, garmentSuggest: garmentSuggest, garmentValue: garmentValue, orderLines: orderLines, migrate: migrate, syncValues: syncValues,
+    orderMoney: orderMoney, rateFor: rateFor, cutsTotal: cutsTotal, addsTotal: addsTotal, garmentSuggest: garmentSuggest, garmentValue: garmentValue, orderLines: orderLines, migrate: migrate, syncValues: syncValues,
     paidOn: paidOn, invoiceDue: invoiceDue, invoiceLeft: invoiceLeft,
     costOf: costOf, marginOf: marginOf, stockOf: stockOf,
     fabricsOf: fabricsOf, metresOf: metresOf, handOver: handOver,

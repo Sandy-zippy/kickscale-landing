@@ -814,10 +814,10 @@
       '<div class="f"><label>Date back with us</label><input type="date" value="' +
         (o.expected_in || '') + '" data-change="setOrderDate" data-id="' + o.id + '|expected_in"></div>' : '<div></div>') +
       '</div>' +
-      '<div class="two">' + (GE.me().role === 'BDM' ?
+      '<div class="two">' + (['Owner', 'BDM'].indexOf(GE.me().role) > -1 ?
         '<div class="f"><label>Stylist (owner of the order)</label><select data-change="setOrderStylist" data-id="' + o.id + '">' +
         stylists().map(function (p) { return '<option value="' + p.id + '"' + (p.id === o.stylist ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') +
-        '</select><div class="hint">Only the BDM can change the stylist.</div></div>' : fld('Stylist (owner of the order)', pname(o.stylist))) +
+        '</select><div class="hint">Only the owner or the BDM can change the stylist.</div></div>' : fld('Stylist (owner of the order)', pname(o.stylist))) +
       '<div class="f"><label>Operations person on it</label>' + (opsRole ?
         '<select data-change="setOrderOps" data-id="' + o.id + '"><option value="">Nobody yet</option>' + opsPeople().map(function (p) {
           return '<option value="' + p.id + '"' + (p.id === o.ops ? ' selected' : '') + '>' + esc(p.name) + ' · ' + esc(p.role) + '</option>'; }).join('') + '</select>'
@@ -1171,7 +1171,7 @@
     GE.toast('Saved. The Clock counts back from the delivery date.');
   };
   A.setOrderStylist = function (id, el) {
-    if (GE.me().role !== 'BDM') { GE.toast('Only the BDM can change the stylist.'); return; }
+    if (['Owner', 'BDM'].indexOf(GE.me().role) < 0) { GE.toast('Only the owner or the BDM can change the stylist.'); return; }
     var o = one(D().orders, id), from = o.stylist;
     o.stylist = el.value;
     (o.history = o.history || []).push({ stage: o.stage, by: GE.me().id, at: GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5), note: 'Stylist changed from ' + pname(from) + ' to ' + pname(el.value) });
@@ -1577,8 +1577,10 @@
         kpi(all.filter(function (f) { return f.sat_days >= 120; }).length, 'Not moved in 120 days', 'The Shelf calls this dead') +
         '</div>';
     }
-    if (GE.can('cost')) h += '<div class="card" data-sec="rule"><div class="cardhead"><h3>How a garment is priced</h3></div><p>A garment\'s value comes from the price set for that outfit on its cloth (open a bunch to set them). Where no price is set, charge ' +
-      '<input type="number" min="1" step="0.5" style="width:70px" value="' + (D().priceRule.multiplier || 6) + '" data-change="setPriceRule" aria-label="Times the fabric cost"> times the cost of the fabric used, rounded to the nearest ₹500.</p></div>';
+    if (GE.can('cost')) h += '<div class="card" data-sec="rule"><div class="cardhead"><h3>How a garment is priced</h3><span class="sub">' + (canPrice() ? 'set by the owner or the BDM' : 'set by the owner or the BDM; you can see it, not change it') + '</span></div>' +
+      '<p>An outfit in a cloth is charged <b>metres used × the charge per metre</b>, plus its <b>design charge</b>. Both are set for each outfit on each bunch: open a bunch below. Where a bunch has no charge per metre for an outfit, charge ' +
+      (canPrice() ? '<input type="number" min="1" step="0.5" style="width:70px" value="' + (D().priceRule.multiplier || 6) + '" data-change="setPriceRule" aria-label="Times the fabric cost">' : '<b>' + (D().priceRule.multiplier || 6) + '</b>') +
+      ' times what the cloth cost us a metre.</p></div>';
     h += searchBar('#/fabric', 'Search a brand, a colour, a pattern, a vendor', list.length, all.length);
     h += '<div class="grid">';
     list.forEach(function (f) {
@@ -1626,14 +1628,20 @@
       ' days. Order it today or the next sherwani waits.</div>';
     h += '</div>';
     if (GE.can('stock') === true) {
-      h += '<div class="card" data-sec="prices"><div class="cardhead"><h3>What we charge for each outfit</h3><span class="sub">in this cloth, before tax</span></div><table><tbody>';
+      var ed = canPrice();
+      h += '<div class="card" data-sec="prices"><div class="cardhead"><h3>What we charge for each outfit</h3><span class="sub">in this cloth, before tax' + (ed ? '' : ' · set by the owner or the BDM') + '</span></div>' +
+        '<table class="rates"><thead><tr><th>Outfit</th><th class="num">Charge per metre</th><th class="num">Design charge</th><th class="num">At 3 metres</th></tr></thead><tbody>';
       GE.KINDS.forEach(function (k) {
-        var auto = GE.garmentSuggest({ kind: k, fabrics: [] }), rule = Math.round(f.cost * 3 * (D().priceRule.multiplier || 6) / 500) * 500;
-        h += '<tr><td>' + esc(k) + '</td><td style="width:170px"><input type="number" placeholder="rule: ' + rupees(rule) + ' at 3 m" value="' + (f.prices[k] || '') +
-          '" data-change="setFabPrice" data-id="' + f.id + '|' + esc(k) + '" aria-label="Price for a ' + esc(k) + '"></td></tr>';
+        var rt = GE.rateFor(f, k), r0 = (f.rates && f.rates[k]) || {};
+        var cell = function (field, val, ph) {
+          return ed ? '<input type="number" min="0" step="100" value="' + (val || '') + '" placeholder="' + ph + '" data-change="setFabRate" data-id="' + f.id + '|' + esc(k) + '|' + field + '" aria-label="' + (field === 'per_m' ? 'Charge per metre' : 'Design charge') + ' for a ' + esc(k) + '">'
+            : (val ? rupees(val) : '<span class="sub">' + ph + '</span>');
+        };
+        h += '<tr><td>' + esc(k) + '</td><td class="num">' + cell('per_m', r0.per_m, 'rule: ' + rupees(rt.per_m)) + '</td><td class="num">' + cell('design', r0.design, 'none') + '</td>' +
+          '<td class="num sub">' + rupees(Math.round(rt.per_m * 3 + rt.design)) + '</td></tr>';
       });
-      h += '</tbody></table><p class="hint">When a stylist picks this cloth for an outfit, the garment\'s value comes from here. Left empty, the rule applies: ' +
-        (D().priceRule.multiplier || 6) + ' times the cost of the fabric used (' + rupees(f.cost) + ' a metre). The rule is set on the fabric library page.</p></div>';
+      h += '</tbody></table><p class="hint">When a stylist picks this cloth for an outfit, both figures come into the order, and the value is the metres he takes × the charge per metre, plus the design charge. ' +
+        'Without a charge per metre, the rule applies: ' + (D().priceRule.multiplier || 6) + ' times what this cloth cost us (' + rupees(f.cost) + ' a metre).</p></div>';
     }
     h += '<div class="card"><h3>What it has gone into</h3><table><thead><tr><th>Garment</th><th>Order</th>' +
       '<th class="num">Metres</th><th>Stage</th></tr></thead><tbody>';
@@ -1647,14 +1655,22 @@
     GE.drawer(h);
   };
 
-  A.setFabPrice = function (id, el) {
-    var p = id.split('|'), f = one(D().fabrics, p[0]), v = Number(el.value) || 0;
-    if (v > 0) f.prices[p[1]] = v; else delete f.prices[p[1]];
-    GE.save(); GE.toast(v > 0 ? 'A ' + p[1].split(' / ')[0].toLowerCase() + ' in ' + f.brand + ' ' + f.colour + ' is now ' + rupees(v) + '.' : 'Back on the rule for that outfit.');
+  /* only the owner and the BDM set what we charge */
+  function canPrice() { return ['Owner', 'BDM'].indexOf(GE.me().role) > -1; }
+  GE.canPrice = canPrice;
+  A.setFabRate = function (id, el) {
+    if (!canPrice()) { GE.toast('Only the owner or the BDM can set what we charge.'); return; }
+    var p = id.split('|'), f = one(D().fabrics, p[0]), v = Math.max(0, Number(el.value) || 0);
+    f.rates = f.rates || {}; var r = f.rates[p[1]] = f.rates[p[1]] || {};
+    r[p[2]] = v; if (!r.per_m && !r.design) delete f.rates[p[1]];
+    GE.save(); A.openFabric(f.id);
+    var rt = GE.rateFor(f, p[1]);
+    GE.toast('A ' + p[1].split(' / ')[0].toLowerCase() + ' in ' + f.brand + ' ' + f.colour + ': ' + rupees(rt.per_m) + ' a metre plus ' + rupees(rt.design) + ' design. At 3 metres, ' + rupees(Math.round(rt.per_m * 3 + rt.design)) + '.');
   };
   A.setPriceRule = function (id, el) {
+    if (!canPrice()) { GE.toast('Only the owner or the BDM can set what we charge.'); return; }
     D().priceRule.multiplier = Math.max(1, Number(el.value) || 6); GE.save();
-    GE.toast('Garments without a set price are now ' + D().priceRule.multiplier + ' times their fabric cost.');
+    GE.toast('Where no charge per metre is set, it is now ' + D().priceRule.multiplier + ' times what the cloth cost us.');
   };
   A.fabPhoto = function (id) {
     GE.modal('<h2>The photograph of the cloth</h2>' +
@@ -2840,7 +2856,9 @@
       '<div class="hint">Straight from the readymade stock: its price becomes the garment\'s value. No metres.</div></div></div>' +
       '<div id="agCustom"><div class="two"><div class="f"><label>Fabric</label>' + fabricPicker('agFab') +
       '<div class="hint">More can be added on the garment itself: lining, contrast, whatever it takes.</div></div>' +
-      '<div class="f"><label>Metres</label><input type="number" step="0.1" id="agM" value="3" data-change="agPrice"></div></div></div>' +
+      '<div class="f"><label>Metres</label><input type="number" step="0.1" id="agM" value="3" data-change="agPrice"></div></div>' +
+      '<div class="two" id="agRates" hidden><div class="f"><label>Charge per metre</label><input type="number" id="agRate" data-change="agRateEdit"><div class="hint" id="agRateWhy"></div></div>' +
+      '<div class="f"><label>Design charge</label><input type="number" id="agDesign" data-change="agRateEdit"><div class="hint">for this outfit, from the fabric library</div></div></div></div>' +
       '<div class="two"><div class="f"><label id="agPriceLbl">Value of this garment</label><input type="number" id="agPriceIn">' +
       '<div class="hint" id="agWhy"></div></div>' +
       '<div class="f"><label id="agDueLbl">Back by</label><input type="date" id="agDue" value="' + (o.delivery || '') + '"></div></div>' +
@@ -2869,6 +2887,17 @@
     if (third && !ready) { if (why) why.textContent = 'What the designer charges for this piece.'; return; }
     var g = { kind: $('agKind').value, piece: ready ? $('agPiece').value : '',
       fabrics: !ready && $('agFab') && $('agFab').value ? [{ fabric: $('agFab').value, metres: Number($('agM').value) || 0 }] : [] };
+    /* a cloth picked: its charge per metre and design charge for this outfit come up, to confirm or change */
+    if ($('agRates')) {
+      var fab = !ready && $('agFab') && $('agFab').value ? one(D().fabrics, $('agFab').value) : null;
+      $('agRates').hidden = !fab;
+      if (fab) {
+        var key = fab.id + '|' + g.kind, rt = GE.rateFor(fab, g.kind);
+        if ($('agRates').dataset.key !== key) { $('agRate').value = Math.round(rt.per_m); $('agDesign').value = rt.design; $('agRates').dataset.key = key; }
+        $('agRateWhy').textContent = rt.set ? 'set for a ' + g.kind.split(' / ')[0].toLowerCase() + ' in this cloth' : 'none set for this outfit: ' + rt.rule + ' times what the cloth cost us';
+        g.rate = Number($('agRate').value) || 0; g.design = Number($('agDesign').value) || 0;
+      }
+    }
     if (ready && g.piece) { var r = one(D().readymade, g.piece); if (r && r.kind) { $('agKind').value = r.kind; g.kind = r.kind; } }
     var sg = GE.garmentSuggest(g);
     if (!out.dataset.touched) out.value = sg.amount || '';
@@ -2876,6 +2905,7 @@
       : (ready ? 'Choose the piece: its price comes from the readymade stock.' : 'Choose the fabric: the value comes from the fabric library.');
   };
   document.addEventListener('input', function (e) { if (e.target && e.target.id === 'agPriceIn') e.target.dataset.touched = '1'; });
+  A.agRateEdit = function () { var out = document.getElementById('agPriceIn'); if (out && out.dataset) delete out.dataset.touched; A.agPrice(); };
   A.saveGarment = function (oid) {
     var o = one(D().orders, oid);
     var el = function (i) { return document.getElementById(i); };
@@ -2891,6 +2921,7 @@
       due: el('agDue').value, designer: from,
       note: el('agNote').value, samples: [], designform: [],
       history: [{ stage: first, by: GE.me().id, at: GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5) }] };
+    if (fabs.length && el('agRate') && el('agRate').value !== '') { g.rate = Number(el('agRate').value) || 0; g.design = Number(el('agDesign').value) || 0; }   /* the charges agreed at sale */
     var typed = Number(el('agPriceIn') && el('agPriceIn').value) || 0, sug = GE.garmentSuggest(g).amount;
     if (from && !piece) { g.price = typed; g.price_by = 'designer'; }
     else if (typed && typed !== sug) { g.price = typed; g.price_by = 'hand'; }   /* otherwise it follows the library or the piece */
