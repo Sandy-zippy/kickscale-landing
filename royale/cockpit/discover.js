@@ -74,7 +74,7 @@
   function card(p) {
     var on = S.sel.indexOf(p.id) >= 0;
     var tags = (p.sample ? '<span class="pill lime">Sample in office</span>' : '') + (p.ucpmp ? '<span class="pill ok">UCPMP-safe</span>' : '') + (p.premium ? '<span class="pill em">Premium</span>' : '');
-    return '<div class="pcard' + (on ? ' on' : '') + '" data-act="go" data-id="#/product/' + esc(p.id) + '"><div class="img" style="background:linear-gradient(135deg,hsl(' + p.hue + ',42%,52%),hsl(' + ((p.hue + 40) % 360) + ',50%,36%))">' + esc(p.category.charAt(0)) + '<div class="tags">' + tags + '</div></div>' +
+    return '<div class="pcard' + (on ? ' on' : '') + '" data-act="go" data-id="#/product/' + esc(p.id) + '"><div class="img" style="background:linear-gradient(135deg,hsl(' + p.hue + ',38%,36%),hsl(' + ((p.hue + 40) % 360) + ',50%,36%))">' + esc(p.category.charAt(0)) + '<div class="tags">' + tags + '</div></div>' +
       '<div class="body"><span class="v">' + esc(p.vendorName) + ' · ' + esc(p.category) + '</span><b>' + esc(p.name) + '</b><span class="small muted">MOQ ' + p.moq + ' · ' + p.lead + ' days' + (p.brandable ? ' · brandable' : '') + '</span>' +
       '<div class="foot"><span class="price">₹' + GC.fmt(p.price) + '</span><button class="minibtn" data-act="discPick" data-id="' + esc(p.id) + '">' + (on ? '✓ Picked' : '+ Pick') + '</button></div></div></div>';
   }

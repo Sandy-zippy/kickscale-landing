@@ -33,14 +33,26 @@
     if (!G.canOpen(o)) return G.deny('This order belongs to ' + GC.staffName(o.assigned_to), 'Ask Production & Dispatch.');
     var co = G.companyById(o.company), ct = G.contactById(o.contact), risks = GC.orderRisks(o), cost = G.can('cost');
     var days = o.deadline ? GC.daysBetween(GC.today(), o.deadline) : null;
-    var h = '<div class="stickyhead"><div class="ph"><div><p class="muted small"><a href="#/company/' + (co ? co.id : '') + '">' + esc(co ? co.name : '') + '</a> · PO ' + esc(o.po_no || '—') + (o.opp ? ' · <a href="#/opp/' + o.opp + '">the requirement</a>' : '') + '</p>' +
-      '<h1>' + esc(o.no) + ' · ' + esc(o.title) + '</h1><p>' + G.pill(o.stage, o.stage === 'Paid' ? 'ok' : 'info') + ' ' + GC.rupees(o.value) + (cost ? ' · margin ' + GC.rupees(o.value / 1.18 - o.cost) : '') +
-      (o.deadline ? ' · deliver by <b>' + esc(o.deadline) + '</b> ' + G.pill(days < 0 ? Math.abs(days) + ' days late' : days + ' days left', days < 0 ? 'bad' : days <= GC.T.rules.bufferDays ? 'warn' : 'dim') : '') + '</p></div>' +
-      '<div class="acts"><a class="btn ghost" href="client.html#' + esc(o.token) + '" target="_blank">Client portal ↗</a>' + (o.picks ? '<a class="btn ghost" href="pick.html#' + esc(o.picks.code) + '" target="_blank">Employee picker ↗</a>' : '') + '</div></div>';
-    h += '<div class="stagebar">' + GC.T.orderStages.map(function (s, i) {
-      var cur = GC.T.orderStages.indexOf(o.stage);
-      return '<button class="' + (s === o.stage ? 'on' : i < cur ? 'done' : '') + '" data-act="moveOrder" data-id="' + id + '|' + esc(s) + '" title="' + esc(GC.T.orderHelp[s] || '') + '">' + esc(s) + '</button>';
-    }).join('') + '</div></div>';
+    /* one sentence, one next step, then the steps as a checklist that says why a step is locked */
+    var S = GC.T.orderStages, cur = S.indexOf(o.stage), nextS = S[cur + 1];
+    var pcs = o.lines.reduce(function (a, l) { return a + (l.qty || 0); }, 0);
+    var why = nextS && GC.ORDER_NEEDS[nextS] ? GC.ORDER_NEEDS[nextS](o) : null;
+    var step = G.nextOrderStep(o, id, nextS, why);
+    var h = '<div class="stickyhead"><div class="ph" style="align-items:flex-start"><div><p class="muted small"><a href="#/company/' + (co ? co.id : '') + '">' + esc(co ? co.name : '') + '</a> · ' + esc(o.no) + ' · client PO ' + esc(o.po_no || 'not given') + (o.opp ? ' · <a href="#/opp/' + o.opp + '">the enquiry</a>' : '') + '</p>' +
+      '<p class="sentence">' + GC.fmt(pcs) + ' pieces for ' + esc(co ? co.name : 'the client') + ' · ' + esc(o.title) +
+      (o.deadline && o.stage !== 'Paid' ? ' <span class="soft">· deliver by ' + esc(G.day(o.deadline)) + ' (' + (days < 0 ? Math.abs(days) + ' days late' : days + ' days left') + ')</span>' : '') + '</p>' +
+      '<div class="stepline"><span>Step <b>' + (cur + 1) + ' of ' + S.length + '</b>: ' + esc(o.stage) + '</span><span class="track" aria-hidden="true"><i style="width:' + Math.round(100 * (cur + 1) / S.length) + '%"></i></span><span>' + GC.rupees(o.value) + (cost ? ' · margin ' + GC.rupees(o.value / 1.18 - o.cost) : '') + '</span></div></div>' +
+      '<div class="acts">' + step + '<a class="btn ghost" href="client.html#' + esc(o.token) + '" target="_blank">Client\'s view</a>' + (o.picks ? '<a class="btn ghost" href="pick.html#' + esc(o.picks.code) + '" target="_blank">Employee picker</a>' : '') + '</div></div></div>';
+    var allDone = !nextS;
+    h += '<div class="card pad0" style="margin-bottom:16px"><div class="hd"><h3>Where this order is</h3><span class="small muted">' + (nextS ? (why ? 'Next: ' + esc(nextS) + '. ' + esc(why) : 'Ready to move to ' + esc(nextS)) : 'All ' + S.length + ' steps done') + '</span></div><ul class="checklist">' +
+      (cur > 0 && !allDone ? '<li class="done"><span class="tick">✓</span><div class="grow"><b>' + cur + ' step' + (cur === 1 ? '' : 's') + ' done</b><small>' + esc(S.slice(0, cur).join(', ')) + '</small></div></li>' : '') +
+      S.map(function (st, i) {
+        if (allDone ? i < S.length - 1 : i < cur) return '';
+        var need = i > cur && GC.ORDER_NEEDS[st] ? GC.ORDER_NEEDS[st](o) : null;
+        var cls = allDone ? 'done' : i === cur ? 'on' : '';
+        return '<li class="' + cls + '"><span class="tick">' + (allDone ? '✓' : i + 1) + '</span><div class="grow"><b>' + esc(st) + (i === cur && !allDone ? ' <span class="pill info">now</span>' : '') + '</b><small>' + esc(i <= cur ? (GC.T.orderHelp[st] || '') : need ? 'Locked. ' + need : (GC.T.orderHelp[st] || '')) + '</small></div>' +
+          (i === cur + 1 && !need ? '<button class="minibtn" data-act="moveOrder" data-id="' + id + '|' + esc(st) + '">Move here</button>' : '') + '</li>';
+      }).join('') + '</ul></div>';
     risks.forEach(function (r) { h += '<div class="notice ' + (r.sev === 'bad' ? 'bad' : 'warn') + '">' + esc(r.text) + (r.vendor != null && G.can('vendors') ? ' <button class="btn sm ghost" data-act="sourceFaster" data-id="' + id + '">⇄ Find a faster vendor</button>' : '') + '</div>'; });
     var waiting = D().proposals.filter(function (p) { return p.status === 'pending' && p.target && p.target.id === id; });
     waiting.forEach(function (p) { var a = AG.agentById(p.agent); h += '<div class="notice agent">' + a.icon + ' <b>' + esc(a.name) + '</b> ' + esc(p.summary) + ' <a class="btn agent sm" href="#/proposal/' + p.id + '">Review</a></div>'; });
@@ -61,10 +73,10 @@
           (v.status === 'received' ? G.pill('received ' + (v.receivedAt || ''), 'ok') : '<button class="minibtn" data-act="poReceived" data-id="' + id + '|' + i + '">Mark goods received</button>') + '</div>';
       }).join('') : G.empty('No vendor POs yet.')) + '</div>';
 
-    h += '<div class="card" style="margin-top:14px"><h3>Dispatch</h3>' + (o.dispatches.length ? '<table class="tbl"><thead><tr><th>City</th><th class="num">Qty</th><th>AWB / vehicle</th><th>Status</th><th></th></tr></thead><tbody>' + o.dispatches.map(function (d, i) {
+    h += '<div class="card" id="dispatch" style="margin-top:14px"><h3>Dispatch</h3>' + (o.dispatches.length ? '<table class="tbl"><thead><tr><th>City</th><th class="num">Qty</th><th>Tracking / vehicle</th><th>Status</th><th></th></tr></thead><tbody>' + o.dispatches.map(function (d, i) {
       return '<tr><td>' + esc(d.city) + '</td><td class="num">' + GC.fmt(d.qty) + '</td><td>' + esc(d.awb || '—') + '</td><td>' + G.pill(d.status, d.status === 'delivered' ? 'ok' : 'info') + '</td><td>' + (d.status !== 'delivered' ? '<button class="minibtn" data-act="dispDelivered" data-id="' + id + '|' + i + '">Delivered</button>' : '') + '</td></tr>';
     }).join('') + '</tbody></table>' : '<p class="muted small">Nothing dispatched yet. Split across as many locations as the client needs.</p>') +
-      '<form class="row" data-submit="addDispatch" data-id="' + id + '" style="margin-top:10px"><input name="city" placeholder="City" style="max-width:140px"><input type="number" name="qty" placeholder="Qty" style="max-width:90px"><input name="awb" placeholder="AWB / vehicle" style="max-width:170px"><button class="btn sm">Add dispatch</button></form></div>';
+      '<form class="row" data-submit="addDispatch" data-id="' + id + '" style="margin-top:10px"><input name="city" placeholder="City" style="max-width:140px"><input type="number" name="qty" placeholder="Qty" style="max-width:90px"><input name="awb" placeholder="Tracking number or vehicle" style="max-width:170px"><button class="btn sm">Add dispatch</button></form></div>';
 
     if (o.picks) {
       var pk = o.picks, by = {};
@@ -100,7 +112,7 @@
       var s = db.items.filter(function (it) { return it.attr.indexOf(5) >= 0 || (d.productEdits[it.id] || {}).sample === true; });
       if (SQ) s = s.filter(function (it) { return it.name.toLowerCase().indexOf(SQ.toLowerCase()) >= 0; });
       h += '<div class="row" style="margin-bottom:12px"><input data-input="sampleSearch" id="sampleSearch" value="' + esc(SQ) + '" placeholder="Search samples" style="max-width:300px"><span class="muted small">' + s.length + ' samples in ' + esc((d.warehouses.filter(function (w) { return w.kind === 'samples'; })[0] || {}).name || 'the office') + '</span></div>';
-      h += '<div class="pgrid">' + s.slice(0, 60).map(function (it) { var p = G.P(it.id); return '<div class="pcard" data-act="go" data-id="#/product/' + esc(p.id) + '"><div class="img" style="height:80px;background:linear-gradient(135deg,hsl(' + p.hue + ',42%,52%),hsl(' + ((p.hue + 40) % 360) + ',50%,36%))">' + esc(p.category.charAt(0)) + '</div><div class="body"><span class="v">' + esc(p.vendorName) + '</span><b>' + esc(p.name) + '</b><div class="foot"><span class="price">₹' + GC.fmt(p.price) + '</span></div></div></div>'; }).join('') + '</div>';
+      h += '<div class="pgrid">' + s.slice(0, 60).map(function (it) { var p = G.P(it.id); return '<div class="pcard" data-act="go" data-id="#/product/' + esc(p.id) + '"><div class="img" style="height:80px;background:linear-gradient(135deg,hsl(' + p.hue + ',38%,36%),hsl(' + ((p.hue + 40) % 360) + ',50%,36%))">' + esc(p.category.charAt(0)) + '</div><div class="body"><span class="v">' + esc(p.vendorName) + '</span><b>' + esc(p.name) + '</b><div class="foot"><span class="price">₹' + GC.fmt(p.price) + '</span></div></div></div>'; }).join('') + '</div>';
       return h;
     }
     if (STAB === 'moves') {
@@ -130,6 +142,22 @@
   /* ================= actions ================= */
 
   function ord(id) { var p = String(id).split('|'); return [G.orderById(p[0]), p[1]]; }
+  /* The one button at the top of an order: whatever unblocks the next step. */
+  G.nextOrderStep = function (o, id, nextS, why) {
+    if (!nextS) return '';
+    var b = function (act, label, did) { return '<button class="btn" data-act="' + act + '" data-id="' + esc(did || id) + '">' + esc(label) + '</button>'; };
+    if (!why) return b('moveOrder', 'Move to ' + nextS, id + '|' + nextS);
+    var unplaced = o.lines.some(function (l) { return !o.vendorPOs.some(function (v) { return v.pids.indexOf(l.pid) >= 0; }); });
+    if (!o.vendorPOs.length || unplaced) return G.can('vendors') || G.can('orders') ? b('placePOs', 'Place vendor POs') : '';
+    var pi = -1; o.vendorPOs.forEach(function (v, k) { if (pi < 0 && v.status !== 'received') pi = k; });
+    if (pi >= 0) return b('poReceived', 'Mark goods received', id + '|' + pi);
+    if (o.artwork.status !== 'approved') return o.artwork.status === 'sent' ? b('artApprove', 'Client approved the artwork') : b('artSend', 'Send artwork to client');
+    if (o.qc.status !== 'passed') return b('qcPass', 'Quality check passed');
+    if (!o.invoice && /deliver/i.test(why)) return '<a class="btn" href="#dispatch">Add a dispatch</a>';
+    if (!o.invoice && G.can('money')) return b('raiseInvoice', 'Raise invoice');
+    if (o.invoice && !o.paid && G.can('money')) return b('recordPayment', 'Record payment');
+    return '';
+  };
   function hist(o, note) { o.history.push({ stage: o.stage, at: GC.today(), by: G.me().id, note: note }); o.updated = GC.today(); }
   Object.assign(A, {
     runWatch: function () { var r = G.runAgent('orderwatch', null, { manual: true }); G.toast('Order watch: ' + (r && r.length ? r.length + ' order(s) flagged — on the Agent Desk.' : 'nothing new.'), 'agent'); G.render(); },
@@ -165,7 +193,7 @@
     artApprove: function (id) { var o = G.orderById(id); o.artwork.status = 'approved'; o.artwork.approved = GC.today(); hist(o, 'Artwork approved'); G.log('order_edit', o.no + ': artwork approved', { order: id }); G.save(); G.render(); },
     qcPass: function (id) { var o = G.orderById(id); o.qc = { status: 'passed', note: '' }; hist(o, 'QC passed'); G.log('order_edit', o.no + ': QC passed', { order: id }); G.save(); G.render(); },
     qcFail: function (id) {
-      var n = window.prompt('What failed QC?'); if (!n) return;
+      var n = arguments[3]; if (n == null) return G.ask('What failed the quality check?', 'Say what is wrong and how many pieces.', function (t) { A.qcFail(id, null, null, t); }); if (!n) return;
       var o = G.orderById(id); o.qc = { status: 'failed', note: n }; hist(o, 'QC failed: ' + n); G.log('order_edit', o.no + ': QC failed — ' + n, { order: id }); G.save();
       G.runAgent('orderwatch'); G.render();
     },

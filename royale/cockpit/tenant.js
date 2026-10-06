@@ -52,9 +52,40 @@
       'Paid':              'Money received. Order complete.'
     },
 
-    sources: { email: 'Email', whatsapp: 'WhatsApp', website: 'Website form', indiamart: 'IndiaMART',
+    /* Most enquiries arrive by phone, so it comes first everywhere a source is picked. */
+    sources: { phone: 'Phone call', whatsapp: 'WhatsApp', email: 'Email', walkin: 'Walk-in', website: 'Website form', indiamart: 'IndiaMART',
                tradeindia: 'TradeIndia', referral: 'Referral', expo: 'Gifts World Expo', repeat: 'Repeat client',
                linkedin: 'LinkedIn' },
+
+    /* ONE word per thing, in the words this business uses. Applied to every
+       rendered screen (text only, never attributes or what someone is typing),
+       so internal and engineering words never reach the staff. Longest first.
+       Each entry: [what the code says, what the person reads]. */
+    words: [
+      ['Curator agent', 'Product finder'], ['Order-watch agent', 'Delivery checker'], ['Proposal agent', 'Quote writer'],
+      ['New requirement', 'New enquiry'], ['Open requirement', 'Save enquiry'],
+      ['requirements', 'enquiries'], ['requirement', 'enquiry'], ['opportunities', 'enquiries'], ['opportunity', 'enquiry'],
+      ['Open reqs', 'Open enquiries'], ['reqs', 'enquiries'],
+      ['Deals with nothing booked', 'Enquiries with nothing booked'], ['deals', 'enquiries'], ['deal', 'enquiry'],
+      ['the Agent Desk', 'Assistants'], ['Agent Desk', 'Assistants'], ['The team of agents', 'Your assistants'],
+      ['agent proposals', 'drafts for your OK'], ['agent proposal', 'draft for your OK'], ['proposals', 'drafts'], ['proposal', 'draft'],
+      ['Waiting for your approval', 'Needs your OK'], ['Waiting for you', 'Needs your OK'],
+      ['agents', 'assistants'], ['agent', 'assistant'],
+      ['Ask the Curator', 'Find products'], ['the Curator', 'the product finder'], ['Curator', 'Product finder'],
+      ['Run Order watch', 'Check deliveries'], ['Order-watch', 'Delivery checker'], ['Order watch', 'Delivery checker'],
+      ['Run the sweep now', 'Check everything now'], ['sweep', 'check'],
+      ['Agent runs', 'Assistant work'],
+      ['Autonomy', 'Works alone?'], ['dry run', 'test'], ['Confidence', 'How sure'],
+      ['Price-list intake', 'Read a price list'], ['Vendor intake agent', 'Price-list reader'], ['Vendor intake', 'Price-list reader'],
+      ['Sealed RFQs', 'Sealed price requests'], ['Sealed RFQ', 'Sealed price request'], ['Open RFQs', 'Open price requests'], ['RFQs', 'price requests'], ['RFQ', 'price request'],
+      ['Reverse auction', 'Live bidding'], ['R1 low', 'Round 1 lowest'],
+      ['GRN', 'goods received'], ['Goods in & QC', 'Goods in and quality check'], ['QC passed', 'quality check passed'], ['QC', 'quality check'],
+      ['AWB', 'tracking number'], ['UCPMP-safe', 'safe for doctors'], ['UCPMP', 'doctor gift rule'],
+      ['window too short', 'date range too short'], ['in window', 'in this date range'], ['window', 'date range'],
+      ['Pipeline value', 'Enquiry value'], ['the Pipeline', 'Enquiries'], ['Pipelines', 'Stages'], ['Pipeline', 'Enquiries'],
+      ['Log a conversation', 'Log follow-up'], ['Log a call', 'Log follow-up'], ['Conversations', 'Conversation'],
+      ['Note score', 'Note quality'], [' — ', ', '], ['tenant', 'business'], ['in play', 'chosen'], ['Discover', 'Products']
+    ],
 
     roles: {
       owner:    { label: 'Owner / COO',          short: 'Owner' },

@@ -153,7 +153,7 @@
       var err = GC.validateAuto(EDIT); if (err) return G.toast(err, 'bad');
       saveEdit(); G.log('auto_save', 'Rule saved: ' + EDIT.name); G.save(); var id = EDIT.id; EDIT = null; G.toast('Saved.'); G.go('#/automations');
     },
-    deleteAuto: function () { if (!window.confirm('Delete this rule?')) return; D().automations = D().automations.filter(function (a) { return a.id !== EDIT.id; }); G.log('auto_save', 'Rule deleted: ' + EDIT.name); EDIT = null; G.save(); G.go('#/automations'); },
+    deleteAuto: function () { D().automations = D().automations.filter(function (a) { return a.id !== EDIT.id; }); G.log('auto_save', 'Rule deleted: ' + EDIT.name); EDIT = null; G.save(); G.go('#/automations'); },
     issueFilter: function (v) { IF = v; G.render(); },
     newIssue: function (coId) {
       var ords = D().orders.filter(function (o) { return o.company === coId; });
@@ -173,7 +173,7 @@
     issueNote: function (f, form) { var i = D().issues.filter(function (x) { return x.id === form.dataset.id; })[0]; if (!f.text) return; i.log.push({ at: GC.today(), by: G.me().id, text: f.text }); G.log('issue_edit', 'Note on issue: ' + f.text, { company: i.company }); G.save(); G.render(); },
     issueEscalate: function (id) { var i = D().issues.filter(function (x) { return x.id === id; })[0]; i.level = Math.min(GC.LADDER.length - 1, i.level + 1); i.log.push({ at: GC.today(), by: G.me().id, text: 'Escalated to ' + GC.LADDER[i.level] }); G.log('issue_edit', 'Issue escalated to ' + GC.LADDER[i.level], { company: i.company }); G.save(); G.render(); },
     issueResolve: function (id) {
-      var n = window.prompt('How was it resolved?'); if (!n) return;
+      var n = arguments[3]; if (n == null) return G.ask('How was it resolved?', 'Marketing to this client resumes once it is resolved.', function (t) { A.issueResolve(id, null, null, t); }); if (!n) return;
       var i = D().issues.filter(function (x) { return x.id === id; })[0]; i.status = 'resolved'; i.resolved = GC.today(); i.log.push({ at: GC.today(), by: G.me().id, text: 'Resolved: ' + n });
       G.log('issue_edit', 'Issue resolved — marketing resumes: ' + n, { company: i.company }); G.save(); G.render();
     },

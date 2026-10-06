@@ -164,7 +164,7 @@
 
   A.delVendorContact = function (id) {
     var ct = (D().contacts || []).filter(function (x) { return x.id === id; })[0];
-    if (!ct || !window.confirm('Remove ' + ct.name + '?')) return;
+    if (!ct) return;
     D().contacts = D().contacts.filter(function (x) { return x.id !== id; });
     G.log('contact_del', 'Removed ' + ct.name, {});
     G.save(); G.render();

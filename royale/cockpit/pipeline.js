@@ -24,6 +24,8 @@
     var quiet = GC.needsAttention(D().opps.filter(filt), D().followups);
     var h = '<div class="ph"><div><h1>Pipeline</h1><p>' + GC.T.stages.reduce(function (a, s) { return a + cols[s].length; }, 0) + ' open requirements worth ' + GC.money(total) + '. Won and lost ones move onto the client\'s record.</p></div>' +
       '<div class="acts"><a class="btn" href="#/oppnew">+ New requirement</a></div></div>';
+    var unread = D().messages.filter(function (m) { return m.status === 'pending'; }).length;
+    if (unread) h += '<div class="notice info"><b>' + unread + ' new message' + (unread > 1 ? 's' : '') + ' waiting.</b> The Brief assistant has read them and drafted enquiries. <a class="btn sm" href="#/inbox">Read them</a></div>';
     if (quiet.length) h += '<div class="notice warn">' + quiet.length + ' requirement' + (quiet.length > 1 ? 's have' : ' has') + ' no follow-up booked, or an overdue one. They are marked on the board.</div>';
     h += '<div class="row" style="margin-bottom:12px"><input data-input="boardSearch" id="boardSearch" value="' + esc(BF.q) + '" placeholder="Search requirement or company" style="max-width:280px">' +
       (G.acc().scope !== 'own' ? '<button class="chip" data-act="boardWho" data-id="" aria-pressed="' + (!BF.who) + '">Everyone</button><button class="chip" data-act="boardWho" data-id="me" aria-pressed="' + (BF.who === 'me') + '">Mine</button>' : '') + '</div>';
@@ -43,93 +45,117 @@
 
   /* ================= a requirement ================= */
 
+  /* One sentence, one next step, then three tabs: what they get, what it costs, what was said. */
+  var OPPTAB = {};
+  function nextOppStep(o, id) {
+    var S = GC.T.stages, i = S.indexOf(o.stage), lines = GC.inPlay(o).length;
+    var b = function (act, label) { return '<button class="btn" data-act="' + act + '" data-id="' + id + '">' + esc(label) + '</button>'; };
+    if (i <= 1) return lines ? b('sendShortlist', 'Send shortlist to client') : b('runCurator', 'Find products');
+    if (i <= 3) return lines ? b('runProposal', 'Draft the quote') : b('runCurator', 'Find products');
+    if (i === 4) return b('logFollow', 'Log follow-up');
+    return b('winOpp', 'Won, PO in hand');
+  }
   V.opp = function (id) {
     var o = G.oppById(id);
     if (!o) return G.deny('No such requirement.', '');
     if (!G.canOpen(o)) return G.deny('This requirement belongs to ' + GC.staffName(o.assigned_to), 'Ask them, or the Sales Head, if you need access.');
     var co = G.companyById(o.company), ct = G.contactById(o.contact), open = GC.isOpen(o);
-    var val = GC.oppValue(o, G.P), cost = G.can('cost');
-    var h = '<div class="stickyhead"><div class="ph"><div><p class="muted small"><a href="#/company/' + (co ? co.id : '') + '">' + esc(co ? co.name : 'No company') + '</a>' + (ct ? ' · ' + esc(ct.name) + ' (' + esc(ct.role) + ')' : '') + ' · via ' + esc(GC.T.sources[o.source] || o.source) + '</p>' +
-      '<h1>' + esc(o.title) + '</h1><p>' + G.pill(o.stage, o.stage === 'Won' ? 'ok' : o.stage === 'Lost' ? 'bad' : 'info') + ' ' + GC.money(val) + ' · owner ' + esc(GC.staffName(o.assigned_to)) + ' · opened ' + esc(o.created) +
-      (o.brief.deadline ? ' · deliver by <b>' + esc(o.brief.deadline) + '</b> (' + GC.daysBetween(GC.today(), o.brief.deadline) + ' days)' : '') + '</p></div>' +
-      '<div class="acts"><button class="btn ghost" data-act="editOppToggle" data-id="' + id + '">' + (EDITING[id] ? 'Done editing' : 'Edit details') + '</button>' + (open ? '<button class="btn ghost" data-act="logFollow" data-id="' + id + '">Log a conversation</button><button class="btn" data-act="winOpp" data-id="' + id + '">Won — PO in hand</button><button class="btn ghost" data-act="loseOpp" data-id="' + id + '">Lost</button>'
-        : o.order ? '<a class="btn" href="#/order/' + o.order + '">Open the order →</a>' : '') + '</div></div>';
-    if (open) h += '<div class="stagebar">' + GC.T.stages.map(function (s, i) {
-      var cur = GC.T.stages.indexOf(o.stage);
-      return '<button class="' + (s === o.stage ? 'on' : i < cur ? 'done' : '') + '" data-act="moveOpp" data-id="' + id + '|' + esc(s) + '" title="' + esc(GC.T.stageHelp[s] || '') + '">' + esc(s) + '</button>';
-    }).join('') + '</div>';
-    h += '</div>';
-    if (EDITING[id]) h += editCard(o, id, co);
-    if (o.stage === 'Lost') h += '<div class="notice bad">Lost on ' + esc(o.closed) + ' — ' + esc(o.lost_reason || 'no reason') + '. <button class="btn sm ghost" data-act="reopenOpp" data-id="' + id + '">Reopen</button></div>';
-    var waiting = D().proposals.filter(function (p) { return p.status === 'pending' && p.target && p.target.id === id; });
-    waiting.forEach(function (p) {
+    var val = GC.oppValue(o, G.P), cost = G.can('cost'), b = o.brief;
+    var S = GC.T.stages, si = S.indexOf(o.stage);
+    var tab = OPPTAB[id] || 'shortlist';
+    var days = b.deadline ? GC.daysBetween(GC.today(), b.deadline) : null;
+
+    var h = '<div class="stickyhead"><div class="ph" style="align-items:flex-start"><div><p class="muted small"><a href="#/company/' + (co ? co.id : '') + '">' + esc(co ? co.name : 'No company') + '</a>' + (ct ? ' · ' + esc(ct.name) + (ct.role ? ' (' + esc(ct.role) + ')' : '') : '') + ' · came by ' + esc(GC.T.sources[o.source] || o.source) + ' · ' + esc(GC.staffName(o.assigned_to)) + ' looks after it</p>' +
+      '<p class="sentence">' + esc(co ? co.name : 'The client') + ' wants ' + esc(b.occasion && b.recipients ? (b.qty ? GC.fmt(b.qty) + ' ' : '') + b.occasion.toLowerCase() + ' gifts for ' + b.recipients.toLowerCase() : o.title) +
+      (b.deadline ? ' <span class="soft">by ' + esc(G.day(b.deadline)) + (open && days != null ? ' (' + (days < 0 ? Math.abs(days) + ' days ago' : days + ' days left') + ')' : '') + '</span>' : '') +
+      (val ? ' <span class="soft">· about ' + GC.money(val) + '</span>' : '') + '</p>';
+    if (open && si >= 0) h += '<div class="stepline"><span>Step <b>' + (si + 1) + ' of ' + S.length + '</b>: ' + esc(o.stage) + '</span><span class="track" aria-hidden="true"><i style="width:' + Math.round(100 * (si + 1) / S.length) + '%"></i></span>' +
+      (S[si + 1] ? '<button class="minibtn" data-act="moveOpp" data-id="' + id + '|' + esc(S[si + 1]) + '" title="' + esc(GC.T.stageHelp[S[si + 1]] || '') + '">Move to ' + esc(S[si + 1]) + '</button>' : '') +
+      '<button class="minibtn" data-act="winOpp" data-id="' + id + '">Won</button><button class="minibtn" data-act="loseOpp" data-id="' + id + '">Lost</button></div>';
+    else h += '<p style="margin-top:10px">' + G.pill(o.stage, o.stage === 'Won' ? 'ok' : 'bad') + '</p>';
+    h += '</div><div class="acts">' + (open ? nextOppStep(o, id) + '<button class="btn ghost" data-act="logFollow" data-id="' + id + '">Log follow-up</button>' : o.order ? '<a class="btn" href="#/order/' + o.order + '">Open the order</a>' : '') +
+      '<button class="btn ghost" data-act="editOppToggle" data-id="' + id + '">' + (EDITING[id] ? 'Done editing' : 'Edit details') + '</button></div></div>';
+    h += '<div class="tabs" role="tablist">' + [['shortlist', 'Shortlist · ' + GC.inPlay(o).length], ['quote', 'Quote' + (o.quotes.length ? ' · v' + o.quotes[o.quotes.length - 1].v : '')], ['talk', 'Conversation']].map(function (t) {
+      return '<a href="#" role="tab" data-act="oppTab" data-id="' + id + '|' + t[0] + '" class="' + (tab === t[0] ? 'on' : '') + '" aria-selected="' + (tab === t[0]) + '">' + esc(t[1]) + '</a>';
+    }).join('') + '</div></div>';
+
+    if (EDITING[id]) h += editCard(o, id, co) + briefForm(o, id, open);
+    if (o.stage === 'Lost') h += '<div class="notice bad">Lost on ' + esc(o.closed) + ': ' + esc(o.lost_reason || 'no reason given') + '. <button class="btn sm ghost" data-act="reopenOpp" data-id="' + id + '">Reopen</button></div>';
+    D().proposals.filter(function (p) { return p.status === 'pending' && p.target && p.target.id === id; }).forEach(function (p) {
       var a = AG.agentById(p.agent);
-      h += '<div class="notice agent">' + a.icon + ' <b>' + esc(a.name) + '</b> ' + esc(p.summary) + ' <a class="btn agent sm" href="#/proposal/' + p.id + '">Review</a></div>';
+      h += '<div class="notice agent"><b>Needs your OK · ' + esc(a.name) + '</b> ' + esc(p.summary) + ' <a class="btn sm" href="#/proposal/' + p.id + '">Review</a></div>';
     });
 
-    h += '<div class="split"><div>';
-    /* the shortlist */
-    var lines = o.lines;
-    var q = lines.length ? GC.buildQuote(o, G.P) : null;
-    h += '<div class="card pad0"><div class="hd"><h3>Shortlist · ' + GC.inPlay(o).length + ' in play</h3><span class="row">' +
-      (open ? '<button class="btn agent sm" data-act="runCurator" data-id="' + id + '">✦ Ask the Curator</button><a class="btn ghost sm" href="#/discover">⌕ Discover</a>' : '') + '</span></div>';
-    h += lines.length ? '<div class="scroller"><table class="tbl"><thead><tr><th>Product</th><th>Qty</th><th class="num">Unit</th><th>Branding</th><th>Mark</th>' + (cost ? '<th class="num">Margin</th>' : '') + '</tr></thead><tbody>' + lines.map(function (l) {
-      var p = G.P(l.pid); if (!p) return '';
-      var qty = l.qty || o.brief.qty || p.moq, unit = GC.unitPrice(p, qty);
-      var rej = l.mark === 'rejected';
-      var acts = open ? '<div class="row" style="margin-top:6px;gap:4px"><button class="minibtn" data-act="sendSample" data-id="' + id + '|' + esc(l.pid) + '">Send sample</button>' + (G.can('vendors') ? '<button class="minibtn" data-act="lineSource" data-id="' + id + '|' + esc(l.pid) + '">⇄ Vendor prices</button>' : '') + '<button class="minibtn" data-act="lineRemove" data-id="' + id + '|' + esc(l.pid) + '">Remove</button></div>' : '';
-      return '<tr style="' + (rej ? 'opacity:.5' : '') + '"><td style="min-width:260px"><div class="row" style="flex-wrap:nowrap;align-items:flex-start">' + G.photo(p) + '<span><a href="#" data-act="peekProduct" data-id="' + esc(p.id) + '|opp/' + id + '"><b>' + esc(p.name) + '</b></a><small>' + esc(p.vendorName) + ' · MOQ ' + p.moq + ' · ' + p.lead + ' d' + (p.ucpmp ? ' · UCPMP-safe' : '') + (p.sample ? ' · sample in office' : '') + '</small>' + acts + '</span></div></td>' +
-        '<td>' + (open ? '<input type="number" style="width:84px" data-chg="lineQty" data-id="' + id + '|' + esc(l.pid) + '" value="' + qty + '">' : GC.fmt(qty)) + (qty < p.moq ? '<small style="color:var(--warn)">under MOQ</small>' : '') + '</td>' +
-        '<td class="num">₹' + GC.fmt(unit) + '</td>' +
-        '<td>' + (open && p.branding.length ? '<select data-chg="lineBrand" data-id="' + id + '|' + esc(l.pid) + '" style="width:auto;font-size:12px"><option value="">None</option>' + p.branding.map(function (b) { return '<option' + (l.branding === b ? ' selected' : '') + '>' + esc(b) + '</option>'; }).join('') + '</select>' : esc(l.branding || '—')) + '</td>' +
-        '<td>' + (open ? '<select data-chg="lineMark" data-id="' + id + '|' + esc(l.pid) + '" style="width:auto;font-size:12px">' + Object.keys(GC.MARKS).map(function (m) { return '<option value="' + m + '"' + (l.mark === m ? ' selected' : '') + '>' + GC.MARKS[m] + '</option>'; }).join('') + '</select>' : G.pill(GC.MARKS[l.mark] || l.mark, 'info')) + '</td>' +
-        (cost ? '<td class="num">' + Math.round(100 * (unit - p.cost) / unit) + '%</td>' : '') + '</tr>';
-    }).join('') + '</tbody></table></div>' : G.empty('Nothing shortlisted yet. Ask the Curator — it searches the whole catalogue against this brief.');
-    if (q && q.lines.length) h += '<div class="between" style="padding:12px 16px;border-top:1px solid var(--line)"><span class="muted">In play: taxable ' + GC.rupees(q.taxable) + ' + GST ' + GC.rupees(q.gst) + ' = <b style="color:var(--ink)">' + GC.rupees(q.total) + '</b>' + (cost ? ' · margin ' + q.marginPct + '%' : '') + '</span>' +
-      (open ? '<span class="row"><button class="btn agent sm" data-act="runProposal" data-id="' + id + '">✦ Draft the proposal</button><button class="btn ghost sm" data-act="saveQuote" data-id="' + id + '">Save quote version</button></span>' : '') + '</div>';
-    h += '</div>';
-    if (q && q.lines.length && open) h += G.complianceBox(GC.compliance(q, o, co, GC.T.rules));
+    var lines = o.lines, q = lines.length ? GC.buildQuote(o, G.P) : null;
 
-    /* quote versions */
-    if (o.quotes.length) h += '<div class="card pad0" style="margin-top:14px"><div class="hd"><h3>Quotes</h3></div>' + o.quotes.slice().reverse().map(function (qq) {
-      return '<div class="item"><div class="grow"><h4>v' + qq.v + ' · ' + GC.rupees(qq.total) + (cost ? ' · margin ' + qq.marginPct + '%' : '') + '</h4><p>' + esc(qq.at) + ' · ' + qq.lines.length + ' lines · valid till ' + esc(qq.validTill) + ' · by ' + esc(GC.staffName(qq.by)) + '</p></div>' + G.pill(qq.status, qq.status === 'sent' ? 'ok' : 'dim') +
-        ' <button class="minibtn" data-act="printQuote" data-id="' + id + '|' + qq.v + '">Proposal PDF</button></div>';
-    }).join('') + '</div>';
+    if (tab === 'shortlist') {
+      /* what they asked for, read first */
+      var asked = [['Occasion', b.occasion], ['For', b.recipients], ['How many', b.qty ? GC.fmt(b.qty) : ''], ['Deliver by', b.deadline ? G.day(b.deadline) : ''],
+        ['Budget per piece', b.budgetMin || b.budgetMax ? (b.budgetMin ? '₹' + GC.fmt(b.budgetMin) : '') + (b.budgetMin && b.budgetMax ? ' to ' : '') + (b.budgetMax ? '₹' + GC.fmt(b.budgetMax) : '') : ''],
+        ['Cities', (b.cities || []).join(', ')], ['Branding', b.branding]].filter(function (x) { return x[1]; });
+      h += '<div class="card" style="margin-bottom:14px"><div class="between"><h3 style="margin:0">What they asked for</h3>' + (open ? '<button class="minibtn" data-act="editOppToggle" data-id="' + id + '">' + (EDITING[id] ? 'Close' : 'Change') + '</button>' : '') + '</div>' +
+        (asked.length ? '<dl class="kv" style="margin-top:12px">' + asked.map(function (x) { return '<dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd>'; }).join('') + '</dl>' : '<p class="muted" style="margin:10px 0 0">Not filled in yet. Tap Change, or let the Brief assistant read their message.</p>') +
+        (b.ucpmp ? '<p style="margin:10px 0 0">' + G.pill('Gifts to doctors: limit ₹' + GC.fmt(GC.T.rules.ucpmpCap) + ' each', 'warn') + '</p>' : '') +
+        (b.text ? '<p class="small muted" style="white-space:pre-wrap;margin:12px 0 0">“' + esc(b.text) + '”</p>' : '') + '</div>';
+      h += '<div class="card pad0"><div class="hd"><h3>Shortlist · ' + GC.inPlay(o).length + ' in play</h3><span class="row">' +
+        (open ? (GC.inPlay(o).length ? '<button class="btn sm" data-act="sendShortlist" data-id="' + id + '">Send shortlist</button>' : '') + '<button class="btn ghost sm" data-act="runCurator" data-id="' + id + '">Find products</button><a class="btn ghost sm" href="#/discover">Browse all products</a>' : '') + '</span></div>';
+      h += lines.length ? '<div class="scroller"><table class="tbl"><thead><tr><th>Product</th><th>Qty</th><th class="num">Price each</th><th>Branding</th><th>Client says</th>' + (cost ? '<th class="num">Margin</th>' : '') + '</tr></thead><tbody>' + lines.map(function (l) {
+        var p = G.P(l.pid); if (!p) return '';
+        var qty = l.qty || b.qty || p.moq, unit = GC.unitPrice(p, qty);
+        var rej = l.mark === 'rejected';
+        var acts = open ? '<div class="row" style="margin-top:6px;gap:4px"><button class="minibtn" data-act="sendSample" data-id="' + id + '|' + esc(l.pid) + '">Send sample</button>' + (G.can('vendors') ? '<button class="minibtn" data-act="lineSource" data-id="' + id + '|' + esc(l.pid) + '">Ask vendors for price</button>' : '') + '<button class="minibtn" data-act="lineRemove" data-id="' + id + '|' + esc(l.pid) + '">Remove</button></div>' : '';
+        return '<tr style="' + (rej ? 'opacity:.5' : '') + '"><td style="min-width:260px"><div class="row" style="flex-wrap:nowrap;align-items:flex-start">' + G.photo(p) + '<span><a href="#" data-act="peekProduct" data-id="' + esc(p.id) + '|opp/' + id + '"><b>' + esc(p.name) + '</b></a><small>' + esc(p.vendorName) + ' · min order ' + p.moq + ' · ready in ' + p.lead + ' days' + (p.ucpmp ? ' · UCPMP-safe' : '') + (p.sample ? ' · sample in office' : '') + '</small>' + acts + '</span></div></td>' +
+          '<td>' + (open ? '<input type="number" style="width:96px" data-chg="lineQty" data-id="' + id + '|' + esc(l.pid) + '" value="' + qty + '" aria-label="Quantity">' : GC.fmt(qty)) + (qty < p.moq ? '<small style="color:var(--warn)">below the minimum order</small>' : '') + '</td>' +
+          '<td class="num">₹' + GC.fmt(unit) + '</td>' +
+          '<td>' + (open && p.branding.length ? '<select data-chg="lineBrand" data-id="' + id + '|' + esc(l.pid) + '" style="width:auto" aria-label="Branding"><option value="">None</option>' + p.branding.map(function (x) { return '<option' + (l.branding === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' : esc(l.branding || (p.branding.length ? 'None' : 'Not brandable'))) + '</td>' +
+          '<td>' + (open ? '<select data-chg="lineMark" data-id="' + id + '|' + esc(l.pid) + '" style="width:auto" aria-label="What the client says">' + Object.keys(GC.MARKS).map(function (m) { return '<option value="' + m + '"' + (l.mark === m ? ' selected' : '') + '>' + GC.MARKS[m] + '</option>'; }).join('') + '</select>' : G.pill(GC.MARKS[l.mark] || l.mark, 'info')) + '</td>' +
+          (cost ? '<td class="num">' + Math.round(100 * (unit - p.cost) / unit) + '%</td>' : '') + '</tr>';
+      }).join('') + '</tbody></table></div>' : G.empty('Nothing shortlisted yet. Tap Find products: it searches the whole catalogue against what they asked for.');
+      h += '</div>';
+      if (o.samples.length) h += '<div class="card pad0" style="margin-top:14px"><div class="hd"><h3>Samples</h3></div>' + o.samples.map(function (sm, i) {
+        var p = G.P(sm.pid);
+        return '<div class="item"><div class="grow"><h4>' + esc(p ? p.name : sm.pid) + '</h4><p>' + esc(sm.status) + ' ' + esc(sm.at || '') + (sm.feedback ? ' · “' + esc(sm.feedback) + '”' : '') + '</p></div>' +
+          (sm.status !== 'delivered' ? '<button class="minibtn" data-act="sampleDelivered" data-id="' + id + '|' + i + '">Delivered</button>' : !sm.feedback ? '<button class="minibtn" data-act="sampleFeedback" data-id="' + id + '|' + i + '">Log feedback</button>' : '') + '</div>';
+      }).join('') + '</div>';
+    }
 
-    /* samples */
-    if (o.samples.length) h += '<div class="card pad0" style="margin-top:14px"><div class="hd"><h3>Samples</h3></div>' + o.samples.map(function (s, i) {
-      var p = G.P(s.pid);
-      return '<div class="item"><div class="grow"><h4>' + esc(p ? p.name : s.pid) + '</h4><p>' + esc(s.status) + ' ' + esc(s.at || '') + (s.feedback ? ' · “' + esc(s.feedback) + '”' : '') + '</p></div>' +
-        (s.status !== 'delivered' ? '<button class="minibtn" data-act="sampleDelivered" data-id="' + id + '|' + i + '">Delivered</button>' : !s.feedback ? '<button class="minibtn" data-act="sampleFeedback" data-id="' + id + '|' + i + '">Log feedback</button>' : '') + '</div>';
-    }).join('') + '</div>';
-    h += '</div><div>';
+    if (tab === 'quote') {
+      h += '<div class="card">' + (q && q.lines.length ? '<div class="between"><div><span class="muted">Products in play, with branding and GST</span><p class="sentence" style="margin-top:4px">' + GC.rupees(q.total) + ' <span class="soft">· ' + GC.rupees(q.taxable) + ' + GST ' + GC.rupees(q.gst) + (cost ? ' · margin ' + q.marginPct + '%' : '') + '</span></p></div>' +
+        (open ? '<span class="row"><button class="btn" data-act="runProposal" data-id="' + id + '">Draft the quote</button><button class="btn ghost" data-act="saveQuote" data-id="' + id + '">Save as a version</button></span>' : '') + '</div>'
+        : '<p class="muted" style="margin:0">Shortlist products first. The quote is worked out from them.</p>') + '</div>';
+      if (q && q.lines.length && open) h += '<div style="margin-top:14px">' + G.complianceBox(GC.compliance(q, o, co, GC.T.rules)) + '</div>';
+      h += '<div class="card pad0" style="margin-top:14px"><div class="hd"><h3>Versions</h3></div>' + (o.quotes.length ? o.quotes.slice().reverse().map(function (qq) {
+        return '<div class="item"><div class="grow"><h4>Version ' + qq.v + ' · ' + GC.rupees(qq.total) + (cost ? ' · margin ' + qq.marginPct + '%' : '') + '</h4><p>' + esc(qq.at) + ' · ' + qq.lines.length + ' products · valid till ' + esc(qq.validTill) + ' · by ' + esc(GC.staffName(qq.by)) + '</p></div>' + G.pill(qq.status === 'sent' ? 'sent' : 'draft', qq.status === 'sent' ? 'ok' : 'dim') +
+          ' <button class="minibtn" data-act="printQuote" data-id="' + id + '|' + qq.v + '">PDF</button></div>';
+      }).join('') : G.empty('No quote saved yet.')) + '</div>';
+    }
 
-    /* the brief */
-    var b = o.brief;
-    h += '<form class="card" data-submit="saveBrief" data-id="' + id + '"><h3>The brief</h3>' + (b.text ? '<p class="small muted" style="white-space:pre-wrap">“' + esc(b.text) + '”</p>' : '') +
-      '<div class="grid2" style="gap:0 12px">' + G.field('Occasion', '<input name="occasion" value="' + esc(b.occasion) + '">') + G.field('For', '<input name="recipients" value="' + esc(b.recipients) + '">') +
-      G.field('Quantity', '<input type="number" name="qty" value="' + (b.qty || '') + '">') + G.field('Deliver by', '<input type="date" name="deadline" value="' + esc(b.deadline || '') + '">') +
-      G.field('Budget min ₹', '<input type="number" name="budgetMin" value="' + (b.budgetMin || '') + '">') + G.field('Budget max ₹', '<input type="number" name="budgetMax" value="' + (b.budgetMax || '') + '">') +
-      G.field('Cities', '<input name="cities" value="' + esc((b.cities || []).join(', ')) + '">') + G.field('Branding', '<input name="branding" value="' + esc(b.branding) + '">') + '</div>' +
-      '<label class="chk"><input type="checkbox" name="ucpmp"' + (b.ucpmp ? ' checked' : '') + '> Gifts to doctors — UCPMP applies</label>' +
-      (open ? '<p style="margin-top:10px"><button class="btn sm">Save brief</button></p>' : '') + '</form>';
-
-    /* follow-ups */
-    var fs = D().followups.filter(function (f) { return f.opp === id; }).sort(function (x, y) { return String(y.due).localeCompare(String(x.due)); });
-    h += '<div class="card pad0" style="margin-top:14px"><div class="hd"><h3>Conversations</h3>' + (open ? '<button class="minibtn" data-act="logFollow" data-id="' + id + '">+ Log</button>' : '') + '</div>' + (fs.length ? fs.map(function (f) {
-      var s = f.done && f.note && !f.auto ? GC.scoreNote(f.note, { outcome: f.outcome }) : null;
-      return '<div class="item"><span class="sev ' + (f.done ? 'ok' : GC.isOverdue(f) ? 'bad' : 'warn') + '"></span><div class="grow"><h4 style="font-weight:500">' + esc(f.note || '—') + '</h4><p>' + esc(f.done ? 'Done ' + (f.done_at || '') : 'Due ' + G.when(f.due)) + ' · ' + esc(f.method) + ' · ' + esc(GC.staffName(f.owner)) + (f.outcome ? ' · ' + esc(f.outcome) : '') + (f.auto ? ' · by an agent' : '') + '</p></div>' +
-        (s ? G.pill(s.score + '/10', s.band) : !f.done ? '<button class="minibtn" data-act="doneFollow" data-id="' + f.id + '">Done</button>' : '') + '</div>';
-    }).join('') : G.empty('Nothing logged yet.')) + '</div>';
-
-    /* what the agents did here */
-    var runs = D().runs.filter(function (r) { return r.target && r.target.id === id; }).slice(0, 6);
-    if (runs.length) h += '<div class="agentcard" style="margin-top:14px"><span class="tag">Agents on this requirement</span>' + runs.map(function (r) {
-      var a = AG.agentById(r.agent) || { icon: '•', name: r.agent };
-      return '<p style="margin:8px 0 0"><a href="#/run/' + r.id + '"><b>' + a.icon + ' ' + esc(a.name) + '</b></a> — ' + esc(r.summary) + ' <span class="small muted">' + esc(r.status) + '</span></p>';
-    }).join('') + '</div>';
-    return h + '</div></div>';
+    if (tab === 'talk') {
+      var fs = D().followups.filter(function (f) { return f.opp === id; }).sort(function (x, y) { return String(x.done ? x.done_at || x.due : x.due).localeCompare(String(y.done ? y.done_at || y.due : y.due)); });
+      h += '<div class="card pad0"><div class="hd"><h3>Conversation with ' + esc(ct ? ct.name : co ? co.name : 'the client') + '</h3>' + (open ? '<button class="btn sm" data-act="logFollow" data-id="' + id + '">Log follow-up</button>' : '') + '</div>' +
+        (fs.length ? '<div class="chat">' + fs.map(function (f) {
+          var sc = f.done && f.note && !f.auto ? GC.scoreNote(f.note, { outcome: f.outcome }) : null;
+          return '<div class="msg ' + (f.done ? 'me' : 'todo') + '"><div>' + esc(f.note || 'Follow up') + '</div><small>' + esc(f.done ? (f.done_at || '') + ' · ' + f.method + ' · ' + GC.staffName(f.by || f.owner) + (f.outcome ? ' · ' + f.outcome : '') + (f.auto ? ' · by an assistant' : '') : 'Next: ' + f.method + ' ' + G.when(f.due) + ' · ' + GC.staffName(f.owner)) + '</small>' +
+            (sc ? '<small>' + G.pill('note ' + sc.score + '/10', sc.band) + '</small>' : !f.done ? '<div style="margin-top:6px"><button class="minibtn" data-act="doneFollow" data-id="' + f.id + '">Done</button></div>' : '') + '</div>';
+        }).join('') + '</div>' : G.empty('Nothing logged yet. After every call or WhatsApp, tap Log follow-up.')) + '</div>';
+      var runs = D().runs.filter(function (r) { return r.target && r.target.id === id; }).slice(0, 6);
+      if (runs.length) h += '<div class="card pad0" style="margin-top:14px"><div class="hd"><h3>What the assistants did here</h3></div>' + runs.map(function (r) {
+        var a = AG.agentById(r.agent) || { name: r.agent };
+        return '<a class="item" href="#/run/' + r.id + '"><div class="grow"><h4>' + esc(a.name) + '</h4><p>' + esc(r.summary) + '</p></div>' + G.pill(r.status, 'dim') + '</a>';
+      }).join('') + '</div>';
+    }
+    return h;
   };
+  function briefForm(o, id, open) {
+    var b = o.brief;
+    return '<form class="card" style="margin-top:14px" data-submit="saveBrief" data-id="' + id + '"><h3>What they asked for</h3>' +
+      '<div class="grid2" style="gap:0 12px">' + G.field('Occasion', '<input name="occasion" value="' + esc(b.occasion) + '">') + G.field('For', '<input name="recipients" value="' + esc(b.recipients) + '">') +
+      G.field('How many', '<input type="number" name="qty" value="' + (b.qty || '') + '">') + G.field('Deliver by', '<input type="date" name="deadline" value="' + esc(b.deadline || '') + '">') +
+      G.field('Budget per piece, from ₹', '<input type="number" name="budgetMin" value="' + (b.budgetMin || '') + '">') + G.field('Budget per piece, up to ₹', '<input type="number" name="budgetMax" value="' + (b.budgetMax || '') + '">') +
+      G.field('Cities', '<input name="cities" value="' + esc((b.cities || []).join(', ')) + '">') + G.field('Branding', '<input name="branding" value="' + esc(b.branding) + '">') + '</div>' +
+      '<label class="chk"><input type="checkbox" name="ucpmp"' + (b.ucpmp ? ' checked' : '') + '> Gifts to doctors (UCPMP applies)</label>' +
+      (open ? '<p style="margin-top:10px"><button class="btn sm">Save</button></p>' : '') + '</form>';
+  }
 
   /* The requirement's edit card. The value is deliberately absent: it is worked out from
      the line items, and a total you can type over is a total that disagrees with the
@@ -177,25 +203,28 @@
            ', <b>' + cost.samples + '</b> sample' + (cost.samples === 1 ? '' : 's') +
            ', <b>' + cost.quotes + '</b> quote' + (cost.quotes === 1 ? '' : 's') +
            ', <b>' + cost.followups + '</b> follow-up' + (cost.followups === 1 ? '' : 's') +
-           ' and <b>' + cost.proposals + '</b> agent proposal' + (cost.proposals === 1 ? '' : 's') + '. This cannot be undone.</p>' +
+           ' and <b>' + cost.proposals + '</b> agent proposal' + (cost.proposals === 1 ? '' : 's') + '.</p>' +
            '<button class="btn sm bad" data-act="delOpp" data-id="' + id + '">Delete this requirement</button>';
     }
     return h + '</div></div>';
   }
 
+  /* Four things, nothing else: who, what, how many, by when. The rest is filled
+     in later on the enquiry, or by the Brief assistant from their message. */
   V.oppnew = function (companyId) {
     var cos = D().companies.filter(G.inScope).sort(function (a, b) { return a.name.localeCompare(b.name); });
-    return '<div class="ph"><div><h1>New requirement</h1><p>Or paste the client\'s message into the Inbox and let the Brief agent fill this in.</p></div></div>' +
-      '<form class="card" data-submit="saveOpp" style="max-width:800px"><div class="grid2">' +
-      G.field('Client', '<select name="company" required>' + cos.map(function (c) { return '<option value="' + c.id + '"' + (c.id === companyId ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>') +
-      G.field('Title', '<input name="title" placeholder="e.g. Diwali — Clients × 250" required>') +
-      G.field('Occasion', '<select name="occasion">' + G.E.OCCASIONS.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select>') +
-      G.field('For', '<select name="recipients">' + G.E.RECIPIENTS.map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select>') +
-      G.field('Quantity', '<input type="number" name="qty">') + G.field('Deliver by', '<input type="date" name="deadline">') +
-      G.field('Budget min ₹ per piece', '<input type="number" name="budgetMin">') + G.field('Budget max ₹ per piece', '<input type="number" name="budgetMax">') +
-      G.field('Delivery cities', '<input name="cities" placeholder="Mumbai, Pune">') + G.field('Branding', '<input name="branding" placeholder="Logo print, engraving…">') + '</div>' +
-      G.field('What the client said', '<textarea name="text"></textarea>') +
-      '<label class="chk"><input type="checkbox" name="ucpmp"> Gifts to doctors — UCPMP applies</label><p class="honest">With quantity, budget and date filled in, it opens at "' + esc(GC.T.stages[1]) + '" and the Curator starts straight away.</p><button class="btn">Open requirement</button></form>';
+    var pre = companyId ? G.companyById(companyId) : null;
+    var src = Object.keys(GC.T.sources).slice(0, 5);
+    return '<div class="ph"><div><h1>New enquiry</h1><p>Four questions. Everything else can wait.</p></div></div>' +
+      '<form class="card" data-submit="saveOpp" style="max-width:720px">' +
+      '<p class="field" style="margin-bottom:6px"><span>How did it come in?</span></p><div class="srcpick" role="radiogroup" aria-label="How did it come in?">' + src.map(function (k, i) {
+        return '<label><input type="radio" name="source" value="' + k + '"' + (i === 0 ? ' checked' : '') + '><span>' + esc(GC.T.sources[k]) + '</span></label>';
+      }).join('') + '</div>' +
+      G.field('Client', '<input name="company" list="colist" required autocomplete="off" placeholder="Start typing a company name" value="' + esc(pre ? pre.name : '') + '"><datalist id="colist">' + cos.map(function (c) { return '<option value="' + esc(c.name) + '">'; }).join('') + '</datalist>') +
+      G.field('What do they want?', '<input name="title" required placeholder="e.g. Diwali gifts for 250 clients">') +
+      '<div class="grid2" style="gap:0 12px">' + G.field('How many', '<input type="number" name="qty" min="1" placeholder="e.g. 250">') + G.field('By when', '<input type="date" name="deadline">') + '</div>' +
+      '<p class="honest">A new company name creates the client. Add their contact person later, from the client page.</p>' +
+      '<button class="btn">Save enquiry</button></form>';
   };
 
   /* ================= the proposal PDF: this page, printed ================= */
@@ -231,6 +260,24 @@
       G.save(); G.render();
       if (p[1] === GC.T.stages[1] && !o.lines.length) { var c = G.runAgent('curator', o); if (c) G.toast('The Curator has proposed ' + c.payload.picks.length + ' options.', 'agent'); }
     },
+    oppTab: function (id) { var p = String(id).split('|'); OPPTAB[p[0]] = p[1]; G.render(); },
+    sendShortlist: function (id) {
+      var o = G.oppById(id), co = G.companyById(o.company), ct = G.contactById(o.contact);
+      var lines = GC.inPlay(o).map(function (l, i) { var p = G.P(l.pid); if (!p) return ''; var qty = l.qty || o.brief.qty || p.moq; return (i + 1) + '. ' + p.name + ', ₹' + GC.fmt(GC.unitPrice(p, qty)) + ' each for ' + GC.fmt(qty) + (l.branding ? ' with ' + l.branding : ''); }).filter(Boolean);
+      var text = 'Dear ' + (ct ? ct.name.split(' ')[0] : 'Sir/Madam').replace('Sir/Madam', 'team') + ',\n\nThank you for your enquiry. Here are our options for ' + o.title + ':\n\n' + lines.join('\n') + '\n\nPrices are before GST. Tell us which ones you like and we will send samples and a formal quote.\n\n' + GC.T.name;
+      var mob = ct && ct.mobile ? String(ct.mobile).replace(/\D/g, '').slice(-10) : '';
+      G.modal('Send shortlist', (co ? co.name : '') + (ct ? ' · ' + ct.name : ''), '<form data-submit="confirmShortlist" data-id="' + id + '">' + G.field('Message', '<textarea name="text" id="slText" style="min-height:220px">' + esc(text) + '</textarea>') +
+        '<div class="row">' + (mob ? '<a class="btn ghost" target="_blank" rel="noopener" href="https://wa.me/91' + mob + '?text=' + encodeURIComponent(text) + '">Open in WhatsApp</a>' : '<span class="small muted">No mobile on this contact. Copy the message and send it by email.</span>') +
+        '<button class="btn">Mark as sent</button></div><p class="honest">Marking it sent moves the enquiry to "' + esc(GC.T.stages[2]) + '" and books a follow-up in 2 days.</p></form>');
+    },
+    confirmShortlist: function (f, form) {
+      var o = G.oppById(form.dataset.id), me = G.me().id;
+      if (GC.T.stages.indexOf(o.stage) < 2) GC.moveOpp(o, GC.T.stages[2]);
+      D().followups.push(GC.newFollow({ opp: o.id, company: o.company, owner: o.assigned_to || me, due: GC.addDays(GC.today(), 2), method: 'Call', note: 'Ask which options they liked', by: me }));
+      o.updated = GC.today();
+      G.log('sent', 'Shortlist sent: ' + o.title + ' (' + GC.inPlay(o).length + ' options)', { opp: o.id, company: o.company });
+      G.save(); G.closeModal(); G.toast('Shortlist marked as sent. Follow-up booked in 2 days.'); G.render();
+    },
     reopenOpp: function (id) { var o = G.oppById(id); o.stage = GC.T.stages[0]; o.outcome = null; o.closed = null; o.lost_reason = null; G.log('opp_stage', o.title + ' reopened', { opp: id }); G.save(); G.render(); },
     runCurator: function (id) { var p = G.runAgent('curator', G.oppById(id), { manual: true }); if (p) G.go('#/proposal/' + p.id); },
     runProposal: function (id) { var p = G.runAgent('proposal', G.oppById(id), { manual: true }); if (p) G.go('#/proposal/' + p.id); },
@@ -257,7 +304,7 @@
     },
     sampleDelivered: function (id) { var p = String(id).split('|'), o = G.oppById(p[0]); o.samples[+p[1]].status = 'delivered'; o.samples[+p[1]].at = GC.today(); G.log('sample', 'Sample delivered', { opp: o.id }); G.save(); G.render(); },
     sampleFeedback: function (id) {
-      var p = String(id).split('|'), o = G.oppById(p[0]); var fb = window.prompt('What did the client say about the sample?');
+      var p = String(id).split('|'), o = G.oppById(p[0]); var fb = arguments[3]; if (fb == null) return G.ask('What did the client say about the sample?', '', function (t) { A.sampleFeedback(id, null, null, t); });
       if (!fb) return; o.samples[+p[1]].feedback = fb; G.log('sample', 'Sample feedback: ' + fb, { opp: o.id }); G.save(); G.render();
     },
     saveBrief: function (f, form) {
@@ -267,14 +314,22 @@
       o.updated = GC.today(); G.log('opp_stage', 'Brief updated: ' + o.title, { opp: o.id }); G.save(); G.toast('Brief saved.'); G.render();
     },
     saveOpp: function (f) {
-      var co = G.companyById(f.company); if (!co) return G.toast('Pick a client.', 'bad');
-      var complete = f.qty && f.budgetMax && f.deadline;
-      var o = GC.newOpp({ company: co.id, contact: (G.contactsOf(co.id)[0] || {}).id, title: f.title, source: co.source, assigned_to: co.assigned_to || G.me().id, branch: co.branch,
-        stage: complete ? GC.T.stages[1] : GC.T.stages[0],
-        brief: { text: f.text, occasion: f.occasion, recipients: f.recipients, qty: +f.qty || null, deadline: f.deadline || null, budgetMin: +f.budgetMin || null, budgetMax: +f.budgetMax || null,
-                 cities: String(f.cities || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean), branding: f.branding, ucpmp: !!f.ucpmp || (co.pharma && /doctor/i.test(f.recipients)) } });
-      D().opps.push(o); G.log('opp_new', 'New requirement: ' + o.title, { opp: o.id, company: co.id }); G.save();
-      if (complete) { var c = G.runAgent('curator', o); if (c) G.toast('Opened. The Curator has proposed ' + c.payload.picks.length + ' options.', 'agent'); }
+      var name = String(f.company || '').trim();
+      if (name.length < 2) return G.toast('Which company is this for?', 'bad');
+      if (!String(f.title || '').trim()) return G.toast('Write what they want, in a few words.', 'bad');
+      var me = G.me(), co = GC.findCompany(D().companies, name), made = false;
+      if (co && !G.inScope(co)) co = null;
+      if (!co) {
+        co = GC.newCompany({ name: name, source: f.source || 'phone', assigned_to: me.id, branch: me.branch });
+        D().companies.push(co); made = true;
+      }
+      var o = GC.newOpp({ company: co.id, contact: (G.contactsOf(co.id)[0] || {}).id, title: String(f.title).trim(), source: f.source || co.source, assigned_to: co.assigned_to || me.id, branch: co.branch,
+        stage: GC.T.stages[0],
+        brief: { text: '', occasion: '', recipients: '', qty: +f.qty || null, deadline: f.deadline || null, budgetMin: null, budgetMax: null, cities: [], branding: '', ucpmp: !!co.pharma } });
+      D().opps.push(o);
+      if (made) G.log('company_add', 'New client: ' + co.name, { company: co.id });
+      G.log('opp_new', 'New requirement: ' + o.title, { opp: o.id, company: co.id }); G.save();
+      G.toast(made ? 'Saved. ' + co.name + ' is a new client: add their contact when you can.' : 'Enquiry saved.');
       G.go('#/opp/' + o.id);
     },
     winOpp: function (id) {
@@ -290,7 +345,7 @@
       D().orders.push(r.order);
       G.log('opp_won', o.title + ' won — PO ' + f.po + ', ' + GC.rupees(r.order.value), { opp: o.id, company: o.company, order: r.order.id });
       G.log('order_stage', 'Order ' + r.order.no + ' opened; ops notified to place vendor POs', { order: r.order.id });
-      G.save(); G.closeModal(); G.toast('Order ' + r.order.no + ' opened. Ops have been told.'); G.go('#/order/' + r.order.id);
+      G.save(); G.closeModal(); G.celebrate(); G.toast('Won. Order ' + r.order.no + ' opened and Production has been told.'); G.go('#/order/' + r.order.id);
     },
     loseOpp: function (id) {
       G.modal('Mark as lost', G.oppById(id).title, '<form data-submit="confirmLose" data-id="' + id + '">' + G.field('Why', '<select name="reason">' + GC.T.lostReasons.map(function (r) { return '<option>' + esc(r) + '</option>'; }).join('') + '</select>') +
@@ -343,7 +398,6 @@
   A.delOpp = function (id) {
     var o = G.oppById(id);
     if (!o) return;
-    if (!window.confirm('Delete "' + o.title + '"? This cannot be undone.')) return;
     var co = o.company;
     var r = G.deleteOpp(id);
     if (r.error) { G.toast(r.error, 'bad'); return; }

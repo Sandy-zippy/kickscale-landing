@@ -213,7 +213,7 @@
   function initials(n) { return String(n || '?').split(/\s+/).map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase(); }
   function avatar(uid, sm) {
     var u = GC.staffById(uid);
-    return '<span class="av' + (sm ? ' sm' : '') + '" title="' + esc(u ? u.name : 'Unassigned') + '" style="background:hsl(' + Math.round(GC.hash01(uid || 'x') * 360) + ',45%,42%)">' + esc(u ? initials(u.name) : '—') + '</span>';
+    return '<span class="av' + (sm ? ' sm' : '') + '" title="' + esc(u ? u.name : 'Unassigned') + '" style="background:hsl(' + Math.round(GC.hash01(uid || 'x') * 360) + ',40%,32%)">' + esc(u ? initials(u.name) : '—') + '</span>';
   }
   function inScope(row) { return GC.inScope(row, me(), D.access); }
   function canOpen(row) { return GC.canOpen(row, me(), D.access); }
@@ -272,7 +272,7 @@
     if (p && p.image) return '<img class="thumb' + (lg ? ' lg' : '') + '" src="' + p.image + '" alt="" style="object-fit:cover">';
     var hue = p ? p.hue : 260;
     var ch = p ? (p.category || '?').charAt(0) : '?';
-    return '<span class="thumb' + (lg ? ' lg' : '') + '" style="background:linear-gradient(135deg,hsl(' + hue + ',42%,46%),hsl(' + ((hue + 40) % 360) + ',50%,34%))">' + esc(ch) + '</span>';
+    return '<span class="thumb' + (lg ? ' lg' : '') + '" style="background:linear-gradient(135deg,hsl(' + hue + ',38%,30%),hsl(' + ((hue + 40) % 360) + ',50%,34%))">' + esc(ch) + '</span>';
   }
   function kpis(list) {
     return '<div class="kpis">' + list.map(function (k) {
@@ -297,46 +297,64 @@
     if (n < -1 && n > -8) return 'in ' + (-n) + ' days';
     return d;
   }
+  /* dates the way people say them: 5 Nov 2026 */
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function day(iso) { var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? (+m[3]) + ' ' + MON[+m[2] - 1] + ' ' + m[1] : String(iso || ''); }
   function deny(h, p) { return '<div class="deny"><h3>' + esc(h) + '</h3><p>' + esc(p) + '</p></div>'; }
   function empty(t) { return '<div class="empty">' + esc(t) + '</div>'; }
 
   /* ================= navigation ================= */
 
+  /* Every screen with its gate. Labels are the words staff use. */
   var NAV = [
-    ['Today'],
-    ['home', 'Home', '⌂', null],
-    ['desk', 'Agent Desk', '✦', null],
-    ['inbox', 'Inbox', '✉', 'clients'],
-    ['Sell'],
-    ['discover', 'Discover', '⌕', null],
-    ['pipeline', 'Pipeline', '▦', 'clients'],
-    ['companies', 'Clients', '☷', 'clients'],
-    ['campaigns', 'Campaigns', '✺', 'clients'],
-    ['Deliver'],
-    ['orders', 'Orders', '⧉', 'orders'],
-    ['vendors', 'Vendors', '⇄', 'vendors'],
-    ['stock', 'Stock', '▤', null],
-    ['issues', 'Client issues', '⚑', 'clients'],
-    ['Manage'],
-    ['automations', 'Automations', '⚙', 'automations'],
-    ['reports', 'Reports', '▲', null],
-    ['targets', 'Targets', '◎', 'targets'],
-    ['activity', 'Activity', '☰', null],
-    ['team', 'Team', '☺', 'reports'],
-    ['settings', 'Settings', '⚒', 'settings']
+    ['home', 'My Day', 'house', null],
+    ['pipeline', 'Enquiries', 'clipboard-list', 'clients'],
+    ['orders', 'Orders', 'truck', 'orders'],
+    ['companies', 'Clients', 'users', 'clients'],
+    ['discover', 'Products', 'gift', null],
+    ['vendors', 'Vendors', 'handshake', 'vendors'],
+    ['stock', 'Stock', 'warehouse', null],
+    ['issues', 'Client issues', 'triangle-alert', 'clients'],
+    ['inbox', 'New messages', 'inbox', 'clients'],
+    ['campaigns', 'Campaigns', 'megaphone', 'clients'],
+    ['reports', 'Reports', 'chart-column', null],
+    ['activity', 'Activity', 'activity', null],
+    ['team', 'Team', 'users-round', 'reports'],
+    ['targets', 'Targets', 'target', 'targets'],
+    ['desk', 'Assistants', 'sparkles', null],
+    ['automations', 'Automations', 'zap', 'automations'],
+    ['settings', 'Settings', 'settings', 'settings']
   ];
+  /* At most five in front, per role (working memory holds about four things).
+     Everything else waits under "More". A custom role gets the first five it can reach. */
+  var PRIMARY = {
+    owner: ['home', 'pipeline', 'orders', 'companies', 'discover'],
+    head: ['home', 'pipeline', 'orders', 'companies', 'discover'],
+    am: ['home', 'pipeline', 'orders', 'companies', 'discover'],
+    sourcing: ['home', 'vendors', 'discover', 'stock', 'orders'],
+    ops: ['home', 'orders', 'stock', 'vendors', 'issues'],
+    accounts: ['home', 'orders', 'companies', 'reports']
+  };
+  function navFor(a, role) {
+    var vis = NAV.filter(function (n) { return !n[3] || a[n[3]]; });
+    var want = PRIMARY[role] || vis.slice(0, 5).map(function (n) { return n[0]; });
+    var pri = want.map(function (k) { return vis.filter(function (n) { return n[0] === k; })[0]; }).filter(Boolean).slice(0, 5);
+    return { pri: pri, more: vis.filter(function (n) { return pri.indexOf(n) < 0; }) };
+  }
+  function ico(name) { return '<i data-lucide="' + name + '"></i>'; }
+
   /* screens that are not in the menu still carry a gate */
   var ROUTE_CAP = { product: null, company: 'clients', companynew: 'clients', opp: 'clients', oppnew: 'clients',
     order: 'orders', vendor: 'vendors', rfq: 'vendors', intake: 'catalogue', automation: 'automations', issue: 'clients',
     person: 'reports', proposal: null, run: null };
-  NAV.forEach(function (n) { if (n.length > 1) ROUTE_CAP[n[0]] = n[3]; });
+  NAV.forEach(function (n) { ROUTE_CAP[n[0]] = n[3]; });
 
-  var LABELS = { home: 'Home', desk: 'the Agent Desk', inbox: 'the Inbox', discover: 'Discover', pipeline: 'the Pipeline',
-    companies: 'Clients', company: 'a client', companynew: 'Add a client', campaigns: 'Campaigns', opp: 'a requirement',
-    oppnew: 'New requirement', orders: 'Orders', order: 'an order', vendors: 'Vendors', vendor: 'a vendor', rfq: 'an RFQ',
+  var LABELS = { home: 'My Day', desk: 'the Agent Desk', inbox: 'the Inbox', discover: 'Discover', pipeline: 'the Pipeline',
+    companies: 'Clients', company: 'the client', companynew: 'Add a client', campaigns: 'Campaigns', opp: 'the enquiry',
+    oppnew: 'New requirement', orders: 'Orders', order: 'the order', vendors: 'Vendors', vendor: 'a vendor', rfq: 'an RFQ',
     intake: 'Price-list intake', stock: 'Stock', issues: 'Client issues', issue: 'an issue', automations: 'Automations',
     automation: 'a rule', reports: 'Reports', targets: 'Targets', activity: 'Activity', team: 'Team', person: 'a colleague',
-    settings: 'Settings', product: 'a product', proposal: 'a proposal', run: 'an agent run' };
+    settings: 'Settings', product: 'the product', proposal: 'a proposal', run: 'an agent run' };
 
   function badge(route) {
     if (route === 'desk') { var n = pending().length; return n ? '<em class="agent">' + n + '</em>' : ''; }
@@ -354,24 +372,71 @@
     });
   }
 
+  var MORE_OPEN = (function () { try { return localStorage.getItem('gc_more') === '1'; } catch (e) { return false; } })();
   function paintChrome(route) {
-    var u = me(), a = acc();
-    var groupOpen = null, h = '<div class="brandmark"><span class="m">' + esc(GC.T.logoText.charAt(0)) + '</span><span><b>' + esc(GC.T.name) + '</b><small>Agentic Cockpit</small></span></div>';
-    NAV.forEach(function (n) {
-      if (n.length === 1) { groupOpen = n[0]; return; }
-      if (n[3] && !a[n[3]]) return;
-      if (groupOpen) { h += '<div class="grp">' + esc(groupOpen) + '</div>'; groupOpen = null; }
-      h += '<a href="#/' + n[0] + '" class="' + (n[0] === route ? 'on' : '') + '"><i>' + n[2] + '</i>' + esc(n[1]) + badge(n[0]) + '</a>';
-    });
-    $('#side').innerHTML = h;
+    var u = me(), a = acc(), nv = navFor(a, u.role);
+    var link = function (n, cls) { return '<a href="#/' + n[0] + '" class="' + cls + (n[0] === route ? ' on' : '') + '">' + ico(n[2]) + '<span>' + esc(n[1]) + '</span>' + badge(n[0]) + '</a>'; };
+    var inMore = nv.more.some(function (n) { return n[0] === route; });
+    var open = MORE_OPEN || inMore;
+    var h = '<div class="brandmark"><span class="m">' + esc(GC.T.logoText.charAt(0)) + '</span><span><b>' + esc(GC.T.name) + '</b><small>' + esc(roleName(u.role)) + '</small></span></div>';
+    h += nv.pri.map(function (n) { return link(n, 'pri'); }).join('');
+    if (nv.more.length) {
+      h += '<button class="morebtn" data-act="toggleMore" aria-expanded="' + open + '">' + ico('chevron-down') + 'More</button>';
+      h += '<div class="moreg"' + (open ? '' : ' hidden') + '>' + nv.more.map(function (n) { return link(n, ''); }).join('') + '</div>';
+    }
+    $('#side').innerHTML = say(h);
     $('#uchip').innerHTML = avatar(u.id, true) + '<span style="text-align:left"><b>' + esc(u.name) + '</b><span class="r">' + esc(roleName(u.role)) + '</span></span>';
-    $('#topleft').innerHTML = '<span class="muted small">' + esc(GC.T.name) + ' · ' + esc(GC.branchName(D.branches, u.branch)) + '</span>';
-    var tabs = [['home', '⌂', 'Home'], ['desk', '✦', 'Agents'], ['pipeline', '▦', 'Pipeline'], ['orders', '⧉', 'Orders']]
-      .filter(function (t) { return !ROUTE_CAP[t[0]] || a[ROUTE_CAP[t[0]]]; });
-    $('#tabbar').innerHTML = tabs.map(function (t) {
-      return '<a href="#/' + t[0] + '" class="' + (t[0] === route ? 'on' : '') + '"><i>' + t[1] + '</i>' + t[2] + '</a>';
-    }).join('') + '<button data-act="toggleSide"><i>☰</i>More</button>';
+    var ta = $('#topacts');
+    if (ta) ta.innerHTML = (a.clients ? '<a class="btn" href="#/oppnew">' + ico('plus') + '<span class="hideph">New enquiry</span></a>' : '') +
+      (u.role === 'owner' ? ' <span class="demo-pill hideph">Sample data</span><button class="btn ghost sm hideph" data-act="stories">Guided stories</button>' : '');
+    var tb = $('#themebtn'); if (tb) tb.innerHTML = ico(theme() === 'dark' ? 'sun' : 'moon');
+    var tabs = nv.pri.slice(0, 4);
+    $('#tabbar').innerHTML = say(tabs.map(function (t) {
+      return '<a href="#/' + t[0] + '" class="' + (t[0] === route ? 'on' : '') + '">' + ico(t[2]) + esc(t[1].replace('Client issues', 'Issues')) + '</a>';
+    }).join('') + '<button data-act="toggleSide">' + ico('menu') + 'More</button>');
   }
+
+  /* ---- one word per thing: the tenant glossary, applied to rendered text only ----
+     ponytail: a string pass over the rendered HTML instead of editing ~300 strings in
+     31 screens. Skips tags (so attributes and ids never change) and <textarea> bodies
+     (so what someone typed is saved as typed). New screens inherit it for free. */
+  var SAY = null;
+  function sayRules() {
+    if (SAY && SAY.src === GC.T.words) return SAY.list;
+    var list = (GC.T.words || []).map(function (w) {
+      var acro = /^[A-Z0-9-]+$/.test(w[0].replace(/\s/g, ''));
+      var pat = w[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      var wordy = /^[A-Za-z0-9]/.test(w[0]);
+      return { re: new RegExp((wordy ? '(^|[^A-Za-z0-9])(' : '()(') + pat + ')' + (wordy ? '(?![A-Za-z0-9])' : ''), acro ? 'g' : 'gi'), to: w[1], acro: acro };
+    });
+    SAY = { src: GC.T.words, list: list };
+    return list;
+  }
+  function sayText(t) {
+    var rules = sayRules();
+    for (var i = 0; i < rules.length; i++) {
+      var r = rules[i];
+      t = t.replace(r.re, function (m, pre, hit, off, whole) {
+        var to = r.to;
+        var first = r.acro ? (/^\s*$/.test(whole.slice(0, off) + pre)) : /^[A-Z]/.test(hit);
+        to = first ? to.charAt(0).toUpperCase() + to.slice(1) : (r.acro ? to : to.charAt(0).toLowerCase() + to.slice(1));
+        return pre + to;
+      });
+    }
+    return t;
+  }
+  function say(html) {
+    if (!GC.T.words) return html;
+    /* a lone dash standing for "nothing here" becomes a word (rule: say it, don't dash it) */
+    return String(html).split(/(<textarea[\s\S]*?<\/textarea>|<[^>]*>)/).map(function (seg, i) {
+      if (i % 2) return seg;
+      if (/^\s*—\s*$/.test(seg)) return seg.replace('—', 'None');
+      return sayText(seg.replace(/^(\s*)—\s+/, '$1· ').replace(/(:\s*)—(?=\s|$)/g, '$1not given'));
+    }).join('');
+  }
+
+  function theme() { try { return localStorage.getItem('gc_theme') || 'light'; } catch (e) { return 'light'; } }
+  function icons() { try { if (window.lucide && document.querySelector('i[data-lucide]')) window.lucide.createIcons(); } catch (e) {} }
 
   /* ================= render ================= */
 
@@ -404,18 +469,22 @@
     var route = parts[0] || 'home', arg = decodeURIComponent(parts.slice(1).join('/'));
     paintChrome(route);
     if (HIST[HIST.length - 1] !== hash) { HIST.push(hash); if (HIST.length > 60) HIST.shift(); }
-    $('#backwrap').innerHTML = backBar(route);
+    $('#backwrap').innerHTML = say(backBar(route));
     var view = VIEWS[route];
     if (!view) { $('#shell').innerHTML = deny('That screen does not exist.', 'Pick something from the menu.'); return; }
     var gate = ROUTE_CAP[route];
     if (gate && !can(gate)) {
-      $('#shell').innerHTML = deny('Not in your view', 'This screen is switched off for ' + roleName(me().role).toLowerCase() + '. What each role can reach is set by the owner in Settings → Roles & access.');
+      $('#shell').innerHTML = deny('Not in your view', 'This screen is switched off for ' + roleName(me().role).toLowerCase() + '. The owner can switch it on in Settings, under Roles and access.');
       return;
     }
-    try { $('#shell').innerHTML = view(arg); }
+    try { $('#shell').innerHTML = say(view(arg)); }
     catch (e) { $('#shell').innerHTML = crashCard(e, route); if (window.console) console.error(e); }
     if (same) { window.scrollTo(0, y); restoreFocus(f); } else window.scrollTo(0, 0);
     $('#side').classList.remove('open');
+    /* the entrance plays on a real route change only, never on a re-render while typing */
+    var sh = $('#shell');
+    if (!same && sh.classList) { sh.classList.remove('enter'); void sh.offsetWidth; sh.classList.add('enter'); }
+    icons();
   }
   function backBar(route) {
     if (route === 'home') return '';
@@ -433,18 +502,107 @@
   }
   function go(hash) { if (location.hash === hash) render(); else location.hash = hash; }
 
-  var TT = null;
-  function toast(msg, kind) {
+  var TT = null, UNDO = null;
+  /* Every change answers at once. When the change can be taken back, the toast carries Undo. */
+  function toast(msg, kind, undo) {
     var t = $('#toast');
-    t.textContent = msg; t.hidden = false; t.className = kind || '';
-    clearTimeout(TT); TT = setTimeout(function () { t.hidden = true; }, kind === 'agent' ? 4800 : 3400);
+    UNDO = undo || null;
+    t.innerHTML = '<span>' + esc(sayText(String(msg))) + '</span>' + (UNDO ? '<button class="undo" data-act="undo">Undo</button>' : '');
+    t.hidden = false; t.className = kind && kind !== 'ok' ? kind : '';
+    clearTimeout(TT); TT = setTimeout(function () { t.hidden = true; UNDO = null; }, UNDO ? 6000 : kind === 'agent' ? 4800 : 3400);
   }
   function modal(title, sub, body, wide) {
-    $('#m-title').textContent = title; $('#m-sub').textContent = sub || ''; $('#m-body').innerHTML = body;
+    $('#m-title').textContent = sayText(title); $('#m-sub').textContent = sayText(sub || ''); $('#m-body').innerHTML = say(body);
     var m = $('#modal'); m.className = wide ? 'wide' : '';
     if (!m.open) { try { m.showModal(); } catch (e) { m.setAttribute('open', ''); } }
+    icons();
+  }
+  /* Runs one action. If it changed the data and said nothing, it says "Saved" with Undo;
+     if it toasted on its own, Undo is added to that toast. Undo puts the data back as it was. */
+  var QUIET = { showAllToday: 1, undo: 1, toggleSide: 1, toggleMore: 1, toggleTheme: 1, gsearch: 1, go: 1, goBack: 1, closeModal: 1, scoreLive: 1, quickLogin: 1, signOut: 1, switchUser: 1, becomeUser: 1, story: 1, stories: 1, hardReload: 1, resetDemo: 1 };
+  function runAct(name, args) {
+    var fn = ACTIONS[name]; if (!fn) return;
+    if (QUIET[name] || !D || !D.session) return fn.apply(null, args);
+    var before = JSON.stringify(D), seen = TOASTS;
+    var out = fn.apply(null, args);
+    var changed = D && JSON.stringify(D) !== before;
+    if (!changed) return out;
+    var back = function () { var sess = D.session; D = JSON.parse(before); D.session = sess; applyTenant(); dropCache(); rebuildIndex(); save(); render(); toast('Undone.'); };
+    if (TOASTS === seen) toast('Saved.', null, back);
+    else if (!/^bad$/.test($('#toast').className)) { UNDO = back; var t = $('#toast'); if (t.innerHTML.indexOf('class="undo"') < 0) t.innerHTML += '<button class="undo" data-act="undo">Undo</button>'; clearTimeout(TT); TT = setTimeout(function () { t.hidden = true; UNDO = null; }, 6000); }
+    return out;
+  }
+  var TOASTS = 0;
+  var _toast = toast;
+  toast = function (m, k, u) { TOASTS++; return _toast(m, k, u); };
+  /* a small moment when an order is won (Peak-End). Skipped under reduced motion. */
+  function celebrate() {
+    try {
+      if (!document.body || !document.body.appendChild || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+      var cols = ['#3D2F86', '#6A45C9', '#C6F432', '#B7AEF0'];
+      for (var i = 0; i < 22; i++) {
+        var c = document.createElement('i'); c.className = 'confetti';
+        var ang = Math.random() * Math.PI * 2, dist = 80 + Math.random() * 160;
+        c.style.background = cols[i % cols.length];
+        c.style.setProperty('--x', Math.round(Math.cos(ang) * dist) + 'px'); c.style.setProperty('--y', Math.round(Math.sin(ang) * dist - 40) + 'px'); c.style.setProperty('--r', Math.round(Math.random() * 540) + 'deg');
+        document.body.appendChild(c); setTimeout(function (n) { return function () { n.remove(); }; }(c), 700);
+      }
+    } catch (e) {}
+  }
+  /* in place of the browser's grey prompt box */
+  var ASKCB = null;
+  function ask(title, hint, cb) {
+    ASKCB = cb;
+    modal(title, hint || '', '<form data-submit="askDone">' + field('Your answer', '<textarea name="text" required style="min-height:110px"></textarea>') + '<div class="row"><button class="btn">Save</button><button type="button" class="btn ghost" data-act="closeModal">Cancel</button></div></form>');
   }
   function closeModal() { var m = $('#modal'); if (m.open) { try { m.close(); } catch (e) { m.removeAttribute('open'); } } }
+
+  /* ================= global search: one box, like Google ================= */
+
+  function norm(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9₹ ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+  /* a word matches if it is inside the text, or one typo away from a word in it */
+  function near(a, b) {
+    if (Math.abs(a.length - b.length) > 1) return false;
+    var i = 0, j = 0, miss = 0;
+    while (i < a.length && j < b.length) {
+      if (a[i] === b[j]) { i++; j++; continue; }
+      if (++miss > 1) return false;
+      if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; }
+    }
+    return miss + (a.length - i) + (b.length - j) <= 1;
+  }
+  function hits(q, text) {
+    var h = norm(text), words = h.split(' ');
+    return norm(q).split(' ').filter(Boolean).every(function (w) {
+      return h.indexOf(w) >= 0 || (w.length >= 4 && words.some(function (x) { return near(w, x.slice(0, w.length + 1)) || near(w, x); }));
+    });
+  }
+  function searchAll(q) {
+    var out = [];
+    if (!q || norm(q).length < 2) return out;
+    var a = acc();
+    if (a.clients) {
+      D.companies.filter(inScope).filter(function (c) { return hits(q, c.name + ' ' + (c.city || '')); }).slice(0, 4)
+        .forEach(function (c) { out.push(['Clients', c.name, c.city || '', '#/company/' + c.id]); });
+      D.opps.filter(inScope).filter(function (o) { var co = companyById(o.company); return hits(q, o.title + ' ' + (co ? co.name : '')); }).slice(0, 4)
+        .forEach(function (o) { var co = companyById(o.company); out.push(['Enquiries', o.title, (co ? co.name : '') + ' · ' + o.stage, '#/opp/' + o.id]); });
+    }
+    if (a.orders) D.orders.filter(inScope).filter(function (o) { var co = companyById(o.company); return hits(q, o.no + ' ' + (co ? co.name : '') + ' ' + (o.po || '')); }).slice(0, 4)
+      .forEach(function (o) { var co = companyById(o.company); out.push(['Orders', o.no + ' · ' + (co ? co.name : ''), o.stage, '#/order/' + o.id]); });
+    var n = 0, nq = norm(q);
+    for (var i = 0; i < DB.items.length && n < 5; i++) { var it = DB.items[i]; if (norm(it.name).indexOf(nq) >= 0) { out.push(['Products', it.name, '', '#/product/' + it.id]); n++; } }
+    return out;
+  }
+  function searchPaint(q) {
+    var box = document.getElementById('gres'); if (!box) return;
+    var r = searchAll(q);
+    if (!q || norm(q).length < 2) { box.hidden = true; return; }
+    var last = '', h = '';
+    r.forEach(function (x) { if (x[0] !== last) { h += '<div class="gh">' + esc(x[0]) + '</div>'; last = x[0]; } h += '<a href="' + esc(x[3]) + '"><span>' + esc(x[1]) + '</span><small>' + esc(x[2]) + '</small></a>'; });
+    box.innerHTML = h || '<div class="empty">Nothing found for "' + esc(q) + '". Check the spelling, or try one word.</div>';
+    box.hidden = false;
+  }
+  function closeSearch() { var b = document.getElementById('gres'); if (b) b.hidden = true; }
 
   /* ================= login ================= */
 
@@ -461,75 +619,91 @@
     location.hash = '#/home'; render();
   }
 
-  /* ================= HOME, per role ================= */
+  /* ================= MY DAY: one prioritised list, for every role =================
+     The first screen answers one question: what do I do next? One sentence, at most
+     four numbers, then ONE list in priority order, each row with one verb. */
 
   VIEWS.home = function () {
-    var u = me(), a = acc(), h = '';
-    var first = u.name.split(' ')[0];
-    h += '<div class="ph"><div><h1>Good ' + (new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening') + ', ' + esc(first) + '</h1><p>' + esc(roleName(u.role)) + ' · ' + esc(GC.T.name) + '</p></div>' +
-      '<div class="acts">' + (a.clients ? '<a class="btn ghost" href="#/oppnew">+ New requirement</a>' : '') + '<a class="btn agent" href="#/desk">✦ Agent Desk' + (pending().length ? ' · ' + pending().length : '') + '</a></div></div>';
-
-    /* the morning brief is an agent's work, so it wears the agent card */
-    var mb = window.GE.morningBrief ? window.GE.morningBrief() : null;
-    if (mb && (u.role === 'owner' || u.role === 'head' || a.reports)) {
-      h += '<div class="agentcard" style="margin-bottom:18px"><span class="tag">Morning brief · ' + esc(GC.today()) + '</span>' +
-        '<h4>' + esc(mb.payload.one) + '</h4>' + stepsHTML(mb.steps.filter(function (s) { return s.t !== 'The one thing today'; })) + '</div>';
-    }
-
+    var u = me(), a = acc(), first = u.name.split(' ')[0], t = GC.today();
+    var hr = new Date().getHours();
     var mine = D.opps.filter(function (o) { return GC.isOpen(o) && inScope(o); });
     var myF = GC.openFollows(D.followups).filter(function (f) { return f.owner === u.id; });
-    var late = myF.filter(GC.isOverdue);
+    var dueF = myF.filter(function (f) { return GC.isOverdue(f) || GC.isDueToday(f); })
+      .sort(function (x, y) { return String(x.due).localeCompare(String(y.due)); });
     var openOrders = D.orders.filter(function (o) { return GC.orderOpen(o) && inScope(o); });
-    var risky = openOrders.filter(function (o) { return GC.orderRisks(o).some(function (x) { return x.sev === 'bad'; }); });
-    var k = [];
-    if (a.clients) {
-      var val = mine.reduce(function (s, o) { return s + GC.oppValue(o, P); }, 0);
-      k.push([mine.length, a.scope === 'own' ? 'Your open requirements' : 'Open requirements', null, 'Everything live on the sales board.', '#/pipeline']);
-      k.push([money(val), 'Pipeline value', null, 'Last quote, or shortlist at band prices.', '#/pipeline']);
-      k.push([myF.length, 'Your follow-ups', late.length ? 'warn' : null, late.length + ' overdue.']);
-    }
-    if (a.orders) {
-      k.push([openOrders.length, 'Orders in production', null, 'Everything not yet paid.', '#/orders']);
-      k.push([risky.length, 'Orders at risk', risky.length ? 'bad' : 'ok', 'A deadline, vendor date or QC problem.', '#/orders']);
-    }
-    if (a.money) {
-      var unpaid = D.orders.filter(function (o) { return o.invoice && !o.paid; });
-      k.push([money(unpaid.reduce(function (s, o) { return s + (o.invoice.amount || o.value); }, 0)), 'Invoiced, unpaid', unpaid.length ? 'warn' : null, unpaid.length + ' invoice(s).', '#/orders']);
-    }
-    if (a.vendors) {
-      var openR = D.rfqs.filter(function (r) { return r.status === 'open'; }).length;
-      k.push([openR, 'Open RFQs', null, 'Waiting for vendor prices or an award.', '#/vendors']);
-    }
-    k.push([pending().length, 'Waiting for your approval', pending().length ? 'warn' : 'ok', 'Agent proposals on the desk.', '#/desk']);
-    h += kpis(k);
+    var risky = a.orders ? openOrders.filter(function (o) { return GC.orderRisks(o).some(function (x) { return x.sev === 'bad'; }); }) : [];
+    var ok = pending();
+    var msgs = a.clients ? D.messages.filter(function (m) { return m.status === 'pending'; }) : [];
+    var quiet = a.clients ? GC.needsAttention(mine, D.followups).slice(0, 6) : [];
 
-    if (a.clients && myF.length) {
-      var sorted = myF.slice().sort(function (x, y) { return String(x.due).localeCompare(String(y.due)); }).slice(0, 8);
-      h += '<p class="eyebrow">Your follow-ups' + (late.length ? ' — ' + late.length + ' overdue' : '') + '</p><div class="card pad0">' + sorted.map(function (f) {
-        var co = companyById(f.company), o = oppById(f.opp), ov = GC.isOverdue(f), td = GC.isDueToday(f);
-        return '<div class="item"><span class="sev ' + (ov ? 'bad' : td ? 'warn' : '') + '"></span><div class="grow"><h4>' + esc(co ? co.name : 'Client') + (o ? ' · <span class="muted">' + esc(o.title) + '</span>' : '') + '</h4><p>' + esc(f.note || 'Follow up') + ' · ' + esc(f.method) + '</p></div>' +
-          pill(ov ? 'overdue ' + f.due : td ? 'today' : when(f.due), ov ? 'bad' : td ? 'warn' : 'dim') +
-          (o ? ' <button class="minibtn" data-act="logFollow" data-id="' + esc(o.id) + '">Log a call</button>' : '') +
-          ' <button class="minibtn" data-act="doneFollow" data-id="' + esc(f.id) + '">Done</button></div>';
-      }).join('') + '</div>';
-    }
+    /* the list, most urgent kind first */
+    var rows = [];
+    ok.forEach(function (p) {
+      var ag = (window.AG && AG.agentById(p.agent)) || { name: 'Assistant' };
+      rows.push(['k-ok', 'Needs your OK · ' + ag.name, p.title || p.summary, p.summary && p.title ? p.summary : '', '<a class="btn sm verb" href="#/proposal/' + esc(p.id) + '">Review</a>']);
+    });
+    dueF.forEach(function (f) {
+      var co = companyById(f.company), o = oppById(f.opp), late = GC.isOverdue(f);
+      rows.push([late ? 'k-late' : '', late ? 'Call back · was due ' + when(f.due) : 'Call back today', (co ? co.name : 'Client') + (o ? ' · ' + o.title : ''), (f.note || 'Follow up') + ' · ' + f.method,
+        (o ? '<button class="btn sm verb" data-act="logFollow" data-id="' + esc(o.id) + '">Log follow-up</button> ' : '') + '<button class="minibtn verb" data-act="doneFollow" data-id="' + esc(f.id) + '">Done</button>']);
+    });
+    risky.forEach(function (o) {
+      var r = GC.orderRisks(o)[0], co = companyById(o.company);
+      rows.push(['k-late', 'Order may miss its date', o.no + ' · ' + (co ? co.name : ''), r.text, '<a class="btn sm verb" href="#/order/' + esc(o.id) + '">Open order</a>']);
+    });
+    msgs.forEach(function (m) {
+      rows.push(['', 'New message · ' + (m.channel || 'message'), (m.from && (m.from.name || m.from.email || m.from.mobile)) || 'Someone', String(m.text || '').slice(0, 90), '<a class="btn sm verb" href="#/inbox">Read</a>']);
+    });
+    quiet.forEach(function (o) {
+      var co = companyById(o.company);
+      rows.push(['', 'Nothing booked yet', o.title, (co ? co.name : '') + ' · ' + o.stage + ' · last touched ' + when(o.updated), '<a class="btn ghost sm verb" href="#/opp/' + esc(o.id) + '">Book follow-up</a>']);
+    });
 
-    if (a.orders && risky.length) {
-      h += '<p class="eyebrow">Orders that can miss their date</p><div class="card pad0">' + risky.map(function (o) {
-        var r = GC.orderRisks(o)[0], co = companyById(o.company);
-        return '<div class="item" data-act="go" data-id="#/order/' + esc(o.id) + '" style="cursor:pointer"><span class="sev bad"></span><div class="grow"><h4>' + esc(o.no + ' · ' + (co ? co.name : '')) + '</h4><p>' + esc(r.text) + '</p></div>' + pill(o.stage, 'info') + '</div>';
-      }).join('') + '</div>';
-    }
+    /* what got done today, so the list feels finishable */
+    var doneToday = D.followups.filter(function (f) { return f.done && f.done_at === t && (f.by || f.owner) === u.id && !f.auto; }).length +
+      D.proposals.filter(function (p) { return p.decided === t && p.decidedBy === u.id; }).length;
+    var urgent = rows.filter(function (r) { return r[0]; }).length;
+    var total = doneToday + rows.length;
 
-    if (a.clients) {
-      var quiet = GC.needsAttention(mine, D.followups).slice(0, 6);
-      if (quiet.length) h += '<p class="eyebrow">Deals with nothing booked</p><div class="card pad0">' + quiet.map(function (o) {
-        var co = companyById(o.company);
-        return '<div class="item" data-act="go" data-id="#/opp/' + esc(o.id) + '" style="cursor:pointer"><span class="sev warn"></span><div class="grow"><h4>' + esc(o.title) + '</h4><p>' + esc(co ? co.name : '') + ' · ' + esc(o.stage) + ' · updated ' + esc(when(o.updated)) + '</p></div>' + avatar(o.assigned_to, true) + '</div>';
-      }).join('') + '</div>';
+    var mb = (u.role === 'owner' || u.role === 'head' || a.reports) && window.GE.morningBrief ? window.GE.morningBrief() : null;
+    var lead = !rows.length ? 'Nothing is waiting for you.'
+      : (rows.length === 1 ? '1 thing needs you today' : rows.length + ' things need you today') + (urgent ? ', ' + urgent + ' of them first.' : '.');
+
+    var h = '<div class="myday"><div class="ph" style="align-items:flex-start"><div><h1 class="hello">Good ' + (hr < 12 ? 'morning' : hr < 17 ? 'afternoon' : 'evening') + ', <em>' + esc(first) + '</em></h1>' +
+      '<p class="lead">' + esc(lead) + (mb && mb.payload && mb.payload.one ? ' <span class="muted">' + esc(mb.payload.one) + '</span>' : '') + '</p></div></div>';
+
+    /* at most four numbers, chosen for the role, each opening the list behind it */
+    var K = {
+      opps: function () { return [mine.length, a.scope === 'own' ? 'Your open enquiries' : 'Open enquiries', null, '', '#/pipeline']; },
+      value: function () { return [money(mine.reduce(function (s, o) { return s + GC.oppValue(o, P); }, 0)), 'Enquiry value', null, '', '#/pipeline']; },
+      follow: function () { var late = myF.filter(GC.isOverdue).length; return [myF.length, 'Your follow-ups', late ? 'warn' : null, late ? late + ' overdue' : '', null]; },
+      orders: function () { return [openOrders.length, 'Orders in progress', null, '', '#/orders']; },
+      risk: function () { return [risky.length, 'Orders at risk', risky.length ? 'bad' : 'ok', '', '#/orders']; },
+      unpaid: function () { var un = D.orders.filter(function (o) { return o.invoice && !o.paid; }); return [money(un.reduce(function (s, o) { return s + (o.invoice.amount || o.value); }, 0)), 'Invoiced, not paid', un.length ? 'warn' : null, un.length + ' invoice' + (un.length === 1 ? '' : 's'), '#/orders']; },
+      rfq: function () { return [D.rfqs.filter(function (r) { return r.status === 'open'; }).length, 'Open price requests', null, '', '#/vendors']; },
+      issues: function () { return [D.issues.filter(function (x) { return x.status !== 'resolved'; }).length, 'Open client issues', null, '', '#/issues']; },
+      ok: function () { return [ok.length, 'Needs your OK', ok.length ? 'warn' : 'ok', '', '#/desk']; }
+    };
+    var PICK = { owner: ['value', 'opps', 'risk', 'unpaid'], head: ['value', 'opps', 'follow', 'risk'], am: ['opps', 'follow', 'orders', 'ok'],
+      sourcing: ['rfq', 'orders', 'risk', 'ok'], ops: ['orders', 'risk', 'issues', 'ok'], accounts: ['unpaid', 'orders', 'risk', 'ok'] };
+    var need = { opps: 'clients', value: 'clients', follow: 'clients', orders: 'orders', risk: 'orders', unpaid: 'money', rfq: 'vendors', issues: 'clients' };
+    var keys = (PICK[u.role] || ['opps', 'orders', 'risk', 'ok']).filter(function (k) { return !need[k] || a[need[k]]; }).slice(0, 4);
+    h += kpis(keys.map(function (k) { return K[k](); }));
+
+    if (rows.length) {
+      var pc = total ? Math.round(100 * doneToday / total) : 0;
+      h += '<div class="progress"><span><b style="color:var(--ink)">' + doneToday + ' of ' + total + '</b> done today</span><span class="track" aria-hidden="true"><i style="width:' + pc + '%"></i></span></div>';
+      var SHOW = 7;
+      h += '<div class="card pad0 todo">' + rows.map(function (r, i) {
+        return '<div class="item ' + r[0] + '"' + (i >= SHOW ? ' data-more hidden' : '') + '><div class="grow"><span class="kind">' + esc(r[1]) + '</span><h4>' + esc(r[2]) + '</h4>' + (r[3] ? '<p>' + esc(r[3]) + '</p>' : '') + '</div><span class="row" style="flex-wrap:nowrap">' + r[4] + '</span></div>';
+      }).join('') + (rows.length > SHOW ? '<div class="item" style="justify-content:center"><button class="btn ghost sm" data-act="showAllToday">Show all ' + rows.length + '</button></div>' : '') + '</div>';
+    } else {
+      h += '<div class="card allclear" style="margin-top:18px"><b>All clear. Nice work.</b><p class="muted">' +
+        (a.clients ? 'A good use of the quiet: <a href="#/oppnew" style="color:var(--brand-ink);font-weight:600">log a new enquiry</a> or call a client you have not spoken to this month.' : 'Check <a href="#/orders" style="color:var(--brand-ink);font-weight:600">Orders</a> for anything coming up this week.') + '</p></div>';
     }
-    return h;
+    return h + '</div>';
   };
+  ACTIONS.showAllToday = function () { Array.prototype.forEach.call(document.querySelectorAll('.todo [data-more]'), function (n) { n.hidden = false; }); var b = document.querySelector('[data-act="showAllToday"]'); if (b) b.parentNode.remove(); };
 
   /* ================= TEAM ================= */
 
@@ -654,13 +828,20 @@
 
   /* ================= SETTINGS ================= */
 
-  var STABS = [['profile', 'Business profile'], ['roles', 'Roles & access'], ['people', 'People'], ['branches', 'Offices & warehouses'],
-               ['pipelines', 'Pipelines'], ['agents', 'Agents'], ['templates', 'WhatsApp templates'], ['tiers', 'Client tiers'],
-               ['compliance', 'Compliance'], ['connections', 'Connections'], ['reset', 'Reset demo']];
+  /* eleven pages, four groups: pick a group, then a page inside it */
+  var SGROUPS = [
+    ['Business', [['profile', 'Business profile'], ['branches', 'Offices & warehouses'], ['reset', 'Reset demo']]],
+    ['People & access', [['people', 'People'], ['roles', 'Roles & access']]],
+    ['Selling rules', [['pipelines', 'Stages'], ['tiers', 'Client tiers'], ['compliance', 'Rules & limits']]],
+    ['Connections', [['connections', 'Connections'], ['templates', 'WhatsApp templates'], ['agents', 'Assistants']]]
+  ];
+  var STABS = SGROUPS.reduce(function (a, g) { return a.concat(g[1]); }, []);
   VIEWS.settings = function (tab) {
     tab = tab || 'profile';
+    var grp = SGROUPS.filter(function (g) { return g[1].some(function (t) { return t[0] === tab; }); })[0] || SGROUPS[0];
     var h = '<div class="ph"><div><h1>Settings</h1><p>Everything that makes this cockpit ' + esc(GC.T.name) + '\'s. A new company changes these, not the code.</p></div></div>';
-    h += '<div class="tabs">' + STABS.map(function (t) { return '<a href="#/settings/' + t[0] + '" class="' + (t[0] === tab ? 'on' : '') + '">' + t[1] + '</a>'; }).join('') + '</div>';
+    h += '<div class="srcpick" style="margin-bottom:12px">' + SGROUPS.map(function (g) { return '<a href="#/settings/' + g[1][0][0] + '"><span style="' + (g === grp ? 'background:var(--brand);border-color:var(--brand);color:#fff' : '') + '">' + esc(g[0]) + '</span></a>'; }).join('') + '</div>';
+    h += '<div class="tabs">' + grp[1].map(function (t) { return '<a href="#/settings/' + t[0] + '" class="' + (t[0] === tab ? 'on' : '') + '">' + t[1] + '</a>'; }).join('') + '</div>';
     var f = SETTINGS[tab];
     return h + (f ? f() : empty('No such tab.'));
   };
@@ -761,12 +942,13 @@
   function applyTenant() {
     GC.configure(D.tenant || {});
     GC.setStaff(D.staff);
-    var r = document.documentElement.style;
-    r.setProperty('--brand', GC.T.brand);
-    r.setProperty('--brand-2', shade(GC.T.brand, 18));
-    r.setProperty('--brand-soft', mix(GC.T.brand, 0.9));
-    r.setProperty('--accent', GC.T.accent);
-    r.setProperty('--accent-soft', mix(GC.T.accent, 0.78));
+    /* the client's colours, per theme: a brand colour almost never survives a mode flip,
+       so dark gets a lighter fill and a separate ink for words */
+    var st = document.getElementById('tenantvars'), B = GC.T.brand, A = GC.T.accent;
+    var dk = function (h, w) { var bg = [20, 18, 32]; return 'rgb(' + hexRGB(h).map(function (v, i) { return Math.round(v * (1 - w) + bg[i] * w); }).join(',') + ')'; };
+    if (st) st.textContent =
+      ':root:not([data-theme=dark]){--brand:' + B + ';--brand-2:' + shade(B, 18) + ';--brand-soft:' + mix(B, 0.9) + ';--brand-ink:' + B + ';--accent:' + A + ';--accent-soft:' + mix(A, 0.78) + '}' +
+      ':root[data-theme=dark]{--brand:' + shade(B, 46) + ';--brand-2:' + shade(B, 64) + ';--brand-soft:' + dk(B, 0.72) + ';--brand-ink:' + mix(B, 0.62) + ';--accent:' + A + '}';
     document.title = GC.T.name + ' · Agentic Cockpit';
   }
   function hexRGB(h) { h = String(h).replace('#', ''); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16) || 0; }); }
@@ -794,6 +976,15 @@
       var on = document.body.classList.toggle('navc');
       try { localStorage.setItem('gc_navc', on ? '1' : ''); } catch (e) {}
     },
+    toggleMore: function () { MORE_OPEN = !MORE_OPEN; try { localStorage.setItem('gc_more', MORE_OPEN ? '1' : ''); } catch (e) {} render(); },
+    toggleTheme: function () {
+      var t = theme() === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem('gc_theme', t); } catch (e) {}
+      document.documentElement.setAttribute('data-theme', t); render();
+    },
+    undo: function () { var u = UNDO; UNDO = null; $('#toast').hidden = true; if (u) u(); },
+    gsearch: function (q) { searchPaint(q); },
+    askDone: function (f) { var cb = ASKCB; ASKCB = null; closeModal(); if (cb && String(f.text || '').trim()) cb(String(f.text).trim()); },
     closeModal: closeModal,
     hardReload: function () { location.reload(); },
     resetDemo: function () {
@@ -810,7 +1001,8 @@
     afArea: function (v) { AF.area = v; render(); },
     quickLogin: function (id) { var u = GC.staffById(id); if (u) signIn(u); },
     switchUser: function () {
-      modal('Switch person', 'Demo only — see the cockpit as somebody else.', '<div class="stories">' + D.staff.map(function (u) {
+      if (me() && me().role !== 'owner') return modal(me().name, roleName(me().role), '<p class="muted">Signed in on this browser.</p><p style="margin-top:14px"><button class="btn ghost" data-act="signOut">Sign out</button></p>');
+      modal('Switch person', 'Demo only. See the cockpit as somebody else.', '<div class="stories">' + D.staff.map(function (u) {
         return '<div class="story" data-act="becomeUser" data-id="' + u.id + '">' + avatar(u.id) + '<div><b>' + esc(u.name) + '</b><span>' + esc(roleName(u.role)) + ' · sees ' + esc(GC.SCOPES[(D.access[u.role] || GC.NO_ACCESS).scope].toLowerCase()) + '</span></div></div>';
       }).join('') + '</div><p style="margin-top:14px"><button class="btn ghost" data-act="signOut">Sign out</button></p>');
     },
@@ -941,33 +1133,36 @@
       var el = e.target.closest('[data-act]');
       if (!el) return;
       if (/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName) && !el.dataset.act) return;
-      var fn = ACTIONS[el.dataset.act];
-      if (!fn) return;
+      if (!ACTIONS[el.dataset.act]) return;
       if (el.tagName === 'A' || el.tagName === 'BUTTON') e.preventDefault();
       e.stopPropagation();
-      fn(el.dataset.id, el, e);
+      runAct(el.dataset.act, [el.dataset.id, el, e]);
     });
     document.addEventListener('change', function (e) {
       var el = e.target.closest('[data-chg]');
       if (!el) return;
-      var fn = ACTIONS[el.dataset.chg];
-      if (fn) fn(el.type === 'checkbox' ? el.checked : el.value, el, e);
+      if (ACTIONS[el.dataset.chg]) runAct(el.dataset.chg, [el.type === 'checkbox' ? el.checked : el.value, el, e]);
     });
     var IT = null;
     document.addEventListener('input', function (e) {
       var el = e.target.closest('[data-input]');
       if (!el) return;
       clearTimeout(IT);
-      IT = setTimeout(function () { var fn = ACTIONS[el.dataset.input]; if (fn) fn(el.value, el, e); }, 220);
+      IT = setTimeout(function () { var fn = ACTIONS[el.dataset.input]; if (fn) fn(el.value, el, e); }, el.dataset.input === 'gsearch' ? 120 : 220);
     });
     document.addEventListener('submit', function (e) {
       var form = e.target;
       if (form.id === 'loginform') return;
       e.preventDefault();
-      var fn = ACTIONS[form.dataset.submit];
-      if (fn) fn(formObj(form), form, e);
+      if (ACTIONS[form.dataset.submit]) runAct(form.dataset.submit, [formObj(form), form, e]);
     });
-    window.addEventListener('hashchange', render);
+    window.addEventListener('hashchange', function () { closeSearch(); render(); });
+    window.addEventListener('load', icons);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closeSearch();
+      if (e.key === '/' && !/^(INPUT|SELECT|TEXTAREA)$/.test((document.activeElement || {}).tagName || '')) { var g = document.getElementById('gsearch'); if (g) { e.preventDefault(); g.focus(); } }
+    });
+    document.addEventListener('click', function (e) { if (!e.target.closest || !e.target.closest('.gsearch')) closeSearch(); });
     /* A portal (client, picker, vendor) in another tab wrote to the store.
        Take its version, or our next save would silently undo what it did. */
     window.addEventListener('storage', function (e) {
@@ -987,7 +1182,7 @@
     me: me, acc: acc, can: can, roleName: roleName, avatar: avatar, inScope: inScope, canOpen: canOpen, mob: mob, cost: cost,
     companyById: companyById, contactById: contactById, oppById: oppById, orderById: orderById, contactsOf: contactsOf, byId: byId,
     tierOf: tierOf, tierPill: tierPill, pill: pill, thumb: thumb, kpis: kpis, conf: conf, stepsHTML: stepsHTML, when: when,
-    deny: deny, empty: empty, field: field, toast: toast, modal: modal, closeModal: closeModal, range: range, rangeBar: rangeBar,
+    deny: deny, empty: empty, field: field, toast: function (m, k, u) { return toast(m, k, u); }, runAct: runAct, say: say, day: day, ask: ask, celebrate: celebrate, navFor: navFor, modal: modal, closeModal: closeModal, range: range, rangeBar: rangeBar,
     inRange: inRange, download: download, pending: pending, KINDS: KINDS, esc: esc, money: money, afterLogin: null, morningBrief: null
   };
 })();
