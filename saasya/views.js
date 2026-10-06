@@ -295,6 +295,7 @@
       '<div class="f"><label>Birthday</label><input type="date" value="' + (c.dob || '') + '" data-change="saveClientField" data-id="' + c.id + '|dob"></div>' +
       '<div class="f"><label>Anniversary</label><input type="date" value="' + (c.anniversary || '') + '" data-change="saveClientField" data-id="' + c.id + '|anniversary"></div>' +
       fld('Stylist', pname(c.stylist)) +
+      fld('Occasion', c.event || '—') + fld('Date of the occasion', c.event_date ? d(c.event_date) : '—') + fld('Delivery wanted by', c.delivery_wanted ? d(c.delivery_wanted) : '—') +
       '</div><div class="f"><label>Note</label><textarea rows="2" data-change="saveClientNote" data-id="' +
       c.id + '">' + esc(c.note) + '</textarea></div></div>';
 
@@ -590,7 +591,7 @@
              '<span>' + (gs.length ? gs.length + ' garments' : 'no garments yet') +
              (o.event_date ? ' · ' + esc(o.event) + ' ' + d(o.event_date) : '') + '</span>' +
              '<div class="row">' + (o.value ? GE.moneyShort(o.value) :
-               '<span class="sub">est ' + (GE.can('money') ? lakh(o.estimate || 0) : '•••') + '</span>') +
+               '<span class="sub">budget ' + (GE.can('money') ? lakh(o.estimate || 0) : '•••') + '</span>') +
              lateness(o) + '</div>' +
              (m.pending > 0 ? '<div class="sub">pending ' + (GE.can('money') ? rupees(m.pending) : '•••') + '</div>' : '') +
              '</div>';
@@ -630,7 +631,7 @@
         '<td>' + d(o.delivery) + ' ' + lateness(o) + '</td>' +
         '<td>' + esc(pname(o.salesperson)) + '</td>' +
         '<td class="num">' + (o.value ? GE.money(o.value) :
-          '<span class="sub">est ' + (GE.can('money') ? lakh(o.estimate || 0) : '•••') + '</span>') + '</td>' +
+          '<span class="sub">budget ' + (GE.can('money') ? lakh(o.estimate || 0) : '•••') + '</span>') + '</td>' +
         '<td class="num">' + (o.value ? GE.money(m.pending) : '—') + '</td>' +
         '<td><button class="mini">Open it</button></td></tr>';
     });
@@ -706,7 +707,7 @@
       ' · sold by ' + esc(pname(o.salesperson)) + ', styled by ' + esc(pname(o.stylist)) + '</p>';
 
     h += '<div class="kpis">' +
-      kpi(GE.moneyShort(m.value || o.estimate || 0), m.value ? 'Order value' : 'Estimate',
+      kpi(GE.moneyShort(m.value || o.estimate || 0), m.value ? 'Order value' : 'Budget',
           m.value ? 'the garments and other items, before tax' : 'no garment priced yet') +
       kpi(GE.moneyShort(m.pending), 'Pending at delivery', 'of ' + (GE.can('money') ? rupees(m.total) : '•••') + ' payable') +
       kpi(gs.length, 'Garments', 'each with its own master and date') +
@@ -2554,67 +2555,113 @@
     if (cur && !known) h += '<option selected>' + esc(cur) + '</option>';
     return h + '</select>';
   }
+  /* Start an order (6 Oct): find him by name or mobile (or the dropdown), and what was taken when he
+     was added comes back here, marked as such; what was not taken is asked here. The stage is set here. */
+  function stylists() { return D().people.filter(function (p) { return p.role === 'Stylist' || p.role === 'Salesperson'; }); }
   A.newOrder = function (cid) {
+    cid = cid || '';
     GE.modal('<h2>Start an order</h2>' +
-      '<p class="sub">The walk-in is already a client record. This is the moment a stylist takes him on.</p>' +
-      '<div class="f"><label>Who it is for</label><select id="noClient">' +
-      D().clients.map(function (c) { return '<option value="' + c.id + '"' + (c.id === cid ? ' selected' : '') +
-        '>' + esc(c.name) + ' · ' + esc(famName(c.family)) + '</option>'; }).join('') + '</select></div>' +
+      '<p class="sub">Find the client, check what was taken when he was added, and mark where the sale stands.</p>' +
+      '<div class="f"><label>Who it is for</label><input id="noFind" type="search" autocomplete="off" placeholder="Type his name or mobile number" data-input="noFind">' +
+      '<div id="noHits" class="hits"></div>' +
+      '<select id="noClient" data-change="noPick" style="margin-top:8px"><option value="">Or choose from the list</option>' +
+      D().clients.slice().sort(function (a, b) { return a.name < b.name ? -1 : 1; }).map(function (c) {
+        return '<option value="' + c.id + '"' + (c.id === cid ? ' selected' : '') + '>' + esc(c.name) + ' · ' + esc(c.phone || '') + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div id="noFrom" class="note" style="display:none"></div>' +
       '<div class="two"><div class="f"><label>Type of order</label><select id="noType">' +
       '<option value="">Not decided yet</option>' +
       GE.ORDER_TYPES.map(function (t) { return '<option>' + t + '</option>'; }).join('') + '</select></div>' +
-      '<div class="f"><label>Which stylist</label><select id="noStylist">' +
-      D().people.filter(function (p) { return p.role === 'Stylist' || p.role === 'Salesperson'; })
-        .map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('') +
-      '</select></div></div>' +
-      '<div class="two"><div class="f"><label>Source</label><select id="noSrc">' +
-      GE.SOURCES.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></div>' +
-      '<div class="f"><label>What it might be worth</label><input type="number" id="noEst" value="150000"></div></div>' +
-      '<div class="two"><div class="f"><label>The occasion</label>' + occasionSelect('noEvent', 'Wedding') + '</div>' +
+      '<div class="f"><label>Sales stage</label><select id="noStage">' +
+      START_STAGES.map(function (st) { return '<option>' + st + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="two"><div class="f"><label>Stylist</label><select id="noStylist">' +
+      stylists().map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f"><label>Source</label><select id="noSrc">' +
+      GE.SOURCES.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></div></div>' +
+      '<div class="two"><div class="f"><label>Budget</label><input type="number" id="noEst" placeholder="150000"></div>' +
       '<div class="f"><label>How many outfits</label><input type="number" min="1" id="noOutfits" placeholder="3"></div></div>' +
-      '<div class="two"><div class="f"><label>When is the event</label><input type="date" id="noEventAt"></div>' +
-      '<div class="f"><label>Delivery wanted by</label><input type="date" id="noDelivery"></div></div>' +
-      '<div class="f"><label>What was said</label><textarea id="noNote" rows="2"></textarea></div>' +
+      '<div class="two"><div class="f"><label>Occasion <span class="tag" id="noEventTag"></span></label>' + occasionSelect('noEvent', '') + '</div>' +
+      '<div class="f"><label>Date of the occasion <span class="tag" id="noEventAtTag"></span></label><input type="date" id="noEventAt"></div></div>' +
+      '<div class="two"><div class="f"><label>Delivery wanted by <span class="tag" id="noDeliveryTag"></span></label><input type="date" id="noDelivery"></div><div></div></div>' +
+      '<div class="f"><label>What was said <span class="tag" id="noNoteTag"></span></label><textarea id="noNote" rows="2"></textarea></div>' +
       '<button class="btn gold" data-act="saveOrder">Put him on the showroom</button>');
+    if (cid) A.noPick(cid);
+  };
+  A.noFind = function (id, el) {
+    var t = el.value.trim().toLowerCase(), digits = t.replace(/\D/g, ''), box = document.getElementById('noHits');
+    if (t.length < 2) { box.innerHTML = ''; return; }
+    var hits = D().clients.filter(function (c) {
+      return c.name.toLowerCase().indexOf(t) > -1 || (digits.length >= 3 && String(c.phone || '').replace(/\D/g, '').indexOf(digits) > -1);
+    }).slice(0, 6);
+    box.innerHTML = hits.length ? hits.map(function (c) {
+      return '<button type="button" class="hit" data-act="noPick" data-id="' + c.id + '"><b>' + esc(c.name) + '</b> <span class="sub">' + esc(c.phone || '') +
+        (c.family ? ' · ' + esc(famName(c.family)) : '') + '</span></button>'; }).join('')
+      : '<div class="sub">Nobody by that name or number. Add him from Clients first.</div>';
+  };
+  /* fill the form from his record; say what came from it and what is still to be taken */
+  A.noPick = function (cid, el) {
+    if (!cid && el && el.tagName === 'SELECT') cid = el.value;
+    var c = one(D().clients, cid), $ = function (i) { return document.getElementById(i); };
+    if (!c || !$('noClient')) return;
+    $('noClient').value = c.id; $('noFind').value = c.name; $('noHits').innerHTML = '';
+    if (c.stylist) $('noStylist').value = c.stylist;
+    if (c.source) $('noSrc').value = c.source;
+    var got = [], missing = [];
+    [['noEvent', 'event', 'occasion'], ['noEventAt', 'event_date', 'date of the occasion'], ['noDelivery', 'delivery_wanted', 'delivery date'], ['noNote', 'note', 'what was said']].forEach(function (f) {
+      var v = c[f[1]] || '';
+      $(f[0]).value = v;
+      $(f[0] + 'Tag').textContent = v ? 'from his record' : (f[1] === 'note' ? '' : 'not taken yet');
+      $(f[0] + 'Tag').className = 'tag' + (v ? '' : ' warn');
+      if (f[1] !== 'note') (v ? got : missing).push(f[2]);
+    });
+    var box = $('noFrom'); box.style.display = '';
+    box.innerHTML = '<b>' + esc(c.name) + '</b>' + (c.phone ? ', ' + esc(c.phone) : '') + ', with ' + esc(pname(c.stylist)) + '. ' +
+      (got.length ? 'Brought across from when he was added: ' + got.join(', ') + '. ' : '') +
+      (missing.length ? '<b>Still to be taken: ' + missing.join(', ') + '.</b> Put them in here.' : 'Change anything that has moved.');
   };
   A.saveOrder = function () {
-    var cid = document.getElementById('noClient').value, c = one(D().clients, cid);
-    var type = document.getElementById('noType').value;
+    var $ = function (i) { return document.getElementById(i); };
+    var cid = $('noClient').value, c = one(D().clients, cid);
+    if (!c) { GE.toast('Find the client first: type his name or mobile, or choose him from the list.'); return; }
+    var type = $('noType').value, stage = $('noStage').value || 'Stylist', now = GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5);
     var id = 'O-' + (1053 + D().orders.length);
+    var hist = [{ stage: 'Stylist', by: GE.me().id, at: now }];
+    if (stage !== 'Stylist') hist.push({ stage: stage, by: GE.me().id, at: now });
     D().orders.push({ id: id, client: cid, family: c.family,
       vertical: type.indexOf('Third-party') === 0 ? 'designer' : 'in-house', type: type,
-      stage: 'Stylist', value: 0, cuts: [],
-      estimate: Number(document.getElementById('noEst').value) || 0,
-      source: document.getElementById('noSrc').value,
-      salesperson: GE.me().role === 'Salesperson' ? GE.me().id : c.salesperson,
-      stylist: document.getElementById('noStylist').value,
+      stage: stage, value: 0, cuts: [],
+      estimate: Number($('noEst').value) || 0,
+      source: $('noSrc').value,
+      salesperson: GE.me().role === 'Salesperson' ? GE.me().id : (c.salesperson || $('noStylist').value),
+      stylist: $('noStylist').value,
       designer: type.indexOf('Third-party') === 0 ? D().designers[0].id : '',
-      booked: GE.TODAY, advance_at: '',
-      event: document.getElementById('noEvent').value, event_date: document.getElementById('noEventAt').value,
-      outfits: Number(document.getElementById('noOutfits').value) || 0, adds: [], extras: [], ops: '',
-      delivery: document.getElementById('noDelivery').value, trial: '', note: document.getElementById('noNote').value,
-      history: [{ stage: 'Stylist', by: GE.me().id, at: GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5) }] });
+      booked: GE.TODAY, advance_at: stage === 'Advance taken' ? GE.TODAY : '',
+      event: $('noEvent').value, event_date: $('noEventAt').value,
+      outfits: Number($('noOutfits').value) || 0, adds: [], extras: [], ops: '',
+      delivery: $('noDelivery').value, trial: '', note: $('noNote').value,
+      history: hist });
+    /* what was only taken here goes back on his record, so it is there next time */
+    if (!c.event) c.event = $('noEvent').value;
+    if (!c.event_date) c.event_date = $('noEventAt').value;
+    if (!c.delivery_wanted) c.delivery_wanted = $('noDelivery').value;
     GE.save(); GE.closeModal(); GE.go('#/showroom'); A.openOrder(id);
-    GE.toast(id + ' is on the showroom at Stylist. The Doorman chases it if it goes quiet for five days.');
+    GE.toast(id + ' is on the showroom at ' + stage + '. The Doorman chases it if it goes quiet for five days.');
   };
 
   /* what the showroom needs on day one (6 Oct): the man, how he came, who has him, the occasion and its
-     dates, and where in the sale he is. Adding him opens his opportunity at that stage.
+     dates. No stage and no order here: the stage is marked when his order is started.
      Household and birthday live on his own record. */
   var START_STAGES = ['Stylist', 'Shown designs', 'Quotation provided', 'Advance taken', 'Measurements'];
   A.newClient = function () {
-    GE.modal('<h2>Add a client</h2><p class="sub">One person. His household and birthday go on his own record.</p>' +
+    GE.modal('<h2>Add a client</h2><p class="sub">One person. His household and birthday go on his own record; his order is started next.</p>' +
       '<div class="two"><div class="f"><label>Name</label><input id="ncName" autocomplete="off"></div>' + phoneField('ncPhone', 'Mobile') + '</div>' +
       '<div class="two"><div class="f"><label>Source</label><select id="ncSrc">' +
       GE.SOURCES.map(function (s) { return '<option>' + s + '</option>'; }).join('') + '</select></div>' +
       '<div class="f"><label>Assign a stylist</label><select id="ncStylist">' +
-      D().people.filter(function (p) { return p.role === 'Stylist' || p.role === 'Salesperson'; })
-        .map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + ' · ' + esc(p.role) + '</option>'; }).join('') + '</select></div></div>' +
+      stylists().map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + ' · ' + esc(p.role) + '</option>'; }).join('') + '</select></div></div>' +
       '<div class="two"><div class="f"><label>Occasion</label>' + occasionSelect('ncEvent', 'Wedding') + '</div>' +
-      '<div class="f"><label>Sales stage</label><select id="ncStage">' +
-      START_STAGES.map(function (st) { return '<option>' + st + '</option>'; }).join('') + '</select></div></div>' +
-      '<div class="two"><div class="f"><label>Date of the occasion</label><input type="date" id="ncEventAt"></div>' +
-      '<div class="f"><label>Delivery wanted by</label><input type="date" id="ncDelivery"></div></div>' +
+      '<div class="f"><label>Date of the occasion</label><input type="date" id="ncEventAt"></div></div>' +
+      '<div class="two"><div class="f"><label>Delivery wanted by</label><input type="date" id="ncDelivery"></div><div></div></div>' +
       '<div class="f"><label>Note</label><textarea id="ncNote" rows="2" placeholder="Walked in at four, asking about a bandhgala."></textarea></div>' +
       '<button class="btn gold" data-act="saveClient">Add him</button>');
   };
@@ -2626,19 +2673,12 @@
     if (phone === null) { GE.toast(v('ncPhoneCc') === '+91' ? 'An Indian mobile is 10 digits, starting 6, 7, 8 or 9.' : 'Check the mobile number: 6 to 14 digits, without the country code.'); return; }
     var dup = D().clients.filter(function (c) { return c.phone && c.phone.replace(/\D/g, '') === phone.replace(/\D/g, ''); })[0];
     if (dup) { GE.toast(dup.name + ' already has this number. Open him from Clients.'); return; }
-    var stylist = v('ncStylist'), stage = v('ncStage'), now = GE.TODAY + 'T' + new Date().toTimeString().slice(0, 5);
-    var id = GE.uid('C-');
+    var stylist = v('ncStylist'), id = GE.uid('C-');
     D().clients.push({ id: id, family: '', name: name, relation: '', phone: phone, email: '', dob: '', anniversary: '',
-      source: v('ncSrc'), stylist: stylist, salesperson: GE.me().role === 'Salesperson' ? GE.me().id : stylist, note: v('ncNote') });
-    var oid = 'O-' + (1053 + D().orders.length);
-    var hist = [{ stage: 'Stylist', by: GE.me().id, at: now }];
-    if (stage !== 'Stylist') hist.push({ stage: stage, by: GE.me().id, at: now });
-    D().orders.push({ id: oid, client: id, family: '', vertical: 'in-house', type: '', stage: stage, value: 0, cuts: [], adds: [], extras: [], ops: '',
-      estimate: 0, source: v('ncSrc'), salesperson: GE.me().role === 'Salesperson' ? GE.me().id : stylist, stylist: stylist, designer: '',
-      booked: GE.TODAY, advance_at: stage === 'Advance taken' ? GE.TODAY : '', event: v('ncEvent'), event_date: v('ncEventAt'), outfits: 0,
-      delivery: v('ncDelivery'), trial: '', note: v('ncNote'), history: hist });
+      source: v('ncSrc'), stylist: stylist, salesperson: GE.me().role === 'Salesperson' ? GE.me().id : stylist, note: v('ncNote'),
+      event: v('ncEvent'), event_date: v('ncEventAt'), delivery_wanted: v('ncDelivery') });
     GE.save(); GE.closeModal(); GE.go('#/clients'); A.openClient(id);
-    GE.toast(name + ' is added, with ' + pname(stylist) + ', and ' + oid + ' is open at ' + stage + '.');
+    GE.toast(name + ' is added, with ' + pname(stylist) + '. Start his order from his record: what you just took comes across.');
   };
 
   A.addGarment = function (oid) {

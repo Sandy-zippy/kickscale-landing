@@ -533,6 +533,11 @@ p.sub.empty{display:block;border:1px dashed var(--line2);border-radius:var(--r);
 .card:has(> .floortab){overflow-x:auto}
 .phone{display:grid;grid-template-columns:118px 1fr;gap:8px}
 .phone select{min-width:0}
+.hits{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.hit{text-align:left;background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:8px 12px;color:var(--ink);cursor:pointer;font:inherit}
+.hit:hover,.hit:focus-visible{border-color:var(--gold)}
+label .tag{text-transform:none;letter-spacing:0;font-weight:500;color:var(--gold-ink);margin-left:6px}
+label .tag.warn{color:var(--mut)}
 .gsum{text-align:right;margin:8px 0 0;color:var(--mut)}
 .gc-ups{display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;margin-top:12px;padding-top:8px;border-top:1px solid var(--line)}
 .gc-uph{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--mut)}
