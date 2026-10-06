@@ -357,6 +357,8 @@
     h += '</tbody></table></div>';
 
     h += '<div class="card"><h3>Timeline</h3><div class="tl">' + timelineFor(c.id) + '</div></div>';
+    if (GE.can('settings')) h += '<div class="danger"><button class="mini bad" data-act="delClient" data-id="' + c.id + '">Delete this client</button>' +
+      '<span class="hint">Takes every opportunity of his with it.</span></div>';
     GE.drawer(h);
   };
 
@@ -475,6 +477,55 @@
     GE.closeModal(); linkHousehold(c, fid);
     GE.toast('The ' + name + ' household is added, with ' + c.name + ' in it.');
   };
+  /* deleting: say exactly what goes before anything goes */
+  function n(x, one1, many) { return x + ' ' + (x === 1 ? one1 : many); }
+  A.delOrder = function (id) {
+    if (!GE.can('settings')) { GE.toast('Only the owner or the BDM can delete an opportunity.'); return; }
+    var o = one(D().orders, id), x = GE.orderImpact(id);
+    GE.modal('<h2>Delete ' + o.id + '?</h2><p class="sub">' + esc(cname(o.client)) + (o.event ? ', ' + esc(o.event) : '') + '. This cannot be undone.</p>' +
+      '<div class="note bad"><b>Everything on this opportunity goes with it:</b><ul class="gone">' +
+      '<li>' + n(x.garments.length, 'outfit', 'outfits') + (x.garments.length ? ', taken off Our operations and At the designers' : '') + '</li>' +
+      '<li>' + n(x.invoices.length, 'invoice', 'invoices') + ' and ' + n(x.payins.length, 'payment', 'payments') + (x.paid ? ' (' + rupees(x.paid) + ' recorded, which leaves the accounts)' : '') + '</li>' +
+      (x.payables.length ? '<li>' + n(x.payables.length, 'designer payable', 'designer payables') + '</li>' : '') +
+      '<li>' + n(x.costlines.length, 'cost line', 'cost lines') + ', ' + n(x.follows.length, 'follow-up', 'follow-ups') + ', ' + n(x.comms.length, 'note', 'notes') + '</li>' +
+      (o.share ? '<li>the client\'s live link stops showing the order</li>' : '') +
+      '</ul></div><p class="hint">The client stays, with his measurements. Delete the client to remove him too.</p>' +
+      '<button class="btn bad" data-act="delOrderYes" data-id="' + o.id + '">Delete it</button> <button class="btn alt" data-act="closemodal">Keep it</button>');
+  };
+  A.delOrderYes = function (id) {
+    if (!GE.can('settings')) return;
+    var o = one(D().orders, id); if (!o) return;
+    retireShare(o);
+    var x = GE.deleteOrder(id);
+    GE.save(); GE.closeModal(); GE.closeDrawer(); GE.go(location.hash || '#/order');
+    GE.toast(id + ' is deleted, with ' + n(x.garments.length, 'outfit', 'outfits') + ' and everything on it.');
+  };
+  A.delClient = function (id) {
+    if (!GE.can('settings')) { GE.toast('Only the owner or the BDM can delete a client.'); return; }
+    var c = one(D().clients, id), x = GE.clientImpact(id);
+    GE.modal('<h2>Delete ' + esc(c.name) + '?</h2><p class="sub">' + esc(c.phone || '') + '. This cannot be undone.</p>' +
+      '<div class="note bad"><b>Everything of his goes:</b><ul class="gone">' +
+      '<li>' + n(x.orders.length, 'opportunity', 'opportunities') + (x.orders.length ? ' (' + x.orders.map(function (o) { return o.id; }).join(', ') + ')' : '') + '</li>' +
+      '<li>' + n(x.garments, 'outfit', 'outfits') + (x.garments ? ', taken off the operations floors' : '') + '</li>' +
+      '<li>' + n(x.invoices, 'invoice', 'invoices') + ' and ' + n(x.payins, 'payment', 'payments') + (x.paid ? ' (' + rupees(x.paid) + ' recorded, which leaves the accounts)' : '') + '</li>' +
+      '<li>' + n(x.meas.length, 'measurement set', 'measurement sets') + ', ' + n(x.threads.length, 'inbox conversation', 'inbox conversations') + ', ' + n(x.comms.length, 'note', 'notes') + '</li>' +
+      '</ul></div>' + (c.family ? '<p class="hint">The rest of his household stays.</p>' : '') +
+      '<button class="btn bad" data-act="delClientYes" data-id="' + c.id + '">Delete him and all of it</button> <button class="btn alt" data-act="closemodal">Keep him</button>');
+  };
+  A.delClientYes = function (id) {
+    if (!GE.can('settings')) return;
+    var c = one(D().clients, id); if (!c) return;
+    by(D().orders, 'client', id).forEach(retireShare);
+    var x = GE.deleteClient(id);
+    GE.save(); GE.closeModal(); GE.closeDrawer(); GE.go('#/clients');
+    GE.toast(c.name + ' is deleted, with ' + n(x.orders.length, 'opportunity', 'opportunities') + ' and ' + n(x.garments, 'outfit', 'outfits') + '.');
+  };
+  /* a shared link stops showing a deleted order */
+  function retireShare(o) {
+    if (!o.share || !/^http/.test(String(location.protocol || ''))) return;
+    fetch(SHARE_API + o.share.token, { method: 'PUT', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ key: o.share.key, data: { deleted: true } }) }).catch(function () {});
+  }
   A.saveClientNote = function (id, el) {
     var c = one(D().clients, id); if (!c) return;
     c.note = el.value; GE.save(); GE.toast('Saved.');
@@ -878,6 +929,8 @@
           ' · ' + esc(pname(hh.by)) + '</span></div>';
       }).join('') + '</div></div>';
 
+    if (GE.can('settings')) h += '<div class="danger"><button class="mini bad" data-act="delOrder" data-id="' + o.id + '">Delete this opportunity</button>' +
+      '<span class="hint">Takes its outfits off the operations floors with it.</span></div>';
     GE.drawer(h);
   };
 

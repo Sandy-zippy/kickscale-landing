@@ -634,6 +634,46 @@ var GE = (function () {
     D.comms.push(c); save(); return c;
   }
 
+  /* ---------- deleting (6 Oct) ----------
+     An opportunity holds the whole order, so deleting it takes everything that hangs off it:
+     its outfits (and so their operations tasks), invoices and their payments, designer payables,
+     cost lines, follow-ups and notes. Deleting a client takes each of his opportunities that way,
+     plus his measurement sets, inbox threads and follow-ups. A household left empty goes too. */
+  function orderImpact(oid) {
+    var inv = by(D.invoices, 'order', oid), invIds = inv.map(function (i) { return i.id; });
+    var pays = D.payins.filter(function (p) { return invIds.indexOf(p.invoice) > -1; });
+    var gs = by(D.garments, 'order', oid), gIds = gs.map(function (g) { return g.id; });
+    return { garments: gs, invoices: inv, payins: pays, paid: sum(pays, function (p) { return Number(p.amount) || 0; }),
+      payables: by(D.payables, 'order', oid), costlines: by(D.costlines, 'order', oid), follows: by(D.follows, 'order', oid),
+      comms: D.comms.filter(function (c) { return (c.on === 'order' && c.ref === oid) || (c.on === 'garment' && gIds.indexOf(c.ref) > -1); }) };
+  }
+  function drop(list, gone) { for (var i = list.length - 1; i >= 0; i--) if (gone.indexOf(list[i]) > -1) list.splice(i, 1); }
+  function deleteOrder(oid) {
+    var o = one(D.orders, oid); if (!o) return null;
+    var x = orderImpact(oid);
+    drop(D.garments, x.garments); drop(D.invoices, x.invoices); drop(D.payins, x.payins); drop(D.payables, x.payables);
+    drop(D.costlines, x.costlines); drop(D.follows, x.follows); drop(D.comms, x.comms); drop(D.orders, [o]);
+    save(); return x;
+  }
+  function clientImpact(cid) {
+    var orders = by(D.orders, 'client', cid), per = orders.map(function (o) { return orderImpact(o.id); });
+    var tot = function (k) { return per.reduce(function (a, x) { return a + x[k].length; }, 0); };
+    return { orders: orders, garments: tot('garments'), invoices: tot('invoices'), payins: tot('payins'),
+      paid: per.reduce(function (a, x) { return a + x.paid; }, 0),
+      meas: by(D.meas, 'client', cid), threads: by(D.threads, 'client', cid),
+      follows: D.follows.filter(function (f) { return f.client === cid; }),
+      comms: D.comms.filter(function (c) { return c.on === 'client' && c.ref === cid; }) };
+  }
+  function deleteClient(cid) {
+    var c = one(D.clients, cid); if (!c) return null;
+    var x = clientImpact(cid);
+    x.orders.slice().forEach(function (o) { deleteOrder(o.id); });
+    drop(D.meas, x.meas); drop(D.threads, x.threads); drop(D.follows, D.follows.filter(function (f) { return f.client === cid; })); drop(D.comms, x.comms);
+    drop(D.clients, [c]);
+    if (c.family && !by(D.clients, 'family', c.family).length) drop(D.families, by(D.families, 'id', c.family));
+    save(); return x;
+  }
+
   /* ---------- the public surface ---------- */
 
   return {
@@ -655,7 +695,8 @@ var GE = (function () {
     costOf: costOf, marginOf: marginOf, stockOf: stockOf,
     fabricsOf: fabricsOf, metresOf: metresOf, handOver: handOver,
     Q: Q, matches: matches,
-    ladderFor: ladderFor, isThird: isThird, moveGarment: moveGarment, moveOrder: moveOrder, sittingFor: sittingFor,
+    ladderFor: ladderFor, isThird: isThird,
+    orderImpact: orderImpact, deleteOrder: deleteOrder, clientImpact: clientImpact, deleteClient: deleteClient, moveGarment: moveGarment, moveOrder: moveOrder, sittingFor: sittingFor,
     runAgents: runAgents,
     windowFor: windowFor, inWindow: inWindow, closedIn: closedIn, targetValue: targetValue,
     commsOn: commsOn, addComm: addComm,

@@ -64,7 +64,7 @@ function draw(x, at) {
 function load() {
   if (!/^[A-Za-z0-9_-]{16,64}$/.test(T)) { document.getElementById('app').innerHTML = '<p class="err">This link is not complete. Ask Saasya Men to send it again.</p>'; return; }
   fetch(API + T, { cache: 'no-store' }).then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
-    .then(function (j) { draw(j.data, j.at); }, function () { document.getElementById('app').innerHTML = '<p class="err">We could not find this order. Ask Saasya Men to send the link again.</p>'; });
+    .then(function (j) { if (j.data && j.data.deleted) { document.getElementById('app').innerHTML = '<p class="err">This order is no longer available. Please speak to Saasya Men.</p>'; return; } draw(j.data, j.at); }, function () { document.getElementById('app').innerHTML = '<p class="err">We could not find this order. Ask Saasya Men to send the link again.</p>'; });
 }
 load(); setInterval(load, 30000);
 </script>
