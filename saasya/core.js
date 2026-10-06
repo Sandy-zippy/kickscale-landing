@@ -197,6 +197,7 @@ var GE = (function () {
     (D.fabrics || []).forEach(function (f) { f.prices = f.prices || {}; });
     (D.orders || []).forEach(function (o) {
       o.adds = o.adds || []; o.extras = o.extras || []; o.cuts = o.cuts || []; if (o.ops == null) o.ops = '';
+      if (o.vertical === 'designer' && o.designer) by(D.garments, 'order', o.id).forEach(function (g) { if (!g.designer) g.designer = o.designer; });
       var gs = by(D.garments, 'order', o.id), priced = gs.filter(function (g) { return g.price != null; });
       if (!(Number(o.value) > 0) || priced.length || o.extras.length) return;
       if (!gs.length) { o.extras.push({ id: uid('X-'), label: 'As agreed', note: 'The value agreed before garments were listed', due: o.delivery || '', amount: Number(o.value) }); return; }
@@ -280,9 +281,13 @@ var GE = (function () {
 
   /* 1,00,000 gross -> 18,000 GST -> 82,000 net -> designer margin 30% to us
      -> Sasya keeps 24,600, designer is owed 57,400 */
-  function payableGrossOf(p) {           /* the client-facing total, GST inside */
+  function payableGrossOf(p) {           /* the client-facing total, GST inside, for HIS garments only */
     var o = one(D.orders, p && p.order);
-    return o ? orderMoney(o.id).total : (Number(p && p.gross) || 0);
+    if (!o) return Number(p && p.gross) || 0;
+    var m = orderMoney(o.id), L = m.lines;
+    if (!L.listed || !m.value) return m.total;
+    var his = sum(L.garments.filter(function (g) { return g.designer === p.designer; }), garmentValue);
+    return his >= m.value ? m.total : Math.round(m.total * his / m.value);
   }
   function payableOn(p) { return payableOf(payableGrossOf(p), p.margin, D.gst); }
 
@@ -398,10 +403,10 @@ var GE = (function () {
 
   /* ---------- stages ---------- */
 
-  function ladderFor(g) {
-    var o = one(D.orders, g.order);
-    return (o && o.vertical === 'designer') ? DESIGNER : HOUSE;
-  }
+  /* 6 Oct: in-house or third-party is the GARMENT's, not the order's. One order can hold both:
+     ours go to our floor, a designer's go to the designers. */
+  function isThird(g) { return !!(g && g.designer); }
+  function ladderFor(g) { return isThird(g) ? DESIGNER : HOUSE; }
   function moveGarment(gid, stage) {
     var g = one(D.garments, gid); if (!g) return;
     g.stage = stage;
@@ -498,8 +503,8 @@ var GE = (function () {
     designerchase: function (r) {
       var res = [];
       D.orders.forEach(function (o) {
-        if (o.vertical !== 'designer' || o.stage === 'Delivered') return;
-        var gs = by(D.garments, 'order', o.id);
+        if (o.stage === 'Delivered') return;
+        var gs = by(D.garments, 'order', o.id).filter(isThird);
         gs.forEach(function (g) {
           if (g.stage === 'Queried by designer' && sittingFor(g) >= (r.quiet_days || 3))
             res.push({ what: o.designer + ' queried ' + g.kind + ' on ' + o.id + ' ' +
@@ -650,7 +655,7 @@ var GE = (function () {
     costOf: costOf, marginOf: marginOf, stockOf: stockOf,
     fabricsOf: fabricsOf, metresOf: metresOf, handOver: handOver,
     Q: Q, matches: matches,
-    ladderFor: ladderFor, moveGarment: moveGarment, moveOrder: moveOrder, sittingFor: sittingFor,
+    ladderFor: ladderFor, isThird: isThird, moveGarment: moveGarment, moveOrder: moveOrder, sittingFor: sittingFor,
     runAgents: runAgents,
     windowFor: windowFor, inWindow: inWindow, closedIn: closedIn, targetValue: targetValue,
     commsOn: commsOn, addComm: addComm,
