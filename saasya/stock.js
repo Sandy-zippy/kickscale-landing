@@ -594,18 +594,32 @@
     if (!labelSheet([{ code: l.code, line1: f.brand + ' ' + f.colour + ', ' + l.metres + ' m', line2: rupees(GE.sellOf(f)) + ' a metre' }])) GE.toast('Allow pop-ups for this site to print labels.');
   };
   /* the phone's or laptop's camera reads the QR, inside the cockpit */
-  A.camScan = function (target) {
-    GE.modal('<h2>Scan with the camera</h2><p class="sub">Hold the QR label up to the camera.</p><div id="camReader" style="width:100%;max-width:420px"></div><p class="hint" id="camMsg">Starting the camera…</p>');
+  /* the camera of a phone, an iPad or a laptop reads a QR tag and hands the code to whoever asked */
+  GE.camScan = function (cb, title) {
+    GE.modal('<h2>' + esc(title || 'Scan with the camera') + '</h2><p class="sub">Hold the QR tag up to the camera.</p><div id="camReader" style="width:100%;max-width:420px"></div><p class="hint" id="camMsg">Starting the camera…</p>' +
+      '<div class="f" style="margin-top:10px"><label>Or type the code</label><input id="camType" placeholder="SM2610-0026" autocomplete="off"></div><button class="mini" data-act="camTyped">Use this code</button>');
+    CAM_CB = cb;
     var go = function () {
-      var q = new window.Html5Qrcode('camReader');
+      var q = new window.Html5Qrcode('camReader'); CAM_Q = q;
       q.start({ facingMode: 'environment' }, { fps: 10, qrbox: 220 }, function (text) {
-        q.stop().catch(function () {}); GE.closeModal();
-        if (target && document.getElementById(target)) { var el = document.getElementById(target); el.value = text; el.dispatchEvent(new Event('input', { bubbles: true })); return; }
-        openCode(text);
-      }).then(function () { var m = document.getElementById('camMsg'); if (m) m.textContent = 'Point it at the label.'; }, function () { var m = document.getElementById('camMsg'); if (m) m.textContent = 'The camera could not start. Allow the camera for this site, or use a scanner.'; });
+        q.stop().catch(function () {}); CAM_Q = null; GE.closeModal(); var f = CAM_CB; CAM_CB = null; if (f) f(text);
+      }).then(function () { var m = document.getElementById('camMsg'); if (m) m.textContent = 'Point it at the label.'; }, function () { CAM_Q = null; var m = document.getElementById('camMsg'); if (m) m.textContent = 'The camera could not start. Allow the camera for this site, or type the code below.'; });
     };
     if (window.Html5Qrcode) return go();
+    if (!document.head) return;
     var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js'; sc.onload = go; document.head.appendChild(sc);
+  };
+  var CAM_CB = null, CAM_Q = null;
+  A.camTyped = function () {
+    var v = (document.getElementById('camType') || {}).value; if (!v) { GE.toast('Type the code first.'); return; }
+    if (CAM_Q) { try { var st = CAM_Q.stop(); if (st && st.catch) st.catch(function () {}); } catch (e) {} CAM_Q = null; }
+    GE.closeModal(); var f = CAM_CB; CAM_CB = null; if (f) f(v.trim());
+  };
+  A.camScan = function (target) {
+    GE.camScan(function (text) {
+      if (target && document.getElementById(target)) { var el = document.getElementById(target); el.value = text; el.dispatchEvent(new Event('input', { bubbles: true })); return; }
+      openCode(text);
+    });
   };
   /* a code opens what it belongs to: a piece or a fabric lot */
   function openCode(code) {

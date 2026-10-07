@@ -931,6 +931,7 @@
 
     /* 3. the garments, each with its value, and anything else being added */
     h += '<div class="card" data-sec="garments"><div class="cardhead"><h3>3 · The garments</h3><div>' +
+      '<button class="btn gold scanbtn" data-act="scanToGarment" data-id="' + o.id + '">Scan a tag</button> ' +
       '<button class="mini" data-act="addGarment" data-id="' + o.id + '">Add a garment</button> ' +
       '<button class="mini" data-act="addExtra" data-id="' + o.id + '">Add something else</button></div></div>';
     gs.forEach(function (g) { h += garmentCard(g, o); });
@@ -2993,9 +2994,24 @@
     A.agPrice();
   };
   /* one order, any mix: ours or a designer's, custom or readymade. The garment goes to the floor that makes it. */
-  A.addGarment = function (oid) {
+  /* 7 Oct: on the phone or iPad, scan the tag and the garment is filled in; the rest can be changed */
+  A.scanToGarment = function (oid) { GE.camScan(function (code) { A.garmentFromCode(oid, code); }, 'Scan the tag on the outfit or the cloth'); };
+  A.garmentFromCode = function (oid, code) {
+    var p = GE.findBarcode(code);
+    if (p) {
+      if (p.status !== 'in stock') { GE.toast(p.barcode + ' is ' + p.status + (p.order ? ' on ' + p.order : '') + ', so it cannot be added here.'); return false; }
+      A.addGarment(oid, { from: p.supplier === 'Sasya' ? '' : p.supplier, make: 'readymade', piece: p.id, code: p.barcode }); return true;
+    }
+    var l = GE.findLot(code);
+    if (l) { A.addGarment(oid, { from: '', make: 'custom', fabric: l.fabric, code: l.code }); return true; }
+    GE.toast('No piece or cloth has the code ' + code + '.'); return false;
+  };
+  A.addGarment = function (oid, preset) {
     var o = one(D().orders, oid), from = o.vertical === 'designer' ? (o.designer || '') : '';
+    if (preset && typeof preset === 'object' && preset.from != null) from = preset.from; else preset = null;
     GE.modal('<h2>Add a garment to ' + esc(oid) + '</h2>' +
+      (preset ? '<div class="note"><b>Scanned ' + esc(preset.code) + '.</b> ' + (preset.piece ? 'The piece is chosen and priced. Check it and add.' : 'The cloth is chosen. Put in the metres; the rest is filled in.') + ' Anything can be changed.</div>'
+        : '<div class="btnrow" style="margin-bottom:10px"><button class="btn alt scanbtn" data-act="scanToGarment" data-id="' + esc(oid) + '">Scan a tag instead</button></div>') +
       '<div class="two"><div class="f"><label>What it is</label><select id="agKind" data-change="agPrice">' +
       GE.KINDS.map(function (k) { return '<option>' + k + '</option>'; }).join('') + '</select></div>' +
       '<div class="f"><label>Made by</label><select id="agFrom" data-change="agMakeSwitch">' +
@@ -3021,6 +3037,17 @@
       '<div class="f"><label id="agDueLbl">Back by</label><input type="date" id="agDue" value="' + (o.delivery || '') + '"></div></div>' +
       '<div class="f"><label>Note for whoever makes it</label><textarea id="agNote" rows="2"></textarea></div>' +
       '<button class="btn gold" data-act="saveGarment" data-id="' + esc(oid) + '">Add it</button>');
+    if (preset) {
+      var $ = function (i) { return document.getElementById(i); };
+      if ($('agMake')) $('agMake').value = preset.make;
+      A.agMakeSwitch();
+      if (preset.piece && $('agPiece')) {
+        if (!$('agPiece').querySelector || !$('agPiece').querySelector('option[value="' + preset.piece + '"]')) $('agPiece').innerHTML += '<option value="' + preset.piece + '">' + esc(GE.pieceOf(preset.piece).barcode) + '</option>';
+        $('agPiece').value = preset.piece; A.agPrice();
+      }
+      if (preset.fabric && $('agFab')) { $('agFab').value = preset.fabric; A.agPrice(); if ($('agM') && $('agM').focus) $('agM').focus(); }
+      return;
+    }
     A.agMakeSwitch();
   };
   A.agMakeSwitch = function () {
