@@ -37,7 +37,7 @@
     var list = fb.rows, stock = D().pieces.filter(function (p) { return p.status === 'in stock'; });
     var month = GE.localToday().slice(0, 7);
     var h = U.head('Readymade stock', 'Every piece on the shelf, one code each. A piece sold on an opportunity leaves here by itself; a piece received comes in here first.',
-      '<button class="btn gold" data-act="receiveGoods">Receive goods</button> <button class="btn alt" data-act="printLabels" data-id="filtered">Print labels for these</button> <button class="btn alt" data-act="camScan">Scan with camera</button>');
+      '<button class="btn gold" data-act="receiveGoods">Receive goods</button> ' + GE.sheetButtons('stock') + ' <button class="btn alt" data-act="printLabels" data-id="filtered">Print labels for these</button> <button class="btn alt" data-act="camScan">Scan with camera</button>');
     h += '<div class="kpis">' + U.kpi(stock.length, 'Pieces in stock', 'store and godown') +
       (seeCost() ? U.kpi(GE.lakh(sum(stock, GE.pieceCost)), 'At cost to us', 'consignment at the designer’s share') : '') +
       U.kpi(GE.lakh(sum(stock, function (p) { return GE.withGst(GE.piecePrice(p), p.gst); })), 'At MRP', 'selling price with GST') +
@@ -147,7 +147,7 @@
   A.receiveGoods = function () {
     var aw = awaited(); RG_N = 1;
     GE.modal('<h2>Receive goods</h2><p class="sub">One row per design. Sizes like <b>38 x1, 40 x2, 42 x1</b> make four pieces, each with its own code and QR label. Or fill the stock sheet in Excel and upload it.</p>' +
-      '<div class="btnrow" style="margin-bottom:12px"><button class="mini" data-act="stockSheet">Download the stock sheet</button> <label class="mini upl1">Upload the stock sheet<input type="file" id="rgFile" accept=".xlsx,.xls,.csv" data-input="stockUpload" hidden></label></div>' +
+      '<div class="btnrow" style="margin-bottom:12px">' + GE.sheetButtons('stock') + '</div>' +
       '<div class="two"><div class="f"><label>What is coming in</label><select id="rgType" data-change="rgSwitch">' +
       '<option value="on-order">On-order purchase from a designer</option><option value="consignment">Consignment from a designer</option>' +
       '<option value="own">Our own make</option>' + (aw.length ? '<option value="for-order">A designer piece made for an order</option>' : '') + '</select></div>' +
@@ -331,7 +331,7 @@
     var list = fb.rows;
     var cost = seeCost(), price = GE.canPrice();
     var h = U.head('Fabric stock', 'The cloth we own and hold here, from purchase bills: metres in, cut, promised to garments, free. The selling price a metre is what an order picks up.',
-      '<button class="btn gold" data-act="receiveFabric">Receive fabric</button>');
+      '<button class="btn gold" data-act="receiveFabric">Receive fabric</button> ' + GE.sheetButtons('fabricIn'));
     h += '<div class="kpis">' + U.kpi(Math.round(sum(fabs, function (f) { return GE.stockOf(f.id).hand; })) + ' m', 'On hand', fabs.length + ' cloths') +
       (cost ? U.kpi(GE.lakh(sum(fabs, function (f) { var st = GE.stockOf(f.id); return st.hand * st.avgCost; })), 'At cost', 'what it cost us') : '') +
       U.kpi(GE.lakh(sum(fabs, function (f) { return GE.stockOf(f.id).hand * GE.sellOf(f); })), 'At our selling price', 'before GST') +
@@ -465,9 +465,10 @@
       '<div class="f"><label>Their bill number</label><input id="rfBill"></div></div>' +
       '<div class="two"><div class="f"><label>Received on</label><input type="date" id="rfAt" value="' + GE.localToday() + '"></div><div class="f"><label>Where it goes</label><select id="rfLoc"><option>Store</option><option>Godown</option></select></div></div>' +
       '<div id="rfRows">' + rfRow(0, vid, fid) + '</div>' +
-      '<button class="mini" data-act="rfAddRow">+ Another cloth on this bill</button>' +
+      '<div class="btnrow"><button class="mini" data-act="rfAddRow">+ Another cloth on this bill</button> <button class="mini" data-act="rfAddFive">+ 5 more rows</button></div>' +
       '<p class="rftotal" id="rfTotal"></p><p class="hint" id="rfWait"></p>' +
-      '<button class="btn gold" data-act="saveFabricIn">Receive it</button>');
+      '<div class="btnrow"><button class="btn gold" data-act="saveFabricIn">Receive it</button> <button class="btn alt" data-act="saveFabricNext">Receive, then the next bill</button></div>' +
+      '<p class="hint">Many cloths? Add rows here, or use the Excel sheet on the Fabric stock screen.</p>');
     A.rfTotal();
   };
   A.rfVendorPick = function () {
@@ -479,6 +480,8 @@
     var sel = document.getElementById('rfFab_' + i); document.getElementById('rfNew_' + i).hidden = sel.value !== '__new';
     var f = one(D().fabrics, sel.value); if (f) document.getElementById('rfC_' + i).value = f.cost; A.rfTotal();
   };
+  A.rfAddFive = function () { for (var k = 0; k < 5; k++) A.rfAddRow(); };
+  A.saveFabricNext = function () { var vid = document.getElementById('rfVendor').value; if (A.saveFabricIn() === false) return; A.receiveFabric(); var v = document.getElementById('rfVendor'); if (v && vid !== '__new') { v.value = vid; A.rfVendorPick(); } };
   A.rfAddRow = function () { var vid = document.getElementById('rfVendor').value; document.getElementById('rfRows').insertAdjacentHTML('beforeend', rfRow(RF_N, vid === '__new' ? 'none' : vid)); RF_N++; A.rfTotal(); };
   A.rfTotal = function () {
     var t = 0, m = 0, waits = [];
@@ -496,7 +499,7 @@
     var v = function (i) { var e = document.getElementById(i); return e ? e.value : ''; };
     var vid = v('rfVendor');
     if (vid === '__new') {
-      if (!v('rfNVName').trim()) { GE.toast('Name the new vendor.'); return; }
+      if (!v('rfNVName').trim()) { GE.toast('Name the new vendor.'); return false; }
       vid = GE.uid('V-'); D().vendors.push({ id: vid, name: v('rfNVName').trim(), city: v('rfNVCity'), days: Number(v('rfNVDays')) || 21, contact: '' });
     }
     var rows = [];
@@ -505,14 +508,14 @@
       var fid = v('rfFab_' + i), m = Number(v('rfM_' + i)) || 0, c = Number(v('rfC_' + i)) || 0, g = v('rfG_' + i) === '' ? 5 : Number(v('rfG_' + i));
       if (!m) continue;
       if (fid === '__new') {
-        if (!v('rfNB_' + i).trim()) { GE.toast('Row ' + (i + 1) + ': give the new cloth a brand.'); return; }
+        if (!v('rfNB_' + i).trim()) { GE.toast('Row ' + (i + 1) + ': give the new cloth a brand.'); return false; }
         fid = GE.uid('F-'); D().fabrics.push({ id: fid, brand: v('rfNB_' + i).trim(), colour: v('rfNC_' + i).trim(), pattern: v('rfNP_' + i).trim(), book: '', vendor: vid, cost: c, sell_m: 0, threshold: 5,
           procure_days: (one(D().vendors, vid) || {}).days || 21, at_vendor: 0, hex: '#b9b2a6', img: '', sat_days: 0, sold_90: 0 });
       }
-      if (!one(D().fabrics, fid)) { GE.toast('Row ' + (i + 1) + ': choose the cloth.'); return; }
+      if (!one(D().fabrics, fid)) { GE.toast('Row ' + (i + 1) + ': choose the cloth.'); return false; }
       rows.push({ fid: fid, m: m, c: c, g: g });
     }
-    if (!rows.length) { GE.toast('How many metres came in?'); return; }
+    if (!rows.length) { GE.toast('How many metres came in?'); return false; }
     var at = v('rfAt') || GE.localToday(), pid = 'FAB-' + ('0' + (fabBills().length + 1)).slice(-2);
     while (one(D().purchases, pid)) pid += 'b';
     D().purchases.push({ id: pid, type: 'fabric', supplier: vid, at: at, credit_days: 30, advance: 0, bill: v('rfBill'), note: rows.map(function (r) { var f = one(D().fabrics, r.fid); return r.m + ' m ' + f.brand + ' ' + f.colour; }).join(', '),
@@ -529,7 +532,7 @@
   V['#/stitching'] = function () {
     var ed = GE.canPrice();
     var h = U.head('Stitching charges', 'What we charge to stitch each outfit, and its design charge. These come into an order beside the fabric, at 18% GST.',
-      ed ? '<button class="btn gold" data-act="newStitch">Add an outfit</button>' : '');
+      ed ? '<button class="btn gold" data-act="newStitch">Add an outfit</button> ' + GE.sheetButtons('stitching') : '');
     h += '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Outfit</th><th class="num">Stitching</th><th class="num">Design charge</th><th class="num">Together</th><th class="num">With 18% GST</th></tr></thead><tbody>';
     D().stitching.forEach(function (x, i) {
       var cell = function (k) { return ed ? '<input type="number" min="0" step="500" style="width:120px" value="' + (x[k] || 0) + '" data-change="setStitch" data-id="' + i + '|' + k + '" aria-label="' + k + ' for ' + esc(x.kind) + '">' : rupees(x[k]); };

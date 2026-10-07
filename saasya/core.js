@@ -343,6 +343,11 @@ var GE = (function () {
     });
     if (!D.stitching) { var sd0 = (typeof SEED === 'function') ? SEED() : {}; D.stitching = sd0.stitching || []; if (!D.expenses.length) D.expenses = sd0.expenses || []; if (!D.rewards.length) D.rewards = sd0.rewards || []; }
     if (!D.priceRule.markup) D.priceRule.markup = 1.6;
+    D.agents = D.agents || [];
+    [{ id:'advancewatch', name:'The Advance Watch', mode:'suggest', job:'an order where the advance has not reached what the house asks before work starts', rules:{ designer_pct:75, designer_days:7, fabric_pct:70 },
+       rule_labels:{ designer_pct:'Designer custom: collect this % before the outfit comes in', designer_days:'Days after placing it with the designer', fabric_pct:'Bespoke waiting for fabric: collect this % once the fabric is in' } },
+     { id:'sheetkeeper', name:'The Sheet Keeper', mode:'auto', job:'every Excel sheet in step with the lists: a sheet downloaded before a vendor, designer, cloth or kind was added or removed', rules:{ check_days:1 },
+       rule_labels:{ check_days:'Check the sheets every this many days' } }].forEach(function (a) { if (!one(D.agents, a.id)) D.agents.push(a); });
     (D.stitching || []).forEach(function (x) { if (KINDS.indexOf(x.kind) < 0) KINDS.push(x.kind); });   /* an outfit added to the stitching menu can be ordered */
     /* 6 Oct: the fabric library is the vendors' catalogue; our own stock is lots bought on bills.
        An old store/godown figure becomes an opening lot, topped up by what has already been cut,
@@ -801,6 +806,13 @@ var GE = (function () {
         }
       });
       return out;
+    },
+    /* the Excel sheets are built fresh at each download; this flags any copy taken before a list changed */
+    sheetkeeper: function () {
+      return (GE.sheetDrift ? GE.sheetDrift() : []).map(function (x) {
+        return { what: 'The ' + x.title.toLowerCase() + ' sheet downloaded on ' + d(x.at) + ' is out of date' + (x.added.length ? ': new ' + x.added.slice(0, 4).join(', ') + (x.added.length > 4 ? ' and ' + (x.added.length - 4) + ' more' : '') : '') + (x.gone.length ? (x.added.length ? '; ' : ': ') + 'gone ' + x.gone.slice(0, 3).join(', ') : ''),
+          why: 'download a fresh one: it carries today\'s lists. An old copy is still checked against today\'s lists on upload', ref: x.key, route: '#/agents', level: 'warn' };
+      });
     },
     collector: function (r) {
       return D.invoices.filter(function (i) {

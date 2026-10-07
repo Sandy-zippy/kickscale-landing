@@ -351,7 +351,7 @@
     var fbc = filterBar('#/clients', all, { placeholder: 'Search a name, a number, a household, a source', quick: ['household', 'source', 'stylist'], fields: [{ k: 'name', label: 'Name', get: function (x) { return x.name; } },{ k: 'phone', label: 'Mobile', get: function (x) { return x.phone; } },{ k: 'household', label: 'Household', type: 'enum', get: function (x) { return x.family ? famName(x.family) : 'No household'; } },{ k: 'source', label: 'Source', type: 'enum', get: function (x) { return x.source; } },{ k: 'stylist', label: 'Stylist', type: 'enum', get: function (x) { return pname(x.stylist); } },{ k: 'occasion', label: 'Occasion', type: 'enum', get: function (x) { return x.event || ''; } },{ k: 'eventat', label: 'Date of the occasion', type: 'date', get: function (x) { return x.event_date; } },{ k: 'given', label: 'Given us, to date', type: 'num', get: function (x) { return sum(by(D().orders, 'client', x.id), function (o) { return o.value; }); } }] });
     var list = fbc.rows;
     var h = head('Clients', 'Every client, one after the other. A client is one person, because every set of measurements is his own. The household he belongs to is inside his record.',
-      '<button class="btn gold" data-act="newClient">Add a client</button>');
+      '<button class="btn gold" data-act="newClient">Add a client</button> ' + GE.sheetButtons('clients'));
     h += fbc.html;
     h += '<div class="card"><table><thead><tr><th>Client</th><th>Number</th><th>Household</th>' +
       '<th>Source</th><th>Measurement sets</th><th>Running now</th>' +
@@ -1719,8 +1719,8 @@
     var fbl = filterBar('#/fabric', all, { placeholder: 'Search a brand, a colour, a pattern, a vendor', quick: ['vendor', 'brand', 'colour'], fields: [{ k: 'brand', label: 'Brand', type: 'enum', get: function (x) { return x.brand; } },{ k: 'colour', label: 'Colour', type: 'enum', get: function (x) { return x.colour; } },{ k: 'pattern', label: 'Pattern', get: function (x) { return x.pattern; } },{ k: 'book', label: 'Book', get: function (x) { return x.book; } },{ k: 'vendor', label: 'Vendor', type: 'enum', get: function (x) { return (one(D().vendors, x.vendor) || {}).name || ''; } },{ k: 'price', label: 'Their price a metre', type: 'num', get: function (x) { return x.cost; } },{ k: 'holds', label: 'They hold, metres', type: 'num', get: function (x) { return x.at_vendor; } },{ k: 'ours', label: 'We hold, metres', type: 'num', get: function (x) { return GE.stockOf(x.id).hand; } }] });
     var list = fbl.rows;
     var h = head('Fabric library', 'Every vendor’s cloth and what they hold at their end, for choosing and showing. Our own metres are in Fabric stock.',
-      metresOnly ? '' : '<button class="btn gold" data-act="newFabric">Add a cloth to the library</button> ' +
-        '<button class="btn alt" data-act="newVendor">Add a vendor</button>');
+      metresOnly ? '' : '<button class="btn gold" data-act="newFabric">Add a cloth to the library</button> ' + GE.sheetButtons('fabricLib', 'cloths') + ' ' +
+        '<button class="btn alt" data-act="newVendor">Add a vendor</button> ' + GE.sheetButtons('vendors', 'vendors'));
     if (!metresOnly) {
       h += '<div class="kpis">' + kpi(all.length, 'Cloths in the library', D().vendors.length + ' vendors') +
         kpi(sum(all, function (f) { return Number(f.at_vendor) || 0; }) + ' m', 'Held at the vendors', 'what they told us they hold') +
@@ -1878,7 +1878,7 @@
     var stockOf2 = function (r) { var ps = D().pieces.filter(function (p) { return p.supplier === 'Sasya' && p.status === 'in stock' && (p.design === r.id || p.name === r.name); }), m = {};
       ps.forEach(function (p) { m[p.size] = (m[p.size] || 0) + 1; }); return { n: ps.length, sizes: Object.keys(m).sort().map(function (z) { return z + (m[z] > 1 ? ' x' + m[z] : ''); }).join(', ') }; };
     var h = head('Designs', 'Ours, added here. The designers’ come in by themselves the moment an on-order purchase or a consignment is received, tagged as one or the other.',
-      seg === 'Ours' ? '<button class="btn gold" data-act="newPiece">Add one of ours</button>' : '<button class="btn gold" data-act="receiveGoods">Receive a purchase or consignment</button>');
+      seg === 'Ours' ? '<button class="btn gold" data-act="newPiece">Add one of ours</button> ' + GE.sheetButtons('designsOurs') : '<button class="btn gold" data-act="receiveGoods">Receive a purchase or consignment</button> ' + GE.sheetButtons('stock'));
     h += '<div class="tabs">' + [['Ours', ours.length], ['Third-party', theirs.length]].map(function (t) {
       return '<button class="' + (t[0] === seg ? 'on' : '') + '" data-act="segRM" data-id="' + t[0] + '">' + t[0] + ' <span class="sub">' + t[1] + '</span></button>'; }).join('') + '</div>';
     if (seg === 'Ours') {

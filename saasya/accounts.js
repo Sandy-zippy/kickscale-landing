@@ -26,7 +26,7 @@
       { k: 'sold', label: 'Sold', type: 'num', get: function (x) { return x.sold.length; } }, { k: 'left', label: 'Days of credit left', type: 'num', get: function (x) { return x.daysLeft == null ? 9999 : x.daysLeft; } }] });
     var sums = fbp.rows;
     var h = U.head('On-order purchases', 'What we bought from each designer: the advance, the pieces, what went back and when, what has sold, and what we owe because of it.',
-      '<button class="btn gold" data-act="receiveGoods">Receive a purchase</button>');
+      '<button class="btn gold" data-act="receiveGoods">Receive a purchase</button> ' + GE.sheetButtons('stock'));
     h += '<div class="kpis">' + U.kpi(sum(sums, function (x) { return x.pieces.length; }), 'Pieces bought', purs.length + ' purchases') +
       U.kpi(GE.lakh(sum(sums, function (x) { return x.advance; })), 'Advance paid', 'to designers, in all') +
       U.kpi(sum(sums, function (x) { return x.sold.length; }), 'Sold', GE.lakh(sum(sums, function (x) { return x.soldCost; })) + ' at cost') +
@@ -118,7 +118,7 @@
     var rows = fbc.rows;
     var all = rows.map(function (x) { return GE.consignmentSummary(x.supplier); });
     var h = U.head('Consignment', 'Designers’ pieces lying in our store. Not ours until sold; then our share is ' + '30% and theirs 70% of the price before GST. Each month, one click sends each designer what sold.',
-      '<button class="btn gold" data-act="receiveGoods">Receive a consignment</button>');
+      '<button class="btn gold" data-act="receiveGoods">Receive a consignment</button> ' + GE.sheetButtons('stock'));
     h += '<div class="kpis">' + U.kpi(sum(all, function (x) { return x.pieces.length; }), 'Pieces received', sups.length + ' designers') +
       U.kpi(sum(all, function (x) { return x.onHand.length; }), 'On our floor', 'not ours, theirs') +
       U.kpi(sum(rows, function (x) { return x.sold.length; }), 'Sold in ' + monthName(month()), rupees(sum(rows, function (x) { return x.pre; })) + ' before GST') +
@@ -376,7 +376,7 @@
     var inWin = all.filter(function (x) { return (!r[0] || x.at >= r[0]) && (!r[1] || x.at <= r[1]); });
     var tin = sum(inWin.filter(function (x) { return x.dir === 'in'; }), function (x) { return x.amount; }), tout = sum(inWin.filter(function (x) { return x.dir === 'out'; }), function (x) { return x.amount; });
     var h = U.head('Money in and out', 'Every rupee that came in and went out, in one place: sales collections, designer and fabric payments, and every expense. Filter it, report it, send it to Tally.',
-      '<button class="btn gold" data-act="newExpense">Record money out</button> <button class="btn alt" data-act="tally">Tally Export</button>');
+      '<button class="btn gold" data-act="newExpense">Record money out</button> ' + GE.sheetButtons('expenses') + ' <button class="btn alt" data-act="tally">Tally Export</button>');
     h += '<div class="kpis">' + U.kpi(GE.lakh(tin), 'Money in', r[0] ? d(r[0]) + ' to ' + d(r[1]) : 'everything') + U.kpi(GE.lakh(tout), 'Money out', 'payments and expenses') +
       U.kpi(GE.lakh(tin - tout), 'Net', tin >= tout ? 'more in than out' : 'more out than in') + '</div>';
     h += '<div class="tabs">' + ['Money in', 'Money out', 'Everything', 'Reports'].map(function (t) { return '<button class="' + (t === tab ? 'on' : '') + '" data-act="moneyTab" data-id="' + t + '">' + t + '</button>'; }).join('') + '</div>';
