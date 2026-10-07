@@ -17,7 +17,14 @@
   /* ================= On-order purchases ================= */
   V['#/purchases'] = function () {
     var purs = D().purchases.filter(function (p) { return p.type === 'on-order'; });
-    var sums = purs.map(function (p) { return GE.purchaseSummary(p.id); });
+    var sumsAll = purs.map(function (p) { return GE.purchaseSummary(p.id); });
+    var fbp = GE.filterBar('#/purchases', sumsAll, { placeholder: 'Search a purchase, a designer, a bill', quick: ['designer', 'credit'], date: 'at', fields: [
+      { k: 'id', label: 'Purchase', get: function (x) { return x.purchase.id; } }, { k: 'designer', label: 'Designer', type: 'enum', get: function (x) { return who(x.purchase.supplier); } },
+      { k: 'bill', label: 'Their bill', get: function (x) { return x.purchase.bill; } }, { k: 'at', label: 'Bought on', type: 'date', get: function (x) { return x.purchase.at; } },
+      { k: 'credit', label: 'Credit', type: 'enum', options: ['Over', 'Running', 'No credit'], all: 'Any credit state', get: function (x) { return x.due ? (x.daysLeft < 0 ? 'Over' : 'Running') : 'No credit'; } },
+      { k: 'owed', label: 'We owe', type: 'num', get: function (x) { return x.owed; } }, { k: 'pieces', label: 'Pieces in', type: 'num', get: function (x) { return x.pieces.length; } },
+      { k: 'sold', label: 'Sold', type: 'num', get: function (x) { return x.sold.length; } }, { k: 'left', label: 'Days of credit left', type: 'num', get: function (x) { return x.daysLeft == null ? 9999 : x.daysLeft; } }] });
+    var sums = fbp.rows;
     var h = U.head('On-order purchases', 'What we bought from each designer: the advance, the pieces, what went back and when, what has sold, and what we owe because of it.',
       '<button class="btn gold" data-act="receiveGoods">Receive a purchase</button>');
     h += '<div class="kpis">' + U.kpi(sum(sums, function (x) { return x.pieces.length; }), 'Pieces bought', purs.length + ' purchases') +
@@ -25,6 +32,7 @@
       U.kpi(sum(sums, function (x) { return x.sold.length; }), 'Sold', GE.lakh(sum(sums, function (x) { return x.soldCost; })) + ' at cost') +
       U.kpi(sum(sums, function (x) { return x.returned.length; }), 'Returned', 'went back to the designer') +
       U.kpi(GE.lakh(sum(sums, function (x) { return x.owed; })), 'We owe now', 'sold beyond the advance') + '</div>';
+    h += fbp.html;
     h += '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Purchase</th><th>Designer</th><th class="num">In</th><th class="num">Returned</th><th class="num">Sold</th><th class="num">On hand</th>' +
       '<th class="num">Advance</th><th class="num">Sold at cost</th><th class="num">We owe</th><th>Credit</th><th></th></tr></thead><tbody>';
     sums.forEach(function (x) {
@@ -102,8 +110,13 @@
   V['#/consignment'] = function () {
     var sups = uniq(D().pieces.filter(function (p) { return p.source === 'consignment'; }).map(function (p) { return p.supplier; }));
     var r = monthRange(month());
-    var rows = sups.map(function (s) { return GE.consignmentSummary(s, r[0], r[1]); });
-    var all = sups.map(function (s) { return GE.consignmentSummary(s); });
+    var rowsAll = sups.map(function (s) { return GE.consignmentSummary(s, r[0], r[1]); });
+    var fbc = GE.filterBar('#/consignment', rowsAll, { placeholder: 'Search a designer', quick: ['designer'], fields: [
+      { k: 'designer', label: 'Designer', type: 'enum', get: function (x) { return who(x.supplier); } }, { k: 'sold', label: 'Sold this month', type: 'num', get: function (x) { return x.sold.length; } },
+      { k: 'floor', label: 'On our floor', type: 'num', get: function (x) { return x.onHand.length; } }, { k: 'theirs', label: 'Their 70% this month', type: 'num', get: function (x) { return x.theirs; } },
+      { k: 'topay', label: 'Billed, unpaid', type: 'num', get: function (x) { return GE.consignmentSummary(x.supplier).toPay; } }] });
+    var rows = fbc.rows;
+    var all = rows.map(function (x) { return GE.consignmentSummary(x.supplier); });
     var h = U.head('Consignment', 'Designers’ pieces lying in our store. Not ours until sold; then our share is ' + '30% and theirs 70% of the price before GST. Each month, one click sends each designer what sold.',
       '<button class="btn gold" data-act="receiveGoods">Receive a consignment</button>');
     h += '<div class="kpis">' + U.kpi(sum(all, function (x) { return x.pieces.length; }), 'Pieces received', sups.length + ' designers') +
@@ -111,7 +124,7 @@
       U.kpi(sum(rows, function (x) { return x.sold.length; }), 'Sold in ' + monthName(month()), rupees(sum(rows, function (x) { return x.pre; })) + ' before GST') +
       U.kpi(GE.lakh(sum(rows, function (x) { return x.ours; })), 'Our share that month', 'before GST') +
       U.kpi(GE.lakh(sum(all, function (x) { return x.toPay; })), 'Billed, not yet paid', 'from their invoices') + '</div>';
-    h += '<div class="card"><div class="cardhead"><h3>By designer</h3>' + monthPicker() + '</div><div style="overflow-x:auto"><table><thead><tr><th>Designer</th><th class="num">Received</th><th class="num">On floor</th><th class="num">Returned</th>' +
+    h += fbc.html + '<div class="card"><div class="cardhead"><h3>By designer</h3>' + monthPicker() + '</div><div style="overflow-x:auto"><table><thead><tr><th>Designer</th><th class="num">Received</th><th class="num">On floor</th><th class="num">Returned</th>' +
       '<th class="num">Sold this month</th><th class="num">Sale before GST</th><th class="num">Our 30%</th><th class="num">Their 70%</th><th class="num">Billed, unpaid</th><th>Statement</th></tr></thead><tbody>';
     rows.forEach(function (x, i) {
       var a = all[i];
@@ -169,6 +182,7 @@
   /* ================= one-click reports: PDF and Excel ================= */
   function sheetDoc(title, sub, heads, rows, totals, note, extra) {
     var r = function (n) { return typeof n === 'number' ? '₹' + Math.round(n).toLocaleString('en-IN') : esc(n); };
+    GE.house();
     return '<div class="inv"><div class="ih"><div class="il"><img src="assets/logo.png" alt="Saasya Men"><div><b>SAASYA MEN</b><span>' + esc(GE.HOUSE_INFO.addr) + '</span></div></div>' +
       '<div class="ir"><b>' + esc(title) + '</b><span>' + esc(sub) + '</span></div></div>' +
       '<table class="it"><thead><tr>' + heads.map(function (h, i) { return '<th' + (i >= heads.length - (totals ? totals.length : 0) ? ' class="n"' : '') + '>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
@@ -244,13 +258,19 @@
   function rState(r) { return r.used ? 'used on ' + r.used.order : (r.valid_until && r.valid_until < GE.localToday() ? 'expired' : 'open'); }
   V['#/rewards'] = function () {
     var all = D().rewards, open = all.filter(function (r) { return rState(r) === 'open'; });
-    var list = all.filter(function (r) { return GE.matches(U.q('#/rewards'), [r.code, r.kind, U.cname(r.client), r.reason, r.order]); });
+    var fbr = GE.filterBar('#/rewards', all, { placeholder: 'Search a code, a client, a reason', quick: ['kind', 'state', 'client'], date: 'issued', fields: [
+      { k: 'code', label: 'Code', get: function (r) { return r.code; } }, { k: 'kind', label: 'What it is', type: 'enum', options: Object.keys(RKINDS), get: function (r) { return r.kind; } },
+      { k: 'state', label: 'State', type: 'enum', options: ['open', 'used', 'expired'], all: 'Any state', get: function (r) { var s2 = rState(r); return s2.indexOf('used') === 0 ? 'used' : s2; } },
+      { k: 'client', label: 'Client', type: 'enum', get: function (r) { return U.cname(r.client); } }, { k: 'reason', label: 'Why', get: function (r) { return r.reason; } },
+      { k: 'amount', label: 'Amount', type: 'num', get: function (r) { return r.amount; } }, { k: 'issued', label: 'Issued', type: 'date', get: function (r) { return r.issued; } },
+      { k: 'until', label: 'Valid until', type: 'date', get: function (r) { return r.valid_until; } }, { k: 'order', label: 'Against', get: function (r) { return r.order; } }] });
+    var list = fbr.rows;
     var h = U.head('Rewards', 'Credit notes for a damaged piece or an issue, gift coupons and rewards. Each has a code; it is used once, in full, as a payment on an order.',
       canIssue() ? '<button class="btn gold" data-act="newReward">Issue a credit note or coupon</button>' : '');
     h += '<div class="kpis">' + U.kpi(open.length, 'Open', rupees(sum(open, function (r) { return r.amount; })) + ' waiting to be used') +
       U.kpi(all.filter(function (r) { return r.used; }).length, 'Used', rupees(sum(all.filter(function (r) { return r.used; }), function (r) { return r.amount; }))) +
       U.kpi(open.filter(function (r) { return r.valid_until && GE.days(GE.localToday(), r.valid_until) <= 30; }).length, 'Running out in 30 days', '') + '</div>';
-    h += U.searchBar('#/rewards', 'Search a code, a client, a reason', list.length, all.length);
+    h += fbr.html;
     h += '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Code</th><th>What</th><th>Client</th><th>Why</th><th>Against</th><th>Valid until</th><th class="num">Amount</th><th>State</th><th></th></tr></thead><tbody>';
     list.slice().sort(function (a, b) { return a.issued < b.issued ? 1 : -1; }).forEach(function (r) {
       var st = rState(r);
@@ -288,7 +308,7 @@
   };
   A.rewardPdf = function (id) {
     var r = one(D().rewards, id); if (!r) return;
-    var c = one(D().clients, r.client) || {};
+    var c = one(D().clients, r.client) || {}; GE.house();
     GE.makePdf('<div class="inv"><div class="ih"><div class="il"><img src="assets/logo.png" alt="Saasya Men"><div><b>SAASYA MEN</b><span>' + esc(GE.HOUSE_INFO.line) + '</span></div></div>' +
       '<div class="ir"><b>' + esc(r.kind.toUpperCase()) + '</b><span>' + esc(r.code) + ' · ' + d(r.issued) + '</span></div></div>' +
       '<div class="ib" style="margin-top:24px;font-size:15px">Mr. ' + esc((c.name || '').split(' ').slice(-1)[0]) + ', this ' + esc(r.kind.toLowerCase()) + ' is worth <b>' + rupees(r.amount) + '</b> against your next order with us' +
@@ -356,7 +376,7 @@
     var inWin = all.filter(function (x) { return (!r[0] || x.at >= r[0]) && (!r[1] || x.at <= r[1]); });
     var tin = sum(inWin.filter(function (x) { return x.dir === 'in'; }), function (x) { return x.amount; }), tout = sum(inWin.filter(function (x) { return x.dir === 'out'; }), function (x) { return x.amount; });
     var h = U.head('Money in and out', 'Every rupee that came in and went out, in one place: sales collections, designer and fabric payments, and every expense. Filter it, report it, send it to Tally.',
-      '<button class="btn gold" data-act="newExpense">Record money out</button> <button class="btn alt" data-act="tallyExport">Export for Tally</button>');
+      '<button class="btn gold" data-act="newExpense">Record money out</button> <button class="btn alt" data-act="tally">Tally Export</button>');
     h += '<div class="kpis">' + U.kpi(GE.lakh(tin), 'Money in', r[0] ? d(r[0]) + ' to ' + d(r[1]) : 'everything') + U.kpi(GE.lakh(tout), 'Money out', 'payments and expenses') +
       U.kpi(GE.lakh(tin - tout), 'Net', tin >= tout ? 'more in than out' : 'more out than in') + '</div>';
     h += '<div class="tabs">' + ['Money in', 'Money out', 'Everything', 'Reports'].map(function (t) { return '<button class="' + (t === tab ? 'on' : '') + '" data-act="moneyTab" data-id="' + t + '">' + t + '</button>'; }).join('') + '</div>';
@@ -369,7 +389,13 @@
       sel('concern', 'Brand or designer', [''].concat(concerns), F.concern || '', 'Every brand') + '</div>' +
       ((F.block || F.party || F.concern || (F.preset && F.preset !== 'This month')) ? '<button class="mini" data-act="moneyClear">Clear the filters</button>' : '') + '</div>';
     if (tab === 'Reports') return h + reportsHtml(inWin);
-    h += U.searchBar('#/money', 'Search a party, a reference, a mode', rows.length, rows.length);
+    var fbm = GE.filterBar('#/money.list', rows, { placeholder: 'Search a party, a reference, a mode', quick: ['mode'], fields: [
+      { k: 'party', label: 'Who', get: function (x) { return x.party; } }, { k: 'block', label: 'What it was', type: 'enum', get: function (x) { return x.block; } },
+      { k: 'concern', label: 'Brand or designer', get: function (x) { return x.concern; } }, { k: 'ref', label: 'Reference', get: function (x) { return x.ref; } },
+      { k: 'mode', label: 'How', type: 'enum', get: function (x) { return x.mode || ''; } }, { k: 'amount', label: 'Amount', type: 'num', get: function (x) { return x.amount; } },
+      { k: 'at', label: 'Date', type: 'date', get: function (x) { return x.at; } }, { k: 'note', label: 'Note', get: function (x) { return x.note || ''; } }] });
+    rows = fbm.rows;
+    h += fbm.html;
     h += '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Date</th><th>In or out</th><th>What it was</th><th>Who</th><th>Brand or designer</th><th>Reference</th><th>How</th><th class="num">Amount</th></tr></thead><tbody>';
     rows.forEach(function (x) {
       h += '<tr><td>' + d(x.at) + '</td><td>' + U.pill(x.dir === 'in' ? 'in' : 'out', x.dir === 'in' ? 'ok' : 'warn') + '</td><td>' + esc(x.block) + (x.doc ? '<div class="sub">' + esc(x.doc) + '</div>' : x.note ? '<div class="sub">' + esc(x.note) + '</div>' : '') + '</td>' +
@@ -491,5 +517,145 @@
     xls('Saasya-Men-Tally-' + (r[0] || 'all') + (r[1] ? '-to-' + r[1] : '') + '.xlsx', [{ name: 'Receipts', rows: b.receipts }, { name: 'Payments', rows: b.payments }, { name: 'Sales', rows: b.sales }, { name: 'Purchases', rows: b.purchases }]);
     GE.toast('Tally workbook: ' + (b.receipts.length - 1) + ' receipts, ' + (b.payments.length - 1) + ' payments, ' + (b.sales.length - 1) + ' sales lines, ' + (b.purchases.length - 1) + ' purchases.');
   };
-  A.tally = A.tallyExport;
+  A.tally = function () { GE.go('#/tally'); };
+
+  /* ================= Tally Export: what goes to the accountant, date by date ================= */
+  /* any record can be changed from here: the export is read from the records, never typed twice */
+  var FIELDSETS = {
+    payins: { title: 'Payment received', fields: [['at', 'Date', 'date'], ['amount', 'Amount', 'num'], ['method', 'How', 'text'], ['ref', 'Reference', 'text'], ['kind', 'What it was', 'text']] },
+    supplier_payments: { title: 'Payment to a designer or vendor', fields: [['at', 'Date', 'date'], ['amount', 'Amount', 'num'], ['mode', 'How', 'text'], ['ref', 'Tally voucher or reference', 'text'], ['note', 'Note', 'text']] },
+    expenses: { title: 'Expense', fields: [['at', 'Date', 'date'], ['category', 'What it was', 'text'], ['payee', 'Paid to', 'text'], ['amount', 'Amount', 'num'], ['gst', 'GST in it', 'num'], ['mode', 'How', 'text'], ['ref', 'Reference', 'text'], ['note', 'Note', 'text']] },
+    purchases: { title: 'Purchase', fields: [['at', 'Date', 'date'], ['bill', 'Their bill number', 'text'], ['credit_days', 'Credit period, days', 'num'], ['note', 'Note', 'text']] },
+    supplier_bills: { title: 'Designer’s bill', fields: [['at', 'Received on', 'date'], ['bill_no', 'Their bill number', 'text'], ['amount', 'Amount', 'num'], ['note', 'For', 'text']] },
+    invoices: { title: 'Invoice or receipt', fields: [['issued', 'Date', 'date'], ['billed_to', 'Billed to', 'text'], ['amount', 'Amount', 'num'], ['kind', 'What it was', 'text']] }
+  };
+  A.editRec = function (id) {
+    var p = id.split('|'), col = p[0], rec = one(D()[col] || [], p[1]), fs = FIELDSETS[col];
+    if (!rec || !fs) { if (col === 'pieces') return A.editPiece(p[1]); return; }
+    GE.modal('<h2>Change: ' + esc(fs.title) + '</h2><p class="sub">' + esc(rec.id) + '. Every field. The change flows to every report and to Tally.</p>' +
+      fs.fields.map(function (f) { return '<div class="f"><label>' + esc(f[1]) + '</label><input id="er_' + f[0] + '" type="' + (f[2] === 'num' ? 'number' : f[2]) + '" value="' + esc(rec[f[0]] == null ? '' : rec[f[0]]) + '"></div>'; }).join('') +
+      '<button class="btn gold" data-act="saveRec" data-id="' + esc(id) + '">Save</button>');
+  };
+  A.saveRec = function (id) {
+    var p = id.split('|'), col = p[0], rec = one(D()[col], p[1]), fs = FIELDSETS[col], changed = [];
+    fs.fields.forEach(function (f) { var v = document.getElementById('er_' + f[0]).value; if (f[2] === 'num') v = Number(v) || 0; if (String(v) !== String(rec[f[0]] == null ? '' : rec[f[0]])) { changed.push(f[1] + ': ' + (rec[f[0]] == null ? '' : rec[f[0]]) + ' to ' + v); rec[f[0]] = v; } });
+    if (changed.length) (rec.edits = rec.edits || []).push({ by: GE.me().id, at: GE.localToday(), what: changed.join('; ') });
+    GE.save(); GE.closeModal(); GE.refresh(); GE.toast(changed.length ? 'Saved. ' + changed.join('; ') + '.' : 'Nothing changed.');
+  };
+  function tallyDates() {
+    var t = GE.localToday(), y = +t.slice(0, 4), m = +t.slice(5, 7), last = new Date(y, m, 0).getDate(), pad = function (n) { return ('0' + n).slice(-2); };
+    var Q = GE.Q['#/tally.d'] = GE.Q['#/tally.d'] || { from: y + '-' + pad(m) + '-01', to: y + '-' + pad(m) + '-' + last };
+    return Q;
+  }
+  function inDates(dt) { var Q = tallyDates(); return dt && Q.from && Q.to && dt >= Q.from && dt <= Q.to; }
+  function ledgerName(block) {
+    return { 'Readymade sale, in-house': 'Sales: readymade, in-house', 'Bespoke sale, in-house': 'Sales: bespoke, in-house', 'Third-party designer sale': 'Sales: third-party designer',
+      'Credit note or coupon used': 'Credit notes and coupons', 'On-order purchase': 'Purchase: on-order readymade', 'Consignment payment': 'Consignment: designer payable', 'Fabric purchase': 'Purchase: fabric' }[block] || block;
+  }
+  var TABS = { money: 'Money in and out', onorder: 'On-order purchases', consignment: 'Consignment' };
+  function tallyRows(tab, sub) {
+    var rows = [];
+    if (tab === 'money' && sub === 'in') {
+      D().payins.forEach(function (pi) { var inv = one(D().invoices, pi.invoice); if (!inv || !inDates(pi.at)) return;
+        var blk = /coupon/i.test(pi.method || '') ? 'Credit note or coupon used' : orderBlock(inv.order);
+        rows.push({ src: 'payins|' + pi.id, cells: [pi.at, 'Receipt', inv.id, pi.id, U.cname(inv.client), inv.doc === 'receipt' ? 'Advance from customers' : ledgerName(blk), Number(pi.amount) || 0, pi.method || '',
+          (pi.kind || inv.kind) + ' against ' + inv.order + (pi.ref ? ', ref ' + pi.ref : '') + (inv.doc === 'receipt' ? ', receipt ' + inv.id : ', invoice ' + inv.id)] }); });
+      return { heads: ['Voucher date', 'Voucher type', 'Voucher no.', 'Reference', 'Party ledger', 'Ledger', 'Amount', 'Mode', 'Narration'], rows: rows, sum: 6 };
+    }
+    if (tab === 'money' && sub === 'out') {
+      (D().supplier_payments || []).forEach(function (x) { if (!inDates(x.at)) return;
+        var blk = x.kind === 'fabric' ? 'Fabric purchase' : x.kind === 'consignment' ? 'Consignment payment' : 'On-order purchase';
+        rows.push({ src: 'supplier_payments|' + x.id, cells: [x.at, 'Payment', x.ref || x.id, x.id, who(x.supplier), ledgerName(blk), Number(x.amount) || 0, 0, x.mode || '', (x.advance ? 'Advance' : 'Payment') + (x.purchase ? ' against ' + x.purchase : '') + (x.note ? ', ' + x.note : '')] }); });
+      (D().expenses || []).forEach(function (x) { if (!inDates(x.at)) return;
+        rows.push({ src: 'expenses|' + x.id, cells: [x.at, 'Payment', x.ref || x.id, x.id, x.payee || '', x.category, Number(x.amount) || 0, Number(x.gst) || 0, x.mode || '', x.note || ''] }); });
+      return { heads: ['Voucher date', 'Voucher type', 'Voucher no.', 'Reference', 'Party ledger', 'Ledger', 'Amount', 'GST in it', 'Mode', 'Narration'], rows: rows, sum: 6 };
+    }
+    if (tab === 'money' && sub === 'sales') {
+      D().invoices.filter(function (i) { return i.doc !== 'receipt' && inDates(i.issued); }).forEach(function (i) {
+        var m = GE.orderMoney(i.order), share = m.total ? (Number(i.amount) || 0) / m.total : 0;
+        (m.gstParts || []).forEach(function (gp) { var g = Math.round(gp.gst * share), taxable = Math.round(gp.base * share);
+          rows.push({ src: 'invoices|' + i.id, cells: [i.issued, 'Sales', i.id, i.order, i.billed_to || U.cname(i.client), 'Sales GST ' + gp.rate + '%' + (gp.rate === 5 ? ' (fabric)' : ''), taxable, gp.rate + '%', Math.round(g / 2), g - Math.round(g / 2), 0, taxable + g, i.kind + ' for ' + i.order] }); });
+      });
+      return { heads: ['Voucher date', 'Voucher type', 'Invoice no.', 'Reference', 'Party ledger', 'Ledger', 'Taxable value', 'GST rate', 'CGST', 'SGST', 'IGST', 'Amount', 'Narration'], rows: rows, sum: 11 };
+    }
+    if (tab === 'onorder') {
+      D().purchases.filter(function (p) { return p.type === 'on-order'; }).forEach(function (p) {
+        GE.piecesOf(p.id).forEach(function (pc) {
+          if (inDates(p.at)) { var g = GE.withGst(pc.cost_ex, pc.gst) - pc.cost_ex;
+            rows.push({ src: 'pieces|' + pc.id, cells: [p.at, 'Purchase', p.bill || p.id, p.id, who(p.supplier), 'Purchase: on-order readymade', pc.barcode + ' ' + pc.name + ', size ' + pc.size, 1, Number(pc.cost_ex) || 0, pc.gst + '%', Math.round(g / 2), g - Math.round(g / 2), Number(pc.cost_ex) + g, 'Bought on ' + p.id] }); }
+          if (pc.status === 'returned' && inDates(pc.returned_at)) { var g2 = GE.withGst(pc.cost_ex, pc.gst) - pc.cost_ex;
+            rows.push({ src: 'pieces|' + pc.id, cells: [pc.returned_at, 'Purchase return', p.bill || p.id, p.id, who(p.supplier), 'Purchase: on-order readymade', pc.barcode + ' ' + pc.name + ', size ' + pc.size, -1, -Number(pc.cost_ex) || 0, pc.gst + '%', -Math.round(g2 / 2), -(g2 - Math.round(g2 / 2)), -(Number(pc.cost_ex) + g2), 'Returned after ' + GE.days(pc.received, pc.returned_at) + ' days'] }); }
+        });
+      });
+      return { heads: ['Voucher date', 'Voucher type', 'Bill no.', 'Reference', 'Party ledger', 'Ledger', 'Item', 'Qty', 'Taxable value', 'GST rate', 'CGST', 'SGST', 'Amount', 'Narration'], rows: rows, sum: 12 };
+    }
+    if (tab === 'consignment') {
+      D().pieces.filter(function (pc) { return pc.source === 'consignment' && pc.status === 'sold' && inDates(pc.sold_at); }).forEach(function (pc) { var l = GE.consignmentLine(pc);
+        rows.push({ src: 'pieces|' + pc.id, cells: [pc.sold_at, 'Memo (consignment sale)', pc.purchase || '', pc.barcode, who(pc.supplier), 'Consignment: designer payable', pc.name + ', size ' + pc.size, l.pre, l.gst, l.mrp, l.ours, l.theirs, 'Sold; their ' + (100 - l.margin) + '% before GST'] }); });
+      (D().supplier_bills || []).filter(function (b) { return b.kind === 'consignment' && inDates(b.at); }).forEach(function (b) {
+        rows.push({ src: 'supplier_bills|' + b.id, cells: [b.at, 'Purchase', b.bill_no, b.id, who(b.supplier), 'Purchase: consignment sold', b.note || 'Their bill for sold pieces', Number(b.amount) || 0, 0, Number(b.amount) || 0, 0, Number(b.amount) || 0, 'Designer’s invoice for sold consignment'] }); });
+      return { heads: ['Voucher date', 'Voucher type', 'Voucher no.', 'Reference', 'Party ledger', 'Ledger', 'Item', 'Taxable value', 'GST', 'Amount', 'Saasya Men share', 'Designer share', 'Narration'], rows: rows, sum: 9 };
+    }
+    return { heads: [], rows: [], sum: -1 };
+  }
+  GE.tallyRows = tallyRows; GE.tallyDates = tallyDates;
+  V['#/tally'] = function () {
+    var tab = GE.Q['#/tally.tab'] || 'money', sub = GE.Q['#/tally.sub'] || 'in', Q = tallyDates(), ok = Q.from && Q.to && Q.from <= Q.to;
+    var h = U.head('Tally Export', 'What goes to the accountant, for the dates you choose: every voucher in Tally’s own columns. Each row opens the record it came from, so a correction is made once, at its source.');
+    h += '<div class="tabs">' + Object.keys(TABS).map(function (k) { return '<button class="' + (k === tab ? 'on' : '') + '" data-act="tallyTab" data-id="' + k + '">' + TABS[k] + '</button>'; }).join('') + '</div>';
+    h += '<div class="card tdates"><div class="f"><label>From (required)</label><input type="date" value="' + (Q.from || '') + '" data-change="tallyDate" data-id="from"></div>' +
+      '<div class="f"><label>To (required)</label><input type="date" value="' + (Q.to || '') + '" data-change="tallyDate" data-id="to"></div>' +
+      '<div class="btnrow">' + ['This month', 'Last month', 'This quarter', 'This financial year'].map(function (pz) { return '<button class="mini" data-act="tallyPreset" data-id="' + pz + '">' + pz + '</button>'; }).join('') + '</div></div>';
+    if (!ok) return h + '<div class="note bad"><b>Choose both dates.</b> The export runs only for a date range.</div>';
+    if (tab === 'money') h += '<div class="tabs sub">' + [['in', 'Money in'], ['out', 'Money out'], ['sales', 'Sales invoices (GST by rate)']].map(function (x) { return '<button class="' + (x[0] === sub ? 'on' : '') + '" data-act="tallySub" data-id="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
+    var T = tallyRows(tab, sub), key = '#/tally.' + tab + sub;
+    var fb = GE.filterBar(key, T.rows, { placeholder: 'Search a party, a voucher, a ledger', quick: ['party', 'ledger', 'type'], fields: T.heads.map(function (hd, i) {
+      var k = i === 4 ? 'party' : i === 5 ? 'ledger' : i === 1 ? 'type' : 'c' + i;
+      return { k: k, label: hd, type: (typeof (T.rows[0] && T.rows[0].cells[i]) === 'number') ? 'num' : (i === 4 || i === 5 || i === 1 ? 'enum' : 'text'), get: function (r) { return r.cells[i]; } }; }) });
+    var rows = fb.rows, total = T.sum >= 0 ? sum(rows, function (r) { return Number(r.cells[T.sum]) || 0; }) : 0;
+    if (tab !== 'money') h += supplierReportHtml(tab);
+    h += fb.html + '<div class="btnrow" style="margin-bottom:10px"><button class="btn gold" data-act="tallyXls">Export this for Tally</button> <span class="sub">' + rows.length + ' vouchers, ' + d(Q.from) + ' to ' + d(Q.to) + ' · total ' + rupees(total) + '</span></div>';
+    h += '<div class="card" style="overflow-x:auto"><table class="tally"><thead><tr>' + T.heads.map(function (hd) { return '<th>' + esc(hd) + '</th>'; }).join('') + '<th></th></tr></thead><tbody>';
+    rows.forEach(function (r) {
+      h += '<tr>' + r.cells.map(function (c, i) { return '<td' + (typeof c === 'number' ? ' class="num"' : '') + '>' + (typeof c === 'number' && i !== 7 ? rupees(c) : i === 0 ? d(c) : esc(c)) + '</td>'; }).join('') +
+        '<td><button class="mini" data-act="editRec" data-id="' + esc(r.src) + '">Edit</button></td></tr>';
+    });
+    if (!rows.length) h += '<tr><td colspan="' + (T.heads.length + 1) + '" class="sub">Nothing in these dates.</td></tr>';
+    return h + '</tbody></table></div><p class="hint">Each voucher carries the cockpit’s own number as its reference, so the same voucher imported twice can be spotted. Consignment received is a memo, not a purchase: it becomes a purchase when the designer’s bill comes in.</p>';
+  };
+  function supplierReportHtml(tab) {
+    var Q = tallyDates(), ids = uniq(D().purchases.filter(function (p) { return p.type === (tab === 'onorder' ? 'on-order' : 'consignment'); }).map(function (p) { return p.supplier; }));
+    var h = '<div class="card"><div class="cardhead"><h3>Supplier bill report</h3><div class="btnrow"><button class="mini" data-act="supRepXls" data-id="' + tab + '">Excel</button> <button class="mini" data-act="supRepPdf" data-id="' + tab + '">PDF</button></div></div><div style="overflow-x:auto"><table><thead><tr><th>Supplier</th><th class="num">Total bills</th><th class="num">Bill value</th><th class="num">Purchase value</th><th class="num">Net sale</th><th class="num">Closing balance</th></tr></thead><tbody>';
+    supplierReport(tab).forEach(function (r) { h += '<tr><td>' + esc(r[0]) + '</td><td class="num">' + r[1] + '</td><td class="num">' + rupees(r[2]) + '</td><td class="num">' + rupees(r[3]) + '</td><td class="num">' + rupees(r[4]) + '</td><td class="num"><b>' + rupees(r[5]) + '</b></td></tr>'; });
+    return h + '</tbody></table></div><p class="hint">For ' + d(Q.from) + ' to ' + d(Q.to) + '. Net sale is what sold, before GST; the closing balance is what is still owed to them today.</p></div>';
+  }
+  function supplierReport(tab) {
+    var type = tab === 'onorder' ? 'on-order' : 'consignment';
+    return uniq(D().purchases.filter(function (p) { return p.type === type; }).map(function (p) { return p.supplier; })).map(function (sid) {
+      var purs = D().purchases.filter(function (p) { return p.type === type && p.supplier === sid; });
+      var bills = type === 'on-order' ? purs.filter(function (p) { return inDates(p.at); }) : (D().supplier_bills || []).filter(function (b) { return b.supplier === sid && inDates(b.at); });
+      var billValue = type === 'on-order' ? sum(bills, function (p) { return GE.purchaseSummary(p.id).costIn; }) : sum(bills, function (b) { return Number(b.amount) || 0; });
+      var pv = type === 'on-order' ? billValue : sum(D().pieces.filter(function (pc) { return pc.supplier === sid && pc.source === 'consignment' && inDates(pc.received); }), GE.piecePrice);
+      var net = sum(D().pieces.filter(function (pc) { return pc.supplier === sid && pc.source === type && pc.status === 'sold' && inDates(pc.sold_at); }), GE.piecePrice);
+      var bal = type === 'on-order' ? sum(purs, function (p) { return GE.purchaseSummary(p.id).owed; }) : GE.consignmentSummary(sid).toPay;
+      return [who(sid), bills.length, billValue, pv, net, bal];
+    });
+  }
+  GE.supplierReport = supplierReport;
+  var SR_HEADS = ['Supplier', 'Total bills', 'Bill value', 'Purchase value', 'Net sale', 'Closing balance'];
+  A.supRepXls = function (tab) { var Q = tallyDates(); GE.xls('Saasya-Men-supplier-bills-' + tab + '-' + Q.from + '-to-' + Q.to + '.xlsx', [{ name: 'Supplier bills', rows: [SR_HEADS].concat(supplierReport(tab)) }]); };
+  A.supRepPdf = function (tab) { var Q = tallyDates(); GE.makePdf(sheetDoc('SUPPLIER BILL REPORT', TABS[tab] + ' · ' + d(Q.from) + ' to ' + d(Q.to), SR_HEADS, supplierReport(tab).map(function (r) { return [r[0], String(r[1]), r[2], r[3], r[4], r[5]]; }), null, ''), 'Saasya-Men-supplier-bills-' + tab + '.pdf'); };
+  A.tallyTab = function (t) { GE.Q['#/tally.tab'] = t; GE.refresh(); };
+  A.tallySub = function (t) { GE.Q['#/tally.sub'] = t; GE.refresh(); };
+  A.tallyDate = function (k, el) { tallyDates()[k] = el.value; GE.refresh(); };
+  A.tallyPreset = function (pz) { var r = GE.fbRange({ preset: pz }); var Q = tallyDates(); Q.from = r[0]; Q.to = r[1]; GE.refresh(); };
+  A.tallyXls = function () {
+    var Q = tallyDates(); if (!Q.from || !Q.to) { GE.toast('Choose both dates first.'); return; }
+    var tab = GE.Q['#/tally.tab'] || 'money', sub = GE.Q['#/tally.sub'] || 'in', T = tallyRows(tab, sub), key = '#/tally.' + tab + sub;
+    var fb = GE.filterBar(key, T.rows, { fields: T.heads.map(function (hd, i) { var k = i === 4 ? 'party' : i === 5 ? 'ledger' : i === 1 ? 'type' : 'c' + i; return { k: k, label: hd, get: function (r) { return r.cells[i]; } }; }) });
+    var name = (tab === 'money' ? ({ in: 'money-in', out: 'money-out', sales: 'sales' })[sub] : tab) + '-' + Q.from + '-to-' + Q.to;
+    xls('Saasya-Men-Tally-' + name + '.xlsx', [{ name: 'Vouchers', rows: [T.heads].concat(fb.rows.map(function (r) { return r.cells; })) }]);
+    GE.toast(fb.rows.length + ' vouchers exported, ' + d(Q.from) + ' to ' + d(Q.to) + '.');
+  };
+
 })();

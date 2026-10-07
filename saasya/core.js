@@ -109,8 +109,11 @@ var GE = (function () {
   var ADD_LABELS = ['Extra design work','Delivery charges','Porter / courier','Express making','Other'];
   var OUR_DESIGN_TYPES = ['Our own bespoke','Our own readymade'];
 
-  var COST_KINDS = ['Fabric','Readymade piece','Marking','Cutting','Stitching','Designing','Embroidery / handwork','Karigari / extra work',
-                    'Finishing','Buttons and trims','Porter / courier','Third-party stitching','Other'];
+  /* 7 Oct: an order is charged only fabric, stitching, designing and handwork, and "Other" when it
+     must be. Porter and the like are expenses of the house, entered in Money in and out. */
+  var COST_KINDS = ['Fabric','Stitching','Designing','Handwork','Other'];
+  var COST_MAP = { 'Marking':'Stitching', 'Cutting':'Stitching', 'Finishing':'Stitching', 'Embroidery / handwork':'Handwork', 'Karigari / extra work':'Handwork',
+                   'Buttons and trims':'Other', 'Third-party stitching':'Other' };
 
   var FOLLOW_METHODS = ['Phone call','WhatsApp','In person','Email','Online meet'];
 
@@ -296,6 +299,30 @@ var GE = (function () {
     var o = one(D.orders, oid); if (r.client && o && r.client !== o.client) { var c = one(D.clients, r.client); return { ok: false, why: r.code + ' belongs to ' + (c ? c.name : 'another client') + '.' }; }
     return { ok: true, reward: r };
   }
+  function nextLotCode(at) {
+    var ym = String(at || localToday()).slice(2, 7).replace('-', ''), n = 0;
+    (D.fabric_lots || []).forEach(function (l) { var m = /-(\d{4})$/.exec(l.code || ''); if (m) n = Math.max(n, Number(m[1])); });
+    return 'FB' + ym + '-' + ('000' + (n + 1)).slice(-4);
+  }
+  function findLot(code) { code = String(code || '').trim().toUpperCase(); return (D.fabric_lots || []).filter(function (l) { return String(l.code || '').toUpperCase() === code; })[0] || null; }
+  /* the third-party designs are the pieces themselves, grouped: never typed twice */
+  function designsOf() {
+    var map = {};
+    (D.pieces || []).forEach(function (p) {
+      if (p.supplier === 'Sasya' || p.source === 'for-order') return;
+      var k = p.supplier + '|' + p.name, g = map[k] = map[k] || { key: k, name: p.name, supplier: p.supplier, kind: p.kind, sources: [], purchases: [], pieces: [], price: piecePrice(p), gst: p.gst };
+      if (g.sources.indexOf(p.source) < 0) g.sources.push(p.source);
+      if (p.purchase && g.purchases.indexOf(p.purchase) < 0) g.purchases.push(p.purchase);
+      g.pieces.push(p);
+    });
+    return Object.keys(map).map(function (k) {
+      var g = map[k], st = g.pieces.filter(function (p) { return p.status === 'in stock'; });
+      var sizes = {}; st.forEach(function (p) { sizes[p.size] = (sizes[p.size] || 0) + 1; });
+      g.inStock = st.length; g.sold = g.pieces.filter(function (p) { return p.status === 'sold'; }).length;
+      g.sizes = Object.keys(sizes).sort().map(function (z) { return z + (sizes[z] > 1 ? ' x' + sizes[z] : ''); }).join(', ');
+      return g;
+    });
+  }
   function findBarcode(code) { code = String(code || '').trim().toUpperCase(); return (D.pieces || []).filter(function (p) { return p.barcode.toUpperCase() === code; })[0] || null; }
   function syncValues() { (D.orders || []).forEach(function (o) { var L = orderLines(o); if (L.listed) o.value = L.garmentsTotal + L.extrasTotal; }); }
   function save() { syncValues(); syncPieces(); try { localStorage.setItem(KEY, JSON.stringify(D)); } catch (e) {} }
@@ -307,6 +334,13 @@ var GE = (function () {
     /* 6 Oct: stock. Every physical piece is one record with a barcode; purchases own them. */
     D.supplier_bills = D.supplier_bills || []; D.supplier_payments = D.supplier_payments || [];
     D.rewards = D.rewards || []; D.expenses = D.expenses || [];
+    /* porter and courier move off the orders into expenses; old cost kinds fold into the four */
+    (D.costlines || []).slice().forEach(function (l) {
+      if (/porter|courier/i.test(l.kind)) {
+        D.expenses.push({ id: 'EX-' + l.id, at: l.at || TODAY, category: 'Porter / courier', payee: '', amount: Number(l.amount) || 0, gst: 0, mode: 'Cash', ref: '', note: (l.label || '') + (l.order ? ' (was entered on ' + l.order + ')' : ''), by: l.by || '' });
+        D.costlines.splice(D.costlines.indexOf(l), 1);
+      } else if (COST_KINDS.indexOf(l.kind) < 0) l.kind = COST_MAP[l.kind] || 'Other';
+    });
     if (!D.stitching) { var sd0 = (typeof SEED === 'function') ? SEED() : {}; D.stitching = sd0.stitching || []; if (!D.expenses.length) D.expenses = sd0.expenses || []; if (!D.rewards.length) D.rewards = sd0.rewards || []; }
     if (!D.priceRule.markup) D.priceRule.markup = 1.6;
     (D.stitching || []).forEach(function (x) { if (KINDS.indexOf(x.kind) < 0) KINDS.push(x.kind); });   /* an outfit added to the stitching menu can be ordered */
@@ -343,6 +377,7 @@ var GE = (function () {
       var w = gs.map(function (g) { return garmentSuggest(g).amount || 1; }), wt = w.reduce(function (a, b) { return a + b; }, 0), left = Number(o.value);
       gs.forEach(function (g, i) { g.price = i === gs.length - 1 ? left : Math.round(Number(o.value) * w[i] / wt / 500) * 500; left -= g.price; g.price_by = 'agreed'; });
     });
+    (D.fabric_lots || []).forEach(function (l) { if (!l.code) l.code = nextLotCode(l.at); });   /* every lot has a code and a QR */
     syncValues();
   }
   function reset() { try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); }
@@ -408,6 +443,7 @@ var GE = (function () {
     '#/stitching':       function () { return can('stock') === true; },
     '#/rewards':         function () { return can('orders') !== 'mine'; },
     '#/money':           function () { return !!can('invoices'); },
+    '#/tally':           function () { return !!can('invoices'); },
     '#/consignment':     function () { return !!can('invoices'); },
     '#/invoices':        function () { return !!can('invoices'); },
     '#/payables':        function () { return !!can('invoices'); },
@@ -911,7 +947,7 @@ var GE = (function () {
     load: load, save: save, reset: reset,
     me: me, signIn: signIn, signOut: signOut, can: can, money: money, moneyShort: moneyShort,
     ROUTE_OK: ROUTE_OK, pieceOf: pieceOf, pieceCost: pieceCost, piecePrice: piecePrice, withGst: withGst, syncPieces: syncPieces,
-    nextBarcode: nextBarcode, sellOf: sellOf, stitchOf: stitchOf, garmentParts: garmentParts, consumedOf: consumedOf,
+    nextBarcode: nextBarcode, nextLotCode: nextLotCode, findLot: findLot, designsOf: designsOf, sellOf: sellOf, stitchOf: stitchOf, garmentParts: garmentParts, consumedOf: consumedOf,
     garmentInStock: garmentInStock, orderInStock: orderInStock, advRule: advRule, rewardByCode: rewardByCode, rewardCheck: rewardCheck, piecesOf: piecesOf, purchaseSummary: purchaseSummary, consignmentSummary: consignmentSummary, consignmentLine: consignmentLine, addDays: addDays, paidOn: paidOn, receivePieces: receivePieces, findBarcode: findBarcode, supplierMargin: supplierMargin, allowed: allowed,
     myOrders: myOrders,
     payableOf: payableOf, payableOn: payableOn, payableGrossOf: payableGrossOf,

@@ -245,8 +245,11 @@ html:not(.js) #boot{animation:bootfail .6s var(--e2) 4.5s forwards}
  box-shadow:inset 0 1px 0 var(--hi)}
 .nav a.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;
  border-radius:2px;background:var(--gold-ink)}
-.nav .grp{padding:17px 13px 7px;font-size:8.5px;letter-spacing:.28em;color:var(--gold-ink);
- text-transform:uppercase;opacity:.75;font-weight:600}
+.nav .grp{display:flex;align-items:center;justify-content:space-between;width:100%;padding:15px 13px 7px;font-size:8.5px;letter-spacing:.28em;color:var(--gold-ink);
+ text-transform:uppercase;opacity:.85;font-weight:600;background:none;border:0;cursor:pointer;font-family:inherit;text-align:left}
+.nav .grp:hover,.nav .grp:focus-visible{opacity:1}
+.nav .grp .chev{width:7px;height:7px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg);transition:transform .2s}
+.nav .grp[aria-expanded="false"] .chev{transform:rotate(-45deg)}
 .me{padding:15px 20px 0;margin-top:10px;border-top:1px solid var(--line)}
 .me b{display:block;font-size:13px;font-weight:500;letter-spacing:-.015em}
 .me span{display:block;font-size:11px;color:var(--dim);margin-bottom:10px}
@@ -562,6 +565,29 @@ td code{white-space:nowrap;font-variant-numeric:tabular-nums}
 .rep{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);border-radius:10px}
 .filtergrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .filters .mini{margin-top:6px}
+.fbar{margin:4px 0 14px;display:flex;flex-direction:column;gap:8px}
+.fbrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fbq{flex:1 1 240px;min-width:0}
+.fbsel{width:auto;max-width:220px;flex:0 1 auto}
+.fbd{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)}
+.fbd input{width:auto}
+.fbfoot{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chipx{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:3px 6px 3px 10px;border-radius:999px;border:1px solid var(--gold);color:var(--ink)}
+.chipx button{border:0;background:none;color:var(--mut);cursor:pointer;font-size:14px;line-height:1}
+.fbadd{margin-top:8px;padding:12px;border:1px solid var(--line);border-radius:12px}
+.tdates{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.tdates .f{margin:0}
+.tabs.sub button{font-size:12.5px}
+table.tally td{font-size:12.5px;white-space:nowrap}
+.rfrow,.rgrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.rgrow .rgsizes{grid-column:span 2}
+.rfnew{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.rftotal{margin:10px 0;color:var(--mut)}
+.upl1{cursor:pointer}
+.qr{background:#fff;padding:6px;border-radius:8px;line-height:0}
+.qr img,.qr canvas{width:96px;height:96px}
+.pickrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.pickrow .pickfind{flex:1 1 180px;margin:0}
 .scanrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 14px}
 .scanrow label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .scan{flex:1;min-width:220px;font-variant-numeric:tabular-nums;letter-spacing:.04em}
@@ -715,6 +741,7 @@ input[type=date]{color-scheme:dark}
  .nav{order:3;flex:0 0 100%;display:flex;gap:5px;padding:0 0 2px;overflow-x:auto;scrollbar-width:none}
  .nav::-webkit-scrollbar{display:none}
  .nav .grp{display:none}
+ .nav .grpbody{display:contents!important}
  .nav a{flex:none;margin:0;white-space:nowrap;border-radius:99px;padding:9px 15px;background:var(--glass);
   border-color:var(--line)}
  .nav a.on::before{display:none}
@@ -849,11 +876,11 @@ try{if(localStorage.getItem('saasya.theme')==='light')document.documentElement.s
   })();
 </script>
 
-<script src="core.js?v=20261006e"></script>
-<script src="seed.js?v=20261006e"></script>
-<script src="app.js?v=20261006e"></script>
-<script src="views.js?v=20261006e"></script>
-<script src="stock.js?v=20261006e"></script>
-<script src="accounts.js?v=20261006e"></script>
+<script src="core.js?v=20261007a"></script>
+<script src="seed.js?v=20261007a"></script>
+<script src="app.js?v=20261007a"></script>
+<script src="views.js?v=20261007a"></script>
+<script src="stock.js?v=20261007a"></script>
+<script src="accounts.js?v=20261007a"></script>
 <script>GE.boot();</script>
 </body></html>

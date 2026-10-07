@@ -84,6 +84,109 @@
   };
   A.clearSearch = function (route) { GE.Q[route] = ''; GE.refresh(); };
 
+  /* ---------- the filter bar (7 Oct): the same on every list, screen or dialog ----------
+     search across every field, a dropdown for the obvious ones, "+ Add a filter" for any field
+     with a condition, a date range where the rows have dates, and the count. */
+  var FB = {};
+  var FB_PRESETS = ['Everything', 'This month', 'Last month', 'This quarter', 'This financial year', 'Custom dates'];
+  function fbState(key) { return GE.Q[key + '#fb'] = GE.Q[key + '#fb'] || { q: '', quick: {}, manual: [], preset: '', from: '', to: '' }; }
+  function fbRange(S, dflt) {
+    var t = GE.localToday(), y = +t.slice(0, 4), m = +t.slice(5, 7), pad = function (n) { return ('0' + n).slice(-2); }, last = function (yy, mm) { return new Date(yy, mm, 0).getDate(); };
+    switch (S.preset || dflt || 'Everything') {
+      case 'This month': return [y + '-' + pad(m) + '-01', y + '-' + pad(m) + '-' + last(y, m)];
+      case 'Last month': var lm = m === 1 ? 12 : m - 1, ly = m === 1 ? y - 1 : y; return [ly + '-' + pad(lm) + '-01', ly + '-' + pad(lm) + '-' + last(ly, lm)];
+      case 'This quarter': var q0 = Math.floor((m - 1) / 3) * 3 + 1; return [y + '-' + pad(q0) + '-01', y + '-' + pad(q0 + 2) + '-' + last(y, q0 + 2)];
+      case 'This financial year': var fy = m >= 4 ? y : y - 1; return [fy + '-04-01', (fy + 1) + '-03-31'];
+      case 'Custom dates': return [S.from || '', S.to || ''];
+      default: return ['', ''];
+    }
+  }
+  function fbVal(f, r) { var v = f.get(r); return v == null ? '' : v; }
+  function fbTest(f, op, val, v2, r) {
+    var x = fbVal(f, r);
+    if (f.type === 'num') { x = Number(x) || 0; var a = Number(val) || 0, b = Number(v2) || 0;
+      return op === 'more than' ? x > a : op === 'less than' ? x < a : op === 'between' ? x >= a && x <= b : x === a; }
+    if (f.type === 'date') { x = String(x).slice(0, 10); return !x ? false : op === 'on or after' ? x >= val : op === 'on or before' ? x <= val : op === 'between' ? x >= val && x <= v2 : x === val; }
+    x = String(x).toLowerCase(); var s = String(val).toLowerCase();
+    return op === 'is' ? x === s : op === 'is not' ? x !== s : op === 'does not contain' ? x.indexOf(s) < 0 : x.indexOf(s) > -1;
+  }
+  function filterBar(key, rows, opt) {
+    FB[key] = opt; opt.rows = rows;
+    var S = fbState(key), fields = opt.fields, byK = {};
+    fields.forEach(function (f) { byK[f.k] = f; });
+    var dateF = opt.date && byK[opt.date], r = dateF ? fbRange(S, opt.datePreset) : ['', ''];
+    if (opt.mustDate && (!r[0] || !r[1])) r = r[0] || r[1] ? r : ['', ''];
+    var out = rows.filter(function (row) {
+      if (S.q) { var hay = fields.map(function (f) { return String(fbVal(f, row)); }).join(' ').toLowerCase(); if (!S.q.toLowerCase().split(/\s+/).every(function (w) { return hay.indexOf(w) > -1; })) return false; }
+      for (var k in S.quick) if (S.quick[k] !== '' && S.quick[k] != null && byK[k] && String(fbVal(byK[k], row)) !== S.quick[k]) return false;
+      for (var i = 0; i < S.manual.length; i++) { var m = S.manual[i]; if (byK[m.k] && !fbTest(byK[m.k], m.op, m.v, m.v2, row)) return false; }
+      if (dateF && (r[0] || r[1])) { var dv = String(fbVal(dateF, row)).slice(0, 10); if (!dv || (r[0] && dv < r[0]) || (r[1] && dv > r[1])) return false; }
+      return true;
+    });
+    var h = '<div class="fbar" data-fb="' + esc(key) + '"><div class="fbrow">' +
+      '<input class="fbq" type="search" data-input="fbQ" data-id="' + esc(key) + '" value="' + esc(S.q) + '" placeholder="' + esc(opt.placeholder || 'Search') + '" autocomplete="off" aria-label="Search">';
+    (opt.quick || []).forEach(function (k) {
+      var f = byK[k]; if (!f) return;
+      var vals = f.options || rows.map(function (row) { return String(fbVal(f, row)); }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).sort();
+      h += '<select class="fbsel" data-change="fbQuick" data-id="' + esc(key) + '|' + k + '" aria-label="' + esc(f.label) + '"><option value="">' + esc(f.all || 'Every ' + f.label.toLowerCase()) + '</option>' +
+        vals.map(function (v) { return '<option' + (S.quick[k] === v ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select>';
+    });
+    if (dateF) {
+      h += '<select class="fbsel" data-change="fbPreset" data-id="' + esc(key) + '" aria-label="Dates">' + FB_PRESETS.map(function (p) { return '<option' + ((S.preset || opt.datePreset || 'Everything') === p ? ' selected' : '') + '>' + p + '</option>'; }).join('') + '</select>';
+      if ((S.preset || opt.datePreset) === 'Custom dates')
+        h += '<label class="fbd">From <input type="date" value="' + (S.from || '') + '" data-change="fbDate" data-id="' + esc(key) + '|from"></label><label class="fbd">To <input type="date" value="' + (S.to || '') + '" data-change="fbDate" data-id="' + esc(key) + '|to"></label>';
+    }
+    h += '<button class="mini" data-act="fbAdd" data-id="' + esc(key) + '">+ Add a filter</button></div>';
+    var chips = S.manual.map(function (m, i) { var f = byK[m.k]; return f ? '<span class="chipx">' + esc(f.label + ' ' + m.op + ' ' + (f.type === 'date' ? d(m.v) : m.v) + (m.op === 'between' ? ' and ' + (f.type === 'date' ? d(m.v2) : m.v2) : '')) +
+      ' <button data-act="fbDel" data-id="' + esc(key) + '|' + i + '" aria-label="Remove this filter">&times;</button></span>' : ''; }).join('');
+    var any = S.q || S.manual.length || Object.keys(S.quick).some(function (k) { return S.quick[k]; }) || S.preset;
+    h += '<div class="fbfoot">' + chips + '<span class="sub">' + (out.length === rows.length ? rows.length + ' in all' : out.length + ' of ' + rows.length + ' shown') +
+      (dateF && (r[0] || r[1]) ? ' · ' + (r[0] ? d(r[0]) : 'start') + ' to ' + (r[1] ? d(r[1]) : 'today') : '') + '</span>' +
+      (any ? ' <button class="mini" data-act="fbClear" data-id="' + esc(key) + '">Clear all</button>' : '') + '</div></div>';
+    return { html: h, rows: out, range: r };
+  }
+  GE.filterBar = filterBar; GE.fbState = fbState; GE.fbRange = fbRange;
+  A.fbQ = function (key, el) {
+    fbState(key).q = el.value; var caret = el.selectionStart;
+    if (FB[key] && FB[key].redraw) FB[key].redraw(); else GE.refresh();
+    var again = document.querySelector('.fbq[data-id="' + key + '"]'); if (again) { again.focus(); try { again.setSelectionRange(caret, caret); } catch (e) {} }
+  };
+  function fbRedraw(key) { if (FB[key] && FB[key].redraw) FB[key].redraw(); else GE.refresh(); }
+  A.fbQuick = function (id, el) { var p = id.split('|'); fbState(p[0]).quick[p[1]] = el.value; fbRedraw(p[0]); };
+  A.fbPreset = function (key, el) { fbState(key).preset = el.value; fbRedraw(key); };
+  A.fbDate = function (id, el) { var p = id.split('|'); fbState(p[0])[p[1]] = el.value; fbRedraw(p[0]); };
+  A.fbDel = function (id) { var p = id.split('|'); fbState(p[0]).manual.splice(Number(p[1]), 1); fbRedraw(p[0]); };
+  A.fbClear = function (key) { GE.Q[key + '#fb'] = { q: '', quick: {}, manual: [], preset: '', from: '', to: '' }; fbRedraw(key); };
+  var FB_OPS = { text: ['contains', 'is', 'is not', 'does not contain'], enum: ['is', 'is not'], num: ['more than', 'less than', 'between', 'is'], date: ['on or after', 'on or before', 'between', 'is'] };
+  A.fbAdd = function (key) {
+    var o = FB[key]; if (!o) return;
+    var inDialog = document.getElementById('modal') && document.getElementById('modal').classList && document.getElementById('modal').classList.contains('on');
+    var form = '<div class="fbadd" id="fbAddBox"><div class="three"><div class="f"><label>Field</label><select id="fbF" data-change="fbAddField" data-id="' + esc(key) + '">' +
+      o.fields.map(function (f) { return '<option value="' + f.k + '">' + esc(f.label) + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f"><label>Condition</label><select id="fbOp"></select></div><div class="f" id="fbVals"></div></div>' +
+      '<button class="btn gold" data-act="fbSave" data-id="' + esc(key) + '">Add this filter</button></div>';
+    if (inDialog) { var box = document.querySelector('.fbar[data-fb="' + key + '"]'); if (box) { var old = document.getElementById('fbAddBox'); if (old) old.remove(); box.insertAdjacentHTML('beforeend', form); } }
+    else GE.modal('<h2>Add a filter</h2><p class="sub">Pick any field, a condition and a value.</p>' + form);
+    A.fbAddField(key);
+  };
+  A.fbAddField = function (key) {
+    var o = FB[key], f = o.fields.filter(function (x) { return x.k === document.getElementById('fbF').value; })[0], t = f.type || 'text';
+    document.getElementById('fbOp').innerHTML = FB_OPS[t].map(function (x) { return '<option>' + x + '</option>'; }).join('');
+    var input = function (id) {
+      if (t === 'enum') { var vals = f.options || o.rows.map(function (r) { return String(fbVal(f, r)); }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).sort();
+        return '<select id="' + id + '">' + vals.map(function (v) { return '<option>' + esc(v) + '</option>'; }).join('') + '</select>'; }
+      return '<input id="' + id + '" type="' + (t === 'num' ? 'number' : t === 'date' ? 'date' : 'text') + '">';
+    };
+    document.getElementById('fbVals').innerHTML = '<label>Value</label>' + input('fbV') + (t === 'num' || t === 'date' ? '<div class="hint">For "between", the second value:</div>' + input('fbV2') : '');
+  };
+  A.fbSave = function (key) {
+    var v = document.getElementById('fbV').value; if (v === '') { GE.toast('Put a value in.'); return; }
+    fbState(key).manual.push({ k: document.getElementById('fbF').value, op: document.getElementById('fbOp').value, v: v, v2: document.getElementById('fbV2') ? document.getElementById('fbV2').value : '' });
+    var box = document.getElementById('fbAddBox'); if (box && box.parentNode && box.parentNode.classList.contains('fbar')) box.remove(); else GE.closeModal();
+    fbRedraw(key);
+  };
+
+
   /* ---------- a bunch of cloth, as a photograph or as its weave ---------- */
 
   function weave(f) {
@@ -245,13 +348,11 @@
 
   V['#/clients'] = function () {
     var all = D().clients;
-    var list = all.filter(function (c) {
-      return GE.matches(q('#/clients'), [c.name, c.phone, c.email, c.relation, c.source,
-        famName(c.family), (one(D().families, c.family) || {}).name]);
-    });
+    var fbc = filterBar('#/clients', all, { placeholder: 'Search a name, a number, a household, a source', quick: ['household', 'source', 'stylist'], fields: [{ k: 'name', label: 'Name', get: function (x) { return x.name; } },{ k: 'phone', label: 'Mobile', get: function (x) { return x.phone; } },{ k: 'household', label: 'Household', type: 'enum', get: function (x) { return x.family ? famName(x.family) : 'No household'; } },{ k: 'source', label: 'Source', type: 'enum', get: function (x) { return x.source; } },{ k: 'stylist', label: 'Stylist', type: 'enum', get: function (x) { return pname(x.stylist); } },{ k: 'occasion', label: 'Occasion', type: 'enum', get: function (x) { return x.event || ''; } },{ k: 'eventat', label: 'Date of the occasion', type: 'date', get: function (x) { return x.event_date; } },{ k: 'given', label: 'Given us, to date', type: 'num', get: function (x) { return sum(by(D().orders, 'client', x.id), function (o) { return o.value; }); } }] });
+    var list = fbc.rows;
     var h = head('Clients', 'Every client, one after the other. A client is one person, because every set of measurements is his own. The household he belongs to is inside his record.',
       '<button class="btn gold" data-act="newClient">Add a client</button>');
-    h += searchBar('#/clients', 'Search a name, a number, a family, a source', list.length, all.length);
+    h += fbc.html;
     h += '<div class="card"><table><thead><tr><th>Client</th><th>Number</th><th>Household</th>' +
       '<th>Source</th><th>Measurement sets</th><th>Running now</th>' +
       '<th class="num">Given us, to date</th><th class="num">The family together</th><th></th></tr></thead><tbody>';
@@ -663,14 +764,12 @@
 
   V['#/order'] = function () {
     var all = GE.myOrders();
-    var orders = all.filter(function (o) {
-      return GE.matches(q('#/order'), [o.id, cname(o.client), o.type, o.stage, o.event,
-        pname(o.salesperson), garmentsOf(o.id).map(function (g) { return g.kind; }).join(' ')]);
-    });
+    var fbo = filterBar('#/order', all, { placeholder: 'Search an order, a client, a garment, a type', quick: ['stage', 'type', 'stylist', 'occasion'], date: 'delivery', fields: [{ k: 'order', label: 'Order', get: function (x) { return x.id; } },{ k: 'client', label: 'Client', get: function (x) { return cname(x.client); } },{ k: 'stage', label: 'Stage', type: 'enum', get: function (x) { return x.stage; } },{ k: 'type', label: 'Type', type: 'enum', get: function (x) { return x.type || ''; } },{ k: 'stylist', label: 'Stylist', type: 'enum', get: function (x) { return pname(x.stylist); } },{ k: 'occasion', label: 'Occasion', type: 'enum', get: function (x) { return x.event || ''; } },{ k: 'delivery', label: 'Delivery', type: 'date', get: function (x) { return x.delivery; } },{ k: 'trial', label: 'Trial', type: 'date', get: function (x) { return x.trial; } },{ k: 'value', label: 'Order value', type: 'num', get: function (x) { return x.value; } },{ k: 'pending', label: 'Pending', type: 'num', get: function (x) { return GE.orderMoney(x.id).pending; } },{ k: 'garments', label: 'Garments', get: function (x) { return garmentsOf(x.id).map(function (g) { return g.kind; }).join(' '); } }] });
+    var orders = fbo.rows;
     var h = head('Opportunities',
       'The showroom shows where an order has got to. This shows what each one is: the garments, the dates, the money and who is on it.',
       '<button class="btn gold" data-act="newOrder">Start an order</button>');
-    h += searchBar('#/order', 'Search an order, a client, a garment, a type', orders.length, all.length);
+    h += fbo.html;
     h += '<div class="card"><table><thead><tr><th>Order</th><th>Client</th><th>Type</th>' +
       '<th>Garments</th><th>Stage</th><th>Trial</th><th>Delivery</th><th>Sold by</th>' +
       '<th class="num">Order value</th><th class="num">Pending</th><th></th></tr></thead><tbody>';
@@ -1389,7 +1488,7 @@
       by(D().people, 'role', 'Master').map(function (p) { return '<option value="' + p.id + '"' + (p.id === g.master ? ' selected' : '') + '>' + esc(p.name) + (p.craft ? ' · ' + esc(p.craft) : '') + '</option>'; }).join('') +
       '</select></div></div>' +
       '<div class="two"><div class="f"><label>Amount</label><input type="number" id="gcAmt"></div>' +
-      '<div class="f"><label>Detail</label><input id="gcLabel" placeholder="Zardozi on the placket and cuffs"></div></div>' +
+      '<div class="f"><label>Detail</label><input id="gcLabel" placeholder="Zardozi on the placket and cuffs"><div class="hint">For Other, say what it was. Porter is entered in Money in and out.</div></div></div>' +
       '<div class="f"><label>The bill, if there is one</label><input type="file" id="gcFile" accept="image/*,application/pdf"></div>' +
       '<button class="btn gold" data-act="saveGCost" data-id="' + g.id + '">Add it</button>');
   };
@@ -1397,6 +1496,7 @@
     var g = one(D().garments, id), $ = function (i) { return document.getElementById(i); };
     var amt = Number($('gcAmt').value) || 0;
     if (amt <= 0) { GE.toast('Put an amount in.'); return; }
+    if ($('gcKind').value === 'Other' && !String($('gcLabel').value).trim()) { GE.toast('Say what the other cost was.'); return; }
     var file = $('gcFile') && $('gcFile').files && $('gcFile').files[0];
     D().costlines.push({ id: GE.uid('CL-'), order: g.order, garment: g.id, kind: $('gcKind').value, person: $('gcWho').value,
       label: $('gcLabel').value, amount: amt, file: file ? file.name : '', by: GE.me().id, at: GE.TODAY });
@@ -1474,11 +1574,8 @@
       /* once it is delivered it leaves the floor. The history stays on the client. */
       return g.stage !== 'Delivered' && o.stage !== 'Delivered';
     });
-    var gs = all.filter(function (g) {
-      var o = one(D().orders, g.order);
-      return GE.matches(q('#/floor'), [g.kind, g.order, cname(o.client), g.stage, pname(g.master), pname(o.stylist), o.ops ? pname(o.ops) : '',
-        GE.fabricsOf(g).map(function (u) { return fname(u.fabric); }).join(' ')]);
-    });
+    var fbf = filterBar('#/floor', all, { placeholder: 'Search a garment, a client, a stylist, a master, a fabric', quick: ['stage', 'master', 'stylist', 'ops', 'kind'], date: 'due', fields: [{ k: 'kind', label: 'Garment', type: 'enum', get: function (x) { return x.kind; } },{ k: 'order', label: 'Order', get: function (x) { return x.order; } },{ k: 'client', label: 'Client', get: function (x) { return cname((one(D().orders, x.order) || {}).client); } },{ k: 'stage', label: 'Stage', type: 'enum', get: function (x) { return x.stage; } },{ k: 'master', label: 'Master', type: 'enum', get: function (x) { return x.master ? pname(x.master) : 'Nobody yet'; } },{ k: 'stylist', label: 'Stylist', type: 'enum', get: function (x) { return pname((one(D().orders, x.order) || {}).stylist); } },{ k: 'ops', label: 'Operations person', type: 'enum', get: function (x) { return (one(D().orders, x.order) || {}).ops ? pname(one(D().orders, x.order).ops) : 'Nobody yet'; } },{ k: 'due', label: 'Due back', type: 'date', get: function (x) { return x.due; } },{ k: 'sat', label: 'Days at this stage', type: 'num', get: function (x) { return GE.sittingFor(x); } },{ k: 'fabric', label: 'Fabric', get: function (x) { return GE.fabricsOf(x).map(function (u) { return fname(u.fabric); }).join(' '); } }] });
+    var gs = fbf.rows;
     var h = head('Our operations', 'Every in-house garment, who is holding it and for how long. The stage is the garment’s, not the order’s. A delivered order leaves this floor.');
     h += agentStrip(3);
     h += '<div class="kpis">' +
@@ -1487,7 +1584,7 @@
       kpi(all.filter(function (g) { return g.due && days(GE.TODAY, g.due) < 0; }).length, 'Past their date', '') +
       kpi(all.filter(function (g) { return GE.sittingFor(g) > 7; }).length, 'Sat over a week', 'at one stage') +
       '</div>';
-    h += searchBar('#/floor', 'Search a garment, a client, a stylist, a master, a fabric', gs.length, all.length);
+    h += fbf.html;
     h += '<div class="card">' + garmentTable(gs, false, true) + '</div>';
     return h;
   };
@@ -1526,13 +1623,11 @@
       var o = one(D().orders, g.order);
       return o && GE.isThird(g) && g.stage !== 'Delivered' && o.stage !== 'Delivered';
     });
-    var gs = all.filter(function (g) {
-      var o = one(D().orders, g.order);
-      return GE.matches(q('#/designers-floor'), [g.kind, g.order, cname(o.client), g.stage, dgname(o.designer)]);
-    });
+    var fbd = filterBar('#/designers-floor', all, { placeholder: 'Search a designer, a client, a piece', quick: ['designer', 'stage'], date: 'due', fields: [{ k: 'kind', label: 'Piece', type: 'enum', get: function (x) { return x.kind; } },{ k: 'order', label: 'Order', get: function (x) { return x.order; } },{ k: 'client', label: 'Client', get: function (x) { return cname((one(D().orders, x.order) || {}).client); } },{ k: 'designer', label: 'Designer', type: 'enum', get: function (x) { return dgname(x.designer); } },{ k: 'stage', label: 'Stage', type: 'enum', get: function (x) { return x.stage; } },{ k: 'due', label: 'Back from the designer', type: 'date', get: function (x) { return x.due; } },{ k: 'sat', label: 'Days at this stage', type: 'num', get: function (x) { return GE.sittingFor(x); } }] });
+    var gs = fbd.rows;
     var h = head('At the designers', 'Everything sitting with a third-party designer, and how late it is. We cannot see their workshop, so the dates and the chasing are all we have.');
     h += agentStrip(3);
-    h += searchBar('#/designers-floor', 'Search a designer, a client, a piece', gs.length, all.length);
+    h += fbd.html;
     h += '<div class="card"><table><thead><tr><th>Piece</th><th>Order</th><th>Designer</th><th>Stage</th>' +
       '<th>Promised back</th><th>Delivery to him</th><th>Sat</th><th></th></tr></thead><tbody>';
     gs.forEach(function (g) {
@@ -1620,10 +1715,8 @@
   V['#/fabric'] = function () {
     var metresOnly = GE.can('stock') === 'metres';
     var all = D().fabrics;
-    var list = all.filter(function (f) {
-      var v = one(D().vendors, f.vendor);
-      return GE.matches(q('#/fabric'), [f.brand, f.colour, f.pattern, f.book, v && v.name]);
-    });
+    var fbl = filterBar('#/fabric', all, { placeholder: 'Search a brand, a colour, a pattern, a vendor', quick: ['vendor', 'brand', 'colour'], fields: [{ k: 'brand', label: 'Brand', type: 'enum', get: function (x) { return x.brand; } },{ k: 'colour', label: 'Colour', type: 'enum', get: function (x) { return x.colour; } },{ k: 'pattern', label: 'Pattern', get: function (x) { return x.pattern; } },{ k: 'book', label: 'Book', get: function (x) { return x.book; } },{ k: 'vendor', label: 'Vendor', type: 'enum', get: function (x) { return (one(D().vendors, x.vendor) || {}).name || ''; } },{ k: 'price', label: 'Their price a metre', type: 'num', get: function (x) { return x.cost; } },{ k: 'holds', label: 'They hold, metres', type: 'num', get: function (x) { return x.at_vendor; } },{ k: 'ours', label: 'We hold, metres', type: 'num', get: function (x) { return GE.stockOf(x.id).hand; } }] });
+    var list = fbl.rows;
     var h = head('Fabric library', 'Every vendor’s cloth and what they hold at their end, for choosing and showing. Our own metres are in Fabric stock.',
       metresOnly ? '' : '<button class="btn gold" data-act="newFabric">Add a cloth to the library</button> ' +
         '<button class="btn alt" data-act="newVendor">Add a vendor</button>');
@@ -1632,7 +1725,7 @@
         kpi(sum(all, function (f) { return Number(f.at_vendor) || 0; }) + ' m', 'Held at the vendors', 'what they told us they hold') +
         kpi(all.filter(function (f) { return GE.stockOf(f.id).hand > 0; }).length, 'Also in our stock', 'see Fabric stock') + '</div>';
     }
-    h += searchBar('#/fabric', 'Search a brand, a colour, a pattern, a vendor', list.length, all.length);
+    h += fbl.html;
     h += '<div class="grid">';
     list.forEach(function (f) {
       var v = one(D().vendors, f.vendor), ours = GE.stockOf(f.id).hand;
@@ -1779,61 +1872,48 @@
   /* ================= Readymade, in two segments ================= */
 
   V['#/readymade'] = function () {
-    var seg = GE.Q['#/readymade.seg'] || 'Ours';
-    var all = D().readymade.filter(function (r) {
-      return seg === 'Ours' ? r.owner === 'Sasya' : r.owner !== 'Sasya';
-    });
-    var list = all.filter(function (r) {
-      return GE.matches(q('#/readymade'), [r.name, r.code, r.kind, r.designed_by, r.size, r.warehouse,
-        r.owner === 'Sasya' ? 'ours' : dgname(r.owner)]);
-    });
-    var h = head('Readymade', 'Finished pieces on the floor. Ours and the designers’ are kept apart, because theirs is their money standing in our shop.',
-      seg === 'Ours' ? '<button class="btn gold" data-act="newPiece">Add one of ours</button>' : '');
-    h += '<div class="tabs">' + ['Ours', 'Third-party'].map(function (t) {
-      return '<button class="' + (t === seg ? 'on' : '') + '" data-act="segRM" data-id="' + t + '">' + t +
-        ' <span class="sub">' + D().readymade.filter(function (r) {
-          return t === 'Ours' ? r.owner === 'Sasya' : r.owner !== 'Sasya'; }).length + '</span></button>';
-    }).join('') + '</div>';
-    h += searchBar('#/readymade', 'Search a piece, a code, a designer', list.length, all.length);
-
-    h += '<div class="card"><table><thead><tr>' +
-      (seg === 'Ours' ? '<th>Our name for it</th><th>Designed by</th><th>Kind</th><th>Size</th>' +
-        '<th class="num">What it costs us</th><th class="num">What we sell it at</th>' +
-        '<th class="num">Made so far</th><th>On the floor</th><th>To make another</th><th></th>'
-      : '<th>Piece</th><th>Whose</th><th>Designed by</th><th>Kind</th><th>Size</th>' +
-        '<th class="num">Price</th><th>On the floor</th><th></th>') +
-      '</tr></thead><tbody>';
-    list.forEach(function (r) {
-      var age = r.age_days >= 90 ? ' ' + pill('dead', 'warn') : (r.age_days <= 14 ? ' ' + pill('moving', 'ok') : '');
-      if (seg === 'Ours') {
-        var madeFrom = D().orders.filter(function (o) { return o.from_design === r.id; }).length;
-        h += '<tr><td><b>' + esc(r.name) + '</b><div class="sub">' + esc(r.code) + ' · ' + esc(r.warehouse) + '</div></td>' +
-          '<td>' + esc(r.designed_by) + '</td><td>' + esc(r.kind) + '</td><td>' + esc(r.size) + '</td>' +
-          '<td class="num">' + GE.money(r.cost_to_make) + '</td>' +
-          '<td class="num">' + GE.money(r.price) + '<div class="sub">' +
-          (GE.can('cost') && r.price ? Math.round((r.price - r.cost_to_make) / r.price * 100) + '% kept' : '') + '</div></td>' +
-          '<td class="num">' + (r.made_count + madeFrom) + '<div class="sub">' +
-          (madeFrom ? madeFrom + ' from the cockpit' : '') + '</div></td>' +
-          '<td>' + r.age_days + ' days' + age + '</td><td>' + r.make_days + ' days</td>' +
+    var seg = GE.Q['#/readymade.seg'] || 'Ours', SRC = { 'on-order': 'On-order', 'consignment': 'Consignment' };
+    var ours = D().readymade.filter(function (r) { return r.owner === 'Sasya'; }), theirs = GE.designsOf();
+    var stockOf2 = function (r) { var ps = D().pieces.filter(function (p) { return p.supplier === 'Sasya' && p.status === 'in stock' && (p.design === r.id || p.name === r.name); }), m = {};
+      ps.forEach(function (p) { m[p.size] = (m[p.size] || 0) + 1; }); return { n: ps.length, sizes: Object.keys(m).sort().map(function (z) { return z + (m[z] > 1 ? ' x' + m[z] : ''); }).join(', ') }; };
+    var h = head('Designs', 'Ours, added here. The designers’ come in by themselves the moment an on-order purchase or a consignment is received, tagged as one or the other.',
+      seg === 'Ours' ? '<button class="btn gold" data-act="newPiece">Add one of ours</button>' : '<button class="btn gold" data-act="receiveGoods">Receive a purchase or consignment</button>');
+    h += '<div class="tabs">' + [['Ours', ours.length], ['Third-party', theirs.length]].map(function (t) {
+      return '<button class="' + (t[0] === seg ? 'on' : '') + '" data-act="segRM" data-id="' + t[0] + '">' + t[0] + ' <span class="sub">' + t[1] + '</span></button>'; }).join('') + '</div>';
+    if (seg === 'Ours') {
+      var fb = filterBar('#/readymade', ours, { placeholder: 'Search a design, a code, who designed it', quick: ['kind', 'by', 'where'], fields: [
+        { k: 'name', label: 'Design', get: function (r) { return r.name; } }, { k: 'code', label: 'Code', get: function (r) { return r.code; } },
+        { k: 'kind', label: 'Kind', type: 'enum', get: function (r) { return r.kind; } }, { k: 'by', label: 'Designed by', type: 'enum', get: function (r) { return r.designed_by; } },
+        { k: 'where', label: 'Where', type: 'enum', get: function (r) { return r.warehouse; } }, { k: 'price', label: 'We sell it at', type: 'num', get: function (r) { return r.price; } },
+        { k: 'stock', label: 'In stock', type: 'num', get: function (r) { return stockOf2(r).n; } }] });
+      h += fb.html + '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Our name for it</th><th>Designed by</th><th>Kind</th><th class="num">What it costs us</th><th class="num">What we sell it at</th><th>In stock, by size</th><th>To make another</th><th></th></tr></thead><tbody>';
+      fb.rows.forEach(function (r) {
+        var st = stockOf2(r);
+        h += '<tr><td><b>' + esc(r.name) + '</b><div class="sub">' + esc(r.code) + ' · ' + esc(r.warehouse) + '</div></td><td>' + esc(r.designed_by) + '</td><td>' + esc(r.kind) + '</td>' +
+          '<td class="num">' + GE.money(r.cost_to_make) + '</td><td class="num">' + GE.money(r.price) + '</td>' +
+          '<td>' + (st.n ? st.n + ' · ' + esc(st.sizes) : '<span class="sub">none in stock</span>') + '</td><td>' + r.make_days + ' days</td>' +
           '<td><button class="mini" data-act="useDesign" data-id="' + r.id + '">Start an order from it</button></td></tr>';
-      } else {
-        h += '<tr><td><b>' + esc(r.name) + '</b><div class="sub">' + esc(r.warehouse) + '</div></td>' +
-          '<td>' + esc(dgname(r.owner)) + '</td><td>' + esc(r.designed_by) + '</td>' +
-          '<td>' + esc(r.kind) + '</td><td>' + esc(r.size) + '</td>' +
-          '<td class="num">' + GE.money(r.price) + '</td>' +
-          '<td>' + r.age_days + ' days' + age + '</td>' +
-          '<td><button class="mini" data-act="useDesign" data-id="' + r.id + '">Start an order from it</button></td></tr>';
-      }
+      });
+      if (!fb.rows.length) h += '<tr><td colspan="8" class="sub">Nothing in these filters.</td></tr>';
+      return h + '</tbody></table></div><div class="note"><b>Ours.</b> A client often likes a piece on the floor and wants it in his own size. Starting an order from it carries the price across; the measurements are still taken.</div>';
+    }
+    var fb2 = filterBar('#/readymade.tp', theirs, { placeholder: 'Search a design, a designer', quick: ['designer', 'type', 'kind'], fields: [
+      { k: 'name', label: 'Design', get: function (g) { return g.name; } }, { k: 'designer', label: 'Designer', type: 'enum', get: function (g) { return dgname(g.supplier); } },
+      { k: 'type', label: 'Bought as', type: 'enum', options: ['On-order', 'Consignment'], all: 'On-order or consignment', get: function (g) { return g.sources.map(function (x) { return SRC[x] || x; }).join(' and '); } },
+      { k: 'kind', label: 'Kind', type: 'enum', get: function (g) { return g.kind; } }, { k: 'stock', label: 'In stock', type: 'num', get: function (g) { return g.inStock; } },
+      { k: 'sold', label: 'Sold', type: 'num', get: function (g) { return g.sold; } }, { k: 'price', label: 'Price before GST', type: 'num', get: function (g) { return g.price; } }] });
+    h += fb2.html + '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Design</th><th>Designer</th><th>Bought as</th><th>In stock, by size</th><th class="num">In stock</th><th class="num">Sold</th><th class="num">Price before GST</th><th class="num">MRP</th><th>Came on</th><th></th></tr></thead><tbody>';
+    fb2.rows.forEach(function (g) {
+      h += '<tr><td><b>' + esc(g.name) + '</b><div class="sub">' + esc(g.kind.split(' / ')[0]) + '</div></td><td>' + esc(dgname(g.supplier)) + '</td>' +
+        '<td>' + g.sources.map(function (x) { return pill(SRC[x] || x, x === 'consignment' ? 'warn' : 'gold'); }).join(' ') + '</td>' +
+        '<td>' + (g.sizes ? esc(g.sizes) : '<span class="sub">none left</span>') + '</td><td class="num">' + g.inStock + '</td><td class="num">' + g.sold + '</td>' +
+        '<td class="num">' + GE.money(g.price) + '</td><td class="num">' + GE.money(GE.withGst(g.price, g.gst)) + '</td><td class="sub">' + esc(g.purchases.join(', ')) + '</td>' +
+        '<td><button class="mini" data-act="seeDesignPieces" data-id="' + esc(g.name) + '">Its pieces</button></td></tr>';
     });
-    if (!list.length) h += '<tr><td colspan="10" class="sub">Nothing matches that.</td></tr>';
-    h += '</tbody></table></div>';
-    h += '<div class="note">' + (seg === 'Ours'
-      ? '<b>Ours.</b> A client often likes a piece on the floor and wants it in his own size. ' +
-        'Starting an order from it carries the price across and the measurements are still taken.'
-      : '<b>Theirs.</b> We cannot make another. What we can do is sell it, keep our margin and pay them the rest.') +
-      '</div>';
-    return h;
+    if (!fb2.rows.length) h += '<tr><td colspan="10" class="sub">Nothing in these filters.</td></tr>';
+    return h + '</tbody></table></div><div class="note"><b>Theirs.</b> Built from what was received; nothing is typed here. Consignment pieces are theirs until sold; on-order pieces are ours, bought on credit.</div>';
   };
+  A.seeDesignPieces = function (name) { var S = GE.fbState('#/stock'); S.q = name; S.quick = { status: '' }; GE.go('#/stock'); };
   A.segRM = function (t) { GE.Q['#/readymade.seg'] = t; GE.refresh(); };
   A.useDesign = function (id) {
     var r = one(D().readymade, id);
@@ -1911,9 +1991,8 @@
       var L = invLine(i);
       return (seg === 'All' || (seg === 'In-house' ? L.inHouse : seg === 'Third-party designer' ? L.third : seg === 'Receipts' ? i.doc === 'receipt' : i.doc !== 'receipt')) && (!dz || L.designers.indexOf(dz) > -1);
     });
-    var list = all.filter(function (i) {
-      return GE.matches(q('#/invoices'), [i.id, i.billed_to, i.order, i.kind, cname(i.client), i.scope]);
-    });
+    var fbi = filterBar('#/invoices', all, { placeholder: 'Search a number, a party, an order', quick: ['paper', 'kind'], date: 'issued', fields: [{ k: 'id', label: 'Number', get: function (x) { return x.id; } },{ k: 'party', label: 'Billed to', get: function (x) { return x.billed_to; } },{ k: 'order', label: 'Order', get: function (x) { return x.order; } },{ k: 'client', label: 'Client', get: function (x) { return cname(x.client); } },{ k: 'paper', label: 'Paper', type: 'enum', get: function (x) { return x.doc === 'receipt' ? 'Receipt' : 'GST invoice'; } },{ k: 'kind', label: 'What for', type: 'enum', get: function (x) { return x.kind; } },{ k: 'issued', label: 'Date', type: 'date', get: function (x) { return x.issued; } },{ k: 'amount', label: 'Amount', type: 'num', get: function (x) { return Number(x.amount) || 0; } },{ k: 'paid', label: 'Paid', type: 'num', get: function (x) { return GE.paidOn(x.id); } }] });
+    var list = fbi.rows;
     var h = head('Invoices', 'There is no invoice value. There is the order value, what has been deducted, what has been paid, and what is pending.',
       '<button class="btn gold" data-act="newInvoice" data-id="">Raise an invoice</button>');
     h += agentStrip(3);
@@ -1927,7 +2006,7 @@
     h += '<div class="tabs">' + ['All', 'In-house', 'Third-party designer', 'Receipts', 'GST invoices'].map(function (t) { return '<button class="' + (t === seg ? 'on' : '') + '" data-act="invSeg" data-id="' + t + '">' + t + '</button>'; }).join('') +
       '<select data-change="invDz" aria-label="Designer" style="width:auto;margin-left:auto"><option value="">Every designer</option>' + D().designers.map(function (x) { return '<option value="' + x.id + '"' + (x.id === dz ? ' selected' : '') + '>' + esc(x.name) + '</option>'; }).join('') + '</select>' +
       (dz ? ' <button class="mini" data-act="invRepPdf" data-id="' + dz + '">Designer report, PDF</button> <button class="mini" data-act="invRepXls" data-id="' + dz + '">Excel</button>' : '') + '</div>';
-    h += searchBar('#/invoices', 'Search a number, a party, an order', list.length, all.length);
+    h += fbi.html;
     h += '<div class="card"><table><thead><tr><th>Number</th><th>Billed to</th><th>Order</th><th>What for</th>' +
       '<th class="num">Order value</th><th class="num">Asked for</th><th class="num">Paid</th>' +
       '<th class="num">Pending on the order</th><th>State</th><th></th></tr></thead><tbody>';
@@ -2026,8 +2105,24 @@
   A.pdf = function (id) { A.invoicePdf(id); };
   /* the invoice, on Saasya Men's letterhead. One for each payment (its invoice), one for the
      whole order. Drawn as a page and turned into a PDF in the browser, so the ₹ is the real one. */
-  var HOUSE_INFO = { name: 'SAASYA MEN', line: 'A house of Sasya', addr: '23a Shakespeare Sarani, Kolkata 700017, West Bengal', gstin: 'GSTIN to be filled in', phone: '+91 33 0000 0000', mail: 'hello@saasya.co' };
+  /* our details on every invoice, receipt and statement: entered by the owner, never fixed in the screen */
+  var HOUSE_DEFAULT = { name: 'SAASYA MEN', line: 'A house of Sasya', addr: '23a Shakespeare Sarani, Kolkata 700017, West Bengal', gstin: '', phone: '', mail: '' };
+  var HOUSE_INFO = {};
+  function house() { D().house = D().house || JSON.parse(JSON.stringify(HOUSE_DEFAULT)); Object.keys(HOUSE_DEFAULT).forEach(function (k) { HOUSE_INFO[k] = D().house[k] || (k === 'gstin' ? 'GSTIN not entered yet' : HOUSE_DEFAULT[k]); }); return HOUSE_INFO; }
+  A.editHouse = function () {
+    if (GE.me().role !== 'Owner') { GE.toast('Only the owner changes our details.'); return; }
+    var hs = D().house = D().house || JSON.parse(JSON.stringify(HOUSE_DEFAULT));
+    var F2 = [['name', 'Name on the invoice'], ['line', 'Line under it'], ['addr', 'Address'], ['gstin', 'GSTIN'], ['phone', 'Phone'], ['mail', 'Email']];
+    GE.modal('<h2>Our details</h2><p class="sub">Printed on every invoice, receipt and statement.</p>' + F2.map(function (f) { return '<div class="f"><label>' + f[1] + '</label><input id="hs_' + f[0] + '" value="' + esc(hs[f[0]] || '') + '"></div>'; }).join('') +
+      '<button class="btn gold" data-act="saveHouse">Save</button>');
+  };
+  A.saveHouse = function () {
+    if (GE.me().role !== 'Owner') return;
+    var hs = D().house; ['name', 'line', 'addr', 'gstin', 'phone', 'mail'].forEach(function (k) { hs[k] = document.getElementById('hs_' + k).value.trim(); });
+    GE.save(); GE.closeModal(); house(); GE.refresh(); GE.toast('Our details are saved. Every new PDF uses them.');
+  };
   function invoiceHtml(o, inv) {
+    house();
     var m = GE.orderMoney(o.id), c = one(D().clients, o.client) || {}, gs = garmentsOf(o.id);
     var pays = []; by(D().invoices, 'order', o.id).forEach(function (i) { by(D().payins, 'invoice', i.id).forEach(function (p) { pays.push({ i: i, p: p }); }); });
     var r = function (n) { return '₹' + Math.round(n || 0).toLocaleString('en-IN'); };
@@ -2065,6 +2160,7 @@
     '.inv .it th{text-align:left;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7a5e41;border-bottom:1px solid #d9cdb9;padding:6px 4px}.inv .it td{padding:6px 4px;border-bottom:1px solid #eee5d6;vertical-align:top}.inv .it td.d{color:#6b6257;font-size:12px}' +
     '.inv th,.inv td{color:#1d1a16!important;opacity:1!important;font-weight:inherit}.inv .it th{color:#7a5e41!important}.inv .it td.d{color:#6b6257!important}.inv b{color:inherit}.inv .n{text-align:right;white-space:nowrap}.inv .it tr.sum td{border-top:1px solid #d9cdb9}.inv .it tr.tot td{border-top:2px solid #a9835a;font-size:14px}.inv .if{display:flex;justify-content:space-between;gap:30px;color:#6b6257;font-size:11px;margin-top:20px}.inv .sg{text-align:right;color:#1d1a16;min-width:180px}';
   function makePdf(html, file) {
+    house();
     var box = document.createElement('div');
     box.style.cssText = 'position:fixed;left:-10000px;top:0;z-index:-1';
     box.innerHTML = '<style>' + INV_CSS + '</style>' + html;
@@ -2139,7 +2235,7 @@
     makePdf(invoiceHtml(one(D().orders, id), null), 'Saasya-Men-' + id + '.pdf');
     GE.toast('Making the PDF of ' + id + '…');
   };
-  GE.invoiceHtml = invoiceHtml; GE.INV_CSS = INV_CSS; GE.makePdf = makePdf; GE.HOUSE_INFO = HOUSE_INFO;
+  GE.invoiceHtml = invoiceHtml; GE.INV_CSS = INV_CSS; GE.makePdf = makePdf; GE.HOUSE_INFO = HOUSE_INFO; GE.house = house;
 
   A.newInvoice = function (oid) {
     var orders = GE.myOrders().filter(function (o) { return o.value > 0; });
@@ -2201,10 +2297,15 @@
       kpi(lakh(sum(open, function (p) { return GE.payableOn(p).ours; })), 'Our margin on those', '') +
       kpi(open.filter(function (p) { return days(p.at) > 30; }).length, 'Older than a month', 'The Settler is on them') +
       '</div>';
-    h += '<div class="card"><table><thead><tr><th>Designer</th><th>Order</th><th>Sold on</th>' +
-      '<th class="num">Total charged</th><th class="num">GST 18%</th><th class="num">Net</th>' +
+    var fbpy = filterBar('#/payables', D().payables, { placeholder: 'Search a designer, an order', quick: ['designer', 'state'], date: 'at', fields: [
+      { k: 'designer', label: 'Designer', type: 'enum', get: function (p) { return dgname(p.designer); } }, { k: 'order', label: 'Order', get: function (p) { return p.order; } },
+      { k: 'at', label: 'Sold on', type: 'date', get: function (p) { return p.at; } }, { k: 'state', label: 'State', type: 'enum', options: ['Owed', 'Paid'], all: 'Owed or paid', get: function (p) { return p.paid ? 'Paid' : 'Owed'; } },
+      { k: 'theirs', label: 'Theirs', type: 'num', get: function (p) { return GE.payableOn(p).payable; } }] });
+    h += fbpy.html;
+    h += '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Designer</th><th>Order</th><th>Sold on</th>' +
+      '<th class="num">Total charged</th><th class="num">GST in it</th><th class="num">Before GST</th>' +
       '<th class="num">Our margin</th><th class="num">Theirs</th><th>State</th><th></th></tr></thead><tbody>';
-    D().payables.forEach(function (p) {
+    fbpy.rows.forEach(function (p) {
       var m = GE.payableOn(p);
       h += '<tr><td><b>' + esc(dgname(p.designer)) + '</b><div class="sub">' + p.margin + '% to us</div></td>' +
         '<td>' + p.order + '</td><td>' + d(p.at) + '</td>' +
@@ -2250,10 +2351,15 @@
 
   V['#/costsheet'] = function () {
     var all = GE.myOrders().filter(function (o) { return o.value > 0; });
-    var orders = all.filter(function (o) {
-      return GE.matches(q('#/costsheet'), [o.id, cname(o.client), o.type]);
-    });
-    var h = head('P/L on each order', 'What each order is worth against everything it has cost us. One order at a time, and the month together.');
+    var ck = function (o, k) { return sum(GE.costOf(o.id).lines.filter(function (l) { return l.kind === k; }), function (l) { return l.amount; }); };
+    var fb = filterBar('#/costsheet', all, { placeholder: 'Search an order, a client, a type', quick: ['type', 'stylist'], date: 'booked', fields: [
+      { k: 'order', label: 'Order', get: function (o) { return o.id; } }, { k: 'client', label: 'Client', get: function (o) { return cname(o.client); } },
+      { k: 'type', label: 'Type', type: 'enum', get: function (o) { return o.type || ''; } }, { k: 'stylist', label: 'Stylist', type: 'enum', get: function (o) { return pname(o.stylist); } },
+      { k: 'booked', label: 'Booked', type: 'date', get: function (o) { return o.booked; } }, { k: 'value', label: 'Order value', type: 'num', get: function (o) { return o.value; } },
+      { k: 'cost', label: 'All cost', type: 'num', get: function (o) { return GE.costOf(o.id).total; } }, { k: 'pl', label: 'P/L', type: 'num', get: function (o) { return GE.marginOf(o.id).kept; } },
+      { k: 'pct', label: 'P/L %', type: 'num', get: function (o) { return GE.marginOf(o.id).pct; } }] });
+    var orders = fb.rows;
+    var h = head('P/L on each order', 'What each order is worth against what it cost: fabric, stitching, designing, handwork and anything else entered on it. House expenses like porter are in Money in and out.');
     var val = sum(all, function (o) { return o.value; });
     var cst = sum(all, function (o) { return GE.costOf(o.id).total; });
     h += '<div class="kpis">' +
@@ -2261,10 +2367,10 @@
       kpi(lakh(cst), 'Cost recorded', 'fabric plus every line entered') +
       kpi(lakh(val - cst), 'P/L, if nothing else lands', val ? Math.round((val - cst) / val * 100) + '%' : '') +
       '</div>';
-    h += searchBar('#/costsheet', 'Search an order, a client, a type', orders.length, all.length);
-    h += '<div class="card"><table><thead><tr><th>Order</th><th>Client</th><th>Type</th>' +
+    h += fb.html;
+    h += '<div class="card" style="overflow-x:auto"><table><thead><tr><th>Order</th><th>Client</th><th>Type</th>' +
       '<th class="num">Order value</th><th class="num">Fabric</th><th class="num">Stitching</th>' +
-      '<th class="num">Designing</th><th class="num">Handwork</th><th class="num">Porter</th>' +
+      '<th class="num">Designing</th><th class="num">Handwork</th><th class="num">Other</th>' +
       '<th class="num">All cost</th><th class="num">P/L</th></tr></thead><tbody>';
     orders.forEach(function (o) {
       var c = GE.costOf(o.id), m = GE.marginOf(o.id);
@@ -2276,8 +2382,8 @@
         '<td class="num">' + rupees(c.fabric) + '</td>' +
         '<td class="num">' + rupees(kind('Stitching')) + '</td>' +
         '<td class="num">' + rupees(kind('Designing')) + '</td>' +
-        '<td class="num">' + rupees(kind('Embroidery / handwork')) + '</td>' +
-        '<td class="num">' + rupees(kind('Porter / courier')) + '</td>' +
+        '<td class="num">' + rupees(kind('Handwork')) + '</td>' +
+        '<td class="num">' + rupees(kind('Other') + (c.pieces || 0)) + '</td>' +
         '<td class="num">' + rupees(c.total) + '</td>' +
         '<td class="num"><b>' + rupees(m.kept) + '</b> <span class="sub">' + m.pct + '%</span></td></tr>';
     });
@@ -2292,7 +2398,7 @@
       '<div class="f"><label>What kind</label><select id="csKind">' +
       GE.COST_KINDS.filter(function (k) { return k !== 'Fabric'; }).map(function (k) {
         return '<option>' + k + '</option>'; }).join('') + '</select></div>' +
-      '<div class="f"><label>Detail</label><input id="csLabel" placeholder="Zardozi on the sherwani, Ratan"></div>' +
+      '<div class="f"><label>Detail</label><input id="csLabel" placeholder="Zardozi on the sherwani, Ratan"><div class="hint">For Other, say what it was. Porter and courier are not order costs: enter them in Money in and out.</div></div>' +
       '<div class="f"><label>Amount</label><input type="number" id="csAmt"></div>' +
       '<p class="hint">Fabric is not entered here. It comes from the metres on the garment times the cost per metre.</p>' +
       '<button class="btn gold" data-act="saveCost" data-id="' + esc(oid) + '">Add it</button>');
@@ -2300,6 +2406,7 @@
   A.saveCost = function (oid) {
     var amt = Number(document.getElementById('csAmt').value) || 0;
     if (amt <= 0) { GE.toast('Put an amount in.'); return; }
+    if (document.getElementById('csKind').value === 'Other' && !String(document.getElementById('csLabel').value).trim()) { GE.toast('Say what the other cost was.'); return; }
     D().costlines.push({ id: GE.uid('CL-'), order: oid, kind: document.getElementById('csKind').value,
       label: document.getElementById('csLabel').value, amount: amt, by: GE.me().id, at: GE.TODAY });
     GE.save(); GE.closeModal(); A.openOrder(oid);
@@ -2543,7 +2650,7 @@
 
   V['#/team'] = function () {
     var h = head('Team', 'Everybody, their role, who they report to and what their role can reach.',
-      '<button class="btn gold" data-act="newPerson">Add somebody</button>');
+      '<button class="btn gold" data-act="newPerson">Add somebody</button>' + (GE.me().role === 'Owner' ? ' <button class="btn alt" data-act="editHouse">Our details on invoices</button>' : ''));
     h += '<div class="card"><table><thead><tr><th>Name</th><th>Role</th><th>Reports to</th>' +
       '<th>Service line</th><th>Login</th><th>Phone</th></tr></thead><tbody>';
     D().people.forEach(function (p) {
@@ -2852,16 +2959,20 @@
 
   /* type to search: the list narrows as you type, for a library of hundreds */
   function fabricPicker(id) {
-    return '<input type="search" id="' + id + 'Find" class="pickfind" placeholder="Type a brand, colour or pattern" data-input="fabFind" data-id="' + id + '" autocomplete="off">' +
+    return '<div class="pickrow"><input type="search" id="' + id + 'Find" class="pickfind" placeholder="Type a brand, colour or pattern" data-input="fabFind" data-id="' + id + '" autocomplete="off">' +
+      '<select id="' + id + 'Ven" class="fbsel" data-change="fabVen" data-id="' + id + '" aria-label="Vendor"><option value="">Every vendor</option>' + D().vendors.map(function (v) { return '<option value="' + v.id + '">' + esc(v.name) + '</option>'; }).join('') + '</select>' +
+      '<select id="' + id + 'Has" class="fbsel" data-change="fabVen" data-id="' + id + '" aria-label="Stock"><option value="">In stock or not</option><option value="1">In our stock</option></select></div>' +
       '<select id="' + id + '" data-change="agPrice"><option value="">None yet</option>' + fabricOptions('') + '</select>';
   }
-  function fabricOptions(t) {
+  function fabricOptions(t, ven, has) {
     t = (t || '').toLowerCase();
-    return D().fabrics.filter(function (f) { return !t || [f.brand, f.colour, f.pattern, f.book].join(' ').toLowerCase().indexOf(t) > -1; })
+    return D().fabrics.filter(function (f) { return (!t || [f.brand, f.colour, f.pattern, f.book].join(' ').toLowerCase().indexOf(t) > -1) && (!ven || f.vendor === ven) && (!has || GE.stockOf(f.id).hand > 0); })
       .map(function (f) { return '<option value="' + f.id + '">' + esc(f.brand + ' ' + f.colour + ', ' + f.pattern) + ' · ' + GE.stockOf(f.id).hand.toFixed(1) + ' m left</option>'; }).join('');
   }
+  A.fabVen = function (id) { A.fabFind(id, document.getElementById(id + 'Find')); };
   A.fabFind = function (id, el) {
-    var sel = document.getElementById(id), opts = fabricOptions(el.value);
+    var ve = document.getElementById(id + 'Ven'), ha = document.getElementById(id + 'Has');
+    var sel = document.getElementById(id), opts = fabricOptions(el ? el.value : '', ve ? ve.value : '', ha ? ha.value : '');
     sel.innerHTML = (id === 'agFab' ? '<option value="">None yet</option>' : '') + (opts || '<option value="">Nothing matches</option>');
     if (opts && el.value) sel.selectedIndex = id === 'agFab' ? 1 : 0;
     if (id === 'agFab') A.agPrice();
@@ -2871,7 +2982,7 @@
     return D().pieces.filter(function (p) { return p.status === 'in stock' && (owner == null || p.supplier === owner) &&
         (!t || [p.barcode, p.name, p.kind, p.size, GE.whoSupplies(p.supplier)].join(' ').toLowerCase().indexOf(t) > -1); })
       .map(function (p) { return '<option value="' + p.id + '">' + esc(p.barcode + ' · ' + p.name) + ' · size ' + esc(p.size || '—') +
-        ' · ' + esc(p.location) + ' · ' + rupees(GE.piecePrice(p)) + ' + GST</option>'; }).join('');
+        ' · ' + esc({ 'own': 'ours', 'on-order': 'on-order', 'consignment': 'consignment', 'for-order': 'made for an order' }[p.source] || '') + ' · ' + esc(p.location) + ' · ' + rupees(GE.piecePrice(p)) + ' + GST</option>'; }).join('');
   }
   function agOwner() { var f = document.getElementById('agFrom'); return f && f.value ? f.value : 'Sasya'; }
   A.pieceFind = function (id, el) {

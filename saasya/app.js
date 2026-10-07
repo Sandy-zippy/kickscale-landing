@@ -22,6 +22,7 @@
     { r:'#/readymade',       n:'Designs' },
     { grp:'Accounts' },
     { r:'#/money',           n:'Money in and out' },
+    { r:'#/tally',           n:'Tally Export' },
     { r:'#/purchases',       n:'On-order purchases' },
     { r:'#/consignment',     n:'Consignment' },
     { r:'#/invoices',        n:'Invoices' },
@@ -113,20 +114,33 @@
     g.classList.add('go');
   }
 
+  function navOpen() { try { return JSON.parse(localStorage.getItem(GE.KEY + '.nav') || '{}') || {}; } catch (e) { return {}; } }
   function drawFrame() {
-    var me = GE.me(), html = '';
+    var me = GE.me(), html = '', groups = [], cur = null;
+    /* 7 Oct: each group folds. The one holding the screen you are on stays open. */
     NAV.forEach(function (it) {
-      if (it.grp) { html += '<div class="grp" data-grp>' + it.grp + '</div>'; return; }
+      if (it.grp) { cur = { name: it.grp, links: [] }; groups.push(cur); return; }
       if (!GE.allowed(it.r)) return;
-      html += '<a class="appear" href="' + it.r + '">' + it.n + '</a>';
+      cur.links.push('<a class="appear" href="' + it.r + '">' + it.n + '</a>');
+    });
+    var open = navOpen(), here = (location.hash || '').split('?')[0];
+    groups.forEach(function (g) {
+      if (!g.links.length) return;
+      var mine = g.links.some(function (l) { return l.indexOf('href="' + here + '"') > -1; }), isOpen = mine || open[g.name] === true;
+      html += '<button class="grp" data-grp="' + g.name + '" aria-expanded="' + isOpen + '">' + g.name + '<span class="chev" aria-hidden="true"></span></button>' +
+        '<div class="grpbody" data-gb="' + g.name + '"' + (isOpen ? '' : ' hidden') + '>' + g.links.join('') + '</div>';
     });
     var nav = document.getElementById('nav');
     nav.innerHTML = html;
-    /* drop a group heading that ended up with nothing under it */
-    [].forEach.call(nav.querySelectorAll('[data-grp]'), function (g) {
-      var n = g.nextElementSibling;
-      if (!n || n.hasAttribute('data-grp')) g.remove();
-    });
+    if (!nav.getAttribute('data-wired')) {
+      nav.setAttribute('data-wired', '1');
+      nav.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-grp]'); if (!b) return;
+        var body = nav.querySelector('[data-gb="' + b.getAttribute('data-grp') + '"]'), now = body.hidden;
+        body.hidden = !now; b.setAttribute('aria-expanded', String(now));
+        var o = navOpen(); o[b.getAttribute('data-grp')] = now; try { localStorage.setItem(GE.KEY + '.nav', JSON.stringify(o)); } catch (err) {}
+      });
+    }
     var d = 0;
     [].forEach.call(nav.querySelectorAll('a'), function (el) {
       el.style.setProperty('--d', (d += 0.028).toFixed(3) + 's');
@@ -225,6 +239,9 @@
        entrance animation on every single click */
     [].forEach.call(document.querySelectorAll('#nav a'), function (a) {
       a.classList.toggle('on', a.getAttribute('href') === r);
+      if (a.getAttribute('href') === r && a.parentNode && a.parentNode.hidden) {   /* moving to a screen opens its group */
+        a.parentNode.hidden = false; var gb = document.querySelector('[data-grp="' + a.parentNode.getAttribute('data-gb') + '"]'); if (gb) gb.setAttribute('aria-expanded', 'true');
+      }
     });
     /* the nav scrolls on a short screen and on a phone: never leave the screen
        you are on sitting half off the end of it */
