@@ -331,11 +331,11 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
 }
 </style>
 <style>
-#safilm{position:absolute;inset:0;overflow:hidden;z-index:0;background:#0a0b0a;pointer-events:none}
+#safilm{position:fixed;inset:0;overflow:hidden;z-index:0;background:#0a0b0a;pointer-events:none}
 #safilm video{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .9s ease}
 #safilm::after{content:"";position:absolute;inset:0;background:
   linear-gradient(180deg,rgba(10,11,10,.62),rgba(10,11,10,.78) 55%,rgba(10,11,10,.92))}
-#salogin{position:relative}
+#salogin{position:fixed}
 #salogin .gate-card{position:relative;z-index:1}
 @media (prefers-reduced-motion: reduce){#safilm video{display:none}}
 </style>
