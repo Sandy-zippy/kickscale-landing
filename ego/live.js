@@ -19,6 +19,9 @@ const holds = () => D.access.scope !== 'none';
 const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.user.division;
 function allowedTab(t) {
   if (['home', 'account', 'soon'].includes(t)) return true;
+  /* each role has its own screens (8 Oct); within them, the access rules below still apply */
+  const only = ROLE_TABS[D.user.role];
+  if (only && !only.includes(t)) return false;
   if (['clients', 'people', 'opps', 'import', 'inventory'].includes(t)) return holds();
   if (t === 'dealers') return holds() && canDiv('wholesale');
   if (t === 'architects') return holds();
@@ -35,7 +38,7 @@ EM.div = D.user.division === 'both' ? 'both' : D.user.division;
    every button; the buttons themselves are hidden in Both. */
 const SEG = { wholesale: 'EGO Premium', retail: 'Big E', both: 'Both companies' };
 const segBadge = div => `<span class="badge plain" data-seg>${esc(SEG[div] || div)}</span>`;
-const isBothView = () => EM.div === 'both' && D.user.division === 'both';
+const isBothView = () => (EM.div === 'both' && D.user.division === 'both') || !!D.access.readonly;   // Both, and a view-only role, look without changing
 const LOOK_ACTS = new Set(['div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
   'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass']);
@@ -43,7 +46,7 @@ const LOOK_ACTS = new Set(['div', 'sign-out', 'menu', 'theme', 'back', 'close-mo
 const hideChangeButtons = root => { if (!isBothView() || !root) return; root.querySelectorAll('[data-act]').forEach(b => { if (!LOOK_ACTS.has(b.dataset.act)) b.setAttribute('hidden', ''); }); root.querySelectorAll('input[type="file"], #move-stage, [data-list-only]').forEach(x => x.setAttribute('hidden', '')); };
 EM.guard = el => {
   if (!isBothView() || LOOK_ACTS.has(el.dataset.act)) return true;
-  bubbleNear(el, 'Both shows EGO Premium and Big E together, to look at. Switch to Wholesale · EGO or Retail · Big E to add or change anything.');
+  bubbleNear(el, D.access.readonly ? `${D.access.name} is view only: you can see, not change.` : 'Both shows EGO Premium and Big E together, to look at. Switch to Wholesale · EGO or Retail · Big E to add or change anything.');
   return false;
 };
 const baseModal = EM.modal.bind(EM);
@@ -54,7 +57,7 @@ EM.render = (...a) => {
   const both = isBothView();
   qs('#shell').classList.toggle('view-both', both);
   hideChangeButtons(qs('#view'));
-  if (both && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
+  if (both && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
 const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
 const NAV_TAIL = ['complaints', 'approvals', 'p200', 'inventory', 'import'];
@@ -241,6 +244,96 @@ EM.VIEWS.home = () => {
     ${notConnectedCard()}</div>`;
 };
 EM.VIEWS.home.title = () => 'Home';
+
+/* ---------------------------------------------------------------- dashboards, one per role (8 Oct)
+   EGO Premium's team: management, the national sales head, field sales, telesales, accounts,
+   dispatch, office admin, marketing. Every figure is counted from saved records in the person's view. */
+const DASH_OF = { owner: 'mgmt', director: 'mgmt', ea: 'mgmt', mis: 'mgmt', ws_head: 'head', ws_rm: 'head', ws_field: 'sales', ws_tele: 'tele', ws_marketing: 'mkt', ws_finance: 'accounts', ws_warehouse: 'dispatch', office_admin: 'office' };
+const under = id => { const out = []; const walk = x => D.staff.filter(s => s.reports_to === x && s.active).forEach(s => { if (!out.includes(s.id)) { out.push(s.id); walk(s.id); } }); walk(id); return out; };
+const thisMonthD = ts => !!ts && dayIST(ts).slice(0, 7) === today().slice(0, 7);
+const sumV = a => a.reduce((t, x) => t + (Number(x.value) || 0), 0);
+const isWon = o => o.stage === wonStage(o.pipeline, D.lists), isOpen = o => !isClosed(o.pipeline, o.stage, D.lists);
+const due = o => (o.total || 0) - (o.paid || 0);
+const daysSince = ts => ts ? Math.floor((Date.now() - Date.parse(ts.endsWith('Z') ? ts : ts.replace(' ', 'T') + 'Z')) / 864e5) : null;
+/* one row per person: dealers they look after, open sales, won this month, overdue next actions */
+function teamTable(ids) {
+  const P = D.access.prices, t = today();
+  const rows = ids.map(id => D.staff.find(s => s.id === id)).filter(Boolean).map(s => { const os = D.opportunities.filter(o => o.owner_id === s.id), open = os.filter(isOpen), won = os.filter(o => isWon(o) && thisMonthD(o.closed_at));
+    return [`<b>${esc(s.name)}</b><div class="small muted">${esc(roleName(s.role))}${s.region ? ' · ' + esc(s.region) : ''}</div>`, num(D.clients.filter(c => c.owner_id === s.id).length), `${num(open.length)}${P && open.length ? ` · ${inr0(sumV(open))}` : ''}`, `${num(won.length)}${P && won.length ? ` · ${inr0(sumV(won))}` : ''}`, (n => n ? `<span class="badge bad">${n}</span>` : '0')(open.filter(o => o.next_date && o.next_date < t).length)]; });
+  return rows.length ? table(['Person', 'Dealers and clients', 'Open opportunities', 'Won this month', 'Overdue actions'], rows) : '<p class="small muted">Nobody reports here yet.</p>';
+}
+const stageTable = () => { const W = D.lists.stages.wholesale || [], os = D.opportunities.filter(o => o.pipeline === 'wholesale' && inDiv(o));
+  return table(['Stage', 'Opportunities', ...(D.access.prices ? ['Value'] : [])], W.map(st => { const a = os.filter(o => o.stage === st); return [esc(st), num(a.length), ...(D.access.prices ? [sumV(a) ? inr0(sumV(a)) : ''] : [])]; })); };
+const fulTable = () => { const O = OPSD(), FS = OS_('fulfilment_stages'); return table(['Fulfilment stage', 'Orders'], FS.map(st => [esc(st), num(O.orders.filter(o => o.ful_stage === st).length)])); };
+const nextTable = (opps, title) => { const t = today(), list = opps.filter(o => isOpen(o) && o.next_date && o.next_date <= t).sort((a, b) => a.next_date.localeCompare(b.next_date)).slice(0, 12);
+  return `<section class="card stack-s"><h3>${title}</h3>${list.length ? table(['Opportunity', 'Client', 'Next action', 'Due'], list.map(o => ({ href: `#/opp/${o.id}`, cells: [`<b>${esc(o.title)}</b>`, esc(clientName(o.client_id)), esc(o.next_action || ''), o.next_date < t ? `<span class="badge bad">${ds(o.next_date)}</span>` : ds(o.next_date)] }))) : '<p class="small muted">Nothing due. Well done.</p>'}</section>`; };
+const ordersAt = (stages, cols) => { const O = OPSD(), list = O.orders.filter(o => stages.includes(o.ful_stage));
+  return list.length ? table(['Order', 'Dealer', ...cols.map(c => c[0])], list.map(o => ({ href: '#/order/' + o.id, cells: [`<b>${esc(o.ref)}</b><div class="small muted">${esc(o.ful_stage)}</div>`, esc(clientName(o.client_id)), ...cols.map(c => c[1](o))] }))) : '<p class="small muted">None right now.</p>'; };
+const schemeCard = filter => { const run = SCH().list.filter(sc => sc.status === 'Approved' && today() >= sc.start_on && today() <= sc.end_on);
+  if (!run.length || !D.access.prices) return '';
+  return `<section class="card stack-s"><h3>Schemes running</h3>${run.map(sc => { const rows = schemeRows(sc).filter(r => !filter || filter(r.c)); return `<div class="small"><a href="#/scheme/${sc.id}"><b>${esc(sc.name)}</b></a> · ends ${ds(sc.end_on)} · ${num(rows.filter(r => r.won).length)} of ${num(rows.length)} reached ${inr0(sc.target)}</div>`; }).join('')}</section>`; };
+function roleDash(kind) {
+  const P = D.access.prices, O = OPSD(), t = today(), mine = o => o.owner_id === me().id, myOpps = D.opportunities.filter(mine), team = under(me().id);
+  const who = `<div class="stack-s"><div class="kicker">${esc(acc().name)} · ${esc(scopeLabel())}</div><h1>${greet()}, ${esc(me().name.split(' ')[0])}</h1></div>`;
+  const short = O.orders.filter(o => [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage)).reduce((a, o) => a + missingOf(o.id), 0);
+  const invDue = O.orders.filter(o => o.invoiced_at && due(o) > 0.5);
+  if (kind === 'mgmt') {
+    const os = D.opportunities.filter(inDiv), open = os.filter(isOpen), won = os.filter(o => isWon(o) && thisMonthD(o.closed_at)), pend = O.approvals.filter(a => a.status === 'Pending'), cs = D.clients.filter(inDiv);
+    const sellers = D.staff.filter(s => s.active && ['ws_field', 'ws_tele', 'ws_marketing', 'ws_head'].includes(s.role)).map(s => s.id), dueAmt = invDue.reduce((a, o) => a + due(o), 0);
+    return `<div class="stack">${who}${cs.length ? '' : empty('Nothing saved yet', 'Add a dealer with its team, an architect firm with its team, or a person, or fill the Excel file and upload it. Every number on this page is counted from what you save.', addButtons())}
+      <div class="grid g4">${tile('Dealers', num(cs.filter(c => DEALER_KINDS.includes(c.kind)).length), '', '#/dealers')}${tile('Architects', num(cs.filter(c => ARCH_KINDS.includes(c.kind)).length), '', '#/architects')}${tile('People', num(peopleRows().length), '', '#/people')}${tile('Open opportunities', num(open.length), P && open.length ? inr0(sumV(open)) : '', '#/opps')}</div>
+      <div class="grid g4">${tile('Won this month', num(won.length), P && won.length ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Orders in fulfilment', num(O.orders.filter(o => o.ful_stage !== lastOf(OS_('fulfilment_stages'))).length), short ? `${num(short)} boxes short` : '', '#/orders')}${tile('Money due', P && dueAmt > 0 ? inr0(dueAmt) : num(invDue.length), invDue.length ? `${num(invDue.length)} invoices · ${num(O.orders.filter(o => o.credit_hold).length)} on credit hold` : '', '#/orders')}${tile('Approvals waiting', num(pend.length), pend.length ? `${num(pend.filter(a => levelLimit(D.lists.rules, a.kind, me().role) >= a.amount).length)} you can decide` : '', '#/approvals')}</div>
+      <section class="card stack-s" data-dash-team><h3>The sales team</h3>${teamTable(sellers)}</section>
+      <div class="grid g2"><section class="card stack-s"><h3>Wholesale pipeline</h3>${stageTable()}</section><section class="card stack-s"><h3>Fulfilment</h3>${fulTable()}</section></div>${schemeCard()}${notConnectedCard()}</div>`;
+  }
+  if (kind === 'head') {
+    const os = D.opportunities.filter(o => o.pipeline === 'wholesale'), open = os.filter(isOpen), won = os.filter(o => isWon(o) && thisMonthD(o.closed_at)), mineAp = O.approvals.filter(a => a.status === 'Pending' && levelLimit(D.lists.rules, a.kind, me().role) >= a.amount);
+    return `<div class="stack">${who}<div class="grid g4">${tile('Team', num(team.length), 'people reporting to you', '#/team')}${tile('Open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps/wholesale')}${tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Approvals for you', num(mineAp.length), mineAp.length ? 'discounts and credit waiting' : 'nothing waiting', '#/approvals')}</div>
+      <section class="card stack-s" data-dash-team><h3>Your team</h3>${teamTable(team)}</section>
+      <div class="grid g2"><section class="card stack-s"><h3>Wholesale pipeline</h3>${stageTable()}</section><section class="card stack-s"><h3>Orders short of stock</h3>${ordersAt([FN('Stock check'), FN('Waiting on production')], [['Missing', o => missingOf(o.id) ? `<span class="badge bad">${num(missingOf(o.id))} boxes</span>` : '<span class="badge ok">covered</span>']])}</section></div>
+      ${nextTable(open.filter(o => o.next_date && o.next_date < t), 'Overdue next actions in your team')}${schemeCard()}</div>`;
+  }
+  if (kind === 'sales' || kind === 'tele') {
+    const open = myOpps.filter(isOpen), won = myOpps.filter(o => isWon(o) && thisMonthD(o.closed_at)), dueN = open.filter(o => o.next_date && o.next_date <= t), myDealers = D.clients.filter(c => mine(c) && DEALER_KINDS.includes(c.kind));
+    const myOrders = O.orders.filter(o => mine(o) && o.ful_stage !== lastOf(OS_('fulfilment_stages')));
+    const callDue = myDealers.filter(c => { const every = Number((c.extra || {}).contact_every_days || 0); if (!every) return false; const last = [c.updated_at, ...D.opportunities.filter(o => o.client_id === c.id).map(o => o.updated_at)].filter(Boolean).sort().pop(); return daysSince(last) >= every; });
+    const tiles = kind === 'tele'
+      ? tile('Calls due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Dealers due a call', num(callDue.length), 'past their call-every days', '#/dealers') + tile('New and contacted leads', num(open.filter(o => o.stage === (D.lists.stages[o.pipeline] || [])[0] || o.stage === (D.lists.stages[o.pipeline] || [])[1]).length), '', '#/opps') + tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook')
+      : tile('My dealers', num(myDealers.length), '', '#/dealers') + tile('My open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps') + tile('Next actions due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook');
+    return `<div class="stack">${who}<div class="grid g4">${tiles}</div>${nextTable(open, kind === 'tele' ? 'Your calls: due today and overdue' : 'Your next actions: due today and overdue')}
+      ${kind === 'tele' && callDue.length ? `<section class="card stack-s"><h3>Dealers due a call</h3>${table(['Dealer', 'Call every', 'City'], callDue.map(c => ({ href: '#/client/' + c.id, cells: [`<b>${esc(c.name)}</b>`, `${num(c.extra.contact_every_days)} days`, esc(c.city)] })))}</section>` : ''}
+      <section class="card stack-s"><h3>Your orders in fulfilment</h3>${myOrders.length ? table(['Order', 'Dealer', 'Where it is'], myOrders.map(o => ({ href: '#/order/' + o.id, cells: [`<b>${esc(o.ref)}</b>`, esc(clientName(o.client_id)), `<span class="badge info">${esc(o.ful_stage)}</span>`] }))) : '<p class="small muted">None right now. An order comes here when your opportunity reaches Order confirmed.</p>'}</section>
+      ${team.length ? `<section class="card stack-s" data-dash-team><h3>Your team</h3>${teamTable(team)}</section>` : ''}${schemeCard(c => c.owner_id === me().id || team.includes(c.owner_id))}</div>`;
+  }
+  if (kind === 'mkt') {
+    const month = myOpps.filter(o => thisMonthD(o.created_at)), srcs = [...new Set(month.map(o => o.source || 'Not filled'))];
+    return `<div class="stack">${who}<div class="grid g4">${tile('Leads this month', num(month.length), '', '#/opps')}${tile('Moved on', num(month.filter(o => (D.lists.stages[o.pipeline] || []).indexOf(o.stage) > 0 && o.stage !== lostStage(o.pipeline, D.lists)).length), 'past the first stage')}${tile('Won', num(month.filter(isWon).length))}${tile('Lost', num(month.filter(o => o.stage === lostStage(o.pipeline, D.lists)).length))}</div>
+      <section class="card stack-s"><h3>This month's leads by source</h3>${srcs.length ? table(['Source', 'Leads', 'Moved on', 'Won'], srcs.map(sr => { const a = month.filter(o => (o.source || 'Not filled') === sr); return [esc(sr), num(a.length), num(a.filter(o => (D.lists.stages[o.pipeline] || []).indexOf(o.stage) > 0 && o.stage !== lostStage(o.pipeline, D.lists)).length), num(a.filter(isWon).length)]; })) : '<p class="small muted">No leads this month yet. Add them as opportunities, with their source.</p>'}</section></div>`;
+  }
+  if (kind === 'accounts') {
+    const pi = O.orders.filter(o => o.ful_stage === FN('PI sent')), paidNot = O.orders.filter(o => o.ful_stage === FN('Payment received'));
+    return `<div class="stack">${who}<div class="grid g4">${tile('Waiting for payment', num(pi.length), P ? inr0(pi.reduce((a, o) => a + due(o), 0)) : '', '#/orders')}${tile('Paid, to invoice', num(paidNot.length), '', '#/orders')}${tile('Invoiced, money due', num(invDue.length), P ? inr0(invDue.reduce((a, o) => a + due(o), 0)) : '', '#/orders')}${tile('On credit hold', num(O.orders.filter(o => o.credit_hold).length), '', '#/approvals')}</div>
+      <section class="card stack-s"><h3>PI sent: waiting for the payment</h3>${ordersAt([FN('PI sent')], P ? [['Total', o => inr0(o.total)], ['Received', o => inr0(o.paid || 0)]] : [])}</section>
+      <section class="card stack-s"><h3>Payment received: to invoice</h3>${ordersAt([FN('Payment received')], P ? [['Received', o => inr0(o.paid || 0)], ['Still due', o => inr0(due(o))]] : [])}</section>
+      <section class="card stack-s" data-dash-due><h3>Invoiced with money still due</h3>${invDue.length ? table(['Order', 'Dealer', ...(P ? ['Still due'] : []), 'Days since invoice'], invDue.sort((a, b) => a.invoiced_at.localeCompare(b.invoiced_at)).map(o => ({ href: '#/order/' + o.id, cells: [`<b>${esc(o.ref)}</b>`, esc(clientName(o.client_id)), ...(P ? [inr0(due(o))] : []), (d => d > D.lists.rules.payment_days ? `<span class="badge bad">${d}</span>` : String(d))(daysSince(o.invoiced_at))] }))) : '<p class="small muted">Nothing due.</p>'}</section></div>`;
+  }
+  if (kind === 'dispatch') {
+    const PS = OS_('production_stages'), recI = PS.indexOf(PNn('Received at warehouse')), coming = O.production.filter(p => PS.indexOf(p.stage) < recI).sort((a, b) => (a.eta || '').localeCompare(b.eta || ''));
+    const low = INVD().products.filter(p => p.extra.low_stock != null && INVD().stock.filter(x => x.product_id === p.id).reduce((a, x) => a + x.boxes, 0) < p.extra.low_stock);
+    return `<div class="stack">${who}<div class="grid g4">${tile('To check and block', num(O.orders.filter(o => o.ful_stage === FN('Stock check')).length), short ? `${num(short)} boxes short` : '', '#/orders')}${tile('Ready to pack', num(O.orders.filter(o => o.ful_stage === FN('Invoiced')).length), 'invoiced, not packed', '#/orders')}${tile('To dispatch', num(O.orders.filter(o => o.ful_stage === nm(D.lists, 'ops.fulfilment_stages', 'Packed')).length), '', '#/orders')}${tile('Production coming', num(coming.length), '', '#/orders/production')}</div>
+      <section class="card stack-s"><h3>Stock check: what is missing</h3>${ordersAt([FN('Stock check'), FN('Waiting on production')], [['Missing', o => missingOf(o.id) ? `<span class="badge bad">${num(missingOf(o.id))} boxes</span>` : '<span class="badge ok">covered</span>']])}</section>
+      <section class="card stack-s"><h3>To pack and dispatch</h3>${ordersAt([FN('Invoiced'), nm(D.lists, 'ops.fulfilment_stages', 'Packed')], [['Boxes', o => num(O.lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0))]])}</section>
+      <div class="grid g2"><section class="card stack-s"><h3>Production orders coming</h3>${coming.length ? table(['Production order', 'Design', 'Boxes', 'Expected'], coming.map(p => ({ href: '#/po/' + p.id, cells: [`<b>${esc(p.ref)}</b>`, esc(prodName(p.product_id)), num(p.boxes), p.eta ? (p.eta < t ? `<span class="badge bad">${ds(p.eta)}</span>` : ds(p.eta)) : ''] }))) : '<p class="small muted">None.</p>'}</section>
+        <section class="card stack-s"><h3>Below the warning level</h3>${low.length ? table(['Design', 'Warn below'], low.map(p => [esc(p.name), num(p.extra.low_stock)])) : '<p class="small muted">No design is below its warning level.</p>'}</section></div></div>`;
+  }
+  if (kind === 'office') {
+    const I = INVD();
+    return `<div class="stack">${who}<div class="grid g4">${tile('Dealers', num(D.clients.filter(c => DEALER_KINDS.includes(c.kind)).length), '', '#/dealers')}${tile('Architects', num(D.clients.filter(c => ARCH_KINDS.includes(c.kind)).length), '', '#/architects')}${tile('People', num(peopleRows().length), '', '#/people')}${tile('Open complaints', num(O.complaints.filter(c => c.status !== nm(D.lists, 'ops.complaint_statuses', 'Resolved')).length), '', '#/complaints')}</div>
+      <div class="grid g4">${tile('Warehouses', num(I.warehouses.length), '', '#/inventory/warehouses')}${tile('Designs', num(I.products.length), '', '#/inventory/designs')}${tile('Boxes in stock', num(I.stock.reduce((a, x) => a + x.boxes, 0)), '', '#/inventory/stock')}${tile('Collections', num(I.collections.length), '', '#/inventory/collections')}</div></div>`;
+  }
+  return null;
+}
+{ const baseHome = EM.VIEWS.home; EM.VIEWS.home = () => { const k = DASH_OF[D.user.role]; return (k && holds() && EM.div !== 'retail' && roleDash(k)) || baseHome(); }; EM.VIEWS.home.title = () => 'Home'; }
 const scopeLabel = () => ({ all: 'sees both companies', division: `sees all of ${D.user.division === 'both' ? 'both companies' : DIVS[D.user.division].name}`, region: `sees the ${D.user.region || ''} region`, own: 'sees your records and those of everyone who reports to you', none: 'no business records' })[acc().scope] || '';
 
 /* What is still to come, said plainly instead of shown as numbers. */
@@ -1128,10 +1221,10 @@ EM.VIEWS.order = id => {
   const mineAt = (l, w) => al(l).filter(a => a.warehouse_id === w.id && !a.dispatched).reduce((a, x) => a + x.boxes, 0);
   return `<div class="stack">${crumbs(['Fulfilment', '#/orders'], [o.ref])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'an opportunity'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · order confirmed ${ds(o.created_at.slice(0, 10))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
-      ${o.ful_stage !== lastOf(FS) ? `<button class="btn primary" data-act="ful-next" data-id="${id}">Move fulfilment on</button>` : ''}</div>
+      ${o.ful_stage !== lastOf(FS) && fulMayMove(o) ? `<button class="btn primary" data-act="ful-next" data-id="${id}">Move fulfilment on</button>` : o.ful_stage !== lastOf(FS) ? `<span class="small muted" data-ful-who>Next step by ${esc(FUL_WHO[fulGroupOf(D.lists, nextFul(o))] || 'the fulfilment team')}</span>` : ''}</div>
     <section class="card stack-s">${stageChips(FS, o.ful_stage)}${o.credit_hold ? `<div class="callout warn"><b>On credit hold.</b> Waiting for the credit approval before ${esc(FN('Invoiced'))}. <a href="#/approvals">Approvals</a></div>` : ''}</section>
     ${shortBox(o)}
-    <section class="card stack-s" data-stockcheck><div class="row between"><h3>Stock check: each design against the warehouses</h3>${atCheck ? `<button class="btn" data-act="alloc-open" data-id="${id}">Block boxes</button>` : ''}</div>
+    <section class="card stack-s" data-stockcheck><div class="row between"><h3>Stock check: each design against the warehouses</h3>${atCheck && FUL_ROLES.stock.includes(me().role) ? `<button class="btn" data-act="alloc-open" data-id="${id}">Block boxes</button>` : ''}</div>
       <p class="small muted">Free = in the warehouse and not blocked for another sale. Missing = ordered − blocked − on a production order; it must be 0 before the sale moves past ${esc(FN('Stock check'))}.</p>
       ${table(['Design', 'Ordered', ...WH.map(w => esc(w.name) + ' <span class="muted">free</span>'), 'Blocked', 'On production', 'Missing'], lines.map(l => { const left = l.boxes - got(l) - waiting(l);
         return [`<b>${esc(prodName(l.product_id))}</b>`, num(l.boxes), ...WH.map(w => `${num(Math.max(0, freeAt(l.product_id, w.id) + mineAt(l, w)))}${mineAt(l, w) ? ` <span class="badge ok">${mineAt(l, w)} blocked</span>` : ''}`), num(got(l)), waiting(l) ? num(waiting(l)) : '', left > 0 ? `<span class="badge bad">${left}</span>` : '<span class="badge ok">0</span>']; }))}</section>
@@ -1146,6 +1239,10 @@ EM.VIEWS.order = id => {
 EM.VIEWS.order.tab = 'orders';
 EM.VIEWS.order.title = id => (OPSD().orders.find(x => x.id === id) || { ref: 'Fulfilment' }).ref;
 
+/* who moves the next step (8 Oct, by department) */
+const FUL_WHO = { stock: 'Dispatch, the Wholesale Head or Management', money: 'Accounts or Management', dispatch: 'Dispatch or Management' };
+const nextFul = o => { const FS = OS_('fulfilment_stages'), i = FS.indexOf(o.ful_stage), s1 = FS[i + 1]; return s1 === FN('Waiting on production') && o.ful_stage !== FN('Stock check') ? FS[i + 2] : [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage) ? FN('Blocked') : s1; };
+const fulMayMove = o => canFul(D.lists, me().role, nextFul(o));
 /* the red box at the stock check: blocked, and exactly what is missing, design by design */
 function shortBox(o) {
   if (![FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage)) return '';
@@ -1153,7 +1250,7 @@ function shortBox(o) {
   if (!miss.length) return o.ful_stage === FN('Waiting on production') ? `<section class="callout" data-short><b>Waiting on production.</b> Nothing else is missing: the sale moves to ${esc(FN('Blocked'))} by itself when the production order arrives and is allocated.</section>` : `<section class="callout ok" data-short><b>Everything is covered.</b> Move fulfilment on.</section>`;
   const free = l => INVD().warehouses.reduce((a, w) => a + Math.max(0, freeAt(l.product_id, w.id)), 0), code = l => { const p = INVD().products.find(x => x.id === l.product_id); return p && p.code ? ` <span class="muted">${esc(p.code)}</span>` : ''; };
   return `<section class="card stack-s short-box" data-short style="border-color:var(--bad, #c0392b)"><div class="row between"><h3 style="color:var(--bad, #c0392b)">Blocked: short of ${num(total)} box${total === 1 ? '' : 'es'}</h3>
-      <button class="btn primary" data-act="prod-all" data-id="${o.id}">Place production order for everything missing</button></div>
+      ${FUL_ROLES.stock.includes(me().role) ? `<button class="btn primary" data-act="prod-all" data-id="${o.id}">Place production order for everything missing</button>` : ''}</div>
     <p class="small">Why it cannot move on: these designs do not have enough free boxes in the warehouses. Block what is free, and put what is missing on a production order (at least ${num(R.moq_boxes)} boxes, rounded up to ${num(R.production_round_boxes)}; an open production order of the same design is joined instead).</p>
     ${table(['Design', 'Ordered', 'Free in the warehouses', 'Blocked', 'On production', 'Missing'], miss.map(x => [`<b>${esc(prodName(x.l.product_id))}</b>${code(x.l)}`, num(x.l.boxes), num(free(x.l)), num(x.got), x.wait ? num(x.wait) : '', `<span class="badge bad">${num(x.miss)}</span>`]))}</section>`;
 }
@@ -1161,7 +1258,7 @@ function shortBox(o) {
 function payCard(o) {
   if (!D.access.prices) return '';
   const ex = o.extra || {}, pays = ex.payments || [], due = Math.max(0, (o.total || 0) - (o.paid || 0)), FS = OS_('fulfilment_stages');
-  return `<section class="card stack-s" data-pay><div class="row between"><h3>Payment and invoice</h3>${FS.indexOf(o.ful_stage) >= FS.indexOf(FN('PI sent')) || pays.length ? `<button class="btn sm" data-act="pay-add" data-id="${o.id}">+ Record a payment</button>` : ''}</div>
+  return `<section class="card stack-s" data-pay><div class="row between"><h3>Payment and invoice</h3>${(FS.indexOf(o.ful_stage) >= FS.indexOf(FN('PI sent')) || pays.length) && FUL_ROLES.money.includes(me().role) ? `<button class="btn sm" data-act="pay-add" data-id="${o.id}">+ Record a payment</button>` : ''}</div>
     <p class="small">${moneyLine(ex)} = <b>${inr0(o.total)}</b></p>
     ${kv([['Received', inr0(o.paid || 0)], ['Still due', due > 0 ? `<b>${inr0(due)}</b>` : '<span class="badge ok">Paid in full</span>'], ['Invoiced', o.invoiced_at ? whenTxt(o.invoiced_at) : NOTSET]])}
     ${pays.length ? table(['Received on', 'Amount', 'Note', 'By'], pays.map(p => [ds(p.on), inr0(p.amount), esc(p.note || ''), esc(staffName(p.by))])) : `<p class="small muted">No payment yet. At ${esc(FN('Payment received'))} the advance or the full payment is recorded.</p>`}</section>`;

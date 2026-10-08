@@ -667,6 +667,29 @@ const DISCOUNT_FIELD = { key: 'discount_pct', label: 'Discount (%)', type: 'deci
 const SCHEME_APPROVE = ['owner', 'director'];
 const SCHEME_SETTLE = ['owner', 'director', 'ws_finance'];
 const SCHEME_EDIT = ['owner', 'director', 'ws_head', 'ws_finance'];
+/* who moves an order through fulfilment (8 Oct, by department): the stock people block boxes and
+   place production, Accounts takes the PI, the payment and the invoice, Dispatch packs and sends.
+   Sales and telesales follow their orders but do not move them. */
+const FUL_ROLES = { stock: ['owner', 'director', 'ws_head', 'ws_warehouse'], money: ['owner', 'director', 'ws_finance'], dispatch: ['owner', 'director', 'ws_warehouse'] };
+const FUL_GROUP = { 'Stock check': 'stock', Blocked: 'stock', 'Waiting on production': 'stock', 'PI sent': 'money', 'Payment received': 'money', Invoiced: 'money', Packed: 'dispatch', Dispatched: 'dispatch', Delivered: 'dispatch' };
+/* the group a fulfilment stage belongs to, whatever it is called now. A stage that is not a processing stage
+   (PI sent, Packed, or one the Owner added) belongs with the next processing stage after it: PI sent with
+   Payment received, Packed with Dispatched. A renamed stage keeps its group. */
+const fulGroupOf = (lists, stage) => {
+  const FS = opsStages(lists, 'fulfilment_stages'), roles = OPS.fulfilment_stages.locked.map(r => [nm(lists, 'ops.fulfilment_stages', r), FUL_GROUP[r]]);
+  for (let i = Math.max(0, FS.indexOf(stage)); i < FS.length; i++) { const hit = roles.find(([n]) => n === FS[i]); if (hit) return hit[1]; }
+  return null;
+};
+const canFul = (lists, role, stage) => { const g = fulGroupOf(lists, stage); return g ? FUL_ROLES[g].includes(role) : Object.values(FUL_ROLES).some(l => l.includes(role)); };
+/* the screens each role has; a role not listed has every screen its access allows */
+const ROLE_TABS = {
+  ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'account'],
+  ws_tele: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'account'],
+  ws_finance: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'approvals', 'inventory', 'account'],
+  ws_warehouse: ['home', 'orders', 'orderbook', 'inventory', 'complaints', 'account'],
+  office_admin: ['home', 'people', 'architects', 'dealers', 'inventory', 'complaints', 'account'],
+  ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'account'],
+};
 const SCHEME_WHO = { all: 'Every dealer, distributor and sub-dealer', chosen: 'The dealers chosen below', rating: 'Dealers with these ratings' };
 
 /* the roles each stage set has (by their first names), and what is locked to begin with */
