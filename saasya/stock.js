@@ -67,7 +67,7 @@
     var pur = p.purchase && one(D().purchases, p.purchase);
     var h = '<div class="dstick"><h1>' + esc(p.name) + '</h1>' + statusPill(p) + '</div>' +
       '<p class="sub">' + esc(p.kind) + ' · size ' + esc(p.size || '—') + ' · ' + esc(who(p.supplier)) + ' · ' + esc(SOURCES[p.source] || '') + '</p>';
-    h += '<div class="card label-preview"><div class="qr" data-code="' + esc(p.barcode) + '"></div><div><b>' + esc(p.barcode) + '</b><div class="sub">MRP ' + rupees(GE.withGst(GE.piecePrice(p), p.gst)) + ' incl. GST</div></div>' +
+    h += '<div class="card label-preview"><div class="qr" data-code="' + esc(p.barcode) + '"></div><div><svg class="bc" data-code="' + esc(p.barcode) + '"></svg><b>' + esc(p.barcode) + '</b><div class="sub">MRP ' + rupees(GE.withGst(GE.piecePrice(p), p.gst)) + ' incl. GST</div></div>' +
       '<button class="mini" data-act="printLabels" data-id="' + p.id + '">Print its label</button>' + (seeCost() ? ' <button class="mini" data-act="editPiece" data-id="' + p.id + '">Change any detail</button>' : '') + '</div>';
     h += '<div class="card"><div class="three">' +
       (seeCost() ? U.fld('Cost before GST', p.source === 'consignment' ? 'Not ours till sold' : rupees(p.cost_ex)) +
@@ -422,7 +422,7 @@
     var f = one(D().fabrics, l.fabric) || {}, v = one(D().vendors, l.vendor), p = l.purchase && one(D().purchases, l.purchase);
     var h = '<div class="dstick"><h1>' + esc((f.brand || '') + ' ' + (f.colour || '')) + '</h1>' + U.pill(l.metres + ' m in', 'ok') + '</div>' +
       '<p class="sub">Lot ' + esc(l.code || '') + ' · ' + esc(v ? v.name : '') + (p ? ' · bill ' + esc(p.bill || p.id) : ' · ' + esc(l.bill || '')) + '</p>' +
-      '<div class="card label-preview"><div class="qr" data-code="' + esc(l.code || '') + '"></div><div><b>' + esc(l.code || '') + '</b><div class="sub">' + esc(f.brand + ' ' + f.colour) + ', ' + l.metres + ' m</div></div>' +
+      '<div class="card label-preview"><div class="qr" data-code="' + esc(l.code || '') + '"></div><div><svg class="bc" data-code="' + esc(l.code || '') + '"></svg><b>' + esc(l.code || '') + '</b><div class="sub">' + esc(f.brand + ' ' + f.colour) + ', ' + l.metres + ' m</div></div>' +
       '<button class="mini" data-act="printLotLabel" data-id="' + l.id + '">Print its label</button> <button class="mini" data-act="editLot" data-id="' + l.id + '">Change any detail</button></div>' +
       '<div class="card"><div class="three">' + U.fld('Received', d(l.at)) + U.fld('Metres', l.metres + ' m') + (seeCost() ? U.fld('Cost a metre', rupees(l.cost_m)) + U.fld('Bill with GST', rupees(GE.withGst(l.metres * l.cost_m, l.gst))) : '') +
       U.fld('GST', l.gst + '%') + U.fld('Where', l.location) + '</div></div>';
@@ -563,25 +563,37 @@
     GE.save(); GE.closeModal(); GE.refresh(); GE.toast(k + ' added.');
   };
 
-  /* ---------- QR labels. The QR holds the plain code, so any scanner types it straight in ---------- */
+  /* ---------- Labels carry BOTH codes, holding the same plain text: a QR for phones and 2D scanners,
+     and a Code 128 barcode for the 1D scanners a stockroom already has (any USB or Bluetooth scanner in
+     keyboard mode types the code and presses Enter; the cockpit listens for that anywhere) ---------- */
   var QRJS = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  var BCJS = 'https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js';
   function drawCodes() {
-    var go = function () { [].forEach.call(document.querySelectorAll('.qr[data-code]'), function (el) {
-      if (el.getAttribute('data-done')) return; el.setAttribute('data-done', '1'); el.innerHTML = '';
-      try { new window.QRCode(el, { text: el.getAttribute('data-code'), width: 96, height: 96, correctLevel: window.QRCode.CorrectLevel.M }); } catch (e) {} }); };
-    if (window.QRCode) return go();
-    if (!document.head || document.getElementById('qrLoad')) return;
-    var sc = document.createElement('script'); sc.id = 'qrLoad'; sc.src = QRJS; sc.onload = go; document.head.appendChild(sc);
+    var go = function () {
+      if (!window.QRCode || !window.JsBarcode) return;
+      [].forEach.call(document.querySelectorAll('.qr[data-code]'), function (el) {
+        if (el.getAttribute('data-done')) return; el.setAttribute('data-done', '1'); el.innerHTML = '';
+        try { new window.QRCode(el, { text: el.getAttribute('data-code'), width: 96, height: 96, correctLevel: window.QRCode.CorrectLevel.M }); } catch (e) {} });
+      [].forEach.call(document.querySelectorAll('svg.bc[data-code]'), function (el) {
+        if (el.getAttribute('data-done')) return; el.setAttribute('data-done', '1');
+        try { window.JsBarcode(el, el.getAttribute('data-code'), { format: 'CODE128', height: 34, width: 1.4, margin: 4, displayValue: false, background: '#ffffff', lineColor: '#000000' }); } catch (e) {} });
+    };
+    if (window.QRCode && window.JsBarcode) return go();
+    if (!document.head) return;
+    [['qrLoad', QRJS], ['bcLoad', BCJS]].forEach(function (x) {
+      if (document.getElementById(x[0])) return;
+      var sc = document.createElement('script'); sc.id = x[0]; sc.src = x[1]; sc.onload = go; document.head.appendChild(sc);
+    });
   }
   GE.drawCodes = drawCodes; GE.drawBarcodes = drawCodes;
   function labelSheet(items) {
     var w = window.open('', '_blank'); if (!w) return false;
     w.document.write('<!doctype html><meta charset="utf-8"><title>Saasya Men labels</title><style>body{font:11px Arial,sans-serif;margin:8mm}' +
-      '.g{display:grid;grid-template-columns:repeat(3,62mm);gap:4mm}.l{border:1px dashed #bbb;padding:3mm;height:34mm;box-sizing:border-box;display:flex;gap:3mm;align-items:center}' +
-      '.l b{display:block;font-size:9px;letter-spacing:.14em}.l .n{font-size:10.5px;margin:1mm 0}.l .c{font:600 11px monospace}.q{width:26mm;height:26mm;flex:none}.q img,.q canvas{width:26mm!important;height:26mm!important}@media print{.l{border:0}}</style>' +
+      '.g{display:grid;grid-template-columns:repeat(3,62mm);gap:4mm}.l{border:1px dashed #bbb;padding:2.5mm 3mm;height:44mm;box-sizing:border-box;display:flex;flex-direction:column;gap:1.5mm}.t{display:flex;gap:3mm;align-items:center}' +
+      '.l b{display:block;font-size:9px;letter-spacing:.14em}.l .n{font-size:10.5px;margin:1mm 0}.l .c{font:600 11px monospace}.q{width:24mm;height:24mm;flex:none}.q img,.q canvas{width:24mm!important;height:24mm!important}.bc{width:100%;height:11mm}@media print{.l{border:0}}</style>' +
       '<div class="g">' + items.map(function (it) {
-        return '<div class="l"><div class="q" data-code="' + esc(it.code) + '"></div><div><b>SAASYA MEN</b><div class="n">' + esc(it.line1) + '</div><div>' + esc(it.line2) + '</div><div class="c">' + esc(it.code) + '</div></div></div>'; }).join('') + '</div>' +
-      '<script src="' + QRJS + '"><\/script><script>document.querySelectorAll(".q").forEach(function(e){new QRCode(e,{text:e.getAttribute("data-code"),width:120,height:120})});setTimeout(function(){window.print()},400)<\/script>');
+        return '<div class="l"><div class="t"><div class="q" data-code="' + esc(it.code) + '"></div><div><b>SAASYA MEN</b><div class="n">' + esc(it.line1) + '</div><div>' + esc(it.line2) + '</div><div class="c">' + esc(it.code) + '</div></div></div><svg class="bc" data-code="' + esc(it.code) + '"></svg></div>'; }).join('') + '</div>' +
+      '<script src="' + QRJS + '"><\/script><script src="' + BCJS + '"><\/script><script>document.querySelectorAll(".q").forEach(function(e){new QRCode(e,{text:e.getAttribute("data-code"),width:120,height:120})});document.querySelectorAll(".bc").forEach(function(e){JsBarcode(e,e.getAttribute("data-code"),{format:"CODE128",height:40,width:1.6,margin:0,displayValue:false})});setTimeout(function(){window.print()},500)<\/script>');
     w.document.close(); return true;
   }
   A.printLabels = function (ids, quiet) {
