@@ -654,7 +654,9 @@ const DEFAULT_RULES = {
 };
 DEFAULT_LISTS.rules = DEFAULT_RULES;
 const APPROVER_LEVEL = { owner: 'owner', director: 'director', ws_head: 'head', rt_head: 'head', ws_rm: 'manager', rt_project: 'manager' };
-const levelLimit = (rules, kind, role) => { const l = APPROVER_LEVEL[role]; if (l === 'owner') return Infinity; const a = rules.approvals[kind]; return l && a ? a.levels[l] || 0 : 0; };
+/* what a role may approve: its approval level (switched in Roles & access), against the limits in Rules and numbers */
+const levelLimit = (rules, kind, level) => { if (level === 'owner') return Infinity; const a = rules.approvals[kind]; return level && a ? a.levels[level] || 0 : 0; };
+const LEVELS = [['none', 'Nothing'], ['manager', 'Up to the manager limits'], ['head', 'Up to the head limits'], ['director', 'Up to the director limits'], ['owner', 'No limit']];
 const opsStages = (lists, k) => ((lists || {}).ops || {})[k] || OPS[k].list;
 const lastOf = a => a[a.length - 1];
 const DISCOUNT_FIELD = { key: 'discount_pct', label: 'Discount (%)', type: 'decimal' };
@@ -680,7 +682,12 @@ const fulGroupOf = (lists, stage) => {
   for (let i = Math.max(0, FS.indexOf(stage)); i < FS.length; i++) { const hit = roles.find(([n]) => n === FS[i]); if (hit) return hit[1]; }
   return null;
 };
-const canFul = (lists, role, stage) => { const g = fulGroupOf(lists, stage); return g ? FUL_ROLES[g].includes(role) : Object.values(FUL_ROLES).some(l => l.includes(role)); };
+/* ful: the order steps a role has (stock, money, dispatch), switched in Roles & access */
+const canFul = (lists, ful, stage) => { const g = fulGroupOf(lists, stage); return g ? (ful || []).includes(g) : !!(ful || []).length; };
+const FUL_LABEL = { stock: 'Block stock and place production', money: 'PI, payment and invoice', dispatch: 'Pack, dispatch and deliver' };
+const SCHEME_LABEL = { edit: 'Draw up', approve: 'Approve', settle: 'Settle' };
+const DASHES = [['', 'Standard Home'], ['mgmt', 'Management'], ['head', 'Sales head'], ['sales', 'Field sales'], ['tele', 'Telesales'], ['accounts', 'Accounts'], ['dispatch', 'Dispatch'], ['office', 'Office'], ['mkt', 'Marketing']];
+const SCOPES_ALL = [['all', 'Everything, both companies'], ['division', 'Everything in their company'], ['region', 'Their region'], ['own', 'Their own and their team\'s'], ['none', 'No business records']];
 /* the screens each role has; a role not listed has every screen its access allows */
 const ROLE_TABS = {
   ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'account'],

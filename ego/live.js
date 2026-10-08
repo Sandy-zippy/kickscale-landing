@@ -20,8 +20,8 @@ const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.
 function allowedTab(t) {
   if (['home', 'account', 'soon'].includes(t)) return true;
   /* each role has its own screens (8 Oct); within them, the access rules below still apply */
-  const only = ROLE_TABS[D.user.role];
-  if (only && !only.includes(t)) return false;
+  const only = (D.access.tabs || []).length ? D.access.tabs : null;   // the screens ticked for this role in Roles & access
+  if (only && !['team', 'lists'].includes(t) && !only.includes(t)) return false;
   if (['clients', 'people', 'opps', 'import', 'inventory'].includes(t)) return holds();
   if (t === 'dealers') return holds() && canDiv('wholesale');
   if (t === 'architects') return holds();
@@ -29,7 +29,7 @@ function allowedTab(t) {
   if (t === 'installation') return holds() && canDiv('retail');
   if (t === 'complaints' || t === 'approvals' || t === 'orderbook') return holds();
   if (t === 'team') return D.access.users;
-  if (t === 'lists') return isOwner();
+  if (t === 'lists') return !!D.access.can_lists;
   return false;
 }
 EM.div = D.user.division === 'both' ? 'both' : D.user.division;
@@ -39,7 +39,7 @@ EM.div = D.user.division === 'both' ? 'both' : D.user.division;
 const SEG = { wholesale: 'EGO Premium', retail: 'Big E', both: 'Both companies' };
 const segBadge = div => `<span class="badge plain" data-seg>${esc(SEG[div] || div)}</span>`;
 const isBothView = () => (EM.div === 'both' && D.user.division === 'both') || !!D.access.readonly;   // Both, and a view-only role, look without changing
-const LOOK_ACTS = new Set(['div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
+const LOOK_ACTS = new Set(['view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
   'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass']);
 /* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
@@ -57,7 +57,8 @@ EM.render = (...a) => {
   const both = isBothView();
   qs('#shell').classList.toggle('view-both', both);
   hideChangeButtons(qs('#view'));
-  if (both && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
+  if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
+  if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
 const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
 const NAV_TAIL = ['complaints', 'approvals', 'p200', 'inventory', 'import'];
@@ -248,7 +249,6 @@ EM.VIEWS.home.title = () => 'Home';
 /* ---------------------------------------------------------------- dashboards, one per role (8 Oct)
    EGO Premium's team: management, the national sales head, field sales, telesales, accounts,
    dispatch, office admin, marketing. Every figure is counted from saved records in the person's view. */
-const DASH_OF = { owner: 'mgmt', director: 'mgmt', ea: 'mgmt', mis: 'mgmt', ws_head: 'head', ws_rm: 'head', ws_field: 'sales', ws_tele: 'tele', ws_marketing: 'mkt', ws_finance: 'accounts', ws_warehouse: 'dispatch', office_admin: 'office' };
 const under = id => { const out = []; const walk = x => D.staff.filter(s => s.reports_to === x && s.active).forEach(s => { if (!out.includes(s.id)) { out.push(s.id); walk(s.id); } }); walk(id); return out; };
 const thisMonthD = ts => !!ts && dayIST(ts).slice(0, 7) === today().slice(0, 7);
 const sumV = a => a.reduce((t, x) => t + (Number(x.value) || 0), 0);
@@ -282,12 +282,12 @@ function roleDash(kind) {
     const sellers = D.staff.filter(s => s.active && ['ws_field', 'ws_tele', 'ws_marketing', 'ws_head'].includes(s.role)).map(s => s.id), dueAmt = invDue.reduce((a, o) => a + due(o), 0);
     return `<div class="stack">${who}${cs.length ? '' : empty('Nothing saved yet', 'Add a dealer with its team, an architect firm with its team, or a person, or fill the Excel file and upload it. Every number on this page is counted from what you save.', addButtons())}
       <div class="grid g4">${tile('Dealers', num(cs.filter(c => DEALER_KINDS.includes(c.kind)).length), '', '#/dealers')}${tile('Architects', num(cs.filter(c => ARCH_KINDS.includes(c.kind)).length), '', '#/architects')}${tile('People', num(peopleRows().length), '', '#/people')}${tile('Open opportunities', num(open.length), P && open.length ? inr0(sumV(open)) : '', '#/opps')}</div>
-      <div class="grid g4">${tile('Won this month', num(won.length), P && won.length ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Orders in fulfilment', num(O.orders.filter(o => o.ful_stage !== lastOf(OS_('fulfilment_stages'))).length), short ? `${num(short)} boxes short` : '', '#/orders')}${tile('Money due', P && dueAmt > 0 ? inr0(dueAmt) : num(invDue.length), invDue.length ? `${num(invDue.length)} invoices · ${num(O.orders.filter(o => o.credit_hold).length)} on credit hold` : '', '#/orders')}${tile('Approvals waiting', num(pend.length), pend.length ? `${num(pend.filter(a => levelLimit(D.lists.rules, a.kind, me().role) >= a.amount).length)} you can decide` : '', '#/approvals')}</div>
+      <div class="grid g4">${tile('Won this month', num(won.length), P && won.length ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Orders in fulfilment', num(O.orders.filter(o => o.ful_stage !== lastOf(OS_('fulfilment_stages'))).length), short ? `${num(short)} boxes short` : '', '#/orders')}${tile('Money due', P && dueAmt > 0 ? inr0(dueAmt) : num(invDue.length), invDue.length ? `${num(invDue.length)} invoices · ${num(O.orders.filter(o => o.credit_hold).length)} on credit hold` : '', '#/orders')}${tile('Approvals waiting', num(pend.length), pend.length ? `${num(pend.filter(a => levelLimit(D.lists.rules, a.kind, D.access.level) >= a.amount).length)} you can decide` : '', '#/approvals')}</div>
       <section class="card stack-s" data-dash-team><h3>The sales team</h3>${teamTable(sellers)}</section>
       <div class="grid g2"><section class="card stack-s"><h3>Wholesale pipeline</h3>${stageTable()}</section><section class="card stack-s"><h3>Fulfilment</h3>${fulTable()}</section></div>${schemeCard()}${notConnectedCard()}</div>`;
   }
   if (kind === 'head') {
-    const os = D.opportunities.filter(o => o.pipeline === 'wholesale'), open = os.filter(isOpen), won = os.filter(o => isWon(o) && thisMonthD(o.closed_at)), mineAp = O.approvals.filter(a => a.status === 'Pending' && levelLimit(D.lists.rules, a.kind, me().role) >= a.amount);
+    const os = D.opportunities.filter(o => o.pipeline === 'wholesale'), open = os.filter(isOpen), won = os.filter(o => isWon(o) && thisMonthD(o.closed_at)), mineAp = O.approvals.filter(a => a.status === 'Pending' && levelLimit(D.lists.rules, a.kind, D.access.level) >= a.amount);
     return `<div class="stack">${who}<div class="grid g4">${tile('Team', num(team.length), 'people reporting to you', '#/team')}${tile('Open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps/wholesale')}${tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Approvals for you', num(mineAp.length), mineAp.length ? 'discounts and credit waiting' : 'nothing waiting', '#/approvals')}</div>
       <section class="card stack-s" data-dash-team><h3>Your team</h3>${teamTable(team)}</section>
       <div class="grid g2"><section class="card stack-s"><h3>Wholesale pipeline</h3>${stageTable()}</section><section class="card stack-s"><h3>Orders short of stock</h3>${ordersAt([FN('Stock check'), FN('Waiting on production')], [['Missing', o => missingOf(o.id) ? `<span class="badge bad">${num(missingOf(o.id))} boxes</span>` : '<span class="badge ok">covered</span>']])}</section></div>
@@ -333,7 +333,7 @@ function roleDash(kind) {
   }
   return null;
 }
-{ const baseHome = EM.VIEWS.home; EM.VIEWS.home = () => { const k = DASH_OF[D.user.role]; return (k && holds() && EM.div !== 'retail' && roleDash(k)) || baseHome(); }; EM.VIEWS.home.title = () => 'Home'; }
+{ const baseHome = EM.VIEWS.home; EM.VIEWS.home = () => { const k = D.access.dash; return (k && holds() && EM.div !== 'retail' && roleDash(k)) || baseHome(); }; EM.VIEWS.home.title = () => 'Home'; }
 const scopeLabel = () => ({ all: 'sees both companies', division: `sees all of ${D.user.division === 'both' ? 'both companies' : DIVS[D.user.division].name}`, region: `sees the ${D.user.region || ''} region`, own: 'sees your records and those of everyone who reports to you', none: 'no business records' })[acc().scope] || '';
 
 /* What is still to come, said plainly instead of shown as numbers. */
@@ -595,7 +595,7 @@ EM.VIEWS.client = arg => {
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
       <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
       <p class="muted">${esc(fmtMobile(c.mobile))} · ${esc(c.city)}${c.region ? ', ' + esc(c.region) : ''} · owner ${esc(staffName(c.owner_id))}</p></div>
-      <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button>${isOwner() ? `<button class="btn ghost" data-act="client-del" data-id="${id}">Delete</button>` : ''}</div></div>
+      <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button>${D.access.can_delete ? `<button class="btn ghost" data-act="client-del" data-id="${id}">Delete</button>` : ''}</div></div>
     ${subtabs(`#/client/${id}`, tab, tabs)}
     ${body(c, cts, ops, docs)}</div>`;
 };
@@ -761,7 +761,7 @@ EM.VIEWS.opp = id => {
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.title)}</h1>
       <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}<span class="small muted">${esc(o.ref || '')}</span></div>
       <p class="muted"><a href="#/client/${o.client_id}">${esc(c.name)}</a>${contact ? ` · ${esc(contact.name)} ${esc(fmtMobile(contact.mobile))}` : ''}</p></div>
-      <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}<button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${isOwner() ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
+      <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}<button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${D.access.can_delete ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
     <section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>
       <div class="row"><select class="input" id="move-stage" aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
     ${PIPELINES[o.pipeline].lines ? oppLinesCard(o) : ''}
@@ -869,7 +869,7 @@ EM.ACTIONS['opp-del'] = async el => {
    boxes typed when a design is added), so every figure has who, when and why.
    The filter bar at the top (warehouse, category, collection, design) narrows every tab. */
 const INVD = () => D.inventory || { collections: [], products: [], warehouses: [], stock: [] };
-const canStockUI = () => STOCK_ROLES.includes(me().role);
+const canStockUI = () => !!D.access.stock;
 const colOf = p => INVD().collections.find(c => c.id === p.collection_id) || { name: '', category: '', extra: {} };
 const num = n => n == null ? '' : Number(n).toLocaleString('en-IN');
 EM.invF = { wh: '', cat: '', col: '', q: '' };
@@ -978,7 +978,7 @@ EM.VIEWS.product = id => {
   return `<div class="stack">${crumbs(['Inventory', '#/inventory/designs'], [c.category, '#/inventory/categories'], [c.name, '#/collection/' + c.id], [p.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(p.name)}</h1><div class="row"><a class="badge info plain" href="#/collection/${c.id}">${esc(c.name)}</a><span class="badge plain">${esc(c.category)}</span>${p.sub_type ? `<span class="badge plain">${esc(p.sub_type)}</span>` : ''}${p.code ? `<span class="small muted">${esc(p.code)}</span>` : ''}${p.status === 'Discontinued' ? '<span class="badge warn">Discontinued</span>' : ''}</div>
       <p class="muted">${num(allB)} boxes in stock · ${sqftTxt(p, allB)} sq ft</p></div>
-      ${canStockUI() ? `<div class="row"><button class="btn" data-act="prod-edit" data-id="${p.id}">Edit</button><button class="btn primary" data-act="move-add" data-product="${p.id}">Stock in / out</button>${isOwner() ? `<button class="btn ghost" data-act="prod-del" data-id="${p.id}">Delete</button>` : ''}</div>` : ''}</div>
+      ${canStockUI() ? `<div class="row"><button class="btn" data-act="prod-edit" data-id="${p.id}">Edit</button><button class="btn primary" data-act="move-add" data-product="${p.id}">Stock in / out</button>${D.access.can_delete ? `<button class="btn ghost" data-act="prod-del" data-id="${p.id}">Delete</button>` : ''}</div>` : ''}</div>
     <div class="grid g2">${p.extra.image ? `<section class="card"><img src="${esc(p.extra.image)}" alt="${esc(p.name)}" style="width:100%;border-radius:10px;display:block" loading="lazy"></section>` : ''}
       <section class="card stack-s"><h3>Where it is</h3>${I.warehouses.length ? table(['Warehouse', 'Boxes', 'Sq ft'], I.warehouses.map(w => { const b = boxesOf(p.id, w.id); return [esc(w.name), b, sqftTxt(p, b)]; })) : '<p class="small muted">No warehouses yet.</p>'}
         ${kv([['Box size', c.extra.sqft_per_box != null ? `${c.extra.sqft_per_box} sq ft (${c.extra.sqm_per_box} m²)` : NOTSET], ['Colour or shade', esc(p.extra.colour || '') || NOTSET], ['Warn below', p.extra.low_stock != null ? p.extra.low_stock + ' boxes' : NOTSET]])}</section>
@@ -1224,7 +1224,7 @@ EM.VIEWS.order = id => {
       ${o.ful_stage !== lastOf(FS) && fulMayMove(o) ? `<button class="btn primary" data-act="ful-next" data-id="${id}">Move fulfilment on</button>` : o.ful_stage !== lastOf(FS) ? `<span class="small muted" data-ful-who>Next step by ${esc(FUL_WHO[fulGroupOf(D.lists, nextFul(o))] || 'the fulfilment team')}</span>` : ''}</div>
     <section class="card stack-s">${stageChips(FS, o.ful_stage)}${o.credit_hold ? `<div class="callout warn"><b>On credit hold.</b> Waiting for the credit approval before ${esc(FN('Invoiced'))}. <a href="#/approvals">Approvals</a></div>` : ''}</section>
     ${shortBox(o)}
-    <section class="card stack-s" data-stockcheck><div class="row between"><h3>Stock check: each design against the warehouses</h3>${atCheck && FUL_ROLES.stock.includes(me().role) ? `<button class="btn" data-act="alloc-open" data-id="${id}">Block boxes</button>` : ''}</div>
+    <section class="card stack-s" data-stockcheck><div class="row between"><h3>Stock check: each design against the warehouses</h3>${atCheck && D.access.ful.includes('stock') ? `<button class="btn" data-act="alloc-open" data-id="${id}">Block boxes</button>` : ''}</div>
       <p class="small muted">Free = in the warehouse and not blocked for another sale. Missing = ordered − blocked − on a production order; it must be 0 before the sale moves past ${esc(FN('Stock check'))}.</p>
       ${table(['Design', 'Ordered', ...WH.map(w => esc(w.name) + ' <span class="muted">free</span>'), 'Blocked', 'On production', 'Missing'], lines.map(l => { const left = l.boxes - got(l) - waiting(l);
         return [`<b>${esc(prodName(l.product_id))}</b>`, num(l.boxes), ...WH.map(w => `${num(Math.max(0, freeAt(l.product_id, w.id) + mineAt(l, w)))}${mineAt(l, w) ? ` <span class="badge ok">${mineAt(l, w)} blocked</span>` : ''}`), num(got(l)), waiting(l) ? num(waiting(l)) : '', left > 0 ? `<span class="badge bad">${left}</span>` : '<span class="badge ok">0</span>']; }))}</section>
@@ -1242,7 +1242,7 @@ EM.VIEWS.order.title = id => (OPSD().orders.find(x => x.id === id) || { ref: 'Fu
 /* who moves the next step (8 Oct, by department) */
 const FUL_WHO = { stock: 'Dispatch, the Wholesale Head or Management', money: 'Accounts or Management', dispatch: 'Dispatch or Management' };
 const nextFul = o => { const FS = OS_('fulfilment_stages'), i = FS.indexOf(o.ful_stage), s1 = FS[i + 1]; return s1 === FN('Waiting on production') && o.ful_stage !== FN('Stock check') ? FS[i + 2] : [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage) ? FN('Blocked') : s1; };
-const fulMayMove = o => canFul(D.lists, me().role, nextFul(o));
+const fulMayMove = o => canFul(D.lists, D.access.ful, nextFul(o));
 /* the red box at the stock check: blocked, and exactly what is missing, design by design */
 function shortBox(o) {
   if (![FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage)) return '';
@@ -1250,7 +1250,7 @@ function shortBox(o) {
   if (!miss.length) return o.ful_stage === FN('Waiting on production') ? `<section class="callout" data-short><b>Waiting on production.</b> Nothing else is missing: the sale moves to ${esc(FN('Blocked'))} by itself when the production order arrives and is allocated.</section>` : `<section class="callout ok" data-short><b>Everything is covered.</b> Move fulfilment on.</section>`;
   const free = l => INVD().warehouses.reduce((a, w) => a + Math.max(0, freeAt(l.product_id, w.id)), 0), code = l => { const p = INVD().products.find(x => x.id === l.product_id); return p && p.code ? ` <span class="muted">${esc(p.code)}</span>` : ''; };
   return `<section class="card stack-s short-box" data-short style="border-color:var(--bad, #c0392b)"><div class="row between"><h3 style="color:var(--bad, #c0392b)">Blocked: short of ${num(total)} box${total === 1 ? '' : 'es'}</h3>
-      ${FUL_ROLES.stock.includes(me().role) ? `<button class="btn primary" data-act="prod-all" data-id="${o.id}">Place production order for everything missing</button>` : ''}</div>
+      ${D.access.ful.includes('stock') ? `<button class="btn primary" data-act="prod-all" data-id="${o.id}">Place production order for everything missing</button>` : ''}</div>
     <p class="small">Why it cannot move on: these designs do not have enough free boxes in the warehouses. Block what is free, and put what is missing on a production order (at least ${num(R.moq_boxes)} boxes, rounded up to ${num(R.production_round_boxes)}; an open production order of the same design is joined instead).</p>
     ${table(['Design', 'Ordered', 'Free in the warehouses', 'Blocked', 'On production', 'Missing'], miss.map(x => [`<b>${esc(prodName(x.l.product_id))}</b>${code(x.l)}`, num(x.l.boxes), num(free(x.l)), num(x.got), x.wait ? num(x.wait) : '', `<span class="badge bad">${num(x.miss)}</span>`]))}</section>`;
 }
@@ -1258,7 +1258,7 @@ function shortBox(o) {
 function payCard(o) {
   if (!D.access.prices) return '';
   const ex = o.extra || {}, pays = ex.payments || [], due = Math.max(0, (o.total || 0) - (o.paid || 0)), FS = OS_('fulfilment_stages');
-  return `<section class="card stack-s" data-pay><div class="row between"><h3>Payment and invoice</h3>${(FS.indexOf(o.ful_stage) >= FS.indexOf(FN('PI sent')) || pays.length) && FUL_ROLES.money.includes(me().role) ? `<button class="btn sm" data-act="pay-add" data-id="${o.id}">+ Record a payment</button>` : ''}</div>
+  return `<section class="card stack-s" data-pay><div class="row between"><h3>Payment and invoice</h3>${(FS.indexOf(o.ful_stage) >= FS.indexOf(FN('PI sent')) || pays.length) && D.access.ful.includes('money') ? `<button class="btn sm" data-act="pay-add" data-id="${o.id}">+ Record a payment</button>` : ''}</div>
     <p class="small">${moneyLine(ex)} = <b>${inr0(o.total)}</b></p>
     ${kv([['Received', inr0(o.paid || 0)], ['Still due', due > 0 ? `<b>${inr0(due)}</b>` : '<span class="badge ok">Paid in full</span>'], ['Invoiced', o.invoiced_at ? whenTxt(o.invoiced_at) : NOTSET]])}
     ${pays.length ? table(['Received on', 'Amount', 'Note', 'By'], pays.map(p => [ds(p.on), inr0(p.amount), esc(p.note || ''), esc(staffName(p.by))])) : `<p class="small muted">No payment yet. At ${esc(FN('Payment received'))} the advance or the full payment is recorded.</p>`}</section>`;
@@ -1451,7 +1451,7 @@ EM.VIEWS.complaint.after = id => showLog('complaint', id, '#log-c');
 EM.ACTIONS['cmp-upd'] = el => opsAct(el, `complaints/${el.dataset.id}/status`, { status: qs('#cu-st').value, resolution: qs('#cu-res').value, cost: qs('#cu-cost').value }, '<b>Complaint saved</b>', 'cu-err');
 
 /* ---- approvals */
-const myLimit = kind => { const R = D.lists.rules, l = APPROVER_LEVEL[me().role]; return l === 'owner' ? Infinity : l && R.approvals[kind] ? R.approvals[kind].levels[l] || 0 : 0; };
+const myLimit = kind => levelLimit(D.lists.rules, kind, D.access.level);
 const apAmt = a => (D.lists.rules.approvals[a.kind] || {}).unit === '%' ? a.amount + '%' : inr0(a.amount);
 EM.VIEWS.approvals = arg => {
   const all = OPSD().approvals, tab = ['Pending', 'Approved', 'Rejected'].includes(arg) ? arg : 'Pending', rows = all.filter(a => a.status === tab);
@@ -1519,15 +1519,15 @@ function schemeRows(sc) {
   }).sort((a, b) => b.pct - a.pct || a.c.name.localeCompare(b.c.name));
 }
 const schemeState = sc => sc.status === 'Draft' ? ['Draft: waiting for approval', 'warn'] : sc.status === 'Settled' ? ['Settled', 'ok'] : today() < sc.start_on ? [`Approved: starts ${ds(sc.start_on)}`, 'info'] : today() <= sc.end_on ? ['Running', 'info'] : ['Ended: to settle', 'warn'];
-const canSch = list => list.includes(me().role);
+const canSch = right => (D.access.schemes || []).includes(right);   // draw up, approve, settle: switched in Roles & access
 EM.VIEWS.schemes = () => {
   const L = SCH().list;
   return `<div class="stack"><div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">EGO Premium · dealer schemes</div><h1>Schemes</h1>
       <p class="muted" style="max-width:780px">A target over a period, as EGO runs them today (a 7-month dealer scheme). Approved by the Owner or a Director, settled at the end by the Owner, a Director or Wholesale Finance. Each dealer's progress is counted from orders invoiced inside the period, before GST; nothing is typed.</p></div>
-      ${canSch(SCHEME_EDIT) ? '<button class="btn primary" data-act="sch-add">+ Draw up a scheme</button>' : ''}</div>
+      ${canSch('edit') ? '<button class="btn primary" data-act="sch-add">+ Draw up a scheme</button>' : ''}</div>
     ${L.length ? table(['Scheme', 'Period', ...(D.access.prices ? ['Target per dealer'] : []), 'Dealers', 'Reached the target', 'Status'], L.map(sc => { const rows = schemeRows(sc), st = schemeState(sc);
       return { href: '#/scheme/' + sc.id, cells: [`<b>${esc(sc.name)}</b><div class="small muted">${esc(sc.ref || '')}</div>`, `${ds(sc.start_on)} to ${ds(sc.end_on)}`, ...(D.access.prices ? [inr0(sc.target)] : []), num(rows.length), D.access.prices ? num(rows.filter(r => r.won).length) : '<span class="muted">Hidden</span>', `<span class="badge ${st[1]}">${esc(st[0])}</span>`] }; }))
-      : empty('No schemes yet', 'Draw up the scheme running today: its period, the target per dealer, which dealers, and the reward. It runs once the Owner or a Director approves it.', canSch(SCHEME_EDIT) ? '<button class="btn primary" data-act="sch-add">+ Draw up a scheme</button>' : '')}</div>`;
+      : empty('No schemes yet', 'Draw up the scheme running today: its period, the target per dealer, which dealers, and the reward. It runs once the Owner or a Director approves it.', canSch('edit') ? '<button class="btn primary" data-act="sch-add">+ Draw up a scheme</button>' : '')}</div>`;
 };
 EM.VIEWS.schemes.title = () => 'Schemes';
 EM.VIEWS.scheme = id => {
@@ -1539,7 +1539,7 @@ EM.VIEWS.scheme = id => {
     return `${w ? `<a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${t}">WhatsApp</a>` : ''}${r.c.email ? `<a class="btn sm ghost" href="mailto:${esc(r.c.email)}?subject=${encodeURIComponent('Your progress: ' + sc.name)}&body=${t}">Email</a>` : ''}`; };
   return `<div class="stack">${crumbs(['Schemes', '#/schemes'], [sc.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(sc.name)}</h1><div class="row"><span class="badge ${st[1]}">${esc(st[0])}</span><span class="small muted">${esc(sc.ref || '')}</span></div></div>
-      <div class="row">${sc.status === 'Draft' && canSch(SCHEME_EDIT) ? `<button class="btn" data-act="sch-edit" data-id="${id}">Edit</button>` : ''}${sc.status === 'Draft' && canSch(SCHEME_APPROVE) ? `<button class="btn primary" data-act="sch-approve" data-id="${id}">Approve</button>` : ''}${sc.status === 'Approved' && ended && canSch(SCHEME_SETTLE) ? `<button class="btn primary" data-act="sch-settle" data-id="${id}">Settle</button>` : ''}${isOwner() ? `<button class="btn ghost" data-act="sch-del" data-id="${id}">Delete</button>` : ''}</div></div>
+      <div class="row">${sc.status === 'Draft' && canSch('edit') ? `<button class="btn" data-act="sch-edit" data-id="${id}">Edit</button>` : ''}${sc.status === 'Draft' && canSch('approve') ? `<button class="btn primary" data-act="sch-approve" data-id="${id}">Approve</button>` : ''}${sc.status === 'Approved' && ended && canSch('settle') ? `<button class="btn primary" data-act="sch-settle" data-id="${id}">Settle</button>` : ''}${D.access.can_delete ? `<button class="btn ghost" data-act="sch-del" data-id="${id}">Delete</button>` : ''}</div></div>
     <div class="grid g4">${tile('Dealers in it', num(rows.length))}${P ? tile('Reached the target', num(rows.filter(r => r.won).length)) : ''}${P ? tile('New dealers activated', num(rows.filter(r => r.isNew).length), 'first order inside the period') : ''}${P ? tile('Invoiced in the period', inr0(rows.reduce((a, r) => a + r.achieved, 0)), 'before GST') : ''}</div>
     <section class="card stack-s"><h3>The scheme</h3>${kv([['Period', `${ds(sc.start_on)} to ${ds(sc.end_on)}`], ...(P ? [['Target per dealer', inr0(sc.target)]] : []), ['For', esc(SCHEME_WHO[sc.who]) + (sc.who === 'rating' ? ': ' + esc((sc.ratings || []).join(', ')) : '')], ['Reward', esc(sc.reward || '') || NOTSET], ['Notes', esc(sc.notes || '') || NOTSET],
       ['Drawn up by', esc(staffName(sc.created_by))], ['Approved by', sc.approved_by ? `${esc(staffName(sc.approved_by))} · ${whenTxt(sc.approved_at)}` : NOTSET], ['Settled by', sc.settled_by ? `${esc(staffName(sc.settled_by))} · ${whenTxt(sc.settled_at)}` : NOTSET]])}</section>
@@ -1680,7 +1680,7 @@ document.addEventListener('click', async e => {
 const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
 const IMP = { tpl: null, file: null, rows: [], results: null, done: null, error: '' };
 /* both files always side by side for anyone who works in both companies, whatever the top switch says */
-const tplsHere = () => Object.values(TEMPLATES).filter(t => t.id === 'inv' ? STOCK_ROLES.includes(me().role) : canDiv(t.division));
+const tplsHere = () => Object.values(TEMPLATES).filter(t => t.id === 'inv' ? !!D.access.stock : canDiv(t.division));
 const SHEET_NOTE = {
   dealers: 'Each dealer, distributor and sub-dealer company: where it is, the areas it covers, its rating, then the rest.',
   dealer_people: 'Everyone who works at those companies: role, what they handle, name, mobile, email.',
@@ -1843,21 +1843,56 @@ EM.VIEWS.team.title = () => 'Team & access';
 const divName = d => d === 'both' ? 'Both' : DIVS[d] ? DIVS[d].name : d;
 const peopleTable = () => table(['Name', 'Username', 'Role', 'Division', 'Region', 'Reports to', 'Status', ''], D.staff.slice().sort((a, b) => b.active - a.active || a.name.localeCompare(b.name)).map(s => [`<b>${esc(s.name)}</b><div class="small muted">${esc(fmtMobile(s.mobile))}</div>`, esc(s.login), esc(roleName(s.role)), divName(s.division), esc(s.region || ''), esc(s.reports_to ? staffName(s.reports_to) : ''),
   !s.active ? '<span class="badge plain">Switched off</span>' : s.must_change ? '<span class="badge warn">Temporary password</span>' : '<span class="badge ok">Active</span>',
-  s.active ? `<button class="btn sm ghost" data-act="staff-edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-act="staff-pass" data-id="${s.id}">New password</button>${s.id !== me().id ? `<button class="btn sm ghost" data-act="staff-off" data-id="${s.id}">Switch off</button>` : ''}` : '']));
+  s.active ? `${isOwner() && s.id !== me().id ? `<button class="btn sm" data-act="view-as" data-id="${s.id}">View as</button>` : ''}<button class="btn sm ghost" data-act="staff-edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-act="staff-pass" data-id="${s.id}">New password</button>${s.id !== me().id ? `<button class="btn sm ghost" data-act="staff-off" data-id="${s.id}">Switch off</button>` : ''}` : '']));
+/* Roles & access (8 Oct): every switch of every role, for management. Each click saves at once; the
+   people in that role get it at their next reload or sign-in. "View as" shows exactly what they see. */
+const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel']];
+const ROLE_SWITCHES = [['prices', 'Sees money (rates, values, payments)'], ['readonly', 'View only (changes nothing)'], ['users', 'Manages logins (Team & access)'], ['stock', 'Changes the inventory'], ['can_delete', 'Deletes records'], ['can_lists', 'Edits lists, stages and rules']];
+EM.roleOpen = EM.roleOpen || '';
 function rolesMatrix() {
-  const edit = isOwner();
-  return `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Role</th><th>Division</th><th>Sees</th><th class="r">Prices</th><th class="r">Cost &amp; GP</th><th class="r">Approve</th><th class="r">Export</th><th class="r">Manage users</th></tr></thead><tbody>
-    ${D.roles.map(r => `<tr><td><b>${esc(r.name)}</b><div class="small muted">${D.staff.filter(s => s.role === r.id && s.active).length} people</div></td><td>${divName(r.division)}</td>
-      <td><select class="input" data-role="${r.id}|scope" ${!edit || r.id === 'owner' ? 'disabled' : ''} aria-label="What ${esc(r.name)} sees">${SCOPES.map(([k, l]) => `<option value="${k}" ${r.scope === k ? 'selected' : ''}>${l}</option>`).join('')}</select></td>
-      ${['prices', 'cost', 'approve', 'export', 'users'].map(k => `<td class="r"><input type="checkbox" data-role="${r.id}|${k}" ${r[k] ? 'checked' : ''} ${!edit || r.id === 'owner' ? 'disabled' : ''} aria-label="${k} for ${esc(r.name)}"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
-    <p class="small muted">${edit ? 'Changes save at once and apply on the next screen each person opens. The server enforces them: a role that cannot see a record is never sent it.' : 'Only an Owner changes what a role can see.'} Cost &amp; GP and Approve are recorded now and used when orders and approvals go live.</p>`;
+  const edit = isOwner(), L = D.lists.rules;
+  const card = r => { const n = D.staff.filter(s => s.role === r.id && s.active), locked = !edit || r.id === 'owner', dis = locked ? 'disabled' : '', open = EM.roleOpen === r.id;
+    const chk = (k, label, on) => `<label class="chip" style="padding:6px 10px"><input type="checkbox" data-rsw="${r.id}|${k}" ${on ? 'checked' : ''} ${dis}> ${esc(label)}</label>`;
+    const tabsOn = (r.tabs || []).length ? r.tabs : TAB_CHOICES.map(([k]) => k);
+    return `<section class="card stack-s" data-role-card="${r.id}"><div class="row between"><div><b>${esc(r.name)}</b> <span class="small muted">${n.length} ${n.length === 1 ? 'person' : 'people'}${n.length ? ': ' + esc(n.slice(0, 6).map(s => s.name.split(' ')[0]).join(', ')) + (n.length > 6 ? '…' : '') : ''}</span>
+        <div class="small muted">${esc((SCOPES_ALL.find(x => x[0] === r.scope) || ['', r.scope])[1])} · ${divName(r.division)}${r.prices ? ' · money' : ' · no money'}${r.readonly ? ' · view only' : ''} · ${esc((DASHES.find(x => x[0] === (r.dash || '')) || ['', ''])[1])} dashboard</div></div>
+      <div class="row">${edit ? `<button class="btn sm" data-act="role-toggle" data-id="${r.id}">${open ? 'Close' : r.id === 'owner' ? 'See' : 'Change access'}</button><button class="btn sm ghost" data-act="role-copy" data-id="${r.id}">Copy role</button>${r.id !== 'owner' && !D.staff.some(s => s.role === r.id) ? `<button class="btn sm ghost" data-act="role-del" data-id="${r.id}">Remove</button>` : ''}` : ''}</div></div>
+      ${open ? `<div class="stack-s" data-role-body>${r.id === 'owner' ? '<div class="callout">The Owner role always has full access, so management can never be locked out.</div>' : ''}
+        <div class="fgrid"><div class="field"><label for="rn-${r.id}">Role name</label><input class="input" id="rn-${r.id}" data-rsw="${r.id}|name" value="${esc(r.name)}" ${dis}></div>
+          <div class="field"><label for="rs-${r.id}">Sees</label><select class="input" id="rs-${r.id}" data-rsw="${r.id}|scope" ${dis}>${SCOPES_ALL.map(([k, l]) => `<option value="${k}" ${r.scope === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+          <div class="field"><label for="rd-${r.id}">Company</label><select class="input" id="rd-${r.id}" data-rsw="${r.id}|division" ${dis}>${[['wholesale', 'EGO Premium'], ['retail', 'Big E'], ['both', 'Both']].map(([k, l]) => `<option value="${k}" ${r.division === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+          <div class="field"><label for="rh-${r.id}">Dashboard</label><select class="input" id="rh-${r.id}" data-rsw="${r.id}|dash" ${dis}>${DASHES.map(([k, l]) => `<option value="${k}" ${(r.dash || '') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+          <div class="field"><label for="rl-${r.id}">Approves</label><select class="input" id="rl-${r.id}" data-rsw="${r.id}|level" ${dis}>${LEVELS.map(([k, l]) => `<option value="${k}" ${(r.level || 'none') === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div></div>
+        <div class="small muted">Approval limits: credit ₹${num(L.approvals.credit.levels.manager)} / ₹${num(L.approvals.credit.levels.head)} / ₹${num(L.approvals.credit.levels.director)} (manager / head / director), set in Lists & stages › Rules and numbers.</div>
+        <b class="small">What they may do</b><div class="row" style="flex-wrap:wrap;gap:6px">${ROLE_SWITCHES.map(([k, l]) => chk(k, l, r[k])).join('')}</div>
+        <b class="small">Screens in their menu</b><div class="row" style="flex-wrap:wrap;gap:6px" data-rtabs="${r.id}">${TAB_CHOICES.map(([k, l]) => `<label class="chip" style="padding:6px 10px"><input type="checkbox" data-rtab="${r.id}|${k}" ${tabsOn.includes(k) ? 'checked' : ''} ${dis}> ${esc(l)}</label>`).join('')}</div>
+        <b class="small">Order steps they move</b><div class="row" style="flex-wrap:wrap;gap:6px">${Object.entries(FUL_LABEL).map(([k, l]) => `<label class="chip" style="padding:6px 10px"><input type="checkbox" data-rlist="${r.id}|ful|${k}" ${(r.ful || []).includes(k) ? 'checked' : ''} ${dis}> ${esc(l)}</label>`).join('')}</div>
+        <b class="small">Dealer schemes</b><div class="row" style="flex-wrap:wrap;gap:6px">${Object.entries(SCHEME_LABEL).map(([k, l]) => `<label class="chip" style="padding:6px 10px"><input type="checkbox" data-rlist="${r.id}|schemes|${k}" ${(r.schemes || []).includes(k) ? 'checked' : ''} ${dis}> ${esc(l)}</label>`).join('')}</div>
+        <p class="small muted" data-role-note="${r.id}">Each change saves at once and reaches the ${n.length} ${n.length === 1 ? 'person' : 'people'} in this role at their next reload or sign-in. ${n.length ? 'Use View as in People to see exactly what they see.' : ''}</p></div>` : ''}</section>`; };
+  return `<div class="stack-s"><p class="muted">${edit ? 'Management decides who sees and does what. Open a role, switch what you want; a person who needs a little more or less gets a copied role (Copy role, then change their role in People › Edit).' : 'Only an Owner changes roles.'}</p>${D.roles.map(card).join('')}</div>`;
 }
-document.addEventListener('change', async e => {
-  const t = e.target.closest('[data-role]');
-  if (!t) return;
-  const [id, k] = t.dataset.role.split('|'), val = t.type === 'checkbox' ? t.checked : t.value;
-  try { await API('POST', '/api/roles/' + id, { [k]: val }); const r = D.roles.find(x => x.id === id); r[k] = val; EM.toast(`${esc(r.name)} updated.`); } catch (x) { EM.toast(esc(x.message)); EM.rerender(); }
+const saveRoleSw = async (id, patch) => {
+  if (D.access.viewing_as) return EM.toast('Press Back to me first: nothing changes while viewing as someone.');
+  try { const r = await API('POST', '/api/roles/' + id, patch); upsertLocal(D.roles, r.role); EM.toast(`<b>${esc(r.role.name)}</b> saved. Applies to ${r.people} ${r.people === 1 ? 'person' : 'people'} at their next reload or sign-in.`); EM.rerender(); }
+  catch (x) { EM.toast(esc(x.message)); EM.rerender(); }
+};
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (!t.dataset) return;
+  if (t.dataset.rsw) { const [id, k] = t.dataset.rsw.split('|'); return saveRoleSw(id, { [k]: t.type === 'checkbox' ? t.checked : t.value }); }
+  if (t.dataset.rtab) { const id = t.dataset.rtab.split('|')[0]; return saveRoleSw(id, { tabs: [...document.querySelectorAll(`[data-rtab^="${id}|"]:checked`)].map(x => x.dataset.rtab.split('|')[1]) }); }
+  if (t.dataset.rlist) { const [id, k] = t.dataset.rlist.split('|'); return saveRoleSw(id, { [k]: [...document.querySelectorAll(`[data-rlist^="${id}|${k}|"]:checked`)].map(x => x.dataset.rlist.split('|')[2]) }); }
 });
+EM.ACTIONS['role-toggle'] = el => { EM.roleOpen = EM.roleOpen === el.dataset.id ? '' : el.dataset.id; EM.rerender(); };
+EM.ACTIONS['role-copy'] = async el => { const from = D.roles.find(r => r.id === el.dataset.id), name = prompt('Name for the new role', `${from.name} (copy)`); if (!name) return;
+  try { const r = await API('POST', '/api/roles', { from: from.id, name }); D.roles.push(r.role); EM.roleOpen = r.role.id; EM.toast(`<b>${esc(name)}</b> made with the same access as ${esc(from.name)}. Change what you need, then give it to a person in People › Edit.`, 8000); EM.rerender(); } catch (x) { EM.toast(esc(x.message)); } };
+EM.ACTIONS['role-del'] = async el => { const r = D.roles.find(x => x.id === el.dataset.id); if (!confirm(`Remove the role ${r.name}?`)) return; try { await API('DELETE', '/api/roles/' + r.id); D.roles = D.roles.filter(x => x.id !== r.id); EM.rerender(); } catch (x) { EM.toast(esc(x.message)); } };
+/* View as this person: their own data, menu and dashboard, view only, until Back to me */
+EM.ACTIONS['view-as'] = async el => {
+  try { const fresh = await API('GET', '/api/bootstrap?as=' + encodeURIComponent(el.dataset.id)); Object.assign(D, fresh); EM.div = D.user.division === 'both' ? 'both' : D.user.division; location.hash = '#/home'; EM.rerender(); }
+  catch (x) { EM.toast(esc(x.message)); }
+};
+EM.ACTIONS['view-back'] = async () => { const fresh = await API('GET', '/api/bootstrap'); Object.assign(D, fresh); EM.div = D.user.division === 'both' ? 'both' : D.user.division; location.hash = '#/team'; EM.rerender(); };
 const genPass = () => { const a = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const b = crypto.getRandomValues(new Uint8Array(12)); return Array.from(b, x => a[x % a.length]).join(''); };
 const STAFF_MOBILE = { key: 'mobile', label: 'Mobile', type: 'mobile' };
 function openStaffForm(s) {
@@ -1928,7 +1963,7 @@ const LISTS_UI = () => [
 const listItems = key => key.startsWith('stages.') ? D.lists.stages[key.slice(7)] : key.startsWith('ops.') ? (D.lists.ops || {})[key.slice(4)] || [] : key === 'cities' ? D.lists.cities : D.lists[key] || [];
 EM.listOpen = EM.listOpen || '';
 EM.VIEWS.lists = () => {
-  if (!isOwner()) return EM.noAccess('Only an Owner edits the lists and stages.');
+  if (!D.access.can_lists) return EM.noAccess('Your role does not edit the lists and stages.');
   return `<div class="stack"><div class="stack-s"><h1>Lists &amp; stages</h1><p class="muted" style="max-width:780px">Every dropdown and every stage in EGO Master comes from here. Rename an item and every record that has it changes too. Move items up or down to change their order in the dropdowns and on the boards. An item that saved records still use cannot be removed: rename it, or change those records first.</p></div>
     <section class="stack-s"><h3>Rules and numbers</h3><p class="small muted">GST, production quantities, when an order is overdue, approval limits, Priority 200 levels and weights.</p>
       <div class="grid g3"><button class="card stack-s" style="text-align:left;cursor:pointer" data-act="rules-open"><b>Rules and numbers</b><span class="small muted">GST ${D.lists.rules.gst_pct}% · MOQ ${D.lists.rules.moq_boxes} boxes · ${Object.keys(D.lists.rules.approvals).length} approval limits · ${D.lists.rules.p200.tiers.length} Priority 200 levels</span></button></div></section>
