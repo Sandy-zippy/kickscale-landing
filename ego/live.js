@@ -38,15 +38,21 @@ EM.div = D.user.division === 'both' ? 'both' : D.user.division;
    every button; the buttons themselves are hidden in Both. */
 const SEG = { wholesale: 'EGO Premium', retail: 'Big E', both: 'Both companies' };
 const segBadge = div => `<span class="badge plain" data-seg>${esc(SEG[div] || div)}</span>`;
-const isBothView = () => (EM.div === 'both' && D.user.division === 'both') || !!D.access.readonly;   // Both, and a view-only role, look without changing
+/* Both, and a view-only role, look without changing. Viewing as someone shows THEIR buttons (hidden only if their
+   own role is view only); pressing one explains, because nothing saves while viewing as. */
+const ownReadonly = () => D.access.viewing_as ? !!D.access.own_readonly : !!D.access.readonly;
+const isBothView = () => (EM.div === 'both' && D.user.division === 'both') || ownReadonly();
+/* opening tabs, filters and menus is looking, not changing */
+const NAV_ACTS = new Set(['role-toggle', 'opp-mine', 'invf-clear', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab']);
 const LOOK_ACTS = new Set(['view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
   'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass']);
 /* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
 const hideChangeButtons = root => { if (!isBothView() || !root) return; root.querySelectorAll('[data-act]').forEach(b => { if (!LOOK_ACTS.has(b.dataset.act)) b.setAttribute('hidden', ''); }); root.querySelectorAll('input[type="file"], #move-stage, [data-list-only]').forEach(x => x.setAttribute('hidden', '')); };
 EM.guard = el => {
+  if (D.access.viewing_as && !['view-back', 'div', 'sign-out', 'list-open', 'alloc-open'].includes(el.dataset.act) && !NAV_ACTS.has(el.dataset.act)) { bubbleNear(el, `This is what ${D.access.viewing_as.name} sees and can press. Nothing saves while viewing as: press Back to me.`); return false; }
   if (!isBothView() || LOOK_ACTS.has(el.dataset.act)) return true;
-  bubbleNear(el, D.access.readonly ? `${D.access.name} is view only: you can see, not change.` : 'Both shows EGO Premium and Big E together, to look at. Switch to Wholesale · EGO or Retail · Big E to add or change anything.');
+  bubbleNear(el, ownReadonly() ? `${D.access.name} is view only: you can see, not change.` : 'Both shows EGO Premium and Big E together, to look at. Switch to Wholesale · EGO or Retail · Big E to add or change anything.');
   return false;
 };
 const baseModal = EM.modal.bind(EM);
@@ -57,6 +63,7 @@ EM.render = (...a) => {
   const both = isBothView();
   qs('#shell').classList.toggle('view-both', both);
   hideChangeButtons(qs('#view'));
+  if (!allowedTab('import')) qs('#view').querySelectorAll('a[href="#/import"]').forEach(a => a.remove());   // no Import screen, no Import button
   if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
