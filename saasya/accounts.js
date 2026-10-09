@@ -598,6 +598,12 @@
     }
     return { heads: [], rows: [], sum: -1 };
   }
+  // one filter definition for the screen and the download, so the file is exactly what is shown
+  function tallyFilter(key, T) {
+    return GE.filterBar(key, T.rows, { placeholder: 'Search a party, a voucher, a ledger', quick: ['party', 'ledger', 'type'], fields: T.heads.map(function (hd, i) {
+      var k = i === 4 ? 'party' : i === 5 ? 'ledger' : i === 1 ? 'type' : 'c' + i;
+      return { k: k, label: hd, type: (typeof (T.rows[0] && T.rows[0].cells[i]) === 'number') ? 'num' : (i === 4 || i === 5 || i === 1 ? 'enum' : 'text'), get: function (r) { return r.cells[i]; } }; }) });
+  }
   GE.tallyRows = tallyRows; GE.tallyDates = tallyDates;
   V['#/tally'] = function () {
     var tab = GE.Q['#/tally.tab'] || 'money', sub = GE.Q['#/tally.sub'] || 'in', Q = tallyDates(), ok = Q.from && Q.to && Q.from <= Q.to;
@@ -609,12 +615,12 @@
     if (!ok) return h + '<div class="note bad"><b>Choose both dates.</b> The export runs only for a date range.</div>';
     if (tab === 'money') h += '<div class="tabs sub">' + [['in', 'Money in'], ['out', 'Money out'], ['sales', 'Sales invoices (GST by rate)']].map(function (x) { return '<button class="' + (x[0] === sub ? 'on' : '') + '" data-act="tallySub" data-id="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
     var T = tallyRows(tab, sub), key = '#/tally.' + tab + sub;
-    var fb = GE.filterBar(key, T.rows, { placeholder: 'Search a party, a voucher, a ledger', quick: ['party', 'ledger', 'type'], fields: T.heads.map(function (hd, i) {
-      var k = i === 4 ? 'party' : i === 5 ? 'ledger' : i === 1 ? 'type' : 'c' + i;
-      return { k: k, label: hd, type: (typeof (T.rows[0] && T.rows[0].cells[i]) === 'number') ? 'num' : (i === 4 || i === 5 || i === 1 ? 'enum' : 'text'), get: function (r) { return r.cells[i]; } }; }) });
+    var fb = tallyFilter(key, T);
     var rows = fb.rows, total = T.sum >= 0 ? sum(rows, function (r) { return Number(r.cells[T.sum]) || 0; }) : 0;
+    h += '<div class="card texport"><div><b>' + rows.length + ' voucher' + (rows.length === 1 ? '' : 's') + ' shown</b> · ' + d(Q.from) + ' to ' + d(Q.to) + ' · total ' + rupees(total) + '<div class="sub">Only the rows on screen go into the file. Narrow them with the dates, the search and the filters below.</div></div>' +
+      '<button class="btn gold" data-act="tallyXls"' + (rows.length ? '' : ' disabled') + '>Download for Tally (Excel)</button></div>';
     if (tab !== 'money') h += supplierReportHtml(tab);
-    h += fb.html + '<div class="btnrow" style="margin-bottom:10px"><button class="btn gold" data-act="tallyXls">Export this for Tally</button> <span class="sub">' + rows.length + ' vouchers, ' + d(Q.from) + ' to ' + d(Q.to) + ' · total ' + rupees(total) + '</span></div>';
+    h += fb.html;
     h += '<div class="card" style="overflow-x:auto"><table class="tally"><thead><tr>' + T.heads.map(function (hd) { return '<th>' + esc(hd) + '</th>'; }).join('') + '<th></th></tr></thead><tbody>';
     rows.forEach(function (r) {
       h += '<tr>' + r.cells.map(function (c, i) { return '<td' + (typeof c === 'number' ? ' class="num"' : '') + '>' + (typeof c === 'number' && i !== 7 ? rupees(c) : i === 0 ? d(c) : esc(c)) + '</td>'; }).join('') +
@@ -652,7 +658,7 @@
   A.tallyXls = function () {
     var Q = tallyDates(); if (!Q.from || !Q.to) { GE.toast('Choose both dates first.'); return; }
     var tab = GE.Q['#/tally.tab'] || 'money', sub = GE.Q['#/tally.sub'] || 'in', T = tallyRows(tab, sub), key = '#/tally.' + tab + sub;
-    var fb = GE.filterBar(key, T.rows, { fields: T.heads.map(function (hd, i) { var k = i === 4 ? 'party' : i === 5 ? 'ledger' : i === 1 ? 'type' : 'c' + i; return { k: k, label: hd, get: function (r) { return r.cells[i]; } }; }) });
+    var fb = tallyFilter(key, T); if (!fb.rows.length) { GE.toast('Nothing on screen to export.'); return; }
     var name = (tab === 'money' ? ({ in: 'money-in', out: 'money-out', sales: 'sales' })[sub] : tab) + '-' + Q.from + '-to-' + Q.to;
     xls('Saasya-Men-Tally-' + name + '.xlsx', [{ name: 'Vouchers', rows: [T.heads].concat(fb.rows.map(function (r) { return r.cells; })) }]);
     GE.toast(fb.rows.length + ' vouchers exported, ' + d(Q.from) + ' to ' + d(Q.to) + '.');
