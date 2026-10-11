@@ -3190,18 +3190,19 @@
          knows their products and solves their problem, less work for them and
          the team, time and money saved, more deals and more revenue. */
       return 'An Agentic Cockpit. ' +
-        (e.filter(function (x) { return /memory/i.test(x); }).length
-          ? 'At the moment the business runs on somebody remembering, which works until they are on leave. '
-          : '') +
         'Not a different tool for every part of the business, but one tool with AI built in, ' +
         'made for your brand. It understands your products, solves the problems you actually have, ' +
         'and takes the routine work off you and your team: every job, every client, what is owed ' +
         'and what is overdue, with the follow-ups done for you. That saves you time and money, ' +
-        'and wins you more deals and more revenue. Built on your own data, not a demo.';
+        'and wins you more deals and more revenue. ' +
+        (e.filter(function (x) { return /memory/i.test(x); }).length
+          ? 'Right now a lot of it runs on somebody remembering, which works until they are on leave. '
+          : '') +
+        'Built on your own data, not a demo.';
     },
     website: function (p, hits) {
       var e = (hits || []).map(function (h) { return h.evidence; });
-      return 'The site itself. ' +
+      return 'Your website. ' +
         (e.filter(function (x) { return /Not secure/i.test(x); }).length
           ? 'The certificate alone is turning people away before they read a word. '
           : '') +
@@ -3214,32 +3215,62 @@
      must handle that, and the whole point is that one of them cannot forget. */
   /* `notes` is what Bhargav told Mark to put in (Compose email): an offer, a link,
      when he is free. It goes in as its own paragraph, in his words, unedited. */
+  /* The finding as a sentence that can follow "found one thing you can check in
+     ten seconds:". The raw evidence is written for the board, not for a reader. */
+  var FINDING_LINE = {
+    no_https:   function () { return 'your site is served over http, so Chrome shows "Not secure" beside the address'; },
+    site_down:  function () { return 'your website is not loading at all'; },
+    site_error: function () { return 'your website returns an error page instead of loading'; },
+    no_site:    function () { return 'your Google listing has no website against it'; },
+    not_mobile: function () { return 'your site does not fit a phone screen, so it opens at desktop width on a phone'; },
+    stale:      function (f) {
+      var y = String(f.evidence || '').match(/(20\d\d)/);
+      return 'your site still says ' + (y ? y[1] : 'an old year');
+    }
+  };
+
+  /* ⚠️ BHARGAV'S TEMPLATE (11 Oct 2026). He rewrote Mark's casual draft himself
+     and this is that email, line for line. Do not drift back to the short form:
+     introduction with his credibility (HIS numbers: Canada 20+, India 16+),
+     the finding, the numbered offers, free discovery + free sample architecture,
+     3 projects a month, the India engineering team, the CTA, his full signature.
+     Spoken TO them ("you"), never about them. */
+  var MARK_SIGNATURE = ['Warm regards,', '', 'Bhargav Naidu', 'Co-Founder, Zippy Scale',
+                        '+91 99899 90419', 'zippyscale.in'];
+
   function draftEmail(p, picks, me, order, notes) {
     var sub = subjectFor(p, order);
     if (!sub) return null;
 
-    var greet = p.contact_name ? 'Hello ' + p.contact_name.split(' ')[0] + ',' : 'Hello,';
+    var company = shortName(p.name);
+    var greet = p.contact_name
+      ? 'Hello Mr. ' + p.contact_name.split(' ')[0] + ','
+      : 'Hello ' + company + ' team,';
     var services = (picks || []).slice(0, 3);
-    var sig = (me && me.name) || 'Bhargav Naidu';
+    var where = p.country === 'US' ? 'the US' : 'Dubai';
+    var line = FINDING_LINE[sub.finding.id] ? FINDING_LINE[sub.finding.id](sub.finding)
+                                            : String(sub.finding.evidence || '');
+    var commas = function (x) { return x.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,'); };
 
     var body = [
       greet, '',
-      sub.finding.evidence + '.',
+      'I’m Bhargav Naidu, Co-Founder of Zippy Scale, an automation, marketing and branding agency. ' +
+      'We started in Canada, where we have worked with 20+ clients, expanded into India a year ago ' +
+      'and have worked with 16+ clients there, and we are now opening in ' + where + '.',
       '',
-      'I found that looking at ' + p.name + ' this morning, before writing to you. ' +
-      'You can check it in ten seconds and it is yours to fix whether or not we ever speak.',
+      'My team went through your website this morning and found one thing you can check ' +
+      'in ten seconds: ' + line + '. It is yours to fix whether or not we ever speak.',
       ''
     ];
 
     if (services.length) {
       body.push(services.length === 1
-        ? 'While I was there, one thing stood out.'
-        : 'While I was there, ' + (services.length === 2 ? 'two' : 'three') + ' things stood out.');
+        ? 'One more thing stood out while we were there.'
+        : (services.length === 2 ? 'Two' : 'Three') + ' more things stood out while we were there.');
       body.push('');
-      services.forEach(function (sv) {
+      services.forEach(function (sv, i) {
         var hits = ((p.signals || {})[sv.key] || []);
-        body.push(PITCH[sv.key](p, hits));
-        body.push('From ' + priceIn(sv.key, p.country) + '.');
+        body.push((i + 1) + '. ' + PITCH[sv.key](p, hits) + ' From ' + commas(priceIn(sv.key, p.country)) + '.');
         body.push('');
       });
     }
@@ -3247,15 +3278,17 @@
     var said = String(notes || '').trim();
     if (said) { body.push(said); body.push(''); }
 
-    body.push('We build these in India for businesses in ' +
-      (p.country === 'US' ? 'the States' : 'the Gulf') +
-      ', which is why the price looks the way it does. Same engineers, no agency in the middle.');
+    body.push('How we start: a free discovery call to understand what you need, then a free sample ' +
+      'architecture that shows exactly how your system would work. You only pay if you decide to ' +
+      'have it built and deployed.');
     body.push('');
-    body.push('Worth twenty minutes? I can show you what we have built for people in your trade: ' +
-      'zippyscale.in');
+    body.push('We take on only 3 projects a month in ' + where + ', so each one gets our full attention. ' +
+      'Our engineering team is in India, which is why the pricing looks the way it does: the same ' +
+      'team builds it end to end, with no middlemen.');
     body.push('');
-    body.push(sig);
-    body.push('ZippyScale');
+    body.push('Worth twenty minutes? I can show you what we have built for businesses like yours: zippyscale.in');
+    body.push('');
+    MARK_SIGNATURE.forEach(function (l) { body.push(l); });
 
     return { subject: sub.line, text: body.join('\n'), finding: sub.finding };
   }
