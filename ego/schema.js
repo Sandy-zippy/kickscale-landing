@@ -56,6 +56,14 @@ const DEFAULT_LISTS = {
 };
 const REGIONS = ['West', 'South', 'North', 'East', 'Central'];
 
+/* the 28 states and 8 union territories, A to Z (11 Oct) */
+const STATES = ['Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka', 'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'];
+/* picking a city fills its state; a city not here leaves the state to be picked */
+const CITY_STATE = { Mumbai: 'Maharashtra', 'Navi Mumbai': 'Maharashtra', Thane: 'Maharashtra', Pune: 'Maharashtra', Nashik: 'Maharashtra', Nagpur: 'Maharashtra', Ahmedabad: 'Gujarat', Surat: 'Gujarat', Vadodara: 'Gujarat', Goa: 'Goa',
+  Bengaluru: 'Karnataka', Chennai: 'Tamil Nadu', Hyderabad: 'Telangana', Kochi: 'Kerala', 'New Delhi': 'Delhi', Gurugram: 'Haryana', Noida: 'Uttar Pradesh', Jaipur: 'Rajasthan', Chandigarh: 'Chandigarh', Lucknow: 'Uttar Pradesh',
+  Kolkata: 'West Bengal', Indore: 'Madhya Pradesh', Raipur: 'Chhattisgarh', Bhopal: 'Madhya Pradesh', Visakhapatnam: 'Andhra Pradesh', Coimbatore: 'Tamil Nadu', Ludhiana: 'Punjab', Patna: 'Bihar', Bhubaneswar: 'Odisha', Guwahati: 'Assam', Dehradun: 'Uttarakhand' };
+const NEXT_ACTIONS = ['Call', 'WhatsApp', 'Visit dealer', 'Site visit', 'Send sample', 'Send catalogue', 'Send quotation', 'Follow up on quotation', 'Collect payment', 'Meeting'];
+
 const DESIGNATIONS = ['Owner', 'Partner', 'Director', 'Principal', 'Purchase', 'Accounts', 'Store manager', 'Sales', 'Telecaller', 'Marketing', 'Site engineer', 'Project manager', 'Senior architect', 'Architect', 'Interior designer', 'Other'];
 
 /* A field: key, label, type, where it shows (groups), required, options.
@@ -74,9 +82,12 @@ const CLIENT_FIELDS = [
   { key: 'mobile_alt', label: 'Alternate mobile', type: 'mobile', col: true, groups: ALL, section: 'Basics' },
   { key: 'email', label: 'Email', type: 'email', col: true, groups: ALL, section: 'Basics' },
   { key: 'city', label: 'City', type: 'city', req: true, col: true, groups: ALL, section: 'Basics' },
+  { key: 'state', list: 'states', label: 'State', type: 'select', opts: STATES, groups: ALL, section: 'Basics' },
   { key: 'locality', label: 'Area or locality', type: 'text', groups: ALL, section: 'Basics' },
   { key: 'pincode', label: 'Pincode', type: 'pincode', groups: ALL, section: 'Basics' },
   { key: 'address', label: 'Address', type: 'textarea', groups: ALL, section: 'Basics' },
+  /* more addresses (another branch, a site, a godown): picked as billing or delivery on a sale (11 Oct) */
+  { key: 'addresses', label: 'Other addresses', type: 'addresses', groups: ALL, section: 'Basics' },
   { key: 'areas_covered', label: 'Areas they cover', klabel: { distributor: 'Assigned area (they answer for its sales)' }, type: 'cities', groups: ORGS, section: 'Basics' },
   { key: 'other_offices', label: 'Other offices or branches (areas)', type: 'text', groups: ORGS, section: 'Basics' },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true, col: true, groups: ALL, section: 'Basics' },
@@ -130,7 +141,7 @@ const CLIENT_FIELDS = [
   { key: 'condition_tag', list: 'condition_tags', label: 'Condition tag', type: 'select', opts: ['Hot', 'Warm', 'Cold'], groups: ['retail'], section: 'Retail' },
 
   { key: 'last_contact', label: 'Last contact', type: 'date', groups: ['architect', 'firm'], section: 'Follow-up' },
-  { key: 'next_action', label: 'Next action', type: 'text', groups: ALL, section: 'Follow-up' },
+  { key: 'next_action', list: 'next_actions', label: 'Next action', type: 'suggest', opts: NEXT_ACTIONS, groups: ALL, section: 'Follow-up' },
   { key: 'next_date', label: 'Next action date', type: 'date', groups: ALL, section: 'Follow-up' },
   { key: 'notes', label: 'Notes', type: 'textarea', col: true, groups: ALL, section: 'Follow-up' },
 ];
@@ -147,7 +158,8 @@ const CONTACT_FIELDS = [
 
 const OPP_FIELDS = [
   { key: 'pipeline', label: 'Pipeline', type: 'select', opts: Object.keys(PIPELINES), req: true },
-  { key: 'title', label: 'Title', type: 'text', req: true },
+  /* left blank, it is named for them: client · product · month (11 Oct) */
+  { key: 'title', label: 'Opportunity name', type: 'text' },
   { key: 'stage', label: 'Stage', type: 'stage', req: true },
   { key: 'value', label: 'Value (₹)', type: 'money' },
   { key: 'products', label: 'Products', type: 'cats' },
@@ -157,20 +169,24 @@ const OPP_FIELDS = [
   { key: 'source', list: 'sources', label: 'Source', type: 'select', opts: SOURCES },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true },
   { key: 'contact_id', label: 'Point of contact', type: 'contact' },
-  { key: 'next_action', label: 'Next action', type: 'text' },
+  { key: 'next_action', list: 'next_actions', label: 'Next action', type: 'suggest', opts: NEXT_ACTIONS },
   { key: 'next_date', label: 'Next action date', type: 'date' },
   { key: 'expected_close', label: 'Expected close', type: 'date' },
   { key: 'lost_reason', label: 'Lost reason', type: 'lost' },
   { key: 'lost_detail', label: 'Lost: the details', type: 'textarea' },
   /* what EGO writes on an order or quotation (onboarding answers); wholesale only */
-  { key: 'billing_address', label: 'Billing address', type: 'textarea', pipes: ['wholesale'] },
-  { key: 'delivery_address', label: 'Delivery address', type: 'textarea', pipes: ['wholesale'] },
-  { key: 'payment_terms', label: 'Payment terms', type: 'text', pipes: ['wholesale'] },
-  { key: 'delivery_terms', label: 'Delivery terms', type: 'text', pipes: ['wholesale'] },
-  { key: 'delivery_time', label: 'Delivery time', type: 'text', pipes: ['wholesale'] },
-  { key: 'terms', label: 'Terms and conditions', type: 'textarea', pipes: ['wholesale'] },
+  { key: 'billing_address', label: 'Billing address', type: 'address', pipes: ['wholesale'], section: 'Billing, payment and delivery' },
+  { key: 'delivery_address', label: 'Delivery address', type: 'address', pipes: ['wholesale'], section: 'Billing, payment and delivery' },
+  { key: 'payment_terms', list: 'payment_terms', label: 'Payment terms', type: 'suggest', opts: ['100% advance', '50% advance, balance before dispatch', '30% advance, balance before dispatch', 'Against delivery', 'PDC (post-dated cheque)', '15 days credit', '30 days credit', '45 days credit', '60 days credit'], pipes: ['wholesale'], section: 'Billing, payment and delivery' },
+  { key: 'delivery_terms', list: 'delivery_terms', label: 'Delivery terms', type: 'suggest', opts: ['Ex-warehouse Bhiwandi', 'Door delivery, freight extra', 'Door delivery, freight included', 'Transport arranged by the dealer', 'Delivered to site'], pipes: ['wholesale'], section: 'Billing, payment and delivery' },
+  { key: 'delivery_time', label: 'Delivery time', type: 'text', pipes: ['wholesale'], section: 'Billing, payment and delivery' },
+  { key: 'terms', label: 'Terms and conditions', type: 'textarea', pipes: ['wholesale'], section: 'Billing, payment and delivery' },
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ];
+/* the name a sale gets when nobody typed one: who · what · when */
+const oppAutoName = (client, what, iso) => [client, what, new Date((iso || new Date().toISOString()).slice(0, 10) + 'T00:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' })].filter(Boolean).join(' · ');
+/* a client's main address as one block, the first choice for billing */
+const mainAddress = c => { const x = { ...c, ...(c && c.extra) }; return [x.address, x.locality, x.city, x.state, x.pincode].map(v => String(v || '').trim()).filter(Boolean).join(', '); };
 const oppFieldsFor = p => OPP_FIELDS.filter(f => !f.pipes || f.pipes.includes(p));
 const labelFor = (f, kind) => (f.klabel && f.klabel[kind]) || f.label;
 /* the charges a wholesale order may carry besides its designs, typed as "what for" + amount */
@@ -326,7 +342,7 @@ function cleanValue(f, v, ctx, whole) {
   if (typeof v === 'string') v = v.trim();
   if (v === undefined || v === null) v = '';
   switch (f.type) {
-    case 'text': case 'textarea': return { value: String(v).slice(0, f.type === 'textarea' ? 4000 : 300) };
+    case 'text': case 'textarea': case 'suggest': case 'address': return { value: String(v).slice(0, ['textarea', 'address'].includes(f.type) ? 4000 : 300) };
     case 'email':
       if (v === '') return { value: '' };
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? { value: String(v).toLowerCase() } : { error: 'is not an email address' };
@@ -400,6 +416,10 @@ function cleanValue(f, v, ctx, whole) {
       return id ? { value: id } : { error: `"${v}" is not a person on the team` };
     }
     case 'link': case 'contact': return { value: v === '' ? '' : String(v) };
+    case 'addresses': {
+      const arr = (Array.isArray(v) ? v : String(v).split(/\n\s*\n/)).map(a => String(a || '').trim().slice(0, 600)).filter(Boolean);
+      return { value: [...new Set(arr)].slice(0, 30) };
+    }
     default: return { value: v };
   }
 }
@@ -520,17 +540,17 @@ const PEOPLE = (id, sheet, of, kinds, from) => ({ id, sheet, tab: 'contacts', ki
   whatsapp: 'WhatsApp number, if different', email: 'Email ID', is_primary: 'Main person to talk to (Yes or No)' } });
 const SHEETS = {
   dealers: { id: 'dealers', sheet: 'Dealer companies', tab: 'clients', kinds: ['distributor', 'dealer', 'sub_dealer'], poc: true,
-    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'grade', 'parent_id', 'source', 'status', 'since', 'credit_limit', 'priority200'],
+    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'state', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'grade', 'parent_id', 'source', 'status', 'since', 'credit_limit', 'priority200'],
     refs: { parent_id: ['Dealer companies', 'name'] },
     heads: { ...ORG_HEADS, name: 'Dealer company name', kind: 'Type (Distributor, Dealer or Sub-dealer)', areas_covered: 'Areas they cover (a distributor: its assigned area)', parent_id: 'Distributor who serves them (sub-dealers only: pick the distributor)' } },
   dealer_people: PEOPLE('dealer_people', 'Dealer people', 'Company', ['distributor', 'dealer', 'sub_dealer'], 'Dealer companies'),
   architects: { id: 'architects', sheet: 'Architect firms', tab: 'clients', kinds: ['design_firm', 'architect'], poc: true,
-    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'rating', 'source', 'status', 'since', 'relationship'],
+    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'state', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'rating', 'source', 'status', 'since', 'relationship'],
     heads: { ...ORG_HEADS, name: 'Architect firm name', kind: 'Firm or solo architect (Design firm or Architect)', areas_covered: 'Areas they work in' } },
   architect_people: PEOPLE('architect_people', 'Architect people', 'Firm', ['design_firm', 'architect'], 'Architect firms'),
 };
 const CLIENTS_SHEET = kind => ({ id: 'clients', sheet: 'People (no company)', tab: 'clients', kinds: [kind],
-  only: ['name', 'client_type', 'mobile', 'whatsapp', 'email', 'address', 'locality', 'city', 'pincode', 'owner_id', 'source', 'status'],
+  only: ['name', 'client_type', 'mobile', 'whatsapp', 'email', 'address', 'locality', 'city', 'state', 'pincode', 'owner_id', 'source', 'status'],
   heads: { email: 'Email ID', name: 'Person or firm name', client_type: 'Individual or what kind of firm', city: 'City', locality: 'Area', owner_id: 'Who looks after them at EGO', mobile: 'Mobile number (10 digits)' } });
 const TEMPLATES = {
   ws: { id: 'ws', company: 'EGO Premium', division: 'wholesale', version: 'EGO-WS-3', file: 'EGO-Premium-Upload-Template.xlsx',
@@ -589,10 +609,10 @@ const EXAMPLE_MARK = 'EXAMPLE';
    the starting values for a fresh database. The kind of record, the pipeline, Yes/No
    and a design's Active/Discontinued stay fixed: the app's logic depends on them. */
 const LIST_GROUPS = [
-  ['People and companies', [['sources', 'Sources'], ['roles', 'Roles (people at a company)'], ['client_types', 'Kinds of personal client'], ['client_statuses', 'Status'], ['dealer_grades', 'Dealer ratings'],
+  ['People and companies', [['sources', 'Sources'], ['states', 'States'], ['roles', 'Roles (people at a company)'], ['client_types', 'Kinds of personal client'], ['client_statuses', 'Status'], ['dealer_grades', 'Dealer ratings'],
     ['architect_ratings', 'Architect ratings'], ['positions', 'Architect positions'], ['specialisations', 'Specialisations'], ['focus_areas', 'Focus'], ['potentials', 'Potential'],
     ['relationships', 'Relationship (architects)'], ['customer_types', 'Who dealers sell to'], ['condition_tags', 'Condition tags (retail)']]],
-  ['Opportunities', [['lost_reasons', 'Lost reasons'], ['budget_bands', 'Budget bands']]],
+  ['Opportunities', [['lost_reasons', 'Lost reasons'], ['budget_bands', 'Budget bands'], ['next_actions', 'Next actions'], ['payment_terms', 'Payment terms'], ['delivery_terms', 'Delivery terms']]],
   ['Inventory', [['categories', 'Product categories'], ['design_types', 'Design types'], ['ac_ratings', 'AC ratings']]],
 ];
 const LIST_LABEL = Object.fromEntries(LIST_GROUPS.flatMap(([, ls]) => ls));

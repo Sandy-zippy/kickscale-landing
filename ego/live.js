@@ -174,9 +174,13 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'collection': return G.select(f, v, p, INVD().collections.map(c => [c.id, `${c.name} · ${c.category}`]));
     case 'cities': return fieldHtml({ ...f, type: 'multi', opts: D.lists.cities.map(c => c.city) }, v, p);
     case 'multi': return G.multi(f, v, p, optsOf(f, D.lists));
-    case 'stage': return G.select(f, v, p, ((D.lists.stages || {})[opt.pipeline] || []).map(s => [s, s]), false);
+    case 'stage': return G.select(f, v, p, ((D.lists.stages || {})[opt.pipeline] || []).map(s => [s, s]), false).replace('<select', '<select data-keep-order');
     case 'lost': return G.select(f, v, p, D.lists.lost_reasons.map(s => [s, s]));
     case 'contact': return G.select(f, v, p, D.contacts.filter(k => k.client_id === opt.client).map(k => [k.id, `${k.name}${k.designation ? ' · ' + k.designation : ''}`]));
+    /* type anything, or pick from the list (Lists & stages) */
+    case 'suggest': return G.wrap(f, p, `<input class="input" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}" autocomplete="off" data-suggest="${esc(JSON.stringify(optsOf(f, D.lists) || []))}" placeholder="Type or pick">`);
+    case 'address': return addrPick(f, v, p, opt.client);
+    case 'addresses': return G.wrap(f, p, `<div class="stack-s" data-addrs>${(Array.isArray(v) ? v : []).map(a => addrLine(f.key, a)).join('')}<div class="row"><button type="button" class="btn sm" data-act="addr-add" data-key="${f.key}">+ Add an address</button></div></div>`, true);
     case 'gst': return G.wrap(f, p, `<input class="input" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}" maxlength="15" autocapitalize="characters" placeholder="15 characters">`);
     default: return G.wrap(f, p, `<input class="input" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`);
   }
@@ -187,6 +191,7 @@ function readForm(root, fields) {
   for (const f of fields) {
     const els = mine(f.key);
     if (['multi', 'cats', 'cities'].includes(f.type)) o[f.key] = els.filter(el => el.checked).map(el => el.value);
+    else if (f.type === 'addresses') o[f.key] = els.map(el => el.value.trim()).filter(Boolean);
     else if (els.some(el => el.type === 'radio')) o[f.key] = (els.find(el => el.checked) || { value: '' }).value;
     else { o[f.key] = els.length ? String(els[0].value) : ''; if (f.type === 'mobile') o[f.key + '_dial'] = (mine(f.key + '_dial')[0] || { value: '+91' }).value || '+91'; }
   }
@@ -206,9 +211,73 @@ document.addEventListener('change', e => {
   ms.querySelector('.ms-n').textContent = sel.length + ' chosen';
 });
 document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('ms-q')) { const q = e.target.value.toLowerCase(); e.target.parentElement.querySelectorAll('.ms-opt').forEach(l => { l.hidden = q && !l.textContent.toLowerCase().includes(q); }); } });
+/* type to search (11 Oct): any dropdown of 8 or more choices gets a box on top that shortlists as you type,
+   A to Z (a list with an order of its own, like stages, keeps it). The <select> stays and holds the value, so
+   forms and listeners read it as before. A free-text box with data-suggest offers its list the same way. */
+const CB_MIN = 8, cbNorm = t => String(t || '').toLowerCase();
+const cbAZ = (a, b) => a.l.localeCompare(b.l, 'en', { numeric: true, sensitivity: 'base' });
+function cbChoices(el) {
+  if (el.tagName !== 'SELECT') return JSON.parse(el.dataset.suggest || '[]').map(v => ({ v, l: v })).sort(cbAZ);
+  const all = [...el.options].map(o => ({ v: o.value, l: o.textContent.trim() + (o.parentElement.tagName === 'OPTGROUP' ? ' · ' + o.parentElement.label : ''), top: o.value === '' || o.value.startsWith('__') }));
+  const top = all.filter(o => o.top), rest = all.filter(o => !o.top);
+  return [...top.filter(o => o.v === ''), ...(el.hasAttribute('data-keep-order') ? rest : rest.sort(cbAZ)), ...top.filter(o => o.v !== '')];
+}
+function cbEnhance(el) {
+  if (el.dataset.cb) return;
+  const isSel = el.tagName === 'SELECT';
+  if (isSel && (el.multiple || el.classList.contains('dial') || el.options.length < CB_MIN)) return;
+  el.dataset.cb = '1';
+  const wrap = document.createElement('div'); wrap.className = 'cb';
+  const q = isSel ? document.createElement('input') : el, list = document.createElement('div');
+  list.className = 'cb-list'; list.hidden = true; list.setAttribute('role', 'listbox');
+  if (isSel) {
+    q.className = 'input cb-q'; q.autocomplete = 'off'; q.placeholder = 'Type to search';
+    if (el.id) { q.id = el.id + '-q'; const lab = document.querySelector(`label[for="${el.id}"]`); if (lab) lab.htmlFor = q.id; }
+    q.setAttribute('aria-label', el.getAttribute('aria-label') || (el.closest('.field') && el.closest('.field').querySelector('label, span') || {}).textContent || 'Search');
+    q.disabled = el.disabled; el.classList.add('cb-sel'); el.tabIndex = -1;
+    el.after(wrap); wrap.append(q, list);
+  } else { el.after(wrap); wrap.append(el, list); }
+  q.setAttribute('role', 'combobox'); q.setAttribute('aria-expanded', 'false');
+  const shown = () => { const o = isSel && el.selectedOptions[0]; return o && o.value !== '' ? o.textContent.trim() : ''; };
+  const sync = () => { if (isSel) { q.value = shown(); const o = el.selectedOptions[0]; q.placeholder = o && o.value === '' && o.textContent.trim() !== 'Choose' ? o.textContent.trim() : 'Type to search'; } };
+  let act = 0, cur = [], nav = false;
+  const draw = text => {
+    const t = cbNorm(text).trim();
+    cur = cbChoices(el).filter(o => !t || (o.v !== '' && cbNorm(o.l).includes(t)));
+    if (t) cur.sort((a, b) => (cbNorm(b.l).startsWith(t) - cbNorm(a.l).startsWith(t)));
+    act = Math.max(0, cur.findIndex(o => isSel && o.v === el.value && !t));
+    list.innerHTML = cur.length ? cur.slice(0, 300).map((o, i) => `<div class="cb-opt${i === act ? ' on' : ''}" role="option" data-i="${i}">${esc(o.l)}</div>`).join('') : `<div class="cb-none small muted">${isSel ? 'Nothing matches' : 'Type your own'}</div>`;
+    list.hidden = false; q.setAttribute('aria-expanded', 'true');
+    const on = list.querySelector('.on'); if (on) on.scrollIntoView({ block: 'nearest' });
+  };
+  const close = () => { list.hidden = true; q.setAttribute('aria-expanded', 'false'); sync(); };
+  const pick = o => {
+    if (!o) return;
+    el.value = o.v; if (!isSel) q.value = o.v;
+    el.dispatchEvent(new Event(isSel ? 'change' : 'input', { bubbles: true })); if (isSel) el.dispatchEvent(new Event('input', { bubbles: true }));
+    close();
+  };
+  q.addEventListener('focus', () => { if (isSel) q.select(); draw(isSel ? '' : q.value); });
+  q.addEventListener('click', () => { if (list.hidden) draw(isSel ? '' : q.value); });
+  q.addEventListener('input', () => { nav = false; draw(q.value); });
+  q.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); nav = true; if (list.hidden) return draw(''); act = (act + (e.key === 'ArrowDown' ? 1 : -1) + cur.length) % Math.max(cur.length, 1); list.querySelectorAll('.cb-opt').forEach((d, i) => d.classList.toggle('on', i === act)); const on = list.querySelector('.on'); if (on) on.scrollIntoView({ block: 'nearest' }); }
+    else if (e.key === 'Enter' && !list.hidden) { e.preventDefault(); if (isSel || nav) pick(cur[act]); else close(); }
+    else if (e.key === 'Escape' && !list.hidden) { e.stopPropagation(); close(); }
+    else if (e.key === 'Tab') close();
+  });
+  list.addEventListener('mousedown', e => { e.preventDefault(); const d = e.target.closest('.cb-opt'); if (d) pick(cur[+d.dataset.i]); });
+  q.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== q) close(); }, 120));
+  if (isSel) { el.addEventListener('change', sync); el.addEventListener('focus', () => q.focus()); }
+  sync();
+}
+const cbScan = root => (root.querySelectorAll ? root : document).querySelectorAll('select.input:not([data-cb]), input[data-suggest]:not([data-cb])').forEach(cbEnhance);
+new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1) { if (n.matches('select.input, input[data-suggest]')) cbEnhance(n); else cbScan(n); } }).observe(document.documentElement, { childList: true, subtree: true });
 /* a mobile is shown and edited with its code, so the form gives back +<code><number> */
 const withDials = (o, fields) => { for (const f of fields) if (f.type === 'mobile' && o[f.key]) { const r = normMobile(o[f.key], o[f.key + '_dial']); if (r.value) o[f.key] = r.value; } return o; };
 function showVal(f, v) {
+  if (f.key === 'delivery_address' && !v) return 'Same as billing';
+  if (f.type === 'addresses' && Array.isArray(v)) return v.map(a => `<div style="white-space:pre-line">${esc(a)}</div>`).join('<hr class="sep">') || NOTSET;
   if (v === '' || v == null || (Array.isArray(v) && !v.length)) return NOTSET;
   switch (f.type) {
     case 'mobile': return esc(fmtMobile(v));
@@ -223,6 +292,41 @@ function showVal(f, v) {
     default: return esc(v);
   }
 }
+
+/* addresses (11 Oct): a client keeps several; a sale picks its billing and delivery address from them, or adds a new one */
+const addrLine = (key, a = '') => `<div class="row" data-addr-line style="align-items:flex-start"><textarea class="input" rows="2" name="${key}" style="flex:1" placeholder="Address, area, city, state, pincode">${esc(a)}</textarea><button type="button" class="btn sm ghost" data-act="addr-del">Remove</button></div>`;
+EM.ACTIONS['addr-add'] = el => { el.closest('.row').insertAdjacentHTML('beforebegin', addrLine(el.dataset.key)); el.closest('[data-addrs]').querySelector('[data-addr-line]:last-of-type textarea').focus(); };
+EM.ACTIONS['addr-del'] = el => el.closest('[data-addr-line]').remove();
+const clientAddrs = id => { const c = CL()[id]; if (!c) return []; return [...new Set([mainAddress(c), ...((c.extra || {}).addresses || [])].filter(Boolean))]; };
+/* the value lives in the textarea; the dropdown fills it, and "+ Add new address" opens it to type */
+function addrPick(f, v, p, clientId) {
+  const bill = f.key === 'billing_address', list = clientAddrs(clientId);
+  if (bill && !v) v = list[0] || '';
+  const opts = [...(bill ? [] : [['', 'Same as billing']]), ...list.map(a => [a, a.replace(/\s*\n\s*/g, ', ')]), ...(v && !list.includes(v) ? [[v, v.replace(/\s*\n\s*/g, ', ')]] : [])];
+  const typing = bill && !list.length;
+  return G.wrap(f, p, `<select class="input" id="${p}-${f.key}" data-addr-pick="${f.key}">${opts.map(([k, l]) => `<option value="${esc(k)}" ${k === v && !typing ? 'selected' : ''}>${esc(l.length > 90 ? l.slice(0, 88) + '…' : l)}</option>`).join('')}<option value="__new" ${typing ? 'selected' : ''}>+ Add new address…</option></select>
+    <textarea class="input" rows="2" name="${f.key}" data-addr-new placeholder="Type the new address: it is kept on the client for next time" ${typing ? '' : 'hidden'} style="margin-top:6px">${esc(v)}</textarea>`, true);
+}
+document.addEventListener('change', e => {
+  const sel = e.target.closest && e.target.closest('[data-addr-pick]'); if (!sel) return;
+  const ta = sel.parentElement.querySelector('[data-addr-new]'), isNew = sel.value === '__new';
+  ta.hidden = !isNew; ta.value = isNew ? '' : sel.value; if (isNew) ta.focus();
+});
+/* a city we know fills its state; it can still be changed */
+document.addEventListener('change', e => {
+  if (!e.target.matches || !e.target.matches('select[name="city"]')) return;
+  const st = CITY_STATE[e.target.value], box = (e.target.closest('[data-scope], form, .modal') || document).querySelector('[name="state"]');
+  if (st && box && box.value !== st) { box.value = st; box.dispatchEvent(new Event('change', { bubbles: true })); }
+});
+/* the rate per box starts at the list rate: the collection's price per sq ft × sq ft in a box */
+const listRate = pid => { const I = INVD(), pr = I.products.find(x => x.id === pid), c = pr && I.collections.find(x => x.id === pr.collection_id), e = (c && c.extra) || {}; return e.price_sqft && e.sqft_per_box ? Math.round(e.price_sqft * e.sqft_per_box * 100) / 100 : null; };
+const listRateTxt = pid => { const r = pid && listRate(pid); return r ? `List rate ${inr0(r)} / box` : ''; };
+document.addEventListener('change', e => {
+  if (!e.target.matches || !e.target.matches('[data-ol="p"]')) return;
+  const line = e.target.closest('.ordline'), r = listRate(e.target.value), box = line.querySelector('[data-ol="r"]'), hint = line.querySelector('[data-listrate]');
+  if (hint) hint.textContent = listRateTxt(e.target.value);
+  if (r && box && !box.value) { box.value = r; box.dispatchEvent(new Event('input', { bubbles: true })); }
+});
 
 /* ---------------------------------------------------------------- home */
 EM.VIEWS.home = () => {
@@ -377,7 +481,9 @@ const addButtons = () => [
   '<button class="btn primary" data-act="org-add" data-org="architect">+ Add architect firm</button>',
   '<button class="btn" data-act="person-add">+ Add person</button>', '<a class="btn" href="#/import">Import from Excel</a>'].join('');
 const wonValue = id => D.opportunities.filter(o => o.client_id === id && o.stage === wonStage(o.pipeline, D.lists)).reduce((a, o) => a + (Number(o.value) || 0), 0);
-EM.clientQ = '';
+/* each screen remembers its own search, so one typed in People does not filter Opportunities (11 Oct) */
+EM.qByView = {};
+Object.defineProperty(EM, 'clientQ', { get: () => EM.qByView[(location.hash.split('/')[1] || 'home')] || '', set: v => { EM.qByView[(location.hash.split('/')[1] || 'home')] = v; } });
 const searchBox = ph => `<label class="field" style="max-width:420px"><span class="small muted">Search</span><input class="input" id="cq" value="${esc(EM.clientQ)}" placeholder="${ph}"></label>`;
 const matches = (txt, mobiles) => { const q = EM.clientQ.toLowerCase(), qd = q.replace(/\D/g, ''); return !q || txt.toLowerCase().includes(q) || (qd.length >= 4 && mobiles.some(m => String(m || '').includes(qd))); };
 function orgList(org, arg) {
@@ -495,7 +601,7 @@ const FAMILIES = [DEALER_KINDS, ARCH_KINDS, PERSONAL_KINDS];
 const kindName = k => PERSONAL_KINDS.includes(k) ? `Personal contact · ${DIVS[KINDS[k].division].co}` : k === 'architect' ? 'Solo architect' : k === 'design_firm' ? 'Architect firm' : KINDS[k].label;
 const ORG_LAYOUT = [
   ['Company details', ['name', 'legal_name', 'gst']],
-  ['Address', ['address', 'locality', 'city', 'pincode']],
+  ['Address', ['address', 'locality', 'city', 'state', 'pincode', 'addresses']],
   ['Area details', ['areas_covered', 'other_offices']],
   ['Business details', ['parent_id', 'owner_id', 'grade', 'rating', 'source', 'status', 'since', 'credit_limit', 'priority200', 'relationship', 'connected_dealers']],
 ];
@@ -740,7 +846,7 @@ EM.VIEWS.opps = arg => {
   const ps = pipesAllowed();
   if (!ps.length) return EM.noAccess('No pipeline is open to your role.');
   const p = ps.includes(arg) ? arg : ps[0];
-  const all = D.opportunities.filter(o => o.pipeline === p && (!EM.oppMine || o.owner_id === me().id));
+  const all = D.opportunities.filter(o => o.pipeline === p && (!EM.oppMine || o.owner_id === me().id) && matches(`${o.title} ${o.ref || ''} ${(CL()[o.client_id] || {}).name || ''} ${staffName(o.owner_id)} ${o.next_action || ''}`, [(CL()[o.client_id] || {}).mobile]));
   const stages = D.lists.stages[p] || [];
   const t = today();
   const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>
@@ -748,9 +854,10 @@ EM.VIEWS.opps = arg => {
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
       <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
+    ${searchBox('Opportunity, company, owner or next action')}
     ${subtabs('#/opps', p, ps.map(k => [k, `${PIPELINES[k].plural} <span class="muted">${D.opportunities.filter(o => o.pipeline === k).length}</span>`]))}
     <p class="small muted">The board shows what is live. A won or lost one stays until the end of the month it closed in; every order, old and new, is in <a href="#/orderbook">Orders</a>.</p>
-    ${all.length ? '' : `<p class="small muted">No ${esc(PIPELINES[p].plural.toLowerCase())} yet. Add one from here, or from a dealer, an architect firm or a person. The stages below come from Lists & stages.</p>`}
+    ${all.length ? '' : EM.clientQ ? '<p class="muted">Nothing matches that search.</p>' : `<p class="small muted">No ${esc(PIPELINES[p].plural.toLowerCase())} yet. Add one from here, or from a dealer, an architect firm or a person. The stages below come from Lists & stages.</p>`}
     ${stageBoard(stages, all.filter(o => !isClosed(o.pipeline, o.stage, D.lists) || thisMonth(o.closed_at || o.updated_at)), o => o.stage, card, ls => D.access.prices && ls.some(o => o.value) ? `<div class="small muted">${inr(ls.reduce((a, o) => a + (Number(o.value) || 0), 0))}</div>` : '')}</div>`;
 };
 EM.VIEWS.opps.title = () => 'Opportunities';
@@ -770,7 +877,7 @@ EM.VIEWS.opp = id => {
       <p class="muted"><a href="#/client/${o.client_id}">${esc(c.name)}</a>${contact ? ` · ${esc(contact.name)} ${esc(fmtMobile(contact.mobile))}` : ''}</p></div>
       <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}<button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${D.access.can_delete ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
     <section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>
-      <div class="row"><select class="input" id="move-stage" aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
+      <div class="row"><select class="input" id="move-stage" data-keep-order aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
     ${PIPELINES[o.pipeline].lines ? oppLinesCard(o) : ''}
     <div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, v[f.key])]))}</section>
       <section class="card stack-s"><h3>Stage history</h3>${hist.length ? `<div class="timeline">${hist.map(h => `<div class="on"><b>${esc(h.to_stage)}</b>${h.from_stage ? ` <span class="small muted">from ${esc(h.from_stage)}</span>` : ''}<div class="small muted">${ds(h.at)} ${tFmt(h.at)} · ${esc(staffName(h.by_staff))}${h.note ? ' · ' + esc(h.note) : ''}</div></div>`).join('')}</div>` : '<p class="muted">No moves yet.</p>'}</section></div></div>`;
@@ -788,13 +895,16 @@ function openOppForm(o, keep) {
   const stages = D.lists.stages[pipeline] || [];
   if (!stages.includes(v.stage)) v.stage = stages[0];
   const withLines = PIPELINES[pipeline].lines, fields = showFields(oppFieldsFor(pipeline)).filter(f => f.key !== 'pipeline' && !(withLines && f.key === 'value') && (!LOST_KEYS.includes(f.key) || v.stage === lostStage(pipeline, D.lists)));
+  const autoName = oppAutoName(client.name, (v.products || [])[0] || PIPELINES[pipeline].label, o && o.created_at);
+  const oh = f => { const h = fieldHtml(f, v[f.key], 'of', { pipeline, client: client.id }); return f.key === 'stage' ? h.replace('<select', '<select data-opp-redraw') : f.key === 'title' ? h.replace('<input', `<input placeholder="Left blank: ${esc(autoName)}"`) : h; };
   const lines0 = (v.lines || (o ? (OPSD().oppLines || []).filter(l => l.opp_id === o.id) : [])), inFul = o && OPSD().orders.some(x => x.opp_id === o.id);
   EM.modal(`<h2>${o ? 'Edit opportunity' : 'Add an opportunity'}</h2>
     <form id="of" class="stack" onsubmit="return false" style="margin-top:14px" data-id="${o ? o.id : ''}"><div class="fgrid">
       ${o ? `<div class="field"><label>Client</label><input class="input" value="${esc(client.name)}" disabled><input type="hidden" name="client_id" value="${client.id}"></div>`
     : `<div class="field"><label for="of-client_id">Client *</label><select class="input" id="of-client_id" name="client_id" data-opp-redraw>${clients.map(c => `<option value="${c.id}" ${c.id === client.id ? 'selected' : ''}>${esc(c.name)} · ${esc(kindLabel(c.kind))}</option>`).join('')}</select></div>`}
       ${G.select(OPP_FIELDS[0], pipeline, 'of', pipes.map(p => [p, PIPELINES[p].label]), false).replace('<select', '<select data-opp-redraw')}
-      ${fields.map(f => { const h = fieldHtml(f, v[f.key], 'of', { pipeline, client: client.id }); return f.key === 'stage' ? h.replace('<select', '<select data-opp-redraw') : h; }).join('')}</div>
+      ${fields.filter(f => !f.section).map(oh).join('')}</div>
+      ${fields.some(f => f.section) ? fsHtml('Billing, payment and delivery', `<div class="fgrid">${fields.filter(f => f.section).map(oh).join('')}</div>`) : ''}
       ${withLines && !inFul ? `<fieldset class="fs"><legend>Designs, boxes and rate</legend><p class="small muted">Type the boxes and the rate per box; the amount, GST (${D.lists.rules.gst_pct}%) and total are worked out. The total is the opportunity's value.</p>
         <div id="olines" class="stack-s">${(lines0.length ? lines0 : [{}]).map((l, i) => ordLine(i, l)).join('')}</div><div class="row"><button class="btn sm" data-act="ol-add">+ Another design</button></div>
         ${D.access.prices ? `<div class="fgrid"><div class="field"><label for="ord-disc">Discount</label><div class="adorn" data-unit="%"><input class="input" type="number" min="0" max="100" step="0.1" id="ord-disc" value="${esc(v.discount_pct ?? 0)}"><span class="suf">%</span></div></div></div>
@@ -810,7 +920,7 @@ document.addEventListener('change', e => {
   keep.client_id = form.querySelector('[name=client_id]').value;
   if (qs('#olines')) { keep.lines = readOrder(); keep.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0); }
   if (qs('#ochg')) keep.charges = readCharges();
-  if (e.target.name === 'client_id') { keep.pipeline = ''; keep.contact_id = ''; }
+  if (e.target.name === 'client_id') { keep.pipeline = ''; keep.contact_id = ''; keep.billing_address = ''; keep.delivery_address = ''; }
   openOppForm(o, keep);
 });
 EM.ACTIONS['opp-add'] = el => openOppForm(null, el.dataset.client || el.dataset.pipeline ? { owner_id: me().id, client_id: el.dataset.client, pipeline: el.dataset.pipeline } : null);
@@ -975,7 +1085,9 @@ function invWarehouses() {
     : empty('No warehouses yet', 'Add each warehouse: name, city and address.', canStockUI() ? '<button class="btn primary" data-act="wh-add">+ Warehouse</button>' : '');
 }
 
-const specRows = (c, sections) => COLLECTION_FIELDS.filter(f => !['category', 'name'].includes(f.key) && (!sections || sections.includes(f.section)) && (D.access.prices || f.type !== 'money')).map(f => [esc(f.label), showVal(f, c.extra[f.key])]);
+const specRows = (c, sections) => [...COLLECTION_FIELDS.filter(f => !['category', 'name'].includes(f.key) && (!sections || sections.includes(f.section)) && (D.access.prices || f.type !== 'money')).map(f => [esc(f.label), showVal(f, c.extra[f.key])]),
+  /* the rate per box, worked out: what an opportunity line starts at (11 Oct) */
+  ...(D.access.prices && c.extra.price_sqft && c.extra.sqft_per_box && (!sections || sections.includes('Box size and packing')) ? [['Rate per box (price per sq ft × sq ft per box)', inr0(c.extra.price_sqft * c.extra.sqft_per_box)]] : [])];
 const BOX = 'Box size and packing';
 EM.VIEWS.product = id => {
   const p = INVD().products.find(x => x.id === id);
@@ -1156,21 +1268,24 @@ const flowStrip = () => { const W = D.lists.stages.wholesale || [], FS = OS_('fu
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">3. Production (only for what was short)</b>${PS.map(x => chip(x, x === PNn('Received at warehouse') ? 'warn' : '')).join(arrow)}</div>
     <p class="small muted">One production order can serve several sales of the same design. <b>${esc(PNn('Received at warehouse'))}</b> adds the boxes to stock; <b>${esc(PNn('Allocated & closed'))}</b> gives each waiting sale its share, oldest first, and they move on by themselves.</p></section>`; };
 EM.VIEWS.orders = arg => {
-  const tab = ORD_TABS.find(t => t[0] === arg) ? arg : 'fulfilment', O = OPSD();
+  const tab = ORD_TABS.find(t => t[0] === arg) ? arg : 'fulfilment';
+  let O = OPSD();
   const lineSum = id => O.lines.filter(l => l.order_id === id);
   const head = `<div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">EGO Premium · from the confirmed order to the dealer's door</div><h1>Fulfilment</h1></div>
     <div class="row">${tab === 'production' && canStockUI() ? '<button class="btn" data-act="po-add">+ Production order</button>' : ''}<a class="btn" href="#/opps/wholesale">Wholesale opportunities</a></div></div>
     ${flowStrip()}
-    ${subtabs('#/orders', tab, ORD_TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : O.production.length}</span>`]))}`;
+    ${subtabs('#/orders', tab, ORD_TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : O.production.length}</span>`]))}
+    ${searchBox(tab === 'fulfilment' ? 'Fulfilment number, opportunity or dealer' : 'Production order, design or container')}`;
   let body;
   if (tab === 'fulfilment') {
-    const liveO = O.orders.filter(o => o.ful_stage !== lastOf(OS_('fulfilment_stages')) || thisMonth(stageAt(o.id, o.ful_stage)));
+    const liveO = O.orders.filter(o => (o.ful_stage !== lastOf(OS_('fulfilment_stages')) || thisMonth(stageAt(o.id, o.ful_stage))) && matches(`${o.ref} ${(oppOf(o) || { title: '' }).title} ${clientName(o.client_id)}`, []));
     body = `<p class="small muted">The board shows what is live. A delivered order stays in ${esc(lastOf(OS_('fulfilment_stages')))} until the end of the month it was delivered in; every order, old and new, is in <a href="#/orderbook">Orders</a>.</p>${O.orders.length ? '' : `<p class="small muted">Nothing in fulfilment yet. A wholesale opportunity comes here when it reaches ${esc(wonStage('wholesale', D.lists))}.</p>`}${stageBoard(OS_('fulfilment_stages'), liveO, o => o.ful_stage, ordCard)}
       ${liveO.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Boxes', ...(D.access.prices ? ['Value'] : []), 'Stage', 'Production orders'], liveO.map(o => ({ href: '#/order/' + o.id,
         cells: [`<b>${esc(o.ref)}</b><div class="small muted">${ds(o.created_at.slice(0, 10))}</div>`, esc((oppOf(o) || { title: '' }).title), esc(clientName(o.client_id)), num(lineSum(o.id).reduce((a, l) => a + l.boxes, 0)), ...(D.access.prices ? [inr0(o.total)] : []),
           `<span class="badge info">${esc(o.ful_stage)}</span>`, esc([...new Set(waitsOf(w => w.order_id === o.id).map(w => poRef(w.po_id)))].join(', '))] }))) : ''}`;
   } else {
     const nSales = p => new Set(waitsOf(w => w.po_id === p.id).map(w => w.order_id)).size;
+    O = { ...O, production: O.production.filter(p => matches(`${p.ref} ${prodName(p.product_id)} ${p.container || ''}`, [])) };
     body = stageBoard(OS_('production_stages'), O.production, p => p.stage, p => `<a class="card stack-s" style="text-decoration:none" href="#/po/${p.id}"><b>${esc(p.ref)}</b><span class="small">${esc(prodName(p.product_id))}</span><span class="small muted">${num(p.boxes)} boxes · for ${nSales(p)} sale${nSales(p) === 1 ? '' : 's'}</span></a>`)
       + (O.production.length ? table(['Production order', 'Design', 'Boxes', 'For sales', 'Stage', 'Expected', 'Warehouse'], O.production.map(p => ({ href: '#/po/' + p.id,
         cells: [`<b>${esc(p.ref)}</b>${p.container ? `<div class="small muted">${esc(p.container)}</div>` : ''}`, esc(prodName(p.product_id)), num(p.boxes), esc([...new Set(waitsOf(w => w.po_id === p.id).map(w => (O.orders.find(o => o.id === w.order_id) || {}).ref))].join(', ')), `<span class="badge info">${esc(p.stage)}</span>`, p.eta ? ds(p.eta) : '', esc((INVD().warehouses.find(w => w.id === p.warehouse_id) || {}).name || '')] })))
@@ -1199,7 +1314,7 @@ function oppLinesCard(o) {
 const ordLine = (i, v = {}) => { const I = INVD(), byCol = I.collections.map(c => [c, I.products.filter(p => p.collection_id === c.id && p.status !== 'Discontinued')]).filter(([, ps]) => ps.length);
   return `<div class="fgrid ordline" data-i="${i}" style="align-items:end"><div class="field span2"><label for="ol-p-${i}">Design</label><select class="input" id="ol-p-${i}" data-ol="p"><option value="">Choose</option>${byCol.map(([c, ps]) => `<optgroup label="${esc(c.category + ' · ' + c.name)}">${ps.map(p => `<option value="${p.id}" ${p.id === v.product_id ? 'selected' : ''}>${esc(p.name)}${p.code ? ' · ' + esc(p.code) : ''}</option>`).join('')}</optgroup>`).join('')}</select></div>
     <div class="field"><label for="ol-b-${i}">Boxes</label>${G.adorn({ key: 'low_stock' }, `<input class="input" type="number" min="1" step="1" id="ol-b-${i}" data-ol="b" value="${esc(v.boxes || '')}">`)}</div>
-    ${D.access.prices ? `<div class="field"><label for="ol-r-${i}">Rate per box</label>${G.adorn({ type: 'money', key: 'rate' }, `<input class="input" type="number" min="0" step="0.01" id="ol-r-${i}" data-ol="r" value="${esc(v.rate || '')}">`)}</div>` : ''}
+    ${D.access.prices ? `<div class="field"><label for="ol-r-${i}">Rate per box</label>${G.adorn({ type: 'money', key: 'rate' }, `<input class="input" type="number" min="0" step="0.01" id="ol-r-${i}" data-ol="r" value="${esc(v.rate || '')}">`)}<span class="small muted" data-listrate>${listRateTxt(v.product_id)}</span></div>` : ''}
     <div class="field"><button class="btn sm ghost" data-act="ol-del">Remove</button></div></div>`; };
 const LOST_KEYS = ['lost_reason', 'lost_detail'];
 const chgLine = (i, c = {}) => `<div class="fgrid chgline" data-i="${i}" style="align-items:end"><div class="field span2"><label for="chg-l-${i}">What it is for</label><input class="input" id="chg-l-${i}" data-chg="l" list="chg-hints" value="${esc(c.label || '')}" placeholder="e.g. Installation"></div>
@@ -1365,8 +1480,9 @@ EM.ACTIONS['po-save'] = async el => { const r = await opsAct(el, 'production', {
 
 /* ---- installation sites (Big E) */
 EM.VIEWS.installation = () => {
-  const S = OPSD().sites.filter(inDiv), SS = OS_('site_steps');
+  const S = OPSD().sites.filter(inDiv).filter(x => matches(`${x.ref} ${x.name} ${clientName(x.client_id)}`, [])), SS = OS_('site_steps');
   return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">Big E · from survey to handover</div><h1>Installation</h1><p class="muted">Each site moves through the installation steps. Some steps check before they let you on: a crew, the readiness checklist, no open snag, the client's sign-off.</p></div><button class="btn primary" data-act="site-add">+ Site</button></div>
+    ${searchBox('Site, reference or client')}
     ${stageBoard(SS, S, x => x.step, x => `<a class="card stack-s" style="text-decoration:none" href="#/site/${x.id}"><b>${esc(x.ref)}</b><span class="small">${esc(x.name)}</span><span class="small muted">${esc(clientName(x.client_id))}</span></a>`)}
     ${S.length ? table(['Site', 'Client', 'Area', 'Step', 'Crew', 'Open snags', 'Planned start'], S.map(x => ({ href: '#/site/' + x.id, cells: [`<b>${esc(x.ref)}</b> ${esc(x.name)}`, esc(clientName(x.client_id)), x.sqft ? num(x.sqft) + ' sq ft' : '', `<span class="badge info">${esc(x.step)}</span> <span class="small muted">${SS.indexOf(x.step) + 1}/${SS.length}</span>`, esc(x.crew || ''), OPSD().snags.filter(n => n.site_id === x.id && n.status === 'Open').length || '', x.planned_start ? ds(x.planned_start) : ''] })))
       : '<p class="small muted">No installation sites yet. Add a site for a client: a flat, a floor, a project. A won retail project can become a site too.</p>'}</div>`;
@@ -1417,8 +1533,9 @@ EM.ACTIONS['snag-close-go'] = el => opsAct(el, `snags/${el.dataset.id}/close`, {
 
 /* ---- complaints */
 EM.VIEWS.complaints = arg => {
-  const CS = OS_('complaint_statuses'), all = OPSD().complaints.filter(inDiv).filter(c => !EM.cseg || c.division === EM.cseg), tab = CS.includes(arg) ? arg : 'all', rows = all.filter(c => tab === 'all' || c.status === tab);
+  const CS = OS_('complaint_statuses'), all = OPSD().complaints.filter(inDiv).filter(c => (!EM.cseg || c.division === EM.cseg) && matches(`${c.ref} ${clientName(c.client_id)} ${c.type} ${c.description || ''}`, [])), tab = CS.includes(arg) ? arg : 'all', rows = all.filter(c => tab === 'all' || c.status === tab);
   return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="muted">Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
+    ${searchBox('Complaint number, company, kind or what happened')}
     ${stageBoard(CS, all, c => c.status, c => `<a class="card stack-s" style="text-decoration:none" href="#/complaint/${c.id}"><b>${esc(c.ref)}</b><span class="small">${esc(c.type)}</span><span class="small muted">${esc(clientName(c.client_id))}</span></a>`)}
     ${subtabs('#/complaints', tab, [['all', `All <span class="muted">${all.length}</span>`], ...CS.map(s => [s, `${esc(s)} <span class="muted">${all.filter(c => c.status === s).length}</span>`])])}
     ${EM.div === 'both' ? `<label class="field" style="max-width:260px"><span class="small muted">Company</span><select class="input" id="cseg"><option value="">EGO Premium and Big E</option><option value="wholesale" ${EM.cseg === 'wholesale' ? 'selected' : ''}>EGO Premium (wholesale)</option><option value="retail" ${EM.cseg === 'retail' ? 'selected' : ''}>Big E (retail)</option></select></label>` : ''}
@@ -1461,9 +1578,10 @@ EM.ACTIONS['cmp-upd'] = el => opsAct(el, `complaints/${el.dataset.id}/status`, {
 const myLimit = kind => levelLimit(D.lists.rules, kind, D.access.level);
 const apAmt = a => (D.lists.rules.approvals[a.kind] || {}).unit === '%' ? a.amount + '%' : inr0(a.amount);
 EM.VIEWS.approvals = arg => {
-  const all = OPSD().approvals, tab = ['Pending', 'Approved', 'Rejected'].includes(arg) ? arg : 'Pending', rows = all.filter(a => a.status === tab);
+  const all = OPSD().approvals.filter(a => matches(`${clientName(a.client_id)} ${(D.lists.rules.approvals[a.kind] || { label: a.kind }).label} ${a.reason || ''} ${staffName(a.requested_by)}`, [])), tab = ['Pending', 'Approved', 'Rejected'].includes(arg) ? arg : 'Pending', rows = all.filter(a => a.status === tab);
   const href = a => a.entity === 'opp' ? '#/opp/' + a.record_id : a.entity === 'order' ? '#/order/' + a.record_id : a.entity === 'complaint' ? '#/complaint/' + a.record_id : '#/approvals';
   return `<div class="stack"><div class="stack-s"><div class="kicker">Credit, discounts, complaint settlements</div><h1>Approvals</h1><p class="muted">A request goes to whoever's limit covers it (limits in Lists & stages › Rules and numbers). The Owner has no limit.</p></div>
+    ${searchBox('Company, kind, reason or who asked')}
     ${subtabs('#/approvals', tab, ['Pending', 'Approved', 'Rejected'].map(s => [s, `${s} <span class="muted">${all.filter(a => a.status === s).length}</span>`]))}
     ${rows.length ? table(['What', 'Company', 'Amount', 'Asked by', 'When', ''], rows.map(a => [`<a href="${href(a)}"><b>${esc((D.lists.rules.approvals[a.kind] || { label: a.kind }).label)}</b></a><div class="small muted">${esc(a.reason)}</div>`, segBadge(a.division), apAmt(a), esc(staffName(a.requested_by)), ds(a.created_at.slice(0, 10)),
       a.status === 'Pending' ? (myLimit(a.kind) >= a.amount ? `<button class="btn sm primary" data-act="ap-yes" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="ap-no" data-id="${a.id}">Reject</button>` : '<span class="small muted">Above your limit</span>') : `${esc(staffName(a.decided_by))}${a.decision_note ? ' · ' + esc(a.decision_note) : ''}`]))
@@ -2140,7 +2258,7 @@ const PERIODS = [['all', 'All time'], ['today', 'Today'], ['month', 'This month'
 const dayIST = ts => ts ? new Date(Date.parse(ts.endsWith('Z') || ts.includes('+') ? ts : ts.replace(' ', 'T') + 'Z') + 5.5 * 36e5).toISOString().slice(0, 10) : '';
 function dateFilter(st, key, label) {   // st: the screen's filter state; key: which re-render it belongs to
   const custom = st.period === 'custom';
-  return `<label class="field" style="min-width:170px"><span class="small muted">${esc(label)}</span><select class="input" data-df="${key}" data-dfk="period">${PERIODS.map(([v, l]) => `<option value="${v}" ${st.period === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
+  return `<label class="field" style="min-width:170px"><span class="small muted">${esc(label)}</span><select class="input" data-df="${key}" data-dfk="period" data-keep-order>${PERIODS.map(([v, l]) => `<option value="${v}" ${st.period === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
     ${custom ? `<label class="field" style="min-width:150px"><span class="small muted">From</span><input class="input" type="date" data-df="${key}" data-dfk="from" value="${esc(st.from || '')}" aria-label="From date"></label><label class="field" style="min-width:150px"><span class="small muted">To</span><input class="input" type="date" data-df="${key}" data-dfk="to" value="${esc(st.to || '')}" aria-label="To date"></label>` : ''}`;
 }
 const DF_STATE = { ob: () => EM.ob, co: () => EM.co };

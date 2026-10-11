@@ -86,3 +86,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 
 /* Both: to look at; buttons that change something are hidden by hideChangeButtons() */
 [hidden] { display: none !important; }   /* hidden means hidden, in the page and in pop-ups */
+/* type-to-search dropdown (11 Oct) */
+.cb { position: relative; }
+.cb-sel { position: absolute !important; opacity: 0; pointer-events: none; width: 1px !important; height: 1px; overflow: hidden; }
+.cb-q { background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 30px; }
+.cb-list { position: absolute; z-index: 60; left: 0; right: 0; top: calc(100% + 4px); max-height: 260px; overflow: auto; background: var(--ge-surface); border: 1px solid var(--ge-border); border-radius: var(--r-sm, 10px); box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 4px; }
+.cb-list[hidden] { display: none; }
+.cb-opt { padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+.cb-opt.on, .cb-opt:hover { background: var(--ge-surface-2); }
+.cb-none { padding: 8px 10px; }
+hr.sep { border: 0; border-top: 1px dashed var(--ge-border); margin: 6px 0; }
