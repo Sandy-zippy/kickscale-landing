@@ -3156,13 +3156,23 @@
     return { line: SUBJECTS[f.id](p, f), finding: f };
   }
 
-  /* What each service costs, in their money. The rupee figure is the price;
-     everything else is the same number in another currency, which is all
-     Bhargav asked for. Rates are editable in Settings so nothing goes stale. */
-  var SERVICE_PRICE = { automations: 50000, cockpit: 70000, website: 100000 };
+  /* ⚠️ THE PRICE IS THE "FROM" ON HIS PRODUCTS SCREEN, AND NOWHERE ELSE (11 Oct 2026).
+     Mark used to carry his own copy (website 1,00,000, cockpit 70,000, automations
+     50,000) while Products said 79,999 / 89,999 / 35,000, so every email quoted a
+     price Bhargav had already changed. Each service is matched to its product by
+     id, then by name; a service with no product gets no price, never a guess. */
+  var SERVICE_PRODUCT = { website: /website/i, cockpit: /cockpit/i, automations: /automation/i };
+  function servicePrice(service) {
+    var list = productList() || [];
+    var hit = list.filter(function (x) { return x.id === service; })[0] ||
+              list.filter(function (x) { return SERVICE_PRODUCT[service] &&
+                (SERVICE_PRODUCT[service].test(x.id) || SERVICE_PRODUCT[service].test(x.name)); })[0];
+    return hit && Number(hit.from) > 0 ? Number(hit.from) : 0;
+  }
 
   function priceIn(service, country) {
-    var inr = SERVICE_PRICE[service] || 0;
+    var inr = servicePrice(service);
+    if (!inr) return '';
     /* ⚠️ Through inAed/inUsd, never by dividing here: `aedRate()` returns a
        number and `usdRate()` returns {rate, at}, so an arithmetic shortcut gave
        "$NaN" on every American prospect. The two converters are the only place
@@ -3280,7 +3290,8 @@
       body.push('');
       services.forEach(function (sv, i) {
         var hits = ((p.signals || {})[sv.key] || []);
-        body.push((i + 1) + '. ' + PITCH[sv.key](p, hits) + ' From ' + commas(priceIn(sv.key, p.country)) + '.');
+        var price = priceIn(sv.key, p.country);
+        body.push((i + 1) + '. ' + PITCH[sv.key](p, hits) + (price ? ' From ' + commas(price) + '.' : ''));
         body.push('');
       });
     }
@@ -4389,7 +4400,7 @@
     outreachStats: outreachStats, groupOutcomes: groupOutcomes,
     outreachLessons: outreachLessons, markNeeds: markNeeds,
     outreachBrief: outreachBrief, playbookProposal: playbookProposal,
-    SERVICE_PRICE: SERVICE_PRICE, priceIn: priceIn, PITCH: PITCH,
+    servicePrice: servicePrice, priceIn: priceIn, PITCH: PITCH,
     draftEmail: draftEmail, draftWhatsAppReply: draftWhatsAppReply,
     leadOptions: leadOptions, draftsOf: draftsOf,
     worthPitching: worthPitching, PITCH_BAR: PITCH_BAR,

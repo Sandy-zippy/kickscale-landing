@@ -611,7 +611,7 @@
       '<div class="f" style="margin-bottom:14px"><label>What are we pitching?</label>' +
         ['website', 'cockpit', 'automations'].map(function (k) {
           return '<label class="cpick"><input type="checkbox" name="svc" value="' + k + '"> ' +
-            '<b>' + esc(SERVICE_NAME[k]) + '</b> <span class="hint">from ' + esc(ZS.priceIn(k, p.country)) +
+            '<b>' + esc(SERVICE_NAME[k]) + '</b> <span class="hint">' + (ZS.priceIn(k, p.country) ? 'from ' + esc(ZS.priceIn(k, p.country)) : 'no price on Products') +
             ' \u00b7 my read: ' + (scores[k] || 0) + '/5</span></label>';
         }).join('') + '</div>' +
       '<div class="f" style="margin-bottom:14px"><label for="cp-lead">Open with</label>' +
