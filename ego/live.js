@@ -1577,18 +1577,24 @@ EM.ACTIONS['cmp-upd'] = el => opsAct(el, `complaints/${el.dataset.id}/status`, {
 /* ---- approvals */
 const myLimit = kind => levelLimit(D.lists.rules, kind, D.access.level);
 const apAmt = a => (D.lists.rules.approvals[a.kind] || {}).unit === '%' ? a.amount + '%' : inr0(a.amount);
+/* everything waiting for a yes in one place (11 Oct): credit, discounts, complaint settlements, and dealer schemes drawn up */
+const schAsks = () => SCH().list.map(sc => ({ id: sc.id, scheme: sc, kind: 'scheme', status: sc.status === 'Draft' ? 'Pending' : 'Approved', division: sc.division || 'wholesale', amount: sc.target,
+  reason: `${sc.name}${sc.reward ? ' · reward: ' + sc.reward : ''} · ${ds(sc.start_on)} to ${ds(sc.end_on)}`, requested_by: sc.created_by, created_at: sc.created_at || sc.updated_at || '', decided_by: sc.approved_by }));
 EM.VIEWS.approvals = arg => {
-  const all = OPSD().approvals.filter(a => matches(`${clientName(a.client_id)} ${(D.lists.rules.approvals[a.kind] || { label: a.kind }).label} ${a.reason || ''} ${staffName(a.requested_by)}`, [])), tab = ['Pending', 'Approved', 'Rejected'].includes(arg) ? arg : 'Pending', rows = all.filter(a => a.status === tab);
-  const href = a => a.entity === 'opp' ? '#/opp/' + a.record_id : a.entity === 'order' ? '#/order/' + a.record_id : a.entity === 'complaint' ? '#/complaint/' + a.record_id : '#/approvals';
-  return `<div class="stack"><div class="stack-s"><div class="kicker">Credit, discounts, complaint settlements</div><h1>Approvals</h1><p class="muted">A request goes to whoever's limit covers it (limits in Lists & stages › Rules and numbers). The Owner has no limit.</p></div>
-    ${searchBox('Company, kind, reason or who asked')}
+  const label = a => a.kind === 'scheme' ? 'Dealer scheme' : (D.lists.rules.approvals[a.kind] || { label: a.kind }).label;
+  const all = [...OPSD().approvals, ...schAsks()].filter(a => matches(`${a.scheme ? a.scheme.name : clientName(a.client_id)} ${label(a)} ${a.reason || ''} ${staffName(a.requested_by)}`, [])), tab = ['Pending', 'Approved', 'Rejected'].includes(arg) ? arg : 'Pending', rows = all.filter(a => a.status === tab).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const href = a => a.kind === 'scheme' ? '#/scheme/' + a.id : a.entity === 'opp' ? '#/opp/' + a.record_id : a.entity === 'order' ? '#/order/' + a.record_id : a.entity === 'complaint' ? '#/complaint/' + a.record_id : '#/approvals';
+  const act = a => a.kind === 'scheme' ? (canSch('approve') ? `<button class="btn sm primary" data-act="sch-approve" data-id="${a.id}">Approve</button>` : '<span class="small muted">The Owner or a Director approves</span>')
+    : myLimit(a.kind) >= a.amount ? `<button class="btn sm primary" data-act="ap-yes" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="ap-no" data-id="${a.id}">Reject</button>` : '<span class="small muted">Above your limit</span>';
+  return `<div class="stack"><div class="stack-s"><div class="kicker">Credit, discounts, complaint settlements, dealer schemes</div><h1>Approvals</h1><p class="muted">Everything waiting for a yes. A request goes to whoever's limit covers it (limits in Lists & stages › Rules and numbers); a dealer scheme goes to the Owner or a Director. The Owner has no limit.</p></div>
+    ${searchBox('Company, scheme, kind, reason or who asked')}
     ${subtabs('#/approvals', tab, ['Pending', 'Approved', 'Rejected'].map(s => [s, `${s} <span class="muted">${all.filter(a => a.status === s).length}</span>`]))}
-    ${rows.length ? table(['What', 'Company', 'Amount', 'Asked by', 'When', ''], rows.map(a => [`<a href="${href(a)}"><b>${esc((D.lists.rules.approvals[a.kind] || { label: a.kind }).label)}</b></a><div class="small muted">${esc(a.reason)}</div>`, segBadge(a.division), apAmt(a), esc(staffName(a.requested_by)), ds(a.created_at.slice(0, 10)),
-      a.status === 'Pending' ? (myLimit(a.kind) >= a.amount ? `<button class="btn sm primary" data-act="ap-yes" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="ap-no" data-id="${a.id}">Reject</button>` : '<span class="small muted">Above your limit</span>') : `${esc(staffName(a.decided_by))}${a.decision_note ? ' · ' + esc(a.decision_note) : ''}`]))
-      : empty(`Nothing ${tab.toLowerCase()}`, 'Requests appear here when an order goes over a credit limit, a discount is above someone\'s limit, or a complaint settlement is large.')}</div>`;
+    ${rows.length ? table(['What', 'Company', 'Amount', 'Asked by', 'When', ''], rows.map(a => [`<a href="${href(a)}"><b>${esc(label(a))}</b></a><div class="small muted">${esc(a.reason)}</div>`, segBadge(a.division), a.kind === 'scheme' ? (D.access.prices ? `${inr0(a.amount)} target per dealer` : '') : apAmt(a), esc(staffName(a.requested_by)), a.created_at ? ds(String(a.created_at).slice(0, 10)) : '',
+      a.status === 'Pending' ? act(a) : `${esc(staffName(a.decided_by))}${a.decision_note ? ' · ' + esc(a.decision_note) : ''}`]))
+      : empty(`Nothing ${tab.toLowerCase()}`, 'Requests appear here when an order goes over a credit limit, a discount is above someone\'s limit, a complaint settlement is large, or a dealer scheme is drawn up.')}</div>`;
 };
 EM.VIEWS.approvals.title = () => 'Approvals';
-EM.navBadge = Object.assign(EM.navBadge || {}, { approvals: () => OPSD().approvals.filter(a => a.status === 'Pending' && myLimit(a.kind) >= a.amount).length });
+EM.navBadge = Object.assign(EM.navBadge || {}, { approvals: () => OPSD().approvals.filter(a => a.status === 'Pending' && myLimit(a.kind) >= a.amount).length + (canSch('approve') ? SCH().list.filter(sc => sc.status === 'Draft').length : 0) });
 EM.ACTIONS['ap-yes'] = el => opsAct(el, `approvals/${el.dataset.id}/decide`, { decision: 'Approved' }, '<b>Approved</b>');
 EM.ACTIONS['ap-no'] = el => { const note = prompt('Why is it rejected?') || ''; return opsAct(el, `approvals/${el.dataset.id}/decide`, { decision: 'Rejected', note }, '<b>Rejected</b>'); };
 
