@@ -3137,7 +3137,8 @@
         var ai = FINDING_ORDER.indexOf(a.id), bi = FINDING_ORDER.indexOf(b.id);
         return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
       })
-      .map(function (f) { return { id: f.id, line: SUBJECTS[f.id](p, f), evidence: f.evidence }; });
+      .map(function (f) { return { id: f.id, line: SUBJECTS[f.id](p, f), evidence: f.evidence }; })
+      .concat([{ id: 'intro', line: introSubject(p), evidence: 'No finding: open with your introduction' }]);
   }
 
   /* drafts: composed, not yet sent, not thrown away. In Gmail or not. */
@@ -3145,7 +3146,11 @@
     return (d.sends || []).filter(function (s) { return s && !s.sent_at && !s.discarded_at && s.drafted_at; });
   }
 
+  /* No fault found: the subject is his offer, and it claims nothing about them. */
+  function introSubject(p) { return shortName(p.name) + ': one AI-powered tool built for your business'; }
+
   function subjectFor(p, order) {
+    if (order && order[0] === 'intro') return { line: introSubject(p), finding: { id: 'intro' } };
     var f = leadFinding(p, order);
     if (!f) return null;                 /* ⚠️ no verified finding, no subject, no email */
     return { line: SUBJECTS[f.id](p, f), finding: f };
@@ -3248,7 +3253,7 @@
       : 'Hello ' + company + ' team,';
     var services = (picks || []).slice(0, 3);
     var where = p.country === 'US' ? 'the US' : 'Dubai';
-    var line = FINDING_LINE[sub.finding.id] ? FINDING_LINE[sub.finding.id](sub.finding)
+    var line = sub.finding.id === 'intro' ? '' : FINDING_LINE[sub.finding.id] ? FINDING_LINE[sub.finding.id](sub.finding)
                                             : String(sub.finding.evidence || '');
     var commas = function (x) { return x.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,'); };
 
@@ -3258,15 +3263,21 @@
       'We started in Canada, where we have worked with 20+ clients, expanded into India a year ago ' +
       'and have worked with 16+ clients there, and we are now opening in ' + where + '.',
       '',
-      'My team went through your website this morning and found one thing you can check ' +
-      'in ten seconds: ' + line + '. It is yours to fix whether or not we ever speak.',
       ''
     ];
+    var intro = sub.finding.id === 'intro';
+    if (!intro) {
+      body.push('My team went through your website this morning and found one thing you can check ' +
+        'in ten seconds: ' + line + '. It is yours to fix whether or not we ever speak.');
+      body.push('');
+    }
 
     if (services.length) {
-      body.push(services.length === 1
-        ? 'One more thing stood out while we were there.'
-        : (services.length === 2 ? 'Two' : 'Three') + ' more things stood out while we were there.');
+      var n = services.length === 1 ? 'One' : (services.length === 2 ? 'Two' : 'Three');
+      body.push(intro
+        ? (services.length === 1 ? 'One thing we would build for you.' : n + ' things we would build for you.')
+        : (services.length === 1 ? 'One more thing stood out while we were there.'
+                                 : n + ' more things stood out while we were there.'));
       body.push('');
       services.forEach(function (sv, i) {
         var hits = ((p.signals || {})[sv.key] || []);

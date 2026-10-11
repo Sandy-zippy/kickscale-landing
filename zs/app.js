@@ -3925,3 +3925,42 @@
     }
   };
 })();
+
+/* ⚠️ A NEW BUILD MUST REACH AN OPEN TAB (11 Oct 2026). GitHub Pages lets the
+   browser keep console.html for ten minutes, and signing out and in reloads no
+   code, so Bhargav composed with the old Mark template after the new one was
+   live and reasonably concluded nothing had changed. Every minute, and whenever
+   the tab comes back, the page compares its own build stamp with the live one. */
+(function () {
+  var mine = (function () {
+    var s = document.querySelector && document.querySelector('script[src*="app.js?b="]');
+    var m = s && s.getAttribute && String(s.getAttribute('src') || '').match(/\?b=(\d+)/);
+    return m ? m[1] : null;
+  })();
+  if (!mine || !window.fetch || location.protocol === 'file:') return;
+  var shown = false;
+  function check() {
+    if (shown) return;
+    fetch('console.html?nv=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.text() : ''; })
+      .then(function (html) {
+        var m = html.match(/app\.js\?b=(\d+)/);
+        if (!m || m[1] === mine || shown) return;
+        shown = true;
+        var bar = document.createElement('div');
+        bar.id = 'newbuild';
+        bar.setAttribute('role', 'status');
+        bar.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:9999;' +
+          'background:#111;color:#fff;padding:12px 16px;border-radius:10px;display:flex;gap:14px;' +
+          'align-items:center;font:500 14px Inter,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25)';
+        bar.innerHTML = '<span>A new version of the cockpit is ready.</span>' +
+          '<button type="button" style="background:#D9EA66;color:#111;border:0;border-radius:7px;' +
+          'padding:7px 12px;font:600 13px Inter,sans-serif;cursor:pointer">Reload now</button>';
+        bar.querySelector('button').onclick = function () { location.reload(); };
+        document.body.appendChild(bar);
+      })
+      .catch(function () { /* offline: try again next minute */ });
+  }
+  setInterval(check, 60000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+})();

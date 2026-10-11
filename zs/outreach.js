@@ -310,9 +310,7 @@
       (stopped || done || sentTo(p.id).length ? ''
         : draftFor(p.id)
           ? '<button class="btn alt" data-act="markShow" data-id="drafts">See the draft</button>'
-          : (p.email && ZS.leadOptions(p).length
-              ? '<button class="btn" data-act="markCompose" data-id="' + esc(p.id) + '">Compose email</button>'
-              : '')) +
+          : '<button class="btn" data-act="markCompose" data-id="' + esc(p.id) + '">Compose email</button>') +
       (stopped || done ? ''
         : '<button class="minibtn" data-act="markLog" data-id="' + esc(p.id) +
           '">Log a conversation</button>') +
@@ -606,6 +604,10 @@
       '<form id="composeform" data-id="' + esc(p.id) + '">' +
       '<p class="m" style="margin-top:0">I have read their site. Tell me what to pitch and what ' +
       'to say, and I will write it. Nothing leaves until you approve it into your Gmail Drafts.</p>' +
+      (p.email ? '' :
+        '<div class="f" style="margin-bottom:14px"><label for="cp-to">Their email address</label>' +
+        '<input id="cp-to" name="to" type="email" required placeholder="name@company.com">' +
+        '<p class="hint">None was published on their site. It is kept on the row once you draft.</p></div>') +
       '<div class="f" style="margin-bottom:14px"><label>What are we pitching?</label>' +
         ['website', 'cockpit', 'automations'].map(function (k) {
           return '<label class="cpick"><input type="checkbox" name="svc" value="' + k + '"> ' +
@@ -616,7 +618,7 @@
         '<select id="cp-lead" name="lead">' + leads.map(function (f) {
           return '<option value="' + esc(f.id) + '">' + esc(f.line) + '</option>';
         }).join('') + '</select>' +
-        '<p class="hint">Only things I checked on their own site. The subject line is built from this.</p></div>' +
+        '<p class="hint">Things I checked on their own site, or your introduction when I found nothing. The subject line is built from this.</p></div>' +
       '<div class="f" style="margin-bottom:6px"><label for="cp-notes">Anything you want in it? ' +
         '<em>optional, it goes in exactly as you write it</em></label>' +
         '<textarea id="cp-notes" name="notes" rows="4" placeholder="' +
@@ -642,7 +644,7 @@
     var email = ZS.draftEmail(p, picks, G.me(), [lead].concat(book.lead || []), fd.get('notes'));
     if (!email) { if (err) err.textContent = 'There is nothing checkable on their site to open with.'; return; }
     if (!(window.API && API.signedIn())) { if (err) err.textContent = 'Not signed in to the server.'; return; }
-    API.saveDraft({ prospect: p.id, subject: email.subject, text: email.text,
+    API.saveDraft({ prospect: p.id, to: fd.get('to') || '', subject: email.subject, text: email.text,
                     finding: email.finding.id, services: picks.map(function (x) { return x.key; }) })
       .then(function () {
         var m = document.getElementById('modal'); if (m && m.open) m.close();
