@@ -3262,7 +3262,6 @@
       'I’m Bhargav Naidu, Co-Founder of Zippy Scale, an automation, marketing and branding agency. ' +
       'We started in Canada, where we have worked with 20+ clients, expanded into India a year ago ' +
       'and have worked with 16+ clients there, and we are now opening in ' + where + '.',
-      '',
       ''
     ];
     var intro = sub.finding.id === 'intro';
