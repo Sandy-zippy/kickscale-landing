@@ -3185,12 +3185,19 @@
     },
     cockpit: function (p, hits) {
       var e = (hits || []).map(function (h) { return h.evidence; });
-      return 'One screen for the whole business. ' +
+      /* ⚠️ HIS WORDS (11 Oct 2026): it is an Agentic Cockpit, never "one screen".
+         Keep all of it: one tool instead of many, AI built for their brand that
+         knows their products and solves their problem, less work for them and
+         the team, time and money saved, more deals and more revenue. */
+      return 'An Agentic Cockpit. ' +
         (e.filter(function (x) { return /memory/i.test(x); }).length
-          ? 'At the moment it runs on somebody remembering, which works until they are on leave. '
+          ? 'At the moment the business runs on somebody remembering, which works until they are on leave. '
           : '') +
-        'Every job, who it is for, where it has got to, what is owed and what is overdue, ' +
-        'with the chasing done for you. Built on your own data, not a demo.';
+        'Not a different tool for every part of the business, but one tool with AI built in, ' +
+        'made for your brand. It understands your products, solves the problems you actually have, ' +
+        'and takes the routine work off you and your team: every job, every client, what is owed ' +
+        'and what is overdue, with the follow-ups done for you. That saves you time and money, ' +
+        'and wins you more deals and more revenue. Built on your own data, not a demo.';
     },
     website: function (p, hits) {
       var e = (hits || []).map(function (h) { return h.evidence; });
