@@ -941,8 +941,8 @@
     gst_rate: 18,
     /* printed under Billed by on an invoice that charges GST; blank = not printed */
     gstin: '',
-    gst_note: 'This invoice does not include GST. Zippy Scale is not GST-registered and ' +
-              'GST is not applicable on this payment.',
+    /* one line, his words (12 Oct): saying it three ways read as padding */
+    gst_note: 'This invoice does not include GST.',
     terms_days: TERMS_DAYS,
     number_format: 'ZS/{CODE}/{YYYY}/{NNN}',
     footer: 'Zippy Scale  \u2022  bhargav@zippyscale.com  \u2022  Thank you for your business'
