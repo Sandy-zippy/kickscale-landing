@@ -21,7 +21,8 @@ function allowedTab(t) {
   if (['home', 'account', 'soon'].includes(t)) return true;
   /* each role has its own screens (8 Oct); within them, the access rules below still apply */
   const only = (D.access.tabs || []).length ? D.access.tabs : null;   // the screens ticked for this role in Roles & access
-  if (only && !['team', 'lists'].includes(t) && !only.includes(t)) return false;
+  if (only && !['team', 'lists', 'integrations'].includes(t) && !only.includes(t)) return false;
+  if (t === 'integrations') return isOwner() && !D.access.viewing_as;   // every API key in one place: an Owner only
   if (['clients', 'people', 'opps', 'import', 'inventory'].includes(t)) return holds();
   if (t === 'dealers') return holds() && canDiv('wholesale');
   if (t === 'architects') return holds();
@@ -46,7 +47,9 @@ const isBothView = () => (EM.div === 'both' && D.user.division === 'both') || ow
 const NAV_ACTS = new Set(['role-toggle', 'opp-mine', 'invf-clear', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab']);
 const LOOK_ACTS = new Set(['view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
-  'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass']);
+  'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass',
+  /* so are API keys: one set for the whole company (Integrations, 12 Oct) */
+  'int-key-add', 'int-key-go', 'int-key-revoke', 'int-key-revoke-go', 'int-copy', 'int-tool-add', 'int-tool-edit', 'int-tool-save', 'int-tool-del', 'int-tool-del-go', 'int-row-add', 'int-row-del']);
 /* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
 const hideChangeButtons = root => { if (!isBothView() || !root) return; root.querySelectorAll('[data-act]').forEach(b => { if (!LOOK_ACTS.has(b.dataset.act)) b.setAttribute('hidden', ''); }); root.querySelectorAll('input[type="file"], #move-stage, [data-list-only]').forEach(x => x.setAttribute('hidden', '')); };
 EM.guard = el => {
@@ -78,12 +81,13 @@ const NAV_ORDER = {
 EM.navTabs = () => ({
   main: (NAV_ORDER[EM.div] || NAV_ORDER.both).map(k => [k, NAV_LABEL[k]])
     .filter(([k]) => allowedTab(k) && !(['dealers', 'orders', 'p200', 'schemes'].includes(k) && EM.div === 'retail') && !(k === 'installation' && EM.div === 'wholesale')),
-  shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
+  shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['integrations', 'Integrations'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
 Object.assign(ICON, {
   opps: ICON.leads, schemes: ICON.targets, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, p200: ICON.targets, orderbook: ICON.orders || ICON.leads, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
+  integrations: _i('<path d="M9 3.5v4M15 3.5v4"/><path d="M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0z"/><path d="M12 16v4.5"/>'),
 });
 EM.topExtras = () => (D.user.division === 'both' ? `<div class="seg divsw" role="tablist" aria-label="Division">${[['both', 'Both'], ['wholesale', 'Wholesale · EGO'], ['retail', 'Retail · Big E']].map(([k, l]) => `<button role="tab" aria-selected="${EM.div === k}" class="${EM.div === k ? 'on' : ''}" data-act="div" data-d="${k}">${l}</button>`).join('')}</div>` : '')
   + '<button class="btn sm ghost" data-act="sign-out">Sign out</button>';
@@ -2431,7 +2435,7 @@ const NAV_HELP = { home: 'Today at a glance: counts, next actions due, what is n
   architects: 'Architect firms and solo architects, each with its team.', people: 'Everyone: the people at every company, and personal contacts.', opps: 'The sales boards. A wholesale sale runs here until Order confirmed.', schemes: 'Dealer schemes: a target over a period, progress counted from invoiced orders.',
   orders: 'From the confirmed order: stock check and blocking, production for what is missing, PI, payment, invoice, dispatch.', orderbook: 'Every order, live and old: when each stage happened, who gave it, who closed it, who processed it.', installation: 'Big E installation sites, step by step.', complaints: 'Complaints, from logged to resolved.',
   approvals: 'Credit, discounts and settlements waiting for someone whose limit covers them.', p200: 'The dealers EGO develops first, scored from saved sales.', inventory: 'Categories, collections, designs, warehouses and stock.',
-  import: 'Upload the Excel files: EGO Premium, Big E and Inventory.', team: 'The people who use EGO Master and what each role may see.', lists: 'Every dropdown and every stage, editable, with locks.', account: 'Your password.' };
+  import: 'Upload the Excel files: EGO Premium, Big E and Inventory.', team: 'The people who use EGO Master and what each role may see.', integrations: 'Every API key in one place: EGO Master\'s own, and the tools it connects to.', lists: 'Every dropdown and every stage, editable, with locks.', account: 'Your password.' };
 function helpFor(t) {
   const own = t.closest('[data-help]'); if (own) return [own, own.dataset.help];
   const fe = t.closest('.field[data-field]');
@@ -2465,6 +2469,105 @@ for (const ev of ['mousedown', 'keydown', 'scroll', 'wheel']) document.addEventL
 document.addEventListener('mouseout', e => { if (hoverEl && !hoverEl.contains(e.relatedTarget)) hideHelp(); });
 
 /* ---------------------------------------------------------------- my account */
+/* ---------------------------------------------------------------- integrations (12 Oct) */
+/* Every API key in one place, for an Owner. EGO Master's own keys let other tools read and add
+   records here; other tools' keys (voice agent, WhatsApp, IndiaMART...) are kept sealed on the
+   server and only their last 4 characters ever come back. */
+EM.INT = null;
+const intLoad = async () => { try { EM.INT = await API('GET', '/api/integrations'); } catch (x) { EM.INT = { error: x.message }; } EM.rerender(); };
+const whenIST = ts => ts ? `${ds(dayIST(ts))}, ${new Date(Date.parse(ts)).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit' })}` : '';
+EM.VIEWS.integrations = () => {
+  if (!allowedTab('integrations')) return EM.noAccess('Integrations and API keys are managed by an Owner.');
+  if (!EM.INT) { intLoad(); return '<div class="stack"><h1>Integrations</h1><p class="muted">Loading…</p></div>'; }
+  if (EM.INT.error) return `<div class="stack"><h1>Integrations</h1><div class="callout warn">${esc(EM.INT.error)}</div></div>`;
+  const { keys, tools, vault } = EM.INT, base = window.EGOAPI.base;
+  return `<div class="stack" data-integrations><div class="stack-s"><h1>Integrations</h1><p class="muted" style="max-width:780px">Every API key in one place. <b>EGO Master API keys</b> let other tools (the voice agent, a website form, Zapier or n8n) read and add records here. <b>Other tools' keys</b> are the keys EGO Master uses to reach them. Only an Owner sees this screen.</p></div>
+    <section class="stack-s"><div class="row between"><h3>EGO Master API keys</h3><button class="btn primary" data-act="int-key-add">+ New API key</button></div>
+      <p class="small muted">A key acts as the person it is made for: it sees and changes only what their role allows. A key is shown once, when it is made; EGO Master keeps only a fingerprint of it. Revoke a key and it stops at once.</p>
+      ${keys.length ? table(['Name', 'Key', 'Acts as', 'Access', 'Made', 'Last used', 'Status', ''], keys.map(k => [`<b>${esc(k.name)}</b>`, `<code>${esc(k.prefix)}…</code>`, esc(staffName(k.staff_id)), k.access === 'write' ? 'Read and add' : 'Read only', `${whenIST(k.created_at)}<div class="small muted">${esc(staffName(k.created_by))}</div>`, k.last_used_at ? whenIST(k.last_used_at) : '<span class="muted">Never</span>',
+        k.revoked_at ? `<span class="badge plain">Revoked ${ds(dayIST(k.revoked_at))}</span>` : '<span class="badge ok">Active</span>', k.revoked_at ? '' : `<button class="btn sm ghost" data-act="int-key-revoke" data-id="${k.id}">Revoke</button>`])) : '<div class="callout">No EGO Master API keys yet.</div>'}</section>
+    <section class="stack-s"><div class="row between"><h3>Other tools' keys</h3><button class="btn primary" data-act="int-tool-add"${vault ? '' : ' disabled'}>+ Add a tool</button></div>
+      ${vault ? '<p class="small muted">Kept sealed on the server. After saving, a value is never shown again, only its last 4 characters; to change one, type the new value over it.</p>' : '<div class="callout warn" role="note"><b>The key vault is not set up on the server yet.</b> Tool keys cannot be saved until it is.</div>'}
+      ${tools.length ? table(['Tool', 'Values', 'Notes', 'Status', 'Changed', ''], tools.map(t => [`<b>${esc(t.provider)}</b>${t.label ? `<div class="small muted">${esc(t.label)}</div>` : ''}`, t.hints.map(([n, h]) => `<div class="small">${esc(n)}: <code>${esc(h)}</code></div>`).join(''), `<span class="small">${esc(t.notes)}</span>`,
+        t.active ? '<span class="badge ok">On</span>' : '<span class="badge plain">Off</span>', `${whenIST(t.updated_at)}<div class="small muted">${esc(staffName(t.updated_by))}</div>`, `<button class="btn sm ghost" data-act="int-tool-edit" data-id="${t.id}">Edit</button><button class="btn sm ghost" data-act="int-tool-del" data-id="${t.id}">Remove</button>`])) : '<div class="callout">No tool keys saved yet.</div>'}</section>
+    <section class="stack-s"><h3>How another tool calls EGO Master</h3>
+      <div class="card stack-s"><div class="small">Address: <code>${esc(base)}</code></div>
+      <div class="small">Send the key in a header: <code>Authorization: Bearer egm_…</code> (or <code>X-API-Key: egm_…</code>)</div>
+      <table class="tbl"><tbody>${[['GET', '/api/bootstrap', 'Everything the key\'s person can see: clients, people, opportunities, lists'], ['POST', '/api/clients', 'Add or change a client (dealer, architect, person)'], ['POST', '/api/contacts', 'Add or change a contact in a company'], ['POST', '/api/opportunities', 'Add or change an opportunity'], ['GET', '/api/notifications', 'The bell']].map(([mth, pth, what]) => `<tr><td><code>${mth}</code></td><td><code>${pth}</code></td><td class="small">${what}</td></tr>`).join('')}</tbody></table>
+      <p class="small muted">The same rules apply as on screen: required fields, no duplicate mobile or GST, and only the records the key's person may see.</p></div></section></div>`;
+};
+EM.VIEWS.integrations.title = () => 'Integrations';
+EM.ACTIONS['int-key-add'] = () => {
+  const people = D.staff.filter(s => s.active).sort((a, b) => a.name.localeCompare(b.name));
+  EM.modal(`<h2>New EGO Master API key</h2><p class="muted">For one tool. Name it after the tool, so you know what to revoke later.</p>
+    <form id="ikf" class="stack" style="margin-top:12px" onsubmit="return false">
+      <div class="field"><label for="ik-name">Name</label><input class="input" id="ik-name" placeholder="Bolna voice agent" maxlength="80"></div>
+      <div class="field"><label for="ik-who">Acts as</label><select class="input" id="ik-who">${people.map(s => `<option value="${s.id}"${s.id === me().id ? ' selected' : ''}>${esc(s.name)} · ${esc(roleName(s.role))}</option>`).join('')}</select><span class="small muted">The key sees and changes only what this person's role allows.</span></div>
+      <div class="field"><label for="ik-acc">Access</label><select class="input" id="ik-acc"><option value="read">Read only</option><option value="write">Read and add</option></select></div>
+      ${errBox('ik-err')}<div class="row"><button class="btn primary" data-act="int-key-go">Make the key</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+};
+EM.ACTIONS['int-key-go'] = async el => {
+  busy(el, true);
+  try {
+    const r = await API('POST', '/api/integrations/keys', { name: qs('#ik-name').value, staff_id: qs('#ik-who').value, access: qs('#ik-acc').value });
+    EM.INT.keys.unshift(r.api_key);
+    EM.modal(`<h2>${esc(r.api_key.name)}: your new key</h2><div class="callout warn" role="note"><b>Copy it now.</b> It is shown only this once. If it is lost, revoke it and make a new one.</div>
+      <div class="row" style="margin-top:12px"><code data-new-key style="word-break:break-all;flex:1">${esc(r.key)}</code><button class="btn sm" data-act="int-copy" data-v="${esc(r.key)}">Copy</button></div>
+      <div class="row" style="margin-top:14px"><button class="btn primary" data-act="close-modal">Done</button></div>`);
+    EM.rerender();
+  } catch (x) { busy(el, false); showErr('ik-err', x.message); }
+};
+EM.ACTIONS['int-copy'] = el => { navigator.clipboard && navigator.clipboard.writeText(el.dataset.v).catch(() => {}); EM.toast('Copied'); };
+EM.ACTIONS['int-key-revoke'] = el => {
+  const k = EM.INT.keys.find(x => x.id === el.dataset.id);
+  EM.modal(`<h2>Revoke "${esc(k.name)}"</h2><p class="muted">Any tool using <code>${esc(k.prefix)}…</code> stops working at once. This cannot be undone; make a new key if it is needed again.</p>
+    ${errBox('ikr-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="int-key-revoke-go" data-id="${k.id}">Revoke</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+EM.ACTIONS['int-key-revoke-go'] = async el => {
+  busy(el, true);
+  try { await API('POST', `/api/integrations/keys/${el.dataset.id}/revoke`, {}); EM.closeModal(); EM.toast('Key revoked.'); intLoad(); } catch (x) { busy(el, false); showErr('ikr-err', x.message); }
+};
+const intRow = (name, hint) => `<div class="row" data-int-row><input class="input" style="flex:1" data-int-name value="${esc(name)}" placeholder="Name, such as API key" maxlength="40" aria-label="Value name"><input class="input" style="flex:2" data-int-val type="password" autocomplete="new-password" placeholder="${hint ? esc(hint) + ' saved; type to replace' : 'Paste the value'}" aria-label="${esc(name || 'Value')}"><button class="btn sm ghost" data-act="int-row-del" aria-label="Remove this value">×</button></div>`;
+const intToolForm = t => {
+  const presets = EM.INT.presets, rows = t ? t.hints : (presets[0][2].map(n => [n, '']));
+  EM.modal(`<h2>${t ? 'Edit ' + esc(t.provider) + ' keys' : 'Add a tool\'s keys'}</h2><p class="muted">Pick the tool, or Other for any tool not listed. The names fill in; change or add names as that tool needs.</p>
+    <form id="itf" class="stack" style="margin-top:12px" onsubmit="return false">
+      <div class="field"><label for="it-prov">Tool</label><select class="input" id="it-prov" data-keep-order>${presets.map(([n, what]) => `<option value="${esc(n)}"${t && t.provider === n ? ' selected' : ''}>${esc(n)} · ${esc(what)}</option>`).join('')}${t && !presets.some(p => p[0] === t.provider) ? `<option selected value="${esc(t.provider)}">${esc(t.provider)}</option>` : ''}</select></div>
+      <div class="field" id="it-other-wrap"${!t || presets.some(p => p[0] === t.provider) && t.provider !== 'Other' ? ' hidden' : ''}><label for="it-other">Tool name</label><input class="input" id="it-other" maxlength="60" value="${t && !presets.some(p => p[0] === t.provider) ? esc(t.provider) : ''}" placeholder="Such as Zapier"></div>
+      <div class="field"><label for="it-label">Label (optional)</label><input class="input" id="it-label" maxlength="80" value="${esc(t ? t.label : '')}" placeholder="Such as Sales line 1"></div>
+      <div class="stack-s"><label>Values</label><div class="stack-s" id="it-rows">${rows.map(([n, h]) => intRow(n, h)).join('')}</div><button class="btn sm ghost" data-act="int-row-add" style="align-self:flex-start">+ Add a value</button></div>
+      <div class="field"><label for="it-notes">Notes (optional)</label><input class="input" id="it-notes" maxlength="500" value="${esc(t ? t.notes : '')}" placeholder="Who gave it, what it is for"></div>
+      <label class="row small"><input type="checkbox" id="it-on"${!t || t.active ? ' checked' : ''}> On (EGO Master may use these keys)</label>
+      ${errBox('it-err')}<div class="row"><button class="btn primary" data-act="int-tool-save" data-id="${t ? t.id : ''}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+  const prov = qs('#it-prov');
+  prov.addEventListener('change', () => {
+    const p = presets.find(x => x[0] === prov.value);
+    qs('#it-other-wrap').hidden = prov.value !== 'Other';
+    if (!t && p) qs('#it-rows').innerHTML = p[2].map(n => intRow(n, '')).join('');
+  });
+};
+EM.ACTIONS['int-tool-add'] = () => intToolForm(null);
+EM.ACTIONS['int-tool-edit'] = el => intToolForm(EM.INT.tools.find(x => x.id === el.dataset.id));
+EM.ACTIONS['int-row-add'] = () => qs('#it-rows').insertAdjacentHTML('beforeend', intRow('', ''));
+EM.ACTIONS['int-row-del'] = el => el.closest('[data-int-row]').remove();
+EM.ACTIONS['int-tool-save'] = async el => {
+  const prov = qs('#it-prov').value, provider = prov === 'Other' || !EM.INT.presets.some(p => p[0] === prov) ? (qs('#it-other').value.trim() || prov) : prov;
+  const values = [...document.querySelectorAll('#it-rows [data-int-row]')].map(r => ({ name: r.querySelector('[data-int-name]').value, value: r.querySelector('[data-int-val]').value }));
+  busy(el, true);
+  try {
+    await API('POST', '/api/integrations/tools', { id: el.dataset.id || undefined, provider, label: qs('#it-label').value, notes: qs('#it-notes').value, active: qs('#it-on').checked, values });
+    EM.closeModal(); EM.toast(`<b>${esc(provider)}</b> keys saved.`); intLoad();
+  } catch (x) { busy(el, false); showErr('it-err', x.message); }
+};
+EM.ACTIONS['int-tool-del'] = el => {
+  const t = EM.INT.tools.find(x => x.id === el.dataset.id);
+  EM.modal(`<h2>Remove the ${esc(t.provider)} keys</h2><p class="muted">EGO Master can no longer use them. The tool itself is not affected.</p>
+    ${errBox('itd-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="int-tool-del-go" data-id="${t.id}">Remove</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+EM.ACTIONS['int-tool-del-go'] = async el => {
+  busy(el, true);
+  try { await API('DELETE', '/api/integrations/tools/' + el.dataset.id); EM.closeModal(); EM.toast('Removed.'); intLoad(); } catch (x) { busy(el, false); showErr('itd-err', x.message); }
+};
 EM.VIEWS.account = () => `<div class="stack" style="max-width:560px"><div class="stack-s"><h1>My account</h1><p class="muted">${esc(me().name)} · ${esc(me().login)} · ${esc(acc().name)}</p></div>
   <form id="mf" class="card stack" onsubmit="return false"><h3>Change my password</h3>
     <div class="field"><label for="mf-c">Current password</label><input class="input" id="mf-c" type="password" autocomplete="current-password"></div>

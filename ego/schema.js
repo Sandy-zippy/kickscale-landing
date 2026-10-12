@@ -728,3 +728,20 @@ const ROLE_SETS = {
 const roleNames = (lists, set) => (ROLE_SETS[set] || []).map(r => nm(lists, set, r));
 /* every item of every list can be locked or unlocked; the roles start locked */
 const locksOf = (lists, set) => (lists && lists.locks && lists.locks[set]) || roleNames(lists, set).filter(n => !/^Nurturing$/.test(n));
+
+/* Integrations (12 Oct): the tools whose keys are kept in EGO Master, with the values each one
+   needs. Any other tool can be added with its own names; this list only fills the names in. */
+const TOOLS = [
+  ['Bolna', 'AI voice agent', ['API key']],
+  ['VoiceLink', 'Indian +91 numbers and SIP calling', ['Username', 'Password']],
+  ['Sarvam', 'Indian-language voice and speech', ['API key']],
+  ['Exotel', 'Calling', ['Account SID', 'API key', 'API token']],
+  ['Plivo', 'Calling', ['Auth ID', 'Auth token']],
+  ['Meta lead ads', 'Facebook and Instagram lead forms', ['Page ID', 'Page access token', 'App secret']],
+  ['WhatsApp Cloud API', 'WhatsApp messages', ['Phone number ID', 'Business account ID', 'Access token']],
+  ['IndiaMART', 'Enquiries', ['CRM key']],
+  ['Gmail (Apps Script)', 'Email', ['Script URL', 'Shared secret']],
+  ['Google Gemini', 'AI model', ['API key']],
+  ['OpenAI', 'AI model', ['API key']],
+  ['Other', 'Any other tool', ['API key']],
+];
