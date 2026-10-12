@@ -334,7 +334,7 @@
     if (!ready()) {
       return Promise.reject(new Error('The PDF engine did not load. Reload the page.'));
     }
-    var t = ZS.invoiceTemplate(G.D());
+    var t = ZS.invoiceTemplate(G.D(), inv.billed_as);
     return logo(t).then(function (img) {
       var d = build(inv, o, c, t, img);
       return { dataUrl: d.output('datauristring'),

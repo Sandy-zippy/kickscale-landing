@@ -411,6 +411,10 @@
      ALLOWLIST of columns, so a field under the wrong name is not rejected — it
      is simply not written, and nobody finds out until somebody asks where the
      invoice went. Mapped here, and mapped back in adoptRemote. */
+  /* ⚠️ Until 12 Oct none of these reached the server: the number, who it is billed
+     to, the deductions and the notes lived in one browser and went on the next pull. */
+  var INVOICE_PAPER = ['number', 'detail', 'order_value', 'invoice_value', 'deductions', 'gst',
+                       'gst_rate', 'due_text', 'note', 'pay_line', 'bill_to', 'billed_as'];
   function forWire(table, rec) {
     var out = Object.assign({}, rec);
     if (table === 'opportunities') {
@@ -427,6 +431,11 @@
       delete out.of;
       /* proof is a reading, not a fact: kept whole, as JSON */
       if (out.proof && typeof out.proof === 'object') out.proof = JSON.stringify(out.proof);
+      /* what is printed on the paper rides in one JSON column, so a new field on
+         the invoice never needs a new column to survive the next pull */
+      var paper = {};
+      INVOICE_PAPER.forEach(function (k) { if (k in out) { paper[k] = out[k]; delete out[k]; } });
+      out.paper = JSON.stringify(paper);
     }
     if (table === 'followups') {
       out.by_staff = rec.by || rec.by_staff || null;
@@ -450,6 +459,10 @@
       if (typeof row.proof === 'string' && row.proof) {
         try { out.proof = JSON.parse(row.proof); } catch (e) { out.proof = null; }
       }
+      var paper = {};
+      try { paper = JSON.parse(row.paper || '{}') || {}; } catch (e) { paper = {}; }
+      delete out.paper;
+      Object.keys(paper).forEach(function (k) { out[k] = paper[k]; });
     }
     if (table === 'followups') {
       out.by = row.by_staff || null;
@@ -669,7 +682,7 @@
 
     /* data */
     pull: pull,
-    fromWire: fromWire,
+    fromWire: fromWire, forWire: forWire,
     flush: flush,
     push: push,
     touch: touch,

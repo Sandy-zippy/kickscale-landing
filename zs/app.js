@@ -2178,6 +2178,16 @@
         'clients pay. Read it twice before changing it.</p>' +
       '</div></div>' +
 
+      '<div class="fgroup"><h4>Billed as Bhargav Naidu <em>&mdash; the second choice on every invoice</em></h4><div class="fbody">' +
+        f('personal_name', 'Name under Billed by') +
+        f('personal_bank_holder', 'Account name') +
+        f('personal_bank_name', 'Bank') +
+        f('personal_bank_account', 'Account number') +
+        f('personal_bank_ifsc', 'IFSC') +
+        '<p class="hint wide">Raising an invoice asks which one: Zippy Scale (above) or this. ' +
+        'Same address, email and numbering on both.</p>' +
+      '</div></div>' +
+
       '<div class="fgroup"><h4>Tax</h4><div class="fbody">' +
         '<div class="f"><label for="it-gst_registered">GST registered</label>' +
         '<select id="it-gst_registered" data-invt="gst_registered">' +

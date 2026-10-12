@@ -892,6 +892,8 @@
       /* Who it is billed to, COPIED not referenced. A client who changes their
          address next year must not silently rewrite an invoice already sent. */
       bill_to: o.bill_to || null,
+      /* who raises it: 'company' (Zippy Scale's account) or 'personal' (Bhargav's) */
+      billed_as: o.billed_as === 'personal' ? 'personal' : 'company',
       amount: o.amount || 0,
       state: o.state || 'draft',
       /* An ADVANCE is money taken before the work, against this invoice. It is
@@ -926,6 +928,13 @@
     bank_name: 'HDFC Bank',
     bank_account: '50200102811362',
     bank_ifsc: 'HDFC0006334',
+    /* The second way to bill: in Bhargav's own name, to his own account (12 Oct).
+       Chosen per invoice; the company block above stays the default. */
+    personal_name: 'Bhargav Naidu',
+    personal_bank_holder: 'Bhargav Naidu',
+    personal_bank_name: 'HDFC Bank',
+    personal_bank_account: '50100284235973',
+    personal_bank_ifsc: 'HDFC0003665',
     /* ⚠️ Not GST-registered. When this goes on, the rate applies and the note
        below is replaced by the ordinary tax lines. */
     gst_registered: false,
@@ -937,7 +946,9 @@
     footer: 'Zippy Scale  \u2022  bhargav@zippyscale.com  \u2022  Thank you for your business'
   };
 
-  function invoiceTemplate(store) {
+  /* `as` is the invoice's billed_as: 'personal' swaps the billed-by name and the
+     bank block for Bhargav's own, and says his name wherever the company's was. */
+  function invoiceTemplate(store, as) {
     var t = (store && store.invoice_template) || {};
     var out = {};
     Object.keys(DEFAULT_INVOICE_TEMPLATE).forEach(function (k) {
@@ -945,8 +956,20 @@
         ? DEFAULT_INVOICE_TEMPLATE[k] : t[k];
     });
     out.gst_registered = !!t.gst_registered;
+    if (as === 'personal') {
+      var co = out.legal_name, me = out.personal_name;
+      out.legal_name = me;
+      out.byline = '';
+      out.bank_holder = out.personal_bank_holder;
+      out.bank_name = out.personal_bank_name;
+      out.bank_account = out.personal_bank_account;
+      out.bank_ifsc = out.personal_bank_ifsc;
+      out.footer = String(out.footer || '').split(co).join(me);
+      out.gst_note = String(out.gst_note || '').split(co).join(me);
+    }
     return out;
   }
+  var BILLED_AS = { company: 'Zippy Scale', personal: 'Bhargav Naidu' };
 
   /* A short code per client, the way the real ones read: EGO Premium Products
      Private Limited is EGO, The Big E Retail is BER. Derived rather than stored,
@@ -4379,7 +4402,7 @@
     setUsdRate: setUsdRate, usdRate: usdRate, inUsd: inUsd,
     INVOICE_STATES: INVOICE_STATES, INVOICE_WORDS: INVOICE_WORDS, TERMS_DAYS: TERMS_DAYS, newInvoice: newInvoice,
     DEDUCTION_LABELS: DEDUCTION_LABELS, invoiceTotals: invoiceTotals,
-    DEFAULT_INVOICE_TEMPLATE: DEFAULT_INVOICE_TEMPLATE, invoiceTemplate: invoiceTemplate,
+    DEFAULT_INVOICE_TEMPLATE: DEFAULT_INVOICE_TEMPLATE, invoiceTemplate: invoiceTemplate, BILLED_AS: BILLED_AS,
     clientCode: clientCode, codeFor: codeFor, invoiceNumber: invoiceNumber,
     billToFrom: billToFrom,
     invoiceOverdue: invoiceOverdue, owedOn: owedOn,

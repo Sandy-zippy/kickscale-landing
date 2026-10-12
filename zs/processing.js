@@ -193,7 +193,8 @@
             '<span class="invn">' + i.n + '<i>of ' + i.of + '</i></span>' +
             '<div class="t"><b>' + esc(i.scope || 'Phase ' + i.n) +
             (i.ref ? ' <span class="refchip">' + esc(i.ref) + '</span>' : '') + '</b>' +
-            '<span>raised ' + esc(i.raised) + ' &middot; due ' + esc(i.due) +
+            '<span>' + (i.billed_as === 'personal' ? 'billed as ' + esc(ZS.BILLED_AS.personal) + ' &middot; ' : '') +
+            'raised ' + esc(i.raised) + ' &middot; due ' + esc(i.due) +
             (i.paid ? ' &middot; paid ' + esc(i.paid) : '') + '</span></div>' +
             '<span class="invamt">' + ZS.money(i.amount) +
               (i.advance ? '<i>' + ZS.money(i.advance) + ' in advance</i>' : '') +
@@ -735,6 +736,18 @@
       G.modal('Raise an invoice', c.name || '',
         '<form id="invform" data-oid="' + esc(o.id) + '">' +
 
+        /* ⚠️ Two ways to bill (12 Oct): Zippy Scale's account or Bhargav's own.
+           The pick decides the billed-by name AND the bank block on the PDF. */
+        '<div class="fgroup"><h4>Billed by</h4><div class="fbody">' +
+          '<div class="f wide"><label for="i-as">Raise this invoice as</label>' +
+          '<select id="i-as" name="billed_as">' + ['company', 'personal'].map(function (k) {
+            var tk = ZS.invoiceTemplate(D(), k);
+            return '<option value="' + k + '">' + esc(tk.legal_name + ' · ' + tk.bank_name +
+              ' a/c ending ' + String(tk.bank_account).slice(-4)) + '</option>';
+          }).join('') + '</select>' +
+          '<span class="hint">The name under Billed by and the account they pay into.</span></div>' +
+        '</div></div>' +
+
         '<div class="fgroup"><h4>What it is for</h4><div class="fbody">' +
           '<div class="f wide"><label for="i-scope">Description</label>' +
           '<input id="i-scope" name="scope" autocomplete="off" value="' +
@@ -1272,6 +1285,7 @@
       due_text: dueText,
       note: String(fd.get('note') || '').trim(),
       pay_line: String(fd.get('pay_line') || '').trim(),
+      billed_as: fd.get('billed_as') === 'personal' ? 'personal' : 'company',
       bill_to: { name: String(fd.get('bt_name') || '').trim(),
                  lines: String(fd.get('bt_lines') || '').trim(),
                  attn: String(fd.get('bt_attn') || '').trim(),
