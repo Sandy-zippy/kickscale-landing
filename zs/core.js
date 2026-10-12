@@ -3039,6 +3039,35 @@
     };
   }
 
+  /* The board by trade, and which rows are NEW: the latest search of that trade.
+     A search writes its rows over a minute or two, so "latest" is everything found
+     within an hour of the newest row of that trade; the earlier searches are old.
+     Searching a trade again moves its previous batch into old. */
+  // ponytail: a time window, not a run id; two searches of one trade inside an hour read as one batch.
+  function tradeOf(p) { return String((p && p.category) || '').trim().toLowerCase() || 'other'; }
+  function foundMs(p) {
+    var s = String((p && p.found_at) || '');
+    return Date.parse(s.slice(0, 10) + 'T' + (s.slice(11, 19) || '00:00:00') + 'Z') || 0;
+  }
+  function outreachTrades(list) {
+    var newest = {}, fresh = {}, count = {}, fcount = {};
+    (list || []).forEach(function (p) {
+      var t = tradeOf(p), at = foundMs(p);
+      if (!(t in newest) || at > newest[t]) newest[t] = at;
+    });
+    (list || []).forEach(function (p) {
+      var t = tradeOf(p);
+      count[t] = (count[t] || 0) + 1;
+      if (foundMs(p) >= newest[t] - 3600e3) { fresh[p.id] = true; fcount[t] = (fcount[t] || 0) + 1; }
+    });
+    var trades = Object.keys(count).sort(function (a, b) { return newest[b] - newest[a]; })
+      .map(function (t) {
+        return { key: t, label: t.charAt(0).toUpperCase() + t.slice(1),
+                 count: count[t], fresh: fcount[t] || 0, at: newest[t] };
+      });
+    return { trades: trades, fresh: fresh };
+  }
+
   var LEVELS = { owner: 'Owner or founder', director: 'Director or partner',
                  manager: 'Manager', unknown: 'Not found yet' };
 
@@ -3262,7 +3291,7 @@
       ? 'Hello Mr. ' + p.contact_name.split(' ')[0] + ','
       : 'Hello ' + company + ' team,';
     var services = (picks || []).slice(0, 3);
-    var where = p.country === 'US' ? 'the US' : 'Dubai';
+    var where = p.country === 'US' ? 'the US' : p.country === 'IN' ? 'India' : 'Dubai';
     var line = sub.finding.id === 'intro' ? '' : FINDING_LINE[sub.finding.id] ? FINDING_LINE[sub.finding.id](sub.finding)
                                             : String(sub.finding.evidence || '');
     var commas = function (x) { return x.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,'); };
@@ -3271,7 +3300,7 @@
       greet, '',
       'I’m Bhargav Naidu, Co-Founder of Zippy Scale, an automation, marketing and branding agency. ' +
       'We started in Canada, where we have worked with 20+ clients, expanded into India a year ago ' +
-      'and have worked with 16+ clients there, and we are now opening in ' + where + '.',
+      'and have worked with 16+ clients there' + (p.country === 'IN' ? '.' : ', and we are now opening in ' + where + '.'),
       ''
     ];
     var intro = sub.finding.id === 'intro';
@@ -4398,6 +4427,7 @@
     FINDING_ORDER: FINDING_ORDER, DEFAULT_PLAYBOOK: DEFAULT_PLAYBOOK, playbookOf: playbookOf,
     LESSON_MIN: LESSON_MIN, REPLY_BENCHMARK: REPLY_BENCHMARK,
     outreachStats: outreachStats, groupOutcomes: groupOutcomes,
+    outreachTrades: outreachTrades, tradeOf: tradeOf,
     outreachLessons: outreachLessons, markNeeds: markNeeds,
     outreachBrief: outreachBrief, playbookProposal: playbookProposal,
     servicePrice: servicePrice, priceIn: priceIn, PITCH: PITCH,

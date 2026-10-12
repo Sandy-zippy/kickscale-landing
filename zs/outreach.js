@@ -24,10 +24,14 @@
   var OPEN = null;
   var BUSY = false;
   var NOTE = '';
+  var TRADE = '';          /* '' = every trade, else ZS.tradeOf key */
+  var AGE = 'new';         /* new | old, inside one trade */
 
   /* What Overpass calls the things we sell to. Kept here rather than on the
      server because this is the half the browser runs. */
   var TAGS = [
+    ['bespoke clothing', '["shop"~"tailor|boutique|bridal|fashion"]'],
+    ['luxury retail', '["shop"~"jewelry|watches|boutique|bag|perfumery|clothes|shoes"]'],
     ['interior fit out', '["shop"~"interior_decoration|furniture|doityourself"]'],
     ['furniture', '["shop"="furniture"]'],
     ['car dealer', '["shop"~"car|car_repair|car_parts"]'],
@@ -43,14 +47,51 @@
     ['travel agency', '["shop"="travel_agency"]'],
     ['school & training', '["amenity"~"school|college"]']
   ];
-  var CITIES = {
-    'Dubai':     [24.79, 54.89, 25.35, 55.57],
-    'Abu Dhabi': [24.26, 54.27, 24.56, 54.78],
-    'Sharjah':   [25.27, 55.35, 25.42, 55.59],
-    'New York':  [40.48, -74.27, 40.92, -73.68],
-    'Austin':    [30.09, -97.94, 30.52, -97.56],
-    'Miami':     [25.70, -80.32, 25.86, -80.13]
+  /* Where Mark can look: country, then state, then only the places that matter
+     for business there (neighbourhoods included, like Jubilee Hills). The map box
+     comes from OpenStreetMap's own geocoder at search time, so adding a place here
+     is one word, never a coordinate. Countries are the three his prices are quoted
+     in (AED, $, ₹). */
+  var MARK_PLACES = {
+    'India': { code: 'IN', states: {
+      'Telangana': ['Hyderabad', 'Jubilee Hills', 'Banjara Hills', 'Gachibowli', 'HITEC City', 'Madhapur', 'Kondapur', 'Kukatpally', 'Secunderabad', 'Warangal', 'Karimnagar'],
+      'Andhra Pradesh': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Tirupati'],
+      'Karnataka': ['Bengaluru', 'Indiranagar', 'Koramangala', 'Whitefield', 'Jayanagar', 'Mysuru', 'Mangaluru'],
+      'Maharashtra': ['Mumbai', 'Bandra', 'Andheri', 'Juhu', 'Lower Parel', 'Colaba', 'Thane', 'Navi Mumbai', 'Pune', 'Koregaon Park', 'Nagpur'],
+      'Delhi': ['New Delhi', 'Connaught Place', 'Hauz Khas', 'Greater Kailash', 'Defence Colony'],
+      'Haryana': ['Gurugram', 'Faridabad'],
+      'Uttar Pradesh': ['Noida', 'Lucknow'],
+      'Tamil Nadu': ['Chennai', 'T. Nagar', 'Anna Nagar', 'Coimbatore', 'Madurai'],
+      'Gujarat': ['Ahmedabad', 'Surat', 'Vadodara'],
+      'West Bengal': ['Kolkata', 'Salt Lake City, Kolkata', 'Park Street, Kolkata'],
+      'Kerala': ['Kochi', 'Thiruvananthapuram'],
+      'Rajasthan': ['Jaipur', 'Udaipur'],
+      'Punjab': ['Ludhiana', 'Amritsar'],
+      'Chandigarh': ['Chandigarh']
+    } },
+    'United Arab Emirates': { code: 'AE', states: {
+      'Dubai': ['Dubai', 'Downtown Dubai', 'Business Bay', 'Dubai Marina', 'Jumeirah', 'Jumeirah Lake Towers', 'Al Barsha', 'Al Quoz', 'Dubai Design District', 'Deira', 'Bur Dubai'],
+      'Abu Dhabi': ['Abu Dhabi', 'Al Ain'],
+      'Sharjah': ['Sharjah'],
+      'Ajman': ['Ajman City'],
+      'Ras Al Khaimah': ['Ras Al Khaimah']
+    } },
+    'United States': { code: 'US', states: {
+      'New York': ['New York City', 'Manhattan', 'Brooklyn'],
+      'Texas': ['Austin', 'Houston', 'Dallas'],
+      'Florida': ['Miami', 'Orlando', 'Tampa'],
+      'California': ['Los Angeles', 'Beverly Hills', 'San Francisco', 'San Diego'],
+      'Illinois': ['Chicago'],
+      'Georgia': ['Atlanta'],
+      'Nevada': ['Las Vegas'],
+      'New Jersey': ['Jersey City']
+    } }
   };
+  function optionsOf(list, pick) {
+    return list.map(function (x) {
+      return '<option value="' + esc(x) + '"' + (x === pick ? ' selected' : '') + '>' + esc(x) + '</option>';
+    }).join('');
+  }
 
   function rows() { return (D().prospects || []).slice(); }
 
@@ -66,8 +107,43 @@
     return ZS.worthPitching(p);
   }
 
+  /* the trade and the new/old batch picked on top; every chip below counts inside it */
+  function inTrade() {
+    if (!TRADE) return rows();
+    var g = ZS.outreachTrades(rows());
+    return rows().filter(function (p) {
+      return ZS.tradeOf(p) === TRADE && (AGE === 'new' ? !!g.fresh[p.id] : !g.fresh[p.id]);
+    });
+  }
+
+  function trades() {
+    var g = ZS.outreachTrades(rows());
+    if (!g.trades.length) return '';
+    var t = g.trades.filter(function (x) { return x.key === TRADE; })[0];
+    if (TRADE && !t) TRADE = '';
+    var h = '<p class="eyebrow">Trades Mark has researched</p>' +
+      '<div class="chips" style="margin:6px 0 10px">' +
+      '<button class="chip" data-act="markTrade" data-id="" aria-pressed="' + (!TRADE) + '">All trades<i>' +
+      rows().length + '</i></button>' +
+      g.trades.map(function (x) {
+        return '<button class="chip" data-act="markTrade" data-id="' + esc(x.key) + '" aria-pressed="' +
+          (TRADE === x.key) + '">' + esc(x.label) + '<i>' + x.count + '</i></button>';
+      }).join('') + '</div>';
+    if (t) {
+      h += '<div class="chips" style="margin-bottom:16px">' +
+        [['old', 'Old outreach', t.count - t.fresh], ['new', 'New outreach', t.fresh]].map(function (c) {
+          return '<button class="chip" data-act="markAge" data-id="' + c[0] + '" aria-pressed="' +
+            (AGE === c[0]) + '">' + c[1] + '<i>' + c[2] + '</i></button>';
+        }).join('') + '</div>' +
+        '<p class="hint" style="margin:-8px 0 16px">New is the latest search of ' + esc(t.label.toLowerCase()) +
+        ' (' + esc(ZS.niceDate(new Date(t.at).toISOString().slice(0, 10))) + '). Search this trade ' +
+        'again and these move into old.</p>';
+    }
+    return h;
+  }
+
   function shown() {
-    var all = rows();
+    var all = inTrade();
     if (SHOW === 'pitch') return all.filter(function (p) { return pitchable(p).length; });
     if (SHOW === 'lookup') return all.filter(function (p) { return p.needs_lookup; });
     if (SHOW === 'parked') return all.filter(function (p) { return p.stage === 'parked'; });
@@ -81,7 +157,7 @@
   /* ---------------- the screen ---------------- */
 
   V.outreach = function () {
-    var all = rows();
+    var all = inTrade();
     var list = shown().sort(function (a, b) {
       return (b.score_auto + b.score_cockpit + b.score_site) -
              (a.score_auto + a.score_cockpit + a.score_site);
@@ -104,6 +180,7 @@
 
     if (NOTE) h += '<div class="note">' + esc(NOTE) + '</div>';
 
+    h += trades();
     h += brief();
 
     var counts = {
@@ -129,7 +206,7 @@
 
     if (SHOW === 'drafts') return h + draftsView();
 
-    if (!all.length) {
+    if (!rows().length) {
       return h + '<div class="card pad"><p class="m">Nothing yet. Press <b>Find more</b> and ' +
         'pick a trade and a city. Mark looks them up on OpenStreetMap, which is free and needs ' +
         'no account, then reads each one’s website himself.</p>' +
@@ -392,6 +469,8 @@
   /* ---------------- finding ---------------- */
 
   A.markShow = function (which) { SHOW = which; G.render(); };
+  A.markTrade = function (which) { TRADE = which || ''; AGE = 'new'; G.render(); };
+  A.markAge = function (which) { AGE = which === 'old' ? 'old' : 'new'; G.render(); };
 
   /* Reading the answers. It is a button rather than a timer: it reads his Gmail,
      and something that reads a mailbox on a schedule nobody asked for is the
@@ -432,12 +511,17 @@
       '<select id="mk-cat" name="cat">' + TAGS.map(function (t) {
         return '<option value="' + esc(t[0]) + '">' + esc(t[0]) + '</option>';
       }).join('') + '</select></div>' +
-      '<div class="f" style="margin-bottom:12px"><label for="mk-city">City</label>' +
-      '<select id="mk-city" name="city">' + Object.keys(CITIES).map(function (c) {
-        return '<option value="' + esc(c) + '">' + esc(c) + '</option>';
-      }).join('') + '</select></div>' +
-      '<p class="hint">Dubai first. The three American cities are the 20% test, so the data ' +
-      'decides which market is worth the effort rather than an opinion.</p>' +
+      '<div class="f" style="margin-bottom:12px"><label for="mk-country">Country</label>' +
+      '<select id="mk-country" name="country">' + optionsOf(Object.keys(MARK_PLACES), 'United Arab Emirates') +
+      '</select></div>' +
+      '<div class="f" style="margin-bottom:12px"><label for="mk-state">State</label>' +
+      '<select id="mk-state" name="state">' + optionsOf(Object.keys(MARK_PLACES['United Arab Emirates'].states), 'Dubai') +
+      '</select></div>' +
+      '<div class="f" style="margin-bottom:12px"><label for="mk-city">Place</label>' +
+      '<select id="mk-city" name="city">' + optionsOf(MARK_PLACES['United Arab Emirates'].states.Dubai, 'Dubai') +
+      '</select></div>' +
+      '<p class="hint">A neighbourhood finds the businesses in that neighbourhood; the city finds ' +
+      'them across the whole city.</p>' +
       '<div style="display:flex;gap:10px;margin-top:14px">' +
       '<button class="btn" type="submit">Go and look</button>' +
       '<button class="btn alt" type="button" data-act="closeModal">Not now</button></div></form>');
@@ -452,6 +536,35 @@
     'https://overpass.kumi.systems/api/interpreter',
     'https://overpass.private.coffee/api/interpreter'
   ];
+
+  /* OpenStreetMap's own geocoder turns "Jubilee Hills, Telangana, India" into the box
+     Overpass searches. A neighbourhood mapped as a single point gets a box about
+     4 km across, so it still finds something. */
+  function placeBox(place, state, country) {
+    var q = place + (place === state ? '' : ', ' + state) + ', ' + country;
+    return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q))
+      .then(function (r) { if (!r.ok) throw new Error(String(r.status)); return r.json(); })
+      .then(function (out) {
+        var b = out && out[0] && out[0].boundingbox;
+        if (!b) throw new Error('OpenStreetMap could not find ' + q + ' on the map.');
+        var s = +b[0], n = +b[1], w = +b[2], e = +b[3];
+        var lat = (s + n) / 2, lon = (w + e) / 2, half = 0.02;
+        if (n - s < 2 * half) { s = lat - half; n = lat + half; }
+        if (e - w < 2 * half) { w = lon - half; e = lon + half; }
+        return [s, w, n, e].map(function (x) { return +x.toFixed(4); });
+      });
+  }
+
+  document.addEventListener('change', function (e) {
+    var id = e.target && e.target.id;
+    if (id !== 'mk-country' && id !== 'mk-state') return;
+    var c = MARK_PLACES[document.getElementById('mk-country').value];
+    var st = document.getElementById('mk-state'), pl = document.getElementById('mk-city');
+    if (!c || !st || !pl) return;
+    if (id === 'mk-country') st.innerHTML = optionsOf(Object.keys(c.states), Object.keys(c.states)[0]);
+    var list = c.states[st.value] || [];
+    pl.innerHTML = optionsOf(list, list[0]);
+  });
 
   function askOverpass(tag, box, limit) {
     var q = '[out:json][timeout:25];(nwr' + tag + '(' + box.join(',') + ')["name"];);out center ' + limit + ';';
@@ -475,17 +588,22 @@
     if (BUSY) return;
     var cat = document.getElementById('mk-cat').value;
     var city = document.getElementById('mk-city').value;
+    var state = document.getElementById('mk-state').value;
+    var countryName = document.getElementById('mk-country').value;
+    var country = (MARK_PLACES[countryName] || {}).code;
     var tag = (TAGS.filter(function (t) { return t[0] === cat; })[0] || [])[1];
-    var box = CITIES[city];
     var dm = document.getElementById('modal'); if (dm && dm.open) dm.close();
-    if (!tag || !box) return G.toast('Mark has no map tag for that one yet.', true);
+    if (!tag) return G.toast('Mark has no map tag for that one yet.', true);
+    if (!country || !city) return G.toast('Pick a country, a state and a place.', true);
 
     BUSY = true;
     NOTE = 'Mark is looking for ' + cat + ' in ' + city + '. He reads each one’s website, ' +
            'so this takes a minute or two.';
     G.render();
 
-    askOverpass(tag, box, 20).then(function (out) {
+    placeBox(city, state, countryName).then(function (box) {
+      return askOverpass(tag, box, 20);
+    }).then(function (out) {
       var places = (out.elements || []).map(function (el) {
         var t = el.tags || {};
         return {
@@ -506,10 +624,11 @@
       }
       return API.findProspects({
         category: cat, city: city,
-        country: ['New York', 'Austin', 'Miami'].indexOf(city) >= 0 ? 'US' : 'AE',
+        country: country,
         places: places
       }).then(function (r) {
         BUSY = false;
+        TRADE = cat; AGE = 'new';
         NOTE = 'Mark looked at ' + r.looked + ' and wrote ' + r.written + ' to the board' +
           (r.blocked ? '. ' + r.blocked + ' need a name looked up by hand.' : '.');
         return G.pullNow ? G.pullNow() : G.render();
