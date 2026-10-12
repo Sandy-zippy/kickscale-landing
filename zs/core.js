@@ -928,9 +928,9 @@
     bank_name: 'HDFC Bank',
     bank_account: '50200102811362',
     bank_ifsc: 'HDFC0006334',
-    /* The second way to bill: in Bhargav's own name, to his own account (12 Oct).
-       Chosen per invoice; the company block above stays the default. */
-    personal_name: 'Bhargav Naidu',
+    /* The second account an invoice can be paid into: Bhargav's own (12 Oct).
+       ⚠️ ONLY THE BANK BLOCK. The invoice is Zippy Scale's either way: name, logo,
+       byline, footer, GST line. Putting his name on top was wrong (his words). */
     personal_bank_holder: 'Bhargav Naidu',
     personal_bank_name: 'HDFC Bank',
     personal_bank_account: '50100284235973',
@@ -941,7 +941,6 @@
     gst_rate: 18,
     /* printed under Billed by on an invoice that charges GST; blank = not printed */
     gstin: '',
-    personal_gstin: '',
     gst_note: 'This invoice does not include GST. Zippy Scale is not GST-registered and ' +
               'GST is not applicable on this payment.',
     terms_days: TERMS_DAYS,
@@ -949,8 +948,7 @@
     footer: 'Zippy Scale  \u2022  bhargav@zippyscale.com  \u2022  Thank you for your business'
   };
 
-  /* `as` is the invoice's billed_as: 'personal' swaps the billed-by name and the
-     bank block for Bhargav's own, and says his name wherever the company's was. */
+  /* `as` is the invoice's billed_as: 'personal' swaps the bank block, and nothing else. */
   function invoiceTemplate(store, as) {
     var t = (store && store.invoice_template) || {};
     var out = {};
@@ -960,20 +958,14 @@
     });
     out.gst_registered = !!t.gst_registered;
     if (as === 'personal') {
-      var co = out.legal_name, me = out.personal_name;
-      out.legal_name = me;
-      out.byline = '';
       out.bank_holder = out.personal_bank_holder;
       out.bank_name = out.personal_bank_name;
       out.bank_account = out.personal_bank_account;
       out.bank_ifsc = out.personal_bank_ifsc;
-      out.gstin = out.personal_gstin;
-      out.footer = String(out.footer || '').split(co).join(me);
-      out.gst_note = String(out.gst_note || '').split(co).join(me);
     }
     return out;
   }
-  var BILLED_AS = { company: 'Zippy Scale', personal: 'Bhargav Naidu' };
+  var BILLED_AS = { company: 'Zippy Scale account', personal: 'Bhargav Naidu account' };
 
   /* A short code per client, the way the real ones read: EGO Premium Products
      Private Limited is EGO, The Big E Retail is BER. Derived rather than stored,

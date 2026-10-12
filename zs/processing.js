@@ -193,7 +193,7 @@
             '<span class="invn">' + i.n + '<i>of ' + i.of + '</i></span>' +
             '<div class="t"><b>' + esc(i.scope || 'Phase ' + i.n) +
             (i.ref ? ' <span class="refchip">' + esc(i.ref) + '</span>' : '') + '</b>' +
-            '<span>' + (i.billed_as === 'personal' ? 'billed as ' + esc(ZS.BILLED_AS.personal) + ' &middot; ' : '') +
+            '<span>' + (i.billed_as === 'personal' ? 'paid into ' + esc(ZS.BILLED_AS.personal) + ' &middot; ' : '') +
             'raised ' + esc(i.raised) + ' &middot; due ' + esc(i.due) +
             (i.paid ? ' &middot; paid ' + esc(i.paid) : '') + '</span></div>' +
             '<span class="invamt">' + ZS.money(i.amount) +
@@ -738,14 +738,15 @@
 
         /* ⚠️ Two ways to bill (12 Oct): Zippy Scale's account or Bhargav's own.
            The pick decides the billed-by name AND the bank block on the PDF. */
-        '<div class="fgroup"><h4>Billed by</h4><div class="fbody">' +
-          '<div class="f wide"><label for="i-as">Raise this invoice as</label>' +
+        '<div class="fgroup"><h4>Paid into</h4><div class="fbody">' +
+          '<div class="f wide"><label for="i-as">Payment account</label>' +
           '<select id="i-as" name="billed_as">' + ['company', 'personal'].map(function (k) {
             var tk = ZS.invoiceTemplate(D(), k);
-            return '<option value="' + k + '">' + esc(tk.legal_name + ' · ' + tk.bank_name +
+            return '<option value="' + k + '">' + esc(tk.bank_holder + ' · ' + tk.bank_name +
               ' a/c ending ' + String(tk.bank_account).slice(-4)) + '</option>';
           }).join('') + '</select>' +
-          '<span class="hint">The name under Billed by and the account they pay into.</span></div>' +
+          '<span class="hint">The invoice is Zippy Scale\u2019s either way. This only changes ' +
+          'the bank details printed on it.</span></div>' +
         '</div></div>' +
 
         '<div class="fgroup"><h4>What it is for</h4><div class="fbody">' +

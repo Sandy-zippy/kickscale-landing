@@ -2178,14 +2178,13 @@
         'clients pay. Read it twice before changing it.</p>' +
       '</div></div>' +
 
-      '<div class="fgroup"><h4>Billed as Bhargav Naidu <em>&mdash; the second choice on every invoice</em></h4><div class="fbody">' +
-        f('personal_name', 'Name under Billed by') +
+      '<div class="fgroup"><h4>Bhargav Naidu account <em>&mdash; the second payment account on every invoice</em></h4><div class="fbody">' +
         f('personal_bank_holder', 'Account name') +
         f('personal_bank_name', 'Bank') +
         f('personal_bank_account', 'Account number') +
         f('personal_bank_ifsc', 'IFSC') +
-        '<p class="hint wide">Raising an invoice asks which one: Zippy Scale (above) or this. ' +
-        'Same address, email and numbering on both.</p>' +
+        '<p class="hint wide">Raising an invoice asks which account it is paid into. The ' +
+        'invoice itself is always Zippy Scale\u2019s.</p>' +
       '</div></div>' +
 
       '<div class="fgroup"><h4>Tax</h4><div class="fbody">' +
@@ -2196,7 +2195,6 @@
         '</select></div>' +
         f('gst_rate', 'Rate %', 'Applied to the taxable amount when GST is on.', 'number') +
         f('gstin', 'Zippy Scale GSTIN', 'Printed under Billed by on invoices that charge GST.') +
-        f('personal_gstin', 'Bhargav Naidu GSTIN', 'The same, for invoices raised in his name.') +
         area('gst_note', 'The line that prints when GST is not applicable', '', 2) +
       '</div></div>' +
 
