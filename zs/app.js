@@ -2191,10 +2191,12 @@
       '<div class="fgroup"><h4>Tax</h4><div class="fbody">' +
         '<div class="f"><label for="it-gst_registered">GST registered</label>' +
         '<select id="it-gst_registered" data-invt="gst_registered">' +
-        '<option value="">No, GST is not applicable</option>' +
-        '<option value="1"' + (t.gst_registered ? ' selected' : '') + '>Yes, add GST</option>' +
+        '<option value="">No: new invoices start without GST</option>' +
+        '<option value="1"' + (t.gst_registered ? ' selected' : '') + '>Yes: new invoices start with GST</option>' +
         '</select></div>' +
         f('gst_rate', 'Rate %', 'Applied to the taxable amount when GST is on.', 'number') +
+        f('gstin', 'Zippy Scale GSTIN', 'Printed under Billed by on invoices that charge GST.') +
+        f('personal_gstin', 'Bhargav Naidu GSTIN', 'The same, for invoices raised in his name.') +
         area('gst_note', 'The line that prints when GST is not applicable', '', 2) +
       '</div></div>' +
 

@@ -138,6 +138,10 @@
       var ay = ly + String(t.address || '').split('\n').length * 14.5;
       d.text('Email: ' + t.email, M, ay);
     }
+    if (inv.gst && t.gstin) {
+      d.text('GSTIN: ' + t.gstin,
+             M, ly + String(t.address || '').split('\n').length * 14.5 + (t.email ? 14.5 : 0));
+    }
 
     var ry = 210;
     ry = lines(d, billTo.lines, colR, ry, 14.5, 232);
@@ -194,7 +198,9 @@
                 (inv.deductions || []).filter(function (q) { return q && Number(q.amount); }).length +
                 1;                                  /* the GST line */
     var noteDraft = [];
-    if (!t.gst_registered && t.gst_note) noteDraft.push(t.gst_note);
+    /* the "not GST-registered" line only on an invoice that charges none, and only
+       while Settings says not registered: otherwise it would be untrue */
+    if (!inv.gst && !t.gst_registered && t.gst_note) noteDraft.push(t.gst_note);
     if (inv.note) noteDraft.push(inv.note);
     var noteWrapped = [];
     noteDraft.forEach(function (ln, i) {

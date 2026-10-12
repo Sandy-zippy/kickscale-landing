@@ -939,6 +939,9 @@
        below is replaced by the ordinary tax lines. */
     gst_registered: false,
     gst_rate: 18,
+    /* printed under Billed by on an invoice that charges GST; blank = not printed */
+    gstin: '',
+    personal_gstin: '',
     gst_note: 'This invoice does not include GST. Zippy Scale is not GST-registered and ' +
               'GST is not applicable on this payment.',
     terms_days: TERMS_DAYS,
@@ -964,6 +967,7 @@
       out.bank_name = out.personal_bank_name;
       out.bank_account = out.personal_bank_account;
       out.bank_ifsc = out.personal_bank_ifsc;
+      out.gstin = out.personal_gstin;
       out.footer = String(out.footer || '').split(co).join(me);
       out.gst_note = String(out.gst_note || '').split(co).join(me);
     }

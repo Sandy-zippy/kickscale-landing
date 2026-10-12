@@ -776,6 +776,14 @@
           '<span class="hint">What this one bill is for.' +
             (billed ? ' ' + ZS.money(billed) + ' of the order is already invoiced' +
               (left ? ', leaving ' + ZS.money(left) + '.' : '.') : '') + '</span></div>' +
+          /* ⚠️ Per invoice (12 Oct): GST on or off for THIS bill. The rate is the
+             one in Settings; the default is whatever Settings says. */
+          '<div class="f"><label for="i-gst">GST</label>' +
+          '<select id="i-gst" name="gst">' +
+            '<option value="">Not applicable</option>' +
+            '<option value="1"' + (t.gst_registered ? ' selected' : '') + '>Add GST at ' +
+              esc(String(t.gst_rate || 18)) + '%</option></select>' +
+          '<span class="hint">Added on top of what is left after the lines below.</span></div>' +
           '<div class="f wide"><label>What comes off this invoice</label>' +
           '<div id="i-cuts"></div>' +
           '<button type="button" class="minibtn" data-act="invCutAdd">+ Add a line</button>' +
@@ -869,12 +877,13 @@
       if (!box) return;
       var t = ZS.invoiceTemplate(D());
       var valEl = document.getElementById('i-value');
+      var gstEl = document.getElementById('i-gst');
       var hidden = document.querySelector('#invform input[name="order_value"]');
       var inv = { order_value: Number(hidden && hidden.value) || 0,
                   invoice_value: Number(valEl && valEl.value) || 0,
                   deductions: CUTS.map(function (c2) {
                     return { label: c2.label, amount: Number(c2.amount) || 0 }; }),
-                  gst: t.gst_registered, gst_rate: t.gst_rate };
+                  gst: gstEl ? !!gstEl.value : t.gst_registered, gst_rate: t.gst_rate };
       var tot = ZS.invoiceTotals(inv, t.gst_rate);
       box.innerHTML = '<div class="invsum">' +
         /* the order value is here for context and is visibly not part of the sum */
@@ -1240,7 +1249,7 @@
 
     var draft = { order_value: Number(fd.get('order_value')) || 0,
                   invoice_value: Number(fd.get('invoice_value')) || 0,
-                  deductions: cuts, gst: t.gst_registered, gst_rate: t.gst_rate };
+                  deductions: cuts, gst: !!fd.get('gst'), gst_rate: t.gst_rate };
     var tot = ZS.invoiceTotals(draft, t.gst_rate);
     if (tot.deducted > tot.value) {
       var err = document.getElementById('i-err');
@@ -1276,7 +1285,7 @@
       scope: String(fd.get('scope') || '').trim(),
       detail: String(fd.get('detail') || '').trim(),
       order_value: tot.order, invoice_value: tot.value, deductions: cuts,
-      gst: t.gst_registered, gst_rate: t.gst_rate,
+      gst: !!fd.get('gst'), gst_rate: t.gst_rate,
       number: num,
       amount: amt,
       /* ⚠️ A worded due date and a real one are exclusive. Keeping both would
@@ -1315,7 +1324,7 @@
       if (row) { row[cut.dataset.cut] = cut.value; A.invSum(); }
       return;
     }
-    if (e.target.id === 'i-value') A.invSum();
+    if (e.target.id === 'i-value' || e.target.id === 'i-gst') A.invSum();
   }
 
   var prevChange = A.onChange;
