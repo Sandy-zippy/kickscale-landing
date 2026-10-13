@@ -44,12 +44,15 @@ const segBadge = div => `<span class="badge plain" data-seg>${esc(SEG[div] || di
 const ownReadonly = () => D.access.viewing_as ? !!D.access.own_readonly : !!D.access.readonly;
 const isBothView = () => (EM.div === 'both' && D.user.division === 'both') || ownReadonly();
 /* opening tabs, filters and menus is looking, not changing */
-const NAV_ACTS = new Set(['role-toggle', 'opp-mine', 'invf-clear', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab']);
+const NAV_ACTS = new Set(['role-toggle', 'opp-mine', 'invf-clear', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab',
+  /* opening, downloading and sharing a kept file, and downloading a report, change no record (13 Oct) */
+  'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv']);
 const LOOK_ACTS = new Set(['view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
   'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass',
   /* so are API keys: one set for the whole company (Integrations, 12 Oct) */
-  'int-key-add', 'int-key-go', 'int-key-revoke', 'int-key-revoke-go', 'int-copy', 'int-tool-add', 'int-tool-edit', 'int-tool-save', 'int-tool-del', 'int-tool-del-go', 'int-row-add', 'int-row-del']);
+  'int-key-add', 'int-key-go', 'int-key-revoke', 'int-key-revoke-go', 'int-copy', 'int-tool-add', 'int-tool-edit', 'int-tool-save', 'int-tool-del', 'int-tool-del-go', 'int-row-add', 'int-row-del',
+  'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv']);
 /* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
 const hideChangeButtons = root => { if (!isBothView() || !root) return; root.querySelectorAll('[data-act]').forEach(b => { if (!LOOK_ACTS.has(b.dataset.act)) b.setAttribute('hidden', ''); }); root.querySelectorAll('input[type="file"], #move-stage, [data-list-only]').forEach(x => x.setAttribute('hidden', '')); };
 EM.guard = el => {
@@ -762,13 +765,8 @@ const oppTable = ops => table(['Opportunity', 'Pipeline', 'Stage', ...(D.access.
   cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(o.ref || '')}</div>`, esc(PIPELINES[o.pipeline].label), stageBadge(o.stage), ...(D.access.prices ? [money(o.value)] : []), esc(staffName(o.owner_id)), o.next_date ? `${esc(o.next_action || '')} · ${ds(o.next_date)}` : esc(o.next_action || '')] })));
 const stageBadge = s => `<span class="badge ${Object.keys(PIPELINES).some(p => wonStage(p, D.lists) === s) ? 'ok' : Object.keys(PIPELINES).some(p => lostStage(p, D.lists) === s) ? 'bad' : 'info'}">${esc(s)}</span>`;
 function clientDocs(c, cts, ops, docs) {
-  return `<div class="stack-s"><form id="df" class="card stack-s" onsubmit="return false"><h3>Add a document</h3><div class="fgrid">
-      <div class="field"><label for="df-type">What it is</label><select class="input" id="df-type" name="type">${DOC_TYPES.map(t => `<option>${t}</option>`).join('')}</select></div>
-      <div class="field"><label for="df-name">Name (optional)</label><input class="input" id="df-name" name="name" placeholder="e.g. GST certificate 2026"></div>
-      <div class="field span2"><label for="df-file">File (up to 25 MB)</label><input class="input" id="df-file" name="file" type="file" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx"></div></div>
-      ${errBox('df-err')}<div class="row"><button class="btn primary" data-act="doc-up" data-client="${c.id}">Upload</button></div></form>
-    ${docs.length ? table(['Document', 'Type', 'Size', 'Added', ''], docs.map(d => [`<b>${esc(d.name)}</b>`, esc(d.type), `${Math.max(1, Math.round(d.size / 1024))} KB`, `${ds(d.created_at)} · ${esc(staffName(d.uploaded_by))}`,
-      `<button class="btn sm ghost" data-act="doc-open" data-id="${d.id}">Open</button><button class="btn sm ghost" data-act="doc-del" data-id="${d.id}">Remove</button>`])) : empty('No documents yet', 'GST certificate, cheque, agreement, shop and display photos go here.')}</div>`;
+  return filesBox({ id: 'cl', client: c.id, types: DOC_TYPES, docs, title: 'Add documents', canAdd: true, showOrder: true,
+    emptyTitle: 'No documents yet', emptyText: 'GST certificate, cheque, agreement, shop and display photos go here. PI and invoices added on an order show here too.' });
 }
 async function loadHistory(id) {
   try {
@@ -818,29 +816,101 @@ EM.ACTIONS['contact-del'] = async el => {
   try { await API('DELETE', '/api/contacts/' + k.id); D.contacts = D.contacts.filter(x => x.id !== k.id); D.opportunities.forEach(o => { if (o.contact_id === k.id) o.contact_id = ''; }); EM.toast(`${esc(k.name)} removed.`); EM.rerender(); } catch (x) { EM.toast(esc(x.message)); }
 };
 
-/* ---------------------------------------------------------------- documents */
-EM.ACTIONS['doc-up'] = async el => {
-  const f = qs('#df-file').files[0];
-  if (!f) return showErr('df-err', 'Choose a file first.');
-  if (f.size > 25 * 1024 * 1024) return showErr('df-err', 'That file is over 25 MB.');
-  const fd = new FormData(); fd.append('file', f); fd.append('client_id', el.dataset.client); fd.append('type', qs('#df-type').value); fd.append('name', qs('#df-name').value);
+/* ---------------------------------------------------------------- files: ONE upload for every kept file (13 Oct)
+   Bhargav: "the agenda is the functionality and making sure that this is easy to use". Every upload takes
+   many files at once; every file has View (opens in the browser, never downloads), Download (its real
+   name) and Share (WhatsApp, email, any app) through a link that opens without signing in, for 7 days
+   unless changed. Used by a client's Documents and by PI / invoices on a fulfilment order. Excel import
+   is the one single-file input: it is read, not kept. */
+const FILE_ACCEPT = 'image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt';
+const OFFICE_RE = /\.(docx?|xlsx?|pptx?)$/i;
+const kb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round((n || 0) / 1024)) + ' KB';
+const mayRemoveDoc = d => d.order_id ? (D.access.ful || []).includes('money') : true;
+function filesBox(o) {   // o: { id, client, order, types, docs, canAdd, tags, title, note, showOrder, emptyTitle, emptyText }
+  const P = D.access.prices, tagCols = o.tags || o.docs.some(d => d.doc_no || d.doc_date), b = 'fu-' + o.id, ordOf = id => OPSD().orders.find(x => x.id === id);
+  const form = o.canAdd ? `<form class="card stack-s" data-fu-box="${o.id}" onsubmit="return false"><h3>${esc(o.title || 'Add files')}</h3>${o.note ? `<p class="small muted">${o.note}</p>` : ''}<div class="fgrid">
+      <div class="field" data-field="doc_type"><label for="${b}-type">What it is</label><select class="input" id="${b}-type" data-keep-order>${o.types.map(t => `<option>${esc(t)}</option>`).join('')}</select></div>
+      ${o.tags ? `<div class="field" data-field="doc_no"><label for="${b}-no">Number (optional)</label><input class="input" id="${b}-no" placeholder="e.g. PI/2026/0142"></div>
+      <div class="field" data-field="doc_date"><label for="${b}-date">Date (optional)</label><input class="input" type="date" id="${b}-date"></div>
+      ${P ? `<div class="field" data-field="doc_amount"><label for="${b}-amt">Amount (optional)</label>${G.adorn({ type: 'money', key: 'amount' }, `<input class="input" type="number" min="0" step="0.01" id="${b}-amt">`)}</div>` : ''}`
+    : `<div class="field" data-field="doc_name"><label for="${b}-name">Name (optional)</label><input class="input" id="${b}-name" placeholder="e.g. GST certificate 2026"></div>`}
+      <div class="field span2" data-field="doc_files"><label for="${b}-file">Files: one or many, up to 25 MB each</label><input class="input" id="${b}-file" type="file" multiple accept="${FILE_ACCEPT}"></div></div>
+      ${errBox(b + '-err')}<div class="row"><button class="btn primary" data-act="fu-up" data-box="${o.id}" data-client="${o.client || ''}" data-order="${o.order || ''}">Upload</button></div></form>` : '';
+  const rows = o.docs.slice().sort((x, y) => String(y.created_at).localeCompare(String(x.created_at)));
+  const list = rows.length ? table(['File', 'What it is', ...(tagCols ? ['Number', 'Date', ...(P ? ['Amount'] : [])] : []), ...(o.showOrder ? ['On order'] : []), 'Size', 'Added', ''], rows.map(d => [
+    `<b>${esc(d.name)}</b>${d.file_name && d.file_name !== d.name ? `<div class="small muted">${esc(d.file_name)}</div>` : ''}`, esc(d.type), ...(tagCols ? [esc(d.doc_no || ''), d.doc_date ? ds(d.doc_date) : '', ...(P ? [d.amount != null ? inr0(d.amount) : ''] : [])] : []),
+    ...(o.showOrder ? [d.order_id && ordOf(d.order_id) ? `<a href="#/order/${d.order_id}">${esc(ordOf(d.order_id).ref)}</a>` : ''] : []), kb(d.size), `${ds(String(d.created_at).slice(0, 10))} · ${esc(staffName(d.uploaded_by))}`,
+    `<div class="row" style="gap:6px;flex-wrap:nowrap" data-file-acts><button class="btn sm" data-act="fu-view" data-id="${d.id}">View</button><button class="btn sm ghost" data-act="fu-dl" data-id="${d.id}">Download</button><button class="btn sm ghost" data-act="fu-share" data-id="${d.id}">Share</button>${mayRemoveDoc(d) ? `<button class="btn sm ghost" data-act="fu-del" data-id="${d.id}">Remove</button>` : ''}</div>`]))
+    : empty(o.emptyTitle || 'No files yet', o.emptyText || '');
+  return `<div class="stack-s" data-files="${o.id}">${form}${list}</div>`;
+}
+EM.ACTIONS['fu-up'] = async el => {
+  const b = 'fu-' + el.dataset.box, files = [...qs('#' + b + '-file').files], v = id => (qs('#' + b + '-' + id) || { value: '' }).value;
+  if (!files.length) return showErr(b + '-err', 'Choose one or more files first.');
+  if (files.length > 10) return showErr(b + '-err', 'Up to 10 files at a time.');
+  const big = files.find(f => f.size > 25 * 1024 * 1024); if (big) return showErr(b + '-err', `${big.name} is over 25 MB.`);
+  const fd = new FormData(); files.forEach(f => fd.append('file', f));
+  fd.append('type', v('type')); fd.append('name', v('name')); fd.append('doc_no', v('no')); fd.append('doc_date', v('date')); fd.append('amount', v('amt'));
+  if (el.dataset.order) fd.append('order_id', el.dataset.order); else fd.append('client_id', el.dataset.client);
   busy(el, true);
-  try { const r = await API('POST', '/api/documents', fd, true); D.documents.push(r.document); EM.toast(`<b>${esc(r.document.name)}</b> uploaded.`); EM.rerender(); } catch (x) { busy(el, false); showErr('df-err', x.message); }
+  try { const r = await API('POST', '/api/documents', fd, true); D.documents.push(...r.documents); EM.toast(`<b>${r.documents.length} file${r.documents.length === 1 ? '' : 's'}</b> uploaded.`); EM.rerender(); }
+  catch (x) { busy(el, false); showErr(b + '-err', x.message); }
 };
-EM.ACTIONS['doc-open'] = async el => {
-  const w = window.open('', '_blank');
+const docTok = () => { try { return localStorage.getItem('ego-live-token') || ''; } catch (e) { return window.__egoTok || ''; } };
+const docLink = (id, b) => API('POST', `/api/documents/${id}/share`, b);
+/* View: opens in the browser. PDF, photos and text inline; Word, Excel and PowerPoint in Microsoft's free web viewer */
+EM.ACTIONS['fu-view'] = async el => {
+  const d = D.documents.find(x => x.id === el.dataset.id), w = window.open('', '_blank');
   try {
-    let tok = ''; try { tok = localStorage.getItem('ego-live-token') || ''; } catch (e) { tok = window.__egoTok || ''; }
-    const res = await fetch(window.EGOAPI.file(el.dataset.id), { headers: { authorization: 'Bearer ' + tok } });
-    if (!res.ok) throw new Error('Could not open it.');
-    const url = URL.createObjectURL(await res.blob());
-    if (w) w.location = url; else location.href = url;
-  } catch (x) { if (w) w.close(); EM.toast(esc(x.message)); }
+    const { url } = await docLink(d.id, { view: true });
+    const go = OFFICE_RE.test(d.file_name || d.name) ? 'https://view.officeapps.live.com/op/view.aspx?src=' + encodeURIComponent(url) : url;
+    if (w) w.location = go; else location.href = go;
+  } catch (x) { if (w) w.close(); bubbleNear(el, x.message); }
 };
-EM.ACTIONS['doc-del'] = async el => {
+async function docBlob(d) {
+  const res = await fetch(window.EGOAPI.file(d.id) + '?dl=1', { headers: { authorization: 'Bearer ' + docTok() } });
+  if (!res.ok) throw new Error('Could not get the file.');
+  return res.blob();
+}
+EM.ACTIONS['fu-dl'] = async el => {
+  const d = D.documents.find(x => x.id === el.dataset.id);
+  busy(el, true);
+  try { const u = URL.createObjectURL(await docBlob(d)), a = document.createElement('a'); a.href = u; a.download = d.file_name || d.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000); }
+  catch (x) { bubbleNear(el, x.message); }
+  busy(el, false);
+};
+/* Share: a link anyone can open without signing in, until it expires */
+EM.share = null;
+async function shareModal(d, days) {
+  const r = await docLink(d.id, { days });
+  EM.share = { d, url: r.url, expires: r.expires, file: EM.share && EM.share.d.id === d.id ? EM.share.file : null };
+  const text = `${d.name}: ${r.url}`, until = whenTxt(r.expires);
+  EM.modal(`<h2>Share ${esc(d.name)}</h2><p class="muted" data-share-note>Anyone with this link can open the file until <b>${esc(until)}</b>, without signing in to EGO Master. Send it only to the person who needs it.</p>
+    <div class="fgrid" style="margin-top:12px"><div class="field span2"><label for="sh-url">Link</label><input class="input" id="sh-url" readonly value="${esc(r.url)}"></div>
+      <div class="field"><label for="sh-days">The link works for</label><select class="input" id="sh-days" data-share-days="${d.id}" data-keep-order>${[1, 3, 7, 14, 30].map(n => `<option value="${n}" ${n === r.days ? 'selected' : ''}>${n} day${n === 1 ? '' : 's'}</option>`).join('')}</select></div></div>
+    <div class="row" style="margin-top:14px;flex-wrap:wrap"><button class="btn primary" data-act="fu-share-native">Share to any app</button>
+      <a class="btn" target="_blank" rel="noopener" data-share-wa href="https://wa.me/?text=${encodeURIComponent(text)}">WhatsApp</a>
+      <a class="btn" data-share-mail href="mailto:?subject=${encodeURIComponent(d.name)}&body=${encodeURIComponent(`${d.name}\n\n${r.url}\n\nThe link works until ${until}.`)}">Email</a>
+      <button class="btn ghost" data-act="fu-share-copy">Copy link</button><button class="btn ghost" data-act="close-modal">Close</button></div>`);
+  /* the file itself is fetched now, so "Share to any app" can attach it at once (phones allow that only straight after a tap) */
+  if (!EM.share.file && d.size <= 15 * 1024 * 1024) docBlob(d).then(bl => { if (EM.share && EM.share.d.id === d.id) EM.share.file = new File([bl], d.file_name || d.name, { type: d.mime || bl.type }); }).catch(() => {});
+}
+EM.ACTIONS['fu-share'] = async el => { busy(el, true); try { EM.share = null; await shareModal(D.documents.find(x => x.id === el.dataset.id), 7); } catch (x) { bubbleNear(el, x.message); } busy(el, false); };
+document.addEventListener('change', e => { if (e.target.matches('[data-share-days]')) shareModal(D.documents.find(x => x.id === e.target.dataset.shareDays), Number(e.target.value)).catch(x => EM.toast(esc(x.message))); });
+EM.ACTIONS['fu-share-native'] = async el => {
+  const S = EM.share; if (!S) return;
+  const data = { title: S.d.name, text: `${S.d.name} (link works until ${whenTxt(S.expires)})`, url: S.url };
+  try {
+    if (S.file && navigator.canShare && navigator.canShare({ files: [S.file] })) await navigator.share({ files: [S.file], title: S.d.name, text: `${S.d.name}: ${S.url}` });
+    else if (navigator.share) await navigator.share(data);
+    else { await EM.ACTIONS['fu-share-copy'](el); bubbleNear(el, 'This browser has no share menu. The link is copied: paste it into any app.'); }
+  } catch (x) { if (x && x.name !== 'AbortError') bubbleNear(el, 'Could not open the share menu. Use WhatsApp, Email or Copy link.'); }
+};
+EM.ACTIONS['fu-share-copy'] = async el => { const S = EM.share; if (!S) return; try { await navigator.clipboard.writeText(S.url); EM.toast('Link copied'); } catch (x) { const i = qs('#sh-url'); if (i) { i.select(); document.execCommand('copy'); EM.toast('Link copied'); } } };
+EM.ACTIONS['fu-del'] = async el => {
   const d = D.documents.find(x => x.id === el.dataset.id);
   if (!confirm(`Remove ${d.name}?`)) return;
-  try { await API('DELETE', '/api/documents/' + d.id); D.documents = D.documents.filter(x => x.id !== d.id); EM.rerender(); } catch (x) { EM.toast(esc(x.message)); }
+  try { await API('DELETE', '/api/documents/' + d.id); D.documents = D.documents.filter(x => x.id !== d.id); EM.toast(`${esc(d.name)} removed.`); EM.rerender(); } catch (x) { bubbleNear(el, x.message); }
 };
 
 /* ---------------------------------------------------------------- opportunities */
@@ -857,7 +927,7 @@ EM.VIEWS.opps = arg => {
     <div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}</div>`;
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
-      <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
+      <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
     ${searchBox('Opportunity, company, owner or next action')}
     ${subtabs('#/opps', p, ps.map(k => [k, `${PIPELINES[k].plural} <span class="muted">${D.opportunities.filter(o => o.pipeline === k).length}</span>`]))}
     <p class="small muted">The board shows what is live. A won or lost one stays until the end of the month it closed in; every order, old and new, is in <a href="#/orderbook">Orders</a>.</p>
@@ -866,6 +936,64 @@ EM.VIEWS.opps = arg => {
 };
 EM.VIEWS.opps.title = () => 'Opportunities';
 document.addEventListener('change', e => { if (e.target.id === 'opp-mine') { EM.oppMine = e.target.checked; EM.rerender(); } });
+
+/* ---------------------------------------------------------------- Lost sales (13 Oct)
+   Every lost opportunity in your view: why, the details, the value, who, which client, when, and the
+   stage it was lost from. Every figure is counted from saved opportunities and their stage history.
+   Opened from Opportunities (the menu stays short). */
+EM.lostF = { period: 'all', from: '', to: '', reason: '', owner: '', seg: '', pipe: '', field: '', fq: '' };
+const LOST_FIELDS = [['title', 'Opportunity'], ['client', 'Client'], ['reason', 'Reason'], ['detail', 'Details'], ['from', 'Lost from stage'], ['owner', 'Owner'], ['pipe', 'Pipeline']];
+function lostRows() {
+  return D.opportunities.filter(o => o.stage === lostStage(o.pipeline, D.lists) && (EM.div === 'both' || PIPELINES[o.pipeline].division === EM.div)).map(o => {
+    const h = D.history.filter(x => x.opp_id === o.id && x.to_stage === o.stage).pop();
+    return { o, at: (h && h.at) || o.closed_at || o.updated_at || '', from: h ? h.from_stage || '' : '', reason: o.lost_reason || '', detail: (o.extra || {}).lost_detail || '', value: Number(o.value) || 0,
+      owner: staffName(o.owner_id), client: clientName(o.client_id), pipe: PIPELINES[o.pipeline].label, seg: PIPELINES[o.pipeline].division, title: o.title };
+  });
+}
+function lostFiltered() {
+  const f = EM.lostF, fq = f.fq.trim().toLowerCase();
+  return lostRows().filter(r => inPeriod(r.at, f.period, f.from, f.to) && (!f.reason || r.reason === f.reason) && (!f.owner || r.o.owner_id === f.owner) && (!f.seg || r.seg === f.seg) && (!f.pipe || r.o.pipeline === f.pipe)
+    && (!fq || (f.field ? [String(r[f.field] || '')] : LOST_FIELDS.map(([k]) => String(r[k] || ''))).some(v => v.toLowerCase().includes(fq)))
+    && matches(`${r.title} ${r.o.ref || ''} ${r.client} ${r.reason} ${r.detail} ${r.owner} ${r.from}`, [(CL()[r.o.client_id] || {}).mobile])).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+}
+const sumBy = (rows, key) => { const m = {}; for (const r of rows) { const k = r[key] || 'Not given'; (m[k] = m[k] || { n: 0, v: 0 }); m[k].n++; m[k].v += r.value; } return Object.entries(m).sort((a, b) => b[1].n - a[1].n || b[1].v - a[1].v); };
+EM.VIEWS.lost = () => {
+  const f = EM.lostF, P = D.access.prices, all = lostRows(), rows = lostFiltered();
+  const sel = (k, label, opts) => `<label class="field" style="min-width:160px"><span class="small muted">${label}</span><select class="input" data-lf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const reasons = [...new Set([...(D.lists.lost_reasons || []), ...all.map(r => r.reason).filter(Boolean)])], owners = [...new Set(all.map(r => r.o.owner_id))].map(id => [id, staffName(id)]).sort((a, b) => a[1].localeCompare(b[1]));
+  const pipes = Object.keys(PIPELINES).filter(p => EM.div === 'both' || PIPELINES[p].division === EM.div);
+  const totals = (key, head) => { const t = sumBy(rows, key); return `<section class="card stack-s" data-lost-by="${key}"><h3>By ${head.toLowerCase()}</h3>${t.length ? table([head, 'Lost', ...(P ? ['Value'] : [])], t.map(([k, x]) => [esc(k), num(x.n), ...(P ? [inr0(x.v)] : [])])) : '<p class="small muted">Nothing for this filter.</p>'}</section>`; };
+  const top = sumBy(rows, 'reason')[0];
+  return `<div class="stack">${crumbs(['Opportunities', '#/opps'], ['Lost sales'])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Why sales are lost, counted from saved opportunities</div><h1>Lost sales</h1>
+      <p class="muted" style="max-width:780px">Every opportunity marked ${esc([...new Set(pipes.map(p => lostStage(p, D.lists)))].join(' / '))} in your view, with the reason and the details given when it was lost, and the stage it was lost from (from its stage history).</p></div>
+      <button class="btn" data-act="lost-csv">Download for Excel</button></div>
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-lost-filters>${dateFilter(f, 'lost', 'When it was lost')}
+      ${sel('reason', 'Reason', [['', 'Every reason'], ...reasons.map(r => [r, r])])}${sel('owner', 'Owner', [['', 'Everyone'], ...owners])}
+      ${EM.div === 'both' ? sel('seg', 'Company', [['', 'EGO Premium and Big E'], ['wholesale', 'EGO Premium (wholesale)'], ['retail', 'Big E (retail)']]) : ''}${sel('pipe', 'Pipeline', [['', 'Every pipeline'], ...pipes.map(p => [p, PIPELINES[p].label])])}
+      ${sel('field', 'Any field', [['', 'Any field'], ...LOST_FIELDS])}<label class="field" style="min-width:160px"><span class="small muted">contains</span><input class="input" id="lost-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+    ${searchBox('Opportunity, client, reason, details or owner')}
+    <div class="grid g4">${tile('Lost', num(rows.length), rows.length !== all.length ? `of ${num(all.length)} in your view` : '')}${P ? tile('Value lost', inr0(rows.reduce((a, r) => a + r.value, 0))) : ''}${tile('Top reason', top ? esc(top[0]) : 'None', top ? `${top[1].n} lost` : '')}</div>
+    <div class="grid g2">${totals('reason', 'Reason')}${totals('owner', 'Owner')}</div>
+    ${rows.length ? table(['Lost on', 'Opportunity', 'Client', 'Lost from', 'Reason', 'Details', ...(P ? ['Value'] : []), 'Owner'], rows.slice(0, 500).map(r => ({ href: '#/opp/' + r.o.id,
+      cells: [r.at ? ds(dayIST(r.at)) : '', `<b>${esc(r.title)}</b><div class="small muted">${esc(r.o.ref || '')} · ${esc(r.pipe)}</div>${EM.div === 'both' ? segBadge(r.seg) : ''}`, esc(r.client), esc(r.from) || '<span class="muted">Not recorded</span>', `<span class="badge bad">${esc(r.reason || 'Not given')}</span>`, esc(r.detail), ...(P ? [r.value ? inr0(r.value) : ''] : []), esc(r.owner)] })))
+      + (rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters, or download all of them.</p>` : '')
+      : empty(all.length ? 'Nothing lost for this filter' : 'No lost sales yet', all.length ? 'Change or clear the filters above.' : 'When an opportunity is moved to Lost, with its reason and details, it is listed here.')}</div>`;
+};
+EM.VIEWS.lost.tab = 'opps';
+EM.VIEWS.lost.title = () => 'Lost sales';
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.lf; if (k) { EM.lostF[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'lost-fq') { EM.lostF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#lost-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+/* the list as filtered, as a CSV file Excel opens (with the ₹ figures only for roles that see money) */
+EM.ACTIONS['lost-csv'] = () => {
+  const P = D.access.prices, cell = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const head = ['Lost on', 'Opportunity', 'Number', 'Client', 'Company', 'Pipeline', 'Lost from stage', 'Reason', 'Details', ...(P ? ['Value (Rs)'] : []), 'Owner'];
+  const lines = lostFiltered().map(r => [r.at ? dayIST(r.at) : '', r.title, r.o.ref || '', r.client, r.seg === 'retail' ? 'Big E' : 'EGO Premium', r.pipe, r.from, r.reason, r.detail, ...(P ? [Math.round(r.value * 100) / 100] : []), r.owner]);
+  const csv = '﻿' + [head, ...lines].map(l => l.map(cell).join(',')).join('\r\n');
+  const u = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a');
+  a.href = u; a.download = `EGO lost sales ${today()}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000);
+  EM.toast(`<b>${lines.length}</b> lost sale${lines.length === 1 ? '' : 's'} downloaded.`);
+};
 
 EM.VIEWS.opp = id => {
   const o = D.opportunities.find(x => x.id === id);
@@ -883,6 +1011,7 @@ EM.VIEWS.opp = id => {
     <section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>
       <div class="row"><select class="input" id="move-stage" data-keep-order aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
     ${PIPELINES[o.pipeline].lines ? oppLinesCard(o) : ''}
+    ${(() => { const ord = OPSD().orders.find(x => x.opp_id === o.id); return ord ? orderFiles(ord) : ''; })()}
     <div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, v[f.key])]))}</section>
       <section class="card stack-s"><h3>Stage history</h3>${hist.length ? `<div class="timeline">${hist.map(h => `<div class="on"><b>${esc(h.to_stage)}</b>${h.from_stage ? ` <span class="small muted">from ${esc(h.from_stage)}</span>` : ''}<div class="small muted">${ds(h.at)} ${tFmt(h.at)} · ${esc(staffName(h.by_staff))}${h.note ? ' · ' + esc(h.note) : ''}</div></div>`).join('')}</div>` : '<p class="muted">No moves yet.</p>'}</section></div></div>`;
 };
@@ -1355,6 +1484,7 @@ EM.VIEWS.order = id => {
       ${table(['Design', 'Ordered', ...WH.map(w => esc(w.name) + ' <span class="muted">free</span>'), 'Blocked', 'On production', 'Missing'], lines.map(l => { const left = l.boxes - got(l) - waiting(l);
         return [`<b>${esc(prodName(l.product_id))}</b>`, num(l.boxes), ...WH.map(w => `${num(Math.max(0, freeAt(l.product_id, w.id) + mineAt(l, w)))}${mineAt(l, w) ? ` <span class="badge ok">${mineAt(l, w)} blocked</span>` : ''}`), num(got(l)), waiting(l) ? num(waiting(l)) : '', left > 0 ? `<span class="badge bad">${left}</span>` : '<span class="badge ok">0</span>']; }))}</section>
     ${payCard(o)}
+    ${orderFiles(o)}
     <section class="card stack-s" data-sources><h3>Where each design's boxes come from</h3>
       ${table(['Design', 'From a warehouse', 'From production', ...(D.access.prices ? ['Rate', 'Amount'] : [])], lines.map(l => [`<b>${esc(prodName(l.product_id))}</b>`,
         esc(al(l).filter(a => !a.po_id).map(a => `${(WH.find(w => w.id === a.warehouse_id) || {}).name}: ${a.boxes}${a.dispatched ? ' (dispatched)' : ''}`).join(', ')) || '<span class="muted">None</span>',
@@ -1365,6 +1495,12 @@ EM.VIEWS.order = id => {
 EM.VIEWS.order.tab = 'orders';
 EM.VIEWS.order.title = id => (OPSD().orders.find(x => x.id === id) || { ref: 'Fulfilment' }).ref;
 
+/* PI, invoices and payment proofs (13 Oct): EGO keeps making them in Tally and uploads the PDFs here.
+   Accounts or Management add them; whoever sees the order sees them, here, on the sale and on the client's page. */
+const orderFiles = o => { const may = (D.access.ful || []).includes('money');
+  return `<section class="card stack-s" data-order-files><h3>PI, invoices and payment proofs</h3>${filesBox({ id: 'ord', order: o.id, client: o.client_id, types: ORDER_DOC_TYPES, tags: true, canAdd: may, title: 'Add PI, invoice or payment proof',
+    note: 'Made in Tally: upload the PDF (or a photo of the cheque or transfer). Choose what it is; the number, date and amount are optional. Several files at once take the same details.',
+    docs: D.documents.filter(d => d.order_id === o.id), emptyTitle: 'Nothing uploaded yet', emptyText: may ? 'Upload the PI when it is sent, the invoice when it is raised, and proof of each payment.' : 'Accounts or Management upload the PI, invoices and payment proofs here.' })}</section>`; };
 /* who moves the next step (8 Oct, by department) */
 const FUL_WHO = { stock: 'Dispatch, the Wholesale Head or Management', money: 'Accounts or Management', dispatch: 'Dispatch or Management' };
 const nextFul = o => { const FS = OS_('fulfilment_stages'), i = FS.indexOf(o.ful_stage), s1 = FS[i + 1]; return s1 === FN('Waiting on production') && o.ful_stage !== FN('Stock check') ? FS[i + 2] : [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage) ? FN('Blocked') : s1; };
@@ -1582,13 +1718,14 @@ EM.ACTIONS['cmp-upd'] = el => opsAct(el, `complaints/${el.dataset.id}/status`, {
 const myLimit = kind => levelLimit(D.lists.rules, kind, D.access.level);
 const apAmt = a => (D.lists.rules.approvals[a.kind] || {}).unit === '%' ? a.amount + '%' : inr0(a.amount);
 /* everything waiting for a yes in one place (11 Oct): credit, discounts, complaint settlements, and dealer schemes drawn up */
-const schAsks = () => SCH().list.map(sc => ({ id: sc.id, scheme: sc, kind: 'scheme', status: sc.status === 'Draft' ? 'Pending' : 'Approved', division: sc.division || 'wholesale', amount: sc.target,
-  reason: `${sc.name}${sc.reward ? ' · reward: ' + sc.reward : ''} · ${ds(sc.start_on)} to ${ds(sc.end_on)}`, requested_by: sc.created_by, created_at: sc.created_at || sc.updated_at || '', decided_by: sc.approved_by }));
+const schAsks = () => SCH().list.map(sc => ({ id: sc.id, scheme: sc, kind: 'scheme', status: sc.status === 'Draft' ? 'Pending' : sc.status === 'Rejected' ? 'Rejected' : 'Approved', division: sc.division || 'wholesale', amount: sc.target,
+  reason: `${sc.name}${sc.reward ? ' · reward: ' + sc.reward : ''} · ${ds(sc.start_on)} to ${ds(sc.end_on)}`, requested_by: sc.created_by, created_at: sc.created_at || sc.updated_at || '',
+  decided_by: sc.status === 'Rejected' ? sc.rejected_by : sc.approved_by, decision_note: sc.status === 'Rejected' ? sc.reject_reason : '' }));
 EM.VIEWS.approvals = arg => {
   const label = a => a.kind === 'scheme' ? 'Dealer scheme' : (D.lists.rules.approvals[a.kind] || { label: a.kind }).label;
   const all = [...OPSD().approvals, ...schAsks()].filter(a => matches(`${a.scheme ? a.scheme.name : clientName(a.client_id)} ${label(a)} ${a.reason || ''} ${staffName(a.requested_by)}`, [])), tab = ['Pending', 'Approved', 'Rejected'].includes(arg) ? arg : 'Pending', rows = all.filter(a => a.status === tab).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   const href = a => a.kind === 'scheme' ? '#/scheme/' + a.id : a.entity === 'opp' ? '#/opp/' + a.record_id : a.entity === 'order' ? '#/order/' + a.record_id : a.entity === 'complaint' ? '#/complaint/' + a.record_id : '#/approvals';
-  const act = a => a.kind === 'scheme' ? (canSch('approve') ? `<button class="btn sm primary" data-act="sch-approve" data-id="${a.id}">Approve</button>` : '<span class="small muted">The Owner or a Director approves</span>')
+  const act = a => a.kind === 'scheme' ? (canSch('approve') ? `<button class="btn sm primary" data-act="sch-approve" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="sch-reject" data-id="${a.id}">Reject</button>` : '<span class="small muted">The Owner or a Director approves</span>')
     : myLimit(a.kind) >= a.amount ? `<button class="btn sm primary" data-act="ap-yes" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="ap-no" data-id="${a.id}">Reject</button>` : '<span class="small muted">Above your limit</span>';
   return `<div class="stack"><div class="stack-s"><div class="kicker">Credit, discounts, complaint settlements, dealer schemes</div><h1>Approvals</h1><p class="muted">Everything waiting for a yes. A request goes to whoever's limit covers it (limits in Lists & stages › Rules and numbers); a dealer scheme goes to the Owner or a Director. The Owner has no limit.</p></div>
     ${searchBox('Company, scheme, kind, reason or who asked')}
@@ -1653,7 +1790,7 @@ function schemeRows(sc) {
     return { c, achieved, pct: sc.target ? Math.round(achieved / sc.target * 100) : 0, won: achieved >= sc.target, isNew: !!(first && first >= sc.start_on && first <= sc.end_on && inv.length), settle };
   }).sort((a, b) => b.pct - a.pct || a.c.name.localeCompare(b.c.name));
 }
-const schemeState = sc => sc.status === 'Draft' ? ['Draft: waiting for approval', 'warn'] : sc.status === 'Settled' ? ['Settled', 'ok'] : today() < sc.start_on ? [`Approved: starts ${ds(sc.start_on)}`, 'info'] : today() <= sc.end_on ? ['Running', 'info'] : ['Ended: to settle', 'warn'];
+const schemeState = sc => sc.status === 'Draft' ? ['Draft: waiting for approval', 'warn'] : sc.status === 'Rejected' ? ['Rejected', 'bad'] : sc.status === 'Settled' ? ['Settled', 'ok'] : today() < sc.start_on ? [`Approved: starts ${ds(sc.start_on)}`, 'info'] : today() <= sc.end_on ? ['Running', 'info'] : ['Ended: to settle', 'warn'];
 const canSch = right => (D.access.schemes || []).includes(right);   // draw up, approve, settle: switched in Roles & access
 EM.VIEWS.schemes = () => {
   const L = SCH().list;
@@ -1674,7 +1811,8 @@ EM.VIEWS.scheme = id => {
     return `${w ? `<a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${t}">WhatsApp</a>` : ''}${r.c.email ? `<a class="btn sm ghost" href="mailto:${esc(r.c.email)}?subject=${encodeURIComponent('Your progress: ' + sc.name)}&body=${t}">Email</a>` : ''}`; };
   return `<div class="stack">${crumbs(['Schemes', '#/schemes'], [sc.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(sc.name)}</h1><div class="row"><span class="badge ${st[1]}">${esc(st[0])}</span><span class="small muted">${esc(sc.ref || '')}</span></div></div>
-      <div class="row">${sc.status === 'Draft' && canSch('edit') ? `<button class="btn" data-act="sch-edit" data-id="${id}">Edit</button>` : ''}${sc.status === 'Draft' && canSch('approve') ? `<button class="btn primary" data-act="sch-approve" data-id="${id}">Approve</button>` : ''}${sc.status === 'Approved' && ended && canSch('settle') ? `<button class="btn primary" data-act="sch-settle" data-id="${id}">Settle</button>` : ''}${D.access.can_delete ? `<button class="btn ghost" data-act="sch-del" data-id="${id}">Delete</button>` : ''}</div></div>
+      <div class="row">${['Draft', 'Rejected'].includes(sc.status) && canSch('edit') ? `<button class="btn" data-act="sch-edit" data-id="${id}">${sc.status === 'Rejected' ? 'Change and send again' : 'Edit'}</button>` : ''}${sc.status === 'Draft' && canSch('approve') ? `<button class="btn primary" data-act="sch-approve" data-id="${id}">Approve</button><button class="btn ghost" data-act="sch-reject" data-id="${id}">Reject</button>` : ''}${sc.status === 'Approved' && ended && canSch('settle') ? `<button class="btn primary" data-act="sch-settle" data-id="${id}">Settle</button>` : ''}${D.access.can_delete ? `<button class="btn ghost" data-act="sch-del" data-id="${id}">Delete</button>` : ''}</div></div>
+    ${sc.reject_reason ? `<div class="callout ${sc.status === 'Rejected' ? 'warn' : ''}" data-sch-rejected><b>${sc.status === 'Rejected' ? 'Rejected' : 'Sent again after a rejection'}</b> by ${esc(staffName(sc.rejected_by))} · ${whenTxt(sc.rejected_at)}: ${esc(sc.reject_reason)}${sc.status === 'Rejected' ? '<br><span class="small">Whoever drew it up changes it and sends it again for approval.</span>' : ''}</div>` : ''}
     <div class="grid g4">${tile('Dealers in it', num(rows.length))}${P ? tile('Reached the target', num(rows.filter(r => r.won).length)) : ''}${P ? tile('New dealers activated', num(rows.filter(r => r.isNew).length), 'first order inside the period') : ''}${P ? tile('Invoiced in the period', inr0(rows.reduce((a, r) => a + r.achieved, 0)), 'before GST') : ''}</div>
     <section class="card stack-s"><h3>The scheme</h3>${kv([['Period', `${ds(sc.start_on)} to ${ds(sc.end_on)}`], ...(P ? [['Target per dealer', inr0(sc.target)]] : []), ['For', esc(SCHEME_WHO[sc.who]) + (sc.who === 'rating' ? ': ' + esc((sc.ratings || []).join(', ')) : '')], ['Reward', esc(sc.reward || '') || NOTSET], ['Notes', esc(sc.notes || '') || NOTSET],
       ['Drawn up by', esc(staffName(sc.created_by))], ['Approved by', sc.approved_by ? `${esc(staffName(sc.approved_by))} · ${whenTxt(sc.approved_at)}` : NOTSET], ['Settled by', sc.settled_by ? `${esc(staffName(sc.settled_by))} · ${whenTxt(sc.settled_at)}` : NOTSET]])}</section>
@@ -1700,7 +1838,7 @@ function openSchemeForm(sc) {
       <div data-sch-part="chosen" ${v.who === 'chosen' ? '' : 'hidden'} class="span2">${G.multi({ key: 'dealers', label: 'Dealers' }, v.dealers, 'scf', dealers)}</div>
       <div class="field span2"><label for="scf-reward">Reward</label><input class="input" id="scf-reward" value="${esc(v.reward || '')}" placeholder="e.g. 2% credit note, or a trip"></div>
       <div class="field span2"><label for="scf-notes">Notes</label><textarea class="input" id="scf-notes" rows="2">${esc(v.notes || '')}</textarea></div></div>
-      ${errBox('scf-err')}<div class="row sticky-actions"><button class="btn primary" data-act="sch-save" data-id="${sc ? sc.id : ''}">${sc ? 'Save' : 'Save as draft'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+      ${errBox('scf-err')}<div class="row sticky-actions"><button class="btn primary" data-act="sch-save" data-id="${sc ? sc.id : ''}">${sc ? (sc.status === 'Rejected' ? 'Save and send again for approval' : 'Save') : 'Save as draft'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
 document.addEventListener('change', e => { if (!e.target.matches('[data-sch-who]')) return; document.querySelectorAll('[data-sch-part]').forEach(x => { x.hidden = x.dataset.schPart !== e.target.value; }); });
 EM.ACTIONS['sch-add'] = () => openSchemeForm(null);
@@ -1710,11 +1848,22 @@ EM.ACTIONS['sch-save'] = async el => {
   const f = qs('#scf'), pick = n => [...f.querySelectorAll(`[name="${n}"]:checked`)].map(x => x.value);
   const b = { name: qs('#scf-name').value, start_on: qs('#scf-start').value, end_on: qs('#scf-end').value, target: Number(qs('#scf-target').value || 0), who: f.querySelector('[data-sch-who]').value, ratings: pick('ratings'), dealers: pick('dealers'), reward: qs('#scf-reward').value, notes: qs('#scf-notes').value };
   if (el.dataset.id) b.id = el.dataset.id;
+  const again = el.textContent.includes('again');   // a rejected scheme goes back for approval
   busy(el, true);
-  try { const r = await API('POST', '/api/schemes', b); await schReload(); EM.closeModal(); EM.toast(`<b>${esc(b.name)}</b> saved. ${el.dataset.id ? '' : 'It runs once the Owner or a Director approves it.'}`); location.hash = '#/scheme/' + r.id; EM.rerender(); }
+  try { const r = await API('POST', '/api/schemes', b); await schReload(); EM.closeModal(); EM.toast(`<b>${esc(b.name)}</b> saved. ${!el.dataset.id || again ? 'It runs once the Owner or a Director approves it.' : ''}`); location.hash = '#/scheme/' + r.id; EM.rerender(); }
   catch (x) { busy(el, false); showErr('scf-err', x.errors || x.message); }
 };
 EM.ACTIONS['sch-approve'] = async el => { busy(el, true); try { await API('POST', `/api/schemes/${el.dataset.id}/approve`, {}); await schReload(); EM.toast('<b>Scheme approved</b>'); EM.rerender(); } catch (x) { busy(el, false); bubbleNear(el, x.message); } };
+EM.ACTIONS['sch-reject'] = el => { const sc = SCH().list.find(x => x.id === el.dataset.id);
+  EM.modal(`<h2>Reject ${esc(sc.name)}?</h2><p class="muted">Say why. Whoever drew it up sees the reason, changes the scheme and sends it again.</p>
+    <div class="field" style="margin-top:12px" data-field="reject_reason"><label for="sr-why">Why it is rejected *</label><textarea class="input" id="sr-why" rows="3" placeholder="e.g. Target too low for A-rated dealers; make it ₹5 lakh"></textarea></div>
+    ${errBox('sr-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="sch-reject-go" data-id="${sc.id}">Reject</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
+EM.ACTIONS['sch-reject-go'] = async el => {
+  const reason = qs('#sr-why').value.trim();
+  if (!reason) return showErr('sr-err', 'Why it is rejected is compulsory');
+  busy(el, true);
+  try { await API('POST', `/api/schemes/${el.dataset.id}/reject`, { reason }); await schReload(); EM.closeModal(); EM.toast('<b>Scheme rejected</b>'); EM.rerender(); } catch (x) { busy(el, false); showErr('sr-err', x.errors || x.message); }
+};
 EM.ACTIONS['sch-settle'] = el => {
   const sc = SCH().list.find(x => x.id === el.dataset.id), won = schemeRows(sc).filter(r => r.won);
   EM.modal(`<h2>Settle ${esc(sc.name)}</h2><p class="muted">${won.length} dealer${won.length === 1 ? '' : 's'} reached the target. Say how each one is settled (credit note, cheque, trip…).</p>
@@ -2271,7 +2420,7 @@ function dateFilter(st, key, label) {   // st: the screen's filter state; key: w
   return `<label class="field" style="min-width:170px"><span class="small muted">${esc(label)}</span><select class="input" data-df="${key}" data-dfk="period" data-keep-order>${PERIODS.map(([v, l]) => `<option value="${v}" ${st.period === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>
     ${custom ? `<label class="field" style="min-width:150px"><span class="small muted">From</span><input class="input" type="date" data-df="${key}" data-dfk="from" value="${esc(st.from || '')}" aria-label="From date"></label><label class="field" style="min-width:150px"><span class="small muted">To</span><input class="input" type="date" data-df="${key}" data-dfk="to" value="${esc(st.to || '')}" aria-label="To date"></label>` : ''}`;
 }
-const DF_STATE = { ob: () => EM.ob, co: () => EM.co };
+const DF_STATE = { ob: () => EM.ob, co: () => EM.co, lost: () => EM.lostF };
 document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.df; if (!k || !DF_STATE[k]) return; DF_STATE[k]()[e.target.dataset.dfk] = e.target.value; EM.rerender(); });
 function inPeriod(ts, p, from, to) {
   if (p === 'all') return true; if (!ts) return false;
@@ -2373,6 +2522,9 @@ function bubbleNear(el, msg) {
    Rest the pointer on a field, a button, a menu item, a stage or a card for two seconds and a
    small note says what it is and what it does. */
 const FIELD_HELP = {
+  doc_type: 'What the file is. On an order: PI, Invoice, Payment proof or Other.', doc_name: 'A name to find it by. Left blank, the file name is used.', doc_files: 'Pick or drop one or many files at once: PDF, photos, Word, Excel. Up to 25 MB each, 10 at a time.',
+  doc_no: 'The PI or invoice number as it is in Tally. Optional.', doc_date: 'The date on the PI, invoice or payment. Optional.', doc_amount: 'The amount on it, in rupees. Optional; shown only to roles that see money.',
+  reject_reason: 'Why the scheme is not approved, in plain words. Whoever drew it up reads this, changes the scheme and sends it again.',
   kind: 'What this record is: distributor, dealer, sub-dealer, architect firm, solo architect or a personal contact. It decides which fields are asked.',
   name: 'The name the team knows it by. For a company, the trading name; the legal name has its own field.',
   client_type: 'For a person with no company: an individual, or what kind of firm (builder, hotel, corporate...). The choices are edited in Lists & stages.',
@@ -2413,6 +2565,11 @@ const FIELD_HELP = {
 };
 const TYPE_HELP = { mobile: 'A 10-digit mobile; the country code is on the left.', money: 'An amount in rupees.', date: 'Pick the date from the calendar.', select: 'Pick one from the list.', multi: 'Pick one or more from the list.', cats: 'Pick one or more categories.', cities: 'Pick one or more cities.', yesno: 'Yes or No.', number: 'A whole number.', decimal: 'A number; decimals are fine.', email: 'An email address.' };
 const ACT_HELP = {
+  'fu-up': 'Upload the files chosen above. Each is kept with who added it and when.', 'fu-view': 'Open the file in the browser. Nothing is downloaded. Word, Excel and PowerPoint open in Microsoft\'s free web viewer.',
+  'fu-dl': 'Save the file to this device with its real name.', 'fu-share': 'Send the file on WhatsApp, by email or to any app. The receiver opens it with a link that needs no sign-in and stops working after the days chosen (7 unless changed).',
+  'fu-share-native': 'Open the phone\'s share menu with the file attached (or its link where the browser cannot attach files).', 'fu-share-copy': 'Copy the link to paste anywhere.', 'fu-del': 'Remove this file for everyone.',
+  'sch-reject': 'Reject this scheme (Owner or Director) with a reason. Whoever drew it up can change it and send it again.', 'sch-reject-go': 'Reject it. The reason is compulsory and is shown on the scheme and in Approvals.',
+  'lost-csv': 'Download the lost sales shown, with every filter applied, as a file Excel opens.',
   'org-add': 'Add a company with its point of contact, address, areas and business details. Everything else can be added later.', 'person-add': 'Add a person: at a dealer, at an architect firm, or a personal contact.',
   'opp-add': 'Start a sale. For wholesale, type the designs, boxes and rate; the total is worked out.', 'opp-move': 'Move this sale to the stage chosen on the left. Some stages check things first (designs, credit, approvals).',
   'opp-edit': 'Change this sale\'s details and designs.', 'client-edit': 'Change this record\'s details.', 'client-save': 'Save. Anything wrong is shown just above the field.',

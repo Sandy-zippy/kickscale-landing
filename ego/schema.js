@@ -717,6 +717,8 @@ const ROLE_TABS = {
   office_admin: ['home', 'people', 'architects', 'dealers', 'inventory', 'complaints', 'account'],
   ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'account'],
 };
+/* what a file kept on a fulfilment order is (13 Oct): EGO makes these in Tally and uploads the PDF here */
+const ORDER_DOC_TYPES = ['PI', 'Invoice', 'Payment proof', 'Other'];
 const SCHEME_WHO = { all: 'Every dealer, distributor and sub-dealer', chosen: 'The dealers chosen below', rating: 'Dealers with these ratings' };
 
 /* the roles each stage set has (by their first names), and what is locked to begin with */
