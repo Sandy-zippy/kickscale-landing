@@ -21,7 +21,9 @@ function allowedTab(t) {
   if (['home', 'account', 'soon'].includes(t)) return true;
   /* each role has its own screens (8 Oct); within them, the access rules below still apply */
   const only = (D.access.tabs || []).length ? D.access.tabs : null;   // the screens ticked for this role in Roles & access
-  if (only && !['team', 'lists', 'integrations'].includes(t) && !only.includes(t)) return false;
+  if (only && !['team', 'lists', 'integrations', 'followups', 'bin'].includes(t) && !only.includes(t)) return false;
+  if (t === 'bin') return isOwner() || !!D.access.can_delete;   // whoever may delete sees what they deleted; an Owner sees everything
+  if (t === 'followups') return holds();   // My follow-ups opens from Home, like Lost sales from Opportunities
   if (t === 'integrations') return isOwner() && !D.access.viewing_as;   // every API key in one place: an Owner only
   if (['clients', 'people', 'opps', 'import', 'inventory'].includes(t)) return holds();
   if (t === 'dealers') return holds() && canDiv('wholesale');
@@ -44,10 +46,10 @@ const segBadge = div => `<span class="badge plain" data-seg>${esc(SEG[div] || di
 const ownReadonly = () => D.access.viewing_as ? !!D.access.own_readonly : !!D.access.readonly;
 const isBothView = () => (EM.div === 'both' && D.user.division === 'both') || ownReadonly();
 /* opening tabs, filters and menus is looking, not changing */
-const NAV_ACTS = new Set(['role-toggle', 'opp-mine', 'invf-clear', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab',
+const NAV_ACTS = new Set(['hist-open', 'role-toggle', 'opp-mine', 'invf-clear', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab',
   /* opening, downloading and sharing a kept file, and downloading a report, change no record (13 Oct) */
   'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv']);
-const LOOK_ACTS = new Set(['view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
+const LOOK_ACTS = new Set(['hist-open', 'view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
   'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass',
   /* so are API keys: one set for the whole company (Integrations, 12 Oct) */
@@ -70,6 +72,8 @@ EM.render = (...a) => {
   qs('#shell').classList.toggle('view-both', both);
   hideChangeButtons(qs('#view'));
   if (!allowedTab('import')) qs('#view').querySelectorAll('a[href="#/import"]').forEach(a => a.remove());   // no Import screen, no Import button
+  histButton();
+  if (EM.route().r !== 'bin') EM.BIN = null;   // the bin is read again each time it is opened
   if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
@@ -84,12 +88,13 @@ const NAV_ORDER = {
 EM.navTabs = () => ({
   main: (NAV_ORDER[EM.div] || NAV_ORDER.both).map(k => [k, NAV_LABEL[k]])
     .filter(([k]) => allowedTab(k) && !(['dealers', 'orders', 'p200', 'schemes'].includes(k) && EM.div === 'retail') && !(k === 'installation' && EM.div === 'wholesale')),
-  shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['integrations', 'Integrations'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
+  shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['integrations', 'Integrations'], ['bin', 'Recycle bin'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
 Object.assign(ICON, {
   opps: ICON.leads, schemes: ICON.targets, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, p200: ICON.targets, orderbook: ICON.orders || ICON.leads, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
+  bin: _i('<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/><path d="M10 11v5M14 11v5"/>'),
   integrations: _i('<path d="M9 3.5v4M15 3.5v4"/><path d="M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0z"/><path d="M12 16v4.5"/>'),
 });
 EM.topExtras = () => (D.user.division === 'both' ? `<div class="seg divsw" role="tablist" aria-label="Division">${[['both', 'Both'], ['wholesale', 'Wholesale · EGO'], ['retail', 'Retail · Big E']].map(([k, l]) => `<button role="tab" aria-selected="${EM.div === k}" class="${EM.div === k ? 'on' : ''}" data-act="div" data-d="${k}">${l}</button>`).join('')}</div>` : '')
@@ -401,13 +406,13 @@ function roleDash(kind) {
     return `<div class="stack">${who}${cs.length ? '' : empty('Nothing saved yet', 'Add a dealer with its team, an architect firm with its team, or a person, or fill the Excel file and upload it. Every number on this page is counted from what you save.', addButtons())}
       <div class="grid g4">${tile('Dealers', num(cs.filter(c => DEALER_KINDS.includes(c.kind)).length), '', '#/dealers')}${tile('Architects', num(cs.filter(c => ARCH_KINDS.includes(c.kind)).length), '', '#/architects')}${tile('People', num(peopleRows().length), '', '#/people')}${tile('Open opportunities', num(open.length), P && open.length ? inr0(sumV(open)) : '', '#/opps')}</div>
       <div class="grid g4">${tile('Won this month', num(won.length), P && won.length ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Orders in fulfilment', num(O.orders.filter(o => o.ful_stage !== lastOf(OS_('fulfilment_stages'))).length), short ? `${num(short)} boxes short` : '', '#/orders')}${tile('Money due', P && dueAmt > 0 ? inr0(dueAmt) : num(invDue.length), invDue.length ? `${num(invDue.length)} invoices · ${num(O.orders.filter(o => o.credit_hold).length)} on credit hold` : '', '#/orders')}${tile('Approvals waiting', num(pend.length), pend.length ? `${num(pend.filter(a => levelLimit(D.lists.rules, a.kind, D.access.level) >= a.amount).length)} you can decide` : '', '#/approvals')}</div>
-      <section class="card stack-s" data-dash-team><h3>The sales team</h3>${teamTable(sellers)}</section>
+      ${fuRollup()}<section class="card stack-s" data-dash-team><h3>The sales team</h3>${teamTable(sellers)}</section>
       <div class="grid g2"><section class="card stack-s"><h3>Wholesale pipeline</h3>${stageTable()}</section><section class="card stack-s"><h3>Fulfilment</h3>${fulTable()}</section></div>${schemeCard()}${notConnectedCard()}</div>`;
   }
   if (kind === 'head') {
     const os = D.opportunities.filter(o => o.pipeline === 'wholesale'), open = os.filter(isOpen), won = os.filter(o => isWon(o) && thisMonthD(o.closed_at)), mineAp = O.approvals.filter(a => a.status === 'Pending' && levelLimit(D.lists.rules, a.kind, D.access.level) >= a.amount);
     return `<div class="stack">${who}<div class="grid g4">${tile('Team', num(team.length), 'people reporting to you', '#/team')}${tile('Open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps/wholesale')}${tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Approvals for you', num(mineAp.length), mineAp.length ? 'discounts and credit waiting' : 'nothing waiting', '#/approvals')}</div>
-      <section class="card stack-s" data-dash-team><h3>Your team</h3>${teamTable(team)}</section>
+      ${fuCount([me().id, ...team], 'Follow-ups in your team')}<section class="card stack-s" data-dash-team><h3>Your team</h3>${teamTable(team)}</section>
       <div class="grid g2"><section class="card stack-s"><h3>Wholesale pipeline</h3>${stageTable()}</section><section class="card stack-s"><h3>Orders short of stock</h3>${ordersAt([FN('Stock check'), FN('Waiting on production')], [['Missing', o => missingOf(o.id) ? `<span class="badge bad">${num(missingOf(o.id))} boxes</span>` : '<span class="badge ok">covered</span>']])}</section></div>
       ${nextTable(open.filter(o => o.next_date && o.next_date < t), 'Overdue next actions in your team')}${schemeCard()}</div>`;
   }
@@ -418,7 +423,7 @@ function roleDash(kind) {
     const tiles = kind === 'tele'
       ? tile('Calls due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Dealers due a call', num(callDue.length), 'past their call-every days', '#/dealers') + tile('New and contacted leads', num(open.filter(o => o.stage === (D.lists.stages[o.pipeline] || [])[0] || o.stage === (D.lists.stages[o.pipeline] || [])[1]).length), '', '#/opps') + tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook')
       : tile('My dealers', num(myDealers.length), '', '#/dealers') + tile('My open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps') + tile('Next actions due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook');
-    return `<div class="stack">${who}<div class="grid g4">${tiles}</div>${nextTable(open, kind === 'tele' ? 'Your calls: due today and overdue' : 'Your next actions: due today and overdue')}
+    return `<div class="stack">${who}${fuCard(kind === 'tele' ? 'Your calls and follow-ups: due today and overdue' : 'Your follow-ups: due today and overdue')}<div class="grid g4">${tiles}</div>
       ${kind === 'tele' && callDue.length ? `<section class="card stack-s"><h3>Dealers due a call</h3>${table(['Dealer', 'Call every', 'City'], callDue.map(c => ({ href: '#/client/' + c.id, cells: [`<b>${esc(c.name)}</b>`, `${num(c.extra.contact_every_days)} days`, esc(c.city)] })))}</section>` : ''}
       <section class="card stack-s"><h3>Your orders in fulfilment</h3>${myOrders.length ? table(['Order', 'Dealer', 'Where it is'], myOrders.map(o => ({ href: '#/order/' + o.id, cells: [`<b>${esc(o.ref)}</b>`, esc(clientName(o.client_id)), `<span class="badge info">${esc(o.ful_stage)}</span>`] }))) : '<p class="small muted">None right now. An order comes here when your opportunity reaches Order confirmed.</p>'}</section>
       ${team.length ? `<section class="card stack-s" data-dash-team><h3>Your team</h3>${teamTable(team)}</section>` : ''}${schemeCard(c => c.owner_id === me().id || team.includes(c.owner_id))}</div>`;
@@ -694,6 +699,7 @@ EM.ACTIONS['client-save'] = async el => {
     const r = await API('POST', '/api/clients', input);
     upsertLocal(D.clients, r.client);
     if (r.contacts) D.contacts = D.contacts.filter(k => k.client_id !== r.client.id).concat(r.contacts);
+    if (r.followups) fuApply(r);
     EM.closeModal();
     EM.toast(`<b>${esc(r.client.name)} ${r.created ? 'added' : 'saved'}</b><ul><li>${esc(kindLabel(r.client.kind))} · ${esc(r.client.city)} · ${esc(r.client.ref || '')}</li>${r.created && team.length ? `<li>${team.length} ${team.length === 1 ? 'person' : 'people'} in the team${poc ? `, ${esc(poc.name)} as the point of contact` : ''}</li>` : ''}<li>Saved to EGO Master</li></ul>`);
     location.hash = `#/client/${r.client.id}`; EM.rerender();
@@ -708,14 +714,14 @@ EM.VIEWS.client = arg => {
   const cts = D.contacts.filter(k => k.client_id === id), ops = D.opportunities.filter(o => o.client_id === id), docs = D.documents.filter(d => d.client_id === id);
   const org = ['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group);
   const nOrd = buildOrders().filter(x => x.client_id === id).length;
-  const tabs = [['overview', 'Overview'], ['orders', `Orders (${nOrd})`], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
-  const body = { overview: clientOverview, orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>' }[tab] || clientOverview;
+  const tabs = [['overview', 'Overview'], ['activity', 'Activity'], ['orders', `Orders (${nOrd})`], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
+  const body = { overview: clientOverview, activity: c2 => activityPanel({ clientId: c2.id }), orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>' }[tab] || clientOverview;
   const home = homeOf(c);
   return `<div class="stack">${crumbs(home, [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
       <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
       <p class="muted">${esc(fmtMobile(c.mobile))} · ${esc(c.city)}${c.region ? ', ' + esc(c.region) : ''} · owner ${esc(staffName(c.owner_id))}</p></div>
-      <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button>${D.access.can_delete ? `<button class="btn ghost" data-act="client-del" data-id="${id}">Delete</button>` : ''}</div></div>
+      <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn" data-act="fu-add" data-client="${id}">+ Follow-up</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button>${D.access.can_delete ? `<button class="btn ghost" data-act="client-del" data-id="${id}">Delete</button>` : ''}</div></div>
     ${subtabs(`#/client/${id}`, tab, tabs)}
     ${body(c, cts, ops, docs)}</div>`;
 };
@@ -777,7 +783,7 @@ async function loadHistory(id) {
 }
 EM.ACTIONS['client-del'] = el => {
   const c = CL()[el.dataset.id];
-  EM.modal(`<h2>Delete ${esc(c.name)}?</h2><p class="muted">Its contacts, opportunities and documents are deleted with it. This cannot be undone.</p>${errBox('del-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="client-del-go" data-id="${c.id}">Delete</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+  EM.modal(`<h2>Delete ${esc(c.name)}?</h2><p class="muted">Its contacts, opportunities, files and follow-ups go with it, into the Recycle bin for 30 days. An Owner can put it all back from there.</p>${errBox('del-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="client-del-go" data-id="${c.id}">Delete</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
 };
 EM.ACTIONS['client-del-go'] = async el => {
   const id = el.dataset.id; busy(el, true);
@@ -786,7 +792,8 @@ EM.ACTIONS['client-del-go'] = async el => {
     D.clients = D.clients.filter(c => c.id !== id); D.contacts = D.contacts.filter(k => k.client_id !== id);
     const gone = new Set(D.opportunities.filter(o => o.client_id === id).map(o => o.id));
     D.opportunities = D.opportunities.filter(o => !gone.has(o.id)); D.history = D.history.filter(h => !gone.has(h.opp_id)); D.documents = D.documents.filter(d => d.client_id !== id);
-    EM.closeModal(); EM.toast('Deleted.'); location.hash = '#/people';
+    D.followups = FUS().filter(f => f.client_id !== id); D.activities = ACTS().filter(a => a.client_id !== id);
+    EM.closeModal(); EM.toast('Moved to the Recycle bin for 30 days.'); location.hash = '#/people';
   } catch (x) { busy(el, false); showErr('del-err', x.message); }
 };
 
@@ -813,7 +820,7 @@ EM.ACTIONS['contact-save'] = async el => {
 EM.ACTIONS['contact-del'] = async el => {
   const k = D.contacts.find(x => x.id === el.dataset.id);
   if (!confirm(`Remove ${k.name} from ${CL()[k.client_id] ? CL()[k.client_id].name : 'here'}?`)) return;
-  try { await API('DELETE', '/api/contacts/' + k.id); D.contacts = D.contacts.filter(x => x.id !== k.id); D.opportunities.forEach(o => { if (o.contact_id === k.id) o.contact_id = ''; }); EM.toast(`${esc(k.name)} removed.`); EM.rerender(); } catch (x) { EM.toast(esc(x.message)); }
+  try { await API('DELETE', '/api/contacts/' + k.id); D.contacts = D.contacts.filter(x => x.id !== k.id); D.opportunities.forEach(o => { if (o.contact_id === k.id) o.contact_id = ''; }); EM.toast(`${esc(k.name)} removed, in the Recycle bin for 30 days.`); EM.rerender(); } catch (x) { EM.toast(esc(x.message)); }
 };
 
 /* ---------------------------------------------------------------- files: ONE upload for every kept file (13 Oct)
@@ -835,7 +842,7 @@ function filesBox(o) {   // o: { id, client, order, types, docs, canAdd, tags, t
       ${P ? `<div class="field" data-field="doc_amount"><label for="${b}-amt">Amount (optional)</label>${G.adorn({ type: 'money', key: 'amount' }, `<input class="input" type="number" min="0" step="0.01" id="${b}-amt">`)}</div>` : ''}`
     : `<div class="field" data-field="doc_name"><label for="${b}-name">Name (optional)</label><input class="input" id="${b}-name" placeholder="e.g. GST certificate 2026"></div>`}
       <div class="field span2" data-field="doc_files"><label for="${b}-file">Files: one or many, up to 25 MB each</label><input class="input" id="${b}-file" type="file" multiple accept="${FILE_ACCEPT}"></div></div>
-      ${errBox(b + '-err')}<div class="row"><button class="btn primary" data-act="fu-up" data-box="${o.id}" data-client="${o.client || ''}" data-order="${o.order || ''}">Upload</button></div></form>` : '';
+      ${errBox(b + '-err')}<div class="row"><button class="btn primary" data-act="fu-up" data-box="${o.id}" data-client="${o.client || ''}" data-order="${o.order || ''}" data-followup="${o.followup || ''}">Upload</button></div></form>` : '';
   const rows = o.docs.slice().sort((x, y) => String(y.created_at).localeCompare(String(x.created_at)));
   const list = rows.length ? table(['File', 'What it is', ...(tagCols ? ['Number', 'Date', ...(P ? ['Amount'] : [])] : []), ...(o.showOrder ? ['On order'] : []), 'Size', 'Added', ''], rows.map(d => [
     `<b>${esc(d.name)}</b>${d.file_name && d.file_name !== d.name ? `<div class="small muted">${esc(d.file_name)}</div>` : ''}`, esc(d.type), ...(tagCols ? [esc(d.doc_no || ''), d.doc_date ? ds(d.doc_date) : '', ...(P ? [d.amount != null ? inr0(d.amount) : ''] : [])] : []),
@@ -851,9 +858,10 @@ EM.ACTIONS['fu-up'] = async el => {
   const big = files.find(f => f.size > 25 * 1024 * 1024); if (big) return showErr(b + '-err', `${big.name} is over 25 MB.`);
   const fd = new FormData(); files.forEach(f => fd.append('file', f));
   fd.append('type', v('type')); fd.append('name', v('name')); fd.append('doc_no', v('no')); fd.append('doc_date', v('date')); fd.append('amount', v('amt'));
-  if (el.dataset.order) fd.append('order_id', el.dataset.order); else fd.append('client_id', el.dataset.client);
+  if (el.dataset.order) fd.append('order_id', el.dataset.order); else if (el.dataset.followup) fd.append('followup_id', el.dataset.followup); else fd.append('client_id', el.dataset.client);
   busy(el, true);
-  try { const r = await API('POST', '/api/documents', fd, true); D.documents.push(...r.documents); EM.toast(`<b>${r.documents.length} file${r.documents.length === 1 ? '' : 's'}</b> uploaded.`); EM.rerender(); }
+  try { const r = await API('POST', '/api/documents', fd, true); D.documents.push(...r.documents); EM.toast(`<b>${r.documents.length} file${r.documents.length === 1 ? '' : 's'}</b> uploaded.`);
+    const box = el.dataset.followup && el.closest('#overlay [data-files]'); if (box) box.outerHTML = fuFilesBox(el.dataset.followup); else EM.rerender(); }
   catch (x) { busy(el, false); showErr(b + '-err', x.message); }
 };
 const docTok = () => { try { return localStorage.getItem('ego-live-token') || ''; } catch (e) { return window.__egoTok || ''; } };
@@ -910,7 +918,7 @@ EM.ACTIONS['fu-share-copy'] = async el => { const S = EM.share; if (!S) return; 
 EM.ACTIONS['fu-del'] = async el => {
   const d = D.documents.find(x => x.id === el.dataset.id);
   if (!confirm(`Remove ${d.name}?`)) return;
-  try { await API('DELETE', '/api/documents/' + d.id); D.documents = D.documents.filter(x => x.id !== d.id); EM.toast(`${esc(d.name)} removed.`); EM.rerender(); } catch (x) { bubbleNear(el, x.message); }
+  try { await API('DELETE', '/api/documents/' + d.id); D.documents = D.documents.filter(x => x.id !== d.id); EM.toast(`${esc(d.name)} removed, in the Recycle bin for 30 days.`); EM.rerender(); } catch (x) { bubbleNear(el, x.message); }
 };
 
 /* ---------------------------------------------------------------- opportunities */
@@ -924,7 +932,7 @@ EM.VIEWS.opps = arg => {
   const stages = D.lists.stages[p] || [];
   const t = today();
   const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>
-    <div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}</div>`;
+    <div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}<button class="btn sm ghost" data-act="fu-add" data-client="${o.client_id}" data-opp="${o.id}" style="margin-top:4px">+ Follow-up</button></div>`;
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
       <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
@@ -1007,13 +1015,14 @@ EM.VIEWS.opp = id => {
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.title)}</h1>
       <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}<span class="small muted">${esc(o.ref || '')}</span></div>
       <p class="muted"><a href="#/client/${o.client_id}">${esc(c.name)}</a>${contact ? ` · ${esc(contact.name)} ${esc(fmtMobile(contact.mobile))}` : ''}</p></div>
-      <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}<button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${D.access.can_delete ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
+      <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}<button class="btn" data-act="fu-add" data-client="${o.client_id}" data-opp="${id}">+ Follow-up</button><button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${D.access.can_delete ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
     <section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>
       <div class="row"><select class="input" id="move-stage" data-keep-order aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
     ${PIPELINES[o.pipeline].lines ? oppLinesCard(o) : ''}
     ${(() => { const ord = OPSD().orders.find(x => x.opp_id === o.id); return ord ? orderFiles(ord) : ''; })()}
     <div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, v[f.key])]))}</section>
-      <section class="card stack-s"><h3>Stage history</h3>${hist.length ? `<div class="timeline">${hist.map(h => `<div class="on"><b>${esc(h.to_stage)}</b>${h.from_stage ? ` <span class="small muted">from ${esc(h.from_stage)}</span>` : ''}<div class="small muted">${ds(h.at)} ${tFmt(h.at)} · ${esc(staffName(h.by_staff))}${h.note ? ' · ' + esc(h.note) : ''}</div></div>`).join('')}</div>` : '<p class="muted">No moves yet.</p>'}</section></div></div>`;
+      <section class="card stack-s"><h3>Stage history</h3>${hist.length ? `<div class="timeline">${hist.map(h => `<div class="on"><b>${esc(h.to_stage)}</b>${h.from_stage ? ` <span class="small muted">from ${esc(h.from_stage)}</span>` : ''}<div class="small muted">${ds(h.at)} ${tFmt(h.at)} · ${esc(staffName(h.by_staff))}${h.note ? ' · ' + esc(h.note) : ''}</div></div>`).join('')}</div>` : '<p class="muted">No moves yet.</p>'}</section></div>
+    ${activityPanel({ clientId: o.client_id, oppId: id })}</div>`;
 };
 EM.VIEWS.opp.tab = 'opps';
 EM.VIEWS.opp.title = id => (D.opportunities.find(x => x.id === id) || { title: 'Opportunity' }).title;
@@ -1032,7 +1041,7 @@ function openOppForm(o, keep) {
   const oh = f => { const h = fieldHtml(f, v[f.key], 'of', { pipeline, client: client.id }); return f.key === 'stage' ? h.replace('<select', '<select data-opp-redraw') : f.key === 'title' ? h.replace('<input', `<input placeholder="Left blank: ${esc(autoName)}"`) : h; };
   const lines0 = (v.lines || (o ? (OPSD().oppLines || []).filter(l => l.opp_id === o.id) : [])), inFul = o && OPSD().orders.some(x => x.opp_id === o.id);
   EM.modal(`<h2>${o ? 'Edit opportunity' : 'Add an opportunity'}</h2>
-    <form id="of" class="stack" onsubmit="return false" style="margin-top:14px" data-id="${o ? o.id : ''}"><div class="fgrid">
+    <form id="of" class="stack" onsubmit="return false" style="margin-top:14px" data-id="${o ? o.id : ''}" data-seen="${esc(JSON.stringify(o ? { action: o.next_action || '', date: o.next_date || '' } : {}))}"><div class="fgrid">
       ${o ? `<div class="field"><label>Client</label><input class="input" value="${esc(client.name)}" disabled><input type="hidden" name="client_id" value="${client.id}"></div>`
     : `<div class="field"><label for="of-client_id">Client *</label><select class="input" id="of-client_id" name="client_id" data-opp-redraw>${clients.map(c => `<option value="${c.id}" ${c.id === client.id ? 'selected' : ''}>${esc(c.name)} · ${esc(kindLabel(c.kind))}</option>`).join('')}</select></div>`}
       ${G.select(OPP_FIELDS[0], pipeline, 'of', pipes.map(p => [p, PIPELINES[p].label]), false).replace('<select', '<select data-opp-redraw')}
@@ -1066,6 +1075,7 @@ async function saveOpp(input, el, errId) {
     const r = await API('POST', '/api/opportunities', input);
     upsertLocal(D.opportunities, r.opportunity);
     D.history = D.history.filter(h => h.opp_id !== r.opportunity.id).concat(r.history);
+    if (r.followups) fuApply({ followups: r.followups, client: null, opportunity: null, clientId: r.opportunity.client_id });
     /* a wholesale sale also changes its designs, approvals and (at payment) its fulfilment: read them again */
     if (PIPELINES[r.opportunity.pipeline].lines) { const fresh = await API('GET', '/api/bootstrap'); Object.assign(D, fresh); }
     return r;
@@ -1078,7 +1088,7 @@ async function saveOpp(input, el, errId) {
 EM.ACTIONS['opp-save'] = async el => {
   const form = qs('#of'), input = readForm(form, OPP_FIELDS);
   input.client_id = form.querySelector('[name=client_id]').value;
-  if (form.dataset.id) input.id = form.dataset.id;
+  if (form.dataset.id) { input.id = form.dataset.id; input.next_seen = JSON.parse(form.dataset.seen || '{}'); }
   if (qs('#olines')) {
     input.lines = readOrder(); input.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0);
     if (input.lines.some(l => !l.product_id || !Number.isInteger(l.boxes) || l.boxes <= 0)) return showErr('of-err', 'Every design line needs a design and a whole number of boxes (or remove the line).');
@@ -1089,7 +1099,7 @@ EM.ACTIONS['opp-save'] = async el => {
   EM.closeModal(); EM.toast(`<b>${esc(r.opportunity.title)}</b> ${r.created ? 'added' : 'saved'} · ${esc(r.opportunity.stage)}`);
   location.hash = `#/opp/${r.opportunity.id}`; EM.rerender();
 };
-const oppInput = o => ({ ...o.extra, id: o.id, client_id: o.client_id, pipeline: o.pipeline, title: o.title, stage: o.stage, value: o.value ?? '', owner_id: o.owner_id, contact_id: o.contact_id, source: o.source, next_action: o.next_action, next_date: o.next_date, lost_reason: o.lost_reason });
+const oppInput = o => ({ ...o.extra, next_seen: { action: o.next_action || '', date: o.next_date || '' }, id: o.id, client_id: o.client_id, pipeline: o.pipeline, title: o.title, stage: o.stage, value: o.value ?? '', owner_id: o.owner_id, contact_id: o.contact_id, source: o.source, next_action: o.next_action, next_date: o.next_date, lost_reason: o.lost_reason });
 EM.ACTIONS['opp-move'] = async el => {
   const o = D.opportunities.find(x => x.id === el.dataset.id), to = qs('#move-stage').value;
   if (to === o.stage) return;
@@ -1110,7 +1120,7 @@ EM.ACTIONS['opp-lost'] = async el => {
 EM.ACTIONS['opp-del'] = async el => {
   const o = D.opportunities.find(x => x.id === el.dataset.id);
   if (!confirm(`Delete ${o.title}? Its stage history goes with it.`)) return;
-  try { await API('DELETE', '/api/opportunities/' + o.id); D.opportunities = D.opportunities.filter(x => x.id !== o.id); D.history = D.history.filter(h => h.opp_id !== o.id); location.hash = '#/opps/' + o.pipeline; } catch (x) { EM.toast(esc(x.message)); }
+  try { await API('DELETE', '/api/opportunities/' + o.id); D.opportunities = D.opportunities.filter(x => x.id !== o.id); D.history = D.history.filter(h => h.opp_id !== o.id); D.followups = FUS().filter(f => f.opp_id !== o.id); EM.toast('Moved to the Recycle bin for 30 days.'); location.hash = '#/opps/' + o.pipeline; } catch (x) { EM.toast(esc(x.message)); }
 };
 
 /* ---------------------------------------------------------------- inventory
@@ -1333,7 +1343,7 @@ EM.ACTIONS['inv-save'] = async el => {
 EM.ACTIONS['prod-del'] = async el => {
   const p = INVD().products.find(x => x.id === el.dataset.id);
   if (!confirm(`Delete ${p.name}?`)) return;
-  try { await API('DELETE', '/api/products/' + p.id); D.inventory.products = D.inventory.products.filter(x => x.id !== p.id); location.hash = '#/inventory/designs'; } catch (x) { EM.toast(esc(x.message)); }
+  try { await API('DELETE', '/api/products/' + p.id); D.inventory.products = D.inventory.products.filter(x => x.id !== p.id); EM.toast('Moved to the Recycle bin for 30 days.'); location.hash = '#/inventory/designs'; } catch (x) { EM.toast(esc(x.message)); }
 };
 /* stock in, stock out, transfer */
 EM.ACTIONS['move-add'] = el => {
@@ -2301,7 +2311,7 @@ EM.ACTIONS['list-save'] = async el => {
   let imp;
   try { imp = (await API('POST', '/api/lists/' + encodeURIComponent(key), { items, dry: true })).impact; } catch (x) { busy(el, false); return showErr('l-err', x.message); }
   EM._pendingList = { key, items };
-  const T = { opportunities: 'opportunities', clients: 'dealers, architects and people', contacts: 'people in teams', orders: 'fulfilments', production_orders: 'production orders', sites: 'installation sites', complaints: 'complaints', snags: 'snags', collections: 'collections', products: 'designs' };
+  const T = { follow_ups: 'follow-ups', opportunities: 'opportunities', clients: 'dealers, architects and people', contacts: 'people in teams', orders: 'fulfilments', production_orders: 'production orders', sites: 'installation sites', complaints: 'complaints', snags: 'snags', collections: 'collections', products: 'designs' };
   const rec = r => Object.entries(r).map(([t, n]) => `${n} ${T[t] || t}`).join(', ') || 'no saved record';
   EM.modal(`<h2>Before saving: what this change touches</h2><p class="muted small">${esc(listLabel(key))}</p>
     <div class="stack-s" style="margin-top:12px" data-impact>
@@ -2346,7 +2356,7 @@ const LV = { action: ['Needs you', 'warn'], warn: ['Heads-up', 'warn'], error: [
 const notifRow = (n, isNew) => `<a class="np-item${isNew ? ' is-new' : ''}" href="${esc(n.link || '#/notifications')}" data-notif><span class="np-dot ${LV[n.level][1]}" aria-hidden="true"></span><span class="np-text"><span class="np-title">${esc(n.title)}</span>${n.body ? `<span class="np-body">${esc(n.body)}</span>` : ''}<span class="np-meta">${LV[n.level][0]} · ${n.created_at ? ds(n.created_at.slice(0, 10)) + ' ' + n.created_at.slice(11, 16) + (n.by_name ? ' · ' + esc(n.by_name) : '') : 'right now'}${isNew ? ' · new' : ''}</span></span></a>`;
 function notifBody(tab) {
   const N = EM.notif, seen = N.seen_at || '';
-  if (tab === 'external') return `<p class="np-note">Leads and messages that arrive from outside EGO Master.</p>${N.external.map(n => notifRow(n, n.created_at > seen)).join('')}${N.sources.map(([a, b]) => `<div class="np-src"><span>${esc(a)}</span><span class="badge warn">${esc(b)}</span></div>`).join('')}`;
+  if (tab === 'external') return `<p class="np-note">Leads and messages that arrive from outside EGO Master.</p>${N.external.map(n => notifRow(n, n.created_at > seen)).join('')}${N.sources.map(([a, b, st, last]) => `<div class="np-src"><span>${esc(a)}</span><span class="badge ${st === 'live' ? 'ok' : st === 'keys' ? 'info' : 'warn'}">${esc(b)}${last ? ' · ' + esc(whenIST(last)) : ''}</span></div>`).join('')}`;
   return `${N.live.length ? `<div class="np-head">Right now</div>${N.live.map(n => notifRow(n, false)).join('')}` : ''}<div class="np-head">Recorded</div>${N.internal.length ? N.internal.map(n => notifRow(n, n.created_at > seen)).join('') : '<p class="np-note">Nothing yet.</p>'}`;
 }
 const notifTabs = tab => { const N = EM.notif, ni = N.live.length + N.internal.filter(n => n.created_at > (N.seen_at || '')).length, ne = N.external.filter(n => n.created_at > (N.seen_at || '')).length;
@@ -2627,6 +2637,291 @@ document.addEventListener('mouseout', e => { if (hoverEl && !hoverEl.contains(e.
 
 /* ---------------------------------------------------------------- my account */
 /* ---------------------------------------------------------------- integrations (12 Oct) */
+/* ---------------------------------------------------------------- follow-ups (13 Oct)
+   A follow-up is what, when, who, on which client or opportunity, and a note. Done asks what happened
+   and books the next one in the same small sheet, so a record never drops out of follow-up by accident.
+   The record's own Next action and date follow its earliest open follow-up (the server keeps them in step). */
+const FUS = () => D.followups || [], ACTS = () => D.activities || [];
+const dayPlus = n => new Date(Date.now() + 5.5 * 36e5 + n * 864e5).toISOString().slice(0, 10);
+const fuBucket = f => f.status !== 'open' ? 'done' : f.due_date < today() ? 'overdue' : f.due_date === today() ? 'today' : f.due_date <= dayPlus(7) ? 'week' : 'later';
+const FU_TABS = [['overdue', 'Overdue'], ['today', 'Today'], ['week', 'This week'], ['later', 'Later'], ['done', 'Done']];
+const fuSort = (a, b) => (a.due_date + (a.due_time || '99')).localeCompare(b.due_date + (b.due_time || '99'));
+const fuOf = f => { const c = CL()[f.client_id], o = f.opp_id ? D.opportunities.find(x => x.id === f.opp_id) : null;
+  return { c, o, client: c ? c.name : 'Outside your view', opp: o ? o.title : '', href: o ? '#/opp/' + o.id : '#/client/' + f.client_id }; };
+const fuInDiv = f => { const c = CL()[f.client_id]; return !c || inDiv(c); };
+const fuWhen = f => `${f.status === 'open' && f.due_date < today() ? `<span class="badge bad">${ds(f.due_date)}</span>` : ds(f.due_date)}${f.due_time ? ' ' + esc(f.due_time) : ''}`;
+const fuClosed = f => { const x = fuOf(f); return x.o ? isClosed(x.o.pipeline, x.o.stage, D.lists) : !!x.c && x.c.status === CLIENT_CLOSED; };
+const fuBtns = f => f.status === 'open' ? `<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm primary" data-act="fu-done" data-id="${f.id}">Done</button><button class="btn sm ghost" data-act="fu-edit" data-id="${f.id}">Change</button></div>` : '';
+function fuTable(list, { who = true, where = true } = {}) {
+  return table(['When', 'Follow-up', ...(where ? ['Client'] : []), ...(who ? ['Who'] : []), ''], list.map(f => { const x = fuOf(f);
+    return { href: x.href, cells: [fuWhen(f), `<b>${esc(f.action)}</b>${f.note ? `<div class="small muted">${esc(f.note)}</div>` : ''}${f.status !== 'open' ? `<div class="small">${f.source ? `<span class="badge plain">${esc(f.source)}</span> ` : ''}${esc(f.outcome)}${(n => n ? ` <span class="small muted">· ${n} file${n === 1 ? '' : 's'}</span>` : '')(D.documents.filter(d => d.followup_id === f.id).length)}${f.stop_reason ? ` <span class="badge plain">No further follow-up: ${esc(f.stop_reason)}</span>` : ''}</div><div class="small muted">Done ${esc(whenIST(f.done_at))} · ${esc(staffName(f.done_by))}</div>` : ''}`,
+      ...(where ? [`${esc(x.client)}${x.opp ? `<div class="small muted">${esc(x.opp)}</div>` : ''}`] : []), ...(who ? [esc(staffName(f.owner_id))] : []), fuBtns(f)] }; }));
+}
+/* first on the field sales and telesales Home: what is due today and what is late, each with Done */
+function fuCard(title) {
+  const mine = FUS().filter(f => f.owner_id === me().id && f.status === 'open' && fuInDiv(f)), n = b => mine.filter(f => fuBucket(f) === b).length;
+  const due = mine.filter(f => ['overdue', 'today'].includes(fuBucket(f))).sort(fuSort);
+  return `<section class="card stack-s" data-dash-fu><div class="row between"><h3>${title}</h3><a class="btn sm" href="#/followups">All my follow-ups (${mine.length})</a></div>
+    <p class="small"><b class="${n('overdue') ? 'err' : ''}">${num(n('overdue'))} overdue</b> · ${num(n('today'))} today · ${num(n('week'))} this week</p>
+    ${due.length ? fuTable(due.slice(0, 7), { who: false }) + (due.length > 7 ? `<p class="small muted"><a href="#/followups/overdue">${due.length - 7} more</a></p>` : '') : '<p class="small muted">Nothing due today. Well done. Add a follow-up from any client, opportunity or board card.</p>'}</section>`;
+}
+/* a count for the head and management: whose follow-ups are late */
+function fuCount(ids, title) {
+  const list = FUS().filter(f => f.status === 'open' && fuInDiv(f) && (!ids || ids.includes(f.owner_id))), n = b => list.filter(f => fuBucket(f) === b).length;
+  return `<section class="card stack-s" data-dash-fucount><div class="row between"><h3>${title}</h3><a class="btn sm" href="#/followups/overdue">See them</a></div>
+    <p class="small"><b class="${n('overdue') ? 'err' : ''}">${num(n('overdue'))} overdue</b> · ${num(n('today'))} today · ${num(n('week'))} this week · ${num(list.length)} open</p></section>`;
+}
+/* My follow-ups: Overdue, Today, This week, Later, Done. Field sales see their own; a manager their team; an Owner everyone */
+EM.fuF = { who: '', action: '', period: 'all', from: '', to: '', field: '', fq: '' };
+const FU_FIELDS = [['action', 'Follow-up'], ['client', 'Client'], ['opp', 'Opportunity'], ['owner', 'Who'], ['note', 'Note'], ['outcome', 'What happened']];
+const fuWhoDefault = () => ['sales', 'tele'].includes(D.access.dash) ? 'me' : 'all';
+function fuRows(tab) {
+  const f = EM.fuF, who = f.who || fuWhoDefault(), fq = f.fq.trim().toLowerCase();
+  return FUS().filter(x => fuInDiv(x) && (who === 'all' || (who === 'me' ? x.owner_id === me().id : x.owner_id === who)) && (!f.action || x.action === f.action)
+    && inPeriod(x.status === 'open' ? dateTs(x.due_date) : x.done_at, f.period, f.from, f.to)
+    && (!fq || (f.field ? [fuVal(x, f.field)] : FU_FIELDS.map(([k]) => fuVal(x, k))).some(v => v.toLowerCase().includes(fq)))
+    && matches(`${x.action} ${x.note} ${x.outcome} ${fuOf(x).client} ${fuOf(x).opp} ${staffName(x.owner_id)}`, [(CL()[x.client_id] || {}).mobile]))
+    .filter(x => !tab || fuBucket(x) === tab);
+}
+const fuVal = (x, k) => String(k === 'client' ? fuOf(x).client : k === 'opp' ? fuOf(x).opp : k === 'owner' ? staffName(x.owner_id) : x[k] || '');
+EM.VIEWS.followups = arg => {
+  if (!allowedTab('followups')) return EM.noAccess('Follow-ups belong to roles that hold business records.');
+  const f = EM.fuF, all = fuRows(''), cnt = b => all.filter(x => fuBucket(x) === b).length;
+  const tab = FU_TABS.some(([k]) => k === arg) ? arg : cnt('overdue') ? 'overdue' : 'today', rows = all.filter(x => fuBucket(x) === tab);
+  rows.sort(tab === 'done' ? (a, b) => String(b.done_at).localeCompare(String(a.done_at)) : fuSort);
+  const owners = [...new Set(FUS().filter(fuInDiv).map(x => x.owner_id))].filter(id => id !== me().id).map(id => [id, staffName(id)]).sort((a, b) => a[1].localeCompare(b[1]));
+  const sel = (k, label, opts) => `<label class="field" style="min-width:160px"><span class="small muted">${label}</span><select class="input" data-ff="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${(k === 'who' ? f.who || fuWhoDefault() : f[k]) === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const actions = [...new Set([...(D.lists.next_actions || []), ...FUS().map(x => x.action)])];
+  return `<div class="stack">${crumbs(['Home', '#/home'], ['Follow-ups'])}
+    <div class="stack-s"><div class="kicker">${esc(scopeLabel())}</div><h1>Follow-ups</h1><p class="muted" style="max-width:780px">Every call, visit and next step with a date. Done asks what happened and books the next one, so nobody drops out of follow-up. Add one from any client, opportunity or board card.</p></div>
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-fu-filters>${sel('who', 'Whose', [['me', 'Mine'], ['all', 'Everyone I can see'], ...owners])}${sel('action', 'Follow-up', [['', 'Every kind'], ...actions.map(a => [a, a])])}
+      ${dateFilter(f, 'fu', tab === 'done' ? 'When it was done' : 'When it is due')}${sel('field', 'Any field', [['', 'Any field'], ...FU_FIELDS])}<label class="field" style="min-width:160px"><span class="small muted">contains</span><input class="input" id="fu-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+    ${searchBox('Client, opportunity, follow-up, note or person')}
+    ${subtabs('#/followups', tab, FU_TABS.map(([k, l]) => [k, `${l} <span class="muted">${cnt(k)}</span>`]))}
+    ${rows.length ? fuTable(rows.slice(0, 500)) + (rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : '') : empty({ overdue: 'Nothing overdue', today: 'Nothing due today', week: 'Nothing this week', later: 'Nothing later', done: 'Nothing done yet' }[tab], tab === 'overdue' || tab === 'today' ? 'Well done. Everything is up to date.' : 'Change the filters above, or add a follow-up from a client or an opportunity.')}</div>`;
+};
+EM.VIEWS.followups.tab = 'home';
+EM.VIEWS.followups.title = () => 'Follow-ups';
+DF_STATE.fu = () => EM.fuF;
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.ff; if (k) { EM.fuF[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'fu-fq') { EM.fuF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#fu-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+/* what the server sends back after a follow-up write: that client's follow-ups, and the record it moved */
+function fuApply(r) {
+  const cid = (r.client && r.client.id) || r.clientId || (r.followups[0] || {}).client_id;
+  D.followups = FUS().filter(f => f.client_id !== cid).concat(r.followups || []);
+  if (r.client) upsertLocal(D.clients, r.client);
+  if (r.opportunity) upsertLocal(D.opportunities, r.opportunity);
+}
+const FU_ACTION = { key: 'action', list: 'next_actions', label: 'What', type: 'suggest', req: true, opts: [] };
+const dayChips = id => `<div class="row" style="gap:6px;flex-wrap:wrap">${[[0, 'Today'], [1, 'Tomorrow'], [3, 'In 3 days'], [7, 'Next week']].map(([n, l]) => `<button type="button" class="btn sm ghost" data-day="${n}" data-for="${id}">${l}</button>`).join('')}</div>`;
+document.addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; const i = qs('#' + b.dataset.for); if (i) { i.value = dayPlus(Number(b.dataset.day)); i.dispatchEvent(new Event('change', { bubbles: true })); } });
+function fuForm(clientId, oppId, f) {
+  const c = CL()[clientId], o = oppId && D.opportunities.find(x => x.id === oppId), owner = f ? f.owner_id : (o || c || {}).owner_id || me().id;
+  const ppl = D.staff.filter(s => s.active).sort((a, b) => a.name.localeCompare(b.name));
+  EM.modal(`<h2>${f ? 'Change the follow-up' : 'Add a follow-up'}</h2><p class="muted small">${esc(c ? c.name : 'Client')}${o ? ' · ' + esc(o.title) : ''}</p>
+    <form id="fuf" class="stack" onsubmit="return false" style="margin-top:12px" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}" data-id="${f ? f.id : ''}"><div class="fgrid">
+      ${fieldHtml(FU_ACTION, f ? f.action : '', 'fu')}
+      <div class="field" data-field="due_date"><label for="fu-date">When *</label><input class="input" type="date" id="fu-date" value="${esc(f ? f.due_date : '')}">${dayChips('fu-date')}</div>
+      <div class="field"><label for="fu-time">Time (if it matters)</label><input class="input" type="time" id="fu-time" value="${esc(f ? f.due_time : '')}"></div>
+      <div class="field"><label for="fu-owner">Who does it</label><select class="input" id="fu-owner">${ppl.map(s => `<option value="${s.id}" ${s.id === owner ? 'selected' : ''}>${esc(s.name)}${s.id === me().id ? ' (me)' : ''}</option>`).join('')}</select></div>
+      <div class="field span2"><label for="fu-note">Note</label><input class="input" id="fu-note" maxlength="500" value="${esc(f ? f.note : '')}" placeholder="e.g. Take the Oak and Walnut samples"></div></div>
+      ${errBox('fu-err')}<div class="row sticky-actions"><button class="btn primary" data-act="fu-save">${f ? 'Save' : 'Add follow-up'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+}
+EM.ACTIONS['fu-add'] = el => fuForm(el.dataset.client, el.dataset.opp);
+EM.ACTIONS['fu-edit'] = el => { const f = FUS().find(x => x.id === el.dataset.id); fuForm(f.client_id, f.opp_id, f); };
+EM.ACTIONS['fu-save'] = async el => {
+  const form = qs('#fuf'), b = { action: qs('#fu-action').value.trim(), date: qs('#fu-date').value, time: qs('#fu-time').value, owner_id: qs('#fu-owner').value, note: qs('#fu-note').value };
+  if (!b.action || !b.date) return showErr('fu-err', [!b.action && 'What is compulsory', !b.date && 'When is compulsory'].filter(Boolean));
+  if (!form.dataset.id) Object.assign(b, { client_id: form.dataset.client, opp_id: form.dataset.opp });
+  busy(el, true);
+  try { const r = await API('POST', '/api/follow-ups' + (form.dataset.id ? '/' + form.dataset.id : ''), b); fuApply(r); EM.closeModal(); EM.toast(`Follow-up ${form.dataset.id ? 'saved' : 'added'}: <b>${esc(b.action)}</b> on ${ds(b.date)}${b.owner_id !== me().id ? ' · ' + esc(staffName(b.owner_id)) : ''}`); EM.rerender(); }
+  catch (x) { busy(el, false); showErr('fu-err', x.errors || x.message); }
+};
+/* Done: what happened (one line) and the next follow-up, in one sheet; "No further follow-up" only on a closed record */
+EM.ACTIONS['fu-done'] = el => {
+  const f = FUS().find(x => x.id === el.dataset.id), x = fuOf(f), closed = fuClosed(f);
+  EM.modal(`<h2>Done: ${esc(f.action)}</h2><p class="muted small">${esc(x.client)}${x.opp ? ' · ' + esc(x.opp) : ''} · due ${ds(f.due_date)}</p>
+    <form id="fdf" class="stack" onsubmit="return false" style="margin-top:12px" data-id="${f.id}">
+      <div class="field" data-field="source"><label for="fd-src">How it happened *</label><select class="input" id="fd-src" data-keep-order><option value="">Choose</option>${(D.lists.followup_sources || []).map(x => `<option ${x === fuGuessSource(f.action) ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
+      <div class="field" data-field="outcome"><label for="fd-out">What happened *</label><input class="input" id="fd-out" maxlength="300" placeholder="e.g. Wants Oak samples, call after Diwali" autocomplete="off"></div>
+      <fieldset class="fs" id="fd-next"><legend>The next follow-up</legend><div class="fgrid">${fieldHtml(FU_ACTION, f.action, 'fd')}
+        <div class="field" data-field="due_date"><label for="fd-date">When *</label><input class="input" type="date" id="fd-date">${dayChips('fd-date')}</div>
+        <div class="field"><label for="fd-time">Time (if it matters)</label><input class="input" type="time" id="fd-time"></div></div></fieldset>
+      ${closed ? `<label class="row small"><input type="checkbox" id="fd-stop"> No further follow-up (this ${x.o ? 'opportunity is closed' : 'client is ' + esc(CLIENT_CLOSED)})</label><div class="field" id="fd-why-wrap" hidden><label for="fd-why">Why not *</label><input class="input" id="fd-why" maxlength="300" placeholder="e.g. Bought from another brand"></div>` : ''}
+      <details class="more"><summary>Screenshots, photos or PDFs (optional)</summary>${fuFilesBox(f.id)}</details>
+      ${errBox('fd-err')}<div class="row sticky-actions"><button class="btn primary" data-act="fu-done-go">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+  const stop = qs('#fd-stop'); if (stop) stop.addEventListener('change', () => { qs('#fd-next').hidden = stop.checked; qs('#fd-why-wrap').hidden = !stop.checked; });
+  setTimeout(() => { const i = qs('#fd-out'); if (i) i.focus(); }, 50);
+};
+EM.ACTIONS['fu-done-go'] = async el => {
+  const id = qs('#fdf').dataset.id, stop = !!(qs('#fd-stop') && qs('#fd-stop').checked), outcome = qs('#fd-out').value.trim(), source = qs('#fd-src').value;
+  const b = stop ? { source, outcome, stop: true, stop_reason: qs('#fd-why').value.trim() } : { source, outcome, next: { action: qs('#fd-action').value.trim(), date: qs('#fd-date').value, time: qs('#fd-time').value } };
+  const errs = [!source && 'How it happened is compulsory', !outcome && 'What happened is compulsory', stop && !b.stop_reason && 'Why not is compulsory', !stop && !b.next.action && 'The next follow-up: what is compulsory', !stop && !b.next.date && 'The next follow-up: when is compulsory'].filter(Boolean);
+  if (errs.length) return showErr('fd-err', errs);
+  busy(el, true);
+  try { const r = await API('POST', `/api/follow-ups/${id}/done`, b); fuApply(r); EM.closeModal(); EM.toast(stop ? 'Done. No further follow-up.' : `Done. Next: <b>${esc(b.next.action)}</b> on ${ds(b.next.date)}`); EM.rerender(); }
+  catch (x) { busy(el, false); showErr('fd-err', x.errors || x.message); }
+};
+
+/* ---------------------------------------------------------------- activity (13 Oct)
+   One timeline per client (and per opportunity) made of what is ALREADY saved: stage moves, follow-ups
+   done with what happened, files, approvals, payments and fulfilment steps, plus calls, visits, messages,
+   meetings and notes logged here or written by a connection (named with its API key). */
+const ACT_ICON = { call: 'Call', visit: 'Visit', whatsapp: 'WhatsApp', email: 'Email', meeting: 'Meeting', lead: 'Lead', note: 'Note', system: 'System' };
+/* a plain date (a payment's day, a follow-up's due date) is that day in India; a stored time without a zone is UTC */
+const dateTs = d => /^\d{4}-\d\d-\d\d$/.test(String(d || '')) ? d + 'T00:00:00+05:30' : d;
+const tsMs = ts => { if (!ts) return NaN; ts = dateTs(String(ts)); return Date.parse(/Z$|[+-]\d\d:?\d\d$/.test(ts) ? ts : ts.replace(' ', 'T') + 'Z'); };
+const isoOf = ts => { const n = tsMs(ts); return isNaN(n) ? '' : new Date(n).toISOString(); };
+function timelineFor(clientId, oppId) {
+  const O = OPSD(), P = D.access.prices, items = [], push = (at, group, title, detail, who, extra = {}) => { if (at) items.push({ at: isoOf(at), group, title, detail: detail || '', who: who || '', ...extra }); };
+  const opps = D.opportunities.filter(o => oppId ? o.id === oppId : o.client_id === clientId), oppIds = new Set(opps.map(o => o.id)), oppName = id => (opps.find(o => o.id === id) || {}).title || '';
+  for (const a of ACTS().filter(a => a.client_id === clientId && (!oppId || a.opp_id === oppId)))
+    push(a.at, 'talk', `${ACT_ICON[a.kind] || a.kind}${a.direction === 'in' ? ' in' : a.direction === 'out' ? ' out' : ''}${a.opp_id && !oppId ? ' · ' + oppName(a.opp_id) : ''}`, a.summary, a.via_key ? `via API key ${a.via_key}` : staffName(a.by_staff), { source: a.source, kind: a.kind });
+  for (const h of D.history.filter(h => oppIds.has(h.opp_id))) push(h.at, 'stage', `${h.from_stage ? 'Moved to' : 'Opened at'} ${h.to_stage}${oppId ? '' : ' · ' + oppName(h.opp_id)}`, `${h.from_stage ? 'from ' + h.from_stage : ''}${h.note ? (h.from_stage ? ' · ' : '') + h.note : ''}`, staffName(h.by_staff));
+  for (const f of FUS().filter(f => f.client_id === clientId && f.status !== 'open' && (!oppId || f.opp_id === oppId))) push(f.done_at, 'followup', `Follow-up done: ${f.action}${f.source ? ' (' + f.source + ')' : ''}${f.opp_id && !oppId ? ' · ' + oppName(f.opp_id) : ''}`, f.outcome + (f.stop_reason ? ` · No further follow-up: ${f.stop_reason}` : ''), staffName(f.done_by));
+  for (const d of D.documents.filter(d => d.client_id === clientId && (!oppId || d.opp_id === oppId))) push(d.created_at, 'file', `File added: ${d.name}`, d.followup_id ? `${d.type} · with a follow-up` : d.type, staffName(d.uploaded_by), { doc: d.id });
+  for (const a of (O.approvals || []).filter(a => a.client_id === clientId && (!oppId || a.record_id === oppId))) {
+    push(a.created_at, 'approval', `Approval asked: ${a.kind}`, a.reason, staffName(a.requested_by));
+    if (a.decided_at) push(a.decided_at, 'approval', `${a.status}: ${a.kind}`, a.decision_note || a.reason, staffName(a.decided_by));
+  }
+  for (const o of (O.orders || []).filter(o => o.client_id === clientId && (!oppId || o.opp_id === oppId))) {
+    for (const l of (O.logs || []).filter(l => l.record_id === o.id)) push(l.at, 'order', `${o.ref}: ${l.to_stage}`, l.note, staffName(l.by_staff));
+    if (P) for (const pm of (o.extra.payments || [])) push(pm.at || pm.on, 'order', `${o.ref}: payment received ${inr0(pm.amount)}`, pm.note, staffName(pm.by));
+  }
+  return items.sort((a, b) => b.at.localeCompare(a.at));
+}
+EM.actF = { show: '', period: 'all', from: '', to: '', field: '', fq: '' };
+const ACT_SHOW = [['', 'Everything'], ['talk', 'Calls, visits and messages'], ['followup', 'Follow-ups done'], ['stage', 'Stage moves'], ['file', 'Files'], ['approval', 'Approvals'], ['order', 'Orders and payments']];
+const ACT_FIELDS = [['title', 'What'], ['detail', 'Details'], ['who', 'Who']];
+DF_STATE.act = () => EM.actF;
+function activityPanel({ clientId, oppId }) {
+  const f = EM.actF, fq = f.fq.trim().toLowerCase(), all = timelineFor(clientId, oppId);
+  const rows = all.filter(i => (!f.show || i.group === f.show) && inPeriod(i.at, f.period, f.from, f.to) && (!fq || (f.field ? [i[f.field]] : ACT_FIELDS.map(([k]) => i[k])).some(v => String(v || '').toLowerCase().includes(fq))));
+  const open = FUS().filter(x => x.client_id === clientId && x.status === 'open' && (oppId ? x.opp_id === oppId : true)).sort(fuSort);
+  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-af="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const logs = ACT_MANUAL.map(k => `<button class="btn sm" data-act="act-log" data-kind="${k}" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}">${k === 'note' ? '+ Note' : 'Log ' + (k === 'whatsapp' ? 'WhatsApp' : k === 'email' ? 'email' : 'a ' + k)}</button>`).join('');
+  return `<div class="stack" data-activity>
+    <section class="card stack-s" data-open-fu><div class="row between"><h3>Open follow-ups${open.length ? ` (${open.length})` : ''}</h3><button class="btn sm primary" data-act="fu-add" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}">+ Follow-up</button></div>
+      ${open.length ? fuTable(open, { where: !oppId }) : `<p class="small muted">No follow-up booked${oppId ? ' for this opportunity' : ''}. Add one so it is not forgotten.</p>`}</section>
+    <section class="card stack-s"><div class="row between" style="flex-wrap:wrap"><h3>Activity</h3><div class="row" style="gap:6px;flex-wrap:wrap">${logs}</div></div>
+      <div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-act-filters>${sel('show', 'Show', ACT_SHOW)}${dateFilter(f, 'act', 'When')}${sel('field', 'Any field', [['', 'Any field'], ...ACT_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="act-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+      ${rows.length ? `<div class="timeline" data-timeline>${rows.slice(0, 300).map(i => `<div class="on" data-tl="${i.group}"><b>${esc(i.title)}</b>${i.detail ? `<div class="small">${esc(i.detail)}</div>` : ''}<div class="small muted">${esc(whenIST(i.at))}${i.who ? ' · ' + esc(i.who) : ''}${i.source && i.source !== 'manual' ? ' · from ' + esc(i.source) : ''}</div>${i.doc ? `<div class="row" style="gap:6px" data-file-acts><button class="btn sm" data-act="fu-view" data-id="${i.doc}">View</button><button class="btn sm ghost" data-act="fu-dl" data-id="${i.doc}">Download</button><button class="btn sm ghost" data-act="fu-share" data-id="${i.doc}">Share</button></div>` : ''}</div>`).join('')}</div>${rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Use the filters.</p>` : ''}`
+        : `<p class="small muted">${all.length ? 'Nothing for this filter.' : 'Nothing yet. Calls, visits, messages, stage moves, files, approvals and payments for this record all show here.'}</p>`}</section></div>`;
+}
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.af; if (k) { EM.actF[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'act-fq') { EM.actF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#act-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+EM.ACTIONS['act-log'] = el => {
+  const k = el.dataset.kind, c = CL()[el.dataset.client], o = el.dataset.opp && D.opportunities.find(x => x.id === el.dataset.opp), dir = ['call', 'whatsapp', 'email'].includes(k);
+  EM.modal(`<h2>${k === 'note' ? 'Add a note' : 'Log ' + esc(ACT_ICON[k].toLowerCase() === 'whatsapp' ? 'a WhatsApp' : 'a ' + ACT_ICON[k].toLowerCase())}</h2><p class="muted small">${esc(c ? c.name : '')}${o ? ' · ' + esc(o.title) : ''}</p>
+    <form id="acf" class="stack" onsubmit="return false" style="margin-top:12px" data-kind="${k}" data-client="${esc(el.dataset.client)}" data-opp="${esc(el.dataset.opp || '')}">
+      ${dir ? `<div class="field"><label for="ac-dir">Who reached out</label><select class="input" id="ac-dir"><option value="out">We did</option><option value="in">They did</option></select></div>` : ''}
+      <div class="field" data-field="summary"><label for="ac-sum">${k === 'note' ? 'Note' : 'What happened'} *</label><textarea class="input" id="ac-sum" rows="3" maxlength="1000" placeholder="${k === 'note' ? 'Anything worth remembering' : 'e.g. Spoke to Ramesh: wants Oak samples, will order after Diwali'}"></textarea></div>
+      ${errBox('ac-err')}<div class="row sticky-actions"><button class="btn primary" data-act="act-save">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+  setTimeout(() => { const i = qs('#ac-sum'); if (i) i.focus(); }, 50);
+};
+EM.ACTIONS['act-save'] = async el => {
+  const form = qs('#acf'), b = { client_id: form.dataset.client, opp_id: form.dataset.opp || undefined, kind: form.dataset.kind, direction: qs('#ac-dir') ? qs('#ac-dir').value : '', summary: qs('#ac-sum').value.trim() };
+  if (!b.summary) return showErr('ac-err', 'What happened is compulsory');
+  busy(el, true);
+  try { const r = await API('POST', '/api/activities', b); D.activities = ACTS().concat([r.activity]); EM.closeModal(); EM.toast(`${esc(ACT_ICON[b.kind])} saved to the activity.`); EM.rerender(); }
+  catch (x) { busy(el, false); showErr('ac-err', x.errors || x.message); }
+};
+
+/* how it happened, guessed from what was planned (Call -> Call, Site visit -> Visit); the person can change it */
+const fuGuessSource = action => { const a = String(action || '').toLowerCase(), L = D.lists.followup_sources || [];
+  return L.find(x => a.includes(x.toLowerCase())) || (/visit/.test(a) ? L.find(x => /visit/i.test(x)) : '') || ''; };
+/* the shared file component, for the files that go with one follow-up */
+const fuFilesBox = id => { const f = FUS().find(x => x.id === id) || {};
+  return filesBox({ id: 'fd', client: f.client_id, followup: id, types: ['Screenshot', 'Photo', 'PDF', 'Other'], docs: D.documents.filter(d => d.followup_id === id), title: 'Add screenshots, photos or PDFs', canAdd: true, emptyTitle: 'No files with this follow-up yet', emptyText: 'A WhatsApp screenshot, a site photo or a quotation PDF can go here.' }); };
+/* founders and management: the day's roll-up. Overdue by person, due today, done today, missed yesterday */
+function fuRollup() {
+  const all = FUS().filter(fuInDiv), open = all.filter(f => f.status === 'open'), y = dayPlus(-1), t = today();
+  const late = open.filter(f => f.due_date < t), dueT = open.filter(f => f.due_date === t), doneT = all.filter(f => f.status !== 'open' && dayIST(f.done_at) === t);
+  const missed = all.filter(f => f.due_date === y && (f.status === 'open' || dayIST(f.done_at) > y));
+  const ppl = [...new Set([...late, ...dueT, ...doneT].map(f => f.owner_id))].map(id => ({ id, late: late.filter(f => f.owner_id === id).length, today: dueT.filter(f => f.owner_id === id).length, done: doneT.filter(f => f.done_by === id || f.owner_id === id).length }))
+    .sort((a, b) => b.late - a.late || b.today - a.today);
+  return `<section class="card stack-s" data-dash-fucount data-fu-rollup><div class="row between"><h3>Follow-ups across the business today</h3><a class="btn sm" href="#/followups/overdue">See them</a></div>
+    <p class="small"><b class="${late.length ? 'err' : ''}">${num(late.length)} overdue</b> · ${num(dueT.length)} due today · ${num(doneT.length)} done today · ${num(missed.length)} missed yesterday · ${num(open.length)} open</p>
+    ${ppl.length ? table(['Person', 'Overdue', 'Due today', 'Done today'], ppl.slice(0, 12).map(x => [`<b>${esc(staffName(x.id))}</b>`, x.late ? `<span class="badge bad">${x.late}</span>` : '0', num(x.today), num(x.done)])) : '<p class="small muted">Nobody has a follow-up due or done today.</p>'}</section>`;
+}
+
+/* ---------------------------------------------------------------- History on every window (13 Oct)
+   A History button beside every screen's title opens what happened there: added, changed, deleted, by whom
+   and when, old to new where the change kept it. On a record page it is that record's own history. */
+const HIST_AREA = { dealers: 'dealers', architects: 'architects', people: 'people', clients: 'people', opps: 'opps', lost: 'opps', followups: 'followups', orders: 'orders', orderbook: 'orderbook', installation: 'installation', complaints: 'complaints',
+  approvals: 'approvals', schemes: 'schemes', p200: 'p200', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin' };
+const HIST_RECORD = ['client', 'opp', 'order', 'po', 'site', 'scheme', 'product', 'collection'];
+function histButton() {
+  const { r, arg } = EM.route(), h1 = qs('#view h1'); if (!h1 || qs('#view [data-hist-open]')) return;
+  const rec = HIST_RECORD.includes(r) ? arg.split('/')[0] : '', area = rec ? '' : HIST_AREA[r];
+  if (!rec && !area) return;
+  h1.insertAdjacentHTML('afterend', `<div class="row" style="gap:6px"><button class="btn sm ghost" data-act="hist-open" data-hist-open data-area="${esc(area || '')}" data-record="${esc(rec)}" data-title="${esc(h1.textContent)}">History</button></div>`);
+}
+EM.histF = { rows: [], title: '', who: '', kind: '', period: 'all', from: '', to: '', field: '', fq: '', q: '' };
+const HIST_KIND = r => /delete|remove|revoke|purge/.test(r.action) ? 'deleted' : /restore/.test(r.action) ? 'restored' : /_add$|^staff_add|^order_add|^api_key_add|^complaint_add|^site_add|^snag_add|followup_add|activity_add|doc_add|stock_/.test(r.action) ? 'added' : 'changed';
+const HIST_KINDS = [['', 'Everything'], ['added', 'Added'], ['changed', 'Changed or moved'], ['deleted', 'Deleted'], ['restored', 'Put back']];
+const HIST_FIELDS = [['summary', 'What happened'], ['by_name', 'Who'], ['client_name', 'Client']];
+const fieldWord = k => { const f = (typeof ALL_FIELDS === 'function' ? ALL_FIELDS() : []).find(x => x.key === k); return f ? f.label : k.replace(/_id$/, '').replace(/_/g, ' '); };
+const diffVal = v => v === '' || v == null ? 'empty' : typeof v === 'object' ? JSON.stringify(v) : (ST()[v] ? ST()[v].name : String(v));
+function histList() {
+  const H = EM.histF, fq = H.fq.trim().toLowerCase(), q = H.q.trim().toLowerCase();
+  return H.rows.filter(r => (!H.who || r.by === H.who) && (!H.kind || HIST_KIND(r) === H.kind) && inPeriod(r.at, H.period, H.from, H.to)
+    && (!fq || (H.field ? [r[H.field]] : HIST_FIELDS.map(([k]) => r[k])).some(v => String(v || '').toLowerCase().includes(fq)))
+    && (!q || `${r.summary} ${r.by_name} ${r.client_name} ${JSON.stringify(r.diff || '')}`.toLowerCase().includes(q)));
+}
+function histBody() {
+  const H = EM.histF, rows = histList(), who = [...new Set(H.rows.map(r => r.by).filter(Boolean))].map(id => [id, staffName(id)]).sort((a, b) => a[1].localeCompare(b[1]));
+  const sel = (k, label, opts) => `<label class="field" style="min-width:140px"><span class="small muted">${label}</span><select class="input" data-hf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${H[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  return `<div class="row" style="gap:10px;flex-wrap:wrap;align-items:flex-end" data-hist-filters>${sel('who', 'Who', [['', 'Everyone'], ...who])}${sel('kind', 'What', HIST_KINDS)}${dateFilter(H, 'hist', 'When')}${sel('field', 'Any field', [['', 'Any field'], ...HIST_FIELDS])}
+      <label class="field" style="min-width:140px"><span class="small muted">contains</span><input class="input" id="hist-fq" value="${esc(H.fq)}" placeholder="Type to filter"></label><label class="field" style="min-width:160px"><span class="small muted">Search</span><input class="input" id="hist-q" value="${esc(H.q)}" placeholder="Anything"></label></div>
+    <p class="small muted">${num(rows.length)} of ${num(H.rows.length)} entries${H.rows.length >= 1000 ? ' (the latest 1,000)' : ''}</p>
+    <div class="timeline" data-hist-list>${rows.slice(0, 400).map(r => `<div class="on" data-hk="${HIST_KIND(r)}"><b>${esc(r.summary)}</b>${r.diff && Object.keys(r.diff).length ? `<div class="small">${Object.entries(r.diff).map(([k, [a, b]]) => `${esc(fieldWord(k))}: ${esc(diffVal(a))} to ${esc(diffVal(b))}`).join('<br>')}</div>` : ''}<div class="small muted">${esc(whenIST(isoOf(r.at)))} · ${esc(r.by_name || staffName(r.by))}${r.client_name ? ' · ' + esc(r.client_name) : ''}</div></div>`).join('') || '<p class="small muted">Nothing for this filter.</p>'}</div>`;
+}
+const histRedraw = () => { const b = qs('#hist-body'); if (b) { const a = document.activeElement && document.activeElement.id, pos = a && document.activeElement.selectionStart; b.innerHTML = histBody(); if (a && qs('#' + a)) { qs('#' + a).focus(); try { qs('#' + a).setSelectionRange(pos, pos); } catch (e) { } } } };
+DF_STATE.hist = () => EM.histF;
+EM.ACTIONS['hist-open'] = async el => {
+  Object.assign(EM.histF, { rows: [], title: el.dataset.title, who: '', kind: '', period: 'all', from: '', to: '', field: '', fq: '', q: '' });
+  EM.modal(`<h2>History: ${esc(el.dataset.title)}</h2><p class="muted small">Who added, changed or deleted what, and when. Deleted things wait in the Recycle bin for 30 days.</p><div id="hist-body" class="stack-s" style="margin-top:10px"><p class="muted">Loading…</p></div><div class="row" style="margin-top:12px"><button class="btn" data-act="close-modal">Close</button></div>`);
+  try { EM.histF.rows = (await API('GET', '/api/audit?' + (el.dataset.record ? 'record=' + encodeURIComponent(el.dataset.record) : 'area=' + encodeURIComponent(el.dataset.area)))).history; histRedraw(); }
+  catch (x) { const b = qs('#hist-body'); if (b) b.innerHTML = `<p class="err">${esc(x.message)}</p>`; }
+};
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.hf; if (k) { EM.histF[k] = e.target.value; histRedraw(); } if (e.target.dataset && e.target.dataset.df === 'hist') setTimeout(histRedraw, 0); });
+document.addEventListener('input', e => { if (e.target.id === 'hist-fq') { EM.histF.fq = e.target.value; histRedraw(); } if (e.target.id === 'hist-q') { EM.histF.q = e.target.value; histRedraw(); } });
+
+/* ---------------------------------------------------------------- Recycle bin (13 Oct)
+   Every delete waits here 30 days with what it belonged to, who deleted it and when; Put back restores it
+   with its links, or says plainly why it cannot. The daily run empties what is past its date, files included. */
+EM.BIN = null;
+EM.binF = { kind: '', who: '', state: 'in', period: 'all', from: '', to: '', field: '', fq: '' };
+const BIN_FIELDS = [['label', 'What'], ['belonged', 'Belonged to'], ['who', 'Deleted by']];
+const binLoad = async () => { try { EM.BIN = await API('GET', '/api/bin'); } catch (x) { EM.BIN = { error: x.message }; } EM.rerender(); };
+EM.VIEWS.bin = () => {
+  if (!allowedTab('bin')) return EM.noAccess('The Recycle bin is for an Owner, and for roles that may delete.');
+  if (!EM.BIN) { binLoad(); return '<div class="stack"><h1>Recycle bin</h1><p class="muted">Loading…</p></div>'; }
+  if (EM.BIN.error) return `<div class="stack"><h1>Recycle bin</h1><div class="callout warn">${esc(EM.BIN.error)}</div></div>`;
+  const f = EM.binF, fq = f.fq.trim().toLowerCase(), all = EM.BIN.bin.map(e => ({ ...e, who: staffName(e.deleted_by) }));
+  const rows = all.filter(e => (!f.kind || e.kind === f.kind) && (!f.who || e.deleted_by === f.who) && (f.state === 'all' || (f.state === 'in' ? !e.restored_at : !!e.restored_at)) && inPeriod(e.deleted_at, f.period, f.from, f.to)
+    && (!fq || (f.field ? [e[f.field]] : BIN_FIELDS.map(([k]) => e[k])).some(v => String(v || '').toLowerCase().includes(fq))) && matches(`${e.label} ${e.belonged} ${e.who}`, []));
+  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-bf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const kinds = [...new Set(all.map(e => e.kind))].map(k => [k, all.find(e => e.kind === k).kind_label]);
+  return `<div class="stack" data-bin><div class="stack-s"><h1>Recycle bin</h1><p class="muted" style="max-width:780px">Everything deleted waits here for ${EM.BIN.days} days, with what it belonged to, who deleted it and when. <b>Put back</b> restores it with its links. After ${EM.BIN.days} days it is emptied for good, files included. ${isOwner() ? 'As an Owner you see everything deleted.' : 'You see what you deleted.'}</p></div>
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${sel('state', 'Show', [['in', 'In the bin'], ['back', 'Put back'], ['all', 'Both']])}${sel('kind', 'What', [['', 'Everything'], ...kinds])}${sel('who', 'Deleted by', [['', 'Everyone'], ...[...new Set(all.map(e => e.deleted_by))].map(id => [id, staffName(id)])])}
+      ${dateFilter(f, 'bin', 'When it was deleted')}${sel('field', 'Any field', [['', 'Any field'], ...BIN_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="bin-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+    ${searchBox('What, what it belonged to, or who deleted it')}
+    ${rows.length ? table(['What', 'Belonged to', 'Deleted', 'In the bin until', ''], rows.map(e => [`<b>${esc(e.label)}</b><div class="small muted">${esc(e.kind_label)}${e.files ? ` · ${e.files} file${e.files === 1 ? '' : 's'} kept` : ''}</div>`, esc(e.belonged), `${esc(whenIST(e.deleted_at))}<div class="small muted">by ${esc(e.who)}</div>`,
+      e.restored_at ? `<span class="badge ok">Put back ${esc(ds(dayIST(e.restored_at)))}</span><div class="small muted">by ${esc(staffName(e.restored_by))}</div>` : esc(ds(dayIST(e.purge_after))), e.restored_at ? '' : `<button class="btn sm" data-act="bin-restore" data-id="${e.id}">Put back</button>`]))
+      : empty(all.length ? 'Nothing for this filter' : 'The bin is empty', all.length ? 'Change the filters above.' : 'Whatever is deleted waits here for 30 days.')}</div>`;
+};
+EM.VIEWS.bin.title = () => 'Recycle bin';
+DF_STATE.bin = () => EM.binF;
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.bf; if (k) { EM.binF[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'bin-fq') { EM.binF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#bin-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+EM.ACTIONS['bin-restore'] = async el => {
+  busy(el, true);
+  try { const r = await API('POST', `/api/bin/${el.dataset.id}/restore`, {}); window.EGOLIVE.refresh(await API('GET', '/api/bootstrap')); EM.toast(`Put back: <b>${esc(r.restored.label)}</b>${(r.renumbered || []).length ? '<br>' + esc(r.renumbered.join(', ')) : ''}`); binLoad(); }
+  catch (x) { busy(el, false); bubbleNear(el, x.message); }
+};
+
 /* Every API key in one place, for an Owner. EGO Master's own keys let other tools read and add
    records here; other tools' keys (voice agent, WhatsApp, IndiaMART...) are kept sealed on the
    server and only their last 4 characters ever come back. */
@@ -2639,6 +2934,8 @@ EM.VIEWS.integrations = () => {
   if (EM.INT.error) return `<div class="stack"><h1>Integrations</h1><div class="callout warn">${esc(EM.INT.error)}</div></div>`;
   const { keys, tools, vault } = EM.INT, base = window.EGOAPI.base;
   return `<div class="stack" data-integrations><div class="stack-s"><h1>Integrations</h1><p class="muted" style="max-width:780px">Every API key in one place. <b>EGO Master API keys</b> let other tools (the voice agent, a website form, Zapier or n8n) read and add records here. <b>Other tools' keys</b> are the keys EGO Master uses to reach them. Only an Owner sees this screen.</p></div>
+    <section class="stack-s" data-connections><h3>Connections</h3><p class="small muted">Each outside system and where it stands. <b>Keys saved</b>: its keys are below and switched on. <b>Live</b>: a real event from it has arrived; keys alone never make it Live.</p>
+      ${table(['Connection', 'Status', 'Last event', 'Waits for'], (EM.INT.connections || []).map(c => [`<b>${esc(c.name)}</b>`, `<span class="badge ${c.status === 'live' ? 'ok' : c.status === 'keys' ? 'info' : 'warn'}" data-conn="${esc(c.id)}">${esc(c.label)}</span>`, c.last_event_at ? `${esc(whenIST(c.last_event_at))}<div class="small muted">${num(c.events)} event${c.events === 1 ? '' : 's'}</div>` : '<span class="muted">None yet</span>', `<span class="small">${esc(c.waits)}</span>`]))}</section>
     <section class="stack-s"><div class="row between"><h3>EGO Master API keys</h3><button class="btn primary" data-act="int-key-add">+ New API key</button></div>
       <p class="small muted">A key acts as the person it is made for: it sees and changes only what their role allows. A key is shown once, when it is made; EGO Master keeps only a fingerprint of it. Revoke a key and it stops at once.</p>
       ${keys.length ? table(['Name', 'Key', 'Acts as', 'Access', 'Made', 'Last used', 'Status', ''], keys.map(k => [`<b>${esc(k.name)}</b>`, `<code>${esc(k.prefix)}…</code>`, esc(staffName(k.staff_id)), k.access === 'write' ? 'Read and add' : 'Read only', `${whenIST(k.created_at)}<div class="small muted">${esc(staffName(k.created_by))}</div>`, k.last_used_at ? whenIST(k.last_used_at) : '<span class="muted">Never</span>',
@@ -2723,7 +3020,7 @@ EM.ACTIONS['int-tool-del'] = el => {
 };
 EM.ACTIONS['int-tool-del-go'] = async el => {
   busy(el, true);
-  try { await API('DELETE', '/api/integrations/tools/' + el.dataset.id); EM.closeModal(); EM.toast('Removed.'); intLoad(); } catch (x) { busy(el, false); showErr('itd-err', x.message); }
+  try { await API('DELETE', '/api/integrations/tools/' + el.dataset.id); EM.closeModal(); EM.toast('Removed, in the Recycle bin for 30 days.'); intLoad(); } catch (x) { busy(el, false); showErr('itd-err', x.message); }
 };
 EM.VIEWS.account = () => `<div class="stack" style="max-width:560px"><div class="stack-s"><h1>My account</h1><p class="muted">${esc(me().name)} · ${esc(me().login)} · ${esc(acc().name)}</p></div>
   <form id="mf" class="card stack" onsubmit="return false"><h3>Change my password</h3>

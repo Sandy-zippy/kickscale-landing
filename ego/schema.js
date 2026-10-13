@@ -612,7 +612,7 @@ const LIST_GROUPS = [
   ['People and companies', [['sources', 'Sources'], ['states', 'States'], ['roles', 'Roles (people at a company)'], ['client_types', 'Kinds of personal client'], ['client_statuses', 'Status'], ['dealer_grades', 'Dealer ratings'],
     ['architect_ratings', 'Architect ratings'], ['positions', 'Architect positions'], ['specialisations', 'Specialisations'], ['focus_areas', 'Focus'], ['potentials', 'Potential'],
     ['relationships', 'Relationship (architects)'], ['customer_types', 'Who dealers sell to'], ['condition_tags', 'Condition tags (retail)']]],
-  ['Opportunities', [['lost_reasons', 'Lost reasons'], ['budget_bands', 'Budget bands'], ['next_actions', 'Next actions'], ['payment_terms', 'Payment terms'], ['delivery_terms', 'Delivery terms']]],
+  ['Opportunities', [['lost_reasons', 'Lost reasons'], ['budget_bands', 'Budget bands'], ['next_actions', 'Next actions'], ['followup_sources', 'Follow-up sources'], ['payment_terms', 'Payment terms'], ['delivery_terms', 'Delivery terms']]],
   ['Inventory', [['categories', 'Product categories'], ['design_types', 'Design types'], ['ac_ratings', 'AC ratings']]],
 ];
 const LIST_LABEL = Object.fromEntries(LIST_GROUPS.flatMap(([, ls]) => ls));
@@ -628,6 +628,9 @@ const LIST_USES = (() => {
   return out;
 })();
 for (const f of [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS]) if (f.list && !DEFAULT_LISTS[f.list]) DEFAULT_LISTS[f.list] = f.opts;
+/* where a follow-up came from or how it happened (13 Oct), recorded when it is done; editable in Lists & stages */
+DEFAULT_LISTS.followup_sources = ['Call', 'WhatsApp', 'Visit', 'Email', 'Meeting', 'Meta lead', 'IndiaMART', 'Walk-in', 'Referral', 'Other'];
+LIST_USES.followup_sources = [{ table: 'follow_ups', key: 'source', col: true, multi: false }];
 const optsOf = (f, lists) => (f.list && lists && lists[f.list]) || f.opts;
 
 /* ---------------------------------------------------------------- operations (4 Oct)
@@ -743,7 +746,33 @@ const TOOLS = [
   ['WhatsApp Cloud API', 'WhatsApp messages', ['Phone number ID', 'Business account ID', 'Access token']],
   ['IndiaMART', 'Enquiries', ['CRM key']],
   ['Gmail (Apps Script)', 'Email', ['Script URL', 'Shared secret']],
+  ['Runo', 'Calls and telecalling', ['API key']],
+  ['Sales Diary', 'Field visits', ['API key']],
+  ['JustDial', 'Enquiries', ['API key']],
   ['Google Gemini', 'AI model', ['API key']],
   ['OpenAI', 'AI model', ['API key']],
   ['Other', 'Any other tool', ['API key']],
 ];
+
+/* Activities (13 Oct): one place for every call, visit, message, meeting and lead, whether a person
+   logged it or a connection wrote it. A connection is Live only once a real event from it is here. */
+const ACT_KINDS = { call: 'Call', visit: 'Visit', whatsapp: 'WhatsApp', email: 'Email', meeting: 'Meeting', lead: 'Lead', note: 'Note', system: 'System' };
+const ACT_MANUAL = ['call', 'visit', 'whatsapp', 'email', 'meeting', 'note'];
+const ACT_SOURCES = ['manual', 'meta', 'voice', 'whatsapp', 'gmail', 'indiamart', 'tally', 'runo', 'salesdiary', 'justdial', 'api'];
+const CONNECTIONS = [
+  { id: 'meta', name: 'Meta lead ads', tools: ['Meta lead ads'], source: 'meta', waits: 'Meta Business Manager and Page admin access from EGO' },
+  { id: 'voice', name: 'AI voice agent', tools: ['Bolna', 'VoiceLink'], source: 'voice', waits: 'A +91 calling number, DLT registration, and Meta lead ads connected first' },
+  { id: 'whatsapp', name: 'WhatsApp', tools: ['WhatsApp Cloud API'], source: 'whatsapp', waits: 'The WhatsApp number EGO will use, and Meta approval' },
+  { id: 'indiamart', name: 'IndiaMART', tools: ['IndiaMART'], source: 'indiamart', waits: 'An IndiaMART plan with the Leads API, and the OTP mobile' },
+  { id: 'gmail', name: 'Gmail', tools: ['Gmail (Apps Script)'], source: 'gmail', waits: 'The enquiry mailbox (Google Workspace or not)' },
+  { id: 'tally', name: 'Tally', tools: [], source: 'tally', waits: 'The Tally edition and the PC that runs it' },
+  { id: 'runo', name: 'Runo', tools: ['Runo'], source: 'runo', waits: 'The Runo API key' },
+  { id: 'salesdiary', name: 'Sales Diary', tools: ['Sales Diary'], source: 'salesdiary', waits: 'The Sales Diary API documents from the vendor' },
+  { id: 'justdial', name: 'JustDial', tools: ['JustDial'], source: 'justdial', waits: 'JustDial lead feed access' },
+];
+/* "No further follow-up" is allowed only on a record that is closed: a won or lost opportunity, or an Inactive client */
+const CLIENT_CLOSED = 'Inactive';
+
+/* the Recycle bin (13 Oct): every delete waits here this many days, then the daily run purges it */
+const BIN_DAYS = 30;
+const BIN_KIND = { client: 'Client', contact: 'Contact', opportunity: 'Opportunity', document: 'File', product: 'Design', role: 'Role', scheme: 'Scheme', tool_key: 'Tool key' };
