@@ -82,6 +82,13 @@
     try { boot = await api('GET', '/api/bootstrap'); } catch (e) { if (e.offline) root().innerHTML = `<div class="gate-card stack"><h1>Cannot reach EGO Master</h1><p class="muted">${esc(e.message)}</p><button class="btn primary" onclick="location.reload()">Try again</button></div>`; return; }
     /* the demo screens read these tables at load; in live mode they are empty, never invented */
     const empty = ['dealer', 'market', 'employee', 'sku', 'lead', 'project', 'architect', 'installer', 'connection', 'stock'];
+    /* a dealer portal login (13 Oct, batch 4) gets the dealer portal, never the team's app */
+    if (boot.portal) {
+      if (window.EGOPORTAL) return window.EGOPORTAL.refresh(boot);
+      const v = document.querySelector('meta[name="build"]');
+      await new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'portal.js' + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error('portal.js')); document.body.appendChild(s); });
+      return window.EGOPORTAL.start(boot);
+    }
     window.EGO = Object.assign(Object.fromEntries(empty.map(k => [k, []])), boot, { live: true });
     if (window.EM) { window.EGOLIVE.refresh(boot); return; }
     root().innerHTML = '';

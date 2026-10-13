@@ -672,6 +672,8 @@ const DEFAULT_RULES = {
     complaint: { label: 'Complaint settlement', unit: '₹', levels: { manager: 15000, head: 75000, director: 200000 } },
   },
   complaint_settle_from: 15000,
+  /* a lead handed to a dealer with no update for this many days goes to the dealer's field sales owner (13 Oct, batch 4) */
+  lead_escalate_days: 2,
   p200: { tiers: [{ name: 'A', min: 70 }, { name: 'B', min: 50 }, { name: 'C', min: 30 }, { name: 'Watchlist', min: 0 }],
     weights: { sales: 40, breadth: 20, payments: 15, display: 10, activity: 15 } },
 };
@@ -775,7 +777,7 @@ const CLIENT_CLOSED = 'Inactive';
 
 /* the Recycle bin (13 Oct): every delete waits here this many days, then the daily run purges it */
 const BIN_DAYS = 30;
-const BIN_KIND = { client: 'Client', contact: 'Contact', opportunity: 'Opportunity', document: 'File', product: 'Design', role: 'Role', scheme: 'Scheme', tool_key: 'Tool key', target: 'Target' };
+const BIN_KIND = { client: 'Client', contact: 'Contact', opportunity: 'Opportunity', document: 'File', product: 'Design', role: 'Role', scheme: 'Scheme', tool_key: 'Tool key', target: 'Target', lead: 'Lead for a dealer', plan: 'Development plan' };
 
 /* Targets (13 Oct, batch 3): per person, per team (a manager and everyone under them on Reports to),
    per department or role, and for the company; by month, quarter or financial year (April to March).
@@ -823,3 +825,25 @@ function periodOfLabel(label) {
   return null;
 }
 
+
+/* ---------------------------------------------------------------- batch 4 (13 Oct): leads for dealers, development plans, the dealer portal
+
+   A homeowner or retail enquiry that telesales hand to a dealer near them. The dealer updates it in the
+   dealer portal, or EGO's team does; a lead with no update for lead_escalate_days goes to the dealer's
+   field sales owner in the bell. */
+const LEAD_STATUSES = ['Handed over', 'Dealer contacted', 'Visited', 'Won', 'Lost'];
+const LEAD_CLOSED = ['Won', 'Lost'];
+/* a Priority 200 dealer's development plan: goals, and the interventions that get it there (each one a follow-up) */
+const IV_KINDS = ['Visit', 'Training', 'Display', 'Scheme', 'Joint marketing', 'Credit review'];
+const IV_STATUSES = ['Planned', 'In progress', 'Done', 'Cancelled'];
+const REVIEW_EVERY = { Weekly: 7, Fortnightly: 14, Monthly: 30, Quarterly: 91 };
+/* a timestamp (SQLite, ISO) or a plain date, as that day in India */
+const istDay = ts => { if (!ts) return ''; const s = String(ts); if (/^\d{4}-\d\d-\d\d$/.test(s)) return s; const ms = Date.parse(/Z$|[+-]\d\d:?\d\d$/.test(s) ? s : s.replace(' ', 'T') + 'Z'); return isNaN(ms) ? '' : new Date(ms + 5.5 * 36e5).toISOString().slice(0, 10); };
+/* progress against a plan, counted from invoiced orders only (one function for the team's screen and the portal):
+   value before GST, boxes, and the plan's categories bought, in orders invoiced between its start and end */
+function planProgress(plan, orders, lines, catOf) {
+  const inv = (orders || []).filter(o => o.client_id === plan.client_id && o.invoiced_at && istDay(o.invoiced_at) >= plan.start_on && istDay(o.invoiced_at) <= plan.end_on);
+  const ids = new Set(inv.map(o => o.id)), ls = (lines || []).filter(l => ids.has(l.order_id));
+  const cats = [...new Set(ls.map(l => catOf(l.product_id)).filter(Boolean))], goalCats = plan.goal_cats || [];
+  return { orders: inv, value: inv.reduce((a, o) => a + (Number(o.subtotal) || 0), 0), boxes: ls.reduce((a, l) => a + (Number(l.boxes) || 0), 0), cats, catsHit: goalCats.filter(c => cats.includes(c)) };
+}
