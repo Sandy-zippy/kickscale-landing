@@ -384,6 +384,11 @@
             '">' + esc(last.sentiment || 'replied') + '</span>' +
             (last.meeting ? ' <span class="pill em">a time was named</span>' : '') +
             '</p><p class="mtmin">' + esc(String(last.reply_text || '').slice(0, 600)) + '</p>'
+          : last.delivery
+            ? '<p class="mtmin" style="margin-top:8px"><span class="pill bad">did not reach them</span> ' +
+              (last.delivery === 'bounced'
+                ? 'Google says ' + esc(p.email || 'the address') + ' does not take mail. This is not a reply. Find another address with Edit details.'
+                : 'Gmail could not deliver it yet and is still retrying. This is a notice from Google, not a reply.') + '</p>'
           : '<p class="mtmin">No answer yet. Mark checks the thread when you press ' +
             '<b>Read the replies</b>.</p>') +
         (gone.length > 1 ? '<p class="hint">' + gone.length + ' messages in all.</p>' : '') +
@@ -511,7 +516,8 @@
         ? out.replies + ' repl' + (out.replies === 1 ? 'y' : 'ies') + ' came back' +
           (out.stopped ? ', and ' + out.stopped + ' asked never to be written to again. ' +
             'Those are parked and Mark will not touch them.' : '.')
-        : 'Nothing new on ' + out.checked + ' thread(s).');
+        : 'No replies from people on ' + out.checked + ' thread(s).') +
+        (out.undelivered ? ' ' + out.undelivered + ' did not reach them: Google sent a delivery notice, which is not a reply.' : '');
       if (G.pullNow) G.pullNow().catch(function () { G.render(); }); else G.render();
     }).catch(function (e) {
       BUSY = false;
