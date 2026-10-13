@@ -23,6 +23,7 @@
   var SHOW = 'pitch';      /* pitch | lookup | drafts | sent | clients | all | parked */
   var OPEN = null;
   var BUSY = false;
+  var MAX_FIND = 50;   // most a single search brings back, across every ticked place
   var NOTE = '';
   var TRADE = '';          /* '' = every trade, else ZS.tradeOf key */
   var AGE = 'new';         /* new | old, inside one trade */
@@ -92,6 +93,24 @@
       return '<option value="' + esc(x) + '"' + (x === pick ? ' selected' : '') + '>' + esc(x) + '</option>';
     }).join('');
   }
+  /* States and places are ticked, not picked: one search can cover several. */
+  function ticks(name, list, on, state) {
+    return list.map(function (x) {
+      return '<label class="cpick"><input type="checkbox" name="' + name + '" value="' + esc(x) + '"' +
+        (state ? ' data-state="' + esc(state) + '"' : '') + (on.indexOf(x) >= 0 ? ' checked' : '') +
+        '> ' + esc(x) + '</label>';
+    }).join('');
+  }
+  function placeTicks(c, states, on) {
+    return states.map(function (st) {
+      return '<p class="hint" style="margin:8px 0 0"><b>' + esc(st) + '</b></p>' +
+        ticks('place', c.states[st] || [], on, st);
+    }).join('') || '<p class="hint">Tick a state first.</p>';
+  }
+  function checked(name) {
+    return [].slice.call(document.querySelectorAll('#markfind input[name="' + name + '"]:checked'));
+  }
+  var BOX = 'max-height:180px;overflow:auto;border:1px solid var(--line,#ddd);border-radius:10px;padding:4px 12px';
 
   function rows() { return (D().prospects || []).slice(); }
 
@@ -504,8 +523,8 @@
     if (!G.acc().settings) return G.toast('Running a search is the owner’s.', true);
     G.modal('What should Mark look for?',
       'He looks them up on OpenStreetMap, which is free and needs no account, then reads each ' +
-      'one’s own website himself. Twenty at a time, because the free sources he uses are ' +
-      'shared and he paces himself out of courtesy.',
+      'one’s own website himself. Tick as many states and places as you like; he brings back ' +
+      'up to 50 a search, shared across the places, and paces himself because the free sources are shared.',
       '<form id="markfind">' +
       '<div class="f" style="margin-bottom:12px"><label for="mk-cat">Trade</label>' +
       '<select id="mk-cat" name="cat">' + TAGS.map(function (t) {
@@ -514,12 +533,12 @@
       '<div class="f" style="margin-bottom:12px"><label for="mk-country">Country</label>' +
       '<select id="mk-country" name="country">' + optionsOf(Object.keys(MARK_PLACES), 'United Arab Emirates') +
       '</select></div>' +
-      '<div class="f" style="margin-bottom:12px"><label for="mk-state">State</label>' +
-      '<select id="mk-state" name="state">' + optionsOf(Object.keys(MARK_PLACES['United Arab Emirates'].states), 'Dubai') +
-      '</select></div>' +
-      '<div class="f" style="margin-bottom:12px"><label for="mk-city">Place</label>' +
-      '<select id="mk-city" name="city">' + optionsOf(MARK_PLACES['United Arab Emirates'].states.Dubai, 'Dubai') +
-      '</select></div>' +
+      '<div class="f" style="margin-bottom:12px"><label>States <em>tick one or more</em></label>' +
+      '<div id="mk-state" style="' + BOX + '">' + ticks('state', Object.keys(MARK_PLACES['United Arab Emirates'].states), ['Dubai']) +
+      '</div></div>' +
+      '<div class="f" style="margin-bottom:12px"><label>Places <em>tick one or more</em></label>' +
+      '<div id="mk-city" style="' + BOX + '">' + placeTicks(MARK_PLACES['United Arab Emirates'], ['Dubai'], ['Dubai']) +
+      '</div></div>' +
       '<p class="hint">A neighbourhood finds the businesses in that neighbourhood; the city finds ' +
       'them across the whole city.</p>' +
       '<div style="display:flex;gap:10px;margin-top:14px">' +
@@ -556,14 +575,14 @@
   }
 
   document.addEventListener('change', function (e) {
-    var id = e.target && e.target.id;
-    if (id !== 'mk-country' && id !== 'mk-state') return;
+    var t = e.target;
+    if (!t || !(t.id === 'mk-country' || t.name === 'state')) return;
     var c = MARK_PLACES[document.getElementById('mk-country').value];
     var st = document.getElementById('mk-state'), pl = document.getElementById('mk-city');
     if (!c || !st || !pl) return;
-    if (id === 'mk-country') st.innerHTML = optionsOf(Object.keys(c.states), Object.keys(c.states)[0]);
-    var list = c.states[st.value] || [];
-    pl.innerHTML = optionsOf(list, list[0]);
+    if (t.id === 'mk-country') st.innerHTML = ticks('state', Object.keys(c.states), [Object.keys(c.states)[0]]);
+    var keep = checked('place').map(function (x) { return x.value; });
+    pl.innerHTML = placeTicks(c, checked('state').map(function (x) { return x.value; }), keep);
   });
 
   function askOverpass(tag, box, limit) {
@@ -587,50 +606,67 @@
     e.preventDefault();
     if (BUSY) return;
     var cat = document.getElementById('mk-cat').value;
-    var city = document.getElementById('mk-city').value;
-    var state = document.getElementById('mk-state').value;
     var countryName = document.getElementById('mk-country').value;
     var country = (MARK_PLACES[countryName] || {}).code;
+    var picks = checked('place').map(function (x) { return { city: x.value, state: x.getAttribute('data-state') }; });
     var tag = (TAGS.filter(function (t) { return t[0] === cat; })[0] || [])[1];
-    var dm = document.getElementById('modal'); if (dm && dm.open) dm.close();
     if (!tag) return G.toast('Mark has no map tag for that one yet.', true);
-    if (!country || !city) return G.toast('Pick a country, a state and a place.', true);
+    if (!country || !picks.length) return G.toast('Tick at least one place.', true);
+    var dm = document.getElementById('modal'); if (dm && dm.open) dm.close();
+    var where = picks.map(function (x) { return x.city; }).join(', ');
 
     BUSY = true;
-    NOTE = 'Mark is looking for ' + cat + ' in ' + city + '. He reads each one’s website, ' +
-           'so this takes a minute or two.';
+    NOTE = 'Mark is looking for ' + cat + ' in ' + where + '. He reads each one’s website, ' +
+           'so this takes a few minutes.';
     G.render();
 
-    placeBox(city, state, countryName).then(function (box) {
-      return askOverpass(tag, box, 20);
-    }).then(function (out) {
-      var places = (out.elements || []).map(function (el) {
-        var t = el.tags || {};
-        return {
-          place_id: 'osm:' + el.type + '/' + el.id,
-          name: t.name || '',
-          address: [t['addr:street'], t['addr:city'] || city].filter(Boolean).join(', '),
-          website: t.website || t['contact:website'] || '',
-          phone: t.phone || t['contact:phone'] || '',
-          source: 'https://www.openstreetmap.org/' + el.type + '/' + el.id
-        };
-      }).filter(function (p) { return p.name; });
+    /* One place at a time: Nominatim asks for no more than one request a second. */
+    var perPlace = [];
+    var chain = Promise.resolve();
+    picks.forEach(function (pk) {
+      chain = chain.then(function () { return placeBox(pk.city, pk.state, countryName); })
+        .then(function (box) { return askOverpass(tag, box, MAX_FIND); })
+        .then(function (out) {
+          perPlace.push((out.elements || []).map(function (el) {
+            var t = el.tags || {};
+            return {
+              city: pk.city,
+              place_id: 'osm:' + el.type + '/' + el.id,
+              name: t.name || '',
+              address: [t['addr:street'], t['addr:city'] || pk.city].filter(Boolean).join(', '),
+              website: t.website || t['contact:website'] || '',
+              phone: t.phone || t['contact:phone'] || '',
+              source: 'https://www.openstreetmap.org/' + el.type + '/' + el.id
+            };
+          }).filter(function (p) { return p.name; }));
+        });
+    });
 
+    chain.then(function () {
+      var places = ZS.fairShare(perPlace, MAX_FIND);
       if (!places.length) {
         BUSY = false;
-        NOTE = 'OpenStreetMap has nothing listed for ' + cat + ' in ' + city + '. That is a ' +
+        NOTE = 'OpenStreetMap has nothing listed for ' + cat + ' in ' + where + '. That is a ' +
                'gap in the map, not in the market.';
         return G.render();
       }
-      return API.findProspects({
-        category: cat, city: city,
-        country: country,
-        places: places
-      }).then(function (r) {
+      /* The server takes 20 a call (its subrequest budget), so the 50 go in batches, one city per batch. */
+      var batches = [];
+      picks.forEach(function (pk) {
+        var mine = places.filter(function (p) { return p.city === pk.city; });
+        for (var i = 0; i < mine.length; i += 20) batches.push({ city: pk.city, places: mine.slice(i, i + 20) });
+      });
+      var tot = { looked: 0, written: 0, blocked: 0 };
+      return batches.reduce(function (pr, bt) {
+        return pr.then(function () {
+          return API.findProspects({ category: cat, city: bt.city, country: country, places: bt.places })
+            .then(function (r) { tot.looked += r.looked || 0; tot.written += r.written || 0; tot.blocked += r.blocked || 0; });
+        });
+      }, Promise.resolve()).then(function () {
         BUSY = false;
         TRADE = cat; AGE = 'new';
-        NOTE = 'Mark looked at ' + r.looked + ' and wrote ' + r.written + ' to the board' +
-          (r.blocked ? '. ' + r.blocked + ' need a name looked up by hand.' : '.');
+        NOTE = 'Mark looked at ' + tot.looked + ' and wrote ' + tot.written + ' to the board' +
+          (tot.blocked ? '. ' + tot.blocked + ' need a name looked up by hand.' : '.');
         return G.pullNow ? G.pullNow() : G.render();
       });
     }).catch(function (err) {

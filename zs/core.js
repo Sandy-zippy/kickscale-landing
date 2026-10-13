@@ -3068,7 +3068,20 @@
     var s = String((p && p.found_at) || '');
     return Date.parse(s.slice(0, 10) + 'T' + (s.slice(11, 19) || '00:00:00') + 'Z') || 0;
   }
-  function outreachTrades(list) {
+  /* Up to `max` rows taken in turn from each list, so one busy place cannot crowd
+   out the others; a row seen in two places counts once. */
+function fairShare(lists, max) {
+  var out = [], seen = {};
+  for (var i = 0; out.length < max && lists.some(function (l) { return i < l.length; }); i++) {
+    lists.forEach(function (l) {
+      var x = l[i];
+      if (x && out.length < max && !seen[x.place_id]) { seen[x.place_id] = 1; out.push(x); }
+    });
+  }
+  return out;
+}
+
+function outreachTrades(list) {
     var newest = {}, fresh = {}, count = {}, fcount = {};
     (list || []).forEach(function (p) {
       var t = tradeOf(p), at = foundMs(p);
@@ -4446,7 +4459,7 @@
     FINDING_ORDER: FINDING_ORDER, DEFAULT_PLAYBOOK: DEFAULT_PLAYBOOK, playbookOf: playbookOf,
     LESSON_MIN: LESSON_MIN, REPLY_BENCHMARK: REPLY_BENCHMARK,
     outreachStats: outreachStats, groupOutcomes: groupOutcomes,
-    outreachTrades: outreachTrades, tradeOf: tradeOf,
+    outreachTrades: outreachTrades, tradeOf: tradeOf, fairShare: fairShare,
     outreachLessons: outreachLessons, markNeeds: markNeeds,
     outreachBrief: outreachBrief, playbookProposal: playbookProposal,
     servicePrice: servicePrice, priceIn: priceIn, PITCH: PITCH,
