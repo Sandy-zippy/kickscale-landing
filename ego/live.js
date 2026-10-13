@@ -21,11 +21,12 @@ function allowedTab(t) {
   if (['home', 'account', 'soon'].includes(t)) return true;
   /* each role has its own screens (8 Oct); within them, the access rules below still apply */
   const only = (D.access.tabs || []).length ? D.access.tabs : null;   // the screens ticked for this role in Roles & access
-  if (only && !['team', 'lists', 'integrations', 'followups', 'bin'].includes(t) && !only.includes(t)) return false;
+  if (only && !['team', 'lists', 'integrations', 'followups', 'bin', 'targets'].includes(t) && !only.includes(t)) return false;
+  if (t === 'targets') return holds();   // everyone sees their own target; it opens from Home and from Analysis
   if (t === 'bin') return isOwner() || !!D.access.can_delete;   // whoever may delete sees what they deleted; an Owner sees everything
   if (t === 'followups') return holds();   // My follow-ups opens from Home, like Lost sales from Opportunities
   if (t === 'integrations') return isOwner() && !D.access.viewing_as;   // every API key in one place: an Owner only
-  if (['clients', 'people', 'opps', 'import', 'inventory'].includes(t)) return holds();
+  if (['clients', 'people', 'opps', 'import', 'inventory', 'analysis'].includes(t)) return holds();
   if (t === 'dealers') return holds() && canDiv('wholesale');
   if (t === 'architects') return holds();
   if (t === 'orders' || t === 'p200' || t === 'schemes') return holds() && canDiv('wholesale');
@@ -48,13 +49,16 @@ const isBothView = () => (EM.div === 'both' && D.user.division === 'both') || ow
 /* opening tabs, filters and menus is looking, not changing */
 const NAV_ACTS = new Set(['hist-open', 'role-toggle', 'opp-mine', 'invf-clear', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab',
   /* opening, downloading and sharing a kept file, and downloading a report, change no record (13 Oct) */
-  'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv']);
+  'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv',
+  /* seeing the records behind a figure, downloading the analysis or the targets sample, closing a file preview (13 Oct, batch 3) */
+  'why', 'an-csv', 'tg-sample', 'tg-imp-close']);
 const LOOK_ACTS = new Set(['hist-open', 'view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
   'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass',
   /* so are API keys: one set for the whole company (Integrations, 12 Oct) */
   'int-key-add', 'int-key-go', 'int-key-revoke', 'int-key-revoke-go', 'int-copy', 'int-tool-add', 'int-tool-edit', 'int-tool-save', 'int-tool-del', 'int-tool-del-go', 'int-row-add', 'int-row-del',
-  'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv']);
+  'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv',
+  'why', 'an-csv', 'tg-sample', 'tg-imp-close']);
 /* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
 const hideChangeButtons = root => { if (!isBothView() || !root) return; root.querySelectorAll('[data-act]').forEach(b => { if (!LOOK_ACTS.has(b.dataset.act)) b.setAttribute('hidden', ''); }); root.querySelectorAll('input[type="file"], #move-stage, [data-list-only]').forEach(x => x.setAttribute('hidden', '')); };
 EM.guard = el => {
@@ -77,8 +81,8 @@ EM.render = (...a) => {
   if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
-const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
-const NAV_TAIL = ['complaints', 'approvals', 'p200', 'inventory', 'import'];
+const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
+const NAV_TAIL = ['complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
 // Menu order per view, as Bhargav set it on 5 Oct.
 const NAV_ORDER = {
   wholesale: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', ...NAV_TAIL],
@@ -95,6 +99,7 @@ Object.assign(ICON, {
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
   bin: _i('<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/><path d="M10 11v5M14 11v5"/>'),
+  analysis: _i('<path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/>'),
   integrations: _i('<path d="M9 3.5v4M15 3.5v4"/><path d="M6.5 7.5h11v3a5.5 5.5 0 0 1-11 0z"/><path d="M12 16v4.5"/>'),
 });
 EM.topExtras = () => (D.user.division === 'both' ? `<div class="seg divsw" role="tablist" aria-label="Division">${[['both', 'Both'], ['wholesale', 'Wholesale · EGO'], ['retail', 'Retail · Big E']].map(([k, l]) => `<button role="tab" aria-selected="${EM.div === k}" class="${EM.div === k ? 'on' : ''}" data-act="div" data-d="${k}">${l}</button>`).join('')}</div>` : '')
@@ -345,18 +350,11 @@ EM.VIEWS.home = () => {
   const who = `<div class="stack-s"><div class="kicker">${esc(acc().name)} · ${esc(scopeLabel())}</div><h1>${greet()}, ${esc(me().name.split(' ')[0])}</h1></div>`;
   if (!holds()) return `<div class="stack">${who}<p class="muted">Your role manages people and access, not business records.</p><div class="row">${allowedTab('team') ? '<a class="btn primary" href="#/team">Team &amp; access</a>' : ''}</div></div>`;
   const cs = D.clients.filter(inDiv), os = D.opportunities.filter(inDiv), t = today(), month = t.slice(0, 7);
-  const n = k => cs.filter(c => c.kind === k).length;
   const open = os.filter(o => !isClosed(o.pipeline, o.stage, D.lists));
   const due = [...open.filter(o => o.next_date && o.next_date <= t)];
   const won = os.filter(o => o.stage === wonStage(o.pipeline, D.lists) && (o.closed_at || '').slice(0, 7) === month);
   const sum = a => a.reduce((s, o) => s + (Number(o.value) || 0), 0);
-  const groups = [
-    ['wholesale', 'Dealers', DEALER_KINDS, '#/dealers'],
-    ['both', 'Architects', ARCH_KINDS, '#/architects'],
-  ].filter(([d]) => canDiv(d) && (EM.div === 'both' || d === 'both' || d === EM.div));
-  const ppl = peopleRows();
-  const tiles = groups.map(([, l, ks, h]) => tile(l, ks.reduce((a, k) => a + n(k), 0), ks.map(k => `${n(k)} ${kindLabel(k).toLowerCase()}${n(k) === 1 ? '' : 's'}`).join(' · '), h)).join('')
-    + tile('People', ppl.length, ppl.length ? `${ppl.filter(x => x.type === 'personal').length} personal` : '', '#/people')
+  const tiles = homeTarget(isOwner() || D.access.scope === 'all' ? 'company' : under(me().id).length ? 'team' : 'person')
     + tile('Open opportunities', open.length, D.access.prices && open.length ? `${inr(sum(open))} in values entered` : '', '#/opps')
     + tile('Next actions due', due.length, due.length ? `${due.filter(o => o.next_date < t).length} overdue` : 'nothing due today', '#/opps')
     + tile('Won this month', won.length, D.access.prices && won.length ? inr(sum(won)) : '', '#/opps');
@@ -404,14 +402,14 @@ function roleDash(kind) {
     const os = D.opportunities.filter(inDiv), open = os.filter(isOpen), won = os.filter(o => isWon(o) && thisMonthD(o.closed_at)), pend = O.approvals.filter(a => a.status === 'Pending'), cs = D.clients.filter(inDiv);
     const sellers = D.staff.filter(s => s.active && ['ws_field', 'ws_tele', 'ws_marketing', 'ws_head'].includes(s.role)).map(s => s.id), dueAmt = invDue.reduce((a, o) => a + due(o), 0);
     return `<div class="stack">${who}${cs.length ? '' : empty('Nothing saved yet', 'Add a dealer with its team, an architect firm with its team, or a person, or fill the Excel file and upload it. Every number on this page is counted from what you save.', addButtons())}
-      <div class="grid g4">${tile('Dealers', num(cs.filter(c => DEALER_KINDS.includes(c.kind)).length), '', '#/dealers')}${tile('Architects', num(cs.filter(c => ARCH_KINDS.includes(c.kind)).length), '', '#/architects')}${tile('People', num(peopleRows().length), '', '#/people')}${tile('Open opportunities', num(open.length), P && open.length ? inr0(sumV(open)) : '', '#/opps')}</div>
-      <div class="grid g4">${tile('Won this month', num(won.length), P && won.length ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Orders in fulfilment', num(O.orders.filter(o => o.ful_stage !== lastOf(OS_('fulfilment_stages'))).length), short ? `${num(short)} boxes short` : '', '#/orders')}${tile('Money due', P && dueAmt > 0 ? inr0(dueAmt) : num(invDue.length), invDue.length ? `${num(invDue.length)} invoices · ${num(O.orders.filter(o => o.credit_hold).length)} on credit hold` : '', '#/orders')}${tile('Approvals waiting', num(pend.length), pend.length ? `${num(pend.filter(a => levelLimit(D.lists.rules, a.kind, D.access.level) >= a.amount).length)} you can decide` : '', '#/approvals')}</div>
+      <div class="grid g4">${homeTarget('company')}${tile('Open opportunities', num(open.length), P && open.length ? inr0(sumV(open)) : '', '#/opps')}${tile('Money due', P && dueAmt > 0 ? inr0(dueAmt) : num(invDue.length), invDue.length ? `${num(invDue.length)} invoices · ${num(O.orders.filter(o => o.credit_hold).length)} on credit hold` : '', '#/orders')}${tile('Approvals waiting', num(pend.length), pend.length ? `${num(pend.filter(a => levelLimit(D.lists.rules, a.kind, D.access.level) >= a.amount).length)} you can decide` : '', '#/approvals')}</div>
+      <p class="small muted">Won this month, orders in fulfilment, dealers and the rest: <a href="#/analysis">Analysis</a>.</p>
       ${fuRollup()}<section class="card stack-s" data-dash-team><h3>The sales team</h3>${teamTable(sellers)}</section>
       <div class="grid g2"><section class="card stack-s"><h3>Wholesale pipeline</h3>${stageTable()}</section><section class="card stack-s"><h3>Fulfilment</h3>${fulTable()}</section></div>${schemeCard()}${notConnectedCard()}</div>`;
   }
   if (kind === 'head') {
     const os = D.opportunities.filter(o => o.pipeline === 'wholesale'), open = os.filter(isOpen), won = os.filter(o => isWon(o) && thisMonthD(o.closed_at)), mineAp = O.approvals.filter(a => a.status === 'Pending' && levelLimit(D.lists.rules, a.kind, D.access.level) >= a.amount);
-    return `<div class="stack">${who}<div class="grid g4">${tile('Team', num(team.length), 'people reporting to you', '#/team')}${tile('Open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps/wholesale')}${tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Approvals for you', num(mineAp.length), mineAp.length ? 'discounts and credit waiting' : 'nothing waiting', '#/approvals')}</div>
+    return `<div class="stack">${who}<div class="grid g4">${homeTarget('team')}${tile('Open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps/wholesale')}${tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook')}${tile('Approvals for you', num(mineAp.length), mineAp.length ? 'discounts and credit waiting' : 'nothing waiting', '#/approvals')}</div>
       ${fuCount([me().id, ...team], 'Follow-ups in your team')}<section class="card stack-s" data-dash-team><h3>Your team</h3>${teamTable(team)}</section>
       <div class="grid g2"><section class="card stack-s"><h3>Wholesale pipeline</h3>${stageTable()}</section><section class="card stack-s"><h3>Orders short of stock</h3>${ordersAt([FN('Stock check'), FN('Waiting on production')], [['Missing', o => missingOf(o.id) ? `<span class="badge bad">${num(missingOf(o.id))} boxes</span>` : '<span class="badge ok">covered</span>']])}</section></div>
       ${nextTable(open.filter(o => o.next_date && o.next_date < t), 'Overdue next actions in your team')}${schemeCard()}</div>`;
@@ -421,8 +419,8 @@ function roleDash(kind) {
     const myOrders = O.orders.filter(o => mine(o) && o.ful_stage !== lastOf(OS_('fulfilment_stages')));
     const callDue = myDealers.filter(c => { const every = Number((c.extra || {}).contact_every_days || 0); if (!every) return false; const last = [c.updated_at, ...D.opportunities.filter(o => o.client_id === c.id).map(o => o.updated_at)].filter(Boolean).sort().pop(); return daysSince(last) >= every; });
     const tiles = kind === 'tele'
-      ? tile('Calls due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Dealers due a call', num(callDue.length), 'past their call-every days', '#/dealers') + tile('New and contacted leads', num(open.filter(o => o.stage === (D.lists.stages[o.pipeline] || [])[0] || o.stage === (D.lists.stages[o.pipeline] || [])[1]).length), '', '#/opps') + tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook')
-      : tile('My dealers', num(myDealers.length), '', '#/dealers') + tile('My open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps') + tile('Next actions due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook');
+      ? tile('Calls due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Dealers due a call', num(callDue.length), 'past their call-every days', '#/dealers') + tile('New and contacted leads', num(open.filter(o => o.stage === (D.lists.stages[o.pipeline] || [])[0] || o.stage === (D.lists.stages[o.pipeline] || [])[1]).length), '', '#/opps') + homeTarget('person')
+      : homeTarget('person') + tile('My open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps') + tile('Next actions due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook');
     return `<div class="stack">${who}${fuCard(kind === 'tele' ? 'Your calls and follow-ups: due today and overdue' : 'Your follow-ups: due today and overdue')}<div class="grid g4">${tiles}</div>
       ${kind === 'tele' && callDue.length ? `<section class="card stack-s"><h3>Dealers due a call</h3>${table(['Dealer', 'Call every', 'City'], callDue.map(c => ({ href: '#/client/' + c.id, cells: [`<b>${esc(c.name)}</b>`, `${num(c.extra.contact_every_days)} days`, esc(c.city)] })))}</section>` : ''}
       <section class="card stack-s"><h3>Your orders in fulfilment</h3>${myOrders.length ? table(['Order', 'Dealer', 'Where it is'], myOrders.map(o => ({ href: '#/order/' + o.id, cells: [`<b>${esc(o.ref)}</b>`, esc(clientName(o.client_id)), `<span class="badge info">${esc(o.ful_stage)}</span>`] }))) : '<p class="small muted">None right now. An order comes here when your opportunity reaches Order confirmed.</p>'}</section>
@@ -452,7 +450,7 @@ function roleDash(kind) {
   if (kind === 'office') {
     const I = INVD();
     return `<div class="stack">${who}<div class="grid g4">${tile('Dealers', num(D.clients.filter(c => DEALER_KINDS.includes(c.kind)).length), '', '#/dealers')}${tile('Architects', num(D.clients.filter(c => ARCH_KINDS.includes(c.kind)).length), '', '#/architects')}${tile('People', num(peopleRows().length), '', '#/people')}${tile('Open complaints', num(O.complaints.filter(c => c.status !== nm(D.lists, 'ops.complaint_statuses', 'Resolved')).length), '', '#/complaints')}</div>
-      <div class="grid g4">${tile('Warehouses', num(I.warehouses.length), '', '#/inventory/warehouses')}${tile('Designs', num(I.products.length), '', '#/inventory/designs')}${tile('Boxes in stock', num(I.stock.reduce((a, x) => a + x.boxes, 0)), '', '#/inventory/stock')}${tile('Collections', num(I.collections.length), '', '#/inventory/collections')}</div></div>`;
+      <p class="small muted">Inventory: ${num(I.products.length)} designs in ${num(I.collections.length)} collections, ${num(I.stock.reduce((a, x) => a + x.boxes, 0))} boxes in ${num(I.warehouses.length)} warehouses. <a href="#/inventory">Open Inventory</a>.</p></div>`;
   }
   return null;
 }
@@ -467,7 +465,7 @@ const SOON = {
   whatsapp: ['WhatsApp messages', 'The WhatsApp Business number and Meta approval.'],
   ads: ['Ad and portal leads', 'Meta, Google, IndiaMART and JustDial lead feeds.'],
   ai: ['AI lead screening and the call agent', 'The leads feed above, a telephony number and DLT registration.'],
-  targets: ['Targets and Priority 200 scores from invoices', 'Sales from Tally, so achievement is never typed by hand.'],
+  targets: ['Invoices filled in from Tally (targets and Priority 200)', 'Tally. Targets and Priority 200 already count the invoices recorded here (Fulfilment, at Invoiced); once Tally is connected it fills those invoices in by itself.'],
   stock: ['Fulfilment and production', 'Tally. Stock itself is kept in Inventory until Tally is connected.'],
 };
 const notConnectedCard = () => `<section class="card stack-s"><h3>Not connected yet</h3><p class="small muted">These parts of EGO Master show no figures until the system that feeds them is connected. Nothing here is estimated.</p>
@@ -2140,8 +2138,8 @@ const peopleTable = () => table(['Name', 'Username', 'Role', 'Division', 'Region
   s.active ? `${isOwner() && s.id !== me().id ? `<button class="btn sm" data-act="view-as" data-id="${s.id}">View as</button>` : ''}<button class="btn sm ghost" data-act="staff-edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-act="staff-pass" data-id="${s.id}">New password</button>${s.id !== me().id ? `<button class="btn sm ghost" data-act="staff-off" data-id="${s.id}">Switch off</button>` : ''}` : '']));
 /* Roles & access (8 Oct): every switch of every role, for management. Each click saves at once; the
    people in that role get it at their next reload or sign-in. "View as" shows exactly what they see. */
-const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel']];
-const ROLE_SWITCHES = [['prices', 'Sees money (rates, values, payments)'], ['readonly', 'View only (changes nothing)'], ['users', 'Manages logins (Team & access)'], ['stock', 'Changes the inventory'], ['can_delete', 'Deletes records'], ['can_lists', 'Edits lists, stages and rules']];
+const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel']];
+const ROLE_SWITCHES = [['prices', 'Sees money (rates, values, payments)'], ['readonly', 'View only (changes nothing)'], ['users', 'Manages logins (Team & access)'], ['stock', 'Changes the inventory'], ['can_delete', 'Deletes records'], ['can_lists', 'Edits lists, stages and rules'], ['can_targets', 'Sets targets (founders for anyone, others for their team)']];
 EM.roleOpen = EM.roleOpen || '';
 function rolesMatrix() {
   const edit = isOwner(), L = D.lists.rules;
@@ -2845,11 +2843,434 @@ function fuRollup() {
     ${ppl.length ? table(['Person', 'Overdue', 'Due today', 'Done today'], ppl.slice(0, 12).map(x => [`<b>${esc(staffName(x.id))}</b>`, x.late ? `<span class="badge bad">${x.late}</span>` : '0', num(x.today), num(x.done)])) : '<p class="small muted">Nobody has a follow-up due or done today.</p>'}</section>`;
 }
 
+/* ---------------------------------------------------------------- targets and analysis (13 Oct, batch 3)
+   Every figure below is counted from saved records and can be clicked: it opens the records behind it and
+   the calculation. EGO Premium's sales are orders that reached Invoiced, by invoice date, before GST (the
+   same rule as dealer schemes); Big E's are won retail opportunities, by the date they were won. When Tally
+   is connected it fills the invoices in by itself; the counting stays the same. */
+const TGS = () => D.targets || [];
+const canSetT = () => !!D.access.can_targets && !!D.access.prices && !ownReadonly();
+const tgDivName = d => d === 'retail' ? 'Big E' : 'EGO Premium';
+const tgName = t => t.level === 'company' ? tgDivName(t.division) : t.level === 'role' ? roleName(t.subject) : `${t.level === 'team' ? 'Team of ' : ''}${staffName(t.subject)}`;
+/* the people a target counts: a person; a manager and everyone under them; everyone in a role; the company is everyone */
+const tgPeople = t => t.level === 'person' ? [t.subject] : t.level === 'team' ? [t.subject, ...under(t.subject)] : t.level === 'role' ? D.staff.filter(s => s.role === t.subject).map(s => s.id) : null;
+const dayTs = d => d + 'T00:00:00+05:30';   // a plain date as that day in India, for the shared date filter
+/* the first and last day a date filter covers, so a target's period can be tested for overlap */
+function periodBounds(p, from, to) {
+  const t = today(), [y, m] = t.slice(0, 7).split('-').map(Number), fy = m >= 4 ? y : y - 1, ym = (yy, mm) => `${yy}-${String(mm).padStart(2, '0')}`;
+  const month = k => [k + '-01', k + '-31'], prev = m === 1 ? ym(y - 1, 12) : ym(y, m - 1);
+  return { all: ['0000-00-00', '9999-12-31'], today: [t, t], month: month(t.slice(0, 7)), last: month(prev), year: [`${fy}-04-01`, `${fy + 1}-03-31`], lastyear: [`${fy - 1}-04-01`, `${fy}-03-31`], custom: [from || '0000-00-00', to || '9999-12-31'] }[p] || ['0000-00-00', '9999-12-31'];
+}
+const tgRunsIn = (t, f) => { const [a, b] = periodBounds(f.period, f.from, f.to); return t.start_on <= b && t.end_on >= a; };
+/* figures you can click: EM.whyK holds, for each one on screen, the records behind it and how it was worked out */
+EM.whyK = {}; let whyN = 0;
+const whyReset = () => { EM.whyK = {}; whyN = 0; };
+const fig = (text, why) => { const k = 'w' + (++whyN); EM.whyK[k] = why; return `<button type="button" class="fig" data-act="why" data-k="${k}" title="${esc(why.calc)}">${text}</button>`; };
+EM.ACTIONS.why = el => {
+  const w = EM.whyK[el.dataset.k]; if (!w) return;
+  const rows = w.rows || [];
+  EM.modal(`<div data-why><h2>${esc(w.title)}</h2><p class="muted small" style="max-width:640px"><b>How it is worked out:</b> ${esc(w.calc)}</p>
+    ${rows.length ? table(w.head, rows.slice(0, 300).map(r => ({ href: r.href, cells: r.cells }))) + (rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}.</p>` : '') : '<p class="small muted">No records: nothing saved matches yet.</p>'}
+    <div class="row sticky-actions"><button class="btn" data-act="close-modal">Close</button></div></div>`);
+};
+window.addEventListener('hashchange', () => { if (qs('#overlay [data-why]')) EM.closeModal(); });
+/* ---- the sales, as one list: an invoiced order (EGO Premium) or a won retail sale (Big E) */
+function salesList() {
+  const O = OPSD(), out = [], P = D.access.prices;
+  for (const o of O.orders) {
+    if (!o.invoiced_at) continue;
+    const lines = O.lines.filter(l => l.order_id === o.id).map(l => { const p = INVD().products.find(x => x.id === l.product_id) || {}, c = colOf(p); return { product: p.name || 'Design', category: c.category || 'Not set', collection: c.name || 'Not set', boxes: l.boxes || 0, amount: Number(l.amount) || 0, sqft: sqftFor(p, l.boxes || 0) || 0 }; });
+    out.push({ div: 'wholesale', id: o.id, ref: o.ref, at: dayIST(o.invoiced_at), owner: o.owner_id, client_id: o.client_id, region: o.region || (CL()[o.client_id] || {}).region || '', value: P ? Number(o.subtotal) || 0 : 0, lines, href: '#/order/' + o.id });
+  }
+  for (const p of Object.keys(PIPELINES).filter(k => PIPELINES[k].division === 'retail')) for (const o of D.opportunities.filter(x => x.pipeline === p && x.stage === wonStage(p, D.lists))) {
+    const h = D.history.filter(x => x.opp_id === o.id && x.to_stage === o.stage).pop(), at = (h && h.at) || o.closed_at || o.updated_at;
+    out.push({ div: 'retail', id: o.id, ref: o.ref, title: o.title, at: dayIST(at), owner: o.owner_id, client_id: o.client_id, region: o.region || '', value: P ? Number(o.value) || 0 : 0, cats: (o.extra || {}).products || [], area: Number((o.extra || {}).area_sqft) || 0, href: '#/opp/' + o.id });
+  }
+  return out;
+}
+/* what one sale adds up to, all of it or one category of it */
+const saleMeasure = (s, cat) => {
+  if (s.div === 'retail') return !cat || s.cats.includes(cat) ? { value: s.value, boxes: 0, sqft: s.area } : null;
+  const ls = cat ? s.lines.filter(l => l.category === cat) : s.lines;
+  if (cat && !ls.length) return null;
+  return { value: cat ? ls.reduce((a, l) => a + l.amount, 0) : s.value, boxes: ls.reduce((a, l) => a + l.boxes, 0), sqft: ls.reduce((a, l) => a + l.sqft, 0) };
+};
+/* dealers whose first invoice (in your view) falls inside the dates */
+const firstInvoices = () => { const m = {}; for (const s of salesList()) if (s.div === 'wholesale' && DEALER_KINDS.includes((CL()[s.client_id] || {}).kind) && (!m[s.client_id] || s.at < m[s.client_id].at)) m[s.client_id] = s; return m; };
+const saleRow = (s, m) => ({ href: s.href, cells: [`<b>${esc(s.ref || '')}</b>${s.title ? `<div class="small">${esc(s.title)}</div>` : ''}`, ds(s.at), esc(clientName(s.client_id)), esc(staffName(s.owner)), ...(D.access.prices ? [inr0(m ? m.value : s.value)] : []), m && m.boxes ? num(m.boxes) : '', m && m.sqft ? num(Math.round(m.sqft)) : ''] });
+const SALE_HEAD = () => ['Sale', 'Date', 'Client', 'Person', ...(D.access.prices ? ['Value before GST'] : []), 'Boxes', 'Sq ft'];
+/* ---- one target's achievement, counted from the sales */
+function tgAchieved(t) {
+  const ppl = tgPeople(t), inSet = id => !ppl || ppl.includes(id), cat = t.category || '';
+  const sales = salesList().filter(s => s.div === t.division && s.at >= t.start_on && s.at <= t.end_on && inSet(s.owner)).map(s => [s, saleMeasure(s, cat)]).filter(([, m]) => m);
+  const sum = k => sales.reduce((a, [, m]) => a + m[k], 0);
+  const fi = firstInvoices(), nd = t.division === 'wholesale' ? Object.values(fi).filter(s => s.at >= t.start_on && s.at <= t.end_on && inSet(s.owner)) : [];
+  const day = today(), total = Math.round((Date.parse(t.end_on) - Date.parse(t.start_on)) / 864e5) + 1;
+  const gone = day < t.start_on ? 0 : day > t.end_on ? total : Math.round((Date.parse(day) - Date.parse(t.start_on)) / 864e5) + 1, left = day > t.end_on ? 0 : day < t.start_on ? total : total - gone + 1;   // days left, today included
+  return { sales, value: sum('value'), boxes: sum('boxes'), sqft: sum('sqft'), newDealers: nd, total, gone, left, frac: gone / total };
+}
+const pct = (a, b) => b > 0 ? Math.round(a / b * 100) : 0;
+const tgWho = t => t.level === 'company' ? 'everyone' : t.level === 'role' ? `everyone whose role is ${roleName(t.subject)}` : t.level === 'team' ? `${staffName(t.subject)} and everyone who reports to them` : staffName(t.subject);
+const tgRule = t => t.division === 'wholesale' ? `EGO Premium orders that reached Invoiced between ${ds(t.start_on)} and ${ds(t.end_on)}, by invoice date, before GST${t.category ? `, counting only the ${t.category} designs on each order (their line amounts; other charges are left out)` : ' (the order\'s value before GST)'}` : `Big E retail sales won between ${ds(t.start_on)} and ${ds(t.end_on)}, at the value on the opportunity${t.category ? `, counting a sale in full when its products include ${t.category}` : ''}`;
+/* one measure of a target: target, achieved, remaining, %, where a straight line says it should be today, and the daily rate still needed */
+function tgMeasure(t, a, key, label, fmt) {
+  const goal = t[key] || 0; if (!goal) return null;
+  const got = key === 'value' ? a.value : key === 'boxes' ? a.boxes : key === 'sqft' ? Math.round(a.sqft) : a.newDealers.length;
+  const rem = Math.max(0, goal - got), should = Math.round(goal * a.frac), perDay = a.left > 0 ? rem / a.left : 0;
+  const head = key === 'new_dealers' ? ['Dealer', 'First invoice', 'Order', 'Person', ...(D.access.prices ? ['Value before GST'] : [])] : SALE_HEAD();
+  const rows = key === 'new_dealers' ? a.newDealers.map(s => ({ href: '#/client/' + s.client_id, cells: [`<b>${esc(clientName(s.client_id))}</b>`, ds(s.at), esc(s.ref || ''), esc(staffName(s.owner)), ...(D.access.prices ? [inr0(s.value)] : [])] })) : a.sales.map(([s, m]) => saleRow(s, m));
+  const calc = key === 'new_dealers' ? `Dealers whose first invoiced order in EGO Master is dated inside the period, where that order belongs to ${tgWho(t)}.` : `The sum of ${label.toLowerCase()} on ${tgRule(t)}, for ${tgWho(t)}.`;
+  return { key, label, goal, got, rem, should, perDay, ended: a.left === 0 && a.gone > 0, notStarted: a.gone === 0, p: pct(got, goal), fmt,
+    gotFig: fig(fmt(got), { title: `${tgName(t)}: ${label.toLowerCase()} achieved, ${periodLabel(t.period_type, t.period)}`, calc, head, rows }) };
+}
+const TG_MEASURES = () => [...(D.access.prices ? [['value', 'Value', inr0]] : []), ['boxes', 'Boxes', num], ['sqft', 'Sq ft', n => num(Math.round(n))], ['new_dealers', 'New dealers', num]];
+const tgMeasures = t => { const a = tgAchieved(t); return TG_MEASURES().map(([k, l, f]) => tgMeasure(t, a, k, l, f)).filter(Boolean); };
+const bar = p => `<span class="tg-bar" aria-hidden="true"><span style="width:${Math.min(100, p)}%" class="${p >= 100 ? 'ok' : ''}"></span></span>`;
+/* the target table, used by Targets and by Analysis › Targets */
+function tgTable(list, actions) {
+  if (!list.length) return '';
+  const rows = list.flatMap(t => { const ms = tgMeasures(t);
+    const first = `<b>${esc(tgName(t))}</b><div class="small muted">${esc(TARGET_LEVELS[t.level])} · ${esc(tgDivName(t.division))}</div>`;
+    if (!ms.length) return [[first, esc(periodLabel(t.period_type, t.period)), esc(t.category || 'Every category'), '<span class="muted">Value only: your role does not see money</span>', '', '', '', '', '', actions ? actions(t) : '']];
+    return ms.map((m, i) => [i ? '' : first, i ? '' : esc(periodLabel(t.period_type, t.period)), i ? '' : esc(t.category || 'Every category'), `${esc(m.label)}: <b>${m.fmt(m.goal)}</b>`, m.gotFig, m.fmt(m.rem), `${bar(m.p)} <b>${m.p}%</b>`,
+      m.notStarted ? '<span class="muted">Not started</span>' : m.fmt(m.should) + (m.got >= m.should ? ' <span class="badge ok">ahead</span>' : ' <span class="badge warn">behind</span>'),
+      m.ended ? '<span class="muted">Ended</span>' : m.rem ? m.fmt(m.key === 'value' ? Math.ceil(m.perDay) : Math.ceil(m.perDay * 10) / 10) + '<span class="small muted"> a day</span>' : '<span class="badge ok">Reached</span>', i || !actions ? '' : actions(t)]); });
+  return `<div data-tg-table>${table(['Target for', 'Period', 'Category', 'Target', 'Achieved', 'Remaining', '%', 'Should be at today', 'Needed per day', ''], rows)}</div>`;
+}
+/* ---- Targets: set them, see them */
+EM.tgF = { period: 'month', from: '', to: '', seg: '', level: '', who: '', cat: '', field: '', fq: '' };
+DF_STATE.tg = () => EM.tgF;
+const TG_FIELDS = [['name', 'Target for'], ['level', 'Kind'], ['period', 'Period'], ['category', 'Category'], ['notes', 'Notes']];
+const tgText = t => ({ name: tgName(t), level: TARGET_LEVELS[t.level], period: periodLabel(t.period_type, t.period), category: t.category || 'Every category', notes: t.notes || '' });
+function tgFiltered() {
+  const f = EM.tgF, fq = f.fq.trim().toLowerCase();
+  return TGS().filter(t => (EM.div === 'both' || t.division === EM.div) && (!f.seg || t.division === f.seg) && (!f.level || t.level === f.level) && (!f.who || t.subject === f.who) && (!f.cat || (t.category || '') === f.cat)
+    && tgRunsIn(t, f)
+    && (!fq || (f.field ? [tgText(t)[f.field]] : Object.values(tgText(t))).some(v => String(v).toLowerCase().includes(fq)))
+    && matches(Object.values(tgText(t)).join(' '), []))
+    .sort((a, b) => ['company', 'role', 'team', 'person'].indexOf(a.level) - ['company', 'role', 'team', 'person'].indexOf(b.level) || a.start_on.localeCompare(b.start_on) || tgName(a).localeCompare(tgName(b)));
+}
+EM.VIEWS.targets = () => {
+  if (!allowedTab('targets')) return EM.noAccess('Targets belong to roles that hold business records.');
+  whyReset();
+  const f = EM.tgF, all = TGS().filter(t => EM.div === 'both' || t.division === EM.div), rows = tgFiltered(), set = canSetT();
+  const sel = (k, label, opts) => `<label class="field" style="min-width:160px"><span class="small muted">${label}</span><select class="input" data-tgf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const whos = [...new Set(all.map(t => t.subject).filter(Boolean))].map(id => [id, D.staff.some(s => s.id === id) ? staffName(id) : roleName(id)]).sort((a, b) => a[1].localeCompare(b[1]));
+  const acts = t => set ? `<div class="row" style="gap:4px;flex-wrap:nowrap"><button class="btn sm ghost" data-act="tg-edit" data-id="${t.id}">Edit</button><button class="btn sm ghost" data-act="tg-del" data-id="${t.id}">Remove</button></div>` : '';
+  return `<div class="stack">${crumbs(['Analysis', '#/analysis/targets'], ['Targets'])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${esc(scopeLabel())}</div><h1>Targets</h1>
+      <p class="muted" style="max-width:820px">A target per person, per team (a manager and everyone who reports to them), per department or role, or for the company, by month, quarter or financial year. Achievement is counted only from what is saved: EGO Premium from orders that reached Invoiced, by invoice date, before GST; Big E from retail sales won, by the date they were won. Click any achieved figure to see the sales behind it. When Tally is connected it will fill in the invoices by itself.</p></div>
+      <div class="row" style="flex-wrap:wrap">${set ? `<button class="btn primary" data-act="tg-add">+ Set a target</button><button class="btn" data-act="tg-sample">Sample Excel</button><label class="btn" style="cursor:pointer" data-list-only>Upload Excel<input type="file" data-sheet="targets" accept=".xlsx" hidden></label>` : ''}</div></div>
+    ${EM.tgImp ? tgImportPreview() : ''}
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-tg-filters>${dateFilter(f, 'tg', 'Targets running in')}
+      ${EM.div === 'both' ? sel('seg', 'Company', [['', 'EGO Premium and Big E'], ['wholesale', 'EGO Premium'], ['retail', 'Big E']]) : ''}${sel('level', 'Target for', [['', 'Every kind'], ...Object.entries(TARGET_LEVELS)])}
+      ${sel('who', 'Who', [['', 'Everyone'], ...whos])}${sel('cat', 'Category', [['', 'Any category'], ...D.lists.categories.map(c => [c, c])])}
+      ${sel('field', 'Any field', [['', 'Any field'], ...TG_FIELDS])}<label class="field" style="min-width:160px"><span class="small muted">contains</span><input class="input" id="tg-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+    ${searchBox('Person, team, role, period or category')}
+    ${rows.length ? tgTable(rows, acts) + '<p class="small muted">Should be at today: the target spread evenly over every day of its period, up to today. Needed per day: what is still to reach, divided by the days left (today included).</p>'
+      : empty(all.length ? 'No target for this filter' : 'No targets yet', all.length ? 'Change or clear the filters above (the period filter shows targets running in it).' : set ? 'Set a target for a person, a team, a department or the company, or fill the sample Excel and upload it.' : 'Your manager sets targets; yours will show here with how far you have got.', set && !all.length ? '<button class="btn primary" data-act="tg-add">+ Set a target</button>' : '')}</div>`;
+};
+EM.VIEWS.targets.tab = 'analysis';
+EM.VIEWS.targets.title = () => 'Targets';
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.tgf; if (k) { EM.tgF[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'tg-fq') { EM.tgF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#tg-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+/* who a target can be for, from this login: the Owner and founders anyone; anyone else the people who report to them */
+const tgSettablePeople = () => { const all = isOwner() || D.access.scope === 'all'; return D.staff.filter(s => s.active && (all || under(me().id).includes(s.id))); };
+const tgLevels = () => isOwner() || D.access.scope === 'all' ? Object.entries(TARGET_LEVELS) : Object.entries(TARGET_LEVELS).filter(([k]) => ['person', 'team'].includes(k));
+function openTargetForm(t) {
+  const v = t || { division: EM.div === 'retail' ? 'retail' : 'wholesale', level: 'person', period_type: 'month', period: today().slice(0, 7), category: '' };
+  const opts = periodOptions(today()), ppl = tgSettablePeople(), heads = ppl.filter(s => D.staff.some(x => x.reports_to === s.id && x.active));
+  const divs = D.user.division === 'both' ? [['wholesale', 'EGO Premium'], ['retail', 'Big E']] : [[D.user.division, tgDivName(D.user.division)]];
+  const o = (list, cur) => list.map(([k, l]) => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(l)}</option>`).join('');
+  if (t && !opts.some(x => x.type === t.period_type && x.key === t.period)) opts.unshift({ type: t.period_type, key: t.period, label: periodLabel(t.period_type, t.period) });
+  EM.modal(`<h2>${t ? 'Change the target' : 'Set a target'}</h2><p class="muted small">Value before GST is compulsory; boxes, square feet and new dealers are optional (Big E counts value and square feet). Achievement fills itself from invoiced sales.</p>
+    <form id="tgf" class="stack" onsubmit="return false" style="margin-top:14px"><div class="fgrid">
+      <div class="field"><label for="tgf-div">Company *</label><select class="input" id="tgf-div">${o(divs, v.division)}</select></div>
+      <div class="field"><label for="tgf-level">Target for *</label><select class="input" id="tgf-level" data-tgf-level>${o(tgLevels(), v.level)}</select></div>
+      <div class="field" data-tgf-part="person"><label for="tgf-person">Person *</label><select class="input" id="tgf-person"><option value="">Choose</option>${o(ppl.map(s => [s.id, `${s.name} · ${roleName(s.role)}`]), v.level === 'person' ? v.subject : '')}</select></div>
+      <div class="field" data-tgf-part="team"><label for="tgf-team">Team of *</label><select class="input" id="tgf-team"><option value="">Choose the manager</option>${o(heads.map(s => [s.id, `${s.name} and ${under(s.id).length} under them`]), v.level === 'team' ? v.subject : '')}</select></div>
+      <div class="field" data-tgf-part="role"><label for="tgf-role">Department or role *</label><select class="input" id="tgf-role"><option value="">Choose</option>${o(D.roles.filter(r => r.scope !== 'none').map(r => [r.id, r.name]), v.level === 'role' ? v.subject : '')}</select></div>
+      <div class="field"><label for="tgf-ptype">Period *</label><select class="input" id="tgf-ptype" data-tgf-ptype>${o(Object.entries(TARGET_PERIODS), v.period_type)}</select></div>
+      <div class="field"><label for="tgf-period">Which *</label><select class="input" id="tgf-period">${opts.map(x => `<option value="${esc(x.key)}" data-pt="${x.type}" ${x.type === v.period_type && x.key === v.period ? 'selected' : ''} ${x.type === v.period_type ? '' : 'hidden disabled'}>${esc(x.label)}</option>`).join('')}</select></div>
+      <div class="field"><label for="tgf-cat">Category</label><select class="input" id="tgf-cat"><option value="">Every category</option>${o(D.lists.categories.map(c => [c, c]), v.category)}</select></div>
+      <div class="field"><label for="tgf-value">Value before GST *</label>${G.adorn({ type: 'money', key: 'value' }, `<input class="input" type="number" min="0" step="1" id="tgf-value" value="${esc(v.value || '')}">`)}</div>
+      <div class="field" data-tgf-ws><label for="tgf-boxes">Boxes</label><input class="input" type="number" min="0" step="1" id="tgf-boxes" value="${esc(v.boxes || '')}"></div>
+      <div class="field"><label for="tgf-sqft">Square feet</label><input class="input" type="number" min="0" step="1" id="tgf-sqft" value="${esc(v.sqft || '')}"></div>
+      <div class="field" data-tgf-ws><label for="tgf-nd">New dealers</label><input class="input" type="number" min="0" step="1" id="tgf-nd" value="${esc(v.new_dealers || '')}"></div>
+      <div class="field span2"><label for="tgf-notes">Notes</label><textarea class="input" id="tgf-notes" rows="2">${esc(v.notes || '')}</textarea></div></div>
+      ${errBox('tgf-err')}<div class="row sticky-actions"><button class="btn primary" data-act="tg-save" data-id="${t ? t.id : ''}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+  tgFormSync();
+}
+const tgFormSync = () => { const lv = qs('#tgf-level'), pt = qs('#tgf-ptype'), dv = qs('#tgf-div'); if (!lv) return;
+  document.querySelectorAll('[data-tgf-part]').forEach(x => { x.hidden = x.dataset.tgfPart !== lv.value; });
+  document.querySelectorAll('[data-tgf-ws]').forEach(x => { x.hidden = dv.value === 'retail'; });
+  const sel = qs('#tgf-period'); let keep = false;
+  [...sel.options].forEach(op => { const on = op.dataset.pt === pt.value; op.hidden = !on; op.disabled = !on; if (on && op.selected) keep = true; });
+  if (!keep) { const first = [...sel.options].find(op => op.dataset.pt === pt.value && (pt.value !== 'month' || op.value === today().slice(0, 7))) || [...sel.options].find(op => op.dataset.pt === pt.value); if (first) sel.value = first.value; } };
+document.addEventListener('change', e => { if (e.target.matches('#tgf-level, #tgf-ptype, #tgf-div')) tgFormSync(); });
+EM.ACTIONS['tg-add'] = () => openTargetForm(null);
+EM.ACTIONS['tg-edit'] = el => openTargetForm(TGS().find(t => t.id === el.dataset.id));
+EM.ACTIONS['tg-save'] = async el => {
+  const level = qs('#tgf-level').value;
+  const b = { division: qs('#tgf-div').value, level, subject: level === 'company' ? '' : (qs('#tgf-' + level) || {}).value || '', period_type: qs('#tgf-ptype').value, period: qs('#tgf-period').value, category: qs('#tgf-cat').value,
+    value: qs('#tgf-value').value, boxes: qs('#tgf-div').value === 'retail' ? '' : qs('#tgf-boxes').value, sqft: qs('#tgf-sqft').value, new_dealers: qs('#tgf-div').value === 'retail' ? '' : qs('#tgf-nd').value, notes: qs('#tgf-notes').value };
+  if (el.dataset.id) b.id = el.dataset.id;
+  busy(el, true);
+  try { await API('POST', '/api/targets', b); window.EGOLIVE.refresh(await API('GET', '/api/bootstrap')); EM.closeModal(); EM.toast(`<b>Target saved</b><ul><li>${esc(periodLabel(b.period_type, b.period))}</li></ul>`); }
+  catch (x) { busy(el, false); showErr('tgf-err', x.errors || x.message); }
+};
+EM.ACTIONS['tg-del'] = async el => {
+  const t = TGS().find(x => x.id === el.dataset.id); if (!t) return;
+  busy(el, true);
+  try { const r = await API('DELETE', '/api/targets/' + t.id); window.EGOLIVE.refresh(await API('GET', '/api/bootstrap'));
+    EM.toast(`<b>Target removed</b>: ${esc(tgName(t))}, ${esc(periodLabel(t.period_type, t.period))}. In the Recycle bin for 30 days. ${r.bin_id ? `<button class="btn sm" data-act="tg-undo" data-id="${r.bin_id}">Undo</button>` : ''}`, 9000); }
+  catch (x) { busy(el, false); bubbleNear(el, x.message); }
+};
+EM.ACTIONS['tg-undo'] = async el => { busy(el, true); try { await API('POST', `/api/bin/${el.dataset.id}/restore`, {}); window.EGOLIVE.refresh(await API('GET', '/api/bootstrap')); EM.toast('<b>Target put back</b>'); } catch (x) { busy(el, false); bubbleNear(el, x.message); } };
+/* ---- the Excel file for targets: built at download from today's team, roles, categories and periods, with real dropdowns */
+const EXCELJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+const TG_SHEET = [['Company', 'company', true, 'EGO Premium or Big E.'], ['Target for', 'level', true, 'A person, A team (the manager and everyone who reports to them), A department or role, or The company.'],
+  ['Who', 'who', false, 'The person (or the manager, for a team) as named in Team & access, or the role. Leave empty for The company.'], ['Period', 'period', true, 'A month (Oct 2026), a quarter (Q3 2026-27) or a financial year (2026-27).'],
+  ['Category', 'category', false, 'Leave empty for every category.'], ['Value before GST (Rs)', 'value', true, 'Rupees, before GST. A number above 0.'], ['Boxes', 'boxes', false, 'EGO Premium only. Optional.'],
+  ['Sq ft', 'sqft', false, 'Optional.'], ['New dealers', 'new_dealers', false, 'EGO Premium only. Optional.'], ['Notes', 'notes', false, 'Optional.']];
+EM.ACTIONS['tg-sample'] = async el => {
+  busy(el, true);
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(), fill = wb.addWorksheet('Fill this'), how = wb.addWorksheet('How to fill'), ex = wb.addWorksheet('Examples'), lists = wb.addWorksheet('Lists');
+    const ppl = tgSettablePeople(), roles = isOwner() || D.access.scope === 'all' ? D.roles.filter(r => r.scope !== 'none').map(r => r.name) : [];
+    const L = { company: D.user.division === 'both' ? ['EGO Premium', 'Big E'] : [tgDivName(D.user.division)], level: tgLevels().map(([, l]) => l), who: [...ppl.map(s => s.name), ...roles], period: periodOptions(today()).map(x => x.label), category: D.lists.categories };
+    Object.entries(L).forEach(([k, vals], i) => { lists.getCell(1, i + 1).value = k; vals.forEach((v, r) => { lists.getCell(r + 2, i + 1).value = v; }); });
+    lists.state = 'hidden';
+    fill.columns = TG_SHEET.map(([h, , req]) => ({ header: h + (req ? ' *' : ''), width: Math.max(16, h.length + 6) }));
+    fill.getRow(1).font = { bold: true }; fill.views = [{ state: 'frozen', ySplit: 1 }];
+    TG_SHEET.forEach(([, k, req], i) => { const letter = fill.getColumn(i + 1).letter, li = Object.keys(L).indexOf(k);
+      for (let r = 2; r <= 301; r++) { const cell = fill.getCell(letter + r);
+        if (li >= 0) { const col = lists.getColumn(li + 1).letter; cell.dataValidation = { type: 'list', allowBlank: !req, formulae: [`Lists!$${col}$2:$${col}$${Math.max(2, L[k].length + 1)}`], showErrorMessage: true, errorTitle: 'Pick from the list', error: 'Choose a value from the dropdown.' }; }
+        else if (k !== 'notes') cell.dataValidation = { type: 'decimal', operator: 'greaterThanOrEqual', allowBlank: !req, formulae: [0], showErrorMessage: true, error: 'A number, 0 or more.' }; } });
+    how.getCell('A1').value = 'EGO Master: targets'; how.getCell('A1').font = { bold: true, size: 14 };
+    how.getCell('A2').value = 'Fill the "Fill this" tab, one target per row. Columns with * are compulsory. The dropdowns hold today\'s team, roles, categories and periods.';
+    how.getCell('A3').value = `Made on ${today()} by ${me().name}. Upload it on the Targets screen: every row is checked and shown as new, update or a mistake before anything is saved. A target already set for the same person, period and category is updated.`;
+    how.getCell('A5').value = 'Column'; how.getCell('B5').value = 'Compulsory'; how.getCell('C5').value = 'What goes in it'; how.getRow(5).font = { bold: true };
+    TG_SHEET.forEach(([h, , req, note], i) => { how.getCell('A' + (6 + i)).value = h; how.getCell('B' + (6 + i)).value = req ? 'Yes' : 'No'; how.getCell('C' + (6 + i)).value = note; });
+    how.getColumn(1).width = 26; how.getColumn(3).width = 90;
+    ex.addRow(TG_SHEET.map(x => x[0])).font = { bold: true };
+    const p0 = periodOptions(today()), m = p0.find(x => x.key === today().slice(0, 7)) || p0[0], q = p0.find(x => x.type === 'quarter' && periodRange('quarter', x.key).end >= today()) || p0[12];
+    ex.addRow([L.company[0], 'A person', ppl[0] ? ppl[0].name : 'Name as in Team & access', m.label, '', 500000, 400, '', 2, 'Example only']);
+    ex.addRow([L.company[0], 'The company', '', q.label, D.lists.categories[0] || '', 2500000, '', '', '', 'Example only']);
+    const buf = await wb.xlsx.writeBuffer(), a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = `EGO Master targets ${today()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    EM.toast('The targets file is downloading, with today\'s team, roles, categories and periods in its dropdowns.');
+  } catch (x) { bubbleNear(el, x.message); }
+  busy(el, false);
+};
+EM.tgImp = null;
+document.addEventListener('change', async e => {
+  if (!e.target.matches('input[data-sheet="targets"]')) return;
+  const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const ws = wb.getWorksheet('Fill this') || wb.worksheets[0], heads = [], rows = [];
+    const txt = v => v == null ? '' : typeof v === 'object' ? (v.text || v.result || (v.richText ? v.richText.map(x => x.text).join('') : '')) : String(v);
+    ws.getRow(1).eachCell((c, i) => { heads[i] = txt(c.value).replace(/\s*\*$/, '').trim(); });
+    ws.eachRow((r, n) => { if (n === 1) return; const x = { row: n }; let any = false;
+      TG_SHEET.forEach(([h, k]) => { const i = heads.indexOf(h); const v = i > 0 ? txt(r.getCell(i).value).trim() : ''; if (v) any = true; x[k] = v; });
+      if (any) rows.push(x); });
+    if (!rows.length) throw new Error('No filled rows in the "Fill this" tab.');
+    const res = await API('POST', '/api/targets/import', { rows, save: false });
+    EM.tgImp = { file: file.name, rows, res: res.rows }; EM.rerender();
+  } catch (x) { EM.tgImp = { file: file.name, error: x.message, rows: [], res: [] }; EM.rerender(); }
+});
+function tgImportPreview() {
+  const I = EM.tgImp, cnt = s => I.res.filter(r => r.status === s).length;
+  return `<section class="card stack-s" data-tg-import><div class="row between"><h3>Read: ${esc(I.file)}</h3><button class="btn sm ghost" data-act="tg-imp-close">Close</button></div>
+    ${I.error ? `<div class="callout warn">${esc(I.error)}</div>` : `<p class="small">${num(cnt('new'))} new · ${num(cnt('update'))} update · <b>${num(cnt('error'))} with a mistake</b>. ${I.saved ? 'Saved.' : 'Nothing is saved until you press Save.'}</p>
+    ${table(['Row', 'Status', 'Target', 'Mistake'], I.res.map(r => [String(r.row), `<span class="badge ${r.status === 'error' ? 'bad' : r.status === 'new' ? 'ok' : 'info'}">${r.status === 'error' ? 'Mistake' : r.status === 'new' ? 'New' : 'Update'}</span>`, esc(r.label), esc(r.error)]))}
+    ${!I.saved && (cnt('new') + cnt('update')) ? `<div class="row"><button class="btn primary" data-act="tg-imp-save">Save the ${num(cnt('new') + cnt('update'))} good rows${cnt('error') ? ' (rows with a mistake are skipped)' : ''}</button></div>` : ''}`}</section>`;
+}
+EM.ACTIONS['tg-imp-close'] = () => { EM.tgImp = null; EM.rerender(); };
+EM.ACTIONS['tg-imp-save'] = async el => {
+  busy(el, true);
+  try { const r = await API('POST', '/api/targets/import', { rows: EM.tgImp.rows, save: true }); EM.tgImp = { ...EM.tgImp, res: r.rows, saved: true }; window.EGOLIVE.refresh(await API('GET', '/api/bootstrap')); EM.toast(`<b>${r.rows.filter(x => x.status !== 'error').length} targets saved</b>`); }
+  catch (x) { busy(el, false); bubbleNear(el, x.message); }
+};
+/* ---- the headline target for a Home: mine, my team's, or the company's, this month */
+function homeTarget(level) {
+  const month = today().slice(0, 7), divs = EM.div === 'both' ? ['wholesale', 'retail'] : [EM.div];
+  const list = TGS().filter(t => t.period_type === 'month' && t.period === month && !t.category && divs.includes(t.division) && t.level === level && (level === 'company' || t.subject === me().id));
+  const href = '#/targets', label = level === 'company' ? 'Company target this month' : level === 'team' ? 'Team target this month' : 'My target this month';
+  if (!list.length) return tile(label, 'Not set', D.access.can_targets ? 'Set one on Targets' : 'Targets are set by your manager', href);
+  const ms = list.map(t => [t, tgAchieved(t)]), P = D.access.prices;
+  const goal = ms.reduce((a, [t]) => a + (P ? t.value : t.boxes || 0), 0), got = ms.reduce((a, [, x]) => a + (P ? x.value : x.boxes), 0);
+  if (!goal) return tile(label, 'Value only', 'your role does not see money', href);
+  return tile(label, `${pct(got, goal)}%`, P ? `${inr0(got)} of ${inr0(goal)} before GST` : `${num(got)} of ${num(goal)} boxes`, href);
+}
+
+/* ---------------------------------------------------------------- Analysis: five tabs, every figure from saved records */
+EM.anF = { co: '', period: 'month', from: '', to: '', who: '', region: '' };
+DF_STATE.an = () => EM.anF;
+const AN_TABS = [['sales', 'Sales'], ['pipeline', 'Pipeline'], ['followups', 'Follow-ups'], ['fulfilment', 'Fulfilment'], ['targets', 'Targets']];
+const anCo = () => EM.anF.co || EM.div;
+const anPeople = () => { const w = EM.anF.who; if (!w) return null; const [k, id] = w.split(':'); return k === 't' ? [id, ...under(id)] : [id]; };
+const anWhoOk = id => { const p = anPeople(); return !p || p.includes(id); };
+const anRegionOk = r => !EM.anF.region || r === EM.anF.region;
+const anIn = d => inPeriod(dayTs(d), EM.anF.period, EM.anF.from, EM.anF.to);
+const anPeriodTxt = () => EM.anF.period === 'custom' ? `${EM.anF.from ? ds(EM.anF.from) : 'the start'} to ${EM.anF.to ? ds(EM.anF.to) : 'today'}` : (PERIODS.find(x => x[0] === EM.anF.period) || ['', ''])[1].toLowerCase();
+const anFilterTxt = () => [`dates: ${anPeriodTxt()}`, EM.anF.who ? `person: ${EM.anF.who.startsWith('t:') ? 'team of ' : ''}${staffName(EM.anF.who.slice(2))}` : '', EM.anF.region ? `region: ${EM.anF.region}` : '', `company: ${SEG[anCo()]}`].filter(Boolean).join(', ');
+EM.anCsv = [];
+const anSec = (title, head, rows, note, attr) => { EM.anCsv.push([title, head, rows]); return `<section class="card stack-s" ${attr || ''}><h3>${esc(title)}</h3>${note ? `<p class="small muted">${note}</p>` : ''}${rows.length ? table(head, rows) : '<p class="small muted">Nothing for this filter.</p>'}</section>`; };
+const groupBy = (list, key) => { const m = new Map(); for (const x of list) { const k = key(x); if (!m.has(k)) m.set(k, []); m.get(k).push(x); } return [...m.entries()]; };
+/* ---- Sales */
+function anSales() {
+  const P = D.access.prices, co = anCo(), list = salesList().filter(s => (co === 'both' || s.div === co) && anIn(s.at) && anWhoOk(s.owner) && anRegionOk(s.region)).map(s => [s, saleMeasure(s, '')]);
+  const rule = 'EGO Premium: orders that reached Invoiced, by invoice date, value before GST. Big E: retail sales won, by the date won, at the value on the opportunity.';
+  const sum = (a, k) => a.reduce((t, [, m]) => t + m[k], 0), f = EM.anF;
+  const figs = (a, title) => [...(P ? [fig(inr0(sum(a, 'value')), { title, calc: `The sum of the value before GST of these sales. ${rule} Filter: ${anFilterTxt()}.`, head: SALE_HEAD(), rows: a.map(([s, m]) => saleRow(s, m)) })] : []), fig(num(a.length), { title, calc: `The number of sales. ${rule} Filter: ${anFilterTxt()}.`, head: SALE_HEAD(), rows: a.map(([s, m]) => saleRow(s, m)) }), num(sum(a, 'boxes'))];
+  const head = first => [first, ...(P ? ['Value before GST'] : []), 'Sales', 'Boxes'];
+  const byMonth = groupBy(list, ([s]) => s.at.slice(0, 7)).sort((a, b) => b[0].localeCompare(a[0])).map(([k, a]) => [esc(periodLabel('month', k)), ...figs(a, `Sales in ${periodLabel('month', k)}`)]);
+  const byPerson = groupBy(list, ([s]) => s.owner).map(([k, a]) => [[esc(staffName(k)), ...figs(a, `Sales by ${staffName(k)}`)], sum(a, 'value') || a.length]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+  const byRegion = groupBy(list, ([s]) => s.region || 'Not set').map(([k, a]) => [esc(k), ...figs(a, `Sales in the ${k} region`)]);
+  /* categories and collections: the design lines of invoiced orders (Big E sales carry products, not designs) */
+  const lines = list.filter(([s]) => s.div === 'wholesale').flatMap(([s]) => s.lines.map(l => ({ s, l })));
+  const lineFigs = (a, title) => [...(P ? [fig(inr0(a.reduce((t, x) => t + x.l.amount, 0)), { title, calc: `The sum of the line amounts (rate x boxes, before GST) of these designs on invoiced EGO Premium orders. Other charges on an order are not in any category. Filter: ${anFilterTxt()}.`, head: ['Order', 'Date', 'Design', 'Boxes', ...(P ? ['Line amount'] : [])], rows: a.map(x => ({ href: x.s.href, cells: [esc(x.s.ref), ds(x.s.at), esc(x.l.product), num(x.l.boxes), ...(P ? [inr0(x.l.amount)] : [])] })) })] : []), num(a.reduce((t, x) => t + x.l.boxes, 0)), num(Math.round(a.reduce((t, x) => t + x.l.sqft, 0)))];
+  const lhead = first => [first, ...(P ? ['Value before GST'] : []), 'Boxes', 'Sq ft'];
+  const byCat = groupBy(lines, x => x.l.category).map(([k, a]) => [esc(k), ...lineFigs(a, `${k}: designs invoiced`)]);
+  const byCol = groupBy(lines, x => `${x.l.category} · ${x.l.collection}`).map(([k, a]) => [esc(k), ...lineFigs(a, `${k}: designs invoiced`)]);
+  const byDealer = groupBy(list, ([s]) => s.client_id).map(([k, a]) => [k, a, sum(a, 'value'), a.map(([s]) => s.at).sort().pop()]).sort((a, b) => b[2] - a[2] || b[1].length - a[1].length);
+  const dealerRows = byDealer.slice(0, 25).map(([k, a, , last]) => [`<a href="#/client/${k}"><b>${esc(clientName(k))}</b></a>`, ...figs(a, `Sales to ${clientName(k)}`), ds(last)]);
+  /* dormant: dealers who bought before and have no invoice in the last 90 days (the date filter does not apply) */
+  const fi = salesList().filter(s => s.div === 'wholesale' && co !== 'retail' && anWhoOk(s.owner) && anRegionOk(s.region));
+  const lastBy = {}; for (const s of fi) if (!lastBy[s.client_id] || s.at > lastBy[s.client_id].at) lastBy[s.client_id] = s;
+  const cut = new Date(Date.parse(today()) - 90 * 864e5).toISOString().slice(0, 10);
+  const dormant = Object.values(lastBy).filter(s => s.at < cut && DEALER_KINDS.includes((CL()[s.client_id] || {}).kind)).sort((a, b) => a.at.localeCompare(b.at));
+  const nd = Object.values(firstInvoices()).filter(s => anIn(s.at) && anWhoOk(s.owner) && anRegionOk(s.region) && co !== 'retail');
+  const tiles = `<div class="grid g4">${P ? tile('Invoiced and won', fig(inr0(sum(list, 'value')), { title: 'All sales', calc: `The sum of the value before GST of every sale. ${rule} Filter: ${anFilterTxt()}.`, head: SALE_HEAD(), rows: list.map(([s, m]) => saleRow(s, m)) }), 'before GST') : ''}${tile('Sales', fig(num(list.length), { title: 'All sales', calc: `${rule} Filter: ${anFilterTxt()}.`, head: SALE_HEAD(), rows: list.map(([s, m]) => saleRow(s, m)) }))}${tile('Boxes invoiced', num(sum(list, 'boxes')))}${tile('New dealers', fig(num(nd.length), { title: 'New dealers', calc: `Dealers whose first invoiced order in EGO Master is dated inside the filter. Filter: ${anFilterTxt()}.`, head: ['Dealer', 'First invoice', 'Order', 'Person'], rows: nd.map(s => ({ href: '#/client/' + s.client_id, cells: [`<b>${esc(clientName(s.client_id))}</b>`, ds(s.at), esc(s.ref), esc(staffName(s.owner))] })) }), 'first invoice in the dates')}</div>`;
+  return `${tiles}<p class="small muted">${esc(rule)} Click a figure to see the sales behind it.</p>
+    <div class="grid g2">${anSec('By month', head('Month'), byMonth)}${anSec('By person', head('Person'), byPerson)}</div>
+    <div class="grid g2">${anSec('By region', head('Region'), byRegion)}${anSec('By category', lhead('Category'), byCat, 'From the designs on invoiced EGO Premium orders.')}</div>
+    ${anSec('By collection', lhead('Category · collection'), byCol)}
+    ${anSec('Top dealers and clients', [...head('Client'), 'Last sale'], dealerRows, byDealer.length > 25 ? `The 25 highest of ${byDealer.length}.` : '', 'data-an-top')}
+    ${co !== 'retail' ? anSec('Dormant dealers', ['Dealer', 'Last invoice', 'Order', 'Person', 'Days since'], dormant.map(s => ({ href: '#/client/' + s.client_id, cells: [`<b>${esc(clientName(s.client_id))}</b>`, ds(s.at), esc(s.ref), esc(staffName(s.owner)), num(Math.round((Date.parse(today()) - Date.parse(s.at)) / 864e5))] })), 'Dealers who have bought before and have no invoice in the last 90 days. The date filter does not apply here.', 'data-an-dormant') : ''}`;
+}
+/* ---- Pipeline */
+function anPipeline() {
+  const P = D.access.prices, co = anCo(), t = today(), pipes = Object.keys(PIPELINES).filter(p => co === 'both' || PIPELINES[p].division === co);
+  const os = D.opportunities.filter(o => pipes.includes(o.pipeline) && anWhoOk(o.owner_id) && anRegionOk(o.region || ''));
+  const oppRow = o => ({ href: '#/opp/' + o.id, cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(o.ref || '')}</div>`, esc(clientName(o.client_id)), esc(o.stage), esc(staffName(o.owner_id)), ...(P ? [o.value ? inr0(o.value) : ''] : [])] });
+  const OH = () => ['Opportunity', 'Client', 'Stage', 'Owner', ...(P ? ['Value'] : [])];
+  let out = '';
+  for (const p of pipes) {
+    const S = (D.lists.stages[p] || []).filter(s => s !== lostStage(p, D.lists)), mine = os.filter(o => o.pipeline === p);
+    const open = mine.filter(isOpen);
+    const openRows = S.filter(s => !isClosed(p, s, D.lists)).map(s => { const a = open.filter(o => o.stage === s); return [esc(s), fig(num(a.length), { title: `Open at ${s}`, calc: `Opportunities of this pipeline at ${s} right now (the date filter does not apply). Filter: person and region.`, head: OH(), rows: a.map(oppRow) }), ...(P ? [fig(inr0(sumV(a)), { title: `Open value at ${s}`, calc: 'The sum of the values entered on these opportunities.', head: OH(), rows: a.map(oppRow) })] : [])]; });
+    /* the funnel: opportunities created in the dates, and the furthest stage each reached (from its stage history) */
+    const born = mine.filter(o => anIn(dayIST(o.created_at)));
+    const reach = o => { const idx = [o.stage, ...D.history.filter(h => h.opp_id === o.id).flatMap(h => [h.from_stage, h.to_stage])].map(s => S.indexOf(s)); return Math.max(...idx); };
+    const conv = S.map((s, i) => { const a = born.filter(o => reach(o) >= i), b = born.filter(o => reach(o) >= i + 1);
+      return [esc(s), fig(num(a.length), { title: `Reached ${s}`, calc: `Opportunities created in the dates whose stage history reaches ${s} or a later stage.`, head: OH(), rows: a.map(oppRow) }), i < S.length - 1 ? num(b.length) : '', i < S.length - 1 ? (a.length ? `${pct(b.length, a.length)}%` : '') : '']; });
+    /* days in each stage: every stage left in the dates, from the move in to the move out */
+    const spans = []; for (const o of mine) { const h = D.history.filter(x => x.opp_id === o.id).sort((a, b) => String(a.at).localeCompare(String(b.at))); const start = [{ to_stage: (h[0] && h[0].from_stage) || null, at: o.created_at }, ...h];
+      for (let i = 0; i < start.length - 1; i++) if (start[i].to_stage && anIn(dayIST(start[i + 1].at))) spans.push({ o, stage: start[i].to_stage, days: (Date.parse(String(start[i + 1].at).replace(' ', 'T') + (/Z|\+/.test(start[i + 1].at) ? '' : 'Z')) - Date.parse(String(start[i].at).replace(' ', 'T') + (/Z|\+/.test(start[i].at) ? '' : 'Z'))) / 864e5 }); }
+    const days = S.map(s => { const a = spans.filter(x => x.stage === s); return [esc(s), num(a.length), a.length ? fig((a.reduce((t2, x) => t2 + x.days, 0) / a.length).toFixed(1), { title: `Days at ${s}`, calc: `The average number of days between moving into ${s} and moving out of it, over every move out made in the dates (from the stage history).`, head: ['Opportunity', 'Days at this stage'], rows: a.map(x => ({ href: '#/opp/' + x.o.id, cells: [esc(x.o.title), x.days.toFixed(1)] })) }) : '', num(open.filter(o => o.stage === s).length)]; });
+    const closed = mine.filter(o => isClosed(p, o.stage, D.lists) && anIn(dayIST(o.closed_at || o.updated_at))), won = closed.filter(isWon), lost = closed.filter(o => o.stage === lostStage(p, D.lists));
+    out += `<section class="stack-s" data-an-pipe="${p}"><h2>${esc(PIPELINES[p].plural)}</h2>
+      <div class="grid g4">${tile('Open now', fig(num(open.length), { title: 'Open now', calc: 'Opportunities not won or lost, right now.', head: OH(), rows: open.map(oppRow) }), P ? inr0(sumV(open)) : '')}${tile(`Won (${wonStage(p, D.lists)})`, fig(num(won.length), { title: 'Won in the dates', calc: `Opportunities moved to ${wonStage(p, D.lists)} in the dates.`, head: OH(), rows: won.map(oppRow) }), P ? inr0(sumV(won)) : '')}${tile('Lost', fig(num(lost.length), { title: 'Lost in the dates', calc: 'Opportunities moved to Lost in the dates.', head: OH(), rows: lost.map(oppRow) }), P ? inr0(sumV(lost)) : '')}${tile('Won to lost', lost.length ? `${(won.length / lost.length).toFixed(1)} : 1` : won.length ? `${won.length} : 0` : '0 : 0', closed.length ? `${pct(won.length, closed.length)}% of those closed were won` : 'none closed in the dates')}</div>
+      <div class="grid g2">${anSec(`${PIPELINES[p].label}: open value by stage`, ['Stage', 'Open', ...(P ? ['Value'] : [])], openRows)}${anSec(`${PIPELINES[p].label}: conversion between stages`, ['Stage', 'Reached it', 'Went on to the next', 'Conversion'], conv, 'Opportunities created in the dates, by the furthest stage their history reached.')}</div>
+      ${anSec(`${PIPELINES[p].label}: average days in each stage`, ['Stage', 'Moves out', 'Average days', 'In it now'], days, 'From the stage history: the time between moving into a stage and moving out of it, for moves out made in the dates.')}</section>`;
+  }
+  const lostAll = os.filter(o => o.stage === lostStage(o.pipeline, D.lists) && anIn(dayIST(o.closed_at || o.updated_at)));
+  const reasons = groupBy(lostAll, o => o.lost_reason || 'Not given').sort((a, b) => b[1].length - a[1].length).map(([k, a]) => [esc(k), fig(num(a.length), { title: `Lost: ${k}`, calc: 'Opportunities lost in the dates with this reason.', head: OH(), rows: a.map(oppRow) }), ...(P ? [inr0(sumV(a))] : [])]);
+  return out + anSec('Lost by reason', ['Reason', 'Lost', ...(P ? ['Value'] : [])], reasons, 'The full list, with details and the stage each was lost from, is in <a href="#/lost">Lost sales</a>.', 'data-an-lost');
+}
+/* ---- Follow-ups */
+function anFollowups() {
+  const t = today(), co = anCo(), cOk = f => { const c = CL()[f.client_id]; return (!c || co === 'both' || c.division === 'both' || c.division === co) && anRegionOk(c ? c.region || '' : ''); };
+  const fus = FUS().filter(f => cOk(f) && anWhoOk(f.owner_id)), due = fus.filter(f => anIn(f.due_date));
+  const onTime = f => f.status === 'done' && dayIST(f.done_at) <= f.due_date, late = f => f.status === 'done' && dayIST(f.done_at) > f.due_date, missed = f => f.status !== 'done' && f.due_date < t;
+  const fuRow = f => ({ href: f.opp_id ? '#/opp/' + f.opp_id : '#/client/' + f.client_id, cells: [`<b>${esc(f.action)}</b>`, esc(clientName(f.client_id)), ds(f.due_date), esc(staffName(f.owner_id)), f.status === 'done' ? `Done ${ds(dayIST(f.done_at))}${f.outcome ? ': ' + esc(f.outcome) : ''}` : f.due_date < t ? '<span class="badge bad">Missed, still open</span>' : 'Open'] });
+  const FH = ['Follow-up', 'Client', 'Due', 'Person', 'What happened'];
+  const ff = (a, title, calc) => fig(num(a.length), { title, calc: calc + ` Filter: ${anFilterTxt()}.`, head: FH, rows: a.map(fuRow) });
+  const byPerson = groupBy(due, f => f.owner_id).map(([k, a]) => [esc(staffName(k)), ff(a, `Due for ${staffName(k)}`, 'Follow-ups due in the dates.'), ff(a.filter(onTime), 'Done on time', 'Done on or before the day it was due.'), ff(a.filter(late), 'Done late', 'Done after the day it was due.'), ff(a.filter(missed), 'Missed', 'Past its day and still not done.'), a.length ? `${pct(a.filter(onTime).length, a.length)}%` : '']);
+  const open = fus.filter(f => f.status !== 'done' && f.due_date < t), age = f => Math.round((Date.parse(t) - Date.parse(f.due_date)) / 864e5);
+  const buckets = [['1 to 3 days', 1, 3], ['4 to 7 days', 4, 7], ['8 to 14 days', 8, 14], ['15 to 30 days', 15, 30], ['More than 30 days', 31, 1e9]].map(([l, a, b]) => { const x = open.filter(f => age(f) >= a && age(f) <= b); return [esc(l), ff(x, `Overdue ${l}`, 'Open follow-ups past their day by this many days, right now (the date filter does not apply).')]; });
+  /* response to new leads: from the opportunity being created to its first follow-up marked done */
+  const pipes = Object.keys(PIPELINES).filter(p => co === 'both' || PIPELINES[p].division === co);
+  const leads = D.opportunities.filter(o => pipes.includes(o.pipeline) && anIn(dayIST(o.created_at)) && anWhoOk(o.owner_id) && anRegionOk(o.region || '')).map(o => {
+    const first = FUS().filter(f => f.opp_id === o.id && f.status === 'done' && f.done_at).sort((a, b) => String(a.done_at).localeCompare(String(b.done_at)))[0];
+    const ms = s => Date.parse(String(s).replace(' ', 'T') + (/Z|\+/.test(s) ? '' : 'Z'));
+    return { o, first, hours: first ? Math.max(0, (ms(first.done_at) - ms(o.created_at)) / 36e5) : null };
+  });
+  const LH = ['Opportunity', 'Source', 'Created', 'First follow-up done', 'Hours'];
+  const lrow = x => ({ href: '#/opp/' + x.o.id, cells: [`<b>${esc(x.o.title)}</b>`, esc(x.o.source || 'Not filled'), whenTxt(x.o.created_at), x.first ? whenTxt(x.first.done_at) : '<span class="badge warn">Not yet</span>', x.hours == null ? '' : x.hours.toFixed(1)] });
+  const avgH = a => { const d = a.filter(x => x.hours != null); return d.length ? fig((d.reduce((s, x) => s + x.hours, 0) / d.length).toFixed(1) + ' h', { title: 'Average response time', calc: `From the opportunity being created to its first follow-up marked done, averaged over the new leads that have one. Filter: ${anFilterTxt()}.`, head: LH, rows: a.map(lrow) }) : 'None yet'; };
+  const bySource = groupBy(leads, x => x.o.source || 'Not filled').map(([k, a]) => [esc(k), num(a.length), num(a.filter(x => x.first).length), avgH(a), num(a.filter(x => !x.first).length)]);
+  return `<div class="grid g4">${tile('Done', ff(fus.filter(f => f.status === 'done' && anIn(dayIST(f.done_at))), 'Done in the dates', 'Follow-ups marked done in the dates.'))}${tile('Missed', ff(due.filter(missed), 'Missed', 'Due in the dates, past their day and still not done.'))}${tile('Overdue now', ff(open, 'Overdue now', 'Every open follow-up past its day, right now.'))}${tile('Average response to new leads', avgH(leads))}</div>
+    ${anSec('Done and missed, by person', ['Person', 'Due in the dates', 'Done on time', 'Done late', 'Missed', 'On time'], byPerson, '', 'data-an-fu-person')}
+    <div class="grid g2">${anSec('Overdue, by how long', ['Overdue by', 'Follow-ups'], buckets, 'Open follow-ups past their day, right now.')}${anSec('Response to new leads, by source', ['Source', 'New leads', 'Followed up', 'Average time', 'Not followed up yet'], bySource, 'From the opportunity being created to its first follow-up marked done.', 'data-an-response')}</div>`;
+}
+/* ---- Fulfilment (EGO Premium) */
+function anFulfilment() {
+  if (anCo() === 'retail') return '<div class="callout">Fulfilment is EGO Premium\'s order road (stock, PI, payment, invoice, dispatch). Big E\'s won sales go to Installation.</div>';
+  const O = OPSD(), FS = OS_('fulfilment_stages'), t = today(), P = D.access.prices;
+  const orders = O.orders.filter(o => anWhoOk(o.owner_id) && anRegionOk(o.region || ''));
+  const boxesOf = o => O.lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0);
+  const orow = o => ({ href: '#/order/' + o.id, cells: [`<b>${esc(o.ref)}</b>`, esc(clientName(o.client_id)), esc(o.ful_stage), esc(staffName(o.owner_id)), num(boxesOf(o))] });
+  const OHd = ['Order', 'Dealer', 'Stage', 'Person', 'Boxes'];
+  const byStage = FS.map(s => { const a = orders.filter(o => o.ful_stage === s); return [esc(s), fig(num(a.length), { title: `Orders at ${s}`, calc: 'Orders at this fulfilment stage right now.', head: OHd, rows: a.map(orow) }), num(a.reduce((x, o) => x + boxesOf(o), 0))]; });
+  const ms = s => Date.parse(String(s).replace(' ', 'T') + (/Z|\+/.test(s) ? '' : 'Z'));
+  const sent = orders.map(o => ({ o, paid: stageAt(o.id, FN('Payment received')), out: stageAt(o.id, FN('Dispatched')) })).filter(x => x.paid && x.out && anIn(dayIST(x.out))).map(x => ({ ...x, days: (ms(x.out) - ms(x.paid)) / 864e5 }));
+  const short = orders.filter(o => [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage) && missingOf(o.id) > 0);
+  const PS = OS_('production_stages'), recI = PS.indexOf(PNn('Received at warehouse'));
+  const late = O.production.filter(p => p.eta && p.eta < t && PS.indexOf(p.stage) < recI);
+  return `<div class="grid g4">${tile('Orders in fulfilment', fig(num(orders.filter(o => o.ful_stage !== lastOf(FS)).length), { title: 'Orders in fulfilment', calc: `Orders not yet at ${lastOf(FS)}, right now.`, head: OHd, rows: orders.filter(o => o.ful_stage !== lastOf(FS)).map(orow) }))}${tile('Payment to dispatch', sent.length ? fig((sent.reduce((a, x) => a + x.days, 0) / sent.length).toFixed(1) + ' days', { title: 'Payment received to Dispatched', calc: `For each order dispatched in the dates: the days from its move to ${FN('Payment received')} to its move to ${FN('Dispatched')} (from the fulfilment history), averaged.`, head: ['Order', 'Payment received', 'Dispatched', 'Days'], rows: sent.map(x => ({ href: '#/order/' + x.o.id, cells: [esc(x.o.ref), whenTxt(x.paid), whenTxt(x.out), x.days.toFixed(1)] })) }) : 'None yet', 'average, dispatched in the dates')}${tile('Boxes short', fig(num(short.reduce((a, o) => a + missingOf(o.id), 0)), { title: 'Boxes waiting on production', calc: 'For each order at Stock check or Waiting on production: the boxes not covered by free stock, added up.', head: ['Order', 'Dealer', 'Boxes short'], rows: short.map(o => ({ href: '#/order/' + o.id, cells: [esc(o.ref), esc(clientName(o.client_id)), num(missingOf(o.id))] })) }), `${num(short.length)} orders`)}${tile('Late production', fig(num(late.length), { title: 'Late production orders', calc: 'Production orders past their expected date and not yet received at the warehouse.', head: ['Production order', 'Design', 'Boxes', 'Expected'], rows: late.map(p => ({ href: '#/po/' + p.id, cells: [esc(p.ref), esc(prodName(p.product_id)), num(p.boxes), ds(p.eta)] })) }))}</div>
+    <div class="grid g2">${anSec('Orders by stage', ['Stage', 'Orders', 'Boxes'], byStage, 'Right now.')}${anSec('Boxes waiting on production', ['Order', 'Dealer', 'Boxes short'], short.map(o => ({ href: '#/order/' + o.id, cells: [`<b>${esc(o.ref)}</b>`, esc(clientName(o.client_id)), `<span class="badge bad">${num(missingOf(o.id))}</span>`] })), '', 'data-an-short')}</div>
+    <div class="grid g2">${anSec('Payment received to dispatched', ['Order', 'Days'], sent.map(x => ({ href: '#/order/' + x.o.id, cells: [esc(x.o.ref), x.days.toFixed(1)] })), 'Orders dispatched in the dates.')}${anSec('Late production orders', ['Production order', 'Design', 'Boxes', 'Expected', 'Days late'], late.map(p => ({ href: '#/po/' + p.id, cells: [`<b>${esc(p.ref)}</b>`, esc(prodName(p.product_id)), num(p.boxes), ds(p.eta), num(Math.round((Date.parse(t) - Date.parse(p.eta)) / 864e5))] })), '', 'data-an-late')}</div>`;
+}
+/* ---- Targets */
+function anTargets() {
+  const co = anCo(), list = TGS().filter(t => (co === 'both' || t.division === co) && (!EM.anF.who || anPeople().includes(t.subject) || t.level === 'company' || t.level === 'role') && tgRunsIn(t, EM.anF));
+  const grp = lv => list.filter(t => t.level === lv);
+  const part = (lv, title) => grp(lv).length ? `<section class="card stack-s" data-an-tg="${lv}"><h3>${title}</h3>${tgTable(grp(lv))}</section>` : '';
+  return `<div class="row between"><p class="small muted" style="max-width:760px">Targets running in the dates, with how far each has got. Achievement is counted from invoiced orders (EGO Premium) and won sales (Big E). Click an achieved figure to see the sales behind it.</p><a class="btn" href="#/targets">${canSetT() ? 'Set and change targets' : 'All targets'}</a></div>
+    ${list.length ? part('company', 'The company') + part('role', 'Departments and roles') + part('team', 'Teams') + part('person', 'People') : empty('No target in these dates', canSetT() ? 'Set targets on the Targets screen, one at a time or from Excel.' : 'Targets are set by the Owner, a Director or your manager.', '<a class="btn" href="#/targets">Targets</a>')}`;
+}
+EM.VIEWS.analysis = arg => {
+  if (!allowedTab('analysis')) return EM.noAccess('Analysis belongs to roles that hold business records.');
+  whyReset(); EM.anCsv = [];
+  const tab = AN_TABS.some(([k]) => k === arg) ? arg : 'sales', f = EM.anF;
+  const sel = (k, label, opts) => `<label class="field" style="min-width:170px"><span class="small muted">${label}</span><select class="input" data-anf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const ppl = D.staff.filter(s => s.active && (D.access.scope === 'all' || D.access.scope === 'division' || D.access.scope === 'region' || [me().id, ...under(me().id)].includes(s.id)));
+  const heads = ppl.filter(s => D.staff.some(x => x.reports_to === s.id && x.active));
+  const regions = [...new Set((D.lists.cities || []).map(c => c.region).filter(Boolean))].sort();
+  const body = { sales: anSales, pipeline: anPipeline, followups: anFollowups, fulfilment: anFulfilment, targets: anTargets }[tab]();
+  return `<div class="stack"><div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${esc(scopeLabel())}</div><h1>Analysis</h1>
+      <p class="muted" style="max-width:820px">Counted only from what is saved in EGO Master, within what you may see. Click any figure to see the records behind it and how it is worked out.</p></div>
+      <button class="btn" data-act="an-csv">Download for Excel</button></div>
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-an-filters>
+      ${D.user.division === 'both' ? sel('co', 'Company', [['', `As the top switch (${SEG[EM.div]})`], ['both', 'Both companies'], ['wholesale', 'EGO Premium'], ['retail', 'Big E']]) : `<div class="field"><span class="small muted">Company</span>${segBadge(D.user.division)}</div>`}
+      ${dateFilter(f, 'an', 'Dates')}${sel('who', 'Person or team', [['', 'Everyone you see'], ...ppl.map(s => ['p:' + s.id, s.name]), ...heads.map(s => ['t:' + s.id, `Team of ${s.name}`])])}${sel('region', 'Region', [['', 'Every region'], ...regions.map(r => [r, r])])}</div>
+    ${subtabs('#/analysis', tab, AN_TABS)}<div class="stack" data-an-tab="${tab}">${body}</div></div>`;
+};
+EM.VIEWS.analysis.title = () => 'Analysis';
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.anf; if (k) { EM.anF[k] = e.target.value; EM.rerender(); } });
+/* the tab as shown, as a CSV file Excel opens: every table, with its title (rupees only for roles that see money) */
+EM.ACTIONS['an-csv'] = () => {
+  const div = document.createElement('div'), txt = h => { div.innerHTML = String(h == null ? '' : h); return div.textContent.trim(); }, cell = v => `"${String(v).replace(/"/g, '""')}"`;
+  const out = [['EGO Master analysis', (AN_TABS.find(([k]) => k === (EM.route().arg || 'sales')) || AN_TABS[0])[1], anFilterTxt(), `made ${today()} by ${me().name}`]];
+  for (const [title, head, rows] of EM.anCsv) { out.push([], [title], head.map(txt)); for (const r of rows) out.push((Array.isArray(r) ? r : r.cells).map(txt)); }
+  const csv = '﻿' + out.map(l => l.map(cell).join(',')).join('\r\n');
+  const u = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a');
+  a.href = u; a.download = `EGO analysis ${EM.route().arg || 'sales'} ${today()}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000);
+  EM.toast(`<b>${EM.anCsv.length}</b> tables downloaded.`);
+};
+
 /* ---------------------------------------------------------------- History on every window (13 Oct)
    A History button beside every screen's title opens what happened there: added, changed, deleted, by whom
    and when, old to new where the change kept it. On a record page it is that record's own history. */
 const HIST_AREA = { dealers: 'dealers', architects: 'architects', people: 'people', clients: 'people', opps: 'opps', lost: 'opps', followups: 'followups', orders: 'orders', orderbook: 'orderbook', installation: 'installation', complaints: 'complaints',
-  approvals: 'approvals', schemes: 'schemes', p200: 'p200', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin' };
+  approvals: 'approvals', schemes: 'schemes', p200: 'p200', analysis: 'analysis', targets: 'targets', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin' };
 const HIST_RECORD = ['client', 'opp', 'order', 'po', 'site', 'scheme', 'product', 'collection'];
 function histButton() {
   const { r, arg } = EM.route(), h1 = qs('#view h1'); if (!h1 || qs('#view [data-hist-open]')) return;

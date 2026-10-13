@@ -96,3 +96,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .cb-opt.on, .cb-opt:hover { background: var(--ge-surface-2); }
 .cb-none { padding: 8px 10px; }
 hr.sep { border: 0; border-top: 1px dashed var(--ge-border); margin: 6px 0; }
+/* 13 Oct, batch 3: a figure you can click to see the records behind it, and a target's progress bar */
+.fig{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;text-align:inherit}
+.fig:hover,.fig:focus-visible{color:var(--ge-primary);text-decoration-style:solid}
+.tg-bar{display:inline-block;width:56px;height:6px;border-radius:3px;background:var(--ge-border);vertical-align:middle;overflow:hidden}
+.tg-bar>span{display:block;height:100%;background:var(--ge-warning)}
+.tg-bar>span.ok{background:var(--ge-success)}
+#toast.on [data-act]{pointer-events:auto}   /* an Undo inside a toast must be pressable (the toast itself lets clicks through) */

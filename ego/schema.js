@@ -713,12 +713,12 @@ const DASHES = [['', 'Standard Home'], ['mgmt', 'Management'], ['head', 'Sales h
 const SCOPES_ALL = [['all', 'Everything, both companies'], ['division', 'Everything in their company'], ['region', 'Their region'], ['own', 'Their own and their team\'s'], ['none', 'No business records']];
 /* the screens each role has; a role not listed has every screen its access allows */
 const ROLE_TABS = {
-  ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'account'],
-  ws_tele: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'account'],
-  ws_finance: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'approvals', 'inventory', 'account'],
-  ws_warehouse: ['home', 'orders', 'orderbook', 'inventory', 'complaints', 'account'],
-  office_admin: ['home', 'people', 'architects', 'dealers', 'inventory', 'complaints', 'account'],
-  ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'account'],
+  ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account'],
+  ws_tele: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account'],
+  ws_finance: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'approvals', 'inventory', 'analysis', 'account'],
+  ws_warehouse: ['home', 'orders', 'orderbook', 'inventory', 'complaints', 'analysis', 'account'],
+  office_admin: ['home', 'people', 'architects', 'dealers', 'inventory', 'complaints', 'analysis', 'account'],
+  ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'analysis', 'account'],
 };
 /* what a file kept on a fulfilment order is (13 Oct): EGO makes these in Tally and uploads the PDF here */
 const ORDER_DOC_TYPES = ['PI', 'Invoice', 'Payment proof', 'Other'];
@@ -775,4 +775,51 @@ const CLIENT_CLOSED = 'Inactive';
 
 /* the Recycle bin (13 Oct): every delete waits here this many days, then the daily run purges it */
 const BIN_DAYS = 30;
-const BIN_KIND = { client: 'Client', contact: 'Contact', opportunity: 'Opportunity', document: 'File', product: 'Design', role: 'Role', scheme: 'Scheme', tool_key: 'Tool key' };
+const BIN_KIND = { client: 'Client', contact: 'Contact', opportunity: 'Opportunity', document: 'File', product: 'Design', role: 'Role', scheme: 'Scheme', tool_key: 'Tool key', target: 'Target' };
+
+/* Targets (13 Oct, batch 3): per person, per team (a manager and everyone under them on Reports to),
+   per department or role, and for the company; by month, quarter or financial year (April to March).
+   Achievement is counted on screen from saved records, never typed. Shared by the server and the browser. */
+const TARGET_LEVELS = { person: 'A person', team: 'A team', role: 'A department or role', company: 'The company' };
+const TARGET_PERIODS = { month: 'Month', quarter: 'Quarter', year: 'Financial year' };
+const MONTHS_FULL = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const lastDay = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate();   // m is 1 to 12
+const p2 = n => String(n).padStart(2, '0');
+/* a period's first and last day: month 2026-10, quarter 2026-Q3 (Oct to Dec of FY 2026-27), year 2026 (FY 2026-27) */
+function periodRange(type, key) {
+  let m;
+  if (type === 'month' && (m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(key || ''))) { const y = +m[1], mo = +m[2]; return { start: `${y}-${p2(mo)}-01`, end: `${y}-${p2(mo)}-${lastDay(y, mo)}` }; }
+  if (type === 'quarter' && (m = /^(\d{4})-Q([1-4])$/.exec(key || ''))) {
+    const fy = +m[1], q = +m[2], m0 = 4 + (q - 1) * 3, y = m0 > 12 ? fy + 1 : fy, mo = m0 > 12 ? m0 - 12 : m0;
+    return { start: `${y}-${p2(mo)}-01`, end: `${y}-${p2(mo + 2)}-${lastDay(y, mo + 2)}` };
+  }
+  if (type === 'year' && (m = /^(\d{4})$/.exec(key || ''))) return { start: `${m[1]}-04-01`, end: `${+m[1] + 1}-03-31` };
+  return null;
+}
+function periodLabel(type, key) {
+  const r = periodRange(type, key); if (!r) return String(key || '');
+  if (type === 'month') return `${MONS[+key.slice(5, 7) - 1]} ${key.slice(0, 4)}`;
+  const fy = +key.slice(0, 4), fyTxt = `${fy}-${p2((fy + 1) % 100)}`;
+  if (type === 'year') return fyTxt;
+  return `Q${key.slice(-1)} ${fyTxt} (${MONS[+r.start.slice(5, 7) - 1]} to ${MONS[+r.end.slice(5, 7) - 1]} ${r.end.slice(0, 4)})`;
+}
+/* the periods offered in forms and in the Excel file: this financial year and the next */
+function periodOptions(day) {
+  const y = +day.slice(0, 4), mo = +day.slice(5, 7), fy = mo >= 4 ? y : y - 1, out = [];
+  for (const f of [fy, fy + 1]) {
+    for (let i = 0; i < 12; i++) { const m0 = 4 + i, yy = m0 > 12 ? f + 1 : f, key = `${yy}-${p2(m0 > 12 ? m0 - 12 : m0)}`; out.push({ type: 'month', key, label: periodLabel('month', key) }); }
+    for (let q = 1; q <= 4; q++) out.push({ type: 'quarter', key: `${f}-Q${q}`, label: periodLabel('quarter', `${f}-Q${q}`) });
+    out.push({ type: 'year', key: String(f), label: periodLabel('year', String(f)) });
+  }
+  return out;
+}
+/* "Oct 2026", "Q3 2026-27 (Oct to Dec 2026)" or "2026-27" back to its type and key */
+function periodOfLabel(label) {
+  const t = String(label || '').trim(); let m;
+  if ((m = /^([A-Za-z]+)\s+(\d{4})$/.exec(t))) { const w = m[1].toLowerCase(), i = MONS.findIndex((x, j) => x.toLowerCase() === w || MONTHS_FULL[j] === w); return i < 0 ? null : { type: 'month', key: `${m[2]}-${p2(i + 1)}` }; }
+  if ((m = /^Q([1-4])\s+(\d{4})-(\d{2})\b/i.exec(t)) && +m[3] === (+m[2] + 1) % 100) return { type: 'quarter', key: `${m[2]}-Q${m[1]}` };
+  if ((m = /^(\d{4})-(\d{2})$/.exec(t)) && +m[2] === (+m[1] + 1) % 100) return { type: 'year', key: m[1] };
+  return null;
+}
+
