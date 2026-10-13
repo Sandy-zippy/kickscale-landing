@@ -715,6 +715,10 @@ td .sub{display:block;font-size:11px;color:var(--dim)}
 .docrow .needline{display:block;font-size:11px;line-height:1.45;color:var(--bad-ink);margin-top:4px}
 /* files past the first few, behind one click: a card that grows to thirty rows
    pushes the next slot off the screen and moves every time somebody uploads */
+.learn>summary{cursor:pointer;list-style:none}
+.learn>summary::-webkit-details-marker{display:none}
+.learn>summary h3::after{content:'\25BE';display:inline-block;margin-left:8px;color:var(--mut);transition:transform .15s}
+.learn:not([open])>summary h3::after{transform:rotate(-90deg)}
 .dmore{margin-top:6px}
 .dmore>summary{cursor:pointer;list-style-position:inside;padding:12px 2px;
   font-family:var(--d);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
@@ -1271,33 +1275,33 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 
 <div id="toast" hidden></div>
 
-<script src="places.js?b=1791862040"></script>
-<script src="vocab.js?b=1791862040"></script>
-<script src="api.js?b=1791862040"></script>
-<script src="core.js?b=1791862040"></script>
-<script src="app.js?b=1791862040"></script>
-<script src="stock.js?b=1791862040"></script>
-<script src="crm.js?b=1791862040"></script>
-<script src="pipeline.js?b=1791862040"></script>
-<script src="autos.js?b=1791862040"></script>
-<script src="processing.js?b=1791862040"></script>
-<script src="whatsapp.js?b=1791862040"></script>
-<script src="campaigns.js?b=1791862040"></script>
-<script src="bin.js?b=1791862040"></script>
-<script src="inbox.js?b=1791862040"></script>
-<script src="chatbot.js?b=1791862040"></script>
-<script src="outreach.js?b=1791862040"></script>
-<script src="diary.js?b=1791862040"></script>
-<script src="handbook.js?b=1791862040"></script>
-<script src="jarvis.js?b=1791862040"></script>
-<script src="jarvis-desk.js?b=1791862040"></script>
-<script src="dates.js?b=1791862040"></script>
+<script src="places.js?b=1791864115"></script>
+<script src="vocab.js?b=1791864115"></script>
+<script src="api.js?b=1791864115"></script>
+<script src="core.js?b=1791864115"></script>
+<script src="app.js?b=1791864115"></script>
+<script src="stock.js?b=1791864115"></script>
+<script src="crm.js?b=1791864115"></script>
+<script src="pipeline.js?b=1791864115"></script>
+<script src="autos.js?b=1791864115"></script>
+<script src="processing.js?b=1791864115"></script>
+<script src="whatsapp.js?b=1791864115"></script>
+<script src="campaigns.js?b=1791864115"></script>
+<script src="bin.js?b=1791864115"></script>
+<script src="inbox.js?b=1791864115"></script>
+<script src="chatbot.js?b=1791864115"></script>
+<script src="outreach.js?b=1791864115"></script>
+<script src="diary.js?b=1791864115"></script>
+<script src="handbook.js?b=1791864115"></script>
+<script src="jarvis.js?b=1791864115"></script>
+<script src="jarvis-desk.js?b=1791864115"></script>
+<script src="dates.js?b=1791864115"></script>
 <!-- The invoice PDF: the drawing library, the embedded font (the rupee sign is
      not in any PDF standard font), and the layout itself. -->
-<script src="vendor/jspdf.js?b=1791862040"></script>
-<script src="vendor/invoice-fonts.js?b=1791862040"></script>
-<script src="invoice.js?b=1791862040"></script>
-<script src="jarvis-view.js?b=1791862040"></script>
+<script src="vendor/jspdf.js?b=1791864115"></script>
+<script src="vendor/invoice-fonts.js?b=1791864115"></script>
+<script src="invoice.js?b=1791864115"></script>
+<script src="jarvis-view.js?b=1791864115"></script>
 <script>window.GE && window.GE.boot();</script>
 </body>
 </html>

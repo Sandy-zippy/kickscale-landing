@@ -260,9 +260,14 @@
     var st = b.stats;
     if (!st.sent && !b.needs.length) return '';
 
-    var h = '<div class="card pad" style="margin-bottom:14px">' +
-      '<div class="cardhead"><h3>What I have learned so far</h3>' +
-      '<span class="hint">' + esc(ZS.niceDate(b.at)) + '</span></div>';
+    /* Folded by default (13 Oct): the whole card was a long scroll above the
+       board. The summary carries the tally so it says something while shut. */
+    var tally = [st.sent ? st.sent + ' sent' : '', st.sent ? st.replied + ' replied' : '',
+                 b.needs.length ? b.needs.length + ' thing' + (b.needs.length === 1 ? '' : 's') + ' for you' : '']
+      .filter(Boolean).join(' &middot; ');
+    var h = '<details class="card pad learn" id="mk-learn" style="margin-bottom:14px"' + (LEARN_OPEN ? ' open' : '') + '>' +
+      '<summary class="cardhead"><h3>What I have learned so far</h3>' +
+      '<span class="hint">' + tally + ' &middot; ' + esc(ZS.niceDate(b.at)) + '</span></summary>';
 
     if (st.sent) {
       h += '<div class="chips" style="margin:8px 0 2px">' +
@@ -313,8 +318,13 @@
           ? '. I leave ' + esc(b.playbook.avoid.join(', ')) + ' alone.'
           : '.') + '</p>';
     }
-    return h + '</div>';
+    return h + '</details>';
   }
+  /* <details> is rebuilt on every render, so its open state lives here. toggle does not bubble. */
+  var LEARN_OPEN = false;
+  document.addEventListener('toggle', function (e) {
+    if (e.target && e.target.id === 'mk-learn') LEARN_OPEN = e.target.open;
+  }, true);
 
   function scorePill(label, n, bar) {
     var tone = n >= 4 ? 'ok' : n >= bar ? 'warn' : 'dim';
