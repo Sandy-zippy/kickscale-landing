@@ -30,12 +30,16 @@
 
   /* What Overpass calls the things we sell to. Kept here rather than on the
      server because this is the half the browser runs. */
+  /* ⚠️ PRE-OWNED ONLY (13 Oct). Brand dealerships (Hyundai, Audi, VW, and the groups that run them
+     like Al Futtaim) are not who we sell to, nor are parts, tyre or rental shops. OSM files them all
+     as shop=car, so the franchise ones are dropped by brand tag and by name. */
+  var PREOWNED = '["shop"="car"][!"brand"]["name"!~"(^| )(VW|MINI|Ford|Ram|MG|GAC|JAC|Kia|Tata|Hino|BAIC|CAT|bus|Fiat|Alfa|Seat|Jeep)( |$)|Hyundai|Toyota|Lexus|Honda|Nissan|Infiniti|Mazda|Volkswagen|Audi|BMW|Mercedes|Porsche|Lincoln|Chevrolet|Cadillac|GMC|Buick|Dodge|Chrysler|Subaru|Mitsubishi|Suzuki|Maruti|Nexa|Mahindra|Renault|Peugeot|Citroen|Skoda|Volvo|Jaguar|Land Rover|Range Rover|Genesis|Geely|Chery|BYD|Tesla|Ferrari|Lamborghini|Maserati|Bentley|Rolls|McLaren|Aston|Acura|Haval|Changan|Jetour|Isuzu|King Long|Bajaj|Yamaha|Al Tayer|Futtaim|Nabooda|Arabian Automobiles|AGMC|Juma Al Majid|Galadari|Trading Enterprises|Rostamani|Gargash|Habtoor|Swaidan|Al Gurg|Liberty Auto|Emirates Motor|Al Masaood|Western Motors|Ali & Sons|Elite Motors|Shirawi|rental|Europcar|parts|spare|tyre|battery|repair|service|garage|scrap|alignment|driving|transport|truck|diesel|Cummins|Kirloskar|مهندرا|هيونداي|تويوتا|نيسان|كيا|مازدا|ياماها|جيب|قطع|بطاريات|اطارات|تشليح|سكراب|rent a car|rental|tyres",i]';
   var TAGS = [
     ['bespoke clothing', '["shop"~"tailor|boutique|bridal|fashion"]'],
     ['luxury retail', '["shop"~"jewelry|watches|boutique|bag|perfumery|clothes|shoes"]'],
     ['interior fit out', '["shop"~"interior_decoration|furniture|doityourself"]'],
     ['furniture', '["shop"="furniture"]'],
-    ['car dealer', '["shop"~"car|car_repair|car_parts"]'],
+    ['pre-owned cars', PREOWNED],
     ['dental', '["amenity"="dentist"]'],
     ['clinic', '["amenity"~"clinic|doctors"]'],
     ['salon & spa', '["shop"~"beauty|hairdresser"]'],
@@ -323,7 +327,9 @@
     var src = p.sources || {};
     var who = p.contact_name
       ? esc(p.contact_name) + (p.contact_title ? ' <span>' + esc(p.contact_title) + '</span>' : '')
-      : '<span class="pill warn">nobody named yet</span>';
+      : '<span class="pill warn">nobody named yet</span>' +
+        (p.needs_lookup && src.person ? ' <a class="hint" href="' + esc(src.person) +
+          '" target="_blank" rel="noopener">open the search</a>' : '');
 
     var h = '<div class="card pad" style="margin-bottom:12px">' +
       '<div class="cardhead"><h3>' + esc(p.name) + '</h3>' +
@@ -350,7 +356,16 @@
                   'Scored as unknown rather than as "they have none".</span>'
                 : '<b>None at all</b>')) +
         li('Email', p.email ? esc(p.email) : '<span class="hint">not published on their site</span>') +
-      '</ul>';
+        li('Social', p.social ? '<a href="' + esc(p.social) + '" target="_blank" rel="noopener">' + esc(p.social) + '</a>'
+                              : '<span class="hint">none yet</span>') +
+        li('Mobile', p.phone ? esc(p.phone) : '<span class="hint">none yet</span>') +
+        (p.people || []).map(function (x) {
+          return li('Also: ' + (x.name || 'unnamed'),
+            [x.title, x.email, x.mobile ? (x.dial || '') + ' ' + x.mobile : ''].filter(Boolean).map(esc).join(' &middot; ') ||
+            '<span class="hint">no details</span>');
+        }).join('') +
+      '</ul>' +
+      '<button class="minibtn" style="margin-top:8px" data-act="markEdit" data-id="' + esc(p.id) + '">Edit details</button>';
 
     /* ⚠️ WHAT HAPPENED AFTER IT WENT, ON THE ROW. A prospect written to a week
        ago looked identical to one nobody had touched, which is how the same
@@ -373,20 +388,6 @@
             '<b>Read the replies</b>.</p>') +
         (gone.length > 1 ? '<p class="hint">' + gone.length + ' messages in all.</p>' : '') +
         '</div>';
-    }
-
-    /* ⚠️ THE ROW THAT NEEDS A HUMAN SAYS WHAT IT NEEDS AND LINKS STRAIGHT TO IT.
-       A prospect nobody could name is still a prospect. Dropping it would quietly
-       shrink the list for a reason nobody could see. */
-    if (p.needs_lookup && src.person) {
-      h += '<div class="note" style="margin-top:10px"><b>Mark could not name anybody here.</b> ' +
-        '<a href="' + esc(src.person) + '" target="_blank" rel="noopener">Open the search</a>, ' +
-        'then put the name in below. One click, and the row becomes workable.' +
-        '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">' +
-        '<input id="nm-' + esc(p.id) + '" placeholder="Their name" style="flex:1;min-width:140px">' +
-        '<input id="ti-' + esc(p.id) + '" placeholder="Their title" style="flex:1;min-width:140px">' +
-        '<button class="minibtn" data-act="markName" data-id="' + esc(p.id) + '">Save it</button>' +
-        '</div></div>';
     }
 
     /* ⚠️ WHAT WAS SAID TO THEM, ON THE ROW. A business Mark found and a business
@@ -676,21 +677,83 @@
     });
   });
 
-  /* The one click that turns an unnamed row into a workable one. */
-  A.markName = function (id) {
-    var nm = document.getElementById('nm-' + id);
-    var ti = document.getElementById('ti-' + id);
-    var name = nm ? String(nm.value || '').trim() : '';
-    if (!name) return G.toast('Put their name in first.', true);
-    API.saveProspect({ id: id, contact_name: name,
-                       contact_title: ti ? String(ti.value || '').trim() : '',
-                       contact_level: 'owner', needs_lookup: false })
-      .then(function () {
-        G.toast(name + ' saved.');
-        return G.pullNow ? G.pullNow() : G.render();
-      })
-      .catch(function (e) { G.toast((e && e.message) || 'That did not save.', true); });
+  /* ⚠️ EVERY CONTACT DETAIL ON A ROW IS EDITABLE (13 Oct). Mark often finds no
+     person, no site and no email; whoever looks them up types it in here. Extra
+     people (name, title, email, mobile) sit in `people`, so a business can be
+     worked through more than one person. Mobiles are the shared dial-code field. */
+  function splitPhone(t) {
+    t = String(t || '').trim();
+    var d = ZS.DIAL_CODES.map(function (x) { return x[0]; })
+      .sort(function (a, b) { return b.length - a.length; })
+      .filter(function (c) { return t.indexOf(c) === 0; })[0];
+    return d ? { dial: d, digits: t.slice(d.length).replace(/\D/g, '') } : { dial: '', digits: t.replace(/\D/g, '') };
+  }
+  var DIAL_OF = { AE: '+971', US: '+1', IN: '+91' };
+  var PN = 0;
+  function personRow(x, cat, country) {
+    var n = PN++;
+    return '<div class="card pad" data-person="' + n + '" style="margin:10px 0;padding:12px">' +
+      '<div class="f" style="margin-bottom:8px"><label for="pp' + n + '-name">Name</label>' +
+      '<input id="pp' + n + '-name" name="pp' + n + '_name" value="' + esc(x.name || '') + '"></div>' +
+      G.designationField('pp' + n + '-title', 'pp' + n + '_designation', x.title || '', cat) +
+      '<div class="f" style="margin:8px 0"><label for="pp' + n + '-email">Email</label>' +
+      '<input id="pp' + n + '-email" name="pp' + n + '_email" type="email" value="' + esc(x.email || '') + '"></div>' +
+      G.mobileField('pp' + n + '-mob', 'pp' + n + '_mobile', x.dial || DIAL_OF[country] || ZS.DEFAULT_DIAL, x.mobile || '') +
+      '<button type="button" class="minibtn" style="margin-top:8px" data-act="markDropPerson" data-id="' + n + '">Remove this person</button>' +
+      '</div>';
+  }
+  A.markEdit = function (id) {
+    var p = byId(id); if (!p) return;
+    var ph = splitPhone(p.phone);
+    PN = 0;
+    G.modal('Contact details', p.name,
+      '<form id="markedit" data-id="' + esc(p.id) + '">' +
+      '<div class="f" style="margin-bottom:12px"><label for="me-who">Who to write to</label>' +
+      '<input id="me-who" name="contact_name" value="' + esc(p.contact_name || '') + '" placeholder="Their name"></div>' +
+      '<div class="f" style="margin-bottom:12px"><label for="me-web">Website</label>' +
+      '<input id="me-web" name="website" value="' + esc(p.website || '') + '" placeholder="theirsite.com"></div>' +
+      '<div class="f" style="margin-bottom:12px"><label for="me-email">Email</label>' +
+      '<input id="me-email" name="email" type="email" value="' + esc(p.email || '') + '"></div>' +
+      '<div class="f" style="margin-bottom:12px"><label for="me-social">Social</label>' +
+      '<input id="me-social" name="social" value="' + esc(p.social || '') + '" placeholder="instagram.com/theirbrand"></div>' +
+      G.mobileField('me-mob', 'mobile', ph.dial || DIAL_OF[p.country] || ZS.DEFAULT_DIAL, ph.digits) +
+      '<h4 style="margin:18px 0 0">More people to contact</h4>' +
+      '<div id="me-people">' + (p.people || []).map(function (x) { return personRow(x, p.category, p.country); }).join('') + '</div>' +
+      '<button type="button" class="minibtn" style="margin-top:8px" data-act="markAddPerson" data-id="' + esc(p.id) + '">+ Add another person</button>' +
+      '<div style="display:flex;gap:10px;margin-top:16px">' +
+      '<button class="btn" type="submit">Save</button>' +
+      '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
   };
+  A.markAddPerson = function (id) {
+    var p = byId(id), box = document.getElementById('me-people');
+    if (p && box) box.insertAdjacentHTML('beforeend', personRow({}, p.category, p.country));
+  };
+  A.markDropPerson = function (n) {
+    var row = document.querySelector('#me-people [data-person="' + n + '"]');
+    if (row) row.remove();
+  };
+  function webUrl(t) {
+    t = String(t || '').trim();
+    return !t || /^https?:\/\//i.test(t) ? t : 'https://' + t;
+  }
+  document.addEventListener('submit', function (e) {
+    if (!e.target || e.target.id !== 'markedit') return;
+    e.preventDefault();
+    var p = byId(e.target.getAttribute('data-id')); if (!p) return;
+    var fd = new FormData(e.target);
+    var v = function (k) { return String(fd.get(k) || '').trim(); };
+    var people = [].slice.call(e.target.querySelectorAll('[data-person]')).map(function (row) {
+      var n = row.getAttribute('data-person');
+      return { name: v('pp' + n + '_name'), title: v('pp' + n + '_designation'), email: v('pp' + n + '_email'),
+               dial: v('pp' + n + '_mobile_dial'), mobile: v('pp' + n + '_mobile').replace(/\D/g, '') };
+    }).filter(function (x) { return x.name || x.email || x.mobile; });
+    var mob = v('mobile').replace(/\D/g, '');
+    var patch = { contact_name: v('contact_name'), website: webUrl(v('website')), email: v('email'),
+                  social: webUrl(v('social')), phone: mob ? v('mobile_dial') + ' ' + mob : '', people: people };
+    if (patch.contact_name && !p.contact_name) { patch.needs_lookup = false; patch.contact_level = 'owner'; }
+    var dm = document.getElementById('modal'); if (dm && dm.open) dm.close();
+    saveRow(p, patch, 'Saved.');
+  });
 
   /* ⚠️ "PARK IT" IS GONE. It was a manual shelf that meant nothing in particular,
      and a row on it looked the same as a row somebody had decided about.

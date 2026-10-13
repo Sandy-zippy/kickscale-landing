@@ -3047,6 +3047,7 @@
       rating: o.rating || null, reviews: o.reviews || 0,
       contact_name: o.contact_name || '', contact_title: o.contact_title || '',
       contact_level: o.contact_level || 'unknown', linkedin: o.linkedin || '',
+      social: o.social || '', people: o.people || [],
       needs_lookup: !!o.needs_lookup,
       findings: o.findings || [], signals: o.signals || {},
       score_auto: o.score_auto || 0, score_cockpit: o.score_cockpit || 0,
