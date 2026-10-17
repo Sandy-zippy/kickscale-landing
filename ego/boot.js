@@ -89,6 +89,14 @@
       await new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'portal.js' + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error('portal.js')); document.body.appendChild(s); });
       return window.EGOPORTAL.start(boot);
     }
+    /* a field sales login (17 Oct, R2a) gets the phone app; "Open the team screens" on its Me screen opens the team's app for this tab */
+    let team = false; try { team = sessionStorage.getItem('ego-team') === '1'; } catch (e) {}
+    if (boot.field && !team) {
+      if (window.EGOFIELD) return window.EGOFIELD.refresh(boot);
+      const v = document.querySelector('meta[name="build"]');
+      await new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'field.js' + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error('field.js')); document.body.appendChild(s); });
+      return window.EGOFIELD.start(boot);
+    }
     window.EGO = Object.assign(Object.fromEntries(empty.map(k => [k, []])), boot, { live: true });
     if (window.EM) { window.EGOLIVE.refresh(boot); return; }
     root().innerHTML = '';
@@ -97,6 +105,21 @@
     for (const f of FILES) await new Promise((ok, bad) => { const s = document.createElement('script'); s.src = f + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error(f)); document.body.appendChild(s); });
     window.EM.start();
   }
+  /* A NEW BUILD MUST REACH AN OPEN TAB (traps 50, 13 Oct): every minute and whenever the tab comes back, the page reads
+     the live build stamp from index.html; when it differs from the one this tab loaded, one bar offers Reload now.
+     Never reloads by itself (a half-typed form survives); silent when offline. The team app, the dealer portal and the field app alike. */
+  (function () {
+    const m = document.querySelector('meta[name="build"]'), mine = m && m.content;
+    if (!mine || /_/.test(mine) || !window.fetch || location.protocol === 'file:') return;
+    let shown = false;
+    const check = () => { if (shown) return; fetch('index.html?nv=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.text() : '').then(html => {
+      const x = html.match(/<meta name="build" content="([^"]+)"/); if (!x || x[1] === mine || shown) return; shown = true;
+      const bar = document.createElement('div'); bar.id = 'newbuild'; bar.setAttribute('role', 'status');
+      bar.style.cssText = 'position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;background:#111;color:#fff;padding:12px 16px;border-radius:10px;display:flex;gap:14px;align-items:center;font:500 14px Inter,system-ui,sans-serif;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:calc(100vw - 32px)';
+      bar.innerHTML = '<span>A new version of the cockpit is ready.</span><button type="button" style="background:#fff;color:#111;border:0;border-radius:7px;padding:9px 12px;font:600 13px Inter,system-ui,sans-serif;cursor:pointer;min-height:40px">Reload now</button>';
+      bar.querySelector('button').onclick = () => location.reload(); document.body.appendChild(bar); }).catch(() => {}); };
+    setInterval(check, 60000); document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); }); window.EGOBOOT_CHECK = check;
+  })();
   window.EGOBOOT = { start, gate };
   start();
 })();

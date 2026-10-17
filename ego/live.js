@@ -19,6 +19,7 @@ const holds = () => D.access.scope !== 'none';
 const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.user.division;
 function allowedTab(t) {
   if (['home', 'account', 'soon'].includes(t)) return true;
+  if (t === 'attendance' || t === 'roadmap') return holds() && canFieldTab(D.access, t);   // R2a: managers, Owners, telesales (FIELD_TABS)
   /* each role has its own screens (8 Oct); within them, the access rules below still apply */
   const only = (D.access.tabs || []).length ? D.access.tabs : null;   // the screens ticked for this role in Roles & access
   if (only && !['team', 'lists', 'integrations', 'followups', 'bin', 'targets'].includes(t) && !only.includes(t)) return false;
@@ -88,8 +89,8 @@ EM.render = (...a) => {
   if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
-const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
-const NAV_TAIL = ['complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
+const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap' };
+const NAV_TAIL = ['attendance', 'roadmap', 'complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
 // Menu order per view, as Bhargav set it on 5 Oct.
 const NAV_ORDER = {
   wholesale: ['home', 'people', 'architects', 'dealers', 'opps', 'projects', 'schemes', 'orders', 'orderbook', ...NAV_TAIL],
@@ -2159,14 +2160,14 @@ const peopleTable = () => table(['Name', 'Username', 'Role', 'Division', 'Region
   s.active ? `${isOwner() && s.id !== me().id ? `<button class="btn sm" data-act="view-as" data-id="${s.id}">View as</button>` : ''}<button class="btn sm ghost" data-act="staff-edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-act="staff-pass" data-id="${s.id}">New password</button>${s.id !== me().id ? `<button class="btn sm ghost" data-act="staff-off" data-id="${s.id}">Switch off</button>` : ''}` : '']));
 /* Roles & access (8 Oct): every switch of every role, for management. Each click saves at once; the
    people in that role get it at their next reload or sign-in. "View as" shows exactly what they see. */
-const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel']];
+const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel'], ['attendance', 'Attendance'], ['roadmap', 'Roadmap']];
 const ROLE_SWITCHES = [['prices', 'Sees money (rates, values, payments)'], ['readonly', 'View only (changes nothing)'], ['users', 'Manages logins (Team & access)'], ['stock', 'Changes the inventory'], ['can_delete', 'Deletes records'], ['can_lists', 'Edits lists, stages and rules'], ['can_targets', 'Sets targets (founders for anyone, others for their team)']];
 EM.roleOpen = EM.roleOpen || '';
 function rolesMatrix() {
   const edit = isOwner(), L = D.lists.rules;
   const card = r => { const n = D.staff.filter(s => s.role === r.id && s.active), locked = !edit || r.id === 'owner', dis = locked ? 'disabled' : '', open = EM.roleOpen === r.id;
     const chk = (k, label, on) => `<label class="chip" style="padding:6px 10px"><input type="checkbox" data-rsw="${r.id}|${k}" ${on ? 'checked' : ''} ${dis}> ${esc(label)}</label>`;
-    const tabsOn = (r.tabs || []).length ? r.tabs : TAB_CHOICES.map(([k]) => k);
+    const tabsOn = (r.tabs || []).length ? r.tabs : TAB_CHOICES.map(([k]) => k).filter(k => !FIELD_TABS[k] || FIELD_TABS[k].includes(r.id));   // R2a: the two field boards follow FIELD_TABS until ticked
     return `<section class="card stack-s" data-role-card="${r.id}"><div class="row between"><div><b>${esc(r.name)}</b> <span class="small muted">${n.length} ${n.length === 1 ? 'person' : 'people'}${n.length ? ': ' + esc(n.slice(0, 6).map(s => s.name.split(' ')[0]).join(', ')) + (n.length > 6 ? '…' : '') : ''}</span>
         <div class="small muted">${esc((SCOPES_ALL.find(x => x[0] === r.scope) || ['', r.scope])[1])} · ${divName(r.division)}${r.prices ? ' · money' : ' · no money'}${r.readonly ? ' · view only' : ''} · ${esc((DASHES.find(x => x[0] === (r.dash || '')) || ['', ''])[1])} dashboard</div></div>
       <div class="row">${edit ? `<button class="btn sm" data-act="role-toggle" data-id="${r.id}">${open ? 'Close' : r.id === 'owner' ? 'See' : 'Change access'}</button><button class="btn sm ghost" data-act="role-copy" data-id="${r.id}">Copy role</button>${r.id !== 'owner' && !D.staff.some(s => s.role === r.id) ? `<button class="btn sm ghost" data-act="role-del" data-id="${r.id}">Remove</button>` : ''}` : ''}</div></div>
@@ -2621,7 +2622,7 @@ const ACT_HELP = {
   'notif-open': 'Notifications: Internal (the system) and External (from outside).', 'notif-seen': 'Mark the recorded notifications as read.', 'div': 'Show EGO Premium (wholesale), Big E (retail) or both.',
   'sign-out': 'Sign out of EGO Master.', 'contact-add': 'Add a person to this company\'s team.', 'snag-add': 'Record a snag on this site.', 'snag-close': 'Close this snag, saying how it was put right.',
 };
-const NAV_HELP = { projects: 'Projects: one building or site each, with its opportunities, contacts by role, Project Partner dealer, installation sites and files.', home: 'Today at a glance: counts, next actions due, what is not connected yet.', dealers: 'Distributors, dealers and sub-dealers, each with its team, sales and business.',
+const NAV_HELP = { attendance: 'Attendance: who started the day, when, where, the photo, late marks and who has not started.', roadmap: 'Roadmap: plan each field person\'s day as an ordered list of visits, and see the team\'s progress.', projects: 'Projects: one building or site each, with its opportunities, contacts by role, Project Partner dealer, installation sites and files.', home: 'Today at a glance: counts, next actions due, what is not connected yet.', dealers: 'Distributors, dealers and sub-dealers, each with its team, sales and business.',
   architects: 'Architect firms and solo architects, each with its team.', people: 'Everyone: the people at every company, and personal contacts.', opps: 'The sales boards. A wholesale sale runs here until Order confirmed.', schemes: 'Dealer schemes: a target over a period, progress counted from invoiced orders.',
   orders: 'From the confirmed order: stock check and blocking, production for what is missing, PI, payment, invoice, dispatch.', orderbook: 'Every order, live and old: when each stage happened, who gave it, who closed it, who processed it.', installation: 'Big E installation sites, step by step.', complaints: 'Complaints, from logged to resolved.',
   approvals: 'Credit, discounts and settlements waiting for someone whose limit covers them.', p200: 'The dealers EGO develops first, scored from saved sales.', inventory: 'Categories, collections, designs, warehouses and stock.',
@@ -3295,7 +3296,7 @@ EM.ACTIONS['an-csv'] = () => {
    A History button beside every screen's title opens what happened there: added, changed, deleted, by whom
    and when, old to new where the change kept it. On a record page it is that record's own history. */
 const HIST_AREA = { dealers: 'dealers', architects: 'architects', people: 'people', clients: 'people', opps: 'opps', lost: 'opps', followups: 'followups', orders: 'orders', orderbook: 'orderbook', installation: 'installation', complaints: 'complaints',
-  approvals: 'approvals', schemes: 'schemes', p200: 'p200', handover: 'opps', projects: 'projects', analysis: 'analysis', targets: 'targets', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin' };
+  approvals: 'approvals', schemes: 'schemes', p200: 'p200', handover: 'opps', projects: 'projects', analysis: 'analysis', targets: 'targets', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin', attendance: 'attendance', roadmap: 'roadmap' };
 const HIST_RECORD = ['client', 'opp', 'order', 'po', 'site', 'scheme', 'product', 'collection', 'project'];
 function histButton() {
   const { r, arg } = EM.route(), h1 = qs('#view h1'); if (!h1 || qs('#view [data-hist-open]')) return;
@@ -3769,7 +3770,7 @@ EM.VIEWS.projects = () => {
       ${sel('owner', 'Owner at EGO', [['', 'Everyone'], ...uniq(all.map(p => p.owner_id), staffName)])}${sel('city', 'City', [['', 'Every city'], ...uniq(all.map(p => p.city), c => c)])}
       ${sel('partner', 'Project Partner', [['', 'Every partner'], ...uniq(all.map(p => p.partner_id), id => (pjPartner({ partner_id: id }) || {}).name || id)])}
       ${sel('field', 'Any field', [['', 'Any field'], ...PJ_FILTER_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="pj-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
-    ${searchBox('Projects: name, number, city, site address, Project Partner or contact')}
+    ${searchBox('Projects: name, city, address or contact')}
     ${rows.length ? table(['Project', 'Type', 'City', 'Stage', 'Owner at EGO', 'Project Partner', 'Opportunities', ...(P ? ['Expected value'] : []), 'Added'], rows.slice(0, 500).map(p => ({ href: `#/project/${p.id}`,
       cells: [`<b>${esc(p.name)}</b><div class="small muted">${esc(p.ref || '')}</div>${EM.div === 'both' ? segBadge(p.division) : ''}`, esc(p.type), esc(p.city), `<span class="badge info">${esc(p.stage)}</span>`, esc(staffName(p.owner_id)), esc((pjPartner(p) || {}).name || ''),
         String(pjOpps(p).length), ...(P ? [money(p.value)] : []), ds(dayIST(p.created_at))] })))
@@ -3912,3 +3913,173 @@ EM.ACTIONS['pj-imp-save'] = async el => {
   try { const r = await API('POST', '/api/projects/import', { rows: EM.pjImp.rows, save: true }); EM.pjImp = { ...EM.pjImp, res: r.rows, saved: true }; await reload4(); EM.toast(`<b>${r.rows.filter(x => x.status !== 'error').length} projects saved</b>`); EM.rerender(); }
   catch (x) { busy(el, false); bubbleNear(el, x.message); }
 };
+
+/* ================================================================ R2a (17 Oct): Attendance and the Roadmap planner (desktop)
+   The field team's day, for managers, Owners and telesales (FIELD_TABS in schema.js; a role with a fixed screen list sees them
+   when ticked in Roles & access). Read from /api/field/board for the dates asked, in the viewer's scope; the patterns are
+   Picasso's design/field.css (.fb-*) as they are. */
+const fic = (n, cls) => `<svg class="${cls == null ? 'fd-ic' : cls}" aria-hidden="true"><use href="icons.svg#i-${n}"/></svg>`;
+Object.assign(ICON, { attendance: fic('user-check', 'ic'), roadmap: fic('route', 'ic') });
+EM.FB = null;   // the last board read: { key, data }
+const fbRange = f => { const t = today(), ym = t.slice(0, 7), [y, m] = ym.split('-').map(Number), fy = m >= 4 ? y : y - 1, prev = m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`, end = s => { const [a, b] = s.split('-').map(Number); return `${s}-${String(new Date(Date.UTC(a, b, 0)).getUTCDate()).padStart(2, '0')}`; };
+  return f.period === 'today' ? [t, t] : f.period === 'month' ? [ym + '-01', t] : f.period === 'last' ? [prev + '-01', end(prev)] : f.period === 'year' ? [`${fy}-04-01`, t] : f.period === 'lastyear' ? [`${fy - 1}-04-01`, `${fy}-03-31`]
+    : f.period === 'custom' ? [f.from || t, f.to || f.from || t] : ['2026-01-01', t]; };
+function fbLoad(from, to) {
+  const key = from + '|' + to;
+  if (EM.FB && EM.FB.key === key) return EM.FB.data;
+  if (!EM.FB || EM.FB.loading !== key) { EM.FB = { key: null, loading: key, data: EM.FB && EM.FB.data };
+    API('GET', `/api/field/board?from=${from}&to=${to}`).then(r => { EM.FB = { key, data: r }; for (const d of r.documents) upsertLocal(D.documents, d); EM.rerender(); })
+      .catch(x => { EM.FB = { key, data: { error: x.message, people: [], attendance: [], visits: [], documents: [], beats: [] } }; EM.rerender(); }); }
+  return null;
+}
+const fbHm = ts => ts ? new Date(Date.parse(ts)).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit' }) : '';
+const fbLen = (a, b) => { const n = Math.round((Date.parse(b) - Date.parse(a)) / 6e4); return n >= 60 ? `${Math.floor(n / 60)} h ${n % 60} min` : `${n} min`; };
+const fbPlace = (lat, lng, acc, noloc) => noloc || lat == null ? '' : `${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}${acc != null ? ` · within ${acc} m` : ''}`;
+const fbWhere = (lat, lng, acc, noloc) => noloc || lat == null ? '<span class="muted">Location not shared</span>' : `<a class="fb-where" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}">${fic('map-pin', '')}${esc(fbPlace(lat, lng, acc, noloc))}</a>`;
+const fbIni = n => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+const fbFace = (p, docId) => docId ? `<span class="fb-face" role="button" tabindex="0" data-act="fb-photo" data-id="${docId}" title="See the photo">${esc(fbIni(p.name))}<img data-fb-img="${docId}" alt="" hidden></span>` : `<span class="fb-face none">${esc(fbIni(p.name))}</span>`;
+/* photos are read with the session, never by a public address; each is fetched once */
+EM.fbImg = {};
+function fbPaintImgs() { document.querySelectorAll('img[data-fb-img]').forEach(im => { const id = im.dataset.fbImg, show = u => { im.src = u; im.hidden = false; };
+  if (EM.fbImg[id]) return show(EM.fbImg[id]);
+  fetch(window.EGOAPI.file(id), { headers: { authorization: 'Bearer ' + docTok() } }).then(r => r.ok ? r.blob() : null).then(b => { if (b) { EM.fbImg[id] = URL.createObjectURL(b); show(EM.fbImg[id]); } }).catch(() => {}); }); }
+const baseRenderFB = EM.render;
+EM.render = (...a) => { baseRenderFB(...a); if (['attendance', 'roadmap'].includes(EM.route().r)) fbPaintImgs(); };
+EM.ACTIONS['fb-photo'] = el => { const d = D.documents.find(x => x.id === el.dataset.id); if (!d) return;
+  EM.modal(`<h2>${esc(d.type)}</h2><p class="muted small">${esc(staffName(d.uploaded_by))} · ${esc(whenIST(d.created_at))}</p><div style="margin:12px 0"><img data-fb-img="${d.id}" alt="${esc(d.type)}" style="max-width:100%;max-height:60vh;border-radius:12px" hidden></div>
+    <div class="row" data-file-acts><button class="btn sm" data-act="fu-view" data-id="${d.id}">View</button><button class="btn sm ghost" data-act="fu-dl" data-id="${d.id}">Download</button><button class="btn sm ghost" data-act="fu-share" data-id="${d.id}">Share</button><button class="btn sm ghost" data-act="close-modal">Close</button></div>`); fbPaintImgs(); };
+NAV_ACTS.add('fb-photo'); LOOK_ACTS.add('fb-photo'); NAV_ACTS.add('fb-csv'); LOOK_ACTS.add('fb-csv'); NAV_ACTS.add('fb-count'); LOOK_ACTS.add('fb-count'); for (const k of ['rm-pick', 'att-person']) { NAV_ACTS.add(k); LOOK_ACTS.add(k); }   // looking at a person's days changes nothing; planning waits for one company, like every change
+
+/* ---- Attendance */
+EM.attF = { period: 'today', from: '', to: '', q: '', count: '', person: '', field: '', fq: '' };
+DF_STATE.att = () => EM.attF;
+const ATT_FIELDS = [['person', 'Person'], ['region', 'Area'], ['late', 'Late mark'], ['where', 'Where']];
+EM.VIEWS.attendance = () => {
+  const f = EM.attF, [from, to] = fbRange(f), B = fbLoad(from, to), one = from === to;
+  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-attf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const head = `<div class="fb-head"><div><h1>Attendance</h1><div class="fb-sub">Field team · start time ${esc((B && B.start) || D.lists.field_start || '10:00')}${isOwner() && !isBothView() ? ' · <button class="btn sm ghost" data-act="att-start">Change the start time</button>' : ''} · ${one ? esc(ds(from)) : `${esc(ds(from))} to ${esc(ds(to))}`}</div></div>
+    <div class="fb-tools"><button class="btn sm" data-act="fb-csv">Download for Excel</button></div></div>`;
+  const people = B ? B.people : [], P = byIdL(people);
+  const filters = `<div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-att-filters>${dateFilter(f, 'att', 'Date filter')}${sel('person', 'Person', [['', 'Everyone'], ...people.map(p => [p.id, p.name])])}
+    ${sel('field', 'Any field', [['', 'Any field'], ...ATT_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="att-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label>
+    <label class="field" style="min-width:220px"><span class="small muted">Search</span><input class="input" id="att-q" value="${esc(f.q)}" placeholder="Attendance: person or area"></label></div>`;
+  if (!B) return `<div class="fb stack">${head}${filters}<p class="muted">Reading the field team…</p></div>`;
+  if (B.error) return `<div class="fb stack">${head}${filters}<div class="callout warn">${esc(B.error)}</div></div>`;
+  const vis = (sid, day) => B.visits.filter(v => v.staff_id === sid && v.day === day), road = (sid, day) => { const v = vis(sid, day); return v.length ? `${v.filter(x => x.status === 'done' || x.status === 'in').length} of ${v.length}${v.some(x => x.status === 'missed') ? ` · <span class="badge bad">${v.filter(x => x.status === 'missed').length} missed</span>` : ''}` : '<span class="muted">No Roadmap</span>'; };
+  const val = (r, k) => k === 'person' ? (P[r.staff_id] || {}).name || '' : k === 'region' ? (P[r.staff_id] || {}).region || '' : k === 'late' ? (r.late_min ? `Late ${r.late_min} min` : r.start_at ? 'On time' : 'Not started') : k === 'where' ? fbPlace(r.start_lat, r.start_lng, r.start_acc, r.start_noloc) || 'Location not shared' : '';
+  const fq = f.fq.trim().toLowerCase(), q = f.q.trim().toLowerCase();
+  const keep = r => (!f.person || r.staff_id === f.person) && (!fq || (f.field ? [val(r, f.field)] : ATT_FIELDS.map(([k]) => val(r, k))).some(v => v.toLowerCase().includes(fq))) && (!q || `${val(r, 'person')} ${val(r, 'region')}`.toLowerCase().includes(q));
+  const rows = B.attendance.filter(keep);
+  /* who has not started: only for one day, and only today or a day already over */
+  const notStarted = one && from <= B.today ? people.filter(p => !B.attendance.some(a => a.staff_id === p.id && a.day === from)).map(p => ({ staff_id: p.id, day: from })).filter(keep) : [];
+  const cnt = { started: rows.length, late: rows.filter(r => r.late_min > 0).length, not: notStarted.length, ended: rows.filter(r => r.end_at).length };
+  const shown = f.count === 'late' ? rows.filter(r => r.late_min > 0) : f.count === 'ended' ? rows.filter(r => r.end_at) : f.count === 'not' ? [] : rows;
+  const showNot = !f.count || f.count === 'not';
+  EM.attRows = { rows: shown, notStarted: showNot ? notStarted : [], P, vis };
+  const countBtn = (k, n, l, cls) => `<button class="fb-count ${cls}${f.count === k ? ' on' : ''}" data-act="fb-count" data-k="${k}" aria-pressed="${f.count === k}"><span class="fb-n">${n}</span><span class="fb-l">${l}</span></button>`;
+  const who = (p, docId) => `<div class="fb-who">${fbFace(p, docId)}<div><b><a href="#/attendance" data-act="att-person" data-id="${p.id}" title="This person's days">${esc(p.name)}</a></b><span>${esc(p.region || '')}</span></div></div>`;
+  const tr = r => { const p = P[r.staff_id] || { name: staffName(r.staff_id) };
+    return `<tr data-att="${r.staff_id}|${r.day}"><td>${who(p, r.start_photo)}</td><td>${one ? '' : esc(ds(r.day)) + ' · '}${esc(fbHm(r.start_at))}</td><td>${fbWhere(r.start_lat, r.start_lng, r.start_acc, r.start_noloc)}</td>
+      <td>${r.late_min ? `<span class="badge warn">Late ${r.late_min} min</span>` : '<span class="badge ok">On time</span>'}</td><td>${road(r.staff_id, r.day)}</td>
+      <td>${r.end_at ? `${esc(fbHm(r.end_at))} · ${esc(fbLen(r.start_at, r.end_at))}${r.end_noloc ? '<div class="small muted">Location not shared</div>' : ''}` : '<span class="muted">Not yet</span>'}</td>
+      <td class="r">${r.end_photo ? `<button class="btn sm ghost" data-act="fb-photo" data-id="${r.end_photo}">End photo</button>` : ''}${r.start_photo ? '' : '<span class="small muted">No photo</span>'}</td></tr>`; };
+  const trNot = r => { const p = P[r.staff_id];
+    return `<tr data-att-not="${p.id}"><td>${who(p, '')}</td><td><span class="badge bad">Not started</span></td><td class="muted">No location yet</td><td class="muted">After ${esc(B.start)}</td><td>${road(p.id, r.day)}</td><td class="muted">Not yet</td>
+      <td class="r">${p.mobile ? `<a class="btn sm" href="tel:${esc(p.mobile)}">${fic('phone')}Call</a>` : ''}</td></tr>`; };
+  const body = shown.length || (showNot && notStarted.length) ? `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Person</th><th>Start my day</th><th>Where</th><th>Late mark</th><th>Roadmap</th><th>End my day</th><th></th></tr></thead><tbody>
+      ${showNot && notStarted.length ? `<tr class="fb-group"><td colspan="7">Not started yet · ${notStarted.length}</td></tr>${notStarted.map(trNot).join('')}` : ''}
+      ${shown.length ? `<tr class="fb-group"><td colspan="7">Started · ${shown.length}</td></tr>${shown.map(tr).join('')}` : ''}</tbody></table></div><p class="small muted">Click a face to see the photo full size, with the time it was taken; View, Download and Share are there. Where is the GPS fix from the phone.</p>`
+    : empty(people.length ? 'Nothing for this filter' : 'No field team yet', people.length ? 'Change the Date filter or clear the filters above.' : 'People whose role is Field Sales show here once they are added in Team & access.');
+  return `<div class="fb stack">${head}${filters}<div class="fb-counts">${countBtn('started', cnt.started, 'Started', '')}${countBtn('late', cnt.late, 'Late', 'warn')}${countBtn('not', one && from <= B.today ? cnt.not : 0, 'Not started yet', 'bad')}${countBtn('ended', cnt.ended, 'Ended the day', '')}</div>${body}</div>`;
+};
+EM.VIEWS.attendance.title = () => 'Attendance';
+EM.ACTIONS['fb-count'] = el => { const k = el.dataset.k, f = EM.route().r === 'roadmap' ? EM.rmF : EM.attF; f.count = f.count === k ? '' : k; EM.rerender(); };
+EM.ACTIONS['att-person'] = el => { Object.assign(EM.attF, { person: el.dataset.id, period: 'month', count: '' }); EM.rerender(); };
+EM.ACTIONS['fb-csv'] = () => { const R = EM.attRows; if (!R) return;
+  csvDownload('EGO attendance', ['Day', 'Person', 'Area', 'Start my day', 'Where (start)', 'Late (min)', 'End my day', 'Where (end)', 'Day length (min)', 'Visits done', 'Visits planned', 'Missed'],
+    [...R.notStarted.map(r => [r.day, (R.P[r.staff_id] || {}).name, (R.P[r.staff_id] || {}).region, 'Not started', '', '', '', '', '', 0, R.vis(r.staff_id, r.day).length, 0]),
+      ...R.rows.map(r => { const v = R.vis(r.staff_id, r.day); return [r.day, (R.P[r.staff_id] || {}).name, (R.P[r.staff_id] || {}).region, fbHm(r.start_at), fbPlace(r.start_lat, r.start_lng, r.start_acc, r.start_noloc) || 'location not shared', r.late_min, fbHm(r.end_at), r.end_at ? fbPlace(r.end_lat, r.end_lng, r.end_acc, r.end_noloc) || 'location not shared' : '', r.end_at ? Math.round((Date.parse(r.end_at) - Date.parse(r.start_at)) / 6e4) : '', v.filter(x => x.status === 'done' || x.status === 'in').length, v.length, v.filter(x => x.status === 'missed').length]; })]); };
+EM.ACTIONS['att-start'] = () => EM.modal(`<h2>Field day start time</h2><p class="muted small">Starting the day after this time shows a late mark on the phone and on this board. Today it is ${esc(D.lists.field_start || '10:00')}.</p>
+  <form class="stack" onsubmit="return false" style="margin-top:12px"><div class="field"><label for="att-st">Start time</label><input class="input" id="att-st" type="time" value="${esc(D.lists.field_start || '10:00')}" required></div>${errBox('att-st-err')}
+  <div class="row"><button class="btn primary" data-act="att-start-go">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+EM.ACTIONS['att-start-go'] = async el => { busy(el, true); try { const r = await API('POST', '/api/field/settings', { start: qs('#att-st').value }); D.lists.field_start = r.start; EM.FB = null; EM.closeModal(); EM.toast(`<b>Start time ${esc(r.start)}</b>. Late marks count from it.`); EM.rerender(); } catch (x) { busy(el, false); showErr('att-st-err', x.message); } };
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.attf; if (k) { EM.attF[k] = e.target.value; EM.rerender(); } });
+const fbType = (id, set) => document.addEventListener('input', e => { if (e.target.id !== id) return; set(e.target.value); const pos = e.target.selectionStart; EM.rerender(); const el = qs('#' + id); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} } });
+fbType('att-q', v => { EM.attF.q = v; }); fbType('att-fq', v => { EM.attF.fq = v; });
+
+/* ---- the Roadmap planner: one person's day, in order; the field team's progress beside it */
+EM.rmF = { person: '', day: '', q: '', team: '', add: '', prospect: false, wd: [] };
+const RM_KIND = { distributor: 'building-warehouse', dealer: 'building-store', sub_dealer: 'building-community', retailer: 'shopping-bag', architect: 'ruler-measure', project: 'building-skyscraper', prospect: 'user-plus' };
+const RM_ST = { planned: ['Planned', ''], in: ['Checked in', 'info'], done: ['Done', 'ok'], missed: ['Missed', 'bad'] };
+const rmSteps = vs => `<div class="fd-steps">${vs.map(v => `<i class="${v.status === 'done' || v.status === 'in' ? 'done' : v.status === 'missed' ? 'missed' : ''}"></i>`).join('')}</div>`;
+const WD = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], WDN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const wdOf = d => ((new Date(d + 'T00:00:00Z').getUTCDay() + 6) % 7) + 1;
+EM.VIEWS.roadmap = () => {
+  const f = EM.rmF; if (!f.day) f.day = today();
+  const B = fbLoad(f.day, f.day), people = B ? B.people : [];
+  if (B && !f.person && people.length) f.person = people[0].id;
+  const P = byIdL(people), p = P[f.person], can = B && B.can_plan && !isBothView() && f.day >= (B.today || today());
+  const head = `<div class="fb-head"><div><h1>Roadmap</h1><div class="fb-sub">Plan each person's day. Managers, Owners and telesales can all add visits; the person sees them at once on the phone.</div></div>
+    <div class="fb-tools"><select class="input" data-rmf="person" aria-label="Person">${people.map(x => `<option value="${x.id}" ${x.id === f.person ? 'selected' : ''}>${esc(x.name)}</option>`).join('') || '<option value="">No field team yet</option>'}</select>
+      <input class="input" type="date" data-rmf="day" value="${esc(f.day)}" aria-label="Date">${can && p ? `<button class="btn sm primary" data-act="rm-focus">${fic('plus')}Add visit</button>` : ''}</div></div>`;
+  if (!B) return `<div class="fb stack">${head}<p class="muted">Reading the field team…</p></div>`;
+  if (B.error) return `<div class="fb stack">${head}<div class="callout warn">${esc(B.error)}</div></div>`;
+  if (!p) return `<div class="fb stack">${head}${empty('No field team yet', 'People whose role is Field Sales show here once they are added in Team & access.')}</div>`;
+  const vs = B.visits.filter(v => v.staff_id === p.id), done = vs.filter(v => v.status === 'done' || v.status === 'in').length, missed = vs.filter(v => v.status === 'missed').length;
+  const row = (v, i) => { const st = RM_ST[v.status] || RM_ST.planned, mov = can && v.status === 'planned';
+    return `<li class="fb-visit is-${v.status === 'planned' ? 'pending' : v.status}" data-rm-visit="${v.id}" ${mov ? 'draggable="true"' : ''}>${fic('grip-vertical', 'fb-grip')}<span class="fb-no">${i + 1}</span>
+      <span><b>${esc(v.name)}</b><span class="fb-k"> · ${esc(VISIT_KINDS[v.kind] || v.kind)}${v.area ? ' · ' + esc(v.area) : ''}${v.beat_id ? ' · weekly beat' : ''}</span>${v.outcome ? `<div class="small">${esc(v.outcome)}${v.extra && v.extra.boxes != null ? `, ${num(v.extra.boxes)} boxes` : ''}${v.note ? ' · ' + esc(v.note) : ''}</div>` : ''}${v.checkin_at ? `<div class="small muted">Checked in ${esc(fbHm(v.checkin_at))} · ${fbWhere(v.checkin_lat, v.checkin_lng, v.checkin_acc, v.checkin_noloc)}${v.checkin_photo ? ` · <a href="#/roadmap" data-act="fb-photo" data-id="${v.checkin_photo}">Photo</a>` : ''}</div>` : ''}</span>
+      <span class="badge ${st[1]}">${st[0]}</span><span class="row" style="gap:0;flex-wrap:nowrap">${mov ? `<button class="fb-x" data-act="rm-move" data-id="${v.id}" data-dir="-1" aria-label="Move up" ${i ? '' : 'disabled'}>${fic('chevron-down', '')}</button><button class="fb-x" data-act="rm-move" data-id="${v.id}" data-dir="1" aria-label="Move down">${fic('chevron-down', '')}</button><button class="fb-x" data-act="rm-del" data-id="${v.id}" aria-label="Remove visit">${fic('x', '')}</button>` : ''}</span></li>`; };
+  const q = f.add.trim().toLowerCase();
+  const hits = q.length < 2 ? [] : [...D.clients.filter(c => inDiv(c) && `${c.name} ${c.city || ''} ${c.mobile || ''}`.toLowerCase().includes(q)).slice(0, 8).map(c => ({ id: c.id, t: 'client', name: c.name, k: visitKindOf(c.kind), area: c.city || '' })),
+    ...PJS().filter(x => inDiv(x) && `${x.name} ${x.city || ''} ${x.ref || ''}`.toLowerCase().includes(q)).slice(0, 4).map(x => ({ id: x.id, t: 'project', name: x.name, k: 'project', area: x.city || '' }))];
+  const wdSel = f.wd.length ? f.wd : [wdOf(f.day)], beats = B.beats.filter(b => b.staff_id === p.id);
+  const plan = `<div class="card stack-s" data-rm-plan><div class="row between"><h3>${esc(p.name)} · ${esc(ds(f.day))}</h3><span class="badge">${done} of ${vs.length} done${missed ? ` · ${missed} missed` : ''}</span></div>
+    ${vs.length ? rmSteps(vs) : ''}${vs.length ? `<ol class="fb-visits" data-rm-list>${vs.map(row).join('')}</ol>` : '<p class="muted small">No visits on this day yet.</p>'}
+    ${can ? `<div class="cb stack-s" data-rm-add><input class="input" id="rm-add" value="${esc(f.add)}" placeholder="Add a visit: search dealer, distributor, sub-dealer, architect or project site" autocomplete="off">
+      ${hits.length ? `<div class="stack-s" data-rm-hits>${hits.map(h => `<button class="btn sm ghost" style="justify-content:flex-start" data-act="rm-add" data-t="${h.t}" data-id="${h.id}">${fic(RM_KIND[h.k])}<b>${esc(h.name)}</b> <span class="muted">· ${esc(VISIT_KINDS[h.k])}${h.area ? ' · ' + esc(h.area) : ''}</span></button>`).join('')}</div>` : q.length >= 2 ? '<p class="small muted">Nothing in your view by that name.</p>' : ''}
+      <div class="row"><button class="btn sm ghost" data-act="rm-prospect">${fic('user-plus')}New prospect</button></div>
+      ${f.prospect ? `<form class="row" style="gap:8px;align-items:flex-end;flex-wrap:wrap" onsubmit="return false" data-rm-prospect><label class="field" style="min-width:160px"><span class="small muted">Name *</span><input class="input" id="rm-pn"></label><label class="field" style="min-width:140px"><span class="small muted">Area *</span><input class="input" id="rm-pa"></label><label class="field" style="min-width:140px"><span class="small muted">Mobile</span><input class="input" id="rm-pm" inputmode="tel"></label><button class="btn sm primary" data-act="rm-add" data-t="prospect">Add</button></form>${errBox('rm-p-err')}` : ''}</div>
+      ${vs.length ? `<label class="fb-repeat"><input type="checkbox" id="rm-rep" ${f.rep ? 'checked' : ''}><span><b>Repeat weekly beat</b><span class="small muted" style="display:block">This list comes back every ${wdSel.map(n => WDN[n - 1]).join(', ')} for the next 8 weeks</span></span><span class="fb-days">${WD.map((l, i) => `<span role="checkbox" tabindex="0" aria-checked="${wdSel.includes(i + 1)}" aria-label="${WDN[i]}" data-act="rm-wd" data-n="${i + 1}" class="${wdSel.includes(i + 1) ? 'on' : ''}" style="cursor:pointer">${l}</span>`).join('')}</span></label>
+        ${f.rep ? `<div class="row"><button class="btn sm primary" data-act="rm-beat">Repeat this list</button></div>` : ''}` : ''}` : B.can_plan ? '<p class="small muted">This day is over: its Roadmap is kept as a record.</p>' : '<p class="small muted">Only a manager, an Owner or telesales plans a Roadmap.</p>'}
+    ${beats.length ? `<div class="stack-s"><b class="small">Weekly beats of ${esc(p.name)}</b>${beats.map(b => `<div class="row between small" data-rm-beat="${b.id}"><span>${b.weekdays.map(n => WDN[n - 1]).join(', ')}: ${b.items.map(x => esc(x.name)).join(', ')}</span>${can ? `<button class="btn sm ghost" data-act="rm-beat-stop" data-id="${b.id}">Stop repeating</button>` : ''}</div>`).join('')}</div>` : ''}</div>`;
+  const tq = f.q.trim().toLowerCase(), team = people.filter(x => (!tq || `${x.name} ${x.region || ''}`.toLowerCase().includes(tq)) && (!f.team || (f.team === 'missed' ? B.visits.some(v => v.staff_id === x.id && v.status === 'missed') : f.team === 'none' ? !B.visits.some(v => v.staff_id === x.id) : B.visits.some(v => v.staff_id === x.id))));
+  const side = `<div class="card stack-s"><div class="row between"><h3>Field team, ${esc(ds(f.day))}</h3><span class="small muted">Click a person to plan</span></div>
+    <div class="row" style="gap:8px;flex-wrap:wrap"><input class="input" id="rm-q" value="${esc(f.q)}" placeholder="Roadmap: person or area" style="flex:1;min-width:140px"><select class="input" data-rmf="team" aria-label="Show" style="width:auto">${[['', 'Everyone'], ['planned', 'With visits'], ['missed', 'With a missed visit'], ['none', 'No visits yet']].map(([v, l]) => `<option value="${v}" ${f.team === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+    <div class="fb-team">${team.map(x => { const xv = B.visits.filter(v => v.staff_id === x.id); return `<div class="fb-person${x.id === p.id ? ' on' : ''}" role="button" tabindex="0" data-act="rm-pick" data-id="${x.id}"><span><b>${esc(x.name)}</b></span>${rmSteps(xv)}<span class="fb-r">${xv.filter(v => v.status === 'done' || v.status === 'in').length}/${xv.length}</span></div>`; }).join('') || '<p class="small muted">Nobody for this filter.</p>'}</div>
+    <p class="small muted">A visit not checked in by the end of its day turns Missed and rings the manager's bell.</p></div>`;
+  return `<div class="fb stack">${head}<div class="fb-plan">${plan}${side}</div></div>`;
+};
+EM.VIEWS.roadmap.title = () => 'Roadmap';
+const rmRead = () => { EM.FB = null; EM.rerender(); };
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.rmf; if (k) { EM.rmF[k] = e.target.value; if (k === 'day') { EM.rmF.wd = []; EM.rmF.rep = false; } if (k === 'person') EM.rmF.add = ''; EM.rerender(); } if (e.target.id === 'rm-rep') { EM.rmF.rep = e.target.checked; EM.rerender(); } });
+fbType('rm-add', v => { EM.rmF.add = v; }); fbType('rm-q', v => { EM.rmF.q = v; });
+EM.ACTIONS['rm-pick'] = el => { Object.assign(EM.rmF, { person: el.dataset.id, add: '', prospect: false, wd: [], rep: false }); EM.rerender(); };
+EM.ACTIONS['rm-focus'] = () => { const i = qs('#rm-add'); if (i) i.focus(); };
+EM.ACTIONS['rm-prospect'] = () => { EM.rmF.prospect = !EM.rmF.prospect; EM.rerender(); };
+EM.ACTIONS['rm-add'] = async el => { const f = EM.rmF, b = { staff_id: f.person, day: f.day };
+  if (el.dataset.t === 'client') b.client_id = el.dataset.id; else if (el.dataset.t === 'project') b.project_id = el.dataset.id; else Object.assign(b, { name: qs('#rm-pn').value, area: qs('#rm-pa').value, mobile: qs('#rm-pm').value });
+  busy(el, true);
+  try { const r = await API('POST', '/api/field/visits', b); Object.assign(f, { add: '', prospect: false }); EM.toast(`<b>${esc(r.visit.name)}</b> added to the Roadmap.`); rmRead(); }
+  catch (x) { busy(el, false); if (el.dataset.t === 'prospect') showErr('rm-p-err', x.errors || x.message); else bubbleNear(el, x.message); } };
+async function rmOrder(ids) {
+  try { await API('POST', '/api/field/order', { staff_id: EM.rmF.person, day: EM.rmF.day, ids }); EM.toast('Order saved.'); } catch (x) { EM.toast(esc(x.message)); }
+  rmRead();
+}
+const rmIds = () => [...document.querySelectorAll('[data-rm-list] [data-rm-visit]')].map(x => x.dataset.rmVisit);
+EM.ACTIONS['rm-move'] = el => { const ids = rmIds(), i = ids.indexOf(el.dataset.id), j = i + Number(el.dataset.dir); if (j < 0 || j >= ids.length) return; [ids[i], ids[j]] = [ids[j], ids[i]]; rmOrder(ids); };
+EM.ACTIONS['rm-del'] = async el => { const v = (EM.FB.data.visits || []).find(x => x.id === el.dataset.id);
+  if (!confirm(`Remove the visit to ${v.name}? It stays in the Recycle bin for 30 days.`)) return;
+  try { await API('DELETE', '/api/field/visits/' + v.id); EM.toast('Visit removed, in the Recycle bin for 30 days.'); rmRead(); } catch (x) { bubbleNear(el, x.message); } };
+EM.ACTIONS['rm-wd'] = el => { const f = EM.rmF, n = Number(el.dataset.n), cur = f.wd.length ? f.wd : [wdOf(f.day)]; f.wd = cur.includes(n) ? cur.filter(x => x !== n) : [...cur, n].sort(); if (!f.wd.length) f.wd = [n]; EM.rerender(); };
+EM.ACTIONS['rm-beat'] = async el => { const f = EM.rmF; busy(el, true);
+  try { const r = await API('POST', '/api/field/beats', { staff_id: f.person, day: f.day, weekdays: f.wd.length ? f.wd : [wdOf(f.day)] }); Object.assign(f, { rep: false, wd: [] }); EM.toast(`<b>Weekly beat saved.</b> ${r.days.length} day${r.days.length === 1 ? '' : 's'} ahead now carry this list.`); rmRead(); }
+  catch (x) { busy(el, false); bubbleNear(el, x.message); } };
+EM.ACTIONS['rm-beat-stop'] = async el => { if (!confirm('Stop this weekly beat? The days ahead that nobody has checked in go to the Recycle bin for 30 days.')) return;
+  try { const r = await API('DELETE', '/api/field/beats/' + el.dataset.id); EM.toast(`Stopped. ${r.removed} visit${r.removed === 1 ? '' : 's'} ahead removed.`); rmRead(); } catch (x) { bubbleNear(el, x.message); } };
+/* keyboard: Enter or Space on a weekday or a person; drag a visit to reorder (the buttons do the same without a mouse) */
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-act="rm-wd"], [data-act="rm-pick"], .fb-face[data-act]')) { e.preventDefault(); e.target.click(); } });
+let rmDrag = null;
+document.addEventListener('dragstart', e => { const li = e.target.closest && e.target.closest('[data-rm-visit][draggable]'); if (li) { rmDrag = li.dataset.rmVisit; e.dataTransfer.effectAllowed = 'move'; } });
+document.addEventListener('dragover', e => { if (rmDrag && e.target.closest && e.target.closest('[data-rm-list]')) e.preventDefault(); });
+document.addEventListener('drop', e => { const li = rmDrag && e.target.closest && e.target.closest('[data-rm-visit]'); if (!li) return; e.preventDefault(); const ids = rmIds().filter(x => x !== rmDrag); ids.splice(ids.indexOf(li.dataset.rmVisit), 0, rmDrag); rmDrag = null; rmOrder(ids); });

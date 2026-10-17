@@ -903,3 +903,28 @@ function planProgress(plan, orders, lines, catOf) {
   const cats = [...new Set(ls.map(l => catOf(l.product_id)).filter(Boolean))], goalCats = plan.goal_cats || [];
   return { orders: inv, value: inv.reduce((a, o) => a + (Number(o.subtotal) || 0), 0), boxes: ls.reduce((a, l) => a + (Number(l.boxes) || 0), 0), cats, catsHit: goalCats.filter(c => cats.includes(c)) };
 }
+
+/* ---------------------------------------------------------------- the field sales app (17 Oct, R2a)
+   Attendance, the Roadmap, Check in and the visit outcome. Shared by the server and the browser. */
+/* who sees the two desktop boards when their role has no fixed screen list ('' = every screen); a role WITH a list
+   sees a board only when it is ticked there (Roles & access). An explicit list, never a spread. */
+const FIELD_TABS = {
+  attendance: ['owner', 'director', 'ws_head', 'ws_rm', 'rt_head'],
+  roadmap: ['owner', 'director', 'ws_head', 'ws_rm', 'rt_head', 'ws_tele', 'rt_tele'],
+};
+const canFieldTab = (acc, k) => !!acc && ((acc.tabs || []).length ? acc.tabs.includes(k) : (FIELD_TABS[k] || []).includes(acc.id));
+/* the kinds of visit on a Roadmap, in the kit's order; a client's kind decides its visit kind */
+const VISIT_KINDS = { distributor: 'Distributor', dealer: 'Dealer', sub_dealer: 'Sub-dealer', retailer: 'Retailer', architect: 'Architect', project: 'Project site', prospect: 'New prospect' };
+const visitKindOf = clientKind => ({ distributor: 'distributor', dealer: 'dealer', sub_dealer: 'sub_dealer', architect: 'architect', design_firm: 'architect', direct: 'retailer', retail: 'retailer' }[clientKind] || 'retailer');
+const VISIT_STATUS = { planned: 'Planned', in: 'Checked in', done: 'Done', missed: 'Missed' };
+DEFAULT_LISTS.visit_outcomes = ['Order taken', 'Requirement taken', 'Follow-up set', 'Sample given', 'Not available', 'Shop closed'];
+DEFAULT_LISTS.field_start = '10:00';
+LIST_GROUPS.push(['Field app', [['visit_outcomes', 'Visit outcomes']]]);
+LIST_LABEL.visit_outcomes = 'Visit outcomes';
+LIST_USES.visit_outcomes = [{ table: 'visits', key: 'outcome', col: true, multi: false }];
+BIN_KIND.visit = 'Roadmap visit';
+/* minutes after midnight, India time, of a timestamp; and of an 'HH:MM' start time */
+const istMinutes = ts => { const d = new Date(Date.parse(ts) + 5.5 * 36e5); return d.getUTCHours() * 60 + d.getUTCMinutes(); };
+const hhmmMinutes = s => { const m = /^(\d{1,2}):(\d\d)$/.exec(String(s || '')); return m ? Math.min(23, +m[1]) * 60 + Math.min(59, +m[2]) : 600; };
+/* Directions: a Google Maps link from the saved address, or a search by name and city when there is none */
+const directionsUrl = v => 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(v.address || [v.name, v.area].filter(Boolean).join(', '));
