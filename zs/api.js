@@ -569,6 +569,15 @@
   }
   async function templates() { return call('GET', '/api/templates'); }
 
+  /* Meta, read-only: campaign figures for a window, a pull on demand, and the
+     state of the five connections */
+  async function metaCampaigns(from, to) {
+    return call('GET', '/api/meta/campaigns?from=' + encodeURIComponent(from || '') +
+      '&to=' + encodeURIComponent(to || ''));
+  }
+  async function metaRefresh() { return call('POST', '/api/meta/refresh'); }
+  async function metaStatus() { return call('GET', '/api/meta/status'); }
+
   /* the chatbot: a menu, saved whole — bot and steps in one write, because a bot
      saved without its steps greets somebody and then says nothing */
   async function bots() { return call('GET', '/api/bots'); }
@@ -652,6 +661,7 @@
     fillSheet: fillSheet,
     thread: thread, assignThread: assignThread,
     sendOnThread: sendOnThread, templates: templates,
+    metaCampaigns: metaCampaigns, metaRefresh: metaRefresh, metaStatus: metaStatus,
     bots: bots, saveBot: saveBot,
     findProspects: findProspects, saveProspect: saveProspect,
     sendOutreach: sendOutreach, readReplies: readReplies,

@@ -957,7 +957,7 @@
   function rangeBar(note) {
     var r = range();
     return '<div class="rangebar">' +
-      '<span class="rlabel">Showing</span>' +
+      '<span class="rlabel">Date filter</span>' +
       ZS.RANGES.map(function (x) {
         return '<button class="chip" data-act="setRange" data-id="' + x[0] + '" aria-pressed="' +
           (RANGE.key === x[0] ? 'true' : 'false') + '">' + x[1] + '</button>';
@@ -1454,6 +1454,14 @@
        reads. Only the items he has to touch himself come here, and only when
        there are some: a permanent panel saying "nothing for you" is a panel
        that stops being looked at. */
+    if (a.settings) {
+      var mq = metaQuiet();
+      if (mq.length) {
+        h += '<div class="note" style="margin-bottom:16px"><b>Gone quiet: ' +
+          esc(mq.map(function (c) { return c.label; }).join(', ')) + '.</b> Nothing has arrived for ' +
+          '3 days. <a class="minibtn" href="#/settings/connections">Open Connections</a></div>';
+      }
+    }
     if (a.clients) {
       var mn = ZS.markNeeds(D);
       if (mn.length) {
@@ -2985,10 +2993,6 @@
        feature that does not work, and the place it lives is not a detail. It is
        still on Your data as well; the same panel, in both places. */
     var rows = [
-      ['WhatsApp Business', 'Enquiries, template sends and the 24-hour window.', 'Setting up',
-       'warn', 'Needs a Meta Business account, a verified number and approved templates.'],
-      ['Instagram', 'DMs and story replies arrive as enquiries.', 'Setting up', 'warn',
-       'Needs the Instagram account linked to a Meta Business page.'],
       /* ⚠️ THIS ROW USED TO PROMISE MESSAGES, and Google shut Business Messages
          down on 31 July 2024: the endpoints return errors and partner console
          access was revoked. Chat and call history went with it. Leaving the old
@@ -3000,52 +3004,107 @@
        'Needs the ZippyScale profile claimed, then Google\u2019s approval for the ' +
        'Business Profile API. Messaging is not on the list because Google closed it ' +
        'in July 2024.'],
-      ['Meta lead ads', 'Lead form submissions land straight on the board.', 'Setting up', 'warn',
-       'Needs Meta Business verification and app review.'],
       ['Website enquiries', 'The enquiry form on zippyscale.in.', 'Live', 'ok',
        'Needs the form wired to this console.'],
       ['Engagement sheet', 'Every engagement, as a spreadsheet.', 'Live', 'ok',
        'Written by the five-minute sweep. Export and import both work.']
     ];
-    return '<div class="card" style="padding:0">' + rows.map(function (r) {
+    return metaCards() + '<div class="card" style="padding:0">' + rows.map(function (r) {
       return '<div class="conn"><div><b>' + esc(r[0]) + '</b><span>' + esc(r[1]) + '</span>' +
         '<span style="display:block;color:var(--dim);margin-top:3px">' + esc(r[4]) + '</span></div>' +
         '<span class="pill ' + r[3] + '">' + esc(r[2]) + '</span></div>';
-    }).join('') + '</div>' + metaPanel() + backupPanel() + notifyPanel() +
-    '<div class="note">Nothing in the list above sends a real message yet. Each one is ' +
-    'shown so you can see where it would sit, and what it needs first. Notifications are ' +
-    'different: they work now, and they are the one thing here you can switch on yourself.</div>';
+    }).join('') + '</div>' + backupPanel() + notifyPanel();
   }
 
-  /* THE ONE DOOR ALL THREE META CHANNELS COME THROUGH.
+  /* ---------------- the five Meta cards ----------------
 
-     WhatsApp, Instagram and lead ads are not three integrations. They hang off
-     one Meta app, one business verification and one Page, and all three POST to
-     the same callback URL. Shown here because the URL is the one thing that has
-     to be copied out of this cockpit and pasted into Meta, and because the
-     conditions are worth reading before anybody starts. */
-  function metaPanel() {
-    if (!window.API || !API.signedIn()) return '';
-    var hook = (API.url() || '') + '/api/hook/meta';
-    return '<div class="card pad" style="margin:16px 0">' +
-      '<div class="cardhead"><h3>The Meta door</h3>' +
-      '<span class="pill warn">waiting on Meta</span></div>' +
-      '<p class="m">WhatsApp, Instagram and lead ads all arrive here. One app, one ' +
-      'verification, one Page, one address:</p>' +
-      '<div class="f wide" style="margin-top:10px">' +
-      '<input value="' + esc(hook) + '" readonly onclick="this.select()" ' +
-      'style="font-family:var(--mono);font-size:12px">' +
-      '<span class="hint">Paste this as the Callback URL on the Meta app, for every ' +
-      'product. Click to select it.</span></div>' +
-      '<p class="m" style="margin-top:12px"><b>It is shut until it is configured</b>, and ' +
-      'it refuses anything that does not carry Meta\u2019s signature. It cannot be ' +
-      'opened by pasting the URL somewhere: the app secret has to be set on the ' +
-      'server, by hand, once.</p>' +
-      '<p class="m" style="margin-top:8px">What lands where: a <b>lead ad</b> becomes a ' +
-      'client and an engagement at Enquiry, because filling in a lead form is an ' +
-      'enquiry. A <b>WhatsApp or Instagram message</b> waits in the Inbox for one tap, ' +
-      'because a message is not an enquiry and a board that fills itself from every ' +
-      '&ldquo;hi&rdquo; is a board nobody trusts.</p></div>';
+     Each says Connected, Waiting for setup (and which step is open) or Gone quiet
+     (connected, then nothing for three days). The state comes from the server,
+     which knows the keys, the subscriptions and when anything last arrived; an
+     error from Meta is mapped to one of the three, never shown raw. */
+  var MSTAT = null, MSTAT_AT = 0;
+  function metaStatusNow(force) {
+    if (!window.API || !API.signedIn()) return MSTAT;
+    if (!force && Date.now() - MSTAT_AT < 300000) return MSTAT;
+    MSTAT_AT = Date.now();
+    API.metaStatus().then(function (r) { MSTAT = r; render(); })
+      .catch(function () { /* the cards keep their last state */ });
+    return MSTAT;
+  }
+  var CARD = {
+    whatsapp:  { mark: 'WA', thing: 'message',
+                 ok: 'Replies from the Inbox go out from +91 99893 98484.',
+                 fix: 'Conversations land in the Inbox. A message never opens a client by itself.',
+                 check: 'in WhatsApp Manager, the number still shows Connected and the cockpit app is ' +
+                        'still subscribed. Then press Check again.' },
+    instagram: { mark: 'IG', thing: 'message', ok: '',
+                 fix: 'Only you and Sandy can message until step 4 and Meta\u2019s review.',
+                 check: 'the Instagram account is still linked to the ZippyScale.in Page and Allow ' +
+                        'access to messages is on in the Instagram app.' },
+    messenger: { mark: 'M', thing: 'message', ok: '',
+                 fix: 'Only you and Sandy can message until step 4 and Meta\u2019s review.',
+                 check: 'the cockpit app is still connected to the ZippyScale.in Page under Business ' +
+                        'settings, Integrations.' },
+    leadads:   { mark: 'LA', thing: 'form', ok: '',
+                 fix: 'A lead form lands on the Sales board as an Enquiry, named after its campaign.',
+                 check: 'in Meta, Business settings, Integrations, Leads access: the cockpit app is still ' +
+                        'on the list for the ZippyScale.in Page. Then press Check again.' },
+    adaccount: { mark: 'AD', thing: 'pull',
+                 ok: '', fix: 'Read only. Creating, pausing or editing ads stays in Meta Ads Manager.',
+                 check: 'the Cockpit system user still has the ad account under Assigned assets (step 2).' }
+  };
+  function metaCards() {
+    var st = metaStatusNow();
+    var cards = (st && st.cards) || ['whatsapp', 'instagram', 'messenger', 'leadads', 'adaccount']
+      .map(function (id) {
+        return { id: id, label: { whatsapp: 'WhatsApp', instagram: 'Instagram', messenger: 'Messenger',
+          leadads: 'Lead ads', adaccount: 'Ad account' }[id], state: 'wait',
+          step: (window.API && API.signedIn()) ? 'Reading the state from the server.' : 'Sign in to the server to see it.' };
+      });
+    var when = function (iso) { return (window.GE && GE.whenSaid) ? GE.whenSaid(iso) : String(iso || '').slice(0, 16); };
+    return '<div class="cardhead" style="margin-bottom:10px"><h3>Meta</h3>' +
+      '<span class="hint">Steps refer to the file on your Desktop: META, your steps to connect the cockpit</span></div>' +
+      '<div class="grid3" style="margin-bottom:16px">' + cards.map(function (c) {
+        var k = CARD[c.id] || { mark: '?', thing: 'message', fix: '', check: '' };
+        var pill = c.state === 'ok' ? '<span class="pill ok">Connected</span>'
+          : c.state === 'quiet' ? '<span class="pill warn">Gone quiet</span>'
+          : '<span class="pill dim">Waiting for setup</span>';
+        var head, fix, acts = '';
+        if (c.state === 'wait') {
+          head = '<b>Waiting for setup.</b> ' + esc(c.step || '');
+          fix = esc(k.fix);
+        } else if (c.state === 'quiet') {
+          var days = Math.floor((Date.now() - new Date(c.last || c.since).getTime()) / 86400000);
+          head = c.id === 'adaccount'
+            ? '<b>Meta has not answered since ' + esc(when(c.last)) + '.</b>'
+            : '<b>Nothing for ' + days + ' days' + (c.last ? ' (last ' + k.thing + ' ' + esc(when(c.last)) + ')' : '') + '.</b>';
+          fix = '<b>What to check:</b> ' + esc(k.check);
+          acts = '<button class="minibtn" data-act="metaCheck">Check again</button>';
+        } else {
+          head = c.id === 'adaccount'
+            ? '<b>Last pulled ' + esc(when(c.last)) + '.</b> Next pull at 08:47.'
+            : c.last ? '<b>Last ' + k.thing + ' ' + esc(when(c.last)) + '.</b> ' + esc(k.ok)
+            : '<b>Connected.</b> Nothing has arrived yet. ' + esc(k.ok);
+          fix = esc(k.fix);
+        }
+        if (c.id === 'adaccount') {
+          acts += '<a class="minibtn" href="#/campaigns">Open Campaigns</a>' +
+            '<button class="minibtn" data-act="metaRefresh">Refresh from Meta</button>';
+        } else if (c.id !== 'leadads') {
+          acts += '<a class="minibtn" href="#/inbox">Open the Inbox</a>';
+        } else {
+          acts += '<a class="minibtn" href="#/floor">Open the Sales board</a>';
+        }
+        return '<div class="card pad conncard" data-conn="' + esc(c.id) + '" data-state="' + esc(c.state) + '">' +
+          '<div class="cardhead"><span class="agico">' + k.mark + '</span><h3>' + esc(c.label) + '</h3>' +
+          pill + '</div><p class="state">' + head + '</p>' +
+          '<div class="fix">' + fix + '</div><div class="acts">' + acts + '</div></div>';
+      }).join('') + '</div>';
+  }
+  /* "Gone quiet" lines for the Overview: the one place every day starts */
+  function metaQuiet() {
+    var st = metaStatusNow();
+    return ((st && st.cards) || []).filter(function (c) { return c.state === 'quiet'; });
   }
 
   /* THE BACKUP SHEET.
@@ -3275,6 +3334,9 @@
       /* a new query string forces the browser to fetch every file again */
       location.replace(location.pathname + '?fresh=' + Date.now() + location.hash);
     },
+    metaCheck: function () { metaStatusNow(true); toast('Asking the server again.'); },
+    /* for the tests: the server's answer, as if it had arrived */
+    setMetaStatusForTest: function (st) { MSTAT = st; MSTAT_AT = Date.now(); },
     setRange: function (k) {
       RANGE.key = k;
       if (k === 'custom' && !RANGE.from) {

@@ -1859,7 +1859,7 @@
   var RANGES = [
     ['today', 'Today'], ['week', 'This week'], ['month', 'This month'],
     ['last', 'Last month'], ['quarter', 'This quarter'], ['year', 'This year'],
-    ['all', 'All time'], ['custom', 'Custom…']
+    ['all', 'From the start'], ['custom', 'Custom dates']
   ];
 
   function iso(d) {
@@ -1895,7 +1895,7 @@
   function rangeLabel(r) {
     var named = RANGES.filter(function (x) { return x[0] === r.key; })[0];
     if (r.key === 'custom') return r.from + ' to ' + r.to;
-    if (r.key === 'all') return 'All time';
+    if (r.key === 'all') return 'From the start';
     return (named ? named[1] : r.key) + ' (' + r.from + ' to ' + r.to + ')';
   }
 
@@ -2801,6 +2801,52 @@
       leads: opps.length, won: won.length,
       value: won.reduce(function (a, o) { return a + (o.won_price || o.budget_max || 0); }, 0)
     };
+  }
+
+  /* ---- Meta campaigns against the board ----
+
+     Which campaign an engagement came from: the ad id a lead ad carries, else a
+     campaign named on it (by name, or a hand-added campaign that has the same
+     name as a pulled one, so it counts once). Then, in the window:
+       enquiries  engagements created from that campaign
+       won        engagements won, each credited to the campaign of that
+                  client's FIRST enquiry (approved rule, 17 Oct)
+     Returns { enq: {campaignId: n}, won: {campaignId: n} }. */
+  function metaBoard(store, adCampaign, pulled, range) {
+    adCampaign = adCampaign || {};
+    var byName = {}, hand = {};
+    (pulled || []).forEach(function (c) { byName[String(c.name || '').trim().toLowerCase()] = c.id; });
+    (store.campaigns || []).forEach(function (c) { hand[c.id] = c; });
+    function campOf(o) {
+      if (o.ad && adCampaign[o.ad]) return adCampaign[o.ad];
+      var k = o.campaign;
+      if (!k) return null;
+      if (adCampaign[k]) return adCampaign[k];
+      var n = byName[String(k).trim().toLowerCase()];
+      if (n) return n;
+      if (hand[k]) return byName[String(hand[k].name || '').trim().toLowerCase()] || k;
+      return null;
+    }
+    var opps = store.opportunities || [];
+    var first = {};
+    opps.slice().sort(function (a, b) { return String(a.created || '').localeCompare(String(b.created || '')); })
+      .forEach(function (o) {
+        var cl = o.client || o.client_id;
+        if (cl && !(cl in first)) first[cl] = { c: campOf(o), ad: adCampaign[o.ad] ? o.ad : null };
+      });
+    var enq = {}, won = {}, enqAd = {}, wonAd = {};
+    var bump = function (m, k) { if (k) m[k] = (m[k] || 0) + 1; };
+    opps.forEach(function (o) {
+      if (!range || inRange(String(o.created || '').slice(0, 10), range)) {
+        bump(enq, campOf(o));
+        if (adCampaign[o.ad]) bump(enqAd, o.ad);
+      }
+      if (o.outcome === 'won' && (!range || inRange(String(o.closed || '').slice(0, 10), range))) {
+        var f = first[o.client || o.client_id];
+        if (f) { bump(won, f.c); bump(wonAd, f.ad); }
+      }
+    });
+    return { enq: enq, won: won, enqAd: enqAd, wonAd: wonAd };
   }
 
   /* ---- reading a document ----
@@ -4467,7 +4513,7 @@ function outreachTrades(list) {
     draftEmail: draftEmail, draftWhatsAppReply: draftWhatsAppReply,
     leadOptions: leadOptions, draftsOf: draftsOf,
     worthPitching: worthPitching, PITCH_BAR: PITCH_BAR,
-    PAID_SOURCES: PAID_SOURCES, isPaid: isPaid, newCampaign: newCampaign, PLATFORMS: PLATFORMS,
+    PAID_SOURCES: PAID_SOURCES, isPaid: isPaid, newCampaign: newCampaign, PLATFORMS: PLATFORMS, metaBoard: metaBoard,
     campaignsFor: campaignsFor, campaignById: campaignById, campaignResults: campaignResults,
     CLIENT_TYPES: CLIENT_TYPES, newContact: newContact, contactsOf: contactsOf,
     primaryContact: primaryContact, contactById: contactById, oppContact: oppContact,

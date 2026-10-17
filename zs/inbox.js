@@ -32,7 +32,8 @@
     messenger: { label: 'Messenger', tone: 'info', mark: 'M' }
   };
 
-  var FILTER = 'all';       /* all | whatsapp | instagram */
+  var FILTER = 'all';       /* all | whatsapp | instagram | messenger */
+  var Q = '';               /* search: name, handle or the last line */
   var MINE = false;
   var OPEN = null;          /* the conversation being read */
   var LOADED = {};          /* thread id -> its messages, once fetched */
@@ -43,6 +44,11 @@
     var list = (D().threads || []).slice();
     if (FILTER !== 'all') list = list.filter(function (t) { return t.channel === FILTER; });
     if (MINE) list = list.filter(function (t) { return t.assigned_to === (G.me() || {}).id; });
+    /* the shared Date filter, on when they last wrote or were written to */
+    list = list.filter(function (t) { return G.inRange(String(t.last_at || '').slice(0, 10)); });
+    if (Q) list = list.filter(function (t) {
+      return [t.name, t.handle, t.last_body].join(' ').toLowerCase().indexOf(Q) >= 0;
+    });
     return list.sort(function (a, b) {
       return String(b.last_at || '').localeCompare(String(a.last_at || ''));
     });
@@ -77,7 +83,7 @@
     var mayAssign = !!D().mayAssign;
 
     var h = '<div class="ph"><div><h1>Inbox</h1>' +
-      '<p>Every WhatsApp and Instagram conversation in one place. ' +
+      '<p>Every WhatsApp, Instagram and Messenger conversation in one place. ' +
       (mayAssign
         ? 'Hand one to somebody and it moves to their inbox until you take it back.'
         : 'You see the conversations handed to you.') +
@@ -88,8 +94,10 @@
     all.forEach(function (t) { counts[t.channel] = (counts[t.channel] || 0) + 1; });
     var unread = all.filter(function (t) { return t.unread > 0; }).length;
 
+    h += G.rangeBar();
     h += '<div class="chips" style="margin-bottom:14px">' +
-      [['all', 'Everything'], ['whatsapp', 'WhatsApp'], ['instagram', 'Instagram']]
+      [['all', 'All channels'], ['whatsapp', 'WhatsApp'], ['instagram', 'Instagram'],
+       ['messenger', 'Messenger']]
         .map(function (c) {
           return '<button class="chip" data-act="inboxChannel" data-id="' + c[0] + '" ' +
             'aria-pressed="' + (FILTER === c[0] ? 'true' : 'false') + '">' + esc(c[1]) +
@@ -98,15 +106,15 @@
       '<button class="chip" data-act="inboxMine" aria-pressed="' + (MINE ? 'true' : 'false') +
       '">Mine<i>' + all.filter(function (t) {
         return t.assigned_to === (me || {}).id; }).length + '</i></button>' +
-      (unread ? '<span class="pill em" style="margin-left:auto;align-self:center">' +
+      (unread ? '<span class="pill em" style="align-self:center">' +
         unread + ' unread</span>' : '') +
+      '<input type="search" id="inboxq" placeholder="Search conversations" value="' + esc(Q) + '">' +
       '</div>';
 
     if (!all.length) {
-      return h + '<div class="card pad"><p class="m">Nothing yet. ' +
-        'WhatsApp and Instagram messages land here the moment Meta is connected &mdash; ' +
-        'Settings, Connections, The Meta door. A message waits here for one tap rather ' +
-        'than opening a client by itself, because a message is not an enquiry.</p></div>';
+      return h + '<div class="card pad"><p class="m">Nothing yet. Messages land here once ' +
+        'Meta is connected (Settings, Connections). A message waits here for one tap rather ' +
+        'than opening a client by itself.</p></div>';
     }
 
     h += '<div class="inbox2">' +
@@ -123,8 +131,8 @@
   function nothingOpen() {
     return '<div class="card pad" style="height:100%"><p class="m">' +
       'Pick a conversation on the left. Everything you send goes out from the one ' +
-      'WhatsApp number and the one Instagram account, whoever writes it &mdash; the client ' +
-      'sees one business, not a rota.</p></div>';
+      'WhatsApp number, the one Instagram account and the one Page, whoever writes it. The ' +
+      'client sees one business, not a rota.</p></div>';
   }
 
   function threadRow(t) {
@@ -184,11 +192,25 @@
        Outside the 24 hours WhatsApp rejects a plain message rather than
        delivering it late, and discovering that from Meta's error means four
        lines have already been written and believed sent. */
-    if (t.channel === 'whatsapp' && !left) {
+    if (t.channel !== 'whatsapp' && !left) {
+      /* Instagram and Messenger: no templates, so nothing can go until they
+         write. Send stays on screen and disabled, never hidden. */
+      var first = String(t.name || t.handle || 'they').split(' ')[0];
+      var lastIn = t.window_until ? new Date(new Date(t.window_until).getTime() - 86400000) : null;
+      var ago = lastIn ? Math.max(1, Math.floor((Date.now() - lastIn.getTime()) / 86400000)) : null;
+      h += '<form class="convsend shut" onsubmit="return false">' +
+        '<p class="closed">Reply window closed. They need to write first.' +
+        '<span>' + esc(c.label) + ' lets a business reply for 24 hours after the person&rsquo;s ' +
+        'last message.' + (ago ? ' Theirs was ' + (ago === 1 ? 'a day' : ago + ' days') + ' ago.' : '') +
+        '</span></p>' +
+        '<textarea rows="2" disabled aria-disabled="true" placeholder="Opens again when ' +
+        esc(first) + ' writes"></textarea>' +
+        '<div class="sendrow"><button class="btn" type="button" disabled aria-disabled="true">Send</button>' +
+        '<span class="hint">Meta&rsquo;s rule for Instagram and Messenger, not ours.</span></div></form>';
+    } else if (t.channel === 'whatsapp' && !left) {
       h += '<div class="convsend shut">' +
-        '<p class="m"><b>They have not written for over 24 hours.</b> WhatsApp will only ' +
-        'take a template Meta has already approved until they write again. That is Meta’s ' +
-        'rule, not ours.</p>' +
+        '<p class="closed">Reply window closed. They need to write first.' +
+        '<span>WhatsApp only takes a template Meta has approved until they write again.</span></p>' +
         '<button class="btn alt" data-act="pickTemplate" data-id="' + esc(t.id) + '">' +
         'Send an approved template</button></div>';
     } else {
@@ -201,7 +223,7 @@
             ? '<button class="btn alt" type="button" data-act="pickTemplate" data-id="' +
               esc(t.id) + '">Template</button>' +
               '<span class="hint">' + esc(left) + ' to reply freely</span>'
-            : '<span class="hint">Goes out from the ZippyScale account.</span>') +
+            : '<span class="hint">' + esc(left) + ' to reply</span>') +
         '</div></form>';
     }
 
@@ -367,6 +389,13 @@
     var text = box ? String(box.value || '').trim() : '';
     if (!text) return;
     send(e.target.dataset.id, { text: text });
+  });
+
+  document.addEventListener('input', function (e) {
+    if (e.target && e.target.id === 'inboxq') {
+      Q = String(e.target.value || '').toLowerCase().trim();
+      G.render();
+    }
   });
 
   /* what the overview and Jarvis can both ask for */
