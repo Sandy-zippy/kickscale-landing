@@ -207,6 +207,8 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'dealer': { const city = (CL()[opt.client] || {}).city, sug = dealerSuggest(city).map(x => x.d.id);
       return G.select(f, v, p, [...sug.map(id => DDIR().find(d => d.id === id)).map(d => [d.id, `${d.name} · ${d.city} · suggested for ${city}`]), ...DDIR().filter(d => !sug.includes(d.id) && d.division !== 'retail').map(d => [d.id, `${d.name} · ${d.city}`])]).replace('<select', '<select data-keep-order'); }
     case 'partner': return G.select(f, v, p, DDIR().filter(d => (PARTNER_OK.includes(d.project_partner) && (!opt.division || d.division === opt.division)) || d.id === v).map(d => [d.id, `${d.name} · ${d.city} · Project Partner ${d.project_partner || 'not set'}`]));
+    /* R6b: the EGO Champion of the pipeline's company */
+    case 'champion': return G.select(f, v, p, REGS().filter(r => r.kind === 'champion' && r.division === (PIPELINES[opt.pipeline] || {}).division).map(r => [r.id, `${r.item} · ${r.extra.ch_role || ''}${r.client_id ? ' · ' + clientName(r.client_id) : ''}`]));
     case 'cats': return fieldHtml({ ...f, type: 'multi', opts: D.lists.categories }, v, p);
     case 'cat': return G.select(f, v, p, D.lists.categories.map(c => [c, c]));
     case 'decimal': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
@@ -323,6 +325,7 @@ function showVal(f, v) {
     case 'owner': return esc(staffName(v));
     case 'link': case 'dealer': case 'partner': { const c = CL()[v] || DDIR().find(d => d.id === v); return c ? (CL()[v] ? `<a href="#/client/${c.id}">${esc(c.name)}</a>` : esc(c.name)) : '<span class="muted">Outside your view</span>'; }
     case 'project': { const x = PJS().find(y => y.id === v); return x ? `<a href="#/project/${x.id}">${esc(x.name)}</a>` : '<span class="muted">Outside your view</span>'; }
+    case 'champion': { const x = REGS().find(y => y.id === v); return x ? `<a href="#/champion/${x.id}" data-champ-link>${esc(x.item)}</a>` : '<span class="muted">Outside your view</span>'; }
     case 'yesno': return v ? 'Yes' : 'No';
     case 'multi': case 'cats': case 'cities': return v.map(x => `<span class="chip">${esc(x)}</span>`).join('');
     case 'money': return money(v);
@@ -487,7 +490,7 @@ const scopeLabel = () => ({ all: 'sees both companies', division: `sees all of $
 const SOON = {
   sales: ['Invoices, outstanding and ledgers', 'Tally. Orders are taken here; invoices, payments and outstanding will be read from Tally.'],
   calls: ['Calls and telecalling', 'Runo, through its API key.'],
-  visits: ['Field visits', 'Sales Diary, once the vendor shares its API documentation.'],
+  visits: ['Field visits', 'Sales Diary, once its makers share their API documentation.'],
   whatsapp: ['WhatsApp messages', 'The WhatsApp Business number and Meta approval.'],
   ads: ['Ad and portal leads', 'Meta, Google, IndiaMART and JustDial lead feeds.'],
   ai: ['AI lead screening and the call agent', 'The leads feed above, a telephony number and DLT registration.'],
@@ -742,8 +745,9 @@ EM.VIEWS.client = arg => {
   const nOrd = buildOrders().filter(x => x.client_id === id).length;
   const tabs = [['overview', 'Overview'], ['activity', 'Activity'], ['orders', `Orders (${nOrd})`], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
   if (DEALER_KINDS.includes(c.kind)) tabs.splice(6, 0, ...dealerTabs(c));   // batch 4: leads, development plan, portal logins
+  if (ARCH_KINDS.includes(c.kind)) tabs.splice(tabs.length - 1, 0, ['plan', 'Plan']);   // R6b (plan point 18): a Design 500 member's plan and interventions
   if (DEALER_KINDS.includes(c.kind) || ARCH_KINDS.includes(c.kind)) tabs.splice(tabs.length - 1, 0, ...regTabs(c));   // R6a: Samples (dealer, architect), Displays (dealer)
-  const body = { overview: clientOverview, activity: c2 => activityPanel({ clientId: c2.id }), orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>', ...(DEALER_KINDS.includes(c.kind) ? DEALER_TAB_BODY : {}), ...REG_TAB_BODY }[tab] || clientOverview;
+  const body = { overview: clientOverview, activity: c2 => activityPanel({ clientId: c2.id }), orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>', ...(DEALER_KINDS.includes(c.kind) ? DEALER_TAB_BODY : {}), ...(ARCH_KINDS.includes(c.kind) ? { plan: c2 => clientPlan(c2) } : {}), ...REG_TAB_BODY }[tab] || clientOverview;
   const home = homeOf(c);
   return `<div class="stack">${crumbs(home, [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
@@ -1471,7 +1475,7 @@ EM.VIEWS.orders = arg => {
   let O = OPSD();
   const lineSum = id => O.lines.filter(l => l.order_id === id);
   const head = `<div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">EGO Premium · from the confirmed order to the dealer's door</div><h1>Fulfilment</h1></div>
-    <div class="row">${tab === 'production' && canStockUI() ? '<button class="btn" data-act="po-add">+ Production order</button>' : ''}<a class="btn" href="#/opps/wholesale">Wholesale opportunities</a></div></div>
+    <div class="row">${tab === 'production' && canStockUI() ? '<button class="btn" data-act="po-add">+ Production order</button>' : ''}<a class="btn" href="#/suppliers" data-to-suppliers>${fic('building-factory')}Suppliers</a><a class="btn" href="#/opps/wholesale">Wholesale opportunities</a></div></div>
     ${flowStrip()}
     ${subtabs('#/orders', tab, TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : k === 'bige' ? O.rorders.length : O.production.length}</span>`]))}
     ${searchBox(tab === 'fulfilment' ? 'Fulfilment number, opportunity or dealer' : 'Production order, design or container')}`;
@@ -1799,6 +1803,7 @@ EM.VIEWS.po = id => {
     <div class="row between"><div class="stack-s"><h1>${esc(p.ref)}</h1><p class="muted">${esc(prodName(p.product_id))} · ${num(p.boxes)} boxes${p.factory ? ' · ' + esc(p.factory) : ''}${p.eta ? ' · expected ' + ds(p.eta) : ''}${p.container ? ' · container ' + esc(p.container) : ''}</p></div>
       ${nextS && canStockUI() ? `<button class="btn primary" data-act="po-next" data-id="${id}" data-to="${esc(nextS)}">Move to ${esc(nextS)}</button>` : ''}</div>
     <section class="card stack-s">${stageChips(PS, p.stage)}</section>
+    ${poSupplier(p)}
     <section class="card stack-s"><h3>The sales this production order serves</h3>
       <p class="small">${num(p.boxes)} boxes ordered from production · ${num(forSales)} for the sales below · ${num(Math.max(0, p.boxes - forSales))} spare, which go into stock when received.</p>
       ${waits.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Boxes for it', 'Status'], waits.map(w => { const o = OPSD().orders.find(x => x.id === w.order_id) || {}; return { href: '#/order/' + w.order_id, cells: [`<b>${esc(o.ref || '')}</b>`, esc((oppOf(o) || { title: '' }).title), esc(clientName(o.client_id)), num(w.boxes), w.done ? '<span class="badge ok">Arrived, blocked</span>' : '<span class="badge warn">Waiting</span>'] }; })) : '<p class="small muted">No sale is waiting for it; everything it brings goes into stock.</p>'}</section>
@@ -1821,10 +1826,10 @@ EM.ACTIONS['po-add'] = () => {
   EM.modal(`<h2>Place a production order</h2><div class="fgrid" style="margin-top:12px">
     <div class="field span2"><label for="pa-p">Design</label><select class="input" id="pa-p">${I.products.map(p => `<option value="${p.id}">${esc(prodName(p.id))}</option>`).join('')}</select></div>
     <div class="field"><label for="pa-b">Boxes</label><input class="input" id="pa-b" type="number" min="1" step="1" value="${D.lists.rules.moq_boxes}"></div>
-    <div class="field"><label for="pa-f">Factory</label><input class="input" id="pa-f"></div><div class="field"><label for="pa-e">Expected</label><input class="input" id="pa-e" type="date"></div></div>${errBox('pa-err')}
+    ${supPick('pa-sup', '')}<div class="field"><label for="pa-f">Factory (typed, if not on the Supplier master)</label><input class="input" id="pa-f"></div><div class="field"><label for="pa-e">Expected</label><input class="input" id="pa-e" type="date"></div></div>${errBox('pa-err')}
     <div class="row" style="margin-top:12px"><button class="btn primary" data-act="po-save">Place it</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
 };
-EM.ACTIONS['po-save'] = async el => { const r = await opsAct(el, 'production', { product_id: qs('#pa-p').value, boxes: Number(qs('#pa-b').value), factory: qs('#pa-f').value, eta: qs('#pa-e').value }, null, 'pa-err'); if (r) location.hash = '#/po/' + r.id; };
+EM.ACTIONS['po-save'] = async el => { const r = await opsAct(el, 'production', { product_id: qs('#pa-p').value, boxes: Number(qs('#pa-b').value), factory: qs('#pa-f').value, supplier_id: (qs('#pa-sup') || {}).value || '', eta: qs('#pa-e').value }, null, 'pa-err'); if (r) location.hash = '#/po/' + r.id; };
 
 /* ---- installation sites, both companies (R3b: EGO Premium too). A site links to a project or an order of its company;
    who installs it (our contractor, or the partner dealer's team) is picked per site (Q9); a later planned start needs a delay reason. */
@@ -1838,7 +1843,7 @@ EM.VIEWS.installation = () => {
   const S = all.filter(x => (!f.step || x.step === f.step) && (!f.by || ((x.extra || {}).installed_by || 'none') === f.by) && (!f.project || x.project_id === f.project) && inPeriod(x.created_at, f.period, f.from, f.to)
     && (!fq || (f.field ? [siteVal(x, f.field)] : SITE_FIELDS.map(([k]) => siteVal(x, k))).some(v => v.toLowerCase().includes(fq))) && matches(`${x.ref} ${x.name} ${clientName(x.client_id)} ${siteVal(x, 'project')} ${x.address || ''}`, [(CL()[x.client_id] || {}).mobile]));
   const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-inf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
-  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${co ? esc(DIVS[co].co) : 'EGO Premium and Big E'} · from survey to handover</div><h1>Installation</h1><p class="muted">${S.length} of ${all.length}. Each site moves through the installation steps. Some steps check before they let you on: a crew, the readiness checklist, no open snag, the client's sign-off.</p></div><button class="btn primary" data-act="site-add">+ Site</button></div>
+  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${co ? esc(DIVS[co].co) : 'EGO Premium and Big E'} · from survey to handover</div><h1>Installation</h1><p class="muted">${S.length} of ${all.length}. Each site moves through the installation steps. Some steps check before they let you on: a crew, the readiness checklist, no open snag, the client's sign-off.</p></div><div class="row"><a class="btn" href="#/installers" data-to-installers>${fic('tool')}Installers</a><button class="btn primary" data-act="site-add">+ Site</button></div></div>
     <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-inst-filters>${dateFilter(f, 'inst', 'When it was added')}${sel('step', 'Step', [['', 'Every step'], ...SS.map(x => [x, x])])}
       ${sel('by', 'Installed by', [['', 'Anyone'], ...Object.entries(INSTALLED_BY), ['none', 'Not chosen yet']])}${sel('project', 'Project', [['', 'Every project'], ...[...new Set(all.map(x => x.project_id).filter(Boolean))].map(id => [id, (PJS().find(p => p.id === id) || { name: id }).name])])}
       ${sel('field', 'Any field', [['', 'Any field'], ...SITE_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="inst-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
@@ -1879,10 +1884,11 @@ EM.VIEWS.site = id => {
       ${nextS ? `<button class="btn primary" data-act="site-next" data-id="${id}">Move to ${esc(nextS)}</button>` : ''}</div>
     <section class="card stack-s">${stageChips(SS, x.step)}</section>
     <section class="card stack-s" data-site-links><h3>Where it belongs</h3>${kv([['Company', esc(DIVS[x.division] ? DIVS[x.division].co : x.division)], ['Project', siteProject(x) ? `<a href="#/project/${x.project_id}">${esc(siteProject(x).name)}</a>` : NOTSET],
-      ['Order', (() => { const o = allOrders().find(k => k.id === (x.extra || {}).order_id) || allOrders().find(k => x.opp_id && k.opp_id === x.opp_id); return o ? `<a href="#/order/${o.id}">${esc(o.ref)} · ${esc(o.ful_stage)}</a>` : NOTSET; })()], ['Installed by', esc(installedByTxt(x))], ['Installer certified', siteCert(x)]])}</section>
+      ['Order', (() => { const o = allOrders().find(k => k.id === (x.extra || {}).order_id) || allOrders().find(k => x.opp_id && k.opp_id === x.opp_id); return o ? `<a href="#/order/${o.id}">${esc(o.ref)} · ${esc(o.ful_stage)}</a>` : NOTSET; })()], ['Installed by', esc(installedByTxt(x))], ['Installer', (x.extra || {}).installer_id && instRec(x.extra.installer_id) ? `<a href="#/installer/${x.extra.installer_id}" data-site-installer>${esc(instRec(x.extra.installer_id).item)}</a>` : x.crew ? esc(x.crew) + ' <span class="small muted">(typed, not from the Installer master)</span>' : NOTSET], ['Installer certified', siteCert(x)]])}</section>
     <div class="grid g2"><section class="card stack-s"><h3>Crew and dates</h3><div class="fgrid">
         ${installerFields(x.division, (x.extra || {}).installed_by || '', (x.extra || {}).installer_dealer || '')}
-        <div class="field"><label for="se-crew">Installer or crew</label><input class="input" id="se-crew" value="${esc(x.crew || '')}"></div>
+        ${instPick('se-iid', (x.extra || {}).installer_id || '', x.division)}
+        <div class="field"><label for="se-crew">Installer or crew (typed, for anyone not on the master)</label><input class="input" id="se-crew" value="${esc(x.crew || '')}"></div>
         <div class="field"><label for="se-ps">Planned start</label><input class="input" id="se-ps" type="date" value="${esc(x.planned_start || '')}" data-was="${esc(x.planned_start || '')}"></div>
         <div class="field" data-delay ${x.planned_start ? '' : 'hidden'}><label for="se-dr">Delay reason (when the start moves later)</label><select class="input" id="se-dr" data-keep-order><option value="">Choose</option>${(D.lists.delay_reasons || []).map(r => `<option>${esc(r)}</option>`).join('')}</select></div>
         <div class="field" data-delay ${x.planned_start ? '' : 'hidden'}><label for="se-dn">Delay note</label><input class="input" id="se-dn"></div>
@@ -1902,7 +1908,7 @@ EM.ACTIONS['site-next'] = el => opsAct(el, `sites/${el.dataset.id}/next`, {}, '<
 EM.ACTIONS['site-upd'] = el => {
   const was = qs('#se-ps').dataset.was, ps = qs('#se-ps').value;
   if (was && ps > was && !qs('#se-dr').value) return bubbleNear(el, `The planned start moves later (${was} to ${ps}): choose the delay reason.`);
-  return opsAct(el, `sites/${el.dataset.id}/update`, { crew: qs('#se-crew').value, planned_start: ps, signed_off: qs('#se-so').checked, installed_by: qs('#sa-by').value, installer_dealer: qs('#sa-dealer').value, delay_reason: qs('#se-dr').value, delay_note: qs('#se-dn').value, ready: Object.fromEntries([...document.querySelectorAll('[data-ready]')].map(s => [s.dataset.ready, s.value])) }, '<b>Site saved</b>');
+  return opsAct(el, `sites/${el.dataset.id}/update`, { crew: qs('#se-crew').value, planned_start: ps, signed_off: qs('#se-so').checked, installed_by: qs('#sa-by').value, installer_dealer: qs('#sa-dealer').value, installer_id: (qs('#se-iid') || {}).value || '', delay_reason: qs('#se-dr').value, delay_note: qs('#se-dn').value, ready: Object.fromEntries([...document.querySelectorAll('[data-ready]')].map(s => [s.dataset.ready, s.value])) }, '<b>Site saved</b>');
 };
 EM.ACTIONS['snag-add'] = el => EM.modal(`<h2>Add a snag</h2><div class="fgrid" style="margin-top:12px">
   ${G.select({ key: 'cat', label: 'Kind of snag', req: true }, '', 'sn', D.lists.snag_types.map(v => [v, v]))}${G.select({ key: 'sev', label: 'Severity', req: true }, 'Medium', 'sn', D.lists.severities.map(v => [v, v]))}
@@ -1938,7 +1944,7 @@ EM.ACTIONS['cmp-add'] = el => {
     <div class="row" style="margin-top:12px"><button class="btn primary" data-act="cmp-save">Log it</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
 };
 /* R5 (plan point 9): batch or lot number and who installed it, on the staff form and the dealer portal; photos, many */
-const cmpInstallFields = p => `<div class="field" data-field="batch"><label for="${p}-batch">Batch or lot number</label><input class="input" id="${p}-batch" maxlength="60" placeholder="As printed on the box"></div>
+const cmpInstallFields = p => `${p === 'cp' ? instPick('cp-iid', '', EM.div !== 'both' ? EM.div : '') : ''}<div class="field" data-field="batch"><label for="${p}-batch">Batch or lot number</label><input class="input" id="${p}-batch" maxlength="60" placeholder="As printed on the box"></div>
     <div class="field" data-field="installed_by"><label for="${p}-inst">Installed by</label><select class="input" id="${p}-inst" data-keep-order><option value="">Not known</option>${Object.entries(COMPLAINT_INSTALLED_BY).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></div>
     <div class="field" data-field="installer_name"><label for="${p}-iname">Installer's name (compulsory for Other)</label><input class="input" id="${p}-iname" maxlength="120"></div>`;
 const cmpInstallText = c => [c.batch ? `Batch or lot ${esc(c.batch)}` : '', c.installed_by ? `Installed by ${esc(COMPLAINT_INSTALLED_BY[c.installed_by] || c.installed_by)}${c.installer_name ? ` (${esc(c.installer_name)})` : ''}` : ''].filter(Boolean).join(' · ');
@@ -1946,7 +1952,7 @@ EM.ACTIONS['cmp-save'] = async el => {
   const files = [...(qs('#cp-photos') || { files: [] }).files];
   if (files.length > 10) return showErr('cp-err', 'Up to 10 photos at a time.');
   const big = files.find(f => f.size > 25 * 1024 * 1024); if (big) return showErr('cp-err', `${big.name} is over 25 MB.`);
-  const r = await opsAct(el, 'complaints', { client_id: qs('#cp-client').value, type: qs('#cp-type').value, severity: qs('#cp-sev').value, channel: qs('#cp-ch').value, owner_id: qs('#cp-own').value, description: qs('#cp-desc').value, batch: qs('#cp-batch').value, installed_by: qs('#cp-inst').value, installer_name: qs('#cp-iname').value }, null, 'cp-err');
+  const r = await opsAct(el, 'complaints', { client_id: qs('#cp-client').value, type: qs('#cp-type').value, severity: qs('#cp-sev').value, channel: qs('#cp-ch').value, owner_id: qs('#cp-own').value, description: qs('#cp-desc').value, batch: qs('#cp-batch').value, installed_by: qs('#cp-inst').value, installer_name: qs('#cp-iname').value, installer_id: (qs('#cp-iid') || {}).value || '' }, null, 'cp-err');
   if (!r) return;
   if (files.length) { const fd = new FormData(); files.forEach(f => fd.append('file', f)); fd.append('type', 'Photo'); fd.append('complaint_id', r.id);
     try { const u = await API('POST', '/api/documents', fd, true); D.documents.push(...u.documents); EM.toast(`<b>${esc(r.ref)}</b> logged with ${u.documents.length} photo${u.documents.length === 1 ? '' : 's'}.`); } catch (x) { EM.toast(`<b>${esc(r.ref)}</b> logged; the photos did not upload: ${esc(x.message)} Add them on the complaint.`, 8000); } }
@@ -2141,7 +2147,7 @@ const OPS_LIST_GROUP = () => ['Operations stages', 'The stages of the processing
 EM.ACTIONS['rules-open'] = () => {
   const R = D.lists.rules, n = (id, label, v, unit) => `<div class="field"><label for="ru-${id}">${label}</label>${G.adorn(unit === '₹' ? { type: 'money', key: id } : { key: 'x' }, `<input class="input" type="number" min="0" step="any" id="ru-${id}" value="${v}">`).replace('class="suf">undefined<', `class="suf">${unit || ''}<`).replace('<span class="suf"></span>', '')}</div>`;
   EM.modal(`<h2>Rules and numbers</h2><p class="muted small">The numbers the processing uses. Changes apply from the next order, approval or score.</p>
-    <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('wastage', 'Wastage on a new line', wastageDefault(R), '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}${n('dorm', 'A dealer is dormant (Priority calls) after', R.dormant_days ?? 60, 'days with no order')}${n('swin', 'Sales count against a sample for', R.sample_window_days ?? 90, 'days after it is given')}</div></fieldset>
+    <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('wastage', 'Wastage on a new line', wastageDefault(R), '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}${n('dorm', 'A dealer is dormant (Priority calls) after', R.dormant_days ?? 60, 'days with no order')}${n('swin', 'Sales count against a sample for', R.sample_window_days ?? 90, 'days after it is given')}${n('chp', 'EGO Champion points per won sale', R.champion_points ?? 10, 'points')}</div></fieldset>
     <fieldset class="fs" data-cat-units><legend>How each category is sold</legend><p class="small muted">Flooring and cladding are per sq ft, with whole boxes. Accessories (skirting, profiles, underlay foam, film, installation) are per piece or per running ft (rft). A new category starts from its name; change any here.</p>
       ${table(['Category', 'Sold'], allCats().map(c => [esc(c), `<select class="input" data-cu="${esc(c)}" aria-label="${esc(c)} sold" style="max-width:240px">${Object.entries(QTY_UNIT_LONG).map(([k, l]) => `<option value="${k}" ${catUnit(c, R) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`]))}</fieldset>
     <fieldset class="fs"><legend>Approval limits (the Owner has none)</legend>${table(['Approval', 'Regional manager / Project head', 'Head', 'Director'], Object.entries(R.approvals).map(([k, a]) => [esc(a.label) + ` <span class="muted">(${a.unit})</span>`, ...['manager', 'head', 'director'].map(l => `<input class="input" type="number" min="0" step="any" data-ap="${k}" data-lv="${l}" value="${a.levels[l]}" aria-label="${esc(a.label)} ${l}" style="max-width:140px">`)]))}</fieldset>
@@ -2157,7 +2163,7 @@ EM.ACTIONS['rules-save'] = async el => {
     el.dataset.sure = '1'; el.textContent = 'Save, I understand'; return;
   }
   const v = id => Number(qs('#ru-' + id).value), R = D.lists.rules;
-  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'), sample_window_days: v('swin'),
+  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'), sample_window_days: v('swin'), champion_points: v('chp'),
     approvals: Object.fromEntries(Object.keys(R.approvals).map(k => [k, { levels: Object.fromEntries([...document.querySelectorAll(`[data-ap="${k}"]`)].map(i => [i.dataset.lv, Number(i.value)])) }])),
     p200: { tiers: [...document.querySelectorAll('#p2t .p2t')].map(r => ({ name: r.querySelector('[data-t="name"]').value.trim(), min: Number(r.querySelector('[data-t="min"]').value) })).filter(t => t.name),
       weights: Object.fromEntries(['sales', 'breadth', 'payments', 'display', 'activity'].map(k => [k, v('w-' + k)])) } };
@@ -3157,7 +3163,7 @@ function salesList() {
   }
   for (const p of Object.keys(PIPELINES).filter(k => PIPELINES[k].division === 'retail')) for (const o of D.opportunities.filter(x => x.pipeline === p && x.stage === wonStage(p, D.lists))) {
     const h = D.history.filter(x => x.opp_id === o.id && x.to_stage === o.stage).pop(), at = (h && h.at) || o.closed_at || o.updated_at;
-    out.push({ div: 'retail', id: o.id, ref: o.ref, title: o.title, at: dayIST(at), owner: o.owner_id, client_id: o.client_id, region: o.region || '', value: P ? Number(o.value) || 0 : 0, cats: (o.extra || {}).products || [], area: Number((o.extra || {}).area_sqft) || 0, href: '#/opp/' + o.id,
+    out.push({ div: 'retail', id: o.id, ref: o.ref, title: o.title, at: dayIST(at), owner: o.owner_id, client_id: o.client_id, region: o.region || '', value: P ? oppNet(o) : 0, cats: (o.extra || {}).products || [], area: Number((o.extra || {}).area_sqft) || 0, href: '#/opp/' + o.id,
       lines: (OPSD().oppLines || []).filter(l => l.opp_id === o.id).map(l => { const p = lineProd(l.product_id) || {}; return { category: colOf(p).category || 'Not set', boxes: Number(l.boxes) || 0, sqft: Number(l.sqft) || 0, amount: Number(l.amount) || 0 }; }) });
   }
   return out;
@@ -3400,7 +3406,7 @@ const groupBy = (list, key) => { const m = new Map(); for (const x of list) { co
 /* ---- Sales */
 function anSales() {
   const P = D.access.prices, co = anCo(), list = salesList().filter(s => (co === 'both' || s.div === co) && anIn(s.at) && anWhoOk(s.owner) && anRegionOk(s.region)).map(s => [s, saleMeasure(s, '')]);
-  const rule = 'EGO Premium: orders that reached Invoiced, by invoice date, value before GST. Big E: retail sales won, by the date won, at the value on the opportunity.';
+  const rule = 'EGO Premium: orders that reached Invoiced, by invoice date, value before GST. Big E: retail sales won, by the date won, value before GST (the subtotal of the sale\'s lines; a sale with no lines counts the value typed on it).';
   const sum = (a, k) => a.reduce((t, [, m]) => t + m[k], 0), f = EM.anF;
   const figs = (a, title) => [...(P ? [fig(inr0(sum(a, 'value')), { title, calc: `The sum of the value before GST of these sales. ${rule} Filter: ${anFilterTxt()}.`, head: SALE_HEAD(), rows: a.map(([s, m]) => saleRow(s, m)) })] : []), fig(num(a.length), { title, calc: `The number of sales. ${rule} Filter: ${anFilterTxt()}.`, head: SALE_HEAD(), rows: a.map(([s, m]) => saleRow(s, m)) }), num(sum(a, 'boxes'))];
   const head = first => [first, ...(P ? ['Value before GST'] : []), 'Sales', 'Boxes'];
@@ -3816,26 +3822,36 @@ const portalRequestNote = o => { const x = o.extra || {}; return `<div class="ca
 
 /* ---------------------------------------------------------------- Priority 200: development plans and interventions */
 const catOfP = pid => colOf(INVD().products.find(p => p.id === pid) || {}).category;
-const planProg = p => planProgress(p, OPSD().orders, OPSD().lines, catOfP);
+/* R6b (plan point 18): a Design 500 member's plan counts the business they brought (won opportunities they are on, theirs
+   or in their projects, by the date won, before GST) between its dates; a dealer's counts invoiced orders */
+const planIsD5 = p => ARCH_KINDS.includes((CL()[p.client_id] || {}).kind);
+const d5PlanProg = p => { const c = CL()[p.client_id]; const won = c ? d5Of(c).won.map(o => { const h = D.history.filter(x => x.opp_id === o.id && x.to_stage === o.stage).pop(); return { o, at: dayIST((h && h.at) || o.closed_at || o.updated_at) }; }).filter(x => x.at >= p.start_on && x.at <= p.end_on) : [];
+  return { orders: [], won, value: won.reduce((a, x) => a + oppNet(x.o), 0), boxes: 0, cats: [], catsHit: [] }; };
+const planProg = p => planIsD5(p) ? d5PlanProg(p) : planProgress(p, OPSD().orders, OPSD().lines, catOfP);
 const planIvs = p => FUS().filter(f => f.plan_id === p.id);
 const ivState = f => f.status === 'open' ? (f.due_date < today() ? 'Overdue' : f.iv_status || 'Planned') : f.iv_status || 'Done';
 const ivBadge = f => { const s = ivState(f); return `<span class="badge ${s === 'Done' ? 'ok' : s === 'Overdue' ? 'bad' : s === 'Cancelled' ? 'plain' : 'info'}">${esc(s)}</span>`; };
 const planPct = p => { const pr = planProg(p), parts = [...(p.goal_value ? [pr.value / p.goal_value] : []), ...(p.goal_boxes ? [pr.boxes / p.goal_boxes] : []), ...(p.goal_cats.length ? [pr.catsHit.length / p.goal_cats.length] : [])]; return parts.length ? Math.round(Math.min(1, parts.reduce((a, x) => a + Math.min(1, x), 0) / parts.length) * 100) : null; };
+const PLAN_F_D5 = () => [{ key: 'title', label: 'Plan name', type: 'text', req: true }, { key: 'owner_id', label: 'Who drives it', type: 'owner', req: true }, { key: 'start_on', label: 'From', type: 'date', req: true }, { key: 'end_on', label: 'To', type: 'date', req: true },
+  ...(D.access.prices ? [{ key: 'goal_value', label: 'Business goal before GST (₹)', type: 'money' }] : []), { key: 'goal_training', label: 'Presentation or training goal', type: 'text' },
+  { key: 'review_every', label: 'Review every', type: 'select', opts: Object.keys(REVIEW_EVERY), req: true }, { key: 'status', label: 'Status', type: 'select', opts: ['Active', 'Closed'], req: true }, { key: 'notes', label: 'Notes', type: 'textarea' }];
+const planFields = c => ARCH_KINDS.includes((c || {}).kind) ? PLAN_F_D5() : PLAN_F();
 const PLAN_F = () => [{ key: 'title', label: 'Plan name', type: 'text', req: true }, { key: 'owner_id', label: 'Who drives it', type: 'owner', req: true }, { key: 'start_on', label: 'From', type: 'date', req: true }, { key: 'end_on', label: 'To', type: 'date', req: true },
   ...(D.access.prices ? [{ key: 'goal_value', label: 'Sales goal before GST (₹)', type: 'money' }] : []), { key: 'goal_boxes', label: 'Boxes goal', type: 'number' }, { key: 'goal_cats', label: 'Categories to start buying', type: 'cats' },
   { key: 'goal_display', label: 'Display goal', type: 'text' }, { key: 'goal_training', label: 'Training goal', type: 'text' }, { key: 'review_every', label: 'Review every', type: 'select', opts: Object.keys(REVIEW_EVERY), req: true },
   { key: 'status', label: 'Status', type: 'select', opts: ['Active', 'Closed'], req: true }, { key: 'notes', label: 'Notes', type: 'textarea' }];
 function openPlanForm(c, p) {
   const v = p || { owner_id: c.owner_id, start_on: today(), end_on: addMonths(today(), 6), review_every: 'Monthly', status: 'Active', goal_cats: [] };
-  EM.modal(`<h2>${p ? 'Change the plan' : 'Start a development plan'}: ${esc(c.name)}</h2><p class="muted small">Goals over a period. Progress is counted from orders invoiced in it (before GST). Each review is booked as a follow-up for whoever drives the plan.</p>
-    <form id="plf" class="stack" onsubmit="return false" style="margin-top:12px"><div class="fgrid">${PLAN_F().map(f => fieldHtml(f, v[f.key], 'pl')).join('')}</div>
-      ${isOwner() ? `<label class="row small"><input type="checkbox" id="pl-show" ${v.show_dealer ? 'checked' : ''}> Show its progress to ${esc(c.name)} in the dealer portal</label>` : ''}
+  const d5 = ARCH_KINDS.includes(c.kind);
+  EM.modal(`<h2>${p ? 'Change the plan' : d5 ? 'Start a plan' : 'Start a development plan'}: ${esc(c.name)}</h2><p class="muted small">Goals over a period. Progress is counted from ${d5 ? 'the business they brought in it (won opportunities they are on, theirs or in their projects, before GST)' : 'orders invoiced in it (before GST)'}. Each review is booked as a follow-up for whoever drives the plan.</p>
+    <form id="plf" class="stack" onsubmit="return false" style="margin-top:12px"><div class="fgrid">${planFields(c).map(f => fieldHtml(f, v[f.key], 'pl')).join('')}</div>
+      ${isOwner() && !d5 ? `<label class="row small"><input type="checkbox" id="pl-show" ${v.show_dealer ? 'checked' : ''}> Show its progress to ${esc(c.name)} in the dealer portal</label>` : ''}
       ${errBox('pl-err')}<div class="row sticky-actions"><button class="btn primary" data-act="pl-save" data-client="${c.id}" data-id="${p ? p.id : ''}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
 EM.ACTIONS['pl-add'] = el => openPlanForm(CL()[el.dataset.client]);
 EM.ACTIONS['pl-edit'] = el => { const p = PLANS().find(x => x.id === el.dataset.id); openPlanForm(CL()[p.client_id], p); };
 EM.ACTIONS['pl-save'] = async el => {
-  const v = readForm(qs('#plf'), PLAN_F()), id = el.dataset.id;
+  const v = readForm(qs('#plf'), planFields(CL()[el.dataset.client])), id = el.dataset.id;
   if (qs('#pl-show')) v.show_dealer = qs('#pl-show').checked;
   busy(el, true);
   try { await API('POST', id ? '/api/plans/' + id : '/api/plans', { ...v, client_id: el.dataset.client }); await reload4(); EM.closeModal(); EM.toast('<b>Development plan saved.</b> Its reviews are in Follow-ups.'); EM.rerender(); }
@@ -3847,14 +3863,15 @@ EM.ACTIONS['pl-del'] = async el => {
   try { await API('DELETE', '/api/plans/' + p.id); await reload4(); EM.toast('Plan deleted, in the Recycle bin for 30 days.'); EM.rerender(); } catch (x) { bubbleNear(el, x.message); }
 };
 /* not key 'kind': optLabel reads any field keyed kind as a client type (KINDS) */
+const ivF = p => [{ ...IV_F[0], opts: ivKindsFor((CL()[p.client_id] || {}).kind) }, ...IV_F.slice(1)];   // R6b: Design 500 kinds for a member's plan
 const IV_F = [{ key: 'iv_kind', label: 'Kind', type: 'select', opts: IV_KINDS, req: true }, { key: 'what', label: 'What will be done', type: 'text', req: true }, { key: 'owner_id', label: 'Who does it', type: 'owner', req: true }, { key: 'date', label: 'By when', type: 'date', req: true }, { key: 'note', label: 'Note', type: 'textarea' }];
 EM.ACTIONS['iv-add'] = el => { const p = PLANS().find(x => x.id === el.dataset.plan);
   EM.modal(`<h2>Plan an intervention</h2><p class="muted small">${esc(clientName(p.client_id))} · ${esc(p.title)}. It becomes a follow-up: the doer is reminded, their manager sees it when late, and it is in the founders' roll-up.</p>
-    <form id="ivf" class="stack" onsubmit="return false" style="margin-top:12px"><div class="fgrid">${IV_F.map(f => fieldHtml(f, f.key === 'owner_id' ? p.owner_id : f.key === 'date' ? dayPlus(7) : '', 'iv')).join('')}</div>
+    <form id="ivf" class="stack" onsubmit="return false" style="margin-top:12px"><div class="fgrid">${ivF(p).map(f => fieldHtml(f, f.key === 'owner_id' ? p.owner_id : f.key === 'date' ? dayPlus(7) : '', 'iv')).join('')}</div>
       ${errBox('iv-err')}<div class="row sticky-actions"><button class="btn primary" data-act="iv-save" data-plan="${p.id}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`); };
 EM.ACTIONS['iv-save'] = async el => {
   busy(el, true);
-  try { const v = readForm(qs('#ivf'), IV_F), r = await API('POST', `/api/plans/${el.dataset.plan}/interventions`, { ...v, kind: v.iv_kind }); D.followups = FUS().filter(f => f.client_id !== r.client.id).concat(r.followups); upsertLocal(D.clients, r.client); EM.closeModal(); EM.toast('<b>Intervention planned.</b> It is in Follow-ups too.'); EM.rerender(); }
+  try { const v = readForm(qs('#ivf'), ivF(PLANS().find(x => x.id === el.dataset.plan))), r = await API('POST', `/api/plans/${el.dataset.plan}/interventions`, { ...v, kind: v.iv_kind }); D.followups = FUS().filter(f => f.client_id !== r.client.id).concat(r.followups); upsertLocal(D.clients, r.client); EM.closeModal(); EM.toast('<b>Intervention planned.</b> It is in Follow-ups too.'); EM.rerender(); }
   catch (x) { busy(el, false); showErr('iv-err', x.errors || x.message); }
 };
 const ivPost = async (el, id, b, okMsg, errId) => { busy(el, true);
@@ -3879,21 +3896,25 @@ function planCard(c, p) {
   const why = title => ({ title, calc: `Orders of ${c.name} invoiced between ${ds(p.start_on)} and ${ds(p.end_on)} (Fulfilment, at Invoiced): value before GST, and the boxes on their lines.`, head: ['Order', 'Invoiced', ...(P ? ['Value before GST'] : []), 'Boxes'], rows: oRows });
   const done = k => ivs.filter(f => f.iv_kind === k && f.iv_status === 'Done').length;
   const goal = (label, got, want, fmt, w) => want ? [esc(label), `${fig(fmt(got), w)} of ${fmt(want)}`, `${bar(pct(got, want))} ${pct(got, want)}%`] : null;
-  const rowsG = [P ? goal('Sales before GST', pr.value, p.goal_value, inr0, why('Sales on the plan')) : null, goal('Boxes', pr.boxes, p.goal_boxes, num, why('Boxes on the plan')),
+  const d5 = planIsD5(p), whyD5 = { title: 'Business brought on the plan', calc: `Won opportunities ${c.name} is on (theirs, or in their projects), won between ${ds(p.start_on)} and ${ds(p.end_on)}, value before GST.`, head: ['Opportunity', 'Won', ...(P ? ['Value before GST'] : [])], rows: (pr.won || []).map(x => ({ href: '#/opp/' + x.o.id, cells: [`<b>${esc(x.o.title)}</b>`, ds(x.at), ...(P ? [inr0(oppNet(x.o))] : [])] })) };
+  const rowsG = d5 ? [P ? goal('Business brought before GST', pr.value, p.goal_value, inr0, whyD5) : null, [esc('Won opportunities in the period'), fig(num((pr.won || []).length), whyD5), ''], p.goal_training ? ['Presentations and training', esc(p.goal_training), `${done('Presentation') + done('Training')} done`] : null].filter(Boolean) : [P ? goal('Sales before GST', pr.value, p.goal_value, inr0, why('Sales on the plan')) : null, goal('Boxes', pr.boxes, p.goal_boxes, num, why('Boxes on the plan')),
     p.goal_cats.length ? ['Categories to start buying', `${pr.catsHit.length} of ${p.goal_cats.length}: ${p.goal_cats.map(x => pr.catsHit.includes(x) ? `<b>${esc(x)}</b> bought` : esc(x)).join(', ')}`, `${bar(pct(pr.catsHit.length, p.goal_cats.length))} ${pct(pr.catsHit.length, p.goal_cats.length)}%`] : null,
     p.goal_display ? ['Display', esc(p.goal_display), `${done('Display')} display intervention${done('Display') === 1 ? '' : 's'} done`] : null,
     p.goal_training ? ['Training', esc(p.goal_training), `${done('Training')} training${done('Training') === 1 ? '' : 's'} done`] : null].filter(Boolean);
+  const ivNone = d5 ? 'No intervention yet: visits, presentations, samples, site visits, events or training.' : 'No intervention yet: visits, training, display, a scheme, joint marketing or a credit review.';
   return `<section class="card stack" data-plan="${p.id}"><div class="row between" style="align-items:flex-start"><div class="stack-s"><h3>${esc(p.title)} <span class="badge ${p.status === 'Active' ? 'info' : 'plain'}">${esc(p.status)}</span>${p.show_dealer ? ' <span class="badge plain">Shown in the dealer portal</span>' : ''}</h3>
       <p class="small muted">${ds(p.start_on)} to ${ds(p.end_on)} · driven by ${esc(staffName(p.owner_id))} · reviewed ${esc(p.review_every.toLowerCase())}${review ? ` · next review ${ds(review.due_date)}` : ''}</p>${p.notes ? `<p class="small">${esc(p.notes)}</p>` : ''}</div>
       ${isBothView() ? '' : `<div class="row"><button class="btn sm" data-act="pl-edit" data-id="${p.id}">Change</button>${D.access.can_delete ? `<button class="btn sm ghost" data-act="pl-del" data-id="${p.id}">Delete</button>` : ''}</div>`}</div>
-    ${rowsG.length ? table(['Goal', 'Got to', 'Progress'], rowsG) : '<p class="small muted">No goal set yet. Change the plan to add sales, boxes, categories, display or training goals.</p>'}
+    ${rowsG.length ? `<div data-plan-goals>${table(['Goal', 'Got to', 'Progress'], rowsG)}</div>` : '<p class="small muted">No goal set yet. Change the plan to add sales, boxes, categories, display or training goals.</p>'}
     <div class="row between"><h4>Interventions and reviews</h4>${isBothView() || p.status !== 'Active' ? '' : `<button class="btn sm primary" data-act="iv-add" data-plan="${p.id}">+ Intervention</button>`}</div>
-    ${ivs.length ? table(IV_HEAD(false), ivs.map(f => ivRow(f, false))) : '<p class="small muted">No intervention yet: visits, training, display, a scheme, joint marketing or a credit review.</p>'}
+    ${ivs.length ? table(IV_HEAD(false), ivs.map(f => ivRow(f, false))) : `<p class="small muted">${ivNone}</p>`}
     <details class="more"><summary>Files on this plan (${D.documents.filter(d => d.plan_id === p.id).length})</summary>${filesBox({ id: 'pl' + p.id, client: c.id, plan: p.id, types: ['Plan', 'Display photo', 'Training', 'Agreement', 'Other'], docs: D.documents.filter(d => d.plan_id === p.id), canAdd: !isBothView(), title: 'Add files to the plan', emptyTitle: 'No files on this plan yet' })}</details></section>`;
 }
 function clientPlan(c) {
   whyReset();
   const ps = PLANS().filter(p => p.client_id === c.id).sort((a, b) => (a.status === 'Active' ? 0 : 1) - (b.status === 'Active' ? 0 : 1) || b.start_on.localeCompare(a.start_on));
+  if (ARCH_KINDS.includes(c.kind)) return `<div class="stack" data-d5-plan><div class="row between"><p class="small muted" style="max-width:760px">${(c.extra || {}).design500 === 'Yes' ? `${esc(c.name)} is a Design 500 member.` : `${esc(c.name)} is not a Design 500 member yet (set it on their page); a plan can still be made.`} Progress is counted from the business they brought between the plan's dates (won opportunities they are on, before GST); nothing is typed. Each intervention rings its doer's bell on its date.</p>${isBothView() ? '' : `<button class="btn primary" data-act="pl-add" data-client="${c.id}">Start a plan</button>`}</div>
+    ${ps.length ? ps.map(p => planCard(c, p)).join('') : empty('No plan yet', 'A plan sets a business goal over a period, with interventions that get there (visits, presentations, samples, site visits, events, training) and a review cadence.')}</div>`;
   return `<div class="stack"><div class="row between"><p class="small muted" style="max-width:760px">${(c.extra || {}).priority200 ? `${esc(c.name)} is in Priority 200.` : `${esc(c.name)} is not in Priority 200 yet (set it on the dealer's page); a plan can still be made.`} Progress is counted from orders invoiced between the plan's dates; nothing is typed.</p>${isBothView() ? '' : `<button class="btn primary" data-act="pl-add" data-client="${c.id}">Start a development plan</button>`}</div>
     ${ps.length ? ps.map(p => planCard(c, p)).join('') : empty('No development plan yet', 'A plan sets goals (sales, boxes, categories, display, training) over a period, with interventions that get there and a review cadence.')}</div>`;
 }
@@ -3902,15 +3923,16 @@ EM.ivF = { status: '', kind: '', who: '', period: 'all', from: '', to: '', field
 DF_STATE.iv = () => EM.ivF;
 const IVF_FIELDS = [['action', 'Intervention'], ['dealer', 'Dealer'], ['who', 'Who'], ['outcome', 'What came of it'], ['note', 'Note']];
 const ivVal = (f, k) => k === 'dealer' ? clientName(f.client_id) : k === 'who' ? staffName(f.owner_id) : String(f[k] || '');
-function ivRows() {
+const ivForD5 = x => ARCH_KINDS.includes((CL()[x.client_id] || {}).kind);   // R6b: Priority 200 lists dealers' plans, Design 500 members' plans
+function ivRows(d5 = false) {
   const f = EM.ivF, fq = f.fq.trim().toLowerCase();
-  return FUS().filter(x => x.plan_id && fuInDiv(x) && (!f.status || ivState(x) === f.status) && (!f.kind || x.iv_kind === f.kind) && (!f.who || x.owner_id === f.who) && inPeriod(dayTs(x.due_date), f.period, f.from, f.to)
+  return FUS().filter(x => x.plan_id && fuInDiv(x) && ivForD5(x) === d5 && (!f.status || ivState(x) === f.status) && (!f.kind || x.iv_kind === f.kind) && (!f.who || x.owner_id === f.who) && inPeriod(dayTs(x.due_date), f.period, f.from, f.to)
     && (!fq || (f.field ? [ivVal(x, f.field)] : IVF_FIELDS.map(([k]) => ivVal(x, k))).some(v => v.toLowerCase().includes(fq)))
     && matches(`${x.action} ${clientName(x.client_id)} ${staffName(x.owner_id)} ${x.outcome || ''}`, [])).sort((a, b) => a.due_date.localeCompare(b.due_date));
 }
 function p200Plans() {
   whyReset();
-  const P = D.access.prices, R = D.lists.rules, f = EM.ivF, ps = PLANS().filter(p => { const c = CL()[p.client_id]; return c && inDiv(c); }), rows = ivRows(), all = FUS().filter(x => x.plan_id);
+  const P = D.access.prices, R = D.lists.rules, f = EM.ivF, ps = PLANS().filter(p => { const c = CL()[p.client_id]; return c && inDiv(c) && !planIsD5(p); }), rows = ivRows(), all = FUS().filter(x => x.plan_id && !ivForD5(x));
   const dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind) && inDiv(c) && c.division !== 'retail'), inList = dealers.filter(c => (c.extra || {}).priority200);
   const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-ivf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   const planRow = p => { const pr = planProg(p), pc = planPct(p), rv = planIvs(p).find(x => x.iv_kind === 'Review' && x.status === 'open');
@@ -4360,13 +4382,14 @@ function d5Of(c) {
   const dealers = [...[...dealerIds].map(id => (DDIR().find(d => d.id === id) || CL()[id] || {}).name).filter(Boolean), ...String((c.extra || {}).connected_dealers || '').split(/[,;\n]/).map(x => x.trim()).filter(Boolean)];
   const acts = ACTS().filter(a => ids.has(a.client_id)).map(a => a.at), done = FUS().filter(f => ids.has(f.client_id) && f.status !== 'open' && f.done_at).map(f => f.done_at);
   const next = FUS().filter(f => ids.has(f.client_id) && f.status === 'open').sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
-  return { projects, active: projects.filter(p => !['Completed', 'Lost'].includes(p.stage)), won, business: won.reduce((a, o) => a + (Number(o.value) || 0), 0), dealers: [...new Set(dealers)], last: [...acts, ...done].sort().pop() || '', next, samples: REGS().filter(r => r.kind === 'sample' && ids.has(r.client_id)).length };   // R6a: counted from the Samples register
+  return { projects, active: projects.filter(p => !['Completed', 'Lost'].includes(p.stage)), won, business: won.reduce((a, o) => a + oppNet(o), 0), dealers: [...new Set(dealers)], last: [...acts, ...done].sort().pop() || '', next, samples: REGS().filter(r => r.kind === 'sample' && ids.has(r.client_id)).length };   // R6a: counted from the Samples register
 }
 EM.d5F = { period: 'all', from: '', to: '', owner: '', city: '', kind: '', field: '', fq: '' };
 DF_STATE.d5 = () => EM.d5F;
 const D5_FIELDS = [['name', 'Name'], ['city', 'City'], ['owner', 'Owner'], ['dealers', 'Connected dealers'], ['projects', 'Projects'], ['next', 'Next action'], ['mobile', 'Mobile']];
 const d5Val = (c, k, x) => k === 'owner' ? staffName(c.owner_id) : k === 'dealers' ? x.dealers.join(' ') : k === 'projects' ? x.projects.map(p => p.name).join(' ') : k === 'next' ? (x.next ? x.next.action : '') : String(c[k] || '');
-EM.VIEWS.design500 = () => {
+EM.VIEWS.design500 = arg => {
+  if (String(arg || '') === 'plans') return d5Plans();   // R6b (plan point 18)
   const f = EM.d5F, fq = f.fq.trim().toLowerCase(), all = d5Members(), P = D.access.prices, X = Object.fromEntries(all.map(c => [c.id, d5Of(c)]));
   const rows = all.filter(c => (!f.owner || c.owner_id === f.owner) && (!f.city || c.city === f.city) && (!f.kind || c.kind === f.kind) && inPeriod((c.extra || {}).design500_since || '', f.period, f.from, f.to)
     && (!fq || (f.field ? [d5Val(c, f.field, X[c.id])] : D5_FIELDS.map(([k]) => d5Val(c, k, X[c.id]))).some(v => v.toLowerCase().includes(fq))) && matches(`${c.name} ${c.city} ${c.ref || ''} ${X[c.id].dealers.join(' ')} ${X[c.id].projects.map(p => p.name).join(' ')}`, [c.mobile]))
@@ -4376,6 +4399,7 @@ EM.VIEWS.design500 = () => {
   return `<div class="stack" data-d5>
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : esc(DIVS[EM.div].co)} · the architects and interior designers who specify us</div><h1>Design 500</h1><p class="muted">${rows.length} of ${all.length} members · ${esc(scopeLabel())}</p></div>
       <div class="row" style="flex-wrap:wrap"><button class="btn" data-act="d5-sample">Sample Excel</button><label class="btn" style="cursor:pointer" data-list-only>Upload Excel<input type="file" data-sheet="design500" accept=".xlsx" hidden></label><button class="btn primary" data-act="d5-add">+ Add a member</button></div></div>
+    ${D5_TABS('list', all.length)}
     ${EM.d5Imp ? d5ImportPreview() : ''}
     <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-d5-filters>${dateFilter(f, 'd5', 'Member since')}
       ${sel('owner', 'Owner', [['', 'Everyone'], ...uniq(all.map(c => c.owner_id), staffName)])}${sel('city', 'City', [['', 'Every city'], ...uniq(all.map(c => c.city), x => x)])}
@@ -4678,15 +4702,15 @@ const certOf = (name, clientId) => { const t = today(), nm = String(name || '').
     .sort((a, b) => String(b.due_date || '9999').localeCompare(String(a.due_date || '9999')))[0] || null; };
 const certBadge = (name, clientId) => { if (!name && !clientId) return '<span class="badge plain" data-cert="unknown">Installer not named yet</span>'; const c = certOf(name, clientId);
   return c ? `<span class="badge ok" data-cert="yes">Certified till ${c.due_date ? ds(c.due_date) : 'no expiry date'}</span>` : '<span class="badge bad" data-cert="no">Not certified</span>'; };
-const cmpCert = c => certBadge(c.installer_name, c.installed_by === 'dealer' && !c.installer_name ? c.client_id : '') + (c.installer_name ? ` <span class="small muted">${esc(c.installer_name)}</span>` : '');
-const siteCert = x => { const e = x.extra || {}; return certBadge(x.crew || '', e.installed_by === 'dealer' ? e.installer_dealer : ''); };
+const cmpCert = c => c.installer_id && instRec(c.installer_id) ? instCertBadge(instRec(c.installer_id)) + ` <a class="small" href="#/installer/${c.installer_id}">${esc(instRec(c.installer_id).item)}</a>` : certBadge(c.installer_name, c.installed_by === 'dealer' && !c.installer_name ? c.client_id : '') + (c.installer_name ? ` <span class="small muted">${esc(c.installer_name)}</span>` : '');
+const siteCert = x => { const e = x.extra || {}; if (e.installer_id && instRec(e.installer_id)) return instCertBadge(instRec(e.installer_id)); return certBadge(x.crew || '', e.installed_by === 'dealer' ? e.installer_dealer : ''); };
 
 /* ---- sample spend against the sales after it (the Owner sets the window in Rules and numbers, default 90 days) */
 const swDays = () => sampleWindow(D.lists.rules);
 /* value before GST: a Big E sale's value carries GST, so its subtotal is used when it has one */
-const preGst = s => s.div === 'retail' ? Number((((D.opportunities.find(o => o.id === s.id) || {}).extra) || {}).subtotal) || s.value : s.value;
+const preGst = s => s.value;   // R6b: salesList already counts every sale before GST (oppNet, schema.js)
 const salesAfterFor = c => DEALER_KINDS.includes(c.kind) ? salesList().filter(s => s.client_id === c.id).map(s => ({ at: s.at, value: preGst(s), ref: s.ref, href: s.href }))
-  : ARCH_KINDS.includes(c.kind) ? d5Of(c).won.map(o => { const h = D.history.filter(x => x.opp_id === o.id && x.to_stage === o.stage).pop(); return { at: dayIST((h && h.at) || o.closed_at || o.updated_at), value: Number(o.value) || 0, ref: o.ref || o.title, href: '#/opp/' + o.id }; }) : [];
+  : ARCH_KINDS.includes(c.kind) ? d5Of(c).won.map(o => { const h = D.history.filter(x => x.opp_id === o.id && x.to_stage === o.stage).pop(); return { at: dayIST((h && h.at) || o.closed_at || o.updated_at), value: oppNet(o), ref: o.ref || o.title, href: '#/opp/' + o.id }; }) : [];
 const spendOf = (c, samples) => sampleSpend(samples || REGS().filter(r => r.kind === 'sample' && r.client_id === c.id), salesAfterFor(c), swDays());
 function spendCard(c) {
   const P = D.access.prices, sm = REGS().filter(r => r.kind === 'sample' && r.client_id === c.id), x = spendOf(c, sm), W = swDays();
@@ -4714,9 +4738,9 @@ const regVal = (r, k) => k === 'who' ? regWho(r) : k === 'what' ? regWhat(r) : k
 const REG_DATE_LABEL = { sample: 'Date given', display: 'Installed on', training: 'Training date' };
 function regRows(kind) {
   const f = regFstate(kind), fq = f.fq.trim().toLowerCase(), [fa, fb] = REG_FILT[kind];
-  return REGS().filter(r => r.kind === kind && inDiv(r) && (!f.owner || r.owner_id === f.owner) && (!f.a || fa[2](r) === f.a) && (!f.b || fb[2](r) === f.b) && inPeriod(r.on_date, f.period, f.from, f.to)
+  return REGS().filter(r => r.kind === kind && inDiv(r) && (!f.owner || r.owner_id === f.owner) && (!f.a || [].concat(fa[2](r)).includes(f.a)) && (!f.b || [].concat(fb[2](r)).includes(f.b)) && inPeriod(r.on_date || dayIST(r.created_at), f.period, f.from, f.to)
     && (!fq || (f.field ? [regVal(r, f.field)] : REG_ANY[kind].map(([k]) => regVal(r, k))).some(v => v.toLowerCase().includes(fq)))
-    && matches(`${r.ref} ${regWho(r)} ${regWhat(r)} ${r.extra.person || ''} ${r.extra.trainer || ''} ${r.extra.notes || ''}`, []));
+    && matches(`${r.ref} ${regWho(r)} ${regWhat(r)} ${r.extra.person || ''} ${r.extra.trainer || ''} ${r.extra.notes || ''} ${r.extra.area || ''} ${r.extra.country || ''} ${r.extra.contact || ''}`, [r.extra.mobile]));
 }
 const regFiles = r => D.documents.filter(d => d.register_id === r.id).length;
 const REG_HEAD = { sample: () => ['Sample', 'Given to', 'Qty', ...(D.access.prices ? ['Value'] : []), 'Billed or free', 'Date given', 'Return status', 'Files'],
@@ -4800,7 +4824,7 @@ function regField(f, v, kind, div) {
   return fieldHtml(f, v, 'rg');
 }
 function openRegForm(kind, r, pre = {}) {
-  const div = r ? r.division : EM.div !== 'both' ? EM.div : '', fields = showFields(REG_FIELDS[kind]);
+  const div = r ? r.division : kind === 'supplier' ? 'wholesale' : EM.div !== 'both' ? EM.div : '', fields = showFields(REG_FIELDS[kind]);
   const v = r ? { ...r, ...r.extra, recipient: r.project_id ? 'project:' + r.project_id : r.client_id } : { owner_id: (CL()[pre.client] || {}).owner_id || me().id, on_date: today(), qty: 1, billed: 'Free', status: kind === 'sample' ? 'Not due' : kind === 'display' ? 'Good' : '', recipient: pre.project ? 'project:' + pre.project : pre.client || '', client_id: pre.client || '' };
   EM.modal(`<h2>${r ? `Change ${esc(REG_KINDS[kind].label.toLowerCase())} ${esc(r.ref)}` : esc(REG_TXT[kind].add.replace('+ ', ''))}</h2><p class="muted small">${div ? esc(regCo(div)) : 'The company follows the dealer, architect, person or project you choose.'}${kind === 'sample' ? ' Entered by hand now; filled from Tally once it is connected.' : ''}</p>
     <form id="rgf" class="stack" onsubmit="return false" style="margin-top:12px"><div class="fgrid">${fields.map(f => regField(f, v[f.key], kind, div)).join('')}</div>
@@ -4844,7 +4868,7 @@ EM.ACTIONS['rg-sample'] = async el => {
     const cs = D.clients.filter(inDiv), names = a => [...new Set(a.map(c => c.name))].sort();
     const L = { company: ['wholesale', 'retail'].filter(canDiv).map(d => DIVS[d].co), owner: D.staff.filter(s => s.active).map(s => s.name), design: ((INVD() || { products: [] }).products || []).map(p => p.code || p.name),
       who: kind === 'sample' ? [...names(cs), ...PJS().filter(inDiv).map(p => p.name)] : kind === 'display' ? names(cs.filter(c => DEALER_KINDS.includes(c.kind))) : names(cs),
-      billed: ['Billed', 'Free'], status: kind === 'sample' ? SAMPLE_RETURN : DISPLAY_CONDITION, display_type: REG_FILT.display[0][3](), audience: TRAINING_AUDIENCE, course_kind: regCourseKinds(), product: D.lists.categories };
+      billed: ['Billed', 'Free'], status: kind === 'sample' ? SAMPLE_RETURN : DISPLAY_CONDITION, display_type: REG_FILT.display[0][3](), audience: TRAINING_AUDIENCE, course_kind: regCourseKinds(), product: D.lists.categories, ...regSheetLists(kind) };
     const used = Object.fromEntries(Object.entries(L).filter(([k]) => S.some(([, sk]) => sk === k)));
     Object.entries(used).forEach(([k, vals], i) => { lists.getCell(1, i + 1).value = k; vals.forEach((v, r) => { lists.getCell(r + 2, i + 1).value = v; }); });
     lists.state = 'hidden';
@@ -4897,3 +4921,129 @@ EM.ACTIONS['rg-imp-save'] = async el => {
   try { const r = await API('POST', '/api/registers/import', { kind: EM.rgImp.kind, rows: EM.rgImp.rows, save: true }); EM.rgImp = { ...EM.rgImp, res: r.rows, saved: true }; await reload4(); EM.toast(`<b>${r.rows.filter(x => x.status !== 'error').length} rows saved</b>`); EM.rerender(); }
   catch (x) { busy(el, false); bubbleNear(el, x.message); }
 };
+
+/* ================================================================ R6b (17 Oct, plan point 18 and section C)
+   The Installer master (a tab of Installation), the Supplier master (a tab of Fulfilment, EGO Premium only) and EGO Champions
+   (a menu item): three more kinds of the same register (one table on the server; the same list, form, Excel sample and upload,
+   History and Recycle bin as Samples, Displays and Training). Installation sites and complaints pick "Installed by" from the
+   Installer master (typed text stays for anyone not on it); production orders pick their supplier; an opportunity tags an
+   EGO Champion and each won sale adds their points. Design 500 members get the dealer plan engine with their own kinds. */
+Object.assign(HIST_AREA, { installers: 'installers', suppliers: 'suppliers', champions: 'champions', installer: 'installers', supplier: 'suppliers', champion: 'champions' });
+Object.assign(REG_ROUTE, { installer: 'installers', supplier: 'suppliers', champion: 'champions' });
+Object.assign(REG_OF, { installers: 'installer', suppliers: 'supplier', champions: 'champion' });
+DF_STATE.rgi = () => regFstate('installer'); DF_STATE.rgp = () => regFstate('supplier'); DF_STATE.rgc = () => regFstate('champion');
+Object.assign(REG_DF, { installer: 'rgi', supplier: 'rgp', champion: 'rgc' });
+const instRec = id => REGS().find(r => r.id === id && r.kind === 'installer') || null;
+const supRec = id => REGS().find(r => r.id === id && r.kind === 'supplier') || null;
+/* an installer from the master is certified while their Training register holds an unexpired Installer certification (by name or firm) */
+const instCertBadge = r => certBadge(r.item, r.client_id || '');
+const regOptsOf = (kind, key) => optsOf(REG_FIELDS[kind].find(f => f.key === key), D.lists);
+Object.assign(REG_FILT, {
+  installer: [['a', 'Contractor or person', r => r.extra.inst_type, () => INSTALLER_TYPES], ['b', 'Skill', r => r.extra.skills || [], () => regOptsOf('installer', 'skills')]],
+  supplier: [['a', 'Country', r => r.extra.country, () => [...new Set(REGS().filter(r => r.kind === 'supplier').map(r => r.extra.country).filter(Boolean))].sort()], ['b', 'Product', r => r.extra.products || [], () => D.lists.categories]],
+  champion: [['a', 'Who they are', r => r.extra.ch_role, () => CHAMPION_ROLES], ['b', 'Level', r => r.extra.level, () => regOptsOf('champion', 'level')]],
+});
+Object.assign(REG_ANY, { installer: [['what', 'Name'], ['who', 'Linked dealer'], ['area', 'Area covered'], ['mobile', 'Mobile'], ['ref', 'Number'], ['notes', 'Notes']],
+  supplier: [['what', 'Factory'], ['country', 'Country'], ['contact', 'Contact'], ['ref', 'Number'], ['notes', 'Notes']],
+  champion: [['what', 'Name'], ['who', 'Linked dealer or firm'], ['mobile', 'Mobile'], ['rewards', 'Rewards given'], ['ref', 'Number'], ['notes', 'Notes']] });
+Object.assign(REG_DATE_LABEL, { installer: 'Added on', supplier: 'Added on', champion: 'Enrolled on' });
+/* EGO Champion points: each won opportunity tagged with them adds the Owner's points per sale (Rules and numbers, default 10) */
+const champWon = r => D.opportunities.filter(o => (o.extra || {}).champion_id === r.id && o.stage === wonStage(o.pipeline, D.lists));
+const champPts = r => champWon(r).length * championPoints(D.lists.rules);
+const poOfSup = r => (OPSD().production || []).filter(p => p.supplier_id === r.id);
+const regLink = r => `<a href="#/${r.kind}/${r.id}"><b>${esc(r.item)}</b></a><div class="small muted">${esc(r.ref)}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`;
+const regFilesBtn = r => `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Files (${regFiles(r)})</button>`;
+Object.assign(REG_HEAD, { installer: () => ['Installer', 'Skills', 'Rating', 'Linked dealer', 'Certification', ''],
+  supplier: () => ['Supplier', 'Country', 'Contact', 'Products', 'Lead time', 'Production orders', ''],
+  champion: () => ['EGO Champion', 'Who they are', 'Linked dealer or firm', 'Enrolled on', 'Level', 'Points', ''] });
+Object.assign(REG_ROW, {
+  installer: r => [regLink(r) + `<div class="small muted">${esc([r.extra.inst_type, r.extra.area, fmtMobile(r.extra.mobile || '')].filter(Boolean).join(' · '))}</div>`, esc((r.extra.skills || []).join(', ')), r.extra.rating ? `${esc(r.extra.rating)} of 5` : '<span class="muted small">Not rated</span>',
+    r.client_id ? `<a href="#/client/${r.client_id}">${esc(regWho(r))}</a>` : '', `<span data-inst-cert>${instCertBadge(r)}</span>`, `<div class="row" style="gap:6px;flex-wrap:nowrap">${regFilesBtn(r)}${regBtns(r)}</div>`],
+  supplier: r => [regLink(r), esc(r.extra.country || ''), esc(r.extra.contact || ''), esc((r.extra.products || []).join(', ')), r.extra.lead_days != null ? `${num(r.extra.lead_days)} days` : '', num(poOfSup(r).length), `<div class="row" style="gap:6px;flex-wrap:nowrap">${regFilesBtn(r)}${regBtns(r)}</div>`],
+  champion: r => [regLink(r), esc(r.extra.ch_role || ''), r.client_id ? `<a href="#/client/${r.client_id}">${esc(regWho(r))}</a>` : '', ds(r.on_date), `<span class="badge plain">${esc(r.extra.level || '')}</span>`, `<b data-champ-points>${num(champPts(r))}</b>`, `<div class="row" style="gap:6px;flex-wrap:nowrap">${regFilesBtn(r)}${regBtns(r)}</div>`],
+});
+Object.assign(REG_TXT, {
+  installer: { kicker: 'the contractors, firms and people who lay our floors', add: '+ Add an installer', ph: "Installers: name, linked dealer, area, mobile, number", none: 'No installer saved yet', noneTxt: "Add each contractor, firm or person who installs: their skills, area, rating and mobile, and the dealer if they are a dealer's team. Installation sites and complaints then pick the installer from here, and the Training register says whether they are certified." },
+  supplier: { kicker: 'the factories behind production orders', add: '+ Add a supplier', ph: 'Suppliers: factory, country, contact, number', none: 'No supplier saved yet', noneTxt: 'Add each factory EGO buys from: country, contact, products, lead time, notes and files. Production orders then pick their supplier from here.' },
+  champion: { kicker: "dealers' salespeople, installers and architects' staff in the EGO Champion programme", add: '+ Enrol an EGO Champion', ph: 'EGO Champions: name, dealer or firm, mobile, number', none: 'No EGO Champion yet', noneTxt: 'Enrol a person in the EGO Champion programme: who they are, the dealer or firm they work with, their level. Tag them on an opportunity; each won sale adds their points.' },
+});
+/* the Excel sample's dropdowns for the three new sheets */
+Object.assign(REG_SHEET, {
+  installer: [['Company', 'company', true, 'EGO Premium or Big E.'], ['Name', 'item', true, 'The contractor, firm or person.'], ['Contractor or person', 'inst_type', true, INSTALLER_TYPES.join(' or ') + '.'], ['Skills', 'skills', false, 'Flooring types, separated by commas (the Owner edits the list in Lists & stages).'],
+    ['Area covered', 'area', false, ''], ['Rating', 'rating', false, '1 to 5.'], ['Mobile', 'mobile', false, '10 digits.'], ['Linked dealer', 'who', false, "If they are a dealer's team: the dealer, as on the list."], ['Owner at EGO', 'owner', false, ''], ['Notes', 'notes', false, '']],
+  supplier: [['Factory name', 'item', true, ''], ['Country', 'country', true, ''], ['Contact', 'contact', false, 'Person, phone, email.'], ['Products', 'products', false, 'Product categories, separated by commas.'], ['Lead time (days)', 'lead_days', false, 'A whole number.'], ['Owner at EGO', 'owner', false, ''], ['Notes', 'notes', false, '']],
+  champion: [['Company', 'company', true, 'EGO Premium or Big E.'], ['Name', 'item', true, ''], ['Who they are', 'ch_role', true, CHAMPION_ROLES.join(', ') + '.'], ['Mobile', 'mobile', false, '10 digits.'], ['Linked dealer or firm', 'who', false, 'As on the list.'],
+    ['Enrolled on', 'on_date', true, 'A date, e.g. 2026-10-17.'], ['Level', 'level', true, 'From the list (the Owner edits it in Lists & stages).'], ['Rewards given', 'rewards', false, 'What and when.'], ['Owner at EGO', 'owner', false, ''], ['Notes', 'notes', false, '']],
+});
+const regSheetLists = kind => ({ inst_type: INSTALLER_TYPES, rating: ['1', '2', '3', '4', '5'], ch_role: CHAMPION_ROLES, level: regOptsOf('champion', 'level'),
+  ...(kind === 'installer' ? { who: [...new Set(D.clients.filter(c => inDiv(c) && DEALER_KINDS.includes(c.kind)).map(c => c.name))].sort() } : {}) });
+for (const [scr, kind] of [['installers', 'installer'], ['suppliers', 'supplier'], ['champions', 'champion']]) {
+  EM.VIEWS[scr] = () => (kind === 'supplier' && EM.div === 'retail' ? '<div class="callout" data-sup-ego>Suppliers (the factories behind production orders) are kept in EGO Premium. Switch to Wholesale · EGO at the top to see and add them.</div>' : '') + regView(kind).replace('<h1>', kind === 'installer' ? '<a class="small" href="#/installation">Installation</a><h1>' : kind === 'supplier' ? '<a class="small" href="#/orders/production">Fulfilment, Production</a><h1>' : '<h1>').replace('<div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-rg-filters>', m => kind === 'champion' ? D5_TABS('champions', d5Members().length) + m : m);
+  EM.VIEWS[scr].title = () => REG_KINDS[kind].plural;
+}
+EM.VIEWS.installers.tab = 'installation'; EM.VIEWS.suppliers.tab = 'orders'; EM.VIEWS.champions.tab = 'design500';   // no new menu items (Bhargav's menu order, 5 Oct)
+const D5_TABS = (cur, nMem) => subtabs('#/design500', cur, [['list', `Members <span class="muted">${nMem}</span>`], ['plans', `Plans and interventions <span class="muted">${PLANS().filter(p => planIsD5(p) && p.status === 'Active' && inDiv(CL()[p.client_id] || {})).length}</span>`], ['champions', `EGO Champions <span class="muted">${REGS().filter(r => r.kind === 'champion' && inDiv(r)).length}</span>`]]).replace('href="#/design500/champions"', 'href="#/champions" data-to-champions');
+/* one page per installer, supplier or EGO Champion */
+function regPage(kind, id) {
+  const r = REGS().find(x => x.id === id && x.kind === kind), back = REG_ROUTE[kind];
+  if (!r) return `<div class="stack"><h1>Not found</h1><p class="muted">It may have been deleted (see the Recycle bin) or be outside your view.</p><a class="btn" href="#/${back}">${esc(REG_KINDS[kind].plural)}</a></div>`;
+  const P = D.access.prices, F = showFields(REG_FIELDS[kind]).filter(f => f.key !== 'item');
+  const val = f => showVal(f.type === 'firm' ? { ...f, type: 'link' } : f, f.key in r && !['notes'].includes(f.key) && REG_COLS.includes(f.key) ? r[f.key] : r.extra[f.key]);
+  let extra = '';
+  if (kind === 'installer') {
+    const sites = OPSD().sites.filter(x => (x.extra || {}).installer_id === r.id), cmps = (OPSD().complaints || []).filter(c => c.installer_id === r.id || (!c.installer_id && c.installer_name && c.installer_name.trim().toLowerCase() === r.item.trim().toLowerCase()));
+    const cert = certOf(r.item, r.client_id || '');
+    extra = `<section class="card stack-s" data-inst-page-cert><h3>Certification</h3><p>${instCertBadge(r)}</p><p class="small muted">${cert ? `From the Training register: ${esc(cert.extra.course || '')} (${esc(cert.ref)}), trained ${ds(cert.on_date)}.` : 'No unexpired Installer certification in the Training register for this name or their dealer.'} <a href="#/training">Training</a></p></section>
+      <section class="card stack-s"><h3>Installation sites (${sites.length})</h3>${sites.length ? table(['Site', 'Client', 'Step'], sites.map(x => ({ href: '#/site/' + x.id, cells: [`<b>${esc(x.ref)}</b> ${esc(x.name)}`, esc(clientName(x.client_id)), `<span class="badge info">${esc(x.step)}</span>`] }))) : '<p class="small muted">No site has picked this installer yet.</p>'}</section>
+      <section class="card stack-s"><h3>Complaints (${cmps.length})</h3>${cmps.length ? table(['Complaint', 'Client', 'Status'], cmps.map(c => ({ href: '#/complaint/' + c.id, cells: [`<b>${esc(c.ref)}</b> ${esc(c.type)}`, esc(clientName(c.client_id)), esc(c.status)] }))) : '<p class="small muted">No complaint names this installer.</p>'}</section>`;
+  } else if (kind === 'supplier') {
+    const pos = poOfSup(r);
+    extra = `<section class="card stack-s" data-sup-pos><h3>Production orders (${pos.length})</h3>${pos.length ? table(['Production order', 'Design', 'Boxes', 'Stage', 'Expected'], pos.map(p => ({ href: '#/po/' + p.id, cells: [`<b>${esc(p.ref)}</b>`, esc(prodName(p.product_id)), num(p.boxes), `<span class="badge info">${esc(p.stage)}</span>`, p.eta ? ds(p.eta) : ''] }))) : '<p class="small muted">No production order placed with this supplier yet.</p>'}</section>`;
+  } else {
+    const won = champWon(r), per = championPoints(D.lists.rules), tagged = D.opportunities.filter(o => (o.extra || {}).champion_id === r.id);
+    const why = { title: `Points: ${r.item}`, calc: `${per} points for each won opportunity tagged with ${r.item} as EGO Champion (the Owner sets the points in Lists & stages › Rules and numbers).`, head: ['Opportunity', 'Stage', ...(P ? ['Value before GST'] : []), 'Points'], rows: won.map(o => ({ href: '#/opp/' + o.id, cells: [`<b>${esc(o.title)}</b>`, esc(o.stage), ...(P ? [inr0(oppNet(o))] : []), num(per)] })) };
+    extra = `<div class="grid g4" data-champ-tiles>${tile('Points', fig(num(won.length * per), why))}${tile('Won sales', num(won.length))}${tile('Opportunities tagged', num(tagged.length))}${P ? tile('Won value before GST', inr0(won.reduce((a, o) => a + oppNet(o), 0))) : ''}</div>
+      <section class="card stack-s"><h3>Opportunities tagged with ${esc(r.item)}</h3>${tagged.length ? table(['Opportunity', 'Client', 'Stage', ...(P ? ['Value before GST'] : []), 'Points'], tagged.map(o => ({ href: '#/opp/' + o.id, cells: [`<b>${esc(o.title)}</b>`, esc(clientName(o.client_id)), esc(o.stage), ...(P ? [inr0(oppNet(o))] : []), won.includes(o) ? num(per) : '<span class="muted small">when won</span>'] }))) : '<p class="small muted">Not tagged on an opportunity yet. Open an opportunity, Change, and pick them under EGO Champion.</p>'}</section>`;
+  }
+  return `<div class="stack" data-reg-page="${kind}">${crumbs([REG_KINDS[kind].plural, '#/' + back], [r.item])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(r.item)}</h1><p class="muted">${esc(REG_KINDS[kind].label)} · ${esc(r.ref)} · ${esc(regCo(r.division))}</p></div>${regBtns(r)}</div>
+    ${extra}<section class="card stack-s"><h3>Details</h3>${kv(F.map(f => [esc(f.label), val(f)]))}</section>
+    <section class="stack-s"><h3>Files</h3>${filesBox({ id: 'rgp', register: r.id, types: kind === 'installer' ? ['Agreement', 'ID proof', 'Certificate', 'Photo', 'Other'] : kind === 'supplier' ? ['Agreement', 'Price list', 'Catalogue', 'Certificate', 'Other'] : ['Photo', 'Reward proof', 'Other'], docs: D.documents.filter(d => d.register_id === r.id), canAdd: !isBothView(), title: 'Add files', note: 'One or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No files yet' })}</section></div>`;
+}
+for (const [v, kind, tab] of [['installer', 'installer', 'installation'], ['supplier', 'supplier', 'orders'], ['champion', 'champion', 'design500']]) {
+  EM.VIEWS[v] = id => regPage(kind, String(id || '').split('/')[0]); EM.VIEWS[v].tab = tab; EM.VIEWS[v].title = id => (REGS().find(x => x.id === String(id || '').split('/')[0]) || { item: REG_KINDS[kind].label }).item;
+}
+/* the pickers: an installer of the company on a site or complaint; a supplier on a production order */
+function instPick(id, v, div) {
+  const opts = REGS().filter(r => r.kind === 'installer' && (!div || r.division === div)).sort((a, b) => a.item.localeCompare(b.item));
+  return `<div class="field" data-field="installer_id"><label for="${id}">Installer (from the Installer master)</label><select class="input" id="${id}"><option value="">${opts.length ? 'Not from the master (type below)' : 'No installer in the master yet'}</option>${opts.map(r => `<option value="${r.id}" ${r.id === v ? 'selected' : ''}>${esc(r.item)} · ${esc(r.extra.inst_type || '')}${r.client_id ? ' · ' + esc(clientName(r.client_id)) : ''}</option>`).join('')}</select></div>`;
+}
+function supPick(id, v) {
+  const opts = REGS().filter(r => r.kind === 'supplier').sort((a, b) => a.item.localeCompare(b.item));
+  return `<div class="field" data-field="supplier_id"><label for="${id}">Supplier (from the Supplier master)</label><select class="input" id="${id}"><option value="">${opts.length ? 'Not from the master (type the factory)' : 'No supplier in the master yet'}</option>${opts.map(r => `<option value="${r.id}" ${r.id === v ? 'selected' : ''}>${esc(r.item)} · ${esc(r.extra.country || '')}</option>`).join('')}</select></div>`;
+}
+function poSupplier(p) {
+  const s = p.supplier_id && supRec(p.supplier_id), may = canStockUI() && !isBothView();
+  return `<section class="card stack-s" data-po-supplier><h3>Supplier</h3><p>${s ? `<a href="#/supplier/${s.id}" data-po-sup-link><b>${esc(s.item)}</b></a> · ${esc(s.extra.country || '')}${s.extra.lead_days != null ? ` · lead time ${num(s.extra.lead_days)} days` : ''}${s.extra.contact ? ` · ${esc(s.extra.contact)}` : ''}` : p.factory ? `${esc(p.factory)} <span class="small muted">(typed when the order was placed, not linked to the Supplier master)</span>` : '<span class="muted">Not set</span>'}</p>
+    ${may ? `<div class="row" style="align-items:flex-end">${supPick('po-sup', p.supplier_id || '')}<button class="btn sm" data-act="po-sup-save" data-id="${p.id}">Save</button></div>` : ''}</section>`;
+}
+EM.ACTIONS['po-sup-save'] = el => opsAct(el, `production/${el.dataset.id}/supplier`, { supplier_id: qs('#po-sup').value }, '<b>Supplier saved</b>');
+
+/* ---- Design 500 › Plans and interventions: every member's plan and intervention in your view */
+function d5Plans() {
+  whyReset();
+  const P = D.access.prices, f = EM.ivF, ps = PLANS().filter(p => { const c = CL()[p.client_id]; return c && inDiv(c) && planIsD5(p); }), rows = ivRows(true), all = FUS().filter(x => x.plan_id && ivForD5(x) && fuInDiv(x));
+  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-ivf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const planRow = p => { const pr = planProg(p), pc = p.goal_value ? Math.min(100, Math.round(pr.value / p.goal_value * 100)) : null, rv = planIvs(p).find(x => x.iv_kind === 'Review' && x.status === 'open');
+    return { href: `#/client/${p.client_id}/plan`, cells: [`<b>${esc(clientName(p.client_id))}</b><div class="small muted">${esc(p.title)}</div>`, `${ds(p.start_on)} to ${ds(p.end_on)}`, esc(staffName(p.owner_id)), ...(P ? [p.goal_value ? `${inr0(pr.value)} of ${inr0(p.goal_value)}` : inr0(pr.value)] : []), num(pr.won.length), pc == null ? '<span class="muted">no goal</span>' : `${bar(pc)} ${pc}%`, `${planIvs(p).filter(x => x.status === 'open' && x.iv_kind !== 'Review').length} open`, rv ? ds(rv.due_date) : '', `<span class="badge ${p.status === 'Active' ? 'info' : 'plain'}">${esc(p.status)}</span>`] }; };
+  return `<div class="stack" data-d5-plans><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : esc(DIVS[EM.div].co)} · the architects and interior designers who specify us</div><h1>Design 500</h1>
+      <p class="muted" style="max-width:800px">Each member's plan: a business goal over a period, the interventions that get there (visits, presentations, samples, site visits, events, training) and a review cadence. Every intervention and review is also a follow-up: it rings the doer's bell on its date, shows to their manager when late and is in the founders' roll-up. Progress is the business they brought (won opportunities they are on, before GST).</p></div>
+    ${D5_TABS('plans', d5Members().length)}
+    <div class="grid g4">${tile('Active plans', num(ps.filter(p => p.status === 'Active').length))}${tile('Interventions open', num(all.filter(x => x.status === 'open' && x.iv_kind !== 'Review').length))}${tile('Overdue', num(all.filter(x => ivState(x) === 'Overdue').length), 'interventions and reviews')}${tile('Done this month', num(all.filter(x => x.iv_status === 'Done' && thisMonthD(x.done_at)).length))}</div>
+    <section class="card stack-s" data-d5-plan-list><h3>Plans</h3>${ps.length ? table(['Member', 'Period', 'Driven by', ...(P ? ['Business brought'] : []), 'Won', 'Progress', 'Interventions', 'Next review', 'Status'], ps.map(planRow)) : '<p class="small muted">No plan yet. Open a member, then Plan, then Start a plan.</p>'}</section>
+    <section class="card stack-s"><h3>Interventions and reviews</h3>
+      <div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-iv-filters>${dateFilter(f, 'iv', 'Due')}${sel('status', 'Status', [['', 'Every status'], ...['Planned', 'In progress', 'Overdue', 'Done', 'Cancelled'].map(s => [s, s])])}${sel('kind', 'Kind', [['', 'Every kind'], ...[...D5_IV_KINDS, 'Review'].map(k => [k, k])])}${sel('who', 'Who', [['', 'Everyone'], ...[...new Set(all.map(x => x.owner_id))].map(id => [id, staffName(id)]).sort((a, b) => a[1].localeCompare(b[1]))])}
+        ${sel('field', 'Any field', [['', 'Any field'], ...IVF_FIELDS.map(([k, l]) => [k, k === 'dealer' ? 'Member' : l])])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="iv-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+      ${searchBox('Design 500 plans: intervention, member, person or outcome')}
+      ${rows.length ? `<div data-d5-ivs>${table(IV_HEAD(true).map(h => h === 'Dealer' ? 'Member' : h), rows.slice(0, 500).map(x => ivRow(x, true)))}</div>` : '<p class="small muted">Nothing for this filter.</p>'}</section></div>`;
+}

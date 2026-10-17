@@ -183,6 +183,8 @@ const OPP_FIELDS = [
   { key: 'source', list: 'sources', label: 'Source', type: 'select', opts: SOURCES },
   { key: 'project_id', label: 'Project', type: 'project', pipes: ['ego_project', 'retail_project'] },
   { key: 'dealer_id', label: 'Allocated dealer', type: 'dealer', pipes: ['ego_retail'] },
+  /* R6b: the EGO Champion who brought or helped this sale; a won sale adds their points */
+  { key: 'champion_id', label: 'EGO Champion', type: 'champion' },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true },
   { key: 'contact_id', label: 'Point of contact', type: 'contact' },
   { key: 'next_action', list: 'next_actions', label: 'Next action', type: 'suggest', opts: NEXT_ACTIONS },
@@ -264,7 +266,20 @@ const REG_KINDS = {
   sample: { label: 'Sample', plural: 'Samples', prefix: 'SM', tab: 'samples' },
   display: { label: 'Display', plural: 'Displays', prefix: 'DP', tab: 'displays' },
   training: { label: 'Training record', plural: 'Training', prefix: 'TR', tab: 'training' },
+  /* R6b (17 Oct, plan section C): the Installer and Supplier masters and the EGO Champion record live in the same table */
+  installer: { label: 'Installer', plural: 'Installers', prefix: 'IN', tab: 'installers' },
+  supplier: { label: 'Supplier', plural: 'Suppliers', prefix: 'SP', tab: 'suppliers' },
+  champion: { label: 'EGO Champion', plural: 'EGO Champions', prefix: 'CH', tab: 'champions' },
 };
+/* R6b: who installs (a contractor or firm, or one person), their skills (Owner-editable list), who an EGO Champion is */
+const INSTALLER_TYPES = ['Contractor or firm', 'Person'];
+const CHAMPION_ROLES = ["Dealer's salesperson", 'Installer', "Architect's staff", 'Other'];
+/* a sale's value before GST: an opportunity with lines keeps its subtotal (before GST) and its value (with GST); one without
+   lines has only the value that was typed. ONE rule for every figure labelled "before GST" (Analysis, targets, plans, Champions) */
+const oppNet = o => { const s = Number(((o || {}).extra || {}).subtotal); return s > 0 ? s : Number((o || {}).value) || 0; };
+const OPP_NET_SQL = "COALESCE(NULLIF(CAST(json_extract(extra, '$.subtotal') AS REAL), 0), value, 0)";
+/* EGO Champion points: per won sale they are tagged on (Rules and numbers: champion_points, default 10) */
+const championPoints = rules => Math.max(0, Math.round(Number((rules || {}).champion_points ?? 10)));
 const SAMPLE_RETURN = ['Not due', 'Returned', 'Kept', 'Lost'];
 const DISPLAY_CONDITION = ['Good', 'Worn', 'Damaged'];
 const TRAINING_AUDIENCE = ['Dealer', 'Dealer staff', 'Installer', 'Employee', 'Architect'];
@@ -311,11 +326,42 @@ const REG_FIELDS = {
     { key: 'owner_id', label: 'Owner at EGO', type: 'owner' },
     { key: 'notes', label: 'Notes', type: 'textarea' },
   ],
+  installer: [
+    { key: 'item', label: 'Name (contractor, firm or person)', type: 'text', req: true },
+    { key: 'inst_type', label: 'Contractor or firm, or person', type: 'select', opts: INSTALLER_TYPES, req: true },
+    { key: 'skills', list: 'installer_skills', label: 'Skills (flooring types)', type: 'multi', opts: ['SPC', 'LVT', 'Laminate', 'Engineered wood', 'WPC decking', 'Cladding'] },
+    { key: 'area', label: 'Area covered', type: 'text' },
+    { key: 'rating', label: 'Rating (1 to 5)', type: 'select', opts: ['1', '2', '3', '4', '5'] },
+    { key: 'mobile', label: 'Mobile', type: 'mobile' },
+    { key: 'client_id', label: "Linked dealer (if a dealer's team)", type: 'dealer' },
+    { key: 'owner_id', label: 'Owner at EGO', type: 'owner' },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+  supplier: [
+    { key: 'item', label: 'Factory name', type: 'text', req: true },
+    { key: 'country', label: 'Country', type: 'text', req: true },
+    { key: 'contact', label: 'Contact (person, phone, email)', type: 'text' },
+    { key: 'products', label: 'Products', type: 'cats' },
+    { key: 'lead_days', label: 'Lead time (days)', type: 'number' },
+    { key: 'owner_id', label: 'Owner at EGO', type: 'owner' },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+  champion: [
+    { key: 'item', label: 'Name', type: 'text', req: true },
+    { key: 'ch_role', label: 'Who they are', type: 'select', opts: CHAMPION_ROLES, req: true },
+    { key: 'mobile', label: 'Mobile', type: 'mobile' },
+    { key: 'client_id', label: 'Linked dealer or firm', type: 'firm' },
+    { key: 'on_date', label: 'Enrolled on', type: 'date', req: true },
+    { key: 'level', list: 'champion_levels', label: 'Level', type: 'select', opts: ['Bronze', 'Silver', 'Gold', 'Platinum'], req: true },
+    { key: 'rewards', label: 'Rewards given (what and when)', type: 'textarea' },
+    { key: 'owner_id', label: 'Owner at EGO', type: 'owner' },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
 };
 /* a register row checked: the fields, then the rule of its kind. Links (recipient, dealer, firm, design) are checked by the Worker */
 function cleanReg(kind, input, ctx) {
   const errors = [], rec = {}, extra = {};
-  if (!REG_FIELDS[kind]) return { rec, extra, errors: ['Which register: Samples, Displays or Training'] };
+  if (!REG_FIELDS[kind]) return { rec, extra, errors: ['Which register: Samples, Displays, Training, Installers, Suppliers or EGO Champions'] };
   for (const f of REG_FIELDS[kind]) {
     if (f.type === 'recipient') continue;
     const fx = f.key === 'course_kind' ? { ...f, opts: [...new Set([...optsOf(f, ctx && ctx.lists), CERT_COURSE])], list: null } : f;
@@ -331,6 +377,7 @@ function cleanReg(kind, input, ctx) {
   if (kind === 'display' && !rec.product_id && !rec.item) errors.push('Say what is on display: a design, or the product');
   if (kind === 'training' && !extra.person && !rec.client_id) errors.push('Say who was trained: the person, the firm, or both');
   if (kind === 'training' && extra.score != null && extra.score > 100) errors.push('Score is out of 100');
+  if (kind === 'supplier' && extra.lead_days != null && (extra.lead_days < 0 || !Number.isInteger(extra.lead_days))) errors.push('Lead time is a whole number of days');
   if (rec.due_date && rec.on_date && rec.due_date < rec.on_date) errors.push(`${kind === 'display' ? 'Replacement due' : 'Expiry'} is before ${kind === 'display' ? 'the installed date' : 'the training date'}`);
   return { rec, extra, errors };
 }
@@ -559,7 +606,7 @@ function cleanValue(f, v, ctx, whole) {
       const id = ctx && ctx.staffByName && ctx.staffByName.get(String(v).toLowerCase());
       return id ? { value: id } : { error: `"${v}" is not a person on the team` };
     }
-    case 'link': case 'contact': case 'project': case 'dealer': case 'partner': return { value: v === '' ? '' : String(v) };
+    case 'link': case 'contact': case 'project': case 'dealer': case 'partner': case 'champion': return { value: v === '' ? '' : String(v) };
     case 'addresses': {
       const arr = (Array.isArray(v) ? v : String(v).split(/\n\s*\n/)).map(a => String(a || '').trim().slice(0, 600)).filter(Boolean);
       return { value: [...new Set(arr)].slice(0, 30) };
@@ -799,7 +846,7 @@ const LIST_GROUPS = [
     ['architect_ratings', 'Architect ratings'], ['positions', 'Architect positions'], ['specialisations', 'Specialisations'], ['focus_areas', 'Focus'], ['potentials', 'Potential'],
     ['relationships', 'Relationship (architects)'], ['customer_types', 'Who dealers sell to'], ['condition_tags', 'Condition tags (retail)']]],
   ['Projects', [['project_types', 'Project types'], ['project_stages', 'Project stages'], ['project_roles', 'Project contact roles']]],
-  ['Registers', [['display_types', 'Display types'], ['course_kinds', 'Training course kinds']]],
+  ['Registers', [['display_types', 'Display types'], ['course_kinds', 'Training course kinds'], ['installer_skills', 'Installer skills'], ['champion_levels', 'EGO Champion levels']]],
   ['Opportunities', [['lost_reasons', 'Lost reasons'], ['budget_bands', 'Budget bands'], ['next_actions', 'Next actions'], ['followup_sources', 'Follow-up sources'], ['payment_terms', 'Payment terms'], ['delivery_terms', 'Delivery terms']]],
   ['Inventory', [['categories', 'Product categories'], ['design_types', 'Design types'], ['ac_ratings', 'AC ratings']]],
 ];
@@ -869,6 +916,8 @@ const DEFAULT_RULES = {
   dormant_days: 60,
   /* R6a: sales in this many days after a sample count against it (sample spend vs sales after it) */
   sample_window_days: 90,
+  /* R6b: EGO Champion points for each won sale they are tagged on */
+  champion_points: 10,
   p200: { tiers: [{ name: 'A', min: 70 }, { name: 'B', min: 50 }, { name: 'C', min: 30 }, { name: 'Watchlist', min: 0 }],
     weights: { sales: 40, breadth: 20, payments: 15, display: 10, activity: 15 } },
 };
@@ -973,7 +1022,7 @@ const CONNECTIONS = [
   { id: 'gmail', name: 'Gmail', tools: ['Gmail (Apps Script)'], source: 'gmail', waits: 'The enquiry mailbox (Google Workspace or not)' },
   { id: 'tally', name: 'Tally', tools: [], source: 'tally', waits: 'The Tally edition and the PC that runs it' },
   { id: 'runo', name: 'Runo', tools: ['Runo'], source: 'runo', waits: 'The Runo API key' },
-  { id: 'salesdiary', name: 'Sales Diary', tools: ['Sales Diary'], source: 'salesdiary', waits: 'The Sales Diary API documents from the vendor' },
+  { id: 'salesdiary', name: 'Sales Diary', tools: ['Sales Diary'], source: 'salesdiary', waits: 'The Sales Diary API documents from its makers' },
   { id: 'justdial', name: 'JustDial', tools: ['JustDial'], source: 'justdial', waits: 'JustDial lead feed access' },
 ];
 /* "No further follow-up" is allowed only on a record that is closed: a won or lost opportunity, or an Inactive client */
@@ -1039,6 +1088,9 @@ const LEAD_STATUSES = ['Handed over', 'Dealer contacted', 'Visited', 'Won', 'Los
 const LEAD_CLOSED = ['Won', 'Lost'];
 /* a Priority 200 dealer's development plan: goals, and the interventions that get it there (each one a follow-up) */
 const IV_KINDS = ['Visit', 'Training', 'Display', 'Scheme', 'Joint marketing', 'Credit review'];
+/* R6b (plan point 18): the same plan engine for a Design 500 member (an architect or design firm), with its own kinds */
+const D5_IV_KINDS = ['Visit', 'Presentation', 'Sample', 'Site visit', 'Event', 'Training'];
+const ivKindsFor = clientKind => ['architect', 'design_firm'].includes(clientKind) ? D5_IV_KINDS : IV_KINDS;
 const IV_STATUSES = ['Planned', 'In progress', 'Done', 'Cancelled'];
 const REVIEW_EVERY = { Weekly: 7, Fortnightly: 14, Monthly: 30, Quarterly: 91 };
 /* a timestamp (SQLite, ISO) or a plain date, as that day in India */
