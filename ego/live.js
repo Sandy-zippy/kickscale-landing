@@ -437,6 +437,7 @@ function roleDash(kind) {
       ? tile('Calls due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Dealers due a call', num(callDue.length), 'past their call-every days', '#/dealers') + tile('New and contacted leads', num(open.filter(o => o.stage === (D.lists.stages[o.pipeline] || [])[0] || o.stage === (D.lists.stages[o.pipeline] || [])[1]).length), '', '#/opps') + homeTarget('person')
       : homeTarget('person') + tile('My open opportunities', num(open.length), P ? inr0(sumV(open)) : '', '#/opps') + tile('Next actions due', num(dueN.length), `${num(dueN.filter(o => o.next_date < t).length)} overdue`, '#/opps') + tile('Won this month', num(won.length), P ? inr0(sumV(won)) : '', '#/orderbook');
     return `<div class="stack">${who}${fuCard(kind === 'tele' ? 'Your calls and follow-ups: due today and overdue' : 'Your follow-ups: due today and overdue')}<div class="grid g4">${tiles}</div>
+      ${kind === 'tele' ? fieldReqCard(myOpps) : ''}
       ${kind === 'tele' && callDue.length ? `<section class="card stack-s"><h3>Dealers due a call</h3>${table(['Dealer', 'Call every', 'City'], callDue.map(c => ({ href: '#/client/' + c.id, cells: [`<b>${esc(c.name)}</b>`, `${num(c.extra.contact_every_days)} days`, esc(c.city)] })))}</section>` : ''}
       <section class="card stack-s"><h3>Your orders in fulfilment</h3>${myOrders.length ? table(['Order', 'Dealer', 'Where it is'], myOrders.map(o => ({ href: '#/order/' + o.id, cells: [`<b>${esc(o.ref)}</b>`, esc(clientName(o.client_id)), `<span class="badge info">${esc(o.ful_stage)}</span>`] }))) : '<p class="small muted">None right now. An order comes here when your opportunity reaches Order confirmed.</p>'}</section>
       ${team.length ? `<section class="card stack-s" data-dash-team><h3>Your team</h3>${teamTable(team)}</section>` : ''}${schemeCard(c => c.owner_id === me().id || team.includes(c.owner_id))}</div>`;
@@ -937,21 +938,32 @@ EM.ACTIONS['fu-del'] = async el => {
   try { await API('DELETE', '/api/documents/' + d.id); D.documents = D.documents.filter(x => x.id !== d.id); EM.toast(`${esc(d.name)} removed, in the Recycle bin for 30 days.`); EM.rerender(); } catch (x) { bubbleNear(el, x.message); }
 };
 
+/* R2b: telesales' "From field sales" list: every open Requirement from a field phone that is theirs, newest first */
+function fieldReqCard(opps) {
+  const rows = opps.filter(o => fromField(o) && !isClosed(o.pipeline, o.stage, D.lists)).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  return `<section class="card stack-s" data-field-reqs><div class="row between"><h3>From field sales <span class="muted">${num(rows.length)}</span></h3><a class="btn sm" href="#/opps" data-act="opp-field-on">All in Opportunities</a></div>
+    <p class="small muted">Requirements saved at a visit by field sales. Call them, hand a consumer lead to a dealer, or let EGO fulfil it.</p>
+    ${rows.length ? table(['Requirement', 'Who', 'Raised by', 'Saved', 'Stage'], rows.slice(0, 30).map(o => ({ href: '#/opp/' + o.id, cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(PIPELINES[o.pipeline].label)}${o.extra.area_sqft ? ` · ${num(o.extra.area_sqft)} sq ft` : ''}</div>`, esc(o.c_name || clientName(o.client_id)), esc(staffName(o.extra.raised_by)), esc(ds(dayIST(o.created_at))), `<span class="badge info">${esc(o.stage)}</span>`] })))
+      : '<p class="small muted">None waiting. A Requirement saved on a field sales phone shows here at once, and rings your bell.</p>'}</section>`;
+}
+EM.ACTIONS['opp-field-on'] = () => { EM.oppField = true; location.hash = '#/opps'; };
 /* ---------------------------------------------------------------- opportunities */
 const pipesAllowed = () => Object.keys(PIPELINES).filter(p => canDiv(PIPELINES[p].division) && (EM.div === 'both' || PIPELINES[p].division === EM.div));
-EM.oppMine = false;
+EM.oppMine = false; EM.oppField = false;
+/* R2b: a Requirement saved on a field sales phone is an opportunity with who raised it */
+const fromField = o => !!(o && o.extra && o.extra.raised_by);
 EM.VIEWS.opps = arg => {
   const ps = pipesAllowed();
   if (!ps.length) return EM.noAccess('No pipeline is open to your role.');
   const p = ps.includes(arg) ? arg : ps[0];
-  const all = D.opportunities.filter(o => o.pipeline === p && (!EM.oppMine || o.owner_id === me().id) && matches(`${o.title} ${o.ref || ''} ${(CL()[o.client_id] || {}).name || ''} ${staffName(o.owner_id)} ${o.next_action || ''} ${(PJS().find(x => x.id === o.project_id) || {}).name || ''} ${o.dealer_id ? (DDIR().find(d => d.id === o.dealer_id) || {}).name || '' : ''}`, [(CL()[o.client_id] || {}).mobile]));
+  const all = D.opportunities.filter(o => o.pipeline === p && (!EM.oppMine || o.owner_id === me().id) && (!EM.oppField || fromField(o)) && matches(`${o.title} ${o.ref || ''} ${(CL()[o.client_id] || {}).name || ''} ${staffName(o.owner_id)} ${o.next_action || ''} ${(PJS().find(x => x.id === o.project_id) || {}).name || ''} ${o.dealer_id ? (DDIR().find(d => d.id === o.dealer_id) || {}).name || '' : ''}`, [(CL()[o.client_id] || {}).mobile]));
   const stages = D.lists.stages[p] || [];
   const t = today();
   const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>${o.project_id && PJS().find(x => x.id === o.project_id) ? `<div class="small">Project: ${esc(PJS().find(x => x.id === o.project_id).name)}</div>` : ''}${o.dealer_id ? `<div class="small">Dealer: ${esc((DDIR().find(d => d.id === o.dealer_id) || { name: 'outside your view' }).name)}</div>` : ''}
-    <div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}<button class="btn sm ghost" data-act="fu-add" data-client="${o.client_id}" data-opp="${o.id}" style="margin-top:4px">+ Follow-up</button></div>`;
+    ${fromField(o) ? `<div class="small"><span class="badge info">From field sales</span> ${esc(staffName(o.extra.raised_by))}</div>` : ''}<div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}<button class="btn sm ghost" data-act="fu-add" data-client="${o.client_id}" data-opp="${o.id}" style="margin-top:4px">+ Follow-up</button></div>`;
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
-      <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
+      <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-field" ${EM.oppField ? 'checked' : ''}> From field sales</label><a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
     ${searchBox('Opportunity, company, project, dealer, owner or next action')}
     ${PIPELINES[p].dealer ? `<p class="small muted" data-retail-note>Consumer leads: telesales qualify each one, then allocate it to a dealer (the dealers in the person's city are suggested). The dealer accepts it and moves it on in the dealer portal. A lead with no move for ${escDays()} day${escDays() === 1 ? '' : 's'} goes to the dealer's field sales owner in the bell.</p>` : ''}
     ${subtabs('#/opps', p, ps.map(k => [k, `${PIPELINES[k].plural} <span class="muted">${D.opportunities.filter(o => o.pipeline === k).length}</span>`]))}
@@ -960,7 +972,7 @@ EM.VIEWS.opps = arg => {
     ${stageBoard(stages, all.filter(o => !isClosed(o.pipeline, o.stage, D.lists) || thisMonth(o.closed_at || o.updated_at)), o => o.stage, card, ls => D.access.prices && ls.some(o => o.value) ? `<div class="small muted">${inr(ls.reduce((a, o) => a + (Number(o.value) || 0), 0))}</div>` : '')}</div>`;
 };
 EM.VIEWS.opps.title = () => 'Opportunities';
-document.addEventListener('change', e => { if (e.target.id === 'opp-mine') { EM.oppMine = e.target.checked; EM.rerender(); } });
+document.addEventListener('change', e => { if (e.target.id === 'opp-mine') { EM.oppMine = e.target.checked; EM.rerender(); } if (e.target.id === 'opp-field') { EM.oppField = e.target.checked; EM.rerender(); } });
 document.addEventListener('change', e => { if (e.target.id === 'pp-f') { EM.ppF = e.target.value; EM.rerender(); } });
 
 /* ---------------------------------------------------------------- Lost sales (13 Oct)
@@ -3957,7 +3969,7 @@ const ATT_FIELDS = [['person', 'Person'], ['region', 'Area'], ['late', 'Late mar
 EM.VIEWS.attendance = () => {
   const f = EM.attF, [from, to] = fbRange(f), B = fbLoad(from, to), one = from === to;
   const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-attf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
-  const head = `<div class="fb-head"><div><h1>Attendance</h1><div class="fb-sub">Field team · start time ${esc((B && B.start) || D.lists.field_start || '10:00')}${isOwner() && !isBothView() ? ' · <button class="btn sm ghost" data-act="att-start">Change the start time</button>' : ''} · ${one ? esc(ds(from)) : `${esc(ds(from))} to ${esc(ds(to))}`}</div></div>
+  const head = `<div class="fb-head"><div><h1>Attendance</h1><div class="fb-sub">Field team · start time ${esc((B && B.start) || D.lists.field_start || '10:00')}${isOwner() && !isBothView() ? ' · <button class="btn sm ghost" data-act="att-start">Field app settings</button>' : ''} · ${one ? esc(ds(from)) : `${esc(ds(from))} to ${esc(ds(to))}`}</div></div>
     <div class="fb-tools"><button class="btn sm" data-act="fb-csv">Download for Excel</button></div></div>`;
   const people = B ? B.people : [], P = byIdL(people);
   const filters = `<div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-att-filters>${dateFilter(f, 'att', 'Date filter')}${sel('person', 'Person', [['', 'Everyone'], ...people.map(p => [p.id, p.name])])}
@@ -3999,10 +4011,14 @@ EM.ACTIONS['fb-csv'] = () => { const R = EM.attRows; if (!R) return;
   csvDownload('EGO attendance', ['Day', 'Person', 'Area', 'Start my day', 'Where (start)', 'Late (min)', 'End my day', 'Where (end)', 'Day length (min)', 'Visits done', 'Visits planned', 'Missed'],
     [...R.notStarted.map(r => [r.day, (R.P[r.staff_id] || {}).name, (R.P[r.staff_id] || {}).region, 'Not started', '', '', '', '', '', 0, R.vis(r.staff_id, r.day).length, 0]),
       ...R.rows.map(r => { const v = R.vis(r.staff_id, r.day); return [r.day, (R.P[r.staff_id] || {}).name, (R.P[r.staff_id] || {}).region, fbHm(r.start_at), fbPlace(r.start_lat, r.start_lng, r.start_acc, r.start_noloc) || 'location not shared', r.late_min, fbHm(r.end_at), r.end_at ? fbPlace(r.end_lat, r.end_lng, r.end_acc, r.end_noloc) || 'location not shared' : '', r.end_at ? Math.round((Date.parse(r.end_at) - Date.parse(r.start_at)) / 6e4) : '', v.filter(x => x.status === 'done' || x.status === 'in').length, v.length, v.filter(x => x.status === 'missed').length]; })]); };
-EM.ACTIONS['att-start'] = () => EM.modal(`<h2>Field day start time</h2><p class="muted small">Starting the day after this time shows a late mark on the phone and on this board. Today it is ${esc(D.lists.field_start || '10:00')}.</p>
-  <form class="stack" onsubmit="return false" style="margin-top:12px"><div class="field"><label for="att-st">Start time</label><input class="input" id="att-st" type="time" value="${esc(D.lists.field_start || '10:00')}" required></div>${errBox('att-st-err')}
+/* R2b: who a Requirement from field sales goes to, per company: a person picked here, or telesales in turn */
+const reqOwnerSel = dv => { const cur = (D.lists.field_req_owner || {})[dv] || '', ppl = D.staff.filter(s => s.active && (s.division === dv || s.division === 'both') && s.role !== 'ws_field').sort((a, b) => a.name.localeCompare(b.name));
+  return `<div class="field"><label for="att-ro-${dv}">A Requirement from field sales in ${dv === 'retail' ? 'Big E' : 'EGO Premium'} goes to</label><select class="input" id="att-ro-${dv}"><option value="">Telesales in turn (the one who had one longest ago)</option>${ppl.map(s => `<option value="${s.id}" ${cur === s.id ? 'selected' : ''}>${esc(s.name)} · ${esc(roleName(s.role))}</option>`).join('')}</select></div>`; };
+EM.ACTIONS['att-start'] = () => EM.modal(`<h2>Field app settings</h2><p class="muted small">Starting the day after the start time shows a late mark on the phone and on this board. Today it is ${esc(D.lists.field_start || '10:00')}.</p>
+  <form class="stack" onsubmit="return false" style="margin-top:12px"><div class="field"><label for="att-st">Start time</label><input class="input" id="att-st" type="time" value="${esc(D.lists.field_start || '10:00')}" required></div>
+  ${reqOwnerSel('wholesale')}${reqOwnerSel('retail')}<p class="small muted">A dealer with its own Telesales owner always goes to that person. With nobody in telesales, it goes to the Owner.</p>${errBox('att-st-err')}
   <div class="row"><button class="btn primary" data-act="att-start-go">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
-EM.ACTIONS['att-start-go'] = async el => { busy(el, true); try { const r = await API('POST', '/api/field/settings', { start: qs('#att-st').value }); D.lists.field_start = r.start; EM.FB = null; EM.closeModal(); EM.toast(`<b>Start time ${esc(r.start)}</b>. Late marks count from it.`); EM.rerender(); } catch (x) { busy(el, false); showErr('att-st-err', x.message); } };
+EM.ACTIONS['att-start-go'] = async el => { busy(el, true); try { const r = await API('POST', '/api/field/settings', { start: qs('#att-st').value, req_owner: { wholesale: qs('#att-ro-wholesale').value, retail: qs('#att-ro-retail').value } }); D.lists.field_start = r.start; D.lists.field_req_owner = r.req_owner; EM.FB = null; EM.closeModal(); EM.toast(`<b>Saved.</b> Start time ${esc(r.start)}; Requirements go where you chose.`); EM.rerender(); } catch (x) { busy(el, false); showErr('att-st-err', x.message); } };
 document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.attf; if (k) { EM.attF[k] = e.target.value; EM.rerender(); } });
 const fbType = (id, set) => document.addEventListener('input', e => { if (e.target.id !== id) return; set(e.target.value); const pos = e.target.selectionStart; EM.rerender(); const el = qs('#' + id); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} } });
 fbType('att-q', v => { EM.attF.q = v; }); fbType('att-fq', v => { EM.attF.fq = v; });

@@ -13,8 +13,8 @@
   };
   const esc = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
-  async function api(method, path, data, isForm) {
-    const headers = {};
+  async function api(method, path, data, isForm, extra) {
+    const headers = { ...(extra || {}) };
     const tok = store.get();
     if (tok) headers.authorization = 'Bearer ' + tok;
     if (data && !isForm) headers['content-type'] = 'application/json';
@@ -28,7 +28,7 @@
     if (!res.ok) throw Object.assign(new Error(out.error || 'Something went wrong.'), { status: res.status, errors: out.errors });
     return out;
   }
-  window.EGOAPI = { api, base: API, signOut: async () => { try { await api('POST', '/api/auth/logout', {}); } catch (e) {} store.set(''); location.hash = ''; location.reload(); }, file: id => API + '/api/documents/' + id };
+  window.EGOAPI = { api, base: API, signOut: async () => { try { await api('POST', '/api/auth/logout', {}); } catch (e) {} store.set(''); try { localStorage.removeItem('ego-field-boot'); } catch (e) {} location.hash = ''; location.reload(); }, file: id => API + '/api/documents/' + id };
 
   const root = () => document.getElementById('gate');
   const LOGO = '<svg class="logo" viewBox="0 0 557 201" height="30" role="img" aria-label="EGO"><path d="M0 0H194V85H27V117H194V144H0Z M27 29V59H167V29Z M204 0H374V201H204V174H347V144H204Z M231 29V117H347V29Z M386 0H557V144H386Z M411 29V117H530V29Z" fill="#FB0B18" fill-rule="evenodd"/></svg>';
@@ -79,7 +79,9 @@
   async function start() {
     if (!store.get()) return gate();
     let boot;
-    try { boot = await api('GET', '/api/bootstrap'); } catch (e) { if (e.offline) root().innerHTML = `<div class="gate-card stack"><h1>Cannot reach EGO Master</h1><p class="muted">${esc(e.message)}</p><button class="btn primary" onclick="location.reload()">Try again</button></div>`; return; }
+    /* R2b: a field login with no signal opens the field app from what this phone last had (its entries wait in the queue) */
+    let kept = null; try { kept = JSON.parse(localStorage.getItem('ego-field-boot') || 'null'); } catch (e) {}
+    try { boot = await api('GET', '/api/bootstrap'); } catch (e) { if (e.offline && kept && kept.field) { boot = kept; boot.offline = true; } else if (e.offline) root().innerHTML = `<div class="gate-card stack"><h1>Cannot reach EGO Master</h1><p class="muted">${esc(e.message)}</p><button class="btn primary" onclick="location.reload()">Try again</button></div>`; if (!boot) return; }
     /* the demo screens read these tables at load; in live mode they are empty, never invented */
     const empty = ['dealer', 'market', 'employee', 'sku', 'lead', 'project', 'architect', 'installer', 'connection', 'stock'];
     /* a dealer portal login (13 Oct, batch 4) gets the dealer portal, never the team's app */

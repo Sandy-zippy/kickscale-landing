@@ -41,7 +41,7 @@ const PIPES_FOR = { dealer: ['wholesale', 'ego_project'], direct: ['wholesale', 
 /* the Project pipeline of each company: a project's opportunities sit in it */
 const PROJECT_PIPE = { wholesale: 'ego_project', retail: 'retail_project' };
 
-const SOURCES = ['Meta Ads', 'Google Ads', 'Website', 'WhatsApp', 'IndiaMART', 'JustDial', 'Runo', 'Sales Diary', 'QR code', 'Walk-in', 'Referral', 'Field visit', 'Architect', 'Existing relationship', 'Other'];
+const SOURCES = ['Meta Ads', 'Google Ads', 'Website', 'WhatsApp', 'IndiaMART', 'JustDial', 'Runo', 'Sales Diary', 'QR code', 'Walk-in', 'Referral', 'Field visit', 'Field sales', 'Architect', 'Existing relationship', 'Other'];
 
 /* Defaults for the lists the Owner can edit in Lists & stages. Stored in
    settings once edited; these only apply to a fresh database. */
@@ -928,3 +928,25 @@ const istMinutes = ts => { const d = new Date(Date.parse(ts) + 5.5 * 36e5); retu
 const hhmmMinutes = s => { const m = /^(\d{1,2}):(\d\d)$/.exec(String(s || '')); return m ? Math.min(23, +m[1]) * 60 + Math.min(59, +m[2]) : 600; };
 /* Directions: a Google Maps link from the saved address, or a search by name and city when there is none */
 const directionsUrl = v => 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(v.address || [v.name, v.area].filter(Boolean).join(', '));
+
+/* ---------------------------------------------------------------- the field sales app, part 2 (17 Oct, R2b)
+   + Requirement: what a field person saves at a visit becomes an opportunity at once. What kind it is decides the
+   pipeline; the step the field person sees comes from the opportunity itself, never typed twice. */
+const FIELD_SOURCE = 'Field sales';
+const REQ_KINDS = { dealer: 'Dealer order', consumer: 'Homeowner', project: 'Project' };
+/* the pipeline a Requirement goes into, by its kind and the field person's company; '' when that company has none */
+const reqPipe = (kind, division) => (division === 'retail' ? { consumer: 'retail_lead', project: 'retail_project' } : { dealer: 'wholesale', consumer: 'ego_retail', project: 'ego_project' })[kind] || '';
+/* the kind a picked record suggests: a dealer orders, a person or retail client is a homeowner, an architect or a project is a project */
+const reqKindOf = clientKind => ({ distributor: 'dealer', dealer: 'dealer', sub_dealer: 'dealer', direct: 'consumer', retail: 'consumer', architect: 'project', design_firm: 'project', project: 'project' }[clientKind] || 'consumer');
+const REQ_STEPS = ['With telesales', 'Called or site visit set', 'Handed to a dealer or quote sent', 'Turned into a sale'];
+/* where a Requirement has got to: 1 to 4, or lost. Step 2 once it moved past its first stage, step 3 once a dealer has it
+   or it reached a quote, step 4 at the won stage (Order confirmed for a dealer order). */
+function reqStep(o, lists) {
+  const S = (lists.stages || {})[o.pipeline] || [], i = S.indexOf(o.stage), won = wonStage(o.pipeline, lists), lost = lostStage(o.pipeline, lists);
+  if (o.stage === lost) return { step: 0, lost: true, label: 'Lost' };
+  if (o.stage === won) return { step: 4, won: true, label: REQ_STEPS[3] };
+  const q = S.findIndex(s => /^quot/i.test(s));
+  const step = o.dealer_id || (q >= 0 && i >= q) ? 3 : i > 0 ? 2 : 1;
+  return { step, label: REQ_STEPS[step - 1] };
+}
+DEFAULT_LISTS.field_req_owner = { wholesale: '', retail: '' };
