@@ -1,8 +1,8 @@
 /* EGO Master: the field app opens with no signal (17 Oct, R2b). Network first for every page file, so a phone with signal
    always gets the newest build (and the update notice still compares build stamps); with no signal the last copy answers.
-   The API is never touched here: entries made offline wait in the field app's own queue. Build d75ca60636. */
-const CACHE = 'ego-field-d75ca60636';
-const SHELL = ['./', 'index.html', 'tokens.css?v=d75ca60636', 'styles.css?v=d75ca60636', 'live.css?v=d75ca60636', 'field.css?v=d75ca60636', 'boot.js?v=d75ca60636', 'field.js?v=d75ca60636',
+   The API is never touched here: entries made offline wait in the field app's own queue. Build bbb708aa64. */
+const CACHE = 'ego-field-bbb708aa64';
+const SHELL = ['./', 'index.html', 'tokens.css?v=bbb708aa64', 'styles.css?v=bbb708aa64', 'live.css?v=bbb708aa64', 'field.css?v=bbb708aa64', 'boot.js?v=bbb708aa64', 'field.js?v=bbb708aa64',
   'icons.svg', 'field.webmanifest', 'field-180.png', 'field-192.png', 'field-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('ego-field-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

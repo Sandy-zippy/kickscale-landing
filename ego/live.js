@@ -28,10 +28,10 @@ function allowedTab(t) {
   if (t === 'followups') return holds();   // My follow-ups opens from Home, like Lost sales from Opportunities
   if (t === 'integrations') return isOwner() && !D.access.viewing_as;   // every API key in one place: an Owner only
   if (['clients', 'people', 'opps', 'projects', 'import', 'inventory', 'analysis'].includes(t)) return holds();
-  if (t === 'dealers') return holds() && canDiv('wholesale');
+  if (t === 'dealers' || t === 'design500') return holds();   // R3b: Big E keeps its own dealers; Design 500 in both companies
   if (t === 'architects') return holds();
-  if (t === 'orders' || t === 'p200' || t === 'schemes') return holds() && canDiv('wholesale');
-  if (t === 'installation') return holds() && canDiv('retail');
+  if (t === 'orders' || t === 'installation') return holds();   // R3b: Big E fulfilment (retail ladder), EGO installation
+  if (t === 'p200' || t === 'schemes') return holds() && canDiv('wholesale');
   if (t === 'complaints' || t === 'approvals' || t === 'orderbook') return holds();
   if (t === 'team') return D.access.users;
   if (t === 'lists') return !!D.access.can_lists;
@@ -56,7 +56,9 @@ const NAV_ACTS = new Set(['hist-open', 'role-toggle', 'opp-mine', 'invf-clear', 
   /* batch 4: downloading the leads or interventions list, opening an intervention's files */
   'ho-csv', 'iv-csv', 'iv-files',
   /* R3a: the projects Excel sample and closing its preview */
-  'pj-sample', 'pj-imp-close']);
+  'pj-sample', 'pj-imp-close',
+  /* R3b: the Design 500 Excel sample and closing its preview */
+  'd5-sample', 'd5-imp-close']);
 const LOOK_ACTS = new Set(['hist-open', 'view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
   'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass',
@@ -64,7 +66,7 @@ const LOOK_ACTS = new Set(['hist-open', 'view-back', 'view-as', 'role-toggle', '
   'int-key-add', 'int-key-go', 'int-key-revoke', 'int-key-revoke-go', 'int-copy', 'int-tool-add', 'int-tool-edit', 'int-tool-save', 'int-tool-del', 'int-tool-del-go', 'int-row-add', 'int-row-del',
   'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv',
   'why', 'an-csv', 'tg-sample', 'tg-imp-close',
-  'ho-csv', 'iv-csv', 'iv-files', 'pj-sample', 'pj-imp-close',
+  'ho-csv', 'iv-csv', 'iv-files', 'pj-sample', 'pj-imp-close', 'd5-sample', 'd5-imp-close',
   /* dealer portal logins are account matters, like staff logins (batch 4) */
   'pu-add', 'pu-go', 'pu-pass', 'pu-toggle']);
 /* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
@@ -89,22 +91,23 @@ EM.render = (...a) => {
   if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
-const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap' };
+const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', design500: 'Design 500', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap' };
 const NAV_TAIL = ['attendance', 'roadmap', 'complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
 // Menu order per view, as Bhargav set it on 5 Oct.
 const NAV_ORDER = {
-  wholesale: ['home', 'people', 'architects', 'dealers', 'opps', 'projects', 'schemes', 'orders', 'orderbook', ...NAV_TAIL],
-  retail: ['home', 'people', 'architects', 'opps', 'projects', 'orderbook', 'installation', ...NAV_TAIL],
-  both: ['home', 'people', 'dealers', 'architects', 'orderbook', 'opps', 'projects', 'schemes', 'orders', 'installation', ...NAV_TAIL],
+  wholesale: ['home', 'people', 'architects', 'design500', 'dealers', 'opps', 'projects', 'schemes', 'orders', 'orderbook', 'installation', ...NAV_TAIL],
+  retail: ['home', 'people', 'architects', 'design500', 'dealers', 'opps', 'projects', 'orders', 'orderbook', 'installation', ...NAV_TAIL],
+  both: ['home', 'people', 'dealers', 'architects', 'design500', 'orderbook', 'opps', 'projects', 'schemes', 'orders', 'installation', ...NAV_TAIL],
 };
 EM.navTabs = () => ({
   main: (NAV_ORDER[EM.div] || NAV_ORDER.both).map(k => [k, NAV_LABEL[k]])
-    .filter(([k]) => allowedTab(k) && !(['dealers', 'orders', 'p200', 'schemes'].includes(k) && EM.div === 'retail') && !(k === 'installation' && EM.div === 'wholesale')),
+    .filter(([k]) => allowedTab(k) && !(['p200', 'schemes'].includes(k) && EM.div === 'retail')),
   shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['integrations', 'Integrations'], ['bin', 'Recycle bin'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
 Object.assign(ICON, {
   opps: ICON.leads, schemes: ICON.targets, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, p200: ICON.targets, orderbook: ICON.orders || ICON.leads, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
+  design500: _i('<circle cx="12" cy="9" r="5"/><path d="M8.5 13 7 20.5l5-2.5 5 2.5-1.5-7.5"/>'),
   projects: _i('<path d="M4 20.5h16"/><path d="M6 20.5V6.5l6-3 6 3v14"/><path d="M9.5 9h1.5M13 9h1.5M9.5 12.5h1.5M13 12.5h1.5M10.5 20.5v-4h3v4"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
   bin: _i('<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/><path d="M10 11v5M14 11v5"/>'),
@@ -197,8 +200,8 @@ function fieldHtml(f, v, p, opt = {}) {
     /* R3a: a project of the pipeline's company; a dealer for a consumer lead (those near the person first); a Project Partner */
     case 'project': return G.select(f, v, p, PJS().filter(x => x.division === (PIPELINES[opt.pipeline] || {}).division).map(x => [x.id, `${x.name} · ${x.city}`]));
     case 'dealer': { const city = (CL()[opt.client] || {}).city, sug = dealerSuggest(city).map(x => x.d.id);
-      return G.select(f, v, p, [...sug.map(id => DDIR().find(d => d.id === id)).map(d => [d.id, `${d.name} · ${d.city} · suggested for ${city}`]), ...DDIR().filter(d => !sug.includes(d.id)).map(d => [d.id, `${d.name} · ${d.city}`])]).replace('<select', '<select data-keep-order'); }
-    case 'partner': return G.select(f, v, p, DDIR().filter(d => PARTNER_OK.includes(d.project_partner) || d.id === v).map(d => [d.id, `${d.name} · ${d.city} · Project Partner ${d.project_partner || 'not set'}`]));
+      return G.select(f, v, p, [...sug.map(id => DDIR().find(d => d.id === id)).map(d => [d.id, `${d.name} · ${d.city} · suggested for ${city}`]), ...DDIR().filter(d => !sug.includes(d.id) && d.division !== 'retail').map(d => [d.id, `${d.name} · ${d.city}`])]).replace('<select', '<select data-keep-order'); }
+    case 'partner': return G.select(f, v, p, DDIR().filter(d => (PARTNER_OK.includes(d.project_partner) && (!opt.division || d.division === opt.division)) || d.id === v).map(d => [d.id, `${d.name} · ${d.city} · Project Partner ${d.project_partner || 'not set'}`]));
     case 'cats': return fieldHtml({ ...f, type: 'multi', opts: D.lists.categories }, v, p);
     case 'cat': return G.select(f, v, p, D.lists.categories.map(c => [c, c]));
     case 'decimal': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
@@ -351,12 +354,13 @@ document.addEventListener('change', e => {
   if (st && box && box.value !== st) { box.value = st; box.dispatchEvent(new Event('change', { bubbles: true })); }
 });
 /* the rate per box starts at the list rate: the collection's price per sq ft × sq ft in a box */
-const listRate = pid => { const I = INVD(), pr = I.products.find(x => x.id === pid), c = pr && I.collections.find(x => x.id === pr.collection_id), e = (c && c.extra) || {}; return e.price_sqft && e.sqft_per_box ? Math.round(e.price_sqft * e.sqft_per_box * 100) / 100 : null; };
-const listRateTxt = pid => { const r = pid && listRate(pid); return r ? `List rate ${inr0(r)} / box` : ''; };
+/* R3b: a Big E line is priced per sq ft, so its list rate is the collection's price per sq ft itself */
+const listRate = (pid, SQ) => { const I = INVD(), pr = I.products.find(x => x.id === pid), c = pr && I.collections.find(x => x.id === pr.collection_id), e = (c && c.extra) || {}; return SQ ? (e.price_sqft ? Number(e.price_sqft) : null) : e.price_sqft && e.sqft_per_box ? Math.round(e.price_sqft * e.sqft_per_box * 100) / 100 : null; };
+const listRateTxt = (pid, SQ) => { const r = pid && listRate(pid, SQ); return r ? `List rate ${inr0(r)} / ${SQ ? 'sq ft' : 'box'}` : ''; };
 document.addEventListener('change', e => {
   if (!e.target.matches || !e.target.matches('[data-ol="p"]')) return;
-  const line = e.target.closest('.ordline'), r = listRate(e.target.value), box = line.querySelector('[data-ol="r"]'), hint = line.querySelector('[data-listrate]');
-  if (hint) hint.textContent = listRateTxt(e.target.value);
+  const line = e.target.closest('.ordline'), SQ = !!line.querySelector('[data-ol="s"]'), r = listRate(e.target.value, SQ), box = line.querySelector('[data-ol="r"]'), hint = line.querySelector('[data-listrate]');
+  if (hint) hint.textContent = listRateTxt(e.target.value, SQ);
   if (r && box && !box.value) { box.value = r; box.dispatchEvent(new Event('input', { bubbles: true })); }
 });
 
@@ -530,7 +534,7 @@ function orgList(org, arg) {
     ${org === 'dealer' ? `<div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-pp-filter><label class="field" style="min-width:170px"><span class="small muted">Project Partner</span><select class="input" id="pp-f">${[['', 'Every dealer'], ['Yes', 'Yes'], ['Potential', 'Potential'], ['No', 'No'], ['none', 'Not filled']].map(([v, l]) => `<option value="${v}" ${ppF === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>` : ''}
     ${searchBox('Company name, city, mobile, GST, reference or Project Partner capability')}
     ${all.length ? (rows.length ? table(['Company', 'Type', ...(org === 'dealer' ? ['Served by', 'Project Partner'] : []), 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
-      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), ...(org === 'dealer' ? [c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? esc(CL()[c.parent_id].name) : '<span class="badge bad">No distributor</span>') : 'EGO Premium', ppOf(c) ? `<span class="badge ${ppOf(c) === 'Yes' ? 'ok' : ppOf(c) === 'Potential' ? 'info' : 'plain'}">${esc(ppOf(c))}</span>` : ''] : []), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
+      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), ...(org === 'dealer' ? [c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? esc(CL()[c.parent_id].name) : '<span class="badge bad">No distributor</span>') : esc((DIVS[c.division] || DIVS.wholesale).co), ppOf(c) ? `<span class="badge ${ppOf(c) === 'Yes' ? 'ok' : ppOf(c) === 'Potential' ? 'info' : 'plain'}">${esc(ppOf(c))}</span>` : ''] : []), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
       + (rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing matches that search.</p>')
       : empty(`No ${title.toLowerCase()} yet`, `Add the company and its people in one go, or fill the Excel file and upload it.`, `<button class="btn primary" data-act="org-add" data-org="${org}">+ Add ${org === 'dealer' ? 'dealer' : 'architect firm'}</button><a class="btn" href="#/import">Import from Excel</a>`)}
   </div>`;
@@ -553,7 +557,7 @@ function peopleRows() {
 }
 EM.VIEWS.people = arg => {
   const all = peopleRows();
-  const subs = [['all', 'All'], ...(allowedTab('dealers') && EM.div !== 'retail' ? [['dealer', 'At a dealer']] : []), ['architect', 'At an architect firm'], ['personal', 'Personal']];
+  const subs = [['all', 'All'], ...(allowedTab('dealers') ? [['dealer', 'At a dealer']] : []), ['architect', 'At an architect firm'], ['personal', 'Personal']];
   const tab = subs.find(t => t[0] === arg) || subs[0];
   const rows = all.filter(x => (tab[0] === 'all' || x.type === tab[0]) && matches(`${x.name} ${x.role} ${x.company ? x.company.name : ''} ${x.email}`, [x.mobile]));
   const TYPE = { dealer: 'Dealer', architect: 'Architect firm', personal: 'Personal' };
@@ -772,7 +776,7 @@ function businessCard(c) {
   return `<section class="card stack-s"><h3>Business from ${esc(c.name)}</h3>
     ${kv([['Team', String(D.contacts.filter(k => k.client_id === c.id).length)], ['Open opportunities', String(open.length) + (D.access.prices && open.length ? ` · ${money(sum(open))}` : '')], ['Won', String(won.length) + (D.access.prices && won.length ? ` · ${money(sum(won))}` : '')]])}
     ${who.length ? `<div class="small muted">Won business by the person who brought it</div>${kv(who)}` : ''}
-    <p class="small muted">Counted from opportunities saved here. Invoice revenue arrives when Tally is connected.</p></section>`;
+    <p class="small muted">Counted from opportunities saved here. Invoice revenue needs Tally, which is not connected yet.</p></section>`;
 }
 function clientContacts(c, cts) {
   return `<div class="stack-s"><div class="row between"><p class="muted">The people at ${esc(c.name)}, their role and what they handle. Mark one as the main person to talk to.</p><button class="btn primary" data-act="contact-add" data-client="${c.id}">+ Add person</button></div>
@@ -851,7 +855,7 @@ const OFFICE_RE = /\.(docx?|xlsx?|pptx?)$/i;
 const kb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round((n || 0) / 1024)) + ' KB';
 const mayRemoveDoc = d => d.order_id ? (D.access.ful || []).includes('money') : true;
 function filesBox(o) {   // o: { id, client, order, types, docs, canAdd, tags, title, note, showOrder, emptyTitle, emptyText }
-  const P = D.access.prices, tagCols = o.tags || o.docs.some(d => d.doc_no || d.doc_date), b = 'fu-' + o.id, ordOf = id => OPSD().orders.find(x => x.id === id);
+  const P = D.access.prices, tagCols = o.tags || o.docs.some(d => d.doc_no || d.doc_date), b = 'fu-' + o.id, ordOf = id => allOrders().find(x => x.id === id);
   const form = o.canAdd ? `<form class="card stack-s" data-fu-box="${o.id}" onsubmit="return false"><h3>${esc(o.title || 'Add files')}</h3>${o.note ? `<p class="small muted">${o.note}</p>` : ''}<div class="fgrid">
       <div class="field" data-field="doc_type"><label for="${b}-type">What it is</label><select class="input" id="${b}-type" data-keep-order>${o.types.map(t => `<option>${esc(t)}</option>`).join('')}</select></div>
       ${o.tags ? `<div class="field" data-field="doc_no"><label for="${b}-no">Number (optional)</label><input class="input" id="${b}-no" placeholder="e.g. PI/2026/0142"></div>
@@ -1048,8 +1052,8 @@ EM.VIEWS.opp = id => {
       <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}${PIPELINES[o.pipeline].dealer && !isClosed(o.pipeline, o.stage, D.lists) ? `<button class="btn ${o.dealer_id ? '' : 'primary'}" data-act="ld-move" data-id="${id}">${o.dealer_id ? 'Move to another dealer' : 'Allocate to a dealer'}</button>` : ''}<button class="btn" data-act="fu-add" data-client="${o.client_id}" data-opp="${id}">+ Follow-up</button><button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${D.access.can_delete ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
     <section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>
       <div class="row"><select class="input" id="move-stage" data-keep-order aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
-    ${(o.extra || {}).portal ? portalRequestNote(o) : ''}${PIPELINES[o.pipeline].lines ? oppLinesCard(o) : ''}
-    ${(() => { const ord = OPSD().orders.find(x => x.opp_id === o.id); return ord ? orderFiles(ord) : ''; })()}
+    ${(o.extra || {}).portal ? portalRequestNote(o) : ''}${PIPELINES[o.pipeline].lines ? oppLinesCard(o) : PIPELINES[o.pipeline].sqft ? rfOppLinesCard(o) : ''}
+    ${(() => { const ord = allOrders().find(x => x.opp_id === o.id); return ord ? orderFiles(ord) : ''; })()}
     <div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, v[f.key])]))}</section>
       <section class="card stack-s"><h3>Stage history</h3>${hist.length ? `<div class="timeline">${hist.map(h => `<div class="on"><b>${esc(h.to_stage)}</b>${h.from_stage ? ` <span class="small muted">from ${esc(h.from_stage)}</span>` : ''}<div class="small muted">${ds(h.at)} ${tFmt(h.at)} · ${esc(staffName(h.by_staff))}${h.note ? ' · ' + esc(h.note) : ''}</div></div>`).join('')}</div>` : '<p class="muted">No moves yet.</p>'}</section></div>
     ${activityPanel({ clientId: o.client_id, oppId: id })}</div>`;
@@ -1067,10 +1071,10 @@ function openOppForm(o, keep) {
   const pipeline = pipes.includes(v.pipeline) ? v.pipeline : pipes[0];
   const stages = D.lists.stages[pipeline] || [];
   if (!stages.includes(v.stage)) v.stage = stages[0];
-  const withLines = PIPELINES[pipeline].lines, fields = showFields(oppFieldsFor(pipeline)).filter(f => f.key !== 'pipeline' && !(withLines && f.key === 'value') && (!LOST_KEYS.includes(f.key) || v.stage === lostStage(pipeline, D.lists)));
+  const SQ = !!PIPELINES[pipeline].sqft, withLines = PIPELINES[pipeline].lines || SQ, fields = showFields(oppFieldsFor(pipeline)).filter(f => f.key !== 'pipeline' && !(withLines && f.key === 'value') && (!LOST_KEYS.includes(f.key) || v.stage === lostStage(pipeline, D.lists)));
   const autoName = oppAutoName(client.name, (v.products || [])[0] || PIPELINES[pipeline].label, o && o.created_at);
   const oh = f => { const h = fieldHtml(f, v[f.key], 'of', { pipeline, client: client.id }); return f.key === 'stage' ? h.replace('<select', '<select data-opp-redraw') : f.key === 'title' ? h.replace('<input', `<input placeholder="Left blank: ${esc(autoName)}"`) : h; };
-  const lines0 = (v.lines || (o ? (OPSD().oppLines || []).filter(l => l.opp_id === o.id) : [])), inFul = o && OPSD().orders.some(x => x.opp_id === o.id);
+  const lines0 = (v.lines || (o ? (OPSD().oppLines || []).filter(l => l.opp_id === o.id) : [])), inFul = o && allOrders().some(x => x.opp_id === o.id);
   EM.modal(`<h2>${o ? 'Edit opportunity' : 'Add an opportunity'}</h2>
     <form id="of" class="stack" onsubmit="return false" style="margin-top:14px" data-id="${o ? o.id : ''}" data-seen="${esc(JSON.stringify(o ? { action: o.next_action || '', date: o.next_date || '' } : {}))}"><div class="fgrid">
       ${o ? `<div class="field"><label>Client</label><input class="input" value="${esc(client.name)}" disabled><input type="hidden" name="client_id" value="${client.id}"></div>`
@@ -1078,8 +1082,8 @@ function openOppForm(o, keep) {
       ${G.select(OPP_FIELDS[0], pipeline, 'of', pipes.map(p => [p, PIPELINES[p].label]), false).replace('<select', '<select data-opp-redraw')}
       ${fields.filter(f => !f.section).map(oh).join('')}</div>
       ${fields.some(f => f.section) ? fsHtml('Billing, payment and delivery', `<div class="fgrid">${fields.filter(f => f.section).map(oh).join('')}</div>`) : ''}
-      ${withLines && !inFul ? `<fieldset class="fs"><legend>Designs, boxes and rate</legend><p class="small muted">Type the boxes and the rate per box; the amount, GST (${D.lists.rules.gst_pct}%) and total are worked out. The total is the opportunity's value.</p>
-        <div id="olines" class="stack-s">${(lines0.length ? lines0 : [{}]).map((l, i) => ordLine(i, l)).join('')}</div><div class="row"><button class="btn sm" data-act="ol-add">+ Another design</button></div>
+      ${withLines && !inFul ? `<fieldset class="fs"><legend>${SQ ? 'Designs, sq ft and rate per sq ft' : 'Designs, boxes and rate'}</legend><p class="small muted">${SQ ? 'Type the sq ft and the rate per sq ft' : 'Type the boxes and the rate per box'}; the amount, GST (${D.lists.rules.gst_pct}%) and total are worked out. The total is the opportunity's value.</p>
+        <div id="olines" class="stack-s" data-sq="${SQ ? 1 : ''}">${(lines0.length ? lines0 : [{}]).map((l, i) => ordLine(i, l, SQ)).join('')}</div><div class="row"><button class="btn sm" data-act="ol-add">+ Another design</button></div>
         ${D.access.prices ? `<div class="fgrid"><div class="field"><label for="ord-disc">Discount</label><div class="adorn" data-unit="%"><input class="input" type="number" min="0" max="100" step="0.1" id="ord-disc" value="${esc(v.discount_pct ?? 0)}"><span class="suf">%</span></div></div></div>
         <div class="stack-s" data-charges><b class="small">Other charges</b><p class="small muted">Installation, porter or loading, transport, skirting, accessories: say what each is for and the amount. They are added before GST.</p>
           <datalist id="chg-hints">${CHARGE_HINTS.map(h => `<option value="${esc(h)}">`).join('')}</datalist>
@@ -1108,11 +1112,11 @@ async function saveOpp(input, el, errId) {
     D.history = D.history.filter(h => h.opp_id !== r.opportunity.id).concat(r.history);
     if (r.followups) fuApply({ followups: r.followups, client: null, opportunity: null, clientId: r.opportunity.client_id });
     /* a wholesale sale also changes its designs, approvals and (at payment) its fulfilment: read them again */
-    if (PIPELINES[r.opportunity.pipeline].lines) { const fresh = await API('GET', '/api/bootstrap'); Object.assign(D, fresh); }
+    if (PIPELINES[r.opportunity.pipeline].lines || PIPELINES[r.opportunity.pipeline].sqft) { const fresh = await API('GET', '/api/bootstrap'); Object.assign(D, fresh); }
     return r;
   } catch (x) {
     busy(el, false); EM._lastErr = (x.errors || [x.message]).join(' '); showErr(errId, x.errors || x.message);
-    if (PIPELINES[input.pipeline] && PIPELINES[input.pipeline].lines) { try { Object.assign(D, await API('GET', '/api/bootstrap')); } catch (e) { } }   // a refused move may still have raised an approval
+    if (PIPELINES[input.pipeline] && (PIPELINES[input.pipeline].lines || PIPELINES[input.pipeline].sqft)) { try { Object.assign(D, await API('GET', '/api/bootstrap')); } catch (e) { } }   // a refused move may still have raised an approval
     return null;
   }
 }
@@ -1122,7 +1126,8 @@ EM.ACTIONS['opp-save'] = async el => {
   if (form.dataset.id) { input.id = form.dataset.id; input.next_seen = JSON.parse(form.dataset.seen || '{}'); }
   if (qs('#olines')) {
     input.lines = readOrder(); input.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0);
-    if (input.lines.some(l => !l.product_id || !Number.isInteger(l.boxes) || l.boxes <= 0)) return showErr('of-err', 'Every design line needs a design and a whole number of boxes (or remove the line).');
+    if (qs('#olines').dataset.sq) { if (input.lines.some(l => !l.product_id || !(l.sqft > 0))) return showErr('of-err', 'Every design line needs a design and its sq ft (or remove the line).'); }
+    else if (input.lines.some(l => !l.product_id || !Number.isInteger(l.boxes) || l.boxes <= 0)) return showErr('of-err', 'Every design line needs a design and a whole number of boxes (or remove the line).');
     if (qs('#ochg')) { input.charges = readCharges(); const bad = input.charges.findIndex(c => !c.label || !(c.amount > 0)); if (bad >= 0) return showErr('of-err', `Charge ${bad + 1}: say what it is for and the amount (or remove it).`); }
   }
   const r = await saveOpp(input, el, 'of-err');
@@ -1409,7 +1414,15 @@ EM.ACTIONS['move-save'] = async el => {
    complaints and approvals. Priority 200 ranks the dealers from what is saved here.
    Every stage set is edited in Lists & stages; the locked stages carry the logic. */
 const FN = r => nm(D.lists, 'ops.fulfilment_stages', r), PNn = r => nm(D.lists, 'ops.production_stages', r);   // a stage by its role, whatever it is called now
-const OPSD = () => D.ops || { orders: [], lines: [], allocations: [], production: [], waits: [], sites: [], snags: [], complaints: [], approvals: [] };
+/* R3b: Big E's sales now have fulfilment records too (the retail ladder). OPSD().orders stays EGO Premium's wholesale
+   fulfilment, so every wholesale count, board and dashboard reads what it always read; Big E's are OPSD().rorders,
+   and allOrders() is both, for the screens that show any sale (Orders, an opportunity, a client's history, files). */
+const OPS_EMPTY = { orders: [], lines: [], allocations: [], production: [], waits: [], sites: [], snags: [], complaints: [], approvals: [] };
+let opsMemo = null;
+const OPSD = () => { const o = D.ops || OPS_EMPTY;
+  if (!opsMemo || opsMemo.src !== o || opsMemo.arr !== o.orders) { const all = o.orders || []; opsMemo = { src: o, arr: o.orders, v: { ...o, orders: all.filter(x => x.division !== 'retail'), rorders: all.filter(x => x.division === 'retail') } }; }
+  return opsMemo.v; };
+const allOrders = () => [...OPSD().orders, ...OPSD().rorders];
 const OS_ = k => opsStages(D.lists, k);
 const prodName = id => { const p = INVD().products.find(x => x.id === id); return p ? `${p.name}${p.code ? ' · ' + p.code : ''}` : 'Design'; };
 const clientName = id => (CL()[id] || { name: 'Outside your view' }).name;
@@ -1442,13 +1455,18 @@ const flowStrip = () => { const W = D.lists.stages.wholesale || [], FS = OS_('fu
     <div class="row" style="flex-wrap:wrap;gap:6px;align-items:center"><b class="small">3. Production (only for what was short)</b>${PS.map(x => chip(x, x === PNn('Received at warehouse') ? 'warn' : '')).join(arrow)}</div>
     <p class="small muted">One production order can serve several sales of the same design. <b>${esc(PNn('Received at warehouse'))}</b> adds the boxes to stock; <b>${esc(PNn('Allocated & closed'))}</b> gives each waiting sale its share, oldest first, and they move on by themselves.</p></section>`; };
 EM.VIEWS.orders = arg => {
-  const tab = ORD_TABS.find(t => t[0] === arg) ? arg : 'fulfilment';
+  /* R3b: Big E has its own fulfilment, the retail ladder; in Both it is the third tab */
+  const rfHead = `<div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Big E · from Won to Closed</div><h1>Fulfilment</h1></div><div class="row"><a class="btn" href="#/opps/retail_lead">Retail leads</a><a class="btn" href="#/opps/retail_project">Retail projects</a></div></div>`;
+  if (EM.div === 'retail') return `<div class="stack">${rfHead}${rfBoard()}</div>`;
+  const TABS = EM.div === 'both' ? [...ORD_TABS, ['bige', 'Big E fulfilment']] : ORD_TABS;
+  const tab = TABS.find(t => t[0] === arg) ? arg : 'fulfilment';
+  if (tab === 'bige') return `<div class="stack">${rfHead}${subtabs('#/orders', tab, TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? OPSD().orders.length : k === 'bige' ? OPSD().rorders.length : OPSD().production.length}</span>`]))}${rfBoard()}</div>`;
   let O = OPSD();
   const lineSum = id => O.lines.filter(l => l.order_id === id);
   const head = `<div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">EGO Premium · from the confirmed order to the dealer's door</div><h1>Fulfilment</h1></div>
     <div class="row">${tab === 'production' && canStockUI() ? '<button class="btn" data-act="po-add">+ Production order</button>' : ''}<a class="btn" href="#/opps/wholesale">Wholesale opportunities</a></div></div>
     ${flowStrip()}
-    ${subtabs('#/orders', tab, ORD_TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : O.production.length}</span>`]))}
+    ${subtabs('#/orders', tab, TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : k === 'bige' ? O.rorders.length : O.production.length}</span>`]))}
     ${searchBox(tab === 'fulfilment' ? 'Fulfilment number, opportunity or dealer' : 'Production order, design or container')}`;
   let body;
   if (tab === 'fulfilment') {
@@ -1485,10 +1503,11 @@ function oppLinesCard(o) {
 }
 
 /* the order form: a dealer, its designs with boxes and rate, an optional discount */
-const ordLine = (i, v = {}) => { const I = INVD(), byCol = I.collections.map(c => [c, I.products.filter(p => p.collection_id === c.id && p.status !== 'Discontinued')]).filter(([, ps]) => ps.length);
+const ordLine = (i, v = {}, SQ) => { const I = INVD(), byCol = I.collections.map(c => [c, I.products.filter(p => p.collection_id === c.id && p.status !== 'Discontinued')]).filter(([, ps]) => ps.length);
   return `<div class="fgrid ordline" data-i="${i}" style="align-items:end"><div class="field span2"><label for="ol-p-${i}">Design</label><select class="input" id="ol-p-${i}" data-ol="p"><option value="">Choose</option>${byCol.map(([c, ps]) => `<optgroup label="${esc(c.category + ' · ' + c.name)}">${ps.map(p => `<option value="${p.id}" ${p.id === v.product_id ? 'selected' : ''}>${esc(p.name)}${p.code ? ' · ' + esc(p.code) : ''}</option>`).join('')}</optgroup>`).join('')}</select></div>
-    <div class="field"><label for="ol-b-${i}">Boxes</label>${G.adorn({ key: 'low_stock' }, `<input class="input" type="number" min="1" step="1" id="ol-b-${i}" data-ol="b" value="${esc(v.boxes || '')}">`)}</div>
-    ${D.access.prices ? `<div class="field"><label for="ol-r-${i}">Rate per box</label>${G.adorn({ type: 'money', key: 'rate' }, `<input class="input" type="number" min="0" step="0.01" id="ol-r-${i}" data-ol="r" value="${esc(v.rate || '')}">`)}<span class="small muted" data-listrate>${listRateTxt(v.product_id)}</span></div>` : ''}
+    ${SQ ? `<div class="field"><label for="ol-s-${i}">Sq ft</label>${G.adorn({ key: 'area_sqft' }, `<input class="input" type="number" min="0" step="0.01" id="ol-s-${i}" data-ol="s" value="${esc(v.sqft || '')}">`)}</div>`
+    : `<div class="field"><label for="ol-b-${i}">Boxes</label>${G.adorn({ key: 'low_stock' }, `<input class="input" type="number" min="1" step="1" id="ol-b-${i}" data-ol="b" value="${esc(v.boxes || '')}">`)}</div>`}
+    ${D.access.prices ? `<div class="field"><label for="ol-r-${i}">${SQ ? 'Rate per sq ft' : 'Rate per box'}</label>${G.adorn({ type: 'money', key: 'rate' }, `<input class="input" type="number" min="0" step="0.01" id="ol-r-${i}" data-ol="r" value="${esc(v.rate || '')}">`)}<span class="small muted" data-listrate>${listRateTxt(v.product_id, SQ)}</span></div>` : ''}
     <div class="field"><button class="btn sm ghost" data-act="ol-del">Remove</button></div></div>`; };
 const LOST_KEYS = ['lost_reason', 'lost_detail'];
 const chgLine = (i, c = {}) => `<div class="fgrid chgline" data-i="${i}" style="align-items:end"><div class="field span2"><label for="chg-l-${i}">What it is for</label><input class="input" id="chg-l-${i}" data-chg="l" list="chg-hints" value="${esc(c.label || '')}" placeholder="e.g. Installation"></div>
@@ -1498,17 +1517,19 @@ EM.ACTIONS['chg-add'] = () => { const box = qs('#ochg'); box.insertAdjacentHTML(
 EM.ACTIONS['chg-del'] = el => { el.closest('.chgline').remove(); const f = qs('#of'); if (f) f.dispatchEvent(new Event('input', { bubbles: true })); };
 const moneyLine = ex => { const ch = (ex.charges || []).filter(c => c.amount != null);
   return `${ex.discount_pct ? `Discount ${ex.discount_pct}% · ` : ''}${ch.length ? ch.map(c => `${esc(c.label)} ${inr0(c.amount)}`).join(' · ') + ' · ' : ''}Taxable ${inr0(ex.subtotal)} + GST ${ex.gst_pct ?? D.lists.rules.gst_pct}%`; };
-const readOrder = () => [...document.querySelectorAll('#olines .ordline')].map(l => ({ product_id: l.querySelector('[data-ol="p"]').value, boxes: Number(l.querySelector('[data-ol="b"]').value), rate: Number((l.querySelector('[data-ol="r"]') || { value: 0 }).value || 0) })).filter(l => l.product_id || l.boxes);
+const readOrder = () => [...document.querySelectorAll('#olines .ordline')].map(l => { const q = k => l.querySelector(`[data-ol="${k}"]`);
+  return q('s') ? { product_id: q('p').value, sqft: Number(q('s').value || 0), rate: Number((q('r') || { value: 0 }).value || 0) } : { product_id: q('p').value, boxes: Number(q('b').value), rate: Number((q('r') || { value: 0 }).value || 0) }; }).filter(l => l.product_id || l.boxes || l.sqft);
 document.addEventListener('input', e => {
   if (!e.target.closest || !e.target.closest('#ordf, #of')) return;
-  const ls = readOrder(), gross = ls.reduce((a, l) => a + (l.boxes || 0) * (l.rate || 0), 0), disc = Number((qs('#ord-disc') || { value: 0 }).value || 0), chg = readCharges().reduce((a, c) => a + (c.amount || 0), 0), sub = gross * (1 - disc / 100) + chg, t = qs('#ord-total');
-  if (t && D.access.prices) t.textContent = `${ls.reduce((a, l) => a + (l.boxes || 0), 0)} boxes · designs ${inr0(gross * (1 - disc / 100))}${chg ? ` + charges ${inr0(chg)}` : ''} = ${inr0(sub)} + GST ${D.lists.rules.gst_pct}% = ${inr0(sub * (1 + D.lists.rules.gst_pct / 100))}`;
+  const ls = readOrder(), gross = ls.reduce((a, l) => a + (l.sqft != null ? l.sqft : l.boxes || 0) * (l.rate || 0), 0), disc = Number((qs('#ord-disc') || { value: 0 }).value || 0), chg = readCharges().reduce((a, c) => a + (c.amount || 0), 0), sub = gross * (1 - disc / 100) + chg, t = qs('#ord-total');
+  if (t && D.access.prices) t.textContent = `${qs('#olines[data-sq="1"]') ? `${Math.round(ls.reduce((a, l) => a + (l.sqft || 0), 0) * 100) / 100} sq ft` : `${ls.reduce((a, l) => a + (l.boxes || 0), 0)} boxes`} · designs ${inr0(gross * (1 - disc / 100))}${chg ? ` + charges ${inr0(chg)}` : ''} = ${inr0(sub)} + GST ${D.lists.rules.gst_pct}% = ${inr0(sub * (1 + D.lists.rules.gst_pct / 100))}`;
 });
-EM.ACTIONS['ol-add'] = () => { const box = qs('#olines'); box.insertAdjacentHTML('beforeend', ordLine(box.children.length)); };
+EM.ACTIONS['ol-add'] = () => { const box = qs('#olines'); box.insertAdjacentHTML('beforeend', ordLine(box.children.length, {}, !!box.dataset.sq)); };
 EM.ACTIONS['ol-del'] = el => { const l = el.closest('.ordline'); if (document.querySelectorAll('#olines .ordline').length > 1) l.remove(); };
 /* one fulfilment: the sale it came from, each design against the warehouses, and the production orders serving it */
 EM.VIEWS.order = id => {
   const O = OPSD(), o = O.orders.find(x => x.id === id);
+  if (!o && O.rorders.find(x => x.id === id)) return rfOrderView(O.rorders.find(x => x.id === id));   // R3b: a Big E sale
   if (!o) return `<div class="stack"><h1>Fulfilment not found</h1><a class="btn" href="#/orders">Fulfilment</a></div>`;
   const FS = OS_('fulfilment_stages'), lines = O.lines.filter(l => l.order_id === id), WH = INVD().warehouses, opp = oppOf(o);
   const al = l => O.allocations.filter(a => a.line_id === l.id), got = l => al(l).reduce((a, x) => a + x.boxes, 0);
@@ -1534,7 +1555,102 @@ EM.VIEWS.order = id => {
     ${orderStory(o)}</div>`;
 };
 EM.VIEWS.order.tab = 'orders';
-EM.VIEWS.order.title = id => (OPSD().orders.find(x => x.id === id) || { ref: 'Fulfilment' }).ref;
+EM.VIEWS.order.title = id => (allOrders().find(x => x.id === id) || { ref: 'Fulfilment' }).ref;
+
+/* ================================================================ R3b (17 Oct): Big E fulfilment, the RETAIL ladder
+   Won > Advance received > Stock check > Blocked > Delivered to site > Installation > Balance received > Closed.
+   A Big E sale reaching Won opens its fulfilment record (the Worker); its line items are design, sq ft, rate per sq ft, amount
+   (boxes come in R4). Blocked uses the same stock block as EGO; Installation creates or links the installation site. */
+const RF_WHAT = { 'Advance received': 'the advance is recorded', 'Stock check': 'the designs are checked against the warehouses', Blocked: 'boxes are blocked for every design',
+  'Delivered to site': 'the blocked boxes leave the warehouses', Installation: 'the installation site opens (or the one already made is linked)', 'Balance received': 'the balance is paid in full', Closed: 'the sale is done' };
+const RF_WHO = { stock: 'the stock team', money: 'Accounts', dispatch: 'Dispatch' };
+const rfNext = o => RETAIL_FUL[RETAIL_FUL.indexOf(o.ful_stage) + 1];
+const rfMay = o => { const n = rfNext(o); return !!n && (D.access.ful || []).includes(RETAIL_FUL_GROUP[n]); };
+const rfLines = o => OPSD().lines.filter(l => l.order_id === o.id);
+const rfBlocked = l => OPSD().allocations.filter(a => a.line_id === l.id).reduce((a, x) => a + x.boxes, 0);
+const rfSites = o => OPSD().sites.filter(x => (x.extra || {}).order_id === o.id || (o.opp_id && x.opp_id === o.opp_id));
+const rfSqft = ls => Math.round(ls.reduce((a, l) => a + Number(l.sqft || 0), 0) * 100) / 100;
+const rfLineTable = (ls, withBlocked) => table(['Design', 'Sq ft', ...(D.access.prices ? ['Rate per sq ft', 'Amount'] : []), ...(withBlocked ? ['Boxes blocked'] : [])],
+  ls.map(l => [`<b>${esc(prodName(l.product_id))}</b>`, num(l.sqft || 0), ...(D.access.prices ? [inr0(l.rate), inr0(l.amount)] : []), ...(withBlocked ? [rfBlocked(l) ? `<span class="badge ok">${num(rfBlocked(l))}</span>` : '<span class="badge plain">None yet</span>'] : [])]));
+/* on a Big E opportunity: its line items, and its fulfilment once Won */
+function rfOppLinesCard(o) {
+  const ls = (OPSD().oppLines || []).filter(l => l.opp_id === o.id), ord = OPSD().rorders.find(x => x.opp_id === o.id), ex = o.extra || {};
+  return `<section class="card stack-s" data-opp-lines data-rf-opp><div class="row between"><h3>Designs, sq ft and rate per sq ft</h3>${ord ? `<a class="btn sm primary" href="#/order/${ord.id}">In fulfilment: ${esc(ord.ref)} · ${esc(ord.ful_stage)}</a>` : ''}</div>
+    ${ls.length ? rfLineTable(ls) + `<p class="small">${num(rfSqft(ls))} sq ft${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.value)}</b>` : ''}</p>`
+      : `<p class="small muted">No designs yet. Edit the opportunity to add each design with its sq ft and rate per sq ft; they are needed before ${esc(wonStage(o.pipeline, D.lists))}, when its fulfilment opens.</p>`}</section>`;
+}
+EM.rfF = { period: 'all', from: '', to: '', stage: '', owner: '', field: '', fq: '' };
+const RF_FIELDS = [['ref', 'Fulfilment number'], ['title', 'Sale'], ['client', 'Client'], ['stage', 'Stage'], ['owner', 'Owner'], ['designs', 'Designs']];
+const rfVal = (o, k) => k === 'title' ? (oppOf(o) || { title: o.notes || '' }).title : k === 'client' ? clientName(o.client_id) : k === 'stage' ? o.ful_stage : k === 'owner' ? staffName(o.owner_id) : k === 'designs' ? rfLines(o).map(l => prodName(l.product_id)).join(' ') : String(o[k] || '');
+function rfBoard() {
+  const f = EM.rfF, fq = f.fq.trim().toLowerCase(), all = OPSD().rorders;
+  const rows = all.filter(o => (!f.stage || o.ful_stage === f.stage) && (!f.owner || o.owner_id === f.owner) && inPeriod(o.created_at, f.period, f.from, f.to)
+    && (!fq || (f.field ? [rfVal(o, f.field)] : RF_FIELDS.map(([k]) => rfVal(o, k))).some(v => v.toLowerCase().includes(fq))) && matches(`${o.ref} ${rfVal(o, 'title')} ${rfVal(o, 'client')} ${rfVal(o, 'designs')}`, [(CL()[o.client_id] || {}).mobile]));
+  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-rff="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const chip = (t, i) => `<span class="badge ${i === 0 ? 'ok' : t === 'Blocked' ? 'warn' : ''}">${esc(t)}</span>`;
+  return `<section class="card stack-s" data-flow data-rf-flow><h3>How a Big E sale moves</h3><div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">${RETAIL_FUL.map(chip).join('<span class="muted">→</span>')}</div>
+      <p class="small muted">At <b>Won</b> on a retail lead or retail project the sale comes here by itself, with its designs in sq ft. ${RETAIL_FUL.slice(1).map(st => `<b>${esc(st)}</b>: ${esc(RF_WHAT[st])}`).join('. ')}.</p></section>
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-rf-filters>${dateFilter(f, 'rf', 'When it was won')}${sel('stage', 'Stage', [['', 'Every stage'], ...RETAIL_FUL.map(x => [x, x])])}
+      ${sel('owner', 'Owner', [['', 'Everyone'], ...[...new Set(all.map(o => o.owner_id))].map(id => [id, staffName(id)])])}${sel('field', 'Any field', [['', 'Any field'], ...RF_FIELDS])}
+      <label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="rf-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+    ${searchBox('Big E fulfilment: number, sale, client or design')}
+    ${stageBoard(RETAIL_FUL, rows, o => o.ful_stage, o => `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/order/${o.id}" data-rf-card><b>${esc(o.ref)}</b><div class="small">${esc(clientName(o.client_id))}</div><div class="small muted">${num(rfSqft(rfLines(o)))} sq ft</div>${rfSites(o).length ? `<div class="small">Site ${esc(rfSites(o)[0].ref)}</div>` : ''}</a>`)}
+    ${rows.length ? table(['Fulfilment', 'Sale', 'Client', 'Sq ft', ...(D.access.prices ? ['Value', 'Received'] : []), 'Stage', 'Installation site'], rows.map(o => ({ href: '#/order/' + o.id,
+      cells: [`<b>${esc(o.ref)}</b><div class="small muted">${ds(dayIST(o.created_at))}</div>`, esc(rfVal(o, 'title')), esc(clientName(o.client_id)), num(rfSqft(rfLines(o))), ...(D.access.prices ? [inr0(o.total), inr0(o.paid || 0)] : []), `<span class="badge info">${esc(o.ful_stage)}</span>`, esc(rfSites(o).map(x => x.ref).join(', '))] })))
+      : empty(all.length ? 'Nothing for this filter' : 'No Big E sale in fulfilment yet', all.length ? 'Change or clear the filters above.' : 'A retail lead or retail project comes here when it reaches Won, with its designs in sq ft and rate per sq ft.')}`;
+}
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.rff; if (k) { EM.rfF[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'rf-fq') { EM.rfF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#rf-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+/* one Big E sale in fulfilment */
+function rfOrderView(o) {
+  const ls = rfLines(o), opp = oppOf(o), nxt = rfNext(o), sites = rfSites(o), SS = OS_('site_steps'), ex = o.extra || {}, pays = ex.payments || [], due = Math.max(0, (o.total || 0) - (o.paid || 0));
+  const atBlock = ['Stock check', 'Blocked'].includes(o.ful_stage) && (D.access.ful || []).includes('stock');
+  return `<div class="stack" data-rf-order>${crumbs(['Fulfilment', '#/orders'], [o.ref])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Big E · retail ladder</div><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'a sale'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · won ${ds(dayIST(o.created_at))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
+      ${nxt ? (rfMay(o) ? `<button class="btn primary" data-act="rf-next" data-id="${o.id}">Move to ${esc(nxt)}</button>` : `<span class="small muted" data-ful-who>Next step (${esc(nxt)}) by ${esc(RF_WHO[RETAIL_FUL_GROUP[nxt]])} or Management</span>`) : '<span class="badge ok">Closed</span>'}</div>
+    <section class="card stack-s">${stageChips(RETAIL_FUL, o.ful_stage)}${nxt ? `<p class="small muted">Next, <b>${esc(nxt)}</b>: ${esc(RF_WHAT[nxt])}.</p>` : ''}</section>
+    <section class="card stack-s" data-rf-lines><div class="row between"><h3>Designs, sq ft and rate per sq ft</h3>${atBlock ? `<button class="btn" data-act="rf-alloc" data-id="${o.id}">Block boxes</button>` : ''}</div>
+      ${rfLineTable(ls, true)}<p class="small">${num(rfSqft(ls))} sq ft${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.total)}</b>` : ''}</p>
+      <p class="small muted">Blocked uses EGO's stock block: the boxes typed per warehouse are held for this sale and leave the warehouses at Delivered to site.</p></section>
+    ${D.access.prices ? `<section class="card stack-s" data-pay><div class="row between"><h3>Advance and balance</h3>${(D.access.ful || []).includes('money') && due > 0 ? `<button class="btn sm" data-act="rf-pay" data-id="${o.id}">+ Record a payment</button>` : ''}</div>
+      ${kv([['Total', inr0(o.total)], ['Received', inr0(o.paid || 0)], ['Still due', due > 0 ? `<b>${inr0(due)}</b>` : '<span class="badge ok">Paid in full</span>']])}
+      ${pays.length ? table(['Received on', 'Amount', 'Note', 'By'], pays.map(p => [ds(p.on), inr0(p.amount), esc(p.note || ''), esc(staffName(p.by))])) : '<p class="small muted">No payment yet. Advance received records the advance; Balance received needs the rest.</p>'}</section>` : ''}
+    <section class="card stack-s" data-rf-site><h3>Installation site</h3>
+      ${sites.length ? table(['Site', 'Step', 'Installed by', 'Planned start'], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.ref)}</b> ${esc(x.name)}</a>`, `<span class="badge info">${esc(x.step)}</span> <span class="small muted">${SS.indexOf(x.step) + 1}/${SS.length}</span>`, esc(installedByTxt(x)), x.planned_start ? ds(x.planned_start) : '']))
+        : `<p class="small muted">The installation site opens by itself when this sale moves to Installation${OPSD().sites.some(x => x.opp_id === o.opp_id) ? '' : ', under the same client and project'}.</p>`}</section>
+    ${orderFiles(o)}
+    <section class="stack-s"><h3>History</h3><div id="log-rf"><p class="muted">Loading…</p></div></section></div>`;
+}
+{ const baseAfter = EM.VIEWS.order.after; EM.VIEWS.order.after = id => { if (OPSD().rorders.some(x => x.id === id)) return showLog('fulfilment', id, '#log-rf'); return baseAfter && baseAfter(id); }; }
+const rfPayModal = (o, step) => { const due = Math.max(0, (o.total || 0) - (o.paid || 0)), to = step ? rfNext(o) : '';
+  EM.modal(`<h2>${step ? esc(to) : 'Record a payment'}</h2><p class="muted">${esc(o.ref)} · ${esc(clientName(o.client_id))}. Total ${inr0(o.total)}, received so far ${inr0(o.paid || 0)}, still due ${inr0(due)}.</p>
+    <div class="fgrid" style="margin-top:12px"><div class="field"><label for="rfp-a">${to === 'Advance received' ? 'Advance received' : to === 'Balance received' ? 'Balance received' : 'Amount received'}${to === 'Balance received' && !due ? '' : ' *'}</label>${G.adorn({ type: 'money', key: 'pay' }, `<input class="input" type="number" min="0" step="0.01" id="rfp-a" value="${to === 'Advance received' ? '' : due || ''}">`)}</div>
+      <div class="field"><label for="rfp-on">Received on</label><input class="input" type="date" id="rfp-on" value="${today()}"></div><div class="field span2"><label for="rfp-n">Note</label><input class="input" id="rfp-n" placeholder="e.g. 30% advance by UPI"></div></div>
+    ${errBox('rfp-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="rf-pay-save" data-id="${o.id}" data-step="${step ? 1 : ''}">${step ? 'Record and move on' : 'Record payment'}</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
+EM.ACTIONS['rf-next'] = el => {
+  const o = OPSD().rorders.find(x => x.id === el.dataset.id), to = rfNext(o);
+  if (['Advance received', 'Balance received'].includes(to) && D.access.prices && !(to === 'Balance received' && (o.paid || 0) >= (o.total || 0) - 0.5)) return rfPayModal(o, true);
+  return opsAct(el, `orders/${o.id}/ful-next`, {}, `<b>${esc(o.ref)} moved to ${esc(to)}</b>`);
+};
+EM.ACTIONS['rf-pay'] = el => rfPayModal(OPSD().rorders.find(x => x.id === el.dataset.id), false);
+EM.ACTIONS['rf-pay-save'] = async el => {
+  const body = { amount: Number(qs('#rfp-a').value || 0), on: qs('#rfp-on').value, note: qs('#rfp-n').value };
+  if (!el.dataset.step && !(body.amount > 0)) return showErr('rfp-err', 'Type the amount received.');
+  await opsAct(el, `orders/${el.dataset.id}/${el.dataset.step ? 'ful-next' : 'pay'}`, body, body.amount ? `<b>${inr0(body.amount)} recorded</b>` : '<b>Moved on</b>', 'rfp-err');
+};
+EM.ACTIONS['rf-alloc'] = el => {
+  const o = OPSD().rorders.find(x => x.id === el.dataset.id), WH = INVD().warehouses, mine = (l, w) => OPSD().allocations.filter(a => a.line_id === l.id && a.warehouse_id === w.id && !a.dispatched).reduce((a, x) => a + x.boxes, 0);
+  if (!WH.length) return EM.modal('<h2>Block boxes</h2><p class="muted">There is no warehouse yet. Add one in Inventory, with its stock, then block the boxes here.</p><div class="row" style="margin-top:12px"><a class="btn primary" href="#/inventory">Inventory</a><button class="btn" data-act="close-modal">Close</button></div>');
+  EM.modal(`<h2>Block boxes: ${esc(o.ref)}</h2><p class="muted small">For each design, how many boxes to hold from each warehouse. "Free" is what is there and not blocked for another sale.</p>
+    <div class="stack" style="margin-top:12px">${rfLines(o).map(l => `<fieldset class="fs" data-rf-line="${l.id}"><legend>${esc(prodName(l.product_id))} · ${num(l.sqft || 0)} sq ft</legend><div class="fgrid">${WH.map(w => { const fr = Math.max(0, freeAt(l.product_id, w.id) + mine(l, w));
+      return `<div class="field"><label for="rfa-${l.id}-${w.id}">${esc(w.name)} <span class="muted">(free ${fr})</span></label><input class="input" type="number" min="0" step="1" id="rfa-${l.id}-${w.id}" data-wh="${w.id}" value="${mine(l, w) || ''}"></div>`; }).join('')}</div></fieldset>`).join('')}</div>
+    ${errBox('rfa-err')}<div class="row sticky-actions" style="margin-top:12px"><button class="btn primary" data-act="rf-alloc-save" data-id="${o.id}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+EM.ACTIONS['rf-alloc-save'] = el => {
+  const allocs = [...document.querySelectorAll('fieldset[data-rf-line]')].flatMap(fs => [...fs.querySelectorAll('input[data-wh]')].map(i => ({ line_id: fs.dataset.rfLine, warehouse_id: i.dataset.wh, boxes: Number(i.value || 0) })));
+  return opsAct(el, `orders/${el.dataset.id}/allocate`, { allocs }, '<b>Boxes blocked</b>', 'rfa-err');
+};
+const installedByTxt = x => { const e = x.extra || {}; return e.installed_by === 'dealer' ? `${INSTALLED_BY.dealer}${e.installer_dealer ? ': ' + ((DDIR().find(d => d.id === e.installer_dealer) || CL()[e.installer_dealer] || {}).name || 'a dealer outside your view') : ''}` : e.installed_by === 'contractor' ? INSTALLED_BY.contractor : 'Not chosen yet'; };
 
 /* PI, invoices and payment proofs (13 Oct): EGO keeps making them in Tally and uploads the PDFs here.
    Accounts or Management add them; whoever sees the order sees them, here, on the sale and on the client's page. */
@@ -1659,27 +1775,50 @@ EM.ACTIONS['po-add'] = () => {
 };
 EM.ACTIONS['po-save'] = async el => { const r = await opsAct(el, 'production', { product_id: qs('#pa-p').value, boxes: Number(qs('#pa-b').value), factory: qs('#pa-f').value, eta: qs('#pa-e').value }, null, 'pa-err'); if (r) location.hash = '#/po/' + r.id; };
 
-/* ---- installation sites (Big E) */
+/* ---- installation sites, both companies (R3b: EGO Premium too). A site links to a project or an order of its company;
+   who installs it (our contractor, or the partner dealer's team) is picked per site (Q9); a later planned start needs a delay reason. */
+EM.inF = { period: 'all', from: '', to: '', step: '', by: '', project: '', field: '', fq: '' };
+const SITE_FIELDS = [['ref', 'Site number'], ['name', 'Site'], ['client', 'Client'], ['project', 'Project'], ['step', 'Step'], ['crew', 'Installer or crew'], ['by', 'Installed by'], ['address', 'Address']];
+const siteProject = x => x.project_id ? PJS().find(p => p.id === x.project_id) : null;
+const siteVal = (x, k) => k === 'client' ? clientName(x.client_id) : k === 'project' ? (siteProject(x) || {}).name || '' : k === 'by' ? installedByTxt(x) : String(x[k] || '');
+const siteCo = () => EM.div === 'both' ? '' : EM.div;
 EM.VIEWS.installation = () => {
-  const S = OPSD().sites.filter(inDiv).filter(x => matches(`${x.ref} ${x.name} ${clientName(x.client_id)}`, [])), SS = OS_('site_steps');
-  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">Big E · from survey to handover</div><h1>Installation</h1><p class="muted">Each site moves through the installation steps. Some steps check before they let you on: a crew, the readiness checklist, no open snag, the client's sign-off.</p></div><button class="btn primary" data-act="site-add">+ Site</button></div>
-    ${searchBox('Site, reference or client')}
-    ${stageBoard(SS, S, x => x.step, x => `<a class="card stack-s" style="text-decoration:none" href="#/site/${x.id}"><b>${esc(x.ref)}</b><span class="small">${esc(x.name)}</span><span class="small muted">${esc(clientName(x.client_id))}</span></a>`)}
-    ${S.length ? table(['Site', 'Client', 'Area', 'Step', 'Crew', 'Open snags', 'Planned start'], S.map(x => ({ href: '#/site/' + x.id, cells: [`<b>${esc(x.ref)}</b> ${esc(x.name)}`, esc(clientName(x.client_id)), x.sqft ? num(x.sqft) + ' sq ft' : '', `<span class="badge info">${esc(x.step)}</span> <span class="small muted">${SS.indexOf(x.step) + 1}/${SS.length}</span>`, esc(x.crew || ''), OPSD().snags.filter(n => n.site_id === x.id && n.status === 'Open').length || '', x.planned_start ? ds(x.planned_start) : ''] })))
-      : '<p class="small muted">No installation sites yet. Add a site for a client: a flat, a floor, a project. A won retail project can become a site too.</p>'}</div>`;
+  const f = EM.inF, fq = f.fq.trim().toLowerCase(), all = OPSD().sites.filter(inDiv), SS = OS_('site_steps'), co = siteCo();
+  const S = all.filter(x => (!f.step || x.step === f.step) && (!f.by || ((x.extra || {}).installed_by || 'none') === f.by) && (!f.project || x.project_id === f.project) && inPeriod(x.created_at, f.period, f.from, f.to)
+    && (!fq || (f.field ? [siteVal(x, f.field)] : SITE_FIELDS.map(([k]) => siteVal(x, k))).some(v => v.toLowerCase().includes(fq))) && matches(`${x.ref} ${x.name} ${clientName(x.client_id)} ${siteVal(x, 'project')} ${x.address || ''}`, [(CL()[x.client_id] || {}).mobile]));
+  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-inf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${co ? esc(DIVS[co].co) : 'EGO Premium and Big E'} · from survey to handover</div><h1>Installation</h1><p class="muted">${S.length} of ${all.length}. Each site moves through the installation steps. Some steps check before they let you on: a crew, the readiness checklist, no open snag, the client's sign-off.</p></div><button class="btn primary" data-act="site-add">+ Site</button></div>
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-inst-filters>${dateFilter(f, 'inst', 'When it was added')}${sel('step', 'Step', [['', 'Every step'], ...SS.map(x => [x, x])])}
+      ${sel('by', 'Installed by', [['', 'Anyone'], ...Object.entries(INSTALLED_BY), ['none', 'Not chosen yet']])}${sel('project', 'Project', [['', 'Every project'], ...[...new Set(all.map(x => x.project_id).filter(Boolean))].map(id => [id, (PJS().find(p => p.id === id) || { name: id }).name])])}
+      ${sel('field', 'Any field', [['', 'Any field'], ...SITE_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="inst-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+    ${searchBox('Installation sites: site, number, client, project or address')}
+    ${stageBoard(SS, S, x => x.step, x => `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/site/${x.id}"><b>${esc(x.ref)}</b><div class="small">${esc(x.name)}</div><div class="small muted">${esc(clientName(x.client_id))}</div>${siteProject(x) ? `<div class="small">Project: ${esc(siteProject(x).name)}</div>` : ''}</a>`)}
+    ${S.length ? table(['Site', 'Client', 'Project', 'Area', 'Step', 'Installed by', 'Open snags', 'Planned start'], S.map(x => ({ href: '#/site/' + x.id, cells: [`<b>${esc(x.ref)}</b> ${esc(x.name)}${EM.div === 'both' ? segBadge(x.division) : ''}`, esc(clientName(x.client_id)), esc(siteVal(x, 'project')), x.sqft ? num(x.sqft) + ' sq ft' : '', `<span class="badge info">${esc(x.step)}</span> <span class="small muted">${SS.indexOf(x.step) + 1}/${SS.length}</span>`, esc(installedByTxt(x)), OPSD().snags.filter(n => n.site_id === x.id && n.status === 'Open').length || '', x.planned_start ? ds(x.planned_start) : ''] })))
+      : empty(all.length ? 'Nothing for this filter' : 'No installation sites yet', all.length ? 'Change or clear the filters above.' : 'Add a site for a client: a flat, a floor, a project. A site can sit under a project or an order of this company.', all.length ? '' : '<button class="btn primary" data-act="site-add">+ Site</button>')}</div>`;
 };
 EM.VIEWS.installation.title = () => 'Installation';
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.inf; if (k) { EM.inF[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'inst-fq') { EM.inF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#inst-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+const installerFields = (div, by, dealer) => `<div class="field"><label for="sa-by">Installed by</label><select class="input" id="sa-by" data-keep-order><option value="">Not chosen yet</option>${Object.entries(INSTALLED_BY).map(([k, l]) => `<option value="${k}" ${by === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+  <div class="field" data-sa-dealer ${by === 'dealer' ? '' : 'hidden'}><label for="sa-dealer">Partner dealer</label><select class="input" id="sa-dealer"><option value="">Choose</option>${DDIR().filter(d => d.division === div).map(d => `<option value="${d.id}" ${dealer === d.id ? 'selected' : ''}>${esc(d.name)} · ${esc(d.city || '')}</option>`).join('')}</select></div>`;
+document.addEventListener('change', e => { if (e.target.id === 'sa-by') { const d = qs('[data-sa-dealer]'); if (d) d.hidden = e.target.value !== 'dealer'; } });
 EM.ACTIONS['site-add'] = el => {
-  const cs = D.clients.filter(c => inDiv(c) && canDiv('retail') && (c.division === 'retail' || c.division === 'both')).sort((a, b) => a.name.localeCompare(b.name));
-  EM.modal(`<h2>Add an installation site</h2><div class="fgrid" style="margin-top:12px">
-    ${G.select({ key: 'client', label: 'Client', req: true }, el.dataset.client || '', 'sa', cs.map(c => [c.id, `${c.name} · ${kindLabel(c.kind)}`]))}
-    <div class="field"><label for="sa-name">Site name *</label><input class="input" id="sa-name" placeholder="e.g. Flat 1202, Lodha Park"></div>
+  const pj = el.dataset.project ? PJS().find(p => p.id === el.dataset.project) : null, ord = el.dataset.order ? allOrders().find(o => o.id === el.dataset.order) : null;
+  const div = pj ? pj.division : ord ? ord.division : siteCo() || (D.user.division === 'retail' ? 'retail' : 'wholesale');
+  const cs = D.clients.filter(c => c.division === div || c.division === 'both').sort((a, b) => a.name.localeCompare(b.name));
+  const pre = el.dataset.client || (ord ? ord.client_id : pj ? (D.opportunities.find(o => o.project_id === pj.id) || {}).client_id || '' : '');
+  EM.modal(`<h2>Add an installation site</h2><p class="muted small">${esc(DIVS[div].co)}. One flat, floor or part of a project.</p><div class="fgrid" style="margin-top:12px">
+    ${G.select({ key: 'client', label: 'Client', req: true }, pre, 'sa', cs.map(c => [c.id, `${c.name} · ${kindLabel(c.kind)}`]))}
+    <div class="field"><label for="sa-name">Site name *</label><input class="input" id="sa-name" placeholder="e.g. Tower B, floors 3 to 7" value="${esc(pj && !ord ? pj.name : '')}"></div>
+    ${G.select({ key: 'project', label: 'Project' }, pj ? pj.id : '', 'sa', PJS().filter(p => p.division === div).map(p => [p.id, `${p.name} · ${p.city}`]), true)}
+    ${G.select({ key: 'order', label: 'Order (fulfilment)' }, ord ? ord.id : '', 'sa', allOrders().filter(o => o.division === div || (div === 'wholesale' && !o.division)).map(o => [o.id, `${o.ref} · ${clientName(o.client_id)}`]), true)}
+    ${installerFields(div, '', '')}
     <div class="field"><label for="sa-sqft">Area</label>${G.adorn({ key: 'area_sqft' }, '<input class="input" id="sa-sqft" type="number" min="0" step="1">')}</div>
     <div class="field"><label for="sa-ps">Planned start</label><input class="input" id="sa-ps" type="date"></div>
-    <div class="field span2"><label for="sa-ad">Address</label><input class="input" id="sa-ad"></div></div>${errBox('sa-err')}
-    <div class="row" style="margin-top:12px"><button class="btn primary" data-act="site-save" data-opp="${esc(el.dataset.opp || '')}">Add site</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+    <div class="field span2"><label for="sa-ad">Address</label><input class="input" id="sa-ad" value="${esc(pj ? pj.address || '' : '')}"></div></div>${errBox('sa-err')}
+    <div class="row" style="margin-top:12px"><button class="btn primary" data-act="site-save" data-opp="${esc(el.dataset.opp || '')}" data-div="${div}">Add site</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
 };
-EM.ACTIONS['site-save'] = async el => { const r = await opsAct(el, 'sites', { client_id: qs('#sa-client').value, name: qs('#sa-name').value, sqft: qs('#sa-sqft').value, planned_start: qs('#sa-ps').value, address: qs('#sa-ad').value, opp_id: el.dataset.opp }, null, 'sa-err'); if (r) location.hash = '#/site/' + r.id; };
+EM.ACTIONS['site-save'] = async el => { const r = await opsAct(el, 'sites', { client_id: qs('#sa-client').value, name: qs('#sa-name').value, sqft: qs('#sa-sqft').value, planned_start: qs('#sa-ps').value, address: qs('#sa-ad').value, opp_id: el.dataset.opp, division: el.dataset.div, project_id: qs('#sa-project').value, order_id: qs('#sa-order').value, installed_by: qs('#sa-by').value, installer_dealer: qs('#sa-dealer').value }, null, 'sa-err'); if (r) location.hash = '#/site/' + r.id; };
 EM.VIEWS.site = id => {
   const x = OPSD().sites.find(s => s.id === id);
   if (!x) return `<div class="stack"><h1>Site not found</h1><a class="btn" href="#/installation">Installation</a></div>`;
@@ -1688,11 +1827,17 @@ EM.VIEWS.site = id => {
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(x.ref)} · ${esc(x.name)}</h1><p class="muted"><a href="#/client/${x.client_id}">${esc(clientName(x.client_id))}</a>${x.sqft ? ' · ' + num(x.sqft) + ' sq ft' : ''}${x.address ? ' · ' + esc(x.address) : ''}${x.actual_start ? ' · started ' + ds(x.actual_start) : ''}${x.actual_end ? ' · completed ' + ds(x.actual_end) : ''}</p></div>
       ${nextS ? `<button class="btn primary" data-act="site-next" data-id="${id}">Move to ${esc(nextS)}</button>` : ''}</div>
     <section class="card stack-s">${stageChips(SS, x.step)}</section>
+    <section class="card stack-s" data-site-links><h3>Where it belongs</h3>${kv([['Company', esc(DIVS[x.division] ? DIVS[x.division].co : x.division)], ['Project', siteProject(x) ? `<a href="#/project/${x.project_id}">${esc(siteProject(x).name)}</a>` : NOTSET],
+      ['Order', (() => { const o = allOrders().find(k => k.id === (x.extra || {}).order_id) || allOrders().find(k => x.opp_id && k.opp_id === x.opp_id); return o ? `<a href="#/order/${o.id}">${esc(o.ref)} · ${esc(o.ful_stage)}</a>` : NOTSET; })()], ['Installed by', esc(installedByTxt(x))]])}</section>
     <div class="grid g2"><section class="card stack-s"><h3>Crew and dates</h3><div class="fgrid">
+        ${installerFields(x.division, (x.extra || {}).installed_by || '', (x.extra || {}).installer_dealer || '')}
         <div class="field"><label for="se-crew">Installer or crew</label><input class="input" id="se-crew" value="${esc(x.crew || '')}"></div>
-        <div class="field"><label for="se-ps">Planned start</label><input class="input" id="se-ps" type="date" value="${esc(x.planned_start || '')}"></div>
+        <div class="field"><label for="se-ps">Planned start</label><input class="input" id="se-ps" type="date" value="${esc(x.planned_start || '')}" data-was="${esc(x.planned_start || '')}"></div>
+        <div class="field" data-delay ${x.planned_start ? '' : 'hidden'}><label for="se-dr">Delay reason (when the start moves later)</label><select class="input" id="se-dr" data-keep-order><option value="">Choose</option>${(D.lists.delay_reasons || []).map(r => `<option>${esc(r)}</option>`).join('')}</select></div>
+        <div class="field" data-delay ${x.planned_start ? '' : 'hidden'}><label for="se-dn">Delay note</label><input class="input" id="se-dn"></div>
         <label class="row" style="gap:8px;align-items:center"><input type="checkbox" id="se-so" ${x.signed_off ? 'checked' : ''}> The client has signed off</label></div>
-        <div class="row"><button class="btn sm" data-act="site-upd" data-id="${id}">Save</button></div></section>
+        <div class="row"><button class="btn sm" data-act="site-upd" data-id="${id}">Save</button></div>
+        ${(x.extra.delays || []).length ? `<div data-delays>${table(['Delayed', 'From', 'To', 'Reason', 'By'], x.extra.delays.map(d => [ds(dayIST(d.at)), ds(d.from), ds(d.to), `<b>${esc(d.reason)}</b>${d.note ? `<div class="small muted">${esc(d.note)}</div>` : ''}`, esc(staffName(d.by))]))}</div>` : ''}</section>
       <section class="card stack-s"><h3>Site readiness</h3>${D.lists.readiness_items.map((k, i) => `<div class="row between"><span class="small">${esc(k)}</span><select class="input" style="width:140px" data-ready="${esc(k)}">${['', 'Ready', 'Not ready'].map(v => `<option value="${v}" ${(ready[k] || '') === v ? 'selected' : ''}>${v || 'Not checked'}</option>`).join('')}</select></div>`).join('')}
         <div class="row"><button class="btn sm" data-act="site-upd" data-id="${id}">Save the checklist</button></div></section></div>
     <section class="card stack-s"><div class="row between"><h3>Snags</h3><button class="btn sm" data-act="snag-add" data-id="${id}">+ Snag</button></div>
@@ -1703,7 +1848,11 @@ EM.VIEWS.site.tab = 'installation';
 EM.VIEWS.site.title = id => (OPSD().sites.find(x => x.id === id) || { name: 'Site' }).name;
 EM.VIEWS.site.after = id => showLog('site', id, '#log-s');
 EM.ACTIONS['site-next'] = el => opsAct(el, `sites/${el.dataset.id}/next`, {}, '<b>Site moved on</b>');
-EM.ACTIONS['site-upd'] = el => opsAct(el, `sites/${el.dataset.id}/update`, { crew: qs('#se-crew').value, planned_start: qs('#se-ps').value, signed_off: qs('#se-so').checked, ready: Object.fromEntries([...document.querySelectorAll('[data-ready]')].map(s => [s.dataset.ready, s.value])) }, '<b>Site saved</b>');
+EM.ACTIONS['site-upd'] = el => {
+  const was = qs('#se-ps').dataset.was, ps = qs('#se-ps').value;
+  if (was && ps > was && !qs('#se-dr').value) return bubbleNear(el, `The planned start moves later (${was} to ${ps}): choose the delay reason.`);
+  return opsAct(el, `sites/${el.dataset.id}/update`, { crew: qs('#se-crew').value, planned_start: ps, signed_off: qs('#se-so').checked, installed_by: qs('#sa-by').value, installer_dealer: qs('#sa-dealer').value, delay_reason: qs('#se-dr').value, delay_note: qs('#se-dn').value, ready: Object.fromEntries([...document.querySelectorAll('[data-ready]')].map(s => [s.dataset.ready, s.value])) }, '<b>Site saved</b>');
+};
 EM.ACTIONS['snag-add'] = el => EM.modal(`<h2>Add a snag</h2><div class="fgrid" style="margin-top:12px">
   ${G.select({ key: 'cat', label: 'Kind of snag', req: true }, '', 'sn', D.lists.snag_types.map(v => [v, v]))}${G.select({ key: 'sev', label: 'Severity', req: true }, 'Medium', 'sn', D.lists.severities.map(v => [v, v]))}
   <div class="field span2"><label for="sn-note">Where and what</label><input class="input" id="sn-note"></div><div class="field"><label for="sn-due">Put right by</label><input class="input" id="sn-due" type="date"></div></div>${errBox('sn-err')}
@@ -1799,7 +1948,7 @@ function p200Score(c) {
 }
 EM.VIEWS.p200 = arg => {
   if (arg === 'plans') return p200Plans();   // batch 4: development plans and interventions
-  const R = D.lists.rules, dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind) && inDiv(c)), inList = dealers.filter(c => (c.extra || {}).priority200);
+  const R = D.lists.rules, dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind) && inDiv(c) && c.division !== 'retail'), inList = dealers.filter(c => (c.extra || {}).priority200);
   const scored = (arg === 'candidates' ? dealers.filter(c => !(c.extra || {}).priority200) : inList).map(c => [c, p200Score(c)]).sort((a, b) => R.p200.tiers.findIndex(t => t.name === a[1].tier) - R.p200.tiers.findIndex(t => t.name === b[1].tier) || b[1].score - a[1].score);
   const W = R.p200.weights;
   return `<div class="stack"><div class="stack-s"><div class="kicker">EGO Premium · the dealers developed first</div><h1>Priority 200</h1>
@@ -1818,7 +1967,7 @@ EM.VIEWS.p200.title = () => 'Priority 200';
 const SCH = () => D.schemes || { list: [], dealers: [] };
 const dayOf = ts => ts ? dayIST(ts) : '';
 function schemeMembers(sc) {
-  const dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind));
+  const dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind) && c.division !== 'retail');
   if (sc.who === 'chosen') { const ids = new Set(SCH().dealers.filter(x => x.scheme_id === sc.id).map(x => x.client_id)); return dealers.filter(c => ids.has(c.id)); }
   if (sc.who === 'rating') return dealers.filter(c => (sc.ratings || []).includes(c.grade));
   return dealers;
@@ -1868,7 +2017,7 @@ EM.VIEWS.scheme.title = id => (SCH().list.find(x => x.id === id) || { name: 'Sch
 const addMonths = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCMonth(x.getUTCMonth() + n); x.setUTCDate(x.getUTCDate() - 1); return x.toISOString().slice(0, 10); };
 function openSchemeForm(sc) {
   const v = sc ? { ...sc, dealers: SCH().dealers.filter(x => x.scheme_id === sc.id).map(x => x.client_id) } : { start_on: today(), end_on: addMonths(today(), 7), who: 'all', ratings: [], dealers: [] };
-  const dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind)).sort((a, b) => a.name.localeCompare(b.name)).map(c => [c.id, `${c.name} · ${kindLabel(c.kind)} · ${c.city}`]);
+  const dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind) && c.division !== 'retail').sort((a, b) => a.name.localeCompare(b.name)).map(c => [c.id, `${c.name} · ${kindLabel(c.kind)} · ${c.city}`]);
   EM.modal(`<h2>${sc ? 'Edit ' + esc(sc.name) : 'Draw up a scheme'}</h2><p class="muted small">It runs once the Owner or a Director approves it. Compulsory fields end with a star.</p>
     <form id="scf" class="stack" onsubmit="return false" style="margin-top:14px"><div class="fgrid">
       <div class="field span2" data-field="sch_name"><label for="scf-name">Scheme name *</label><input class="input" id="scf-name" value="${esc(v.name || '')}" placeholder="e.g. 7-month dealer scheme, Oct to Apr"></div>
@@ -2172,7 +2321,7 @@ const peopleTable = () => table(['Name', 'Username', 'Role', 'Division', 'Region
   s.active ? `${isOwner() && s.id !== me().id ? `<button class="btn sm" data-act="view-as" data-id="${s.id}">View as</button>` : ''}<button class="btn sm ghost" data-act="staff-edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-act="staff-pass" data-id="${s.id}">New password</button>${s.id !== me().id ? `<button class="btn sm ghost" data-act="staff-off" data-id="${s.id}">Switch off</button>` : ''}` : '']));
 /* Roles & access (8 Oct): every switch of every role, for management. Each click saves at once; the
    people in that role get it at their next reload or sign-in. "View as" shows exactly what they see. */
-const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel'], ['attendance', 'Attendance'], ['roadmap', 'Roadmap']];
+const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['design500', 'Design 500'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['projects', 'Projects'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel'], ['attendance', 'Attendance'], ['roadmap', 'Roadmap']];
 const ROLE_SWITCHES = [['prices', 'Sees money (rates, values, payments)'], ['readonly', 'View only (changes nothing)'], ['users', 'Manages logins (Team & access)'], ['stock', 'Changes the inventory'], ['can_delete', 'Deletes records'], ['can_lists', 'Edits lists, stages and rules'], ['can_targets', 'Sets targets (founders for anyone, others for their team)']];
 EM.roleOpen = EM.roleOpen || '';
 function rolesMatrix() {
@@ -2442,7 +2591,15 @@ function buildOrders() {
       won_at: (won && won.at) || o.created_at, closed_by: won ? won.by_staff : o.created_by, processed_by: [...new Set(logs.map(l => l.by_staff).filter(Boolean))], owner_id: o.owner_id,
       stage: o.ful_stage, done_at: stageAt(o.id, lastOf(FS)), done: o.ful_stage === lastOf(FS), boxes: O.lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0), href: '#/order/' + o.id });
   }
-  for (const p of Object.keys(PIPELINES).filter(k => !PIPELINES[k].lines)) for (const opp of D.opportunities.filter(x => x.pipeline === p && x.stage === wonStage(p, D.lists))) {
+  /* R3b: a Big E sale in fulfilment is listed from its fulfilment record, where it is on the retail ladder */
+  for (const o of OPSD().rorders) {
+    const opp = oppOf(o) || {}, won = D.history.filter(x => x.opp_id === o.opp_id && x.to_stage === opp.stage).pop(), logs = (O.logs || []).filter(l => l.record_id === o.id);
+    out.push({ id: o.id, kind: 'Retail', ref: o.ref, title: opp.title || o.notes || '', client_id: o.client_id, contact_id: opp.contact_id || '', opp_id: o.opp_id, value: o.total,
+      won_at: (won && won.at) || o.created_at, closed_by: won ? won.by_staff : o.created_by, processed_by: [...new Set(logs.map(l => l.by_staff).filter(Boolean))], owner_id: o.owner_id,
+      stage: o.ful_stage, done_at: stageAt(o.id, lastOf(RETAIL_FUL)), done: o.ful_stage === lastOf(RETAIL_FUL), boxes: null, href: '#/order/' + o.id });
+  }
+  const inRf = new Set(OPSD().rorders.map(o => o.opp_id));
+  for (const p of Object.keys(PIPELINES).filter(k => !PIPELINES[k].lines)) for (const opp of D.opportunities.filter(x => x.pipeline === p && x.stage === wonStage(p, D.lists) && !inRf.has(x.id))) {
     const h = D.history.filter(x => x.opp_id === opp.id), won = h.filter(x => x.to_stage === opp.stage).pop(), sites = O.sites.filter(x => x.opp_id === opp.id), SS = OS_('site_steps');
     const last = sites.map(x => x.step).sort((a, b) => SS.indexOf(a) - SS.indexOf(b))[0];
     out.push({ id: opp.id, kind: 'Retail', ref: opp.ref, title: opp.title, client_id: opp.client_id, contact_id: opp.contact_id || '', opp_id: opp.id, value: opp.value,
@@ -2635,8 +2792,8 @@ const ACT_HELP = {
   'sign-out': 'Sign out of EGO Master.', 'contact-add': 'Add a person to this company\'s team.', 'snag-add': 'Record a snag on this site.', 'snag-close': 'Close this snag, saying how it was put right.',
 };
 const NAV_HELP = { attendance: 'Attendance: who started the day, when, where, the photo, late marks and who has not started.', roadmap: 'Roadmap: plan each field person\'s day as an ordered list of visits, and see the team\'s progress.', projects: 'Projects: one building or site each, with its opportunities, contacts by role, Project Partner dealer, installation sites and files.', home: 'Today at a glance: counts, next actions due, what is not connected yet.', dealers: 'Distributors, dealers and sub-dealers, each with its team, sales and business.',
-  architects: 'Architect firms and solo architects, each with its team.', people: 'Everyone: the people at every company, and personal contacts.', opps: 'The sales boards. A wholesale sale runs here until Order confirmed.', schemes: 'Dealer schemes: a target over a period, progress counted from invoiced orders.',
-  orders: 'From the confirmed order: stock check and blocking, production for what is missing, PI, payment, invoice, dispatch.', orderbook: 'Every order, live and old: when each stage happened, who gave it, who closed it, who processed it.', installation: 'Big E installation sites, step by step.', complaints: 'Complaints, from logged to resolved.',
+  architects: 'Architect firms and solo architects, each with its team.', design500: 'Design 500: the architects and interior designers who specify us, with their projects and the business they bring.', people: 'Everyone: the people at every company, and personal contacts.', opps: 'The sales boards. A wholesale sale runs here until Order confirmed.', schemes: 'Dealer schemes: a target over a period, progress counted from invoiced orders.',
+  orders: 'EGO Premium: from the confirmed order to dispatch. Big E: the retail ladder from Won to Closed, handing over to the installation site.', orderbook: 'Every order, live and old: when each stage happened, who gave it, who closed it, who processed it.', installation: 'Installation sites of both companies, step by step: under a project or an order, with who installs each one.', complaints: 'Complaints, from logged to resolved.',
   approvals: 'Credit, discounts and settlements waiting for someone whose limit covers them.', p200: 'The dealers EGO develops first, scored from saved sales.', inventory: 'Categories, collections, designs, warehouses and stock.',
   import: 'Upload the Excel files: EGO Premium, Big E and Inventory.', team: 'The people who use EGO Master and what each role may see.', integrations: 'Every API key in one place: EGO Master\'s own, and the tools it connects to.', lists: 'Every dropdown and every stage, editable, with locks.', account: 'Your password.' };
 function helpFor(t) {
@@ -2820,7 +2977,7 @@ function timelineFor(clientId, oppId) {
     push(a.created_at, 'approval', `Approval asked: ${a.kind}`, a.reason, staffName(a.requested_by));
     if (a.decided_at) push(a.decided_at, 'approval', `${a.status}: ${a.kind}`, a.decision_note || a.reason, staffName(a.decided_by));
   }
-  for (const o of (O.orders || []).filter(o => o.client_id === clientId && (!oppId || o.opp_id === oppId))) {
+  for (const o of allOrders().filter(o => o.client_id === clientId && (!oppId || o.opp_id === oppId))) {
     for (const l of (O.logs || []).filter(l => l.record_id === o.id)) push(l.at, 'order', `${o.ref}: ${l.to_stage}`, l.note, staffName(l.by_staff));
     if (P) for (const pm of (o.extra.payments || [])) push(pm.at || pm.on, 'order', `${o.ref}: payment received ${inr0(pm.amount)}`, pm.note, staffName(pm.by));
   }
@@ -3307,7 +3464,7 @@ EM.ACTIONS['an-csv'] = () => {
 /* ---------------------------------------------------------------- History on every window (13 Oct)
    A History button beside every screen's title opens what happened there: added, changed, deleted, by whom
    and when, old to new where the change kept it. On a record page it is that record's own history. */
-const HIST_AREA = { dealers: 'dealers', architects: 'architects', people: 'people', clients: 'people', opps: 'opps', lost: 'opps', followups: 'followups', orders: 'orders', orderbook: 'orderbook', installation: 'installation', complaints: 'complaints',
+const HIST_AREA = { dealers: 'dealers', architects: 'architects', design500: 'design500', people: 'people', clients: 'people', opps: 'opps', lost: 'opps', followups: 'followups', orders: 'orders', orderbook: 'orderbook', installation: 'installation', complaints: 'complaints',
   approvals: 'approvals', schemes: 'schemes', p200: 'p200', handover: 'opps', projects: 'projects', analysis: 'analysis', targets: 'targets', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin', attendance: 'attendance', roadmap: 'roadmap' };
 const HIST_RECORD = ['client', 'opp', 'order', 'po', 'site', 'scheme', 'product', 'collection', 'project'];
 function histButton() {
@@ -3517,13 +3674,13 @@ const leadBadge = l => `<span class="badge ${l.status === wonStage(RETAIL, D.lis
 /* who to hand a lead to: dealers in that city first, then those covering it, then the same region; fewer open leads first */
 function dealerSuggest(city, not) {
   const c = String(city || '').toLowerCase(), region = (D.lists.cities.find(x => x.city.toLowerCase() === c) || {}).region;
-  return DDIR().filter(d => d.id !== not && d.status !== CLIENT_CLOSED).map(d => {
+  return DDIR().filter(d => d.id !== not && d.status !== CLIENT_CLOSED && d.division !== 'retail').map(d => {
     const why = String(d.city || '').toLowerCase() === c ? [3, `In ${d.city}`] : (d.areas || []).some(a => String(a).toLowerCase() === c) ? [2, `Covers ${city}`] : region && d.region === region ? [1, `${region} region`] : [0, ''];
     return { d, rank: why[0], why: why[1], open: LEADS().filter(l => l.dealer_id === d.id && leadOpen(l)).length };
   }).filter(x => x.rank > 0).sort((a, b) => b.rank - a.rank || a.open - b.open || a.d.name.localeCompare(b.d.name)).slice(0, 5);
 }
 const dealerPickHtml = (city, cur, not) => {
-  const sug = dealerSuggest(city, not), others = DDIR().filter(d => d.id !== not).sort((a, b) => a.name.localeCompare(b.name));
+  const sug = dealerSuggest(city, not), others = DDIR().filter(d => d.id !== not && d.division !== 'retail').sort((a, b) => a.name.localeCompare(b.name));
   return `<fieldset class="fs" id="ld-dealers"><legend>Hand it to *</legend>${city ? '' : '<p class="small muted">Pick the city first: the dealers there are suggested here.</p>'}
     ${sug.length ? `<div class="stack-s" data-suggest-dealers>${sug.map((x, i) => `<label class="row small" style="gap:8px"><input type="radio" name="ld-dealer" value="${x.d.id}" ${(cur ? cur === x.d.id : i === 0) ? 'checked' : ''}> <b>${esc(x.d.name)}</b> <span class="muted">${esc(kindLabel(x.d.kind))} · ${esc(x.why)} · ${x.open} open lead${x.open === 1 ? '' : 's'} · field sales ${esc(staffName(x.d.owner_id))}</span></label>`).join('')}</div>` : city ? `<p class="small muted">No dealer is in ${esc(city)}, covers it, or is in its region. Choose one below.</p>` : ''}
     <label class="row small" style="gap:8px;align-items:center"><input type="radio" name="ld-dealer" value="" ${sug.length && !(cur && !sug.some(x => x.d.id === cur)) ? '' : 'checked'}> Another dealer:</label>
@@ -3564,6 +3721,7 @@ const csvDownload = (name, head, lines) => {
 };
 /* ---- on the dealer's page */
 function dealerTabs(c) {
+  if (c.division === 'retail') return [['plan', 'Development plan']];   // R3b: a Big E dealer; EGO's consumer leads and dealer portal are EGO Premium's
   return [['leads', `Leads (${LEADS().filter(l => l.dealer_id === c.id).length})`], ['plan', 'Development plan'], ...(isOwner() ? [['portal', 'Dealer portal']] : [])];
 }
 const DEALER_TAB_BODY = {
@@ -3673,7 +3831,7 @@ function ivRows() {
 function p200Plans() {
   whyReset();
   const P = D.access.prices, R = D.lists.rules, f = EM.ivF, ps = PLANS().filter(p => { const c = CL()[p.client_id]; return c && inDiv(c); }), rows = ivRows(), all = FUS().filter(x => x.plan_id);
-  const dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind) && inDiv(c)), inList = dealers.filter(c => (c.extra || {}).priority200);
+  const dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind) && inDiv(c) && c.division !== 'retail'), inList = dealers.filter(c => (c.extra || {}).priority200);
   const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-ivf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   const planRow = p => { const pr = planProg(p), pc = planPct(p), rv = planIvs(p).find(x => x.iv_kind === 'Review' && x.status === 'open');
     return { href: `#/client/${p.client_id}/plan`, cells: [`<b>${esc(clientName(p.client_id))}</b><div class="small muted">${esc(p.title)}</div>`, `${ds(p.start_on)} to ${ds(p.end_on)}`, esc(staffName(p.owner_id)), ...(P ? [p.goal_value ? `${inr0(pr.value)} of ${inr0(p.goal_value)}` : ''] : []), p.goal_boxes ? `${num(pr.boxes)} of ${num(p.goal_boxes)}` : '', pc == null ? '<span class="muted">no goal</span>' : `${bar(pc)} ${pc}%`, `${planIvs(p).filter(x => x.status === 'open' && x.iv_kind !== 'Review').length} open`, rv ? ds(rv.due_date) : '', `<span class="badge ${p.status === 'Active' ? 'info' : 'plain'}">${esc(p.status)}</span>`] }; };
@@ -3812,9 +3970,9 @@ EM.VIEWS.project = arg => {
       ${ops.length ? table(['Opportunity', 'Client', 'Stage', ...(P ? ['Value'] : []), 'Owner'], ops.map(o => ({ href: `#/opp/${o.id}`, cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(o.ref || '')}</div>`, esc(clientName(o.client_id)), stageBadge(o.stage), ...(P ? [money(o.value)] : []), esc(staffName(o.owner_id))] }))) : '<p class="muted small">No opportunity linked yet.</p>'}</section>
     <section class="card stack-s" data-pj-contacts><div class="row between"><h3>Contacts by role (${(p.contacts || []).length})</h3><button class="btn sm" data-act="pj-edit" data-id="${p.id}">Add or change contacts</button></div>
       ${(p.contacts || []).length ? table(['Role', 'Name', 'Mobile', 'Email'], p.contacts.map(c => [esc(c.role), `<b>${esc(c.name)}</b>`, esc(fmtMobile(c.mobile)), esc(c.email || '')])) : '<p class="muted small">No contact yet: add the owner, purchase manager, project manager, architect and contractor.</p>'}</section>
-    <section class="card stack-s" data-pj-sites><h3>Installation sites (${sites.length})</h3>
-      ${sites.length ? table(['Site', 'Step', 'Address', ''], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.name)}</b></a><div class="small muted">${esc(x.ref || '')}</div>`, esc(x.step), esc(x.address || ''), isBothView() ? '' : `<button class="btn sm ghost" data-act="pj-site" data-id="${p.id}" data-site="${x.id}" data-unlink="1">Unlink</button>`])) : '<p class="muted small">No installation site linked yet.</p>'}
-      ${free.length ? `<div class="row" style="align-items:flex-end"><label class="field" style="min-width:260px"><span class="small muted">Link an installation site</span><select class="input" id="pj-site-pick"><option value="">Choose</option>${free.map(x => `<option value="${x.id}">${esc(x.name)} · ${esc(x.step)}</option>`).join('')}</select></label><button class="btn sm" data-act="pj-site" data-id="${p.id}">Link it</button></div>` : `<p class="small muted">${p.division === 'retail' ? 'Every Big E site is already under a project, or none is added yet (Installation).' : 'Installation for EGO Premium arrives with the next batch; its sites will link here.'}</p>`}</section>
+    <section class="card stack-s" data-pj-sites><div class="row between"><h3>Installation sites (${sites.length})</h3>${isBothView() ? '' : `<button class="btn sm primary" data-act="site-add" data-project="${p.id}">+ New installation site</button>`}</div>
+      ${sites.length ? table(['Site', 'Step', 'Installed by', 'Address', ''], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.name)}</b></a><div class="small muted">${esc(x.ref || '')}</div>`, esc(x.step), esc(installedByTxt(x)), esc(x.address || ''), isBothView() ? '' : `<button class="btn sm ghost" data-act="pj-site" data-id="${p.id}" data-site="${x.id}" data-unlink="1">Unlink</button>`])) : '<p class="muted small">No installation site linked yet.</p>'}
+      ${free.length ? `<div class="row" style="align-items:flex-end"><label class="field" style="min-width:260px"><span class="small muted">Link a site already added</span><select class="input" id="pj-site-pick"><option value="">Choose</option>${free.map(x => `<option value="${x.id}">${esc(x.name)} · ${esc(x.step)}</option>`).join('')}</select></label><button class="btn sm" data-act="pj-site" data-id="${p.id}">Link it</button></div>` : ''}</section>
     <section class="stack-s"><h3>Files</h3>${filesBox({ id: 'pj', project: p.id, types: ['Drawing', 'BOQ', 'Quotation', 'Site photo', 'Agreement', 'Other'], docs: D.documents.filter(d => d.project_id === p.id), canAdd: !isBothView(), title: 'Add files to this project', note: 'Drawings, BOQ, quotations, site photos: one or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No files on this project yet' })}</section></div>`;
 };
 EM.VIEWS.project.tab = 'projects';
@@ -3831,7 +3989,7 @@ function openProjectForm(p) {
   const v = p ? { ...p } : { owner_id: me().id, stage: optsOf(PROJECT_FIELDS.find(f => f.key === 'stage'), D.lists)[0] };
   const co = p ? '' : !pjDiv() ? `<div class="field"><label for="pj-division">Company *</label><select class="input" id="pj-division">${['wholesale', 'retail'].filter(canDiv).map(d => `<option value="${d}">${pjCo(d)}</option>`).join('')}</select></div>` : '';
   EM.modal(`<h2>${p ? 'Edit project ' + esc(p.ref || '') : 'Add a project'}</h2><p class="muted small">${p ? esc(pjCo(p.division)) : pjDiv() ? esc(pjCo(pjDiv())) : 'Choose the company'}. One building or site; its opportunities, sites and files go under it.</p>
-    <form id="pjf" class="stack" onsubmit="return false" style="margin-top:12px" data-id="${p ? p.id : ''}"><div class="fgrid">${co}${showFields(PROJECT_FIELDS).map(f => fieldHtml(f, v[f.key], 'pj')).join('')}</div>
+    <form id="pjf" class="stack" onsubmit="return false" style="margin-top:12px" data-id="${p ? p.id : ''}"><div class="fgrid">${co}${showFields(PROJECT_FIELDS).map(f => fieldHtml(f, v[f.key], 'pj', { division: p ? p.division : pjDiv() || '' })).join('')}</div>
       ${fsHtml('Contacts by role', `<p class="small muted">Owner, purchase manager, project manager, architect, contractor (the roles are in Lists &amp; stages).</p><div id="pj-contacts" class="stack-s">${(v.contacts || []).map((c, i) => pjContactLine(i, c)).join('')}</div><div class="row"><button type="button" class="btn sm" data-act="pj-c-add">+ Add a contact</button></div>`)}
       ${errBox('pj-err')}<div class="row sticky-actions"><button class="btn primary" data-act="pj-save">${p ? 'Save changes' : 'Add project'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
@@ -4099,3 +4257,139 @@ let rmDrag = null;
 document.addEventListener('dragstart', e => { const li = e.target.closest && e.target.closest('[data-rm-visit][draggable]'); if (li) { rmDrag = li.dataset.rmVisit; e.dataTransfer.effectAllowed = 'move'; } });
 document.addEventListener('dragover', e => { if (rmDrag && e.target.closest && e.target.closest('[data-rm-list]')) e.preventDefault(); });
 document.addEventListener('drop', e => { const li = rmDrag && e.target.closest && e.target.closest('[data-rm-visit]'); if (!li) return; e.preventDefault(); const ids = rmIds().filter(x => x !== rmDrag); ids.splice(ids.indexOf(li.dataset.rmVisit), 0, rmDrag); rmDrag = null; rmOrder(ids); });
+
+
+/* ================================================================ R3b (17 Oct): Design 500, both companies
+   The members are the Architects records marked Design 500 (Yes) with the date they joined. Every column is counted from
+   saved records: owner, last interaction (activities, follow-ups done), next action (the open follow-up), connected dealers
+   (typed on the architect, the dealers on their opportunities, the Project Partner of their projects), active projects
+   (projects they are on, not Completed or Lost), samples given (a count of samples: 0 until the Samples register, R6, exists),
+   business brought (won value of the opportunities they are on, theirs or in their projects). */
+const last10 = m => String(m || '').replace(/\D/g, '').slice(-10);
+const d5Members = () => D.clients.filter(c => ARCH_KINDS.includes(c.kind) && inDiv(c) && (c.extra || {}).design500 === 'Yes');
+const d5Ids = c => new Set([c.id, ...(c.kind === 'design_firm' ? D.clients.filter(x => x.firm_id === c.id).map(x => x.id) : [])]);
+function d5Of(c) {
+  const ids = d5Ids(c), mobs = new Set([c.mobile, ...D.contacts.filter(k => ids.has(k.client_id)).map(k => k.mobile)].map(last10).filter(m => m.length === 10));
+  const ownOpps = D.opportunities.filter(o => ids.has(o.client_id) || ids.has((CL()[o.client_id] || {}).architect_id));
+  const pjIds = new Set(ownOpps.map(o => o.project_id).filter(Boolean));
+  const projects = PJS().filter(p => pjIds.has(p.id) || (p.contacts || []).some(k => mobs.has(last10(k.mobile))));
+  const opps = [...new Map([...ownOpps, ...D.opportunities.filter(o => projects.some(p => p.id === o.project_id))].map(o => [o.id, o])).values()];
+  const won = opps.filter(o => o.stage === wonStage(o.pipeline, D.lists));
+  const dealerIds = new Set([...opps.map(o => o.dealer_id), ...projects.map(p => p.partner_id)].filter(Boolean));
+  const dealers = [...[...dealerIds].map(id => (DDIR().find(d => d.id === id) || CL()[id] || {}).name).filter(Boolean), ...String((c.extra || {}).connected_dealers || '').split(/[,;\n]/).map(x => x.trim()).filter(Boolean)];
+  const acts = ACTS().filter(a => ids.has(a.client_id)).map(a => a.at), done = FUS().filter(f => ids.has(f.client_id) && f.status !== 'open' && f.done_at).map(f => f.done_at);
+  const next = FUS().filter(f => ids.has(f.client_id) && f.status === 'open').sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
+  return { projects, active: projects.filter(p => !['Completed', 'Lost'].includes(p.stage)), won, business: won.reduce((a, o) => a + (Number(o.value) || 0), 0), dealers: [...new Set(dealers)], last: [...acts, ...done].sort().pop() || '', next, samples: 0 };
+}
+EM.d5F = { period: 'all', from: '', to: '', owner: '', city: '', kind: '', field: '', fq: '' };
+DF_STATE.d5 = () => EM.d5F;
+const D5_FIELDS = [['name', 'Name'], ['city', 'City'], ['owner', 'Owner'], ['dealers', 'Connected dealers'], ['projects', 'Projects'], ['next', 'Next action'], ['mobile', 'Mobile']];
+const d5Val = (c, k, x) => k === 'owner' ? staffName(c.owner_id) : k === 'dealers' ? x.dealers.join(' ') : k === 'projects' ? x.projects.map(p => p.name).join(' ') : k === 'next' ? (x.next ? x.next.action : '') : String(c[k] || '');
+EM.VIEWS.design500 = () => {
+  const f = EM.d5F, fq = f.fq.trim().toLowerCase(), all = d5Members(), P = D.access.prices, X = Object.fromEntries(all.map(c => [c.id, d5Of(c)]));
+  const rows = all.filter(c => (!f.owner || c.owner_id === f.owner) && (!f.city || c.city === f.city) && (!f.kind || c.kind === f.kind) && inPeriod((c.extra || {}).design500_since || '', f.period, f.from, f.to)
+    && (!fq || (f.field ? [d5Val(c, f.field, X[c.id])] : D5_FIELDS.map(([k]) => d5Val(c, k, X[c.id]))).some(v => v.toLowerCase().includes(fq))) && matches(`${c.name} ${c.city} ${c.ref || ''} ${X[c.id].dealers.join(' ')} ${X[c.id].projects.map(p => p.name).join(' ')}`, [c.mobile]))
+    .sort((a, b) => X[b.id].business - X[a.id].business || a.name.localeCompare(b.name));
+  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-d5f="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const uniq = (vals, name) => [...new Set(vals.filter(Boolean))].map(v => [v, name(v)]).sort((a, b) => a[1].localeCompare(b[1]));
+  return `<div class="stack" data-d5>
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : esc(DIVS[EM.div].co)} · the architects and interior designers who specify us</div><h1>Design 500</h1><p class="muted">${rows.length} of ${all.length} members · ${esc(scopeLabel())}</p></div>
+      <div class="row" style="flex-wrap:wrap"><button class="btn" data-act="d5-sample">Sample Excel</button><label class="btn" style="cursor:pointer" data-list-only>Upload Excel<input type="file" data-sheet="design500" accept=".xlsx" hidden></label><button class="btn primary" data-act="d5-add">+ Add a member</button></div></div>
+    ${EM.d5Imp ? d5ImportPreview() : ''}
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-d5-filters>${dateFilter(f, 'd5', 'Member since')}
+      ${sel('owner', 'Owner', [['', 'Everyone'], ...uniq(all.map(c => c.owner_id), staffName)])}${sel('city', 'City', [['', 'Every city'], ...uniq(all.map(c => c.city), x => x)])}
+      ${sel('kind', 'Firm or solo', [['', 'Both'], ['design_firm', 'Architect firms'], ['architect', 'Solo architects']])}${sel('field', 'Any field', [['', 'Any field'], ...D5_FIELDS])}
+      <label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="d5-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+    ${searchBox('Design 500 members: name, city, mobile, dealer or project')}
+    ${rows.length ? table(['Member', 'Owner', 'Last interaction', 'Next action', 'Connected dealers', 'Active projects', 'Samples given (count)', ...(P ? ['Business brought'] : [])], rows.slice(0, 500).map(c => { const x = X[c.id];
+      return { href: `#/client/${c.id}`, cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(kindLabel(c.kind))} · ${esc(c.city || '')}${(c.extra || {}).design500_since ? ' · since ' + ds(c.extra.design500_since) : ''}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`,
+        esc(staffName(c.owner_id)), x.last ? ds(dayIST(x.last)) : '<span class="muted">None yet</span>', x.next ? `${esc(x.next.action)} <div class="small muted">${ds(x.next.due_date)}</div>` : '<span class="muted">None booked</span>',
+        esc(x.dealers.join(', ')), x.active.length ? `${num(x.active.length)}<div class="small muted">${esc(x.active.map(p => p.name).slice(0, 3).join(', '))}</div>` : '0', '0', ...(P ? [money(x.business)] : [])] }; }))
+      : empty(all.length ? 'Nothing for this filter' : 'No Design 500 member yet', all.length ? 'Change or clear the filters above.' : 'Mark an architect or a firm as a Design 500 member (here, on their page, or with the Excel file); their projects and the business they bring are counted from what is saved.', all.length ? '' : '<button class="btn primary" data-act="d5-add">+ Add a member</button>')}</div>`;
+};
+EM.VIEWS.design500.title = () => 'Design 500';
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.d5f; if (k) { EM.d5F[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'd5-fq') { EM.d5F.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#d5-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+const d5Co = c => c.division === 'retail' ? 'Big E' : 'EGO Premium';
+EM.ACTIONS['d5-add'] = () => {
+  const cands = D.clients.filter(c => ARCH_KINDS.includes(c.kind) && inDiv(c) && (c.extra || {}).design500 !== 'Yes').sort((a, b) => a.name.localeCompare(b.name));
+  if (!cands.length) return EM.modal('<h2>Add a Design 500 member</h2><p class="muted">Every architect and firm in view is already a member, or none is added yet. Add the architect in Architects first.</p><div class="row" style="margin-top:12px"><a class="btn primary" href="#/architects">Architects</a><button class="btn" data-act="close-modal">Close</button></div>');
+  EM.modal(`<h2>Add a Design 500 member</h2><p class="muted small">An architect or firm already on the Architects list.</p><div class="fgrid" style="margin-top:12px">
+    ${G.select({ key: 'who', label: 'Architect or firm', req: true }, '', 'd5', cands.map(c => [c.id, `${c.name} · ${kindLabel(c.kind)} · ${c.city || ''}`]))}
+    <div class="field"><label for="d5-since">Member since</label><input class="input" type="date" id="d5-since" value="${today()}"></div></div>${errBox('d5-err')}
+    <div class="row" style="margin-top:12px"><button class="btn primary" data-act="d5-add-go">Add member</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+EM.ACTIONS['d5-add-go'] = async el => {
+  const c = CL()[qs('#d5-who').value]; if (!c) return showErr('d5-err', 'Choose the architect or firm.');
+  busy(el, true);
+  try { const r = await API('POST', '/api/design500/import', { rows: [{ row: 1, company: d5Co(c), name: c.name, mobile: c.mobile, member: 'Yes', since: qs('#d5-since').value }], save: true });
+    if (r.rows[0].status === 'error') throw new Error(r.rows[0].error);
+    await reload4(); EM.closeModal(); EM.toast(`<b>${esc(c.name)}</b> is a Design 500 member.`); EM.rerender(); }
+  catch (x) { busy(el, false); showErr('d5-err', x.message); }
+};
+/* the Design 500 Excel: built at download from today's architects of each company, with real dropdowns */
+const D5_SHEET = [['Company', 'company', true, 'EGO Premium or Big E.'], ['Architect or firm name', 'name', true, 'As on the Architects list (the dropdown holds them).'], ['Mobile', 'mobile', false, 'Optional: finds the right one when two share a name.'],
+  ['Design 500 member', 'member', true, 'Yes or No.'], ['Member since', 'since', false, 'A date, e.g. 2026-10-17. Left empty for Yes: today.']];
+EM.ACTIONS['d5-sample'] = async el => {
+  busy(el, true);
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(), fill = wb.addWorksheet('Fill this'), how = wb.addWorksheet('How to fill'), lists = wb.addWorksheet('Lists');
+    const arch = D.clients.filter(c => ARCH_KINDS.includes(c.kind) && inDiv(c)).sort((a, b) => a.name.localeCompare(b.name));
+    const L = { company: ['wholesale', 'retail'].filter(canDiv).map(d => DIVS[d].co), name: [...new Set(arch.map(c => c.name))], member: ['Yes', 'No'] };
+    Object.entries(L).forEach(([k, vals], i) => { lists.getCell(1, i + 1).value = k; vals.forEach((v, r) => { lists.getCell(r + 2, i + 1).value = v; }); });
+    lists.state = 'hidden';
+    fill.columns = D5_SHEET.map(([h, , req]) => ({ header: h + (req ? ' *' : ''), width: Math.max(18, h.length + 6) }));
+    fill.getRow(1).font = { bold: true }; fill.views = [{ state: 'frozen', ySplit: 1 }];
+    arch.filter(c => (c.extra || {}).design500 === 'Yes').forEach((c, i) => { fill.getRow(i + 2).values = [d5Co(c), c.name, c.mobile || '', 'Yes', (c.extra || {}).design500_since || '']; });
+    D5_SHEET.forEach(([, k, req], i) => { const letter = fill.getColumn(i + 1).letter, li = Object.keys(L).indexOf(k);
+      for (let r = 2; r <= 501; r++) { const cell = fill.getCell(letter + r);
+        if (li >= 0 && L[k].length) { const col = lists.getColumn(li + 1).letter; cell.dataValidation = { type: 'list', allowBlank: !req, formulae: [`Lists!$${col}$2:$${col}$${L[k].length + 1}`], showErrorMessage: true, errorTitle: 'Pick from the list', error: 'Choose a value from the dropdown.' }; }
+        else if (k === 'since') cell.dataValidation = { type: 'date', operator: 'greaterThan', allowBlank: true, formulae: [new Date(2000, 0, 1)], showErrorMessage: true, error: 'A date.' }; } });
+    how.getCell('A1').value = 'EGO Master: Design 500 members'; how.getCell('A1').font = { bold: true, size: 14 };
+    how.getCell('A2').value = 'One architect or firm per row, already on the Architects list. Today\'s members are filled in; change Yes to No to end a membership.';
+    how.getCell('A3').value = `Made on ${today()} by ${me().name}. Upload it on the Design 500 screen: every row is checked and shown before anything is saved.`;
+    D5_SHEET.forEach(([h, , req, note], i) => { how.getCell('A' + (5 + i)).value = h; how.getCell('B' + (5 + i)).value = req ? 'Compulsory' : 'Optional'; how.getCell('C' + (5 + i)).value = note; });
+    how.getColumn(1).width = 26; how.getColumn(3).width = 80;
+    const buf = await wb.xlsx.writeBuffer(), a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = `EGO Master Design 500 ${today()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    EM.toast('The Design 500 file is downloading, with today\'s architects in its dropdowns.');
+  } catch (x) { bubbleNear(el, x.message); }
+  busy(el, false);
+};
+EM.d5Imp = null;
+document.addEventListener('change', async e => {
+  if (!e.target.matches('input[data-sheet="design500"]')) return;
+  const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const ws = wb.getWorksheet('Fill this') || wb.worksheets[0], heads = [], rows = [];
+    const txt = v => v == null ? '' : v instanceof Date ? v.toISOString().slice(0, 10) : typeof v === 'object' ? (v.text || v.result || (v.richText ? v.richText.map(x => x.text).join('') : '')) : String(v);
+    ws.getRow(1).eachCell((c, i) => { heads[i] = txt(c.value).replace(/\s*\*$/, '').trim(); });
+    ws.eachRow((r, n) => { if (n === 1) return; const x = { row: n }; let any = false;
+      D5_SHEET.forEach(([h, k]) => { const i = heads.indexOf(h); const v = i > 0 ? txt(r.getCell(i).value).trim() : ''; if (v) any = true; x[k] = v; });
+      if (any) rows.push(x); });
+    if (!rows.length) throw new Error('No filled rows in the "Fill this" tab.');
+    const res = await API('POST', '/api/design500/import', { rows, save: false });
+    EM.d5Imp = { file: file.name, rows, res: res.rows }; EM.rerender();
+  } catch (x) { EM.d5Imp = { file: file.name, error: x.message, rows: [], res: [] }; EM.rerender(); }
+});
+function d5ImportPreview() {
+  const I = EM.d5Imp, cnt = st => I.res.filter(r => r.status === st).length;
+  return `<section class="card stack-s" data-d5-import><div class="row between"><h3>Read: ${esc(I.file)}</h3><button class="btn sm ghost" data-act="d5-imp-close">Close</button></div>
+    ${I.error ? `<div class="callout warn">${esc(I.error)}</div>` : `<p class="small">${num(cnt('update'))} to update · <b>${num(cnt('error'))} with a mistake</b>. ${I.saved ? 'Saved.' : 'Nothing is saved until you press Save.'}</p>
+    ${table(['Row', 'Status', 'Architect or firm', 'Mistake'], I.res.map(r => [String(r.row), `<span class="badge ${r.status === 'error' ? 'bad' : 'info'}">${r.status === 'error' ? 'Mistake' : 'Update'}</span>`, esc(r.label), esc(r.error || '')]))}
+    ${!I.saved && cnt('update') ? `<div class="row"><button class="btn primary" data-act="d5-imp-save">Save the ${num(cnt('update'))} good rows${cnt('error') ? ' (rows with a mistake are skipped)' : ''}</button></div>` : ''}`}</section>`;
+}
+EM.ACTIONS['d5-imp-close'] = () => { EM.d5Imp = null; EM.rerender(); };
+EM.ACTIONS['d5-imp-save'] = async el => {
+  busy(el, true);
+  try { const r = await API('POST', '/api/design500/import', { rows: EM.d5Imp.rows, save: true }); EM.d5Imp = { ...EM.d5Imp, res: r.rows, saved: true }; await reload4(); EM.toast(`<b>${r.rows.filter(x => x.status !== 'error').length} Design 500 rows saved</b>`); EM.rerender(); }
+  catch (x) { busy(el, false); bubbleNear(el, x.message); }
+};
+
+/* R3b: the Date filters of Big E fulfilment and Installation (DF_STATE is declared further down than those screens) */
+DF_STATE.rf = () => EM.rfF;
+DF_STATE.inst = () => EM.inF;

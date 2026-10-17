@@ -14,9 +14,11 @@ const CATS = ['LVT', 'SPC', 'Laminate', 'Engineered', 'Hywood', 'WPC Tile Deck',
 /* kind -> which division owns it. Architects and design firms sit in BOTH
    (29 Sep meeting: wholesale needs its own architect database too). */
 const KINDS = {
-  distributor: { label: 'Distributor', plural: 'Distributors', group: 'dealer', division: 'wholesale' },
-  dealer: { label: 'Dealer', plural: 'Dealers', group: 'dealer', division: 'wholesale' },
-  sub_dealer: { label: 'Sub-dealer', plural: 'Sub-dealers', group: 'dealer', division: 'wholesale' },
+  /* R3b (17 Oct, Q1 default): Big E keeps its own dealer list, so a dealer kind sits in both companies and each
+     dealer RECORD belongs to the one company that added it (never 'both'; see divisionFor in the Worker). */
+  distributor: { label: 'Distributor', plural: 'Distributors', group: 'dealer', division: 'both' },
+  dealer: { label: 'Dealer', plural: 'Dealers', group: 'dealer', division: 'both' },
+  sub_dealer: { label: 'Sub-dealer', plural: 'Sub-dealers', group: 'dealer', division: 'both' },
   architect: { label: 'Architect', plural: 'Architects', group: 'architect', division: 'both' },
   design_firm: { label: 'Design firm', plural: 'Design firms', group: 'firm', division: 'both' },
   retail: { label: 'Retail client', plural: 'Retail clients', group: 'retail', division: 'retail' },
@@ -29,15 +31,16 @@ const KIND_BY_LABEL = Object.fromEntries(Object.entries(KINDS).map(([k, v]) => [
 const PIPELINES = {
   /* 6 Oct, EGO's own order: the sale ends at Order confirmed; stock is blocked, the PI sent, the money taken and the invoice raised in fulfilment */
   wholesale: { label: 'Wholesale opportunity', plural: 'Wholesale opportunities', division: 'wholesale', won: 'Order confirmed', lines: true },
-  retail_lead: { label: 'Retail lead', plural: 'Retail leads', division: 'retail' },
-  retail_project: { label: 'Retail project', plural: 'Retail projects', division: 'retail', project: true },
+  /* R3b: a Big E sale carries line items in sq ft (design, sq ft, rate per sq ft, amount); at Won its fulfilment opens */
+  retail_lead: { label: 'Retail lead', plural: 'Retail leads', division: 'retail', sqft: true },
+  retail_project: { label: 'Retail project', plural: 'Retail projects', division: 'retail', project: true, sqft: true },
   /* 17 Oct (R3a): EGO Premium's Project pipeline (spec section 13) and its Retail pipeline, the consumer lead
      engine (spec section 15) where a lead is qualified and allocated to a dealer. Leads for dealers folded into it. */
   ego_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'wholesale', project: true },
   ego_retail: { label: 'Consumer lead', plural: 'Retail (consumer leads)', division: 'wholesale', dealer: true },
 };
 /* which pipelines a client of each group may have */
-const PIPES_FOR = { dealer: ['wholesale', 'ego_project'], direct: ['wholesale', 'ego_project', 'ego_retail'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], firm: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'] };
+const PIPES_FOR = { dealer: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], direct: ['wholesale', 'ego_project', 'ego_retail'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], firm: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'] };
 /* the Project pipeline of each company: a project's opportunities sit in it */
 const PROJECT_PIPE = { wholesale: 'ego_project', retail: 'retail_project' };
 
@@ -143,6 +146,7 @@ const CLIENT_FIELDS = [
   { key: 'rating', list: 'architect_ratings', label: 'Architect rating', type: 'select', opts: ['A', 'B', 'C'], groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'potential', list: 'potentials', label: 'Potential', type: 'select', opts: ['High', 'Medium', 'Low'], groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'design500', label: 'Design 500 member', type: 'yesno', groups: ['architect', 'firm'], section: 'Practice' },
+  { key: 'design500_since', label: 'Design 500 since', type: 'date', groups: ['architect', 'firm'], section: 'Practice' },
   { key: 'relationship', list: 'relationships', label: 'Relationship', type: 'select', opts: ['EGO direct', 'Via dealer'], groups: ['architect'], section: 'Practice' },
   { key: 'connected_dealers', label: 'Connected dealers', type: 'text', groups: ['architect'], section: 'Practice' },
 
@@ -606,8 +610,8 @@ const CLIENTS_SHEET = kind => ({ id: 'clients', sheet: 'People (no company)', ta
 const TEMPLATES = {
   ws: { id: 'ws', company: 'EGO Premium', division: 'wholesale', version: 'EGO-WS-3', file: 'EGO-Premium-Upload-Template.xlsx',
     sheets: [SHEETS.dealers, SHEETS.dealer_people, SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('direct')] },
-  bige: { id: 'bige', company: 'Big E', division: 'retail', version: 'BIGE-2', file: 'Big-E-Upload-Template.xlsx',
-    sheets: [SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('retail')] },
+  bige: { id: 'bige', company: 'Big E', division: 'retail', version: 'BIGE-3', file: 'Big-E-Upload-Template.xlsx',
+    sheets: [SHEETS.dealers, SHEETS.dealer_people, SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('retail')] },
   /* the shared inventory: the same file whichever company uploads it */
   inv: { id: 'inv', company: 'Inventory', division: 'both', version: 'EGO-INV-3', file: 'EGO-Inventory-Upload-Template.xlsx', sheets: [
     { id: 'categories', sheet: 'Categories', tab: 'categories' },
@@ -763,6 +767,11 @@ const fulGroupOf = (lists, stage) => {
 };
 /* ful: the order steps a role has (stock, money, dispatch), switched in Roles & access */
 const canFul = (lists, ful, stage) => { const g = fulGroupOf(lists, stage); return g ? (ful || []).includes(g) : !!(ful || []).length; };
+/* R3b: Big E's fulfilment, the RETAIL ladder (plan point 3), exactly as agreed. Each step has the department that takes it. */
+const RETAIL_FUL = ['Won', 'Advance received', 'Stock check', 'Blocked', 'Delivered to site', 'Installation', 'Balance received', 'Closed'];
+const RETAIL_FUL_GROUP = { 'Advance received': 'money', 'Stock check': 'stock', Blocked: 'stock', 'Delivered to site': 'dispatch', Installation: 'dispatch', 'Balance received': 'money', Closed: 'money' };
+/* R3b, Q9 default: who installs a site, picked per site */
+const INSTALLED_BY = { contractor: 'Our contractor', dealer: "The partner dealer's team" };
 const FUL_LABEL = { stock: 'Block stock and place production', money: 'PI, payment and invoice', dispatch: 'Pack, dispatch and deliver' };
 const SCHEME_LABEL = { edit: 'Draw up', approve: 'Approve', settle: 'Settle' };
 const DASHES = [['', 'Standard Home'], ['mgmt', 'Management'], ['head', 'Sales head'], ['sales', 'Field sales'], ['tele', 'Telesales'], ['accounts', 'Accounts'], ['dispatch', 'Dispatch'], ['office', 'Office'], ['mkt', 'Marketing']];
