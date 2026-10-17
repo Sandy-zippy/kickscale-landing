@@ -912,14 +912,16 @@
     home: 'Overview', jarvis: 'Jarvis', diary: 'Diary', campaigns: 'Campaigns', stock: 'What we sell', line: 'a product', sheet: 'the sheet',
     clients: 'Clients', client: 'a client', clientnew: 'Add a client',
     opp: 'an opportunity', oppnew: 'New opportunity',
-    floor: 'the Floor', inbox: 'Enquiries',
+    floor: 'the Floor', inbox: 'Inbox',
     automations: 'Automations', automation: 'a rule', reports: 'Reports',
     targets: 'Targets', team: 'Team', person: 'a colleague', bin: 'Bin', settings: 'Settings'
   };
 
   function labelFor(hash) {
     var r = String(hash || '').replace(/^#\//, '').split('/')[0] || 'home';
-    return LABELS[r] || r;
+    /* the menu's own name first, so the crumb and Back say what the menu says */
+    var n = NAV.filter(function (x) { return x[0] === r; })[0];
+    return n ? n[1] : LABELS[r] || r;
   }
   function pushHist(hash) {
     if (HIST[HIST.length - 1] === hash) return;
@@ -948,14 +950,18 @@
      thing on the reports screen as it does on the client list. */
 
   var RANGE = { key: 'month', from: '', to: '' };
+  /* The Inbox keeps its own window, From the start, so a conversation never
+     looks missing because it began last month. Every other screen shares RANGE. */
+  var INBOX_RANGE = { key: 'all', from: '', to: '' };
+  function curRange() { return /^#\/inbox/.test(location.hash) ? INBOX_RANGE : RANGE; }
   function range() {
-    var d = ZS.rangeDates(RANGE.key, RANGE.from, RANGE.to);
-    return { key: RANGE.key, from: d[0], to: d[1] };
+    var R = curRange(), d = ZS.rangeDates(R.key, R.from, R.to);
+    return { key: R.key, from: d[0], to: d[1] };
   }
   function inRange(dateStr) { return ZS.inRange(dateStr, range()); }
 
   function rangeBar(note) {
-    var r = range();
+    var r = range(), RANGE = curRange();
     return '<div class="rangebar">' +
       '<span class="rlabel">Date filter</span>' +
       ZS.RANGES.map(function (x) {
@@ -3338,10 +3344,11 @@
     /* for the tests: the server's answer, as if it had arrived */
     setMetaStatusForTest: function (st) { MSTAT = st; MSTAT_AT = Date.now(); },
     setRange: function (k) {
-      RANGE.key = k;
-      if (k === 'custom' && !RANGE.from) {
+      var R = curRange();
+      R.key = k;
+      if (k === 'custom' && !R.from) {
         var d = ZS.rangeDates('month');
-        RANGE.from = d[0]; RANGE.to = d[1];
+        R.from = d[0]; R.to = d[1];
       }
       render();
     },
@@ -3724,8 +3731,8 @@
         save(); toast(who.name + ' updated.'); render();
         return;
       }
-      if (e.target.id === 'r-from') { RANGE.from = e.target.value; render(); return; }
-      if (e.target.id === 'r-to') { RANGE.to = e.target.value; render(); return; }
+      if (e.target.id === 'r-from') { curRange().from = e.target.value; render(); return; }
+      if (e.target.id === 'r-to') { curRange().to = e.target.value; render(); return; }
       if (ACTIONS.onChange) ACTIONS.onChange(e);
     });
 

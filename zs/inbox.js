@@ -195,7 +195,7 @@
     if (t.channel !== 'whatsapp' && !left) {
       /* Instagram and Messenger: no templates, so nothing can go until they
          write. Send stays on screen and disabled, never hidden. */
-      var first = String(t.name || t.handle || 'they').split(' ')[0];
+      var who = String(t.name || '').trim();
       var lastIn = t.window_until ? new Date(new Date(t.window_until).getTime() - 86400000) : null;
       var ago = lastIn ? Math.max(1, Math.floor((Date.now() - lastIn.getTime()) / 86400000)) : null;
       h += '<form class="convsend shut" onsubmit="return false">' +
@@ -204,7 +204,7 @@
         'last message.' + (ago ? ' Theirs was ' + (ago === 1 ? 'a day' : ago + ' days') + ' ago.' : '') +
         '</span></p>' +
         '<textarea rows="2" disabled aria-disabled="true" placeholder="Opens again when ' +
-        esc(first) + ' writes"></textarea>' +
+        (who ? esc(who) + ' writes' : 'they write') + '"></textarea>' +
         '<div class="sendrow"><button class="btn" type="button" disabled aria-disabled="true">Send</button>' +
         '<span class="hint">Meta&rsquo;s rule for Instagram and Messenger, not ours.</span></div></form>';
     } else if (t.channel === 'whatsapp' && !left) {

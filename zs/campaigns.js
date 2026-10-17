@@ -78,7 +78,7 @@
   function cells(o, enq, won, a, first) {
     /* whole rupees: Meta reports paise, and ₹27,510.9 reads as a typo */
     var money = function (v) { return a.cost ? ZS.money(Math.round(v || 0)) : '₹ ••••'; };
-    var per = function (v, by) { return !a.cost ? '₹ ••••' : by ? ZS.money(Math.round(v / by)) : '·'; };
+    var per = function (v, by) { return !a.cost ? '₹ ••••' : by ? ZS.money(Math.round(v / by)) : '-'; };
     return '<td class="num">' + money(o.spend) + '</td>' +
       '<td class="num">' + n(o.impressions) + '</td>' +
       '<td class="num">' + n(o.clicks) + '</td>' +
@@ -150,7 +150,7 @@
         '<span>Meta spend, as Meta reports, before GST</span></div>' +
       '<div class="kpi"><b class="num">' + n(tot.leads) + '</b><span>Meta leads</span></div>' +
       '<div class="kpi"><b class="num">' + n(tot.enq) + '</b><span>Enquiries from Meta campaigns</span></div>' +
-      '<div class="kpi ok"><b class="num">' + (!a.cost ? '₹ ••••' : tot.won ? ZS.money(Math.round(tot.spend / tot.won)) : '·') +
+      '<div class="kpi ok"><b class="num">' + (!a.cost ? '₹ ••••' : tot.won ? ZS.money(Math.round(tot.spend / tot.won)) : 'No won deal yet') +
         '</b><span>Cost per won deal, Meta (' + n(tot.won) + ' won)</span></div></div>';
 
     if (!pulled.length) {
@@ -210,13 +210,13 @@
         ? '<tr class="sect"><td colspan="10">Added by hand · ' + handRows.length + '</td></tr>' +
           handRows.map(function (c) {
             var enq = board.enq[c.id] || 0, won = board.won[c.id] || 0;
-            var per = function (by) { return !a.cost ? '₹ ••••' : by && c.spend ? ZS.money(Math.round(c.spend / by)) : '·'; };
+            var per = function (by) { return !a.cost ? '₹ ••••' : by && c.spend ? ZS.money(Math.round(c.spend / by)) : '-'; };
             return '<tr><td><b>' + esc(c.name) + '</b><span class="sub">' +
               esc(String(ZS.PLATFORMS[c.platform] || c.platform).split(' ')[0]) + ' · added by hand</span></td>' +
               '<td><span class="pill dim">By hand</span>' +
               (a.settings ? ' <button class="xbtn" data-act="dropCampaign" data-id="' + esc(c.id) +
                 '" title="Remove" aria-label="Remove ' + esc(c.name) + '">&times;</button>' : '') + '</td>' +
-              '<td class="num">' + (a.cost ? (c.spend ? ZS.money(c.spend) : '·') : '₹ ••••') + '</td>' +
+              '<td class="num">' + (a.cost ? (c.spend ? ZS.money(c.spend) : '-') : '₹ ••••') + '</td>' +
               '<td class="byhand" colspan="3">Not pulled. Spend is the figure typed in.</td>' +
               '<td class="num ours">' + n(enq) + '</td><td class="num">' + n(won) + '</td>' +
               '<td class="num">' + per(enq) + '</td><td class="num">' + per(won) + '</td></tr>';
