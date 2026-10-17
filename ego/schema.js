@@ -257,6 +257,95 @@ function cleanProject(input, ctx) {
   return { rec, errors };
 }
 
+/* R6a (17 Oct, plan points 13 and 14): the Samples, Displays and Training registers. One table (registers, kind says which),
+   one field list per kind. col: a column of its own (scope, links, dates the reminders and reports read); the rest sits in extra.
+   Entered by hand now; samples are filled from Tally once it is connected (Q5). */
+const REG_KINDS = {
+  sample: { label: 'Sample', plural: 'Samples', prefix: 'SM', tab: 'samples' },
+  display: { label: 'Display', plural: 'Displays', prefix: 'DP', tab: 'displays' },
+  training: { label: 'Training record', plural: 'Training', prefix: 'TR', tab: 'training' },
+};
+const SAMPLE_RETURN = ['Not due', 'Returned', 'Kept', 'Lost'];
+const DISPLAY_CONDITION = ['Good', 'Worn', 'Damaged'];
+const TRAINING_AUDIENCE = ['Dealer', 'Dealer staff', 'Installer', 'Employee', 'Architect'];
+/* the course kind that makes an installer certified (while unexpired); always offered, whatever the Owner's list says */
+const CERT_COURSE = 'Installer certification';
+const REG_COLS = ['client_id', 'project_id', 'product_id', 'item', 'on_date', 'due_date', 'status', 'value', 'owner_id'];
+const REG_FIELDS = {
+  sample: [
+    { key: 'recipient', label: 'Given to (dealer, architect, person or project)', type: 'recipient', req: true },
+    { key: 'product_id', label: 'Design', type: 'design' },
+    { key: 'item', label: 'Sample item (if not a design: board, catalogue, swatch)', type: 'text' },
+    { key: 'qty', label: 'Quantity', type: 'number', req: true },
+    { key: 'value', label: 'Value (₹)', type: 'money' },
+    { key: 'billed', label: 'Billed or free', type: 'select', opts: ['Billed', 'Free'], req: true },
+    { key: 'on_date', label: 'Date given', type: 'date', req: true },
+    { key: 'status', label: 'Return status', type: 'select', opts: SAMPLE_RETURN, req: true },
+    { key: 'owner_id', label: 'Owner at EGO', type: 'owner' },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+  display: [
+    { key: 'client_id', label: 'Dealer', type: 'dealer', req: true },
+    { key: 'product_id', label: 'Design', type: 'design' },
+    { key: 'item', label: 'Product (if not a design)', type: 'text' },
+    { key: 'display_type', list: 'display_types', label: 'Display type', type: 'select', opts: ['Board', 'Stand', 'Mock-up floor', 'Other'], req: true },
+    { key: 'on_date', label: 'Installed on', type: 'date', req: true },
+    { key: 'value', label: 'Cost (₹)', type: 'money' },
+    { key: 'status', label: 'Condition', type: 'select', opts: DISPLAY_CONDITION, req: true },
+    { key: 'last_inspection', label: 'Last inspection', type: 'date' },
+    { key: 'due_date', label: 'Replacement due', type: 'date' },
+    { key: 'owner_id', label: 'Owner at EGO', type: 'owner' },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+  training: [
+    { key: 'audience', label: 'Audience', type: 'select', opts: TRAINING_AUDIENCE, req: true },
+    { key: 'person', label: 'Person', type: 'text' },
+    { key: 'client_id', label: 'Firm (dealer, architect or company)', type: 'firm' },
+    { key: 'course', label: 'Course', type: 'text', req: true },
+    { key: 'course_kind', list: 'course_kinds', label: 'Course kind', type: 'select', opts: ['Product training', 'Installation training', CERT_COURSE, 'Sales training', 'Other'], req: true },
+    { key: 'product', label: 'Product category', type: 'cat' },
+    { key: 'on_date', label: 'Date', type: 'date', req: true },
+    { key: 'trainer', label: 'Trainer', type: 'text' },
+    { key: 'score', label: 'Score (out of 100)', type: 'number' },
+    { key: 'due_date', label: 'Expiry', type: 'date' },
+    { key: 'owner_id', label: 'Owner at EGO', type: 'owner' },
+    { key: 'notes', label: 'Notes', type: 'textarea' },
+  ],
+};
+/* a register row checked: the fields, then the rule of its kind. Links (recipient, dealer, firm, design) are checked by the Worker */
+function cleanReg(kind, input, ctx) {
+  const errors = [], rec = {}, extra = {};
+  if (!REG_FIELDS[kind]) return { rec, extra, errors: ['Which register: Samples, Displays or Training'] };
+  for (const f of REG_FIELDS[kind]) {
+    if (f.type === 'recipient') continue;
+    const fx = f.key === 'course_kind' ? { ...f, opts: [...new Set([...optsOf(f, ctx && ctx.lists), CERT_COURSE])], list: null } : f;
+    const raw = input[f.key], r = ['design', 'dealer', 'firm'].includes(f.type) ? { value: String(raw == null ? '' : raw).trim() } : cleanValue(fx, raw, ctx, input);
+    if (r.error) { errors.push(`${f.label} ${r.error}`); continue; }
+    const empty = r.value === '' || r.value == null;
+    if (f.req && empty) { errors.push(`${f.label} is compulsory`); continue; }
+    const v = empty ? (['money', 'number'].includes(f.type) ? null : '') : r.value;
+    if (REG_COLS.includes(f.key)) rec[f.key] = v; else extra[f.key] = v;
+  }
+  if (kind === 'sample' && !rec.product_id && !rec.item) errors.push('Say what was given: a design, or a sample item (board, catalogue, swatch)');
+  if (kind === 'sample' && extra.qty != null && extra.qty < 1) errors.push('Quantity is 1 or more');
+  if (kind === 'display' && !rec.product_id && !rec.item) errors.push('Say what is on display: a design, or the product');
+  if (kind === 'training' && !extra.person && !rec.client_id) errors.push('Say who was trained: the person, the firm, or both');
+  if (kind === 'training' && extra.score != null && extra.score > 100) errors.push('Score is out of 100');
+  if (rec.due_date && rec.on_date && rec.due_date < rec.on_date) errors.push(`${kind === 'display' ? 'Replacement due' : 'Expiry'} is before ${kind === 'display' ? 'the installed date' : 'the training date'}`);
+  return { rec, extra, errors };
+}
+/* the window after a sample in which sales count against it (Rules and numbers: sample_window_days, default 90) */
+const sampleWindow = rules => Math.max(1, Math.round(Number((rules || {}).sample_window_days) || 90));
+/* sample spend against sales after it: each sale counted once, when it falls inside the window of any sample given before it.
+   samples: [{ on_date, value }], sales: [{ at (YYYY-MM-DD), value }]. Dates are plain days. */
+function sampleSpend(samples, sales, days) {
+  const add = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+  const wins = samples.filter(s => s.on_date).map(s => [s.on_date, add(s.on_date, days)]);
+  const after = sales.filter(x => x.at && wins.some(([a, b]) => x.at >= a && x.at <= b));
+  const spend = samples.reduce((t, s) => t + (Number(s.value) || 0), 0), got = after.reduce((t, x) => t + (Number(x.value) || 0), 0);
+  return { spend, sales: got, after, per: samples.map(s => ({ s, sales: s.on_date ? sales.filter(x => x.at >= s.on_date && x.at <= add(s.on_date, days)).reduce((t, x) => t + (Number(x.value) || 0), 0) : 0 })) };
+}
+
 const fieldsFor = kind => {
   const g = KINDS[kind] && KINDS[kind].group;
   return CLIENT_FIELDS.filter(f => f.groups.includes(g) && (!f.kinds || f.kinds.includes(kind)));
@@ -710,6 +799,7 @@ const LIST_GROUPS = [
     ['architect_ratings', 'Architect ratings'], ['positions', 'Architect positions'], ['specialisations', 'Specialisations'], ['focus_areas', 'Focus'], ['potentials', 'Potential'],
     ['relationships', 'Relationship (architects)'], ['customer_types', 'Who dealers sell to'], ['condition_tags', 'Condition tags (retail)']]],
   ['Projects', [['project_types', 'Project types'], ['project_stages', 'Project stages'], ['project_roles', 'Project contact roles']]],
+  ['Registers', [['display_types', 'Display types'], ['course_kinds', 'Training course kinds']]],
   ['Opportunities', [['lost_reasons', 'Lost reasons'], ['budget_bands', 'Budget bands'], ['next_actions', 'Next actions'], ['followup_sources', 'Follow-up sources'], ['payment_terms', 'Payment terms'], ['delivery_terms', 'Delivery terms']]],
   ['Inventory', [['categories', 'Product categories'], ['design_types', 'Design types'], ['ac_ratings', 'AC ratings']]],
 ];
@@ -724,10 +814,11 @@ const LIST_USES = (() => {
   add('collections', COLLECTION_FIELDS, f => !!f.col);
   add('products', PRODUCT_FIELDS, f => !!f.col);
   add('projects', PROJECT_FIELDS, () => true);
+  for (const k of Object.keys(REG_FIELDS)) add('registers', REG_FIELDS[k], f => REG_COLS.includes(f.key));
   return out;
 })();
 DEFAULT_LISTS.project_roles = PROJECT_ROLES;
-for (const f of [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS, ...PROJECT_FIELDS]) if (f.list && !DEFAULT_LISTS[f.list]) DEFAULT_LISTS[f.list] = f.opts;
+for (const f of [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS, ...PROJECT_FIELDS, ...Object.values(REG_FIELDS).flat()]) if (f.list && !DEFAULT_LISTS[f.list]) DEFAULT_LISTS[f.list] = f.opts;
 /* where a follow-up came from or how it happened (13 Oct), recorded when it is done; editable in Lists & stages */
 DEFAULT_LISTS.followup_sources = ['Call', 'WhatsApp', 'Visit', 'Email', 'Meeting', 'Meta lead', 'IndiaMART', 'Walk-in', 'Referral', 'Other'];
 LIST_USES.followup_sources = [{ table: 'follow_ups', key: 'source', col: true, multi: false }];
@@ -776,6 +867,8 @@ const DEFAULT_RULES = {
   lead_escalate_days: 2,
   /* R5: a dealer with no order in this many days is on telesales' Priority calls as dormant */
   dormant_days: 60,
+  /* R6a: sales in this many days after a sample count against it (sample spend vs sales after it) */
+  sample_window_days: 90,
   p200: { tiers: [{ name: 'A', min: 70 }, { name: 'B', min: 50 }, { name: 'C', min: 30 }, { name: 'Watchlist', min: 0 }],
     weights: { sales: 40, breadth: 20, payments: 15, display: 10, activity: 15 } },
 };
@@ -822,13 +915,14 @@ const DASHES = [['', 'Standard Home'], ['mgmt', 'Management'], ['head', 'Sales h
 const SCOPES_ALL = [['all', 'Everything, both companies'], ['division', 'Everything in their company'], ['region', 'Their region'], ['own', 'Their own and their team\'s'], ['none', 'No business records']];
 /* the screens each role has; a role not listed has every screen its access allows */
 const ROLE_TABS = {
+  /* R6a (17 Oct): Samples, Displays and Training for every role that sees Dealers (migration 0022) */
   /* 17 Oct (Bhargav): Projects, Design 500 and Installation for field sales, telesales, finance, marketing and office admin; Installation for the warehouse */
-  ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account', 'projects', 'design500', 'installation'],
-  ws_tele: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account', 'roadmap', 'projects', 'design500', 'installation', 'priority'],
-  ws_finance: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'approvals', 'inventory', 'analysis', 'account', 'projects', 'design500', 'installation'],
+  ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training'],
+  ws_tele: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account', 'roadmap', 'projects', 'design500', 'installation', 'priority', 'samples', 'displays', 'training'],
+  ws_finance: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'approvals', 'inventory', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training'],
   ws_warehouse: ['home', 'orders', 'orderbook', 'inventory', 'complaints', 'analysis', 'account', 'installation'],
-  office_admin: ['home', 'people', 'architects', 'dealers', 'inventory', 'complaints', 'analysis', 'account', 'projects', 'design500', 'installation'],
-  ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'analysis', 'account', 'projects', 'design500', 'installation'],
+  office_admin: ['home', 'people', 'architects', 'dealers', 'inventory', 'complaints', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training'],
+  ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training'],
 };
 /* what a file kept on a fulfilment order is (13 Oct): EGO makes these in Tally and uploads the PDF here */
 const ORDER_DOC_TYPES = ['PI', 'Invoice', 'Payment proof', 'Other'];

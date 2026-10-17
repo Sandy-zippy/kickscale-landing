@@ -28,7 +28,7 @@ function allowedTab(t) {
   if (t === 'followups') return holds();   // My follow-ups opens from Home, like Lost sales from Opportunities
   if (t === 'integrations') return isOwner() && !D.access.viewing_as;   // every API key in one place: an Owner only
   if (['clients', 'people', 'opps', 'projects', 'import', 'inventory', 'analysis'].includes(t)) return holds();
-  if (t === 'dealers' || t === 'design500') return holds();   // R3b: Big E keeps its own dealers; Design 500 in both companies
+  if (t === 'dealers' || t === 'design500' || t === 'samples' || t === 'displays' || t === 'training') return holds();   // R6a: the registers go with Dealers   // R3b: Big E keeps its own dealers; Design 500 in both companies
   if (t === 'architects') return holds();
   if (t === 'orders' || t === 'installation') return holds();   // R3b: Big E fulfilment (retail ladder), EGO installation
   if (t === 'p200' || t === 'schemes') return holds() && canDiv('wholesale');
@@ -58,7 +58,9 @@ const NAV_ACTS = new Set(['hist-open', 'role-toggle', 'opp-mine', 'invf-clear', 
   /* R3a: the projects Excel sample and closing its preview */
   'pj-sample', 'pj-imp-close',
   /* R3b: the Design 500 Excel sample and closing its preview */
-  'd5-sample', 'd5-imp-close']);
+  'd5-sample', 'd5-imp-close',
+  /* R6a: a register's Excel sample, closing its preview, opening a row's files */
+  'rg-sample', 'rg-imp-close', 'rg-files']);
 const LOOK_ACTS = new Set(['hist-open', 'view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
   'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass',
@@ -66,7 +68,7 @@ const LOOK_ACTS = new Set(['hist-open', 'view-back', 'view-as', 'role-toggle', '
   'int-key-add', 'int-key-go', 'int-key-revoke', 'int-key-revoke-go', 'int-copy', 'int-tool-add', 'int-tool-edit', 'int-tool-save', 'int-tool-del', 'int-tool-del-go', 'int-row-add', 'int-row-del',
   'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv',
   'why', 'an-csv', 'tg-sample', 'tg-imp-close',
-  'ho-csv', 'iv-csv', 'iv-files', 'pj-sample', 'pj-imp-close', 'd5-sample', 'd5-imp-close',
+  'ho-csv', 'iv-csv', 'iv-files', 'pj-sample', 'pj-imp-close', 'd5-sample', 'd5-imp-close', 'rg-sample', 'rg-imp-close', 'rg-files',
   /* dealer portal logins are account matters, like staff logins (batch 4) */
   'pu-add', 'pu-go', 'pu-pass', 'pu-toggle']);
 /* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
@@ -91,8 +93,8 @@ EM.render = (...a) => {
   if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
-const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', design500: 'Design 500', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap', priority: 'Priority calls' };
-const NAV_TAIL = ['priority', 'attendance', 'roadmap', 'complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
+const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', design500: 'Design 500', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap', priority: 'Priority calls', samples: 'Samples', displays: 'Displays', training: 'Training' };
+const NAV_TAIL = ['samples', 'displays', 'training', 'priority', 'attendance', 'roadmap', 'complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
 // Menu order per view, as Bhargav set it on 5 Oct.
 const NAV_ORDER = {
   wholesale: ['home', 'people', 'architects', 'design500', 'dealers', 'opps', 'projects', 'schemes', 'orders', 'orderbook', 'installation', ...NAV_TAIL],
@@ -126,6 +128,8 @@ const byIdL = a => Object.fromEntries((a || []).map(x => [x.id, x]));
 const CL = () => byIdL(D.clients);
 const ST = () => byIdL(D.staff);
 const staffName = id => (ST()[id] || {}).name || 'Not set';
+/* R5 carried (a): who added a file. A file sent from the dealer portal was added by that dealer, so it says the dealer's name */
+const uploaderName = d => ST()[d.uploaded_by] ? staffName(d.uploaded_by) : `${(CL()[d.client_id] || {}).name || 'The dealer'} (dealer portal)`;
 const kindLabel = k => (KINDS[k] || { label: k }).label;
 const today = () => new Date(Date.now() + 5.5 * 36e5).toISOString().slice(0, 10);
 const money = n => n == null || n === '' ? '' : inrFull(n);
@@ -738,7 +742,8 @@ EM.VIEWS.client = arg => {
   const nOrd = buildOrders().filter(x => x.client_id === id).length;
   const tabs = [['overview', 'Overview'], ['activity', 'Activity'], ['orders', `Orders (${nOrd})`], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
   if (DEALER_KINDS.includes(c.kind)) tabs.splice(6, 0, ...dealerTabs(c));   // batch 4: leads, development plan, portal logins
-  const body = { overview: clientOverview, activity: c2 => activityPanel({ clientId: c2.id }), orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>', ...(DEALER_KINDS.includes(c.kind) ? DEALER_TAB_BODY : {}) }[tab] || clientOverview;
+  if (DEALER_KINDS.includes(c.kind) || ARCH_KINDS.includes(c.kind)) tabs.splice(tabs.length - 1, 0, ...regTabs(c));   // R6a: Samples (dealer, architect), Displays (dealer)
+  const body = { overview: clientOverview, activity: c2 => activityPanel({ clientId: c2.id }), orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>', ...(DEALER_KINDS.includes(c.kind) ? DEALER_TAB_BODY : {}), ...REG_TAB_BODY }[tab] || clientOverview;
   const home = homeOf(c);
   return `<div class="stack">${crumbs(home, [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
@@ -865,11 +870,11 @@ function filesBox(o) {   // o: { id, client, order, types, docs, canAdd, tags, t
       ${P ? `<div class="field" data-field="doc_amount"><label for="${b}-amt">Amount (optional)</label>${G.adorn({ type: 'money', key: 'amount' }, `<input class="input" type="number" min="0" step="0.01" id="${b}-amt">`)}</div>` : ''}`
     : `<div class="field" data-field="doc_name"><label for="${b}-name">Name (optional)</label><input class="input" id="${b}-name" placeholder="e.g. GST certificate 2026"></div>`}
       <div class="field span2" data-field="doc_files"><label for="${b}-file">Files: one or many, up to 25 MB each</label><input class="input" id="${b}-file" type="file" multiple accept="${FILE_ACCEPT}"></div></div>
-      ${errBox(b + '-err')}<div class="row"><button class="btn primary" data-act="fu-up" data-box="${o.id}" data-client="${o.client || ''}" data-order="${o.order || ''}" data-followup="${o.followup || ''}" data-plan="${o.plan || ''}" data-project="${o.project || ''}" data-complaint="${o.complaint || ''}" data-opp="${o.opp || ''}">Upload</button></div></form>` : '';
+      ${errBox(b + '-err')}<div class="row"><button class="btn primary" data-act="fu-up" data-box="${o.id}" data-client="${o.client || ''}" data-order="${o.order || ''}" data-followup="${o.followup || ''}" data-plan="${o.plan || ''}" data-project="${o.project || ''}" data-complaint="${o.complaint || ''}" data-register="${o.register || ''}" data-opp="${o.opp || ''}">Upload</button></div></form>` : '';
   const rows = o.docs.slice().sort((x, y) => String(y.created_at).localeCompare(String(x.created_at)));
   const list = rows.length ? table(['File', 'What it is', ...(tagCols ? ['Number', 'Date', ...(P ? ['Amount'] : [])] : []), ...(o.showOrder ? ['On order'] : []), 'Size', 'Added', ''], rows.map(d => [
     `<b>${esc(d.name)}</b>${d.file_name && d.file_name !== d.name ? `<div class="small muted">${esc(d.file_name)}</div>` : ''}`, esc(d.type), ...(tagCols ? [esc(d.doc_no || ''), d.doc_date ? ds(d.doc_date) : '', ...(P ? [d.amount != null ? inr0(d.amount) : ''] : [])] : []),
-    ...(o.showOrder ? [d.order_id && ordOf(d.order_id) ? `<a href="#/order/${d.order_id}">${esc(ordOf(d.order_id).ref)}</a>` : ''] : []), kb(d.size), `${ds(String(d.created_at).slice(0, 10))} · ${esc(D.staff.some(x => x.id === d.uploaded_by) ? staffName(d.uploaded_by) : 'the dealer portal')}`,   /* R5: a photo sent from the dealer portal */
+    ...(o.showOrder ? [d.order_id && ordOf(d.order_id) ? `<a href="#/order/${d.order_id}">${esc(ordOf(d.order_id).ref)}</a>` : ''] : []), kb(d.size), `${ds(String(d.created_at).slice(0, 10))} · ${esc(uploaderName(d))}`,   /* R5: a photo sent from the dealer portal */
     `<div class="row" style="gap:6px;flex-wrap:nowrap" data-file-acts><button class="btn sm" data-act="fu-view" data-id="${d.id}">View</button><button class="btn sm ghost" data-act="fu-dl" data-id="${d.id}">Download</button><button class="btn sm ghost" data-act="fu-share" data-id="${d.id}">Share</button>${mayRemoveDoc(d) ? `<button class="btn sm ghost" data-act="fu-del" data-id="${d.id}">Remove</button>` : ''}</div>`]))
     : empty(o.emptyTitle || 'No files yet', o.emptyText || '');
   return `<div class="stack-s" data-files="${o.id}">${form}${list}</div>`;
@@ -881,7 +886,7 @@ EM.ACTIONS['fu-up'] = async el => {
   const big = files.find(f => f.size > 25 * 1024 * 1024); if (big) return showErr(b + '-err', `${big.name} is over 25 MB.`);
   const fd = new FormData(); files.forEach(f => fd.append('file', f));
   fd.append('type', v('type')); fd.append('name', v('name')); fd.append('doc_no', v('no')); fd.append('doc_date', v('date')); fd.append('amount', v('amt'));
-  if (el.dataset.order) fd.append('order_id', el.dataset.order); else if (el.dataset.followup) fd.append('followup_id', el.dataset.followup); else if (el.dataset.plan) fd.append('plan_id', el.dataset.plan); else if (el.dataset.project) fd.append('project_id', el.dataset.project); else if (el.dataset.complaint) fd.append('complaint_id', el.dataset.complaint); else if (el.dataset.opp) fd.append('opp_id', el.dataset.opp); else fd.append('client_id', el.dataset.client);
+  if (el.dataset.order) fd.append('order_id', el.dataset.order); else if (el.dataset.followup) fd.append('followup_id', el.dataset.followup); else if (el.dataset.plan) fd.append('plan_id', el.dataset.plan); else if (el.dataset.project) fd.append('project_id', el.dataset.project); else if (el.dataset.complaint) fd.append('complaint_id', el.dataset.complaint); else if (el.dataset.register) fd.append('register_id', el.dataset.register); else if (el.dataset.opp) fd.append('opp_id', el.dataset.opp); else fd.append('client_id', el.dataset.client);
   busy(el, true);
   try { const r = await API('POST', '/api/documents', fd, true); D.documents.push(...r.documents); EM.toast(`<b>${r.documents.length} file${r.documents.length === 1 ? '' : 's'}</b> uploaded.`);
     const box = el.dataset.followup && el.closest('#overlay [data-files]'); if (box) box.outerHTML = fuFilesBox(el.dataset.followup); else EM.rerender(); }
@@ -1874,7 +1879,7 @@ EM.VIEWS.site = id => {
       ${nextS ? `<button class="btn primary" data-act="site-next" data-id="${id}">Move to ${esc(nextS)}</button>` : ''}</div>
     <section class="card stack-s">${stageChips(SS, x.step)}</section>
     <section class="card stack-s" data-site-links><h3>Where it belongs</h3>${kv([['Company', esc(DIVS[x.division] ? DIVS[x.division].co : x.division)], ['Project', siteProject(x) ? `<a href="#/project/${x.project_id}">${esc(siteProject(x).name)}</a>` : NOTSET],
-      ['Order', (() => { const o = allOrders().find(k => k.id === (x.extra || {}).order_id) || allOrders().find(k => x.opp_id && k.opp_id === x.opp_id); return o ? `<a href="#/order/${o.id}">${esc(o.ref)} · ${esc(o.ful_stage)}</a>` : NOTSET; })()], ['Installed by', esc(installedByTxt(x))]])}</section>
+      ['Order', (() => { const o = allOrders().find(k => k.id === (x.extra || {}).order_id) || allOrders().find(k => x.opp_id && k.opp_id === x.opp_id); return o ? `<a href="#/order/${o.id}">${esc(o.ref)} · ${esc(o.ful_stage)}</a>` : NOTSET; })()], ['Installed by', esc(installedByTxt(x))], ['Installer certified', siteCert(x)]])}</section>
     <div class="grid g2"><section class="card stack-s"><h3>Crew and dates</h3><div class="fgrid">
         ${installerFields(x.division, (x.extra || {}).installed_by || '', (x.extra || {}).installer_dealer || '')}
         <div class="field"><label for="se-crew">Installer or crew</label><input class="input" id="se-crew" value="${esc(x.crew || '')}"></div>
@@ -1954,7 +1959,7 @@ EM.VIEWS.complaint = id => {
   return `<div class="stack">${crumbs(['Complaints', '#/complaints'], [c.ref])}
     <div class="stack-s"><h1>${esc(c.ref)} · ${esc(c.type)}</h1><p class="muted"><a href="#/client/${c.client_id}">${esc(clientName(c.client_id))}</a> · ${esc(c.severity)}${c.channel ? ' · by ' + esc(c.channel) : ''} · ${esc(staffName(c.owner_id))} · ${ds(c.created_at.slice(0, 10))}</p></div>
     ${pend.length ? `<div class="callout warn"><b>Waiting for approval.</b> ${pend.map(a => esc(a.reason)).join(' · ')}</div>` : ''}
-    <section class="card stack-s">${stageChips(CS, c.status)}<p>${esc(c.description || '')}</p>${cmpInstallText(c) ? `<p class="small" data-cmp-install>${cmpInstallText(c)}</p>` : ''}${c.resolution ? `<p><b>Resolution:</b> ${esc(c.resolution)}${c.cost != null && D.access.prices ? ` · cost ${inr0(c.cost)}` : ''}</p>` : ''}</section>
+    <section class="card stack-s">${stageChips(CS, c.status)}<p>${esc(c.description || '')}</p>${cmpInstallText(c) ? `<p class="small" data-cmp-install>${cmpInstallText(c)}</p>` : ''}<p class="small" data-cmp-cert>Installer: ${cmpCert(c)}</p>${c.resolution ? `<p><b>Resolution:</b> ${esc(c.resolution)}${c.cost != null && D.access.prices ? ` · cost ${inr0(c.cost)}` : ''}</p>` : ''}</section>
     ${c.status !== lastOf(CS) ? `<section class="card stack-s"><h3>Update</h3><div class="fgrid">${G.select({ key: 'st', label: 'Status' }, c.status, 'cu', CS.map(v => [v, v]), false)}
       <div class="field span2"><label for="cu-res">Resolution (compulsory to resolve)</label><input class="input" id="cu-res" value="${esc(c.resolution || '')}"></div>
       <div class="field"><label for="cu-cost">Settlement cost</label>${G.adorn({ type: 'money', key: 'cost' }, `<input class="input" id="cu-cost" type="number" min="0" step="1" value="${c.cost ?? ''}">`)}</div></div>${errBox('cu-err')}
@@ -2136,7 +2141,7 @@ const OPS_LIST_GROUP = () => ['Operations stages', 'The stages of the processing
 EM.ACTIONS['rules-open'] = () => {
   const R = D.lists.rules, n = (id, label, v, unit) => `<div class="field"><label for="ru-${id}">${label}</label>${G.adorn(unit === '₹' ? { type: 'money', key: id } : { key: 'x' }, `<input class="input" type="number" min="0" step="any" id="ru-${id}" value="${v}">`).replace('class="suf">undefined<', `class="suf">${unit || ''}<`).replace('<span class="suf"></span>', '')}</div>`;
   EM.modal(`<h2>Rules and numbers</h2><p class="muted small">The numbers the processing uses. Changes apply from the next order, approval or score.</p>
-    <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('wastage', 'Wastage on a new line', wastageDefault(R), '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}${n('dorm', 'A dealer is dormant (Priority calls) after', R.dormant_days ?? 60, 'days with no order')}</div></fieldset>
+    <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('wastage', 'Wastage on a new line', wastageDefault(R), '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}${n('dorm', 'A dealer is dormant (Priority calls) after', R.dormant_days ?? 60, 'days with no order')}${n('swin', 'Sales count against a sample for', R.sample_window_days ?? 90, 'days after it is given')}</div></fieldset>
     <fieldset class="fs" data-cat-units><legend>How each category is sold</legend><p class="small muted">Flooring and cladding are per sq ft, with whole boxes. Accessories (skirting, profiles, underlay foam, film, installation) are per piece or per running ft (rft). A new category starts from its name; change any here.</p>
       ${table(['Category', 'Sold'], allCats().map(c => [esc(c), `<select class="input" data-cu="${esc(c)}" aria-label="${esc(c)} sold" style="max-width:240px">${Object.entries(QTY_UNIT_LONG).map(([k, l]) => `<option value="${k}" ${catUnit(c, R) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`]))}</fieldset>
     <fieldset class="fs"><legend>Approval limits (the Owner has none)</legend>${table(['Approval', 'Regional manager / Project head', 'Head', 'Director'], Object.entries(R.approvals).map(([k, a]) => [esc(a.label) + ` <span class="muted">(${a.unit})</span>`, ...['manager', 'head', 'director'].map(l => `<input class="input" type="number" min="0" step="any" data-ap="${k}" data-lv="${l}" value="${a.levels[l]}" aria-label="${esc(a.label)} ${l}" style="max-width:140px">`)]))}</fieldset>
@@ -2152,7 +2157,7 @@ EM.ACTIONS['rules-save'] = async el => {
     el.dataset.sure = '1'; el.textContent = 'Save, I understand'; return;
   }
   const v = id => Number(qs('#ru-' + id).value), R = D.lists.rules;
-  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'),
+  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'), sample_window_days: v('swin'),
     approvals: Object.fromEntries(Object.keys(R.approvals).map(k => [k, { levels: Object.fromEntries([...document.querySelectorAll(`[data-ap="${k}"]`)].map(i => [i.dataset.lv, Number(i.value)])) }])),
     p200: { tiers: [...document.querySelectorAll('#p2t .p2t')].map(r => ({ name: r.querySelector('[data-t="name"]').value.trim(), min: Number(r.querySelector('[data-t="min"]').value) })).filter(t => t.name),
       weights: Object.fromEntries(['sales', 'breadth', 'payments', 'display', 'activity'].map(k => [k, v('w-' + k)])) } };
@@ -2386,7 +2391,7 @@ const peopleTable = () => table(['Name', 'Username', 'Role', 'Division', 'Region
   s.active ? `${isOwner() && s.id !== me().id ? `<button class="btn sm" data-act="view-as" data-id="${s.id}">View as</button>` : ''}<button class="btn sm ghost" data-act="staff-edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-act="staff-pass" data-id="${s.id}">New password</button>${s.id !== me().id ? `<button class="btn sm ghost" data-act="staff-off" data-id="${s.id}">Switch off</button>` : ''}` : '']));
 /* Roles & access (8 Oct): every switch of every role, for management. Each click saves at once; the
    people in that role get it at their next reload or sign-in. "View as" shows exactly what they see. */
-const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['design500', 'Design 500'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['projects', 'Projects'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel'], ['attendance', 'Attendance'], ['roadmap', 'Roadmap'], ['priority', 'Priority calls']];
+const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['design500', 'Design 500'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['projects', 'Projects'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel'], ['attendance', 'Attendance'], ['roadmap', 'Roadmap'], ['priority', 'Priority calls'], ['samples', 'Samples'], ['displays', 'Displays'], ['training', 'Training']];
 const ROLE_SWITCHES = [['prices', 'Sees money (rates, values, payments)'], ['readonly', 'View only (changes nothing)'], ['users', 'Manages logins (Team & access)'], ['stock', 'Changes the inventory'], ['can_delete', 'Deletes records'], ['can_lists', 'Edits lists, stages and rules'], ['can_targets', 'Sets targets (founders for anyone, others for their team)']];
 EM.roleOpen = EM.roleOpen || '';
 function rolesMatrix() {
@@ -3045,7 +3050,7 @@ function timelineFor(clientId, oppId) {
     push(a.at, 'talk', `${ACT_ICON[a.kind] || a.kind}${a.direction === 'in' ? ' in' : a.direction === 'out' ? ' out' : ''}${a.opp_id && !oppId ? ' · ' + oppName(a.opp_id) : ''}`, a.summary, a.via_key ? `via API key ${a.via_key}` : staffName(a.by_staff), { source: a.source, kind: a.kind });
   for (const h of D.history.filter(h => oppIds.has(h.opp_id))) push(h.at, 'stage', `${h.from_stage ? 'Moved to' : 'Opened at'} ${h.to_stage}${oppId ? '' : ' · ' + oppName(h.opp_id)}`, `${h.from_stage ? 'from ' + h.from_stage : ''}${h.note ? (h.from_stage ? ' · ' : '') + h.note : ''}`, staffName(h.by_staff));
   for (const f of FUS().filter(f => f.client_id === clientId && f.status !== 'open' && (!oppId || f.opp_id === oppId))) push(f.done_at, 'followup', `Follow-up done: ${f.action}${f.source ? ' (' + f.source + ')' : ''}${f.opp_id && !oppId ? ' · ' + oppName(f.opp_id) : ''}`, f.outcome + (f.stop_reason ? ` · No further follow-up: ${f.stop_reason}` : ''), staffName(f.done_by));
-  for (const d of D.documents.filter(d => d.client_id === clientId && (!oppId || d.opp_id === oppId))) push(d.created_at, 'file', `File added: ${d.name}`, d.followup_id ? `${d.type} · with a follow-up` : d.type, staffName(d.uploaded_by), { doc: d.id });
+  for (const d of D.documents.filter(d => d.client_id === clientId && (!oppId || d.opp_id === oppId))) push(d.created_at, 'file', `File added: ${d.name}`, d.followup_id ? `${d.type} · with a follow-up` : d.type, uploaderName(d), { doc: d.id });
   for (const a of (O.approvals || []).filter(a => a.client_id === clientId && (!oppId || a.record_id === oppId))) {
     push(a.created_at, 'approval', `Approval asked: ${a.kind}`, a.reason, staffName(a.requested_by));
     if (a.decided_at) push(a.decided_at, 'approval', `${a.status}: ${a.kind}`, a.decision_note || a.reason, staffName(a.decided_by));
@@ -4048,6 +4053,7 @@ EM.VIEWS.project = arg => {
     <section class="card stack-s" data-pj-sites><div class="row between"><h3>Installation sites (${sites.length})</h3>${isBothView() ? '' : `<button class="btn sm primary" data-act="site-add" data-project="${p.id}">+ New installation site</button>`}</div>
       ${sites.length ? table(['Site', 'Step', 'Installed by', 'Address', ''], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.name)}</b></a><div class="small muted">${esc(x.ref || '')}</div>`, esc(x.step), esc(installedByTxt(x)), esc(x.address || ''), isBothView() ? '' : `<button class="btn sm ghost" data-act="pj-site" data-id="${p.id}" data-site="${x.id}" data-unlink="1">Unlink</button>`])) : '<p class="muted small">No installation site linked yet.</p>'}
       ${free.length ? `<div class="row" style="align-items:flex-end"><label class="field" style="min-width:260px"><span class="small muted">Link a site already added</span><select class="input" id="pj-site-pick"><option value="">Choose</option>${free.map(x => `<option value="${x.id}">${esc(x.name)} · ${esc(x.step)}</option>`).join('')}</select></label><button class="btn sm" data-act="pj-site" data-id="${p.id}">Link it</button></div>` : ''}</section>
+    ${projectSamples(p)}
     <section class="stack-s"><h3>Files</h3>${filesBox({ id: 'pj', project: p.id, types: ['Drawing', 'BOQ', 'Quotation', 'Site photo', 'Agreement', 'Other'], docs: D.documents.filter(d => d.project_id === p.id), canAdd: !isBothView(), title: 'Add files to this project', note: 'Drawings, BOQ, quotations, site photos: one or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No files on this project yet' })}</section></div>`;
 };
 EM.VIEWS.project.tab = 'projects';
@@ -4191,7 +4197,7 @@ function fbPaintImgs() { document.querySelectorAll('img[data-fb-img]').forEach(i
 const baseRenderFB = EM.render;
 EM.render = (...a) => { baseRenderFB(...a); if (['attendance', 'roadmap'].includes(EM.route().r)) fbPaintImgs(); };
 EM.ACTIONS['fb-photo'] = el => { const d = D.documents.find(x => x.id === el.dataset.id); if (!d) return;
-  EM.modal(`<h2>${esc(d.type)}</h2><p class="muted small">${esc(staffName(d.uploaded_by))} · ${esc(whenIST(d.created_at))}</p><div style="margin:12px 0"><img data-fb-img="${d.id}" alt="${esc(d.type)}" style="max-width:100%;max-height:60vh;border-radius:12px" hidden></div>
+  EM.modal(`<h2>${esc(d.type)}</h2><p class="muted small">${esc(uploaderName(d))} · ${esc(whenIST(d.created_at))}</p><div style="margin:12px 0"><img data-fb-img="${d.id}" alt="${esc(d.type)}" style="max-width:100%;max-height:60vh;border-radius:12px" hidden></div>
     <div class="row" data-file-acts><button class="btn sm" data-act="fu-view" data-id="${d.id}">View</button><button class="btn sm ghost" data-act="fu-dl" data-id="${d.id}">Download</button><button class="btn sm ghost" data-act="fu-share" data-id="${d.id}">Share</button><button class="btn sm ghost" data-act="close-modal">Close</button></div>`); fbPaintImgs(); };
 NAV_ACTS.add('fb-photo'); LOOK_ACTS.add('fb-photo'); NAV_ACTS.add('fb-csv'); LOOK_ACTS.add('fb-csv'); NAV_ACTS.add('fb-count'); LOOK_ACTS.add('fb-count'); for (const k of ['rm-pick', 'att-person']) { NAV_ACTS.add(k); LOOK_ACTS.add(k); }   // looking at a person's days changes nothing; planning waits for one company, like every change
 
@@ -4354,7 +4360,7 @@ function d5Of(c) {
   const dealers = [...[...dealerIds].map(id => (DDIR().find(d => d.id === id) || CL()[id] || {}).name).filter(Boolean), ...String((c.extra || {}).connected_dealers || '').split(/[,;\n]/).map(x => x.trim()).filter(Boolean)];
   const acts = ACTS().filter(a => ids.has(a.client_id)).map(a => a.at), done = FUS().filter(f => ids.has(f.client_id) && f.status !== 'open' && f.done_at).map(f => f.done_at);
   const next = FUS().filter(f => ids.has(f.client_id) && f.status === 'open').sort((a, b) => a.due_date.localeCompare(b.due_date))[0];
-  return { projects, active: projects.filter(p => !['Completed', 'Lost'].includes(p.stage)), won, business: won.reduce((a, o) => a + (Number(o.value) || 0), 0), dealers: [...new Set(dealers)], last: [...acts, ...done].sort().pop() || '', next, samples: 0 };
+  return { projects, active: projects.filter(p => !['Completed', 'Lost'].includes(p.stage)), won, business: won.reduce((a, o) => a + (Number(o.value) || 0), 0), dealers: [...new Set(dealers)], last: [...acts, ...done].sort().pop() || '', next, samples: REGS().filter(r => r.kind === 'sample' && ids.has(r.client_id)).length };   // R6a: counted from the Samples register
 }
 EM.d5F = { period: 'all', from: '', to: '', owner: '', city: '', kind: '', field: '', fq: '' };
 DF_STATE.d5 = () => EM.d5F;
@@ -4379,7 +4385,7 @@ EM.VIEWS.design500 = () => {
     ${rows.length ? '<div class="d5-tbl" data-d5-table>' + table(['Member', 'Owner', 'Last interaction', 'Next action', 'Connected dealers', 'Active projects', 'Samples given', ...(P ? ['Business brought'] : [])], rows.slice(0, 500).map(c => { const x = X[c.id];
       return { href: `#/client/${c.id}`, cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(kindLabel(c.kind))} · ${esc(c.city || '')}${(c.extra || {}).design500_since ? ' · since ' + ds(c.extra.design500_since) : ''}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`,
         esc(staffName(c.owner_id)), x.last ? ds(dayIST(x.last)) : '<span class="muted">None yet</span>', x.next ? `${esc(x.next.action)} <div class="small muted">${ds(x.next.due_date)}</div>` : '<span class="muted">None booked</span>',
-        esc(x.dealers.join(', ')), x.active.length ? `${num(x.active.length)}<div class="small muted">${esc(x.active.map(p => p.name).slice(0, 3).join(', '))}</div>` : '0', '0', ...(P ? [money(x.business)] : [])] }; })) + '</div>'
+        esc(x.dealers.join(', ')), x.active.length ? `${num(x.active.length)}<div class="small muted">${esc(x.active.map(p => p.name).slice(0, 3).join(', '))}</div>` : '0', x.samples ? `<a href="#/client/${c.id}/samples">${num(x.samples)}</a>` : '0', ...(P ? [money(x.business)] : [])] }; })) + '</div>'
       : empty(all.length ? 'Nothing for this filter' : 'No Design 500 member yet', all.length ? 'Change or clear the filters above.' : 'Mark an architect or a firm as a Design 500 member (here, on their page, or with the Excel file); their projects and the business they bring are counted from what is saved.', all.length ? '' : '<button class="btn primary" data-act="d5-add">+ Add a member</button>')}</div>`;
 };
 EM.VIEWS.design500.title = () => 'Design 500';
@@ -4557,6 +4563,9 @@ NAV_HELP.priority = 'Priority calls: who to call now, and why. Follow-ups due, R
 EM.prF = { period: 'all', from: '', to: '', why: '', who: '', field: '', fq: '' };
 DF_STATE.pr = () => EM.prF;
 const PR_WHY = { fu: 'Follow-up due', field: 'From field sales', hot: 'Hot lead', reorder: 'Due a reorder', dormant: 'Dormant dealer' };
+/* R5 carried (b): four tiles at most. Dormant is folded into the reorder tile; the Why filter still offers each reason with its count */
+const PR_TILES = [['fu', 'Follow-up due', ['fu']], ['field', 'From field sales', ['field']], ['hot', 'Hot lead', ['hot']], ['rd', 'Due a reorder or dormant', ['reorder', 'dormant']]];
+const prWhyHas = (why, kind) => (PR_TILES.find(t => t[0] === why) || [, , [why]])[2].includes(kind);
 const PR_FIELDS = [['name', 'Who'], ['why', 'Why'], ['detail', 'Details'], ['mobile', 'Mobile'], ['owner', 'Whose'], ['city', 'City']];
 const PR_HOT = ['wholesale', 'ego_retail', 'retail_lead'];
 const prTele = () => TELE_ROLES.includes(D.access.id) || D.access.dash === 'tele';
@@ -4592,7 +4601,7 @@ const prRow = (r, tele) => [`<span class="badge ${r.rank <= 1 ? 'bad' : r.rank <
   isBothView() ? '' : `<button class="btn sm primary" data-act="pr-called" data-key="${esc(r.key)}">Called</button>`];
 EM.VIEWS.priority = () => {
   const f = EM.prF, fq = f.fq.trim().toLowerCase(), all = priorityRows(), tele = prTele();
-  const rows = all.filter(r => (!f.why || r.kind === f.why) && (!f.who || r.owner === f.who) && inPeriod(r.date, f.period, f.from, f.to)
+  const rows = all.filter(r => (!f.why || prWhyHas(f.why, r.kind)) && (!f.who || r.owner === f.who) && inPeriod(r.date, f.period, f.from, f.to)
     && (!fq || (f.field ? [prVal(r, f.field)] : PR_FIELDS.map(([k]) => prVal(r, k))).some(v => v.toLowerCase().includes(fq))) && matches(`${r.c.name} ${r.why} ${r.detail} ${r.c.city || ''}`, [r.c.mobile]));
   const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-prf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   const owners = [...new Set(all.map(r => r.owner).filter(Boolean))].map(id => [id, staffName(id)]).sort((a, b) => a[1].localeCompare(b[1]));
@@ -4600,9 +4609,9 @@ EM.VIEWS.priority = () => {
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : esc(DIVS[EM.div].co)} · ${tele ? 'your calls, and every dealer in the company' : esc(scopeLabel())}</div><h1>Priority calls</h1>
       <p class="muted">${num(rows.length)} to call now · worked out at ${tFmt(new Date().toISOString())} from saved records: follow-ups due, Requirements from field sales, hot leads, dealers due a reorder, dealers with no order in ${num(dormantDays())} days.</p></div>
       <button class="btn" data-act="pr-refresh">${fic('refresh')}Refresh</button></div>
-    <div class="grid g4" data-pr-counts>${Object.entries(PR_WHY).map(([k, l]) => `<button class="card tile" style="text-align:left;cursor:pointer" data-act="pr-why" data-k="${k}" aria-pressed="${f.why === k}"><div class="small muted">${esc(l)}</div><b style="font-size:22px">${num(all.filter(r => r.kind === k).length)}</b></button>`).join('')}</div>
+    <div class="grid g4" data-pr-counts>${PR_TILES.map(([k, l, ks]) => `<button class="card tile" style="text-align:left;cursor:pointer" data-act="pr-why" data-k="${k}" aria-pressed="${f.why === k}"><div class="small muted">${esc(l)}</div><b style="font-size:22px">${num(all.filter(r => ks.includes(r.kind)).length)}</b></button>`).join('')}</div>
     <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-pr-filters>${dateFilter(f, 'pr', 'Date (due, raised or last order)')}
-      ${sel('why', 'Why', [['', 'Every reason'], ...Object.entries(PR_WHY)])}${tele ? '' : sel('who', 'Whose', [['', 'Everyone'], ...owners])}${sel('field', 'Any field', [['', 'Any field'], ...PR_FIELDS])}
+      ${sel('why', 'Why', [['', 'Every reason'], ...Object.entries(PR_WHY).map(([k, l]) => [k, `${l} (${num(all.filter(r => r.kind === k).length)})`]), ['rd', `Due a reorder or dormant (${num(all.filter(r => prWhyHas('rd', r.kind)).length)})`]])}${tele ? '' : sel('who', 'Whose', [['', 'Everyone'], ...owners])}${sel('field', 'Any field', [['', 'Any field'], ...PR_FIELDS])}
       <label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="pr-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
     ${searchBox('Priority calls: name, reason, mobile or city')}
     ${rows.length ? `<div data-pr-table>${table(['Why', 'Who', 'Details', 'Mobile', ...(tele ? [] : ['Whose']), ''], rows.slice(0, 300).map(r => prRow(r, tele)))}</div>`
@@ -4640,4 +4649,251 @@ EM.ACTIONS['pr-called-save'] = async el => {
     if (r.fu && next) { fuApply(await API('POST', '/api/follow-ups/' + r.fu.id, { date: next })); }
     EM.closeModal(); EM.toast(`<b>Called ${esc(r.c.name)}</b>: ${esc(out)}. Off the list.`); EM.rerender();
   } catch (x) { busy(el, false); showErr('prc-err', x.message); }
+};
+
+/* ================================================================ R6a (17 Oct, plan points 13 and 14): the registers
+   Samples (given to a dealer, architect, person or project, with sample spend against the sales after it), Displays (at a
+   dealer, with a replacement-due reminder on the bell) and Training (an installer is certified while they hold an unexpired
+   record of course kind Installer certification). Both companies. One table on the server; one list, one form, one Excel
+   sample and upload here, each told which register it is. */
+const REGS = () => D.registers || [];
+Object.assign(ICON, { samples: fic('color-swatch', 'ic'), displays: fic('presentation', 'ic'), training: fic('school', 'ic') });   // from the app icon set (design/icons.svg)
+Object.assign(HIST_AREA, { samples: 'samples', displays: 'displays', training: 'training' });
+Object.assign(NAV_HELP, { samples: 'Samples: boards, catalogues and swatches given to dealers, architects, people and projects, billed or free, and the sales that came after.',
+  displays: 'Displays at dealers: what is on show, its condition, and when it is due for replacement (the bell reminds the dealer\'s owner and their manager).',
+  training: 'Training: who was trained on what, the score, the certificate and its expiry. Installer certification shows on complaints and installation sites.' });
+const REG_ROUTE = { sample: 'samples', display: 'displays', training: 'training' }, REG_OF = { samples: 'sample', displays: 'display', training: 'training' };
+const regCo = d => d === 'retail' ? 'Big E' : 'EGO Premium';
+const regProd = id => (INVD() && INVD().products.find(p => p.id === id)) || null;
+const regWhat = r => r.kind === 'training' ? r.extra.course || '' : [regProd(r.product_id) ? regProd(r.product_id).name : '', r.item].filter(Boolean).join(' · ');
+const regWho = r => r.project_id ? (PJS().find(p => p.id === r.project_id) || { name: 'A project outside your view' }).name : r.client_id ? clientName(r.client_id) : '';
+const regWhoHref = r => r.project_id ? '#/project/' + r.project_id : r.client_id ? `#/client/${r.client_id}/${r.kind === 'display' ? 'displays' : 'samples'}` : '';
+const regWhoKind = r => r.project_id ? 'Project' : r.client_id ? kindLabel((CL()[r.client_id] || {}).kind || '') || 'Client' : '';
+const dueIn = d => Math.round((Date.parse(d) - Date.parse(today())) / 864e5);
+const dueBadge = r => { if (!r.due_date) return '<span class="muted small">No date</span>'; const n = dueIn(r.due_date);
+  return `<span class="badge ${n < 0 ? 'bad' : n <= 7 ? 'warn' : 'plain'}" data-due="${n}">${n < 0 ? `Overdue ${-n} day${n === -1 ? '' : 's'}` : n === 0 ? 'Due today' : n <= 7 ? `Due in ${n} day${n === 1 ? '' : 's'}` : ds(r.due_date)}</span>`; };
+/* installer certification: an unexpired Training record of course kind Installer certification, for that person or that firm */
+const certOf = (name, clientId) => { const t = today(), nm = String(name || '').trim().toLowerCase();
+  return REGS().filter(r => r.kind === 'training' && r.extra.course_kind === CERT_COURSE && (!r.due_date || r.due_date >= t) && ((nm && String(r.extra.person || '').trim().toLowerCase() === nm) || (clientId && r.client_id === clientId)))
+    .sort((a, b) => String(b.due_date || '9999').localeCompare(String(a.due_date || '9999')))[0] || null; };
+const certBadge = (name, clientId) => { if (!name && !clientId) return '<span class="badge plain" data-cert="unknown">Installer not named yet</span>'; const c = certOf(name, clientId);
+  return c ? `<span class="badge ok" data-cert="yes">Certified till ${c.due_date ? ds(c.due_date) : 'no expiry date'}</span>` : '<span class="badge bad" data-cert="no">Not certified</span>'; };
+const cmpCert = c => certBadge(c.installer_name, c.installed_by === 'dealer' && !c.installer_name ? c.client_id : '') + (c.installer_name ? ` <span class="small muted">${esc(c.installer_name)}</span>` : '');
+const siteCert = x => { const e = x.extra || {}; return certBadge(x.crew || '', e.installed_by === 'dealer' ? e.installer_dealer : ''); };
+
+/* ---- sample spend against the sales after it (the Owner sets the window in Rules and numbers, default 90 days) */
+const swDays = () => sampleWindow(D.lists.rules);
+/* value before GST: a Big E sale's value carries GST, so its subtotal is used when it has one */
+const preGst = s => s.div === 'retail' ? Number((((D.opportunities.find(o => o.id === s.id) || {}).extra) || {}).subtotal) || s.value : s.value;
+const salesAfterFor = c => DEALER_KINDS.includes(c.kind) ? salesList().filter(s => s.client_id === c.id).map(s => ({ at: s.at, value: preGst(s), ref: s.ref, href: s.href }))
+  : ARCH_KINDS.includes(c.kind) ? d5Of(c).won.map(o => { const h = D.history.filter(x => x.opp_id === o.id && x.to_stage === o.stage).pop(); return { at: dayIST((h && h.at) || o.closed_at || o.updated_at), value: Number(o.value) || 0, ref: o.ref || o.title, href: '#/opp/' + o.id }; }) : [];
+const spendOf = (c, samples) => sampleSpend(samples || REGS().filter(r => r.kind === 'sample' && r.client_id === c.id), salesAfterFor(c), swDays());
+function spendCard(c) {
+  const P = D.access.prices, sm = REGS().filter(r => r.kind === 'sample' && r.client_id === c.id), x = spendOf(c, sm), W = swDays();
+  const what = DEALER_KINDS.includes(c.kind) ? 'orders invoiced (EGO Premium) or sales won (Big E)' : 'won opportunities they are on (theirs or in their projects)';
+  const why = { title: `Sales after samples: ${c.name}`, calc: `Each sale of ${c.name} (${what}) dated on or within ${W} days after a sample was given, counted once even when two samples cover it. Value before GST.`, head: ['Sale', 'Date', ...(P ? ['Value before GST'] : [])], rows: x.after.map(s => ({ href: s.href, cells: [esc(s.ref || ''), ds(s.at), ...(P ? [inr0(s.value)] : [])] })) };
+  return `<section class="card stack-s" data-spend><h3>Sample spend vs sales after</h3>
+    ${P ? kv([['Samples given', `${num(sm.length)} · ${inr0(x.spend)}`], [`Sales in the ${W} days after`, fig(inr0(x.sales), why)], ['Sales per ₹1 of samples', x.spend ? (x.sales / x.spend).toFixed(1) : '<span class="muted">No sample value saved</span>']])
+      : kv([['Samples given', num(sm.length)], [`Sales in the ${W} days after`, fig(num(x.after.length) + ' sales', why)]]) + '<p class="small muted">Money is hidden for your role.</p>'}
+    <p class="small muted">Worked out from saved samples and ${esc(what)}; nothing is typed. The ${W}-day window is the Owner's, in Lists &amp; stages › Rules and numbers.</p></section>`;
+}
+
+/* ---- the list screens */
+EM.regF = { sample: {}, display: {}, training: {} };
+const regFstate = k => (EM.regF[k] = Object.assign({ period: 'all', from: '', to: '', owner: '', a: '', b: '', field: '', fq: '' }, EM.regF[k]));
+DF_STATE.rgs = () => regFstate('sample'); DF_STATE.rgd = () => regFstate('display'); DF_STATE.rgt = () => regFstate('training');
+const REG_DF = { sample: 'rgs', display: 'rgd', training: 'rgt' };
+const REG_FILT = {   // two dropdowns per register, beside the Date filter, Owner and any field
+  sample: [['a', 'Billed or free', r => r.extra.billed, () => ['Billed', 'Free']], ['b', 'Return status', r => r.status, () => SAMPLE_RETURN]],
+  display: [['a', 'Display type', r => r.extra.display_type, () => optsOf(REG_FIELDS.display.find(f => f.key === 'display_type'), D.lists)], ['b', 'Condition', r => r.status, () => DISPLAY_CONDITION]],
+  training: [['a', 'Audience', r => r.extra.audience, () => TRAINING_AUDIENCE], ['b', 'Course kind', r => r.extra.course_kind, () => regCourseKinds()]],
+};
+const regCourseKinds = () => [...new Set([...optsOf(REG_FIELDS.training.find(f => f.key === 'course_kind'), D.lists), CERT_COURSE])];
+const REG_ANY = { sample: [['who', 'Given to'], ['what', 'Design or item'], ['ref', 'Number'], ['notes', 'Notes']], display: [['who', 'Dealer'], ['what', 'Design or product'], ['ref', 'Number'], ['notes', 'Notes']], training: [['person', 'Person'], ['who', 'Firm'], ['what', 'Course'], ['trainer', 'Trainer'], ['ref', 'Number'], ['notes', 'Notes']] };
+const regVal = (r, k) => k === 'who' ? regWho(r) : k === 'what' ? regWhat(r) : k === 'ref' ? r.ref || '' : String(r.extra[k] ?? r[k] ?? '');
+const REG_DATE_LABEL = { sample: 'Date given', display: 'Installed on', training: 'Training date' };
+function regRows(kind) {
+  const f = regFstate(kind), fq = f.fq.trim().toLowerCase(), [fa, fb] = REG_FILT[kind];
+  return REGS().filter(r => r.kind === kind && inDiv(r) && (!f.owner || r.owner_id === f.owner) && (!f.a || fa[2](r) === f.a) && (!f.b || fb[2](r) === f.b) && inPeriod(r.on_date, f.period, f.from, f.to)
+    && (!fq || (f.field ? [regVal(r, f.field)] : REG_ANY[kind].map(([k]) => regVal(r, k))).some(v => v.toLowerCase().includes(fq)))
+    && matches(`${r.ref} ${regWho(r)} ${regWhat(r)} ${r.extra.person || ''} ${r.extra.trainer || ''} ${r.extra.notes || ''}`, []));
+}
+const regFiles = r => D.documents.filter(d => d.register_id === r.id).length;
+const REG_HEAD = { sample: () => ['Sample', 'Given to', 'Qty', ...(D.access.prices ? ['Value'] : []), 'Billed or free', 'Date given', 'Return status', 'Files'],
+  display: () => ['Display', 'Dealer', 'Type', 'Condition', 'Installed on', 'Last inspection', 'Replacement due', ...(D.access.prices ? ['Cost'] : []), 'Photos'],
+  training: () => ['Training', 'Who', 'Audience', 'Course kind', 'Date', 'Score', 'Expiry', 'Certificate'] };
+const regBtns = r => isBothView() ? '' : `<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm ghost" data-act="rg-edit" data-id="${r.id}">Change</button>${D.access.can_delete ? `<button class="btn sm ghost" data-act="rg-del" data-id="${r.id}">Delete</button>` : ''}</div>`;
+const REG_ROW = {
+  sample: r => [`<b>${esc(regWhat(r))}</b><div class="small muted">${esc(r.ref)}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, regWhoHref(r) ? `<a href="${regWhoHref(r)}">${esc(regWho(r))}</a><div class="small muted">${esc(regWhoKind(r))}</div>` : '', num(r.extra.qty || 0), ...(D.access.prices ? [money(r.value)] : []), esc(r.extra.billed || ''), ds(r.on_date), `<span class="badge ${r.status === 'Lost' ? 'bad' : r.status === 'Returned' ? 'ok' : 'plain'}">${esc(r.status)}</span>`, `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Files (${regFiles(r)})</button>${regBtns(r)}`],
+  display: r => [`<b>${esc(regWhat(r))}</b><div class="small muted">${esc(r.ref)}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, r.client_id ? `<a href="#/client/${r.client_id}/displays">${esc(regWho(r))}</a>` : '', esc(r.extra.display_type || ''), `<span class="badge ${r.status === 'Damaged' ? 'bad' : r.status === 'Worn' ? 'warn' : 'ok'}">${esc(r.status)}</span>`, ds(r.on_date), r.extra.last_inspection ? ds(r.extra.last_inspection) : '<span class="muted small">Not inspected</span>', dueBadge(r), ...(D.access.prices ? [money(r.value)] : []), `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Photos (${regFiles(r)})</button>${regBtns(r)}`],
+  training: r => [`<b>${esc(r.extra.course || '')}</b><div class="small muted">${esc(r.ref)}${r.extra.product ? ' · ' + esc(r.extra.product) : ''}${r.extra.trainer ? ' · by ' + esc(r.extra.trainer) : ''}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, `${esc(r.extra.person || '')}${r.client_id ? `<div class="small"><a href="#/client/${r.client_id}">${esc(regWho(r))}</a></div>` : ''}`, esc(r.extra.audience || ''), `${esc(r.extra.course_kind || '')}${r.extra.course_kind === CERT_COURSE ? `<div>${!r.due_date || r.due_date >= today() ? `<span class="badge ok">Certified till ${r.due_date ? ds(r.due_date) : 'no expiry date'}</span>` : '<span class="badge bad">Expired</span>'}</div>` : ''}`, ds(r.on_date), r.extra.score != null ? num(r.extra.score) : '', r.due_date ? ds(r.due_date) : '<span class="muted small">No expiry</span>', `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Certificate (${regFiles(r)})</button>${regBtns(r)}`],
+};
+const regTable = (kind, rows) => `<div data-rg-table="${kind}">${table(REG_HEAD[kind](), rows.slice(0, 500).map(r => ({ cells: REG_ROW[kind](r) })))}</div>${rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : ''}`;
+const REG_TXT = {
+  sample: { kicker: 'boards, catalogues and swatches given out, billed or free', add: '+ Add a sample', ph: 'Samples: given to, design or item, number', none: 'No sample saved yet', noneTxt: 'Note each sample board, catalogue or swatch given to a dealer, architect, person or project: billed or free, and whether it came back. The sales after it are counted by themselves.' },
+  display: { kicker: 'what is on show at each dealer, and when it is due for replacement', add: '+ Add a display', ph: 'Displays: dealer, design or product, number', none: 'No display saved yet', noneTxt: 'Note each board, stand or mock-up floor at a dealer, with its photos, condition and replacement due date. The bell reminds the dealer\'s owner and their manager 7 days before and on the day.' },
+  training: { kicker: 'who was trained on what; installer certification', add: '+ Add a training record', ph: 'Training: person, firm, course, trainer, number', none: 'No training saved yet', noneTxt: 'Note each training: the audience, the person or firm, the course, the score, the certificate and its expiry. An installer with an unexpired Installer certification shows as certified on complaints and installation sites.' },
+};
+function regView(kind) {
+  const f = regFstate(kind), all = REGS().filter(r => r.kind === kind && inDiv(r)), rows = regRows(kind), T = REG_TXT[kind];
+  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-rgf="${kind}:${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const owners = [...new Set(all.map(r => r.owner_id).filter(Boolean))].map(id => [id, staffName(id)]).sort((a, b) => a[1].localeCompare(b[1]));
+  const tabs = kind === 'sample' ? subtabs('#/samples', EM.route().arg === 'report' ? 'report' : 'list', [['list', `Samples <span class="muted">${all.length}</span>`], ['report', 'Spend vs sales after']]) : '';
+  const dueSoon = kind === 'display' ? all.filter(r => r.due_date && dueIn(r.due_date) <= 7) : [];
+  return `<div class="stack" data-rg="${kind}">
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : esc(DIVS[EM.div].co)} · ${T.kicker}</div><h1>${REG_KINDS[kind].plural}</h1><p class="muted">${rows.length} of ${all.length} · ${esc(scopeLabel())}</p></div>
+      <div class="row" style="flex-wrap:wrap"><button class="btn" data-act="rg-sample" data-kind="${kind}">Sample Excel</button><label class="btn" style="cursor:pointer" data-list-only>Upload Excel<input type="file" data-sheet="reg-${kind}" accept=".xlsx" hidden></label><button class="btn primary" data-act="rg-add" data-kind="${kind}">${T.add}</button></div></div>
+    ${tabs}${EM.rgImp && EM.rgImp.kind === kind ? regImportPreview() : ''}
+    ${dueSoon.length ? `<div class="callout warn" data-dsp-due><b>${dueSoon.length} display${dueSoon.length === 1 ? '' : 's'} due for replacement within 7 days or overdue.</b> The dealer's owner and their manager have a bell line for each.</div>` : ''}
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-rg-filters>${dateFilter(f, REG_DF[kind], REG_DATE_LABEL[kind])}
+      ${REG_FILT[kind].map(([k, label, , opts]) => sel(k, label, [['', 'Every one'], ...opts().map(o => [o, o])])).join('')}${sel('owner', 'Owner at EGO', [['', 'Everyone'], ...owners])}${sel('field', 'Any field', [['', 'Any field'], ...REG_ANY[kind]])}
+      <label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="rg-fq" data-kind="${kind}" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+    ${searchBox(T.ph)}
+    ${rows.length ? regTable(kind, rows) : empty(all.length ? 'Nothing for this filter' : T.none, all.length ? 'Change or clear the filters above.' : T.noneTxt, all.length ? '' : `<button class="btn primary" data-act="rg-add" data-kind="${kind}">${T.add}</button>`)}</div>`;
+}
+/* the Samples report: per dealer and architect, sample value given against won or invoiced value in the window after */
+function sampleReport() {
+  const f = regFstate('sample'), P = D.access.prices, W = swDays(), sm = regRows('sample').filter(r => r.client_id && CL()[r.client_id] && (DEALER_KINDS.includes(CL()[r.client_id].kind) || ARCH_KINDS.includes(CL()[r.client_id].kind)));
+  const by = {}; for (const r of sm) (by[r.client_id] = by[r.client_id] || []).push(r);
+  const rows = Object.entries(by).map(([id, a]) => { const c = CL()[id]; return { c, a, x: spendOf(c, a) }; }).sort((p, q) => q.x.sales - p.x.sales || p.c.name.localeCompare(q.c.name));
+  const tot = rows.reduce((t, r) => ({ spend: t.spend + r.x.spend, sales: t.sales + r.x.sales }), { spend: 0, sales: 0 });
+  return `<div class="stack" data-rg="sample" data-sample-report>
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : esc(DIVS[EM.div].co)} · per dealer and architect</div><h1>Samples</h1><p class="muted">Sample value given against the sales in the ${W} days after each sample (each sale counted once). The samples follow the filters above the list.</p></div>
+      <a class="btn" href="#/samples/list">Back to the list</a></div>
+    ${subtabs('#/samples', 'report', [['list', 'Samples'], ['report', 'Spend vs sales after']])}
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-rg-filters>${dateFilter(f, 'rgs', 'Date given')}<span class="small muted">Window: ${W} days after each sample (Lists &amp; stages › Rules and numbers)</span></div>
+    ${P ? `<div class="grid g4">${tile('Sample value given', inr0(tot.spend))}${tile(`Sales in the ${W} days after`, inr0(tot.sales))}${tile('Sales per ₹1 of samples', tot.spend ? (tot.sales / tot.spend).toFixed(1) : '0')}${tile('Dealers and architects', num(rows.length))}</div>` : ''}
+    ${rows.length ? table(['Dealer or architect', 'Samples', ...(P ? ['Sample value', `Sales in the ${W} days after`, 'Sales per ₹1'] : ['Sales after (count)'])], rows.map(({ c, a, x }) => ({ href: `#/client/${c.id}/samples`, cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(kindLabel(c.kind))} · ${esc(c.city || '')}</div>`, num(a.length), ...(P ? [inr0(x.spend), inr0(x.sales), x.spend ? (x.sales / x.spend).toFixed(1) : ''] : [num(x.after.length)])] })))
+      : empty('No sample to a dealer or architect in these dates', 'Samples given to dealers and architects are added up here against the sales that came after them.')}</div>`;
+}
+for (const [scr, kind] of Object.entries(REG_OF)) { EM.VIEWS[scr] = arg => kind === 'sample' && String(arg || '') === 'report' ? sampleReport() : regView(kind); EM.VIEWS[scr].title = () => REG_KINDS[kind].plural; }
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.rgf; if (k) { const [kind, key] = k.split(':'); regFstate(kind)[key] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'rg-fq') { regFstate(e.target.dataset.kind).fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#rg-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+
+/* ---- on the dealer and architect pages: Samples (with spend vs sales after), Displays (dealers) */
+const regTabs = c => [['samples', `Samples (${REGS().filter(r => r.kind === 'sample' && r.client_id === c.id).length})`], ...(DEALER_KINDS.includes(c.kind) ? [['displays', `Displays (${REGS().filter(r => r.kind === 'display' && r.client_id === c.id).length})`]] : [])];
+const REG_TAB_BODY = {
+  samples: c => { const rs = REGS().filter(r => r.kind === 'sample' && r.client_id === c.id);
+    return `<div class="stack" data-client-samples><div class="row between"><p class="small muted" style="max-width:720px">Samples given to ${esc(c.name)}: boards, catalogues, swatches, billed or free.</p>${isBothView() ? '' : `<button class="btn primary" data-act="rg-add" data-kind="sample" data-client="${c.id}">+ Sample for ${esc(c.name)}</button>`}</div>
+      ${spendCard(c)}${rs.length ? regTable('sample', rs) : empty('No sample given yet', `Samples given to ${esc(c.name)} appear here, and the sales after them are counted on their own.`)}</div>`; },
+  displays: c => { const rs = REGS().filter(r => r.kind === 'display' && r.client_id === c.id), soon = rs.filter(r => r.due_date && dueIn(r.due_date) <= 7);
+    return `<div class="stack" data-client-displays><div class="row between"><p class="small muted" style="max-width:720px">What is on show at ${esc(c.name)}. ${soon.length ? `<b>${soon.length} due for replacement within 7 days or overdue.</b>` : 'Nothing is due for replacement within 7 days.'} The bell reminds ${esc(staffName(c.owner_id))} and their manager.</p>${isBothView() ? '' : `<button class="btn primary" data-act="rg-add" data-kind="display" data-client="${c.id}">+ Display at ${esc(c.name)}</button>`}</div>
+      ${rs.length ? regTable('display', rs) : empty('No display saved yet', `Boards, stands and mock-up floors at ${esc(c.name)} appear here with their photos and replacement dates.`)}</div>`; },
+};
+/* on the project page: its samples */
+function projectSamples(p) { const rs = REGS().filter(r => r.kind === 'sample' && r.project_id === p.id);
+  return `<section class="card stack-s" data-pj-samples><div class="row between"><h3>Samples (${rs.length})</h3>${isBothView() ? '' : `<button class="btn sm primary" data-act="rg-add" data-kind="sample" data-project="${p.id}">+ Sample for this project</button>`}</div>
+    ${rs.length ? regTable('sample', rs) : '<p class="muted small">No sample given on this project yet.</p>'}</section>`; }
+
+/* ---- add or change: one form, the fields of the register */
+const regRecipients = div => { const cs = D.clients.filter(c => (!div || c.division === div || c.division === 'both') && inDiv(c)).sort((a, b) => a.name.localeCompare(b.name)), grp = (label, a) => a.length ? `<optgroup label="${label}">${a.join('')}</optgroup>` : '';
+  const o = c => `<option value="${c.id}">${esc(c.name)} · ${esc(kindLabel(c.kind))} · ${esc(c.city || '')}</option>`;
+  return grp('Dealers', cs.filter(c => DEALER_KINDS.includes(c.kind)).map(o)) + grp('Architects', cs.filter(c => ARCH_KINDS.includes(c.kind)).map(o)) + grp('People', cs.filter(c => !DEALER_KINDS.includes(c.kind) && !ARCH_KINDS.includes(c.kind)).map(o))
+    + grp('Projects', PJS().filter(p => (!div || p.division === div) && inDiv(p)).map(p => `<option value="project:${p.id}">${esc(p.name)} · project · ${esc(p.city || '')}</option>`)); };
+function regField(f, v, kind, div) {
+  const opts = (a, blank) => G.wrap(f, 'rg', `<select class="input" id="rg-${f.key}" name="${f.key}">${blank ? '<option value="">Choose</option>' : ''}${a}</select>`);
+  if (f.type === 'recipient') return opts(regRecipients(div), true).replace(`value="${esc(v)}"`, `value="${esc(v)}" selected`);
+  if (f.type === 'design') return G.select(f, v, 'rg', ((INVD() || { products: [] }).products || []).map(p => [p.id, `${p.name}${p.code ? ' · ' + p.code : ''}`]));
+  if (f.type === 'dealer') return G.select(f, v, 'rg', D.clients.filter(c => DEALER_KINDS.includes(c.kind) && inDiv(c)).sort((a, b) => a.name.localeCompare(b.name)).map(c => [c.id, `${c.name} · ${c.city || ''}`]), true);
+  if (f.type === 'firm') return G.select(f, v, 'rg', D.clients.filter(c => inDiv(c)).sort((a, b) => a.name.localeCompare(b.name)).map(c => [c.id, `${c.name} · ${kindLabel(c.kind)} · ${c.city || ''}`]));
+  if (f.key === 'course_kind') return G.select(f, v, 'rg', regCourseKinds().map(o => [o, o]), false);
+  return fieldHtml(f, v, 'rg');
+}
+function openRegForm(kind, r, pre = {}) {
+  const div = r ? r.division : EM.div !== 'both' ? EM.div : '', fields = showFields(REG_FIELDS[kind]);
+  const v = r ? { ...r, ...r.extra, recipient: r.project_id ? 'project:' + r.project_id : r.client_id } : { owner_id: (CL()[pre.client] || {}).owner_id || me().id, on_date: today(), qty: 1, billed: 'Free', status: kind === 'sample' ? 'Not due' : kind === 'display' ? 'Good' : '', recipient: pre.project ? 'project:' + pre.project : pre.client || '', client_id: pre.client || '' };
+  EM.modal(`<h2>${r ? `Change ${esc(REG_KINDS[kind].label.toLowerCase())} ${esc(r.ref)}` : esc(REG_TXT[kind].add.replace('+ ', ''))}</h2><p class="muted small">${div ? esc(regCo(div)) : 'The company follows the dealer, architect, person or project you choose.'}${kind === 'sample' ? ' Entered by hand now; filled from Tally once it is connected.' : ''}</p>
+    <form id="rgf" class="stack" onsubmit="return false" style="margin-top:12px"><div class="fgrid">${fields.map(f => regField(f, v[f.key], kind, div)).join('')}</div>
+    <p class="small muted">${kind === 'display' ? 'Photos' : kind === 'training' ? 'The certificate' : 'Files'}: add them after saving, from the row (many at a time; each opens in the browser, downloads and shares).</p>
+    ${errBox('rg-err')}<div class="row sticky-actions"><button class="btn primary" data-act="rg-save" data-kind="${kind}" data-id="${r ? r.id : ''}">${r ? 'Save changes' : 'Save'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+}
+EM.ACTIONS['rg-add'] = el => openRegForm(el.dataset.kind, null, { client: el.dataset.client, project: el.dataset.project });
+EM.ACTIONS['rg-edit'] = el => { const r = REGS().find(x => x.id === el.dataset.id); if (r) openRegForm(r.kind, r); };
+EM.ACTIONS['rg-save'] = async el => {
+  const kind = el.dataset.kind, input = { ...readForm(qs('#rgf'), REG_FIELDS[kind]), kind, ...(el.dataset.id ? { id: el.dataset.id } : {}) };
+  if (EM.div !== 'both') input.division = EM.div;
+  busy(el, true);
+  try { const r = await API('POST', '/api/registers' + (el.dataset.id ? '/' + el.dataset.id : ''), input); D.registers = REGS(); upsertLocal(D.registers, r.register);
+    EM.closeModal(); EM.toast(`<b>${esc(REG_KINDS[kind].label)} ${esc(r.register.ref)} ${r.created ? 'saved' : 'changed'}</b>${kind === 'display' && r.register.due_date && dueIn(r.register.due_date) <= 7 ? '<ul><li>Replacement due within 7 days: the dealer\'s owner and their manager have a bell line.</li></ul>' : ''}`); EM.rerender(); }
+  catch (x) { busy(el, false); showErr('rg-err', x.errors || x.message); }
+};
+EM.ACTIONS['rg-del'] = async el => {
+  const r = REGS().find(x => x.id === el.dataset.id); if (!r || !confirm(`Delete ${REG_KINDS[r.kind].label.toLowerCase()} ${r.ref}? It stays in the Recycle bin for 30 days.`)) return;
+  try { await API('DELETE', '/api/registers/' + r.id); D.registers = REGS().filter(x => x.id !== r.id); EM.toast(`${esc(REG_KINDS[r.kind].label)} ${esc(r.ref)} deleted, in the Recycle bin for 30 days.`); EM.rerender(); } catch (x) { bubbleNear(el, x.message); }
+};
+EM.ACTIONS['rg-files'] = el => { const r = REGS().find(x => x.id === el.dataset.id); if (!r) return;
+  EM.modal(`<h2>${esc(r.kind === 'display' ? 'Photos' : r.kind === 'training' ? 'Certificate and files' : 'Files')}: ${esc(r.ref)}</h2><p class="muted small">${esc(regWhat(r))}${regWho(r) ? ' · ' + esc(regWho(r)) : ''}</p>
+    ${filesBox({ id: 'rg', register: r.id, types: r.kind === 'display' ? ['Display photo', 'Inspection photo', 'Invoice', 'Other'] : r.kind === 'training' ? ['Certificate', 'Attendance sheet', 'Photo', 'Other'] : ['Photo', 'Bill', 'Delivery note', 'Other'], docs: D.documents.filter(d => d.register_id === r.id), canAdd: !isBothView(), title: 'Add files', note: 'One or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No files yet' })}
+    <div class="row" style="margin-top:12px"><button class="btn" data-act="close-modal">Close</button></div>`); };
+
+/* ---- the Excel sample (built at download, live dropdowns) and the upload, one per register */
+const REG_SHEET = {
+  sample: [['Company', 'company', true, 'EGO Premium or Big E.'], ['Given to', 'who', true, 'A dealer, architect, person or project, as on the list (the dropdown holds them).'], ['Mobile of who it was given to', 'who_mobile', false, 'Optional: finds the right one when two share a name.'],
+    ['Design code', 'design', false, 'A design code or name from Inventory. Or leave empty and fill Sample item.'], ['Sample item', 'item', false, 'Board, catalogue, swatch, if not a design.'], ['Quantity', 'qty', true, 'A whole number, 1 or more.'], ['Value', 'value', false, 'In rupees, before GST.'], ['Billed or free', 'billed', true, 'Billed or Free.'],
+    ['Date given', 'on_date', true, 'A date, e.g. 2026-10-17.'], ['Return status', 'status', true, SAMPLE_RETURN.join(', ') + '.'], ['Owner at EGO', 'owner', false, 'A person on the team. Empty: the owner of who it was given to.'], ['Notes', 'notes', false, '']],
+  display: [['Company', 'company', true, 'EGO Premium or Big E.'], ['Dealer', 'who', true, 'As on the Dealers list (the dropdown holds them).'], ['Mobile of the dealer', 'who_mobile', false, 'Optional.'], ['Design code', 'design', false, 'A design code or name. Or fill Product.'], ['Product', 'item', false, 'If not a design.'],
+    ['Display type', 'display_type', true, 'From the list (the Owner edits it in Lists & stages).'], ['Installed on', 'on_date', true, 'A date.'], ['Cost', 'value', false, 'In rupees.'], ['Condition', 'status', true, DISPLAY_CONDITION.join(', ') + '.'], ['Last inspection', 'last_inspection', false, 'A date.'], ['Replacement due', 'due_date', false, 'A date. The bell reminds 7 days before and on the day.'], ['Owner at EGO', 'owner', false, ''], ['Notes', 'notes', false, '']],
+  training: [['Company', 'company', true, 'EGO Premium or Big E.'], ['Audience', 'audience', true, TRAINING_AUDIENCE.join(', ') + '.'], ['Person', 'person', false, 'The person trained. Person or Firm (or both) is compulsory.'], ['Firm', 'who', false, 'A dealer, architect or company on the list.'], ['Course', 'course', true, 'What the course was called.'],
+    ['Course kind', 'course_kind', true, 'From the list; Installer certification makes an installer certified until its expiry.'], ['Product category', 'product', false, 'From the category list.'], ['Date', 'on_date', true, 'A date.'], ['Trainer', 'trainer', false, ''], ['Score', 'score', false, 'Out of 100.'], ['Expiry', 'due_date', false, 'A date.'], ['Owner at EGO', 'owner', false, ''], ['Notes', 'notes', false, '']],
+};
+EM.ACTIONS['rg-sample'] = async el => {
+  const kind = el.dataset.kind, S = REG_SHEET[kind]; busy(el, true);
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(), fill = wb.addWorksheet('Fill this'), how = wb.addWorksheet('How to fill'), lists = wb.addWorksheet('Lists');
+    const cs = D.clients.filter(inDiv), names = a => [...new Set(a.map(c => c.name))].sort();
+    const L = { company: ['wholesale', 'retail'].filter(canDiv).map(d => DIVS[d].co), owner: D.staff.filter(s => s.active).map(s => s.name), design: ((INVD() || { products: [] }).products || []).map(p => p.code || p.name),
+      who: kind === 'sample' ? [...names(cs), ...PJS().filter(inDiv).map(p => p.name)] : kind === 'display' ? names(cs.filter(c => DEALER_KINDS.includes(c.kind))) : names(cs),
+      billed: ['Billed', 'Free'], status: kind === 'sample' ? SAMPLE_RETURN : DISPLAY_CONDITION, display_type: REG_FILT.display[0][3](), audience: TRAINING_AUDIENCE, course_kind: regCourseKinds(), product: D.lists.categories };
+    const used = Object.fromEntries(Object.entries(L).filter(([k]) => S.some(([, sk]) => sk === k)));
+    Object.entries(used).forEach(([k, vals], i) => { lists.getCell(1, i + 1).value = k; vals.forEach((v, r) => { lists.getCell(r + 2, i + 1).value = v; }); });
+    lists.state = 'hidden';
+    fill.columns = S.map(([h, , req]) => ({ header: h + (req ? ' *' : ''), width: Math.max(16, h.length + 6) }));
+    fill.getRow(1).font = { bold: true }; fill.views = [{ state: 'frozen', ySplit: 1 }];
+    S.forEach(([, k, req], i) => { const letter = fill.getColumn(i + 1).letter, li = Object.keys(used).indexOf(k);
+      for (let r = 2; r <= 501; r++) { const cell = fill.getCell(letter + r);
+        if (li >= 0 && used[k].length) { const col = lists.getColumn(li + 1).letter; cell.dataValidation = { type: 'list', allowBlank: !req, formulae: [`Lists!$${col}$2:$${col}$${used[k].length + 1}`], showErrorMessage: true, errorTitle: 'Pick from the list', error: 'Choose a value from the dropdown.' }; }
+        else if (['on_date', 'due_date', 'last_inspection'].includes(k)) cell.dataValidation = { type: 'date', operator: 'greaterThan', allowBlank: !req, formulae: [new Date(2000, 0, 1)], showErrorMessage: true, error: 'A date.' }; } });
+    how.getCell('A1').value = `EGO Master: ${REG_KINDS[kind].plural}`; how.getCell('A1').font = { bold: true, size: 14 };
+    how.getCell('A2').value = 'One entry per row. The dropdowns hold today\'s lists from EGO Master.';
+    how.getCell('A3').value = `Made on ${today()} by ${me().name}. Upload it on the ${REG_KINDS[kind].plural} screen: every row is checked and shown before anything is saved.`;
+    S.forEach(([h, , req, note], i) => { how.getCell('A' + (5 + i)).value = h; how.getCell('B' + (5 + i)).value = req ? 'Compulsory' : 'Optional'; how.getCell('C' + (5 + i)).value = note; });
+    how.getColumn(1).width = 30; how.getColumn(3).width = 80;
+    const buf = await wb.xlsx.writeBuffer(), a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = `EGO Master ${REG_KINDS[kind].plural} ${today()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    EM.toast(`The ${REG_KINDS[kind].plural} file is downloading, with today's lists in its dropdowns.`);
+  } catch (x) { bubbleNear(el, x.message); }
+  busy(el, false);
+};
+EM.rgImp = null;
+document.addEventListener('change', async e => {
+  const m = e.target.matches('input[type="file"]') && /^reg-(\w+)$/.exec(e.target.dataset.sheet || ''); if (!m) return;
+  const kind = m[1], S = REG_SHEET[kind], file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file || !S) return;
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const ws = wb.getWorksheet('Fill this') || wb.worksheets[0], heads = [], rows = [];
+    const txt = v => v == null ? '' : v instanceof Date ? v.toISOString().slice(0, 10) : typeof v === 'object' ? String(v.text || v.result || (v.richText ? v.richText.map(x => x.text).join('') : '')) : String(v);
+    ws.getRow(1).eachCell((c, i) => { heads[i] = txt(c.value).replace(/\s*\*$/, '').trim(); });
+    ws.eachRow((r, n) => { if (n === 1) return; const x = { row: n }; let any = false;
+      S.forEach(([h, k]) => { const i = heads.indexOf(h); const v = i > 0 ? txt(r.getCell(i).value).trim() : ''; if (v) any = true; x[k] = v; });
+      if (any) rows.push(x); });
+    if (!rows.length) throw new Error('No filled rows in the "Fill this" tab.');
+    const res = await API('POST', '/api/registers/import', { kind, rows, save: false });
+    EM.rgImp = { kind, file: file.name, rows, res: res.rows }; EM.rerender();
+  } catch (x) { EM.rgImp = { kind, file: file.name, error: x.message, rows: [], res: [] }; EM.rerender(); }
+});
+function regImportPreview() {
+  const I = EM.rgImp, cnt = st => I.res.filter(r => r.status === st).length;
+  return `<section class="card stack-s" data-rg-import><div class="row between"><h3>Read: ${esc(I.file)}</h3><button class="btn sm ghost" data-act="rg-imp-close">Close</button></div>
+    ${I.error ? `<div class="callout warn">${esc(I.error)}</div>` : `<p class="small">${num(cnt('new'))} new · <b>${num(cnt('error'))} with a mistake</b>. ${I.saved ? 'Saved.' : 'Nothing is saved until you press Save.'}</p>
+    ${table(['Row', 'Status', 'Entry', 'Mistake'], I.res.map(r => [String(r.row), `<span class="badge ${r.status === 'error' ? 'bad' : 'info'}">${r.status === 'error' ? 'Mistake' : 'New'}</span>`, esc(r.label), esc(r.error || '')]))}
+    ${!I.saved && cnt('new') ? `<div class="row"><button class="btn primary" data-act="rg-imp-save">Save the ${num(cnt('new'))} good rows${cnt('error') ? ' (rows with a mistake are skipped)' : ''}</button></div>` : ''}`}</section>`;
+}
+EM.ACTIONS['rg-imp-close'] = () => { EM.rgImp = null; EM.rerender(); };
+EM.ACTIONS['rg-imp-save'] = async el => {
+  busy(el, true);
+  try { const r = await API('POST', '/api/registers/import', { kind: EM.rgImp.kind, rows: EM.rgImp.rows, save: true }); EM.rgImp = { ...EM.rgImp, res: r.rows, saved: true }; await reload4(); EM.toast(`<b>${r.rows.filter(x => x.status !== 'error').length} rows saved</b>`); EM.rerender(); }
+  catch (x) { busy(el, false); bubbleNear(el, x.message); }
 };
