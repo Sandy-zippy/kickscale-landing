@@ -76,7 +76,8 @@
 
   /* one row's numbers, Meta's and ours */
   function cells(o, enq, won, a, first) {
-    var money = function (v) { return a.cost ? ZS.money(v) : '₹ ••••'; };
+    /* whole rupees: Meta reports paise, and ₹27,510.9 reads as a typo */
+    var money = function (v) { return a.cost ? ZS.money(Math.round(v || 0)) : '₹ ••••'; };
     var per = function (v, by) { return !a.cost ? '₹ ••••' : by ? ZS.money(Math.round(v / by)) : '·'; };
     return '<td class="num">' + money(o.spend) + '</td>' +
       '<td class="num">' + n(o.impressions) + '</td>' +
