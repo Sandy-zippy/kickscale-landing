@@ -134,3 +134,8 @@ body.pt-on #shell { display: none; }
 .pt-nav a { flex: 1; max-width: 136px; text-align: center; padding: 10px 4px; border-radius: 12px; text-decoration: none; color: inherit; font-size: 13px; font-weight: 600; }
 .pt-nav a.on { background: var(--ge-border); }
 @media (max-width: 380px) { .pt-filters, .pt-actions { grid-template-columns: 1fr; } }
+
+/* R4: Design 500 fits at 1280 wide; headers and cells wrap instead of pushing Business brought out of view */
+.d5-tbl .tbl th, .d5-tbl .tbl td { white-space: normal; overflow-wrap: normal; word-break: normal; hyphens: manual; }
+.d5-tbl .tbl th { min-width: 0; }
+.d5-tbl .tbl td:first-child { min-width: 180px; }

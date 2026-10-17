@@ -502,7 +502,7 @@ const SUB_TYPES = ['Plank', 'Tile', 'Herringbone', 'Chevron', 'Board', 'Profile'
 const COLLECTION_FIELDS = [
   { key: 'category', label: 'Category', type: 'cat', req: true, col: true, section: 'Collection' },
   { key: 'name', label: 'Collection name', type: 'text', req: true, col: true, section: 'Collection' },
-  { key: 'sqft_per_box', label: 'Square feet per box', type: 'decimal', section: 'Box size and packing' },
+  { key: 'sqft_per_box', label: 'Sq ft per box', type: 'decimal', section: 'Box size and packing' },
   { key: 'sqm_per_box', label: 'Square metres per box', type: 'decimal', section: 'Box size and packing' },
   { key: 'pcs_per_box', label: 'Pieces per box', type: 'number', section: 'Box size and packing' },
   { key: 'weight_box_kg', label: 'Weight per box (kg)', type: 'decimal', section: 'Box size and packing' },
@@ -536,6 +536,7 @@ const PRODUCT_FIELDS = [
   { key: 'sub_type', list: 'design_types', label: 'Type', type: 'select', opts: SUB_TYPES, col: true },
   { key: 'colour', label: 'Colour or shade', type: 'text' },
   { key: 'image', label: 'Photo link', type: 'text' },
+  { key: 'sqft_per_box', label: 'Sq ft per box (only if it differs from its collection)', type: 'decimal' },
   { key: 'low_stock', label: 'Warn below (boxes)', type: 'number' },
   { key: 'status', label: 'Status', type: 'select', opts: ['Active', 'Discontinued'], col: true },
 ];
@@ -553,6 +554,44 @@ function boxSizes(extra) {
   else if (extra.sqm_per_box != null && extra.sqft_per_box == null) extra.sqft_per_box = Math.round(extra.sqm_per_box * SQFT * 100) / 100;
   return extra;
 }
+/* ---------------------------------------------------------------- quantity (R4, 17 Oct)
+
+   THE one quantity rule, used by the Worker and every screen (opportunity, order, PI, dealer portal, Big E
+   fulfilment, field app, Excel upload): sq ft needed + wastage % -> sq ft to supply -> boxes = whole boxes
+   rounded UP -> sq ft supplied = boxes x sq ft per box -> amount = sq ft supplied x rate per sq ft.
+   Accessories (skirting, profiles, underlay foam, film, installation) are per piece or per running ft (rft):
+   amount = quantity x rate, no boxes. The unit is set per category by the Owner (Rules and numbers). */
+const QTY_UNITS = { sqft: 'sq ft', piece: 'piece', rft: 'rft' };
+const QTY_UNIT_LONG = { sqft: 'per sq ft (with boxes)', piece: 'per piece', rft: 'per running ft (rft)' };
+const defaultCatUnit = cat => /skirting|profile|beading|trim|moulding/i.test(cat || '') ? 'rft' : /underlay|foam|film|install|accessor|adhesive|glue|sealant/i.test(cat || '') ? 'piece' : 'sqft';
+const catUnit = (cat, rules) => { const u = ((rules || {}).cat_units || {})[cat]; return QTY_UNITS[u] ? u : defaultCatUnit(cat); };
+const wastageDefault = rules => { const w = Number((rules || {}).wastage_pct); return isFinite(w) && w >= 0 ? w : 5; };
+const r2q = n => Math.round(n * 100) / 100;
+/* sq ft per box: the design's own figure if it has one, else its collection's. 0 = unknown (the line asks, never guesses) */
+const boxSizeOf = (prod, col) => Number(((prod || {}).extra || {}).sqft_per_box) || Number(((col || {}).extra || {}).sqft_per_box) || 0;
+function qtyLine(x) {
+  const unit = QTY_UNITS[x.unit] ? x.unit : 'sqft', rate = Number(x.rate) || 0;
+  if (unit !== 'sqft') {
+    const qty = r2q(Number(x.qty));
+    if (!isFinite(qty) || qty <= 0) return { error: `the ${unit === 'rft' ? 'running ft' : 'pieces'} must be a number above 0` };
+    return { unit, qty, sqft_need: 0, wastage_pct: 0, per_box: 0, supply: 0, boxes: 0, sqft: 0, rate, amount: r2q(qty * rate) };
+  }
+  const need = r2q(Number(x.sqft_need)), w = x.wastage_pct === '' || x.wastage_pct == null ? 0 : Number(x.wastage_pct), pb = Number(x.per_box);
+  if (!isFinite(need) || need <= 0) return { error: 'sq ft needed must be a number above 0' };
+  if (!isFinite(w) || w < 0 || w > 100) return { error: 'wastage must be between 0 and 100 %' };
+  if (!isFinite(pb) || pb <= 0) return { error: 'the design has no sq ft per box', per_box: true };
+  const supply = r2q(need * (1 + w / 100)), boxes = Math.ceil(Math.round(supply / pb * 1e6) / 1e6), sqft = r2q(boxes * pb);
+  return { unit, qty: 0, sqft_need: need, wastage_pct: w, per_box: pb, supply, boxes, sqft, rate, amount: r2q(sqft * rate) };
+}
+/* how a saved line reads, the same words everywhere. A line saved before R4 keeps its numbers: no wastage reads 0% */
+function qtyText(l) {
+  const n = v => Number(v || 0).toLocaleString('en-IN');
+  if (l.unit === 'piece' || l.unit === 'rft') return `${n(l.qty)} ${l.unit === 'rft' ? 'rft' : Number(l.qty) === 1 ? 'piece' : 'pieces'}`;
+  if (l.unit === 'sqft') return `${n(l.sqft_need)} sq ft + ${n(l.wastage_pct)}% wastage = ${n(r2q(l.sqft_need * (1 + l.wastage_pct / 100)))} sq ft · ${n(l.boxes)} boxes of ${n(l.per_box)} sq ft = ${n(l.sqft)} sq ft supplied`;
+  return [Number(l.sqft) ? `${n(l.sqft)} sq ft` : '', Number(l.boxes) ? `${n(l.boxes)} boxes` : '', '0% wastage'].filter(Boolean).join(' · ');
+}
+const rateUnit = l => l.unit === 'piece' ? 'piece' : l.unit === 'rft' ? 'rft' : l.unit === 'sqft' || (Number(l.sqft) && !Number(l.boxes)) ? 'sq ft' : 'box';
+
 /* one cleaner for the three: unknown keys are dropped, money and specs go in extra */
 function cleanFields(fields, input, ctx) {
   const errors = [], rec = { extra: {} };
@@ -722,7 +761,7 @@ Object.assign(LIST_LABEL, Object.fromEntries(OPS_LISTS.map(([k, l]) => [k, l])))
 
 /* the numbers the processing uses, all editable in Lists & stages > Rules and numbers */
 const DEFAULT_RULES = {
-  gst_pct: 18, moq_boxes: 500, production_round_boxes: 50, production_eta_days: 45, payment_days: 45,
+  gst_pct: 18, wastage_pct: 5, cat_units: {}, moq_boxes: 500, production_round_boxes: 50, production_eta_days: 45, payment_days: 45,
   /* approvals: who may say yes up to what. Owner: no limit. */
   approvals: {
     credit: { label: 'Credit above the limit', unit: '₹', levels: { manager: 100000, head: 500000, director: 1500000 } },

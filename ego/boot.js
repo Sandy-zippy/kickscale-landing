@@ -85,8 +85,11 @@
     /* the demo screens read these tables at load; in live mode they are empty, never invented */
     const empty = ['dealer', 'market', 'employee', 'sku', 'lead', 'project', 'architect', 'installer', 'connection', 'stock'];
     /* a dealer portal login (13 Oct, batch 4) gets the dealer portal, never the team's app */
+    /* R4: the portal and the field app read lines through the one quantity rule in schema.js, so it loads first */
+    const schemaFirst = () => typeof qtyLine === 'function' ? Promise.resolve() : new Promise((ok, bad) => { const v = document.querySelector('meta[name="build"]'), s = document.createElement('script'); s.src = 'schema.js' + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error('schema.js')); document.body.appendChild(s); });
     if (boot.portal) {
       if (window.EGOPORTAL) return window.EGOPORTAL.refresh(boot);
+      await schemaFirst();
       const v = document.querySelector('meta[name="build"]');
       await new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'portal.js' + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error('portal.js')); document.body.appendChild(s); });
       return window.EGOPORTAL.start(boot);
@@ -95,6 +98,7 @@
     let team = false; try { team = sessionStorage.getItem('ego-team') === '1'; } catch (e) {}
     if (boot.field && !team) {
       if (window.EGOFIELD) return window.EGOFIELD.refresh(boot);
+      await schemaFirst();
       const v = document.querySelector('meta[name="build"]');
       await new Promise((ok, bad) => { const s = document.createElement('script'); s.src = 'field.js' + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error('field.js')); document.body.appendChild(s); });
       return window.EGOFIELD.start(boot);

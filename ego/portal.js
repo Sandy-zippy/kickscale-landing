@@ -77,7 +77,7 @@
     <div class="row" style="gap:6px;flex-wrap:nowrap" data-file-acts><button class="btn sm" data-pa="view" data-id="${d.id}">View</button><button class="btn sm ghost" data-pa="dl" data-id="${d.id}">Download</button><button class="btn sm ghost" data-pa="share" data-id="${d.id}">Share</button></div></div>`;
   const orderCard = o => { const ls = B.lines.filter(l => l.order_id === o.id), fs = B.documents.filter(d => d.order_id === o.id);
     return `<div class="card pt-item" data-order="${o.id}"><div class="row between"><b>${esc(o.ref)}</b><span class="small muted">${ds(o.created_at)}</span></div>${stageLine(o)}
-      <div class="small">${ls.map(l => `${esc(l.product || 'Design')}${l.code ? ' (' + esc(l.code) + ')' : ''}: ${num(l.boxes)} boxes`).join(' · ')}</div>
+      ${ls.map(l => `<div class="small" data-p-line><b>${esc(l.product || 'Design')}</b>${l.code ? ' (' + esc(l.code) + ')' : ''}: <span data-p-boxes="${Number(l.boxes) || 0}">${esc(qtyText(l))}</span> · rate ${inr(l.rate)} / ${rateUnit(l)} · <span data-p-amt="${Number(l.amount) || 0}">${inr(l.amount)}</span> before GST</div>`).join('')}
       <div class="small">Total ${inr(o.total)} · paid ${inr(o.paid)}${due(o) > 0.5 ? ` · <b>due ${inr(due(o))}</b>` : ''}${o.invoiced_at ? ` · invoiced ${ds(o.invoiced_at)}` : ''}</div>
       ${fs.length ? fs.map(fileRow).join('') : '<p class="small muted">No PI or invoice on this order yet.</p>'}</div>`; };
   const planCard = p => { const bar = (got, want) => want ? `<div class="pt-bar"><span style="width:${Math.min(100, Math.round(got / want * 100))}%"></span></div>` : '';

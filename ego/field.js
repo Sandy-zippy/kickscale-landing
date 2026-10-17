@@ -229,7 +229,7 @@
         ${who}
         <div class="fd-field${e.kind ? ' has-err' : ''}"><span class="fd-label">What it is</span>${seg('fd-kind', R.kind, kinds)}${fe('kind')}</div>
         <div class="fd-field${e.cat ? ' has-err' : ''}"><span class="fd-label">Category</span><div class="fd-chips" role="radiogroup">${(B.lists.categories || []).map(c => `<label class="fd-chip"><input type="radio" name="fd-cat" value="${esc(c)}" ${R.cat === c ? 'checked' : ''}>${esc(c)}</label>`).join('')}</div>${fe('cat')}</div>
-        <div class="fd-field${e.sqft ? ' has-err' : ''}"><label for="fr-sq">Area</label><div class="fd-adorn"><input class="fd-input" id="fr-sq" data-req="sqft" inputmode="numeric" value="${esc(R.sqft)}"><span class="fd-suf">sq ft</span></div>${fe('sqft')}</div>
+        <div class="fd-field${e.sqft ? ' has-err' : ''}"><label for="fr-sq">Area</label><div class="fd-adorn"><input class="fd-input" id="fr-sq" data-req="sqft" inputmode="numeric" value="${esc(R.sqft)}"><span class="fd-suf">sq ft</span></div>${fe('sqft')}<span class="fd-help" data-req-boxes>${reqBoxes(R)}</span></div>
         <div class="fd-field"><span class="fd-label">Site photos</span><div class="fd-photos">${R.photos.map((f, i) => `<div class="fd-thumb"><img src="${R.urls[i]}" alt="Site photo ${i + 1}"><button type="button" aria-label="Remove photo" data-fa="req-photo-x" data-i="${i}">${ic('x')}</button></div>`).join('')}<label class="fd-photo-add">${ic('camera')}Add<input type="file" accept="image/*" capture="environment" multiple data-req-file="photos"></label></div></div>
         <details class="fd-more"${R.more ? ' open' : ''}><summary>More details: budget, site, timeline${ic('chevron-down')}</summary><div class="fd-form">
           <div class="fd-field${e.budget ? ' has-err' : ''}"><label for="fr-bud">Budget</label><div class="fd-adorn"><span class="fd-pre">₹</span><input class="fd-input" id="fr-bud" data-req="budget" inputmode="numeric" value="${esc(R.budget)}"><span class="fd-suf">/-</span></div>${fe('budget')}</div>
@@ -420,6 +420,12 @@
     team: () => { try { sessionStorage.setItem('ego-team', '1'); } catch (e) {} location.hash = '#/home'; location.reload(); },
     out: () => { if (Q.items.length && !confirm(`${Q.items.length} entr${Q.items.length === 1 ? 'y is' : 'ies are'} still waiting to send. Signing out keeps them on this phone for your next sign-in. Sign out?`)) return; window.EGOAPI.signOut(); },
   };
+  /* R4: "About N boxes with X% wastage", from THE quantity rule (qtyLine) and the category's typical box size (the middle
+     of its collections' sq ft per box). Hidden when the category is not sold per sq ft or no collection has a box size. */
+  const typicalBox = cat => { const xs = ((B.inventory || {}).collections || []).filter(c => c.category === cat).map(c => Number((c.extra || {}).sqft_per_box) || 0).filter(x => x > 0).sort((a, b) => a - b); return xs.length ? xs[Math.floor((xs.length - 1) / 2)] : 0; };
+  const reqBoxes = R => { const sq = Number(String(R.sqft || '').replace(/[,\s]/g, '')), rules = (B.lists || {}).rules || (window.D && D.lists && D.lists.rules) || {}, w = wastageDefault(rules);
+    if (!R.cat || !(sq > 0) || catUnit(R.cat, rules) !== 'sqft') return ''; const q = qtyLine({ unit: 'sqft', sqft_need: sq, wastage_pct: w, per_box: typicalBox(R.cat) });
+    return q.error ? '' : `About ${q.boxes.toLocaleString('en-IN')} boxes with ${w}% wastage`; };
   function start(boot) {
     B = boot;
     document.body.classList.remove('gated'); document.body.classList.add('fd-on');
@@ -440,7 +446,7 @@
         if (e.target.id === 'fd-vphoto') { const n = qs('[data-photo-n]'); if (n) n.textContent = e.target.files[0] ? '1 photo' : 'Photo'; }
         if (e.target.name === 'fd-who' && S.req) { S.req.who = e.target.value; S.req.err = {}; if (e.target.value === 'new' && S.req.kind === 'dealer' && B.user.division === 'retail') S.req.kind = 'consumer'; render(); }
         if (e.target.name === 'fd-kind' && S.req) { S.req.kind = e.target.value; delete S.req.err.kind; }
-        if (e.target.name === 'fd-cat' && S.req) { S.req.cat = e.target.value; delete S.req.err.cat; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.fd-err'); if (x) x.remove(); } }
+        if (e.target.name === 'fd-cat' && S.req) { S.req.cat = e.target.value; { const h = qs('[data-req-boxes]'); if (h) h.textContent = reqBoxes(S.req); } delete S.req.err.cat; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.fd-err'); if (x) x.remove(); } }
         if (e.target.name === 'fd-tl' && S.req) S.req.timeline = e.target.value;
         if (e.target.name === 'fd-rf') { S.rf = e.target.value; render(); }
         if (e.target.dataset && e.target.dataset.reqFile && S.req) { const R = S.req, fs = [...e.target.files];
@@ -451,7 +457,7 @@
       });
       window.addEventListener('hashchange', () => { S.sheet = ''; render(); window.scrollTo(0, 0); });
       /* typing in + Requirement is kept as it is typed, without drawing the screen again (the search redraws only its list) */
-      document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.req; if (!k || !S.req) return; S.req[k] = e.target.value; if (k === 'q') { const p = qs('[data-picks]'); if (p) p.innerHTML = picksHtml(); } });
+      document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.req; if (!k || !S.req) return; S.req[k] = e.target.value; if (k === 'sqft') { const h = qs('[data-req-boxes]'); if (h) h.textContent = reqBoxes(S.req); } if (k === 'q') { const p = qs('[data-picks]'); if (p) p.innerHTML = picksHtml(); } });
       document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('fd-more') && S.req) S.req.more = e.target.open; }, true);
       /* weak network: send what waits when signal returns, every 30 s, and show the banner when it goes */
       window.addEventListener('online', () => { paintBanner(); flush(); });

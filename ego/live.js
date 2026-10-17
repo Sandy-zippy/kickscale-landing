@@ -353,15 +353,16 @@ document.addEventListener('change', e => {
   const st = CITY_STATE[e.target.value], box = (e.target.closest('[data-scope], form, .modal') || document).querySelector('[name="state"]');
   if (st && box && box.value !== st) { box.value = st; box.dispatchEvent(new Event('change', { bubbles: true })); }
 });
-/* the rate per box starts at the list rate: the collection's price per sq ft × sq ft in a box */
-/* R3b: a Big E line is priced per sq ft, so its list rate is the collection's price per sq ft itself */
-const listRate = (pid, SQ) => { const I = INVD(), pr = I.products.find(x => x.id === pid), c = pr && I.collections.find(x => x.id === pr.collection_id), e = (c && c.extra) || {}; return SQ ? (e.price_sqft ? Number(e.price_sqft) : null) : e.price_sqft && e.sqft_per_box ? Math.round(e.price_sqft * e.sqft_per_box * 100) / 100 : null; };
-const listRateTxt = (pid, SQ) => { const r = pid && listRate(pid, SQ); return r ? `List rate ${inr0(r)} / ${SQ ? 'sq ft' : 'box'}` : ''; };
+/* R4: a flooring line is priced per sq ft, so its list rate is the collection's price per sq ft; accessories have none */
+const listRate = pid => { const p = lineProd(pid), e = p ? colOf(p).extra || {} : {}; return p && lineUnit(pid) === 'sqft' && e.price_sqft ? Number(e.price_sqft) : null; };
+const listRateTxt = pid => { const r = pid && listRate(pid); return r ? `List rate ${inr0(r)} / sq ft` : ''; };
+/* picking a design redraws its line: the unit (sq ft, piece, rft) and the box size come from the design */
 document.addEventListener('change', e => {
   if (!e.target.matches || !e.target.matches('[data-ol="p"]')) return;
-  const line = e.target.closest('.ordline'), SQ = !!line.querySelector('[data-ol="s"]'), r = listRate(e.target.value, SQ), box = line.querySelector('[data-ol="r"]'), hint = line.querySelector('[data-listrate]');
-  if (hint) hint.textContent = listRateTxt(e.target.value, SQ);
-  if (r && box && !box.value) { box.value = r; box.dispatchEvent(new Event('input', { bubbles: true })); }
+  const line = e.target.closest('.ordline'), v = readLine(line); delete v.keep;
+  if (!v.rate && listRate(v.product_id)) v.rate = listRate(v.product_id);
+  line.outerHTML = ordLine(line.dataset.i, v);
+  const f = qs('#of'); if (f) f.dispatchEvent(new Event('input', { bubbles: true }));
 });
 
 /* ---------------------------------------------------------------- home */
@@ -1071,7 +1072,7 @@ function openOppForm(o, keep) {
   const pipeline = pipes.includes(v.pipeline) ? v.pipeline : pipes[0];
   const stages = D.lists.stages[pipeline] || [];
   if (!stages.includes(v.stage)) v.stage = stages[0];
-  const SQ = !!PIPELINES[pipeline].sqft, withLines = PIPELINES[pipeline].lines || SQ, fields = showFields(oppFieldsFor(pipeline)).filter(f => f.key !== 'pipeline' && !(withLines && f.key === 'value') && (!LOST_KEYS.includes(f.key) || v.stage === lostStage(pipeline, D.lists)));
+  const withLines = PIPELINES[pipeline].lines || PIPELINES[pipeline].sqft, fields = showFields(oppFieldsFor(pipeline)).filter(f => f.key !== 'pipeline' && !(withLines && f.key === 'value') && (!LOST_KEYS.includes(f.key) || v.stage === lostStage(pipeline, D.lists)));
   const autoName = oppAutoName(client.name, (v.products || [])[0] || PIPELINES[pipeline].label, o && o.created_at);
   const oh = f => { const h = fieldHtml(f, v[f.key], 'of', { pipeline, client: client.id }); return f.key === 'stage' ? h.replace('<select', '<select data-opp-redraw') : f.key === 'title' ? h.replace('<input', `<input placeholder="Left blank: ${esc(autoName)}"`) : h; };
   const lines0 = (v.lines || (o ? (OPSD().oppLines || []).filter(l => l.opp_id === o.id) : [])), inFul = o && allOrders().some(x => x.opp_id === o.id);
@@ -1082,8 +1083,8 @@ function openOppForm(o, keep) {
       ${G.select(OPP_FIELDS[0], pipeline, 'of', pipes.map(p => [p, PIPELINES[p].label]), false).replace('<select', '<select data-opp-redraw')}
       ${fields.filter(f => !f.section).map(oh).join('')}</div>
       ${fields.some(f => f.section) ? fsHtml('Billing, payment and delivery', `<div class="fgrid">${fields.filter(f => f.section).map(oh).join('')}</div>`) : ''}
-      ${withLines && !inFul ? `<fieldset class="fs"><legend>${SQ ? 'Designs, sq ft and rate per sq ft' : 'Designs, boxes and rate'}</legend><p class="small muted">${SQ ? 'Type the sq ft and the rate per sq ft' : 'Type the boxes and the rate per box'}; the amount, GST (${D.lists.rules.gst_pct}%) and total are worked out. The total is the opportunity's value.</p>
-        <div id="olines" class="stack-s" data-sq="${SQ ? 1 : ''}">${(lines0.length ? lines0 : [{}]).map((l, i) => ordLine(i, l, SQ)).join('')}</div><div class="row"><button class="btn sm" data-act="ol-add">+ Another design</button></div>
+      ${withLines && !inFul ? `<fieldset class="fs"><legend>Designs, sq ft and rate</legend><p class="small muted">Type the sq ft needed, the wastage (${wastageDefault(D.lists.rules)}% unless changed) and the rate per sq ft: the boxes are rounded up to whole boxes, and the amount is the sq ft supplied x the rate. Accessories are per piece or per rft. GST (${D.lists.rules.gst_pct}%) and the total are worked out; the total is the opportunity's value.</p>
+        <div id="olines" class="stack-s">${(lines0.length ? lines0.map(l => ({ ...l, keep: l.id })) : [{}]).map((l, i) => ordLine(i, l)).join('')}</div><div class="row" style="flex-wrap:wrap"><button class="btn sm" data-act="ol-add">+ Another design</button><button class="btn sm ghost" data-act="ol-sample">Sample Excel</button><label class="btn sm ghost" style="cursor:pointer">Upload Excel<input type="file" accept=".xlsx" data-sheet="olines" hidden></label></div><div id="ol-imp"></div>
         ${D.access.prices ? `<div class="fgrid"><div class="field"><label for="ord-disc">Discount</label><div class="adorn" data-unit="%"><input class="input" type="number" min="0" max="100" step="0.1" id="ord-disc" value="${esc(v.discount_pct ?? 0)}"><span class="suf">%</span></div></div></div>
         <div class="stack-s" data-charges><b class="small">Other charges</b><p class="small muted">Installation, porter or loading, transport, skirting, accessories: say what each is for and the amount. They are added before GST.</p>
           <datalist id="chg-hints">${CHARGE_HINTS.map(h => `<option value="${esc(h)}">`).join('')}</datalist>
@@ -1126,8 +1127,7 @@ EM.ACTIONS['opp-save'] = async el => {
   if (form.dataset.id) { input.id = form.dataset.id; input.next_seen = JSON.parse(form.dataset.seen || '{}'); }
   if (qs('#olines')) {
     input.lines = readOrder(); input.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0);
-    if (qs('#olines').dataset.sq) { if (input.lines.some(l => !l.product_id || !(l.sqft > 0))) return showErr('of-err', 'Every design line needs a design and its sq ft (or remove the line).'); }
-    else if (input.lines.some(l => !l.product_id || !Number.isInteger(l.boxes) || l.boxes <= 0)) return showErr('of-err', 'Every design line needs a design and a whole number of boxes (or remove the line).');
+    { const bad = input.lines.findIndex(l => !l.keep && (!l.product_id || lineCalc(l).error)); if (bad >= 0) return showErr('of-err', `Design line ${bad + 1}: ${input.lines[bad].product_id ? lineCalc(input.lines[bad]).error : 'choose a design'} (or remove the line).`); }
     if (qs('#ochg')) { input.charges = readCharges(); const bad = input.charges.findIndex(c => !c.label || !(c.amount > 0)); if (bad >= 0) return showErr('of-err', `Charge ${bad + 1}: say what it is for and the amount (or remove it).`); }
   }
   const r = await saveOpp(input, el, 'of-err');
@@ -1219,7 +1219,7 @@ function invOverview() {
   const low = ps.filter(p => p.status !== 'Discontinued' && p.extra.low_stock != null && boxesOf(p.id) < p.extra.low_stock);
   const noBox = I.collections.filter(c => !c.extra.sqm_per_box).length;
   return `${filtNote()}<div class="grid g4">${tile('Categories', cats.length, '', '#/inventory/categories')}${tile('Collections', new Set(ps.map(p => p.collection_id)).size, '', '#/inventory/collections')}${tile('Designs', ps.length, `${ps.filter(p => p.status === 'Discontinued').length} discontinued`, '#/inventory/designs')}${tile('Warehouses', whs.length, '', '#/inventory/warehouses')}
-      ${tile('Boxes in stock', num(all.reduce((a, [, b]) => a + b, 0)), '', '#/inventory/stock')}${tile('Square feet in stock', num(totalSqft(all)), noBox ? `${noBox} collection${noBox === 1 ? '' : 's'} without a box size` : '', '#/inventory/stock')}${tile('Below their warning level', low.length, '', '#/inventory/designs')}</div>
+      ${tile('Boxes in stock', num(all.reduce((a, [, b]) => a + b, 0)), '', '#/inventory/stock')}${tile('Sq ft in stock', num(totalSqft(all)), noBox ? `${noBox} collection${noBox === 1 ? '' : 's'} without a box size` : '', '#/inventory/stock')}${tile('Below their warning level', low.length, '', '#/inventory/designs')}${(() => { const sh = OPSD().orders.filter(o => [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage)).reduce((a, o) => a + missingOf(o.id), 0); return tile('Boxes short for open sales', num(sh), 'whole boxes ordered, less blocked and on production', '#/orders'); })()}</div>
     <div class="grid g2"><section class="card stack-s"><h3>By warehouse</h3>${whs.length ? table(['Warehouse', 'City', 'Designs in stock', 'Boxes', 'Sq ft'], whs.map(w => { const l = ps.map(p => [p, boxesOf(p.id, w.id)]).filter(([, b]) => b); return { href: '#/inventory/warehouses', cells: [`<b>${esc(w.name)}</b>`, esc(w.city || ''), l.length, num(l.reduce((a, [, b]) => a + b, 0)), num(totalSqft(l))] }; })) : '<p class="small muted">No warehouses yet.</p>'}</section>
       <section class="card stack-s"><h3>By category</h3>${table(['Category', 'Collections', 'Designs', 'Boxes', 'Sq ft'], cats.map(c => { const l = ps.filter(p => colOf(p).category === c).map(p => [p, boxesOf(p.id)]); return [`<b>${esc(c)}</b>`, new Set(l.map(([p]) => p.collection_id)).size, l.length, num(l.reduce((a, [, b]) => a + b, 0)), num(totalSqft(l))]; }))}</section></div>
     ${low.length ? `<section class="card stack-s"><h3>Below their warning level</h3>${table(['Design', 'Collection', 'Boxes', 'Warn below'], low.map(p => ({ href: '#/product/' + p.id, cells: [`<b>${esc(p.name)}</b>`, esc(colOf(p).name), boxesOf(p.id), p.extra.low_stock] })))}</section>` : ''}`;
@@ -1230,7 +1230,7 @@ function invStock() {
   const lines = [];
   for (const p of ps) for (const w of whs) { const b = boxesOf(p.id, w.id); if (b) lines.push([p, w, b]); }
   const sum = lines.reduce((a, [, , b]) => a + b, 0), sq = lines.reduce((a, [p, , b]) => a + (sqftFor(p, b) || 0), 0);
-  return `${filtNote()}<div class="grid g4">${tile('Lines in stock', lines.length)}${tile('Boxes', num(sum))}${tile('Square feet', num(sq))}${tile('Designs in stock', new Set(lines.map(([p]) => p.id)).size)}</div>
+  return `${filtNote()}<div class="grid g4">${tile('Lines in stock', lines.length)}${tile('Boxes', num(sum))}${tile('Sq ft', num(sq))}${tile('Designs in stock', new Set(lines.map(([p]) => p.id)).size)}</div>
     ${lines.length ? table(['Warehouse', 'Category', 'Collection', 'Design', 'Code', 'Boxes', 'Sq ft per box', 'Sq ft'], lines.slice(0, 600).map(([p, w, b]) => ({ href: '#/product/' + p.id,
       cells: [esc(w.name), esc(colOf(p).category), esc(colOf(p).name), `<b>${esc(p.name)}</b>`, esc(p.code || ''), num(b), colOf(p).extra.sqft_per_box ?? '<span class="muted">not set</span>', sqftTxt(p, b)] })))
       + (lines.length > 600 ? `<p class="small muted">Showing 600 of ${lines.length}. Use the filters to narrow it down.</p>` : '')
@@ -1330,9 +1330,9 @@ function invForm(table, rec, keep, step) {
   const v = keep && !rec ? keep : (rec ? { ...rec, ...(rec.extra || {}) } : {});
   const fields = FL.filter(f => D.access.prices || f.type !== 'money'), secs = [...new Set(fields.map(f => f.section || ''))];
   if (table === 'products' && !INVD().collections.length) return EM.modal(`<h2>Add a design</h2><p class="muted">A design belongs to a collection. Add the collection first.</p><div class="row" style="margin-top:14px"><button class="btn primary" data-act="col-add">+ Collection</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
-  const note = step === 2 ? stepNote(2, `Add a collection${v.category ? ' in ' + esc(v.category) : ''}. The box size matters most: stock is counted in boxes, and square feet are worked out from it. Fill square feet OR square metres.`)
+  const note = step === 2 ? stepNote(2, `Add a collection${v.category ? ' in ' + esc(v.category) : ''}. The box size matters most: stock is counted in boxes, and sq ft are worked out from it. Fill sq ft OR square metres.`)
     : step === 3 ? stepNote(3, 'Add a design in this collection, and the warehouses it is in with the boxes there today.')
-      : table === 'collections' && !rec ? '<p class="small muted">Box size in square feet or square metres: fill either, the other is worked out.</p>' : '';
+      : table === 'collections' && !rec ? '<p class="small muted">Box size in sq ft or square metres: fill either, the other is worked out.</p>' : '';
   const newDesign = table === 'products' && !rec, whs = INVD().warehouses;
   EM.modal(`<h2>${rec ? 'Edit ' + esc(rec.name) : 'Add a ' + what}</h2>${note}
     <form id="ivf" class="stack" onsubmit="return false" style="margin-top:14px" data-table="${table}" data-id="${rec ? rec.id : ''}" data-step="${step || ''}">
@@ -1494,21 +1494,64 @@ const ordCard = o => { const miss = [FN('Stock check'), FN('Waiting on productio
 /* the designs on a wholesale opportunity, with the money worked out */
 function oppLinesCard(o) {
   const ls = (OPSD().oppLines || []).filter(l => l.opp_id === o.id), ex = o.extra || {}, ord = OPSD().orders.find(x => x.opp_id === o.id), pend = pendingFor('opp', o.id), apprs = OPSD().approvals.filter(a => a.entity === 'opp' && a.record_id === o.id);
-  return `<section class="card stack-s" data-opp-lines><div class="row between"><h3>Designs, boxes and rate</h3>${ord ? `<a class="btn sm primary" href="#/order/${ord.id}">In fulfilment: ${esc(ord.ref)} · ${esc(ord.ful_stage)}</a>` : ''}</div>
-    ${ls.length ? table(['Design', 'Boxes', ...(D.access.prices ? ['Rate per box', 'Amount'] : []), 'Free in the warehouses now'], ls.map(l => [`<b>${esc(prodName(l.product_id))}</b>`, num(l.boxes), ...(D.access.prices ? [inr0(l.rate), inr0(l.amount)] : []), num(INVD().warehouses.reduce((a, w) => a + Math.max(0, freeAt(l.product_id, w.id)), 0))]))
-      + (D.access.prices ? `<p class="small" data-money>${moneyLine(ex)} = <b>${inr0(o.value)}</b></p>` : (ex.charges || []).length ? `<p class="small muted">Other charges: ${ex.charges.map(c => esc(c.label)).join(', ')}</p>` : '')
-      : `<p class="small muted">No designs yet. Edit the opportunity to add the designs, boxes and rate; they are needed before ${esc(wonStage(o.pipeline, D.lists))}.</p>`}
+  return `<section class="card stack-s" data-opp-lines><div class="row between"><h3>Designs, sq ft and boxes</h3>${ord ? `<a class="btn sm primary" href="#/order/${ord.id}">In fulfilment: ${esc(ord.ref)} · ${esc(ord.ful_stage)}</a>` : ''}</div>
+    ${ls.length ? linesTable(ls, [['Free boxes now', l => l.boxes ? num(INVD().warehouses.reduce((a, w) => a + Math.max(0, freeAt(l.product_id, w.id)), 0)) : '']])
+      + `<p class="small">${linesSum(ls)}</p>` + (D.access.prices ? `<p class="small" data-money>${moneyLine(ex)} = <b>${inr0(o.value)}</b></p>` : (ex.charges || []).length ? `<p class="small muted">Other charges: ${ex.charges.map(c => esc(c.label)).join(', ')}</p>` : '')
+      : `<p class="small muted">No designs yet. Edit the opportunity to add the designs with their sq ft needed and rate; they are needed before ${esc(wonStage(o.pipeline, D.lists))}.</p>`}
     ${pend.length ? `<div class="callout warn"><b>Waiting for approval.</b> ${pend.map(a => esc(a.reason)).join(' · ')} <a href="#/approvals">Approvals</a></div>` : ''}
     ${apprs.filter(a => a.status !== 'Pending').map(a => `<p class="small muted">${esc((D.lists.rules.approvals[a.kind] || { label: a.kind }).label)}: <b>${esc(a.status)}</b> by ${esc(staffName(a.decided_by))}${a.decision_note ? ' · ' + esc(a.decision_note) : ''}</p>`).join('')}</section>`;
 }
 
-/* the order form: a dealer, its designs with boxes and rate, an optional discount */
-const ordLine = (i, v = {}, SQ) => { const I = INVD(), byCol = I.collections.map(c => [c, I.products.filter(p => p.collection_id === c.id && p.status !== 'Discontinued')]).filter(([, ps]) => ps.length);
-  return `<div class="fgrid ordline" data-i="${i}" style="align-items:end"><div class="field span2"><label for="ol-p-${i}">Design</label><select class="input" id="ol-p-${i}" data-ol="p"><option value="">Choose</option>${byCol.map(([c, ps]) => `<optgroup label="${esc(c.category + ' · ' + c.name)}">${ps.map(p => `<option value="${p.id}" ${p.id === v.product_id ? 'selected' : ''}>${esc(p.name)}${p.code ? ' · ' + esc(p.code) : ''}</option>`).join('')}</optgroup>`).join('')}</select></div>
-    ${SQ ? `<div class="field"><label for="ol-s-${i}">Sq ft</label>${G.adorn({ key: 'area_sqft' }, `<input class="input" type="number" min="0" step="0.01" id="ol-s-${i}" data-ol="s" value="${esc(v.sqft || '')}">`)}</div>`
-    : `<div class="field"><label for="ol-b-${i}">Boxes</label>${G.adorn({ key: 'low_stock' }, `<input class="input" type="number" min="1" step="1" id="ol-b-${i}" data-ol="b" value="${esc(v.boxes || '')}">`)}</div>`}
-    ${D.access.prices ? `<div class="field"><label for="ol-r-${i}">${SQ ? 'Rate per sq ft' : 'Rate per box'}</label>${G.adorn({ type: 'money', key: 'rate' }, `<input class="input" type="number" min="0" step="0.01" id="ol-r-${i}" data-ol="r" value="${esc(v.rate || '')}">`)}<span class="small muted" data-listrate>${listRateTxt(v.product_id, SQ)}</span></div>` : ''}
-    <div class="field"><button class="btn sm ghost" data-act="ol-del">Remove</button></div></div>`; };
+/* R4: one line editor for every pipeline with designs. THE quantity rule is qtyLine (schema.js); a saved line comes back
+   with keep = its id and is sent untouched (its saved numbers stay) until something on it is changed. */
+const lineProd = pid => INVD().products.find(x => x.id === pid);
+const lineUnit = pid => { const p = lineProd(pid); return p ? catUnit(colOf(p).category, D.lists.rules) : 'sqft'; };
+const lineBox = pid => { const p = lineProd(pid); return p ? boxSizeOf(p, colOf(p)) : 0; };
+const lineCalc = l => qtyLine({ unit: lineUnit(l.product_id), sqft_need: l.sqft_need, wastage_pct: l.wastage_pct, per_box: lineBox(l.product_id) || l.per_box, qty: l.qty, rate: l.rate });
+const calcTxt = q => q.error ? `<span class="muted">${esc(q.error)}</span>` : q.unit === 'sqft' ? `${num(q.supply)} sq ft with ${num(q.wastage_pct)}% wastage · <b data-q-boxes>${num(q.boxes)}</b> boxes of ${num(q.per_box)} sq ft = <b data-q-sqft>${num(q.sqft)}</b> sq ft supplied${D.access.prices ? ` · <b data-q-amt>${inr0(q.amount)}</b>` : ''}` : `${num(q.qty)} ${q.unit === 'rft' ? 'rft' : 'pieces'}${D.access.prices ? ` · <b data-q-amt>${inr0(q.amount)}</b>` : ''}`;
+const ordLine = (i, v = {}) => { const I = INVD(), byCol = I.collections.map(c => [c, I.products.filter(p => p.collection_id === c.id && p.status !== 'Discontinued')]).filter(([, ps]) => ps.length);
+  const pick = `<div class="field span2"><label for="ol-p-${i}">Design</label><select class="input" id="ol-p-${i}" data-ol="p"><option value="">Choose</option>${byCol.map(([c, ps]) => `<optgroup label="${esc(c.category + ' · ' + c.name)}">${ps.map(p => `<option value="${p.id}" ${p.id === v.product_id ? 'selected' : ''}>${esc(p.name)}${p.code ? ' · ' + esc(p.code) : ''}</option>`).join('')}</optgroup>`).join('')}</select></div>`;
+  if (v.keep && !v.unit) return `<div class="fgrid ordline" data-i="${i}" data-keep="${esc(v.keep)}" data-pid="${esc(v.product_id)}" style="align-items:end"><div class="field span2"><label>Design</label><input class="input" value="${esc(prodName(v.product_id))}" disabled></div>
+    <div class="field span2"><span class="small">${esc(qtyText(v))}${D.access.prices ? ` · ${inr0(v.rate)} / ${rateUnit(v)} · <b>${inr0(v.amount)}</b>` : ''}</span><span class="small muted">Saved before the wastage rule, so its numbers stay as saved.</span></div>
+    <div class="field row"><button class="btn sm" data-act="ol-change">Change</button><button class="btn sm ghost" data-act="ol-del">Remove</button></div></div>`;
+  const u = lineUnit(v.product_id), pb = lineBox(v.product_id), sq = u === 'sqft';
+  const w = v.wastage_pct == null || v.wastage_pct === '' ? wastageDefault(D.lists.rules) : v.wastage_pct;
+  return `<div class="ordline stack-s" data-i="${i}"${v.keep ? ` data-keep="${esc(v.keep)}"` : ''}><div class="fgrid" style="align-items:end">${pick}
+    ${sq ? `<div class="field"><label for="ol-s-${i}">Sq ft needed</label>${G.adorn({ key: 'area_sqft' }, `<input class="input" type="number" min="0" step="0.01" id="ol-s-${i}" data-ol="s" value="${esc(v.sqft_need || '')}">`)}</div>
+      <div class="field"><label for="ol-w-${i}">Wastage</label><div class="adorn" data-unit="%"><input class="input" type="number" min="0" max="100" step="0.5" id="ol-w-${i}" data-ol="w" value="${esc(w)}"><span class="suf">%</span></div></div>
+      ${v.product_id && !pb ? `<div class="field"><label for="ol-pb-${i}">Sq ft per box *</label>${G.adorn({ key: 'area_sqft' }, `<input class="input" type="number" min="0" step="0.01" id="ol-pb-${i}" data-ol="pb" value="${esc(v.per_box || '')}">`)}<span class="small muted">This design has no box size yet.</span></div>` : ''}`
+    : `<div class="field"><label for="ol-q-${i}">${u === 'rft' ? 'Running ft (rft)' : 'Pieces'}</label><input class="input" type="number" min="0" step="${u === 'rft' ? '0.5' : '1'}" id="ol-q-${i}" data-ol="q" value="${esc(v.qty || '')}"></div>`}
+    ${D.access.prices ? `<div class="field"><label for="ol-r-${i}">Rate per ${QTY_UNITS[u]}</label>${G.adorn({ type: 'money', key: 'rate' }, `<input class="input" type="number" min="0" step="0.01" id="ol-r-${i}" data-ol="r" value="${esc(v.rate || '')}">`)}<span class="small muted" data-listrate>${listRateTxt(v.product_id)}</span></div>` : ''}
+    <div class="field"><button class="btn sm ghost" data-act="ol-del">Remove</button></div></div>
+    <div class="small" data-ol-calc>${v.product_id ? calcTxt(lineCalc({ ...v, wastage_pct: w })) : ''}</div></div>`; };
+const readLine = l => { const q = k => l.querySelector(`[data-ol="${k}"]`), val = k => q(k) ? q(k).value : '';
+  if (l.dataset.keep && l.dataset.pid) return { keep: l.dataset.keep, product_id: l.dataset.pid };
+  const out = { product_id: val('p'), rate: Number(val('r') || 0) };
+  if (q('s')) Object.assign(out, { sqft_need: Number(val('s') || 0), wastage_pct: val('w') === '' ? 0 : Number(val('w')) });
+  if (q('pb')) out.per_box = Number(val('pb') || 0);
+  if (q('q')) out.qty = Number(val('q') || 0);
+  if (l.dataset.keep) out.keep = l.dataset.keep;
+  return out; };
+const readOrder = () => [...document.querySelectorAll('#olines .ordline')].map(readLine).filter(l => l.product_id || l.sqft_need || l.qty);
+const savedLine = l => (OPSD().oppLines || []).find(x => x.id === l.keep) || {};
+document.addEventListener('input', e => {
+  if (!e.target.closest || !e.target.closest('#ordf, #of')) return;
+  const row = e.target.closest('.ordline');
+  if (row && e.target.dataset.ol && !row.dataset.pid) { delete row.dataset.keep; const c = row.querySelector('[data-ol-calc]'), v = readLine(row); if (c) c.innerHTML = v.product_id ? calcTxt(lineCalc(v)) : ''; }
+  const ls = readOrder().map(l => l.keep ? savedLine(l) : { ...l, ...lineCalc(l) }).filter(l => !l.error), gross = ls.reduce((a, l) => a + (Number(l.amount) || 0), 0), disc = Number((qs('#ord-disc') || { value: 0 }).value || 0), chg = readCharges().reduce((a, c) => a + (c.amount || 0), 0), sub = gross * (1 - disc / 100) + chg, t = qs('#ord-total');
+  if (t) t.innerHTML = `${linesSum(ls)}${D.access.prices ? ` · designs ${inr0(gross * (1 - disc / 100))}${chg ? ` + charges ${inr0(chg)}` : ''} = ${inr0(sub)} before GST + GST ${D.lists.rules.gst_pct}% = ${inr0(sub * (1 + D.lists.rules.gst_pct / 100))}` : ''}`;
+});
+EM.ACTIONS['ol-add'] = () => { const box = qs('#olines'); box.insertAdjacentHTML('beforeend', ordLine(box.children.length, {})); };
+EM.ACTIONS['ol-del'] = el => { const l = el.closest('.ordline'); if (document.querySelectorAll('#olines .ordline').length > 1) l.remove(); const f = qs('#of'); if (f) f.dispatchEvent(new Event('input', { bubbles: true })); };
+/* a line saved before R4: Change turns it into sq ft needed + wastage, starting from what was supplied, at 0% */
+EM.ACTIONS['ol-change'] = el => { const row = el.closest('.ordline'), v = savedLine({ keep: row.dataset.keep }), u = lineUnit(v.product_id), pb = lineBox(v.product_id);
+  row.outerHTML = ordLine(row.dataset.i, { product_id: v.product_id, sqft_need: u === 'sqft' ? (Number(v.sqft) || Math.round((v.boxes || 0) * pb * 100) / 100) : '', qty: u === 'sqft' ? '' : v.boxes || '', wastage_pct: 0, rate: '' }); };
+/* THE line table: opportunity, fulfilment (EGO and Big E), the PI and Analysis read a line the same way */
+const linesTable = (ls, more = []) => table(['Design', 'Sq ft needed', 'Wastage', 'Boxes', 'Sq ft supplied', ...(D.access.prices ? ['Rate', 'Amount'] : []), ...more.map(m => m[0])],
+  ls.map(l => { const acc = l.unit === 'piece' || l.unit === 'rft', old = !l.unit;
+    return [`<b>${esc(prodName(l.product_id))}</b>${l.per_box ? `<div class="small muted">${num(l.per_box)} sq ft per box</div>` : ''}`, acc ? `${num(l.qty)} ${l.unit === 'rft' ? 'rft' : 'pieces'}` : old ? '' : num(l.sqft_need), acc ? '' : `${num(old ? 0 : l.wastage_pct)}%`,
+      acc ? '' : `<span data-l-boxes>${num(l.boxes)}</span>`, acc ? '' : `<span data-l-sqft>${Number(l.sqft) ? num(l.sqft) : ''}</span>`, ...(D.access.prices ? [`${inr0(l.rate)} / ${rateUnit(l)}`, `<span data-l-amt>${inr0(l.amount)}</span>`] : []), ...more.map(m => m[1](l))]; }));
+const linesSum = ls => `${num(Math.round(ls.reduce((a, l) => a + (Number(l.sqft) || 0), 0) * 100) / 100)} sq ft supplied · ${num(ls.reduce((a, l) => a + (Number(l.boxes) || 0), 0))} boxes`;
 const LOST_KEYS = ['lost_reason', 'lost_detail'];
 const chgLine = (i, c = {}) => `<div class="fgrid chgline" data-i="${i}" style="align-items:end"><div class="field span2"><label for="chg-l-${i}">What it is for</label><input class="input" id="chg-l-${i}" data-chg="l" list="chg-hints" value="${esc(c.label || '')}" placeholder="e.g. Installation"></div>
   <div class="field"><label for="chg-a-${i}">Amount</label>${G.adorn({ type: 'money', key: 'charge' }, `<input class="input" type="number" min="0" step="0.01" id="chg-a-${i}" data-chg="a" value="${esc(c.amount || '')}">`)}</div><div class="field"><button class="btn sm ghost" data-act="chg-del">Remove</button></div></div>`;
@@ -1517,15 +1560,6 @@ EM.ACTIONS['chg-add'] = () => { const box = qs('#ochg'); box.insertAdjacentHTML(
 EM.ACTIONS['chg-del'] = el => { el.closest('.chgline').remove(); const f = qs('#of'); if (f) f.dispatchEvent(new Event('input', { bubbles: true })); };
 const moneyLine = ex => { const ch = (ex.charges || []).filter(c => c.amount != null);
   return `${ex.discount_pct ? `Discount ${ex.discount_pct}% · ` : ''}${ch.length ? ch.map(c => `${esc(c.label)} ${inr0(c.amount)}`).join(' · ') + ' · ' : ''}Taxable ${inr0(ex.subtotal)} + GST ${ex.gst_pct ?? D.lists.rules.gst_pct}%`; };
-const readOrder = () => [...document.querySelectorAll('#olines .ordline')].map(l => { const q = k => l.querySelector(`[data-ol="${k}"]`);
-  return q('s') ? { product_id: q('p').value, sqft: Number(q('s').value || 0), rate: Number((q('r') || { value: 0 }).value || 0) } : { product_id: q('p').value, boxes: Number(q('b').value), rate: Number((q('r') || { value: 0 }).value || 0) }; }).filter(l => l.product_id || l.boxes || l.sqft);
-document.addEventListener('input', e => {
-  if (!e.target.closest || !e.target.closest('#ordf, #of')) return;
-  const ls = readOrder(), gross = ls.reduce((a, l) => a + (l.sqft != null ? l.sqft : l.boxes || 0) * (l.rate || 0), 0), disc = Number((qs('#ord-disc') || { value: 0 }).value || 0), chg = readCharges().reduce((a, c) => a + (c.amount || 0), 0), sub = gross * (1 - disc / 100) + chg, t = qs('#ord-total');
-  if (t && D.access.prices) t.textContent = `${qs('#olines[data-sq="1"]') ? `${Math.round(ls.reduce((a, l) => a + (l.sqft || 0), 0) * 100) / 100} sq ft` : `${ls.reduce((a, l) => a + (l.boxes || 0), 0)} boxes`} · designs ${inr0(gross * (1 - disc / 100))}${chg ? ` + charges ${inr0(chg)}` : ''} = ${inr0(sub)} + GST ${D.lists.rules.gst_pct}% = ${inr0(sub * (1 + D.lists.rules.gst_pct / 100))}`;
-});
-EM.ACTIONS['ol-add'] = () => { const box = qs('#olines'); box.insertAdjacentHTML('beforeend', ordLine(box.children.length, {}, !!box.dataset.sq)); };
-EM.ACTIONS['ol-del'] = el => { const l = el.closest('.ordline'); if (document.querySelectorAll('#olines .ordline').length > 1) l.remove(); };
 /* one fulfilment: the sale it came from, each design against the warehouses, and the production orders serving it */
 EM.VIEWS.order = id => {
   const O = OPSD(), o = O.orders.find(x => x.id === id);
@@ -1544,16 +1578,22 @@ EM.VIEWS.order = id => {
     <section class="card stack-s" data-stockcheck><div class="row between"><h3>Stock check: each design against the warehouses</h3>${atCheck && D.access.ful.includes('stock') ? `<button class="btn" data-act="alloc-open" data-id="${id}">Block boxes</button>` : ''}</div>
       <p class="small muted">Free = in the warehouse and not blocked for another sale. Missing = ordered − blocked − on a production order; it must be 0 before the sale moves past ${esc(FN('Stock check'))}.</p>
       ${table(['Design', 'Ordered', ...WH.map(w => esc(w.name) + ' <span class="muted">free</span>'), 'Blocked', 'On production', 'Missing'], lines.map(l => { const left = l.boxes - got(l) - waiting(l);
-        return [`<b>${esc(prodName(l.product_id))}</b>`, num(l.boxes), ...WH.map(w => `${num(Math.max(0, freeAt(l.product_id, w.id) + mineAt(l, w)))}${mineAt(l, w) ? ` <span class="badge ok">${mineAt(l, w)} blocked</span>` : ''}`), num(got(l)), waiting(l) ? num(waiting(l)) : '', left > 0 ? `<span class="badge bad">${left}</span>` : '<span class="badge ok">0</span>']; }))}</section>
+        return [`<b>${esc(prodName(l.product_id))}</b>`, `<span data-o-boxes>${num(l.boxes)}</span>`, ...WH.map(w => `${num(Math.max(0, freeAt(l.product_id, w.id) + mineAt(l, w)))}${mineAt(l, w) ? ` <span class="badge ok">${mineAt(l, w)} blocked</span>` : ''}`), num(got(l)), waiting(l) ? num(waiting(l)) : '', left > 0 ? `<span class="badge bad">${left}</span>` : '<span class="badge ok">0</span>']; }))}</section>
     ${payCard(o)}
     ${orderFiles(o)}
     <section class="card stack-s" data-sources><h3>Where each design's boxes come from</h3>
-      ${table(['Design', 'From a warehouse', 'From production', ...(D.access.prices ? ['Rate', 'Amount'] : [])], lines.map(l => [`<b>${esc(prodName(l.product_id))}</b>`,
+      ${table(['Design', 'Sq ft supplied', 'From a warehouse', 'From production', ...(D.access.prices ? ['Rate', 'Amount'] : [])], lines.map(l => [`<b>${esc(prodName(l.product_id))}</b><div class="small muted">${esc(qtyText(l))}</div>`, `<span data-o-sqft>${Number(l.sqft) ? num(l.sqft) : ''}</span>`,
         esc(al(l).filter(a => !a.po_id).map(a => `${(WH.find(w => w.id === a.warehouse_id) || {}).name}: ${a.boxes}${a.dispatched ? ' (dispatched)' : ''}`).join(', ')) || '<span class="muted">None</span>',
         wl(l).length ? wl(l).map(w => `<a href="#/po/${w.po_id}">${esc(poRef(w.po_id))}</a>: ${w.boxes} ${w.done ? '<span class="badge ok">arrived, blocked</span>' : '<span class="badge warn">waiting</span>'}`).join('<br>') : '<span class="muted">None</span>',
-        ...(D.access.prices ? [inr0(l.rate), inr0(l.amount)] : [])]))}</section>
+        ...(D.access.prices ? [`${inr0(l.rate)} / ${rateUnit(l)}`, `<span data-o-amt>${inr0(l.amount)}</span>`] : [])]))}</section>
+    ${piCard(o, lines)}
     ${orderStory(o)}</div>`;
 };
+/* R4: the PI view. EGO makes the PI in Tally; this is what it must say, line for line, from the same saved lines */
+const piCard = (o, lines) => `<section class="card stack-s" data-pi><div class="row between"><h3>PI: what it says</h3><button class="btn sm" data-act="pi-print">Print</button></div>
+  <p class="small muted">${esc(o.ref)} · ${esc(clientName(o.client_id))}. The same lines as the opportunity and the dealer portal: sq ft needed, wastage, whole boxes, sq ft supplied${D.access.prices ? ', rate and amount' : ''}.</p>
+  ${linesTable(lines)}<p class="small">${linesSum(lines)}${D.access.prices ? ` · ${moneyLine({ ...(o.extra || {}), subtotal: o.subtotal, gst_pct: o.gst_pct })} = <b data-pi-total>${inr0(o.total)}</b>` : ''}</p></section>`;
+EM.ACTIONS['pi-print'] = el => { const sec = el.closest('[data-pi]'), w = window.open('', '_blank'); if (!w) return; w.document.write(`<title>PI lines</title><style>body{font:14px Inter,system-ui,sans-serif;padding:24px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px;text-align:left}button{display:none}</style>${sec.innerHTML}`); w.document.close(); w.print(); };
 EM.VIEWS.order.tab = 'orders';
 EM.VIEWS.order.title = id => (allOrders().find(x => x.id === id) || { ref: 'Fulfilment' }).ref;
 
@@ -1570,13 +1610,12 @@ const rfLines = o => OPSD().lines.filter(l => l.order_id === o.id);
 const rfBlocked = l => OPSD().allocations.filter(a => a.line_id === l.id).reduce((a, x) => a + x.boxes, 0);
 const rfSites = o => OPSD().sites.filter(x => (x.extra || {}).order_id === o.id || (o.opp_id && x.opp_id === o.opp_id));
 const rfSqft = ls => Math.round(ls.reduce((a, l) => a + Number(l.sqft || 0), 0) * 100) / 100;
-const rfLineTable = (ls, withBlocked) => table(['Design', 'Sq ft', ...(D.access.prices ? ['Rate per sq ft', 'Amount'] : []), ...(withBlocked ? ['Boxes blocked'] : [])],
-  ls.map(l => [`<b>${esc(prodName(l.product_id))}</b>`, num(l.sqft || 0), ...(D.access.prices ? [inr0(l.rate), inr0(l.amount)] : []), ...(withBlocked ? [rfBlocked(l) ? `<span class="badge ok">${num(rfBlocked(l))}</span>` : '<span class="badge plain">None yet</span>'] : [])]));
+const rfLineTable = (ls, withBlocked) => linesTable(ls, withBlocked ? [['Boxes blocked', l => !l.boxes ? '' : rfBlocked(l) ? `<span class="badge ${rfBlocked(l) >= l.boxes ? 'ok' : 'warn'}">${num(rfBlocked(l))} of ${num(l.boxes)}</span>` : '<span class="badge plain">None yet</span>']] : []);
 /* on a Big E opportunity: its line items, and its fulfilment once Won */
 function rfOppLinesCard(o) {
   const ls = (OPSD().oppLines || []).filter(l => l.opp_id === o.id), ord = OPSD().rorders.find(x => x.opp_id === o.id), ex = o.extra || {};
-  return `<section class="card stack-s" data-opp-lines data-rf-opp><div class="row between"><h3>Designs, sq ft and rate per sq ft</h3>${ord ? `<a class="btn sm primary" href="#/order/${ord.id}">In fulfilment: ${esc(ord.ref)} · ${esc(ord.ful_stage)}</a>` : ''}</div>
-    ${ls.length ? rfLineTable(ls) + `<p class="small">${num(rfSqft(ls))} sq ft${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.value)}</b>` : ''}</p>`
+  return `<section class="card stack-s" data-opp-lines data-rf-opp><div class="row between"><h3>Designs, sq ft and boxes</h3>${ord ? `<a class="btn sm primary" href="#/order/${ord.id}">In fulfilment: ${esc(ord.ref)} · ${esc(ord.ful_stage)}</a>` : ''}</div>
+    ${ls.length ? rfLineTable(ls) + `<p class="small">${linesSum(ls)}${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.value)}</b>` : ''}</p>`
       : `<p class="small muted">No designs yet. Edit the opportunity to add each design with its sq ft and rate per sq ft; they are needed before ${esc(wonStage(o.pipeline, D.lists))}, when its fulfilment opens.</p>`}</section>`;
 }
 EM.rfF = { period: 'all', from: '', to: '', stage: '', owner: '', field: '', fq: '' };
@@ -1594,7 +1633,7 @@ function rfBoard() {
       ${sel('owner', 'Owner', [['', 'Everyone'], ...[...new Set(all.map(o => o.owner_id))].map(id => [id, staffName(id)])])}${sel('field', 'Any field', [['', 'Any field'], ...RF_FIELDS])}
       <label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="rf-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
     ${searchBox('Big E fulfilment: number, sale, client or design')}
-    ${stageBoard(RETAIL_FUL, rows, o => o.ful_stage, o => `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/order/${o.id}" data-rf-card><b>${esc(o.ref)}</b><div class="small">${esc(clientName(o.client_id))}</div><div class="small muted">${num(rfSqft(rfLines(o)))} sq ft</div>${rfSites(o).length ? `<div class="small">Site ${esc(rfSites(o)[0].ref)}</div>` : ''}</a>`)}
+    ${stageBoard(RETAIL_FUL, rows, o => o.ful_stage, o => `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/order/${o.id}" data-rf-card><b>${esc(o.ref)}</b><div class="small">${esc(clientName(o.client_id))}</div><div class="small muted">${linesSum(rfLines(o))}</div>${rfSites(o).length ? `<div class="small">Site ${esc(rfSites(o)[0].ref)}</div>` : ''}</a>`)}
     ${rows.length ? table(['Fulfilment', 'Sale', 'Client', 'Sq ft', ...(D.access.prices ? ['Value', 'Received'] : []), 'Stage', 'Installation site'], rows.map(o => ({ href: '#/order/' + o.id,
       cells: [`<b>${esc(o.ref)}</b><div class="small muted">${ds(dayIST(o.created_at))}</div>`, esc(rfVal(o, 'title')), esc(clientName(o.client_id)), num(rfSqft(rfLines(o))), ...(D.access.prices ? [inr0(o.total), inr0(o.paid || 0)] : []), `<span class="badge info">${esc(o.ful_stage)}</span>`, esc(rfSites(o).map(x => x.ref).join(', '))] })))
       : empty(all.length ? 'Nothing for this filter' : 'No Big E sale in fulfilment yet', all.length ? 'Change or clear the filters above.' : 'A retail lead or retail project comes here when it reaches Won, with its designs in sq ft and rate per sq ft.')}`;
@@ -1609,8 +1648,8 @@ function rfOrderView(o) {
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Big E · retail ladder</div><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'a sale'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · won ${ds(dayIST(o.created_at))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
       ${nxt ? (rfMay(o) ? `<button class="btn primary" data-act="rf-next" data-id="${o.id}">Move to ${esc(nxt)}</button>` : `<span class="small muted" data-ful-who>Next step (${esc(nxt)}) by ${esc(RF_WHO[RETAIL_FUL_GROUP[nxt]])} or Management</span>`) : '<span class="badge ok">Closed</span>'}</div>
     <section class="card stack-s">${stageChips(RETAIL_FUL, o.ful_stage)}${nxt ? `<p class="small muted">Next, <b>${esc(nxt)}</b>: ${esc(RF_WHAT[nxt])}.</p>` : ''}</section>
-    <section class="card stack-s" data-rf-lines><div class="row between"><h3>Designs, sq ft and rate per sq ft</h3>${atBlock ? `<button class="btn" data-act="rf-alloc" data-id="${o.id}">Block boxes</button>` : ''}</div>
-      ${rfLineTable(ls, true)}<p class="small">${num(rfSqft(ls))} sq ft${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.total)}</b>` : ''}</p>
+    <section class="card stack-s" data-rf-lines><div class="row between"><h3>Designs, sq ft and boxes</h3>${atBlock ? `<button class="btn" data-act="rf-alloc" data-id="${o.id}">Block boxes</button>` : ''}</div>
+      ${rfLineTable(ls, true)}<p class="small">${linesSum(ls)}${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.total)}</b>` : ''}</p>
       <p class="small muted">Blocked uses EGO's stock block: the boxes typed per warehouse are held for this sale and leave the warehouses at Delivered to site.</p></section>
     ${D.access.prices ? `<section class="card stack-s" data-pay><div class="row between"><h3>Advance and balance</h3>${(D.access.ful || []).includes('money') && due > 0 ? `<button class="btn sm" data-act="rf-pay" data-id="${o.id}">+ Record a payment</button>` : ''}</div>
       ${kv([['Total', inr0(o.total)], ['Received', inr0(o.paid || 0)], ['Still due', due > 0 ? `<b>${inr0(due)}</b>` : '<span class="badge ok">Paid in full</span>']])}
@@ -1642,8 +1681,10 @@ EM.ACTIONS['rf-alloc'] = el => {
   const o = OPSD().rorders.find(x => x.id === el.dataset.id), WH = INVD().warehouses, mine = (l, w) => OPSD().allocations.filter(a => a.line_id === l.id && a.warehouse_id === w.id && !a.dispatched).reduce((a, x) => a + x.boxes, 0);
   if (!WH.length) return EM.modal('<h2>Block boxes</h2><p class="muted">There is no warehouse yet. Add one in Inventory, with its stock, then block the boxes here.</p><div class="row" style="margin-top:12px"><a class="btn primary" href="#/inventory">Inventory</a><button class="btn" data-act="close-modal">Close</button></div>');
   EM.modal(`<h2>Block boxes: ${esc(o.ref)}</h2><p class="muted small">For each design, how many boxes to hold from each warehouse. "Free" is what is there and not blocked for another sale.</p>
-    <div class="stack" style="margin-top:12px">${rfLines(o).map(l => `<fieldset class="fs" data-rf-line="${l.id}"><legend>${esc(prodName(l.product_id))} · ${num(l.sqft || 0)} sq ft</legend><div class="fgrid">${WH.map(w => { const fr = Math.max(0, freeAt(l.product_id, w.id) + mine(l, w));
-      return `<div class="field"><label for="rfa-${l.id}-${w.id}">${esc(w.name)} <span class="muted">(free ${fr})</span></label><input class="input" type="number" min="0" step="1" id="rfa-${l.id}-${w.id}" data-wh="${w.id}" value="${mine(l, w) || ''}"></div>`; }).join('')}</div></fieldset>`).join('')}</div>
+    <p class="small muted">Each design starts filled with its boxes on the sale (whole boxes for the sq ft and wastage), taken from the warehouses in turn up to what is free. Change any figure before saving.</p>
+    <div class="stack" style="margin-top:12px">${rfLines(o).filter(l => l.boxes > 0).map(l => { const had = WH.some(w => mine(l, w)); let left = l.boxes;
+      return `<fieldset class="fs" data-rf-line="${l.id}"><legend>${esc(prodName(l.product_id))} · ${num(l.boxes)} boxes · ${num(l.sqft || 0)} sq ft</legend><div class="fgrid">${WH.map(w => { const fr = Math.max(0, freeAt(l.product_id, w.id) + mine(l, w)), take = had ? mine(l, w) : Math.min(left, fr); if (!had) left -= take;
+      return `<div class="field"><label for="rfa-${l.id}-${w.id}">${esc(w.name)} <span class="muted">(free ${fr})</span></label><input class="input" type="number" min="0" step="1" id="rfa-${l.id}-${w.id}" data-wh="${w.id}" value="${take || ''}"></div>`; }).join('')}</div></fieldset>`; }).join('')}</div>
     ${errBox('rfa-err')}<div class="row sticky-actions" style="margin-top:12px"><button class="btn primary" data-act="rf-alloc-save" data-id="${o.id}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
 };
 EM.ACTIONS['rf-alloc-save'] = el => {
@@ -2073,7 +2114,9 @@ const OPS_LIST_GROUP = () => ['Operations stages', 'The stages of the processing
 EM.ACTIONS['rules-open'] = () => {
   const R = D.lists.rules, n = (id, label, v, unit) => `<div class="field"><label for="ru-${id}">${label}</label>${G.adorn(unit === '₹' ? { type: 'money', key: id } : { key: 'x' }, `<input class="input" type="number" min="0" step="any" id="ru-${id}" value="${v}">`).replace('class="suf">undefined<', `class="suf">${unit || ''}<`).replace('<span class="suf"></span>', '')}</div>`;
   EM.modal(`<h2>Rules and numbers</h2><p class="muted small">The numbers the processing uses. Changes apply from the next order, approval or score.</p>
-    <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}</div></fieldset>
+    <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('wastage', 'Wastage on a new line', wastageDefault(R), '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}</div></fieldset>
+    <fieldset class="fs" data-cat-units><legend>How each category is sold</legend><p class="small muted">Flooring and cladding are per sq ft, with whole boxes. Accessories (skirting, profiles, underlay foam, film, installation) are per piece or per running ft (rft). A new category starts from its name; change any here.</p>
+      ${table(['Category', 'Sold'], allCats().map(c => [esc(c), `<select class="input" data-cu="${esc(c)}" aria-label="${esc(c)} sold" style="max-width:240px">${Object.entries(QTY_UNIT_LONG).map(([k, l]) => `<option value="${k}" ${catUnit(c, R) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`]))}</fieldset>
     <fieldset class="fs"><legend>Approval limits (the Owner has none)</legend>${table(['Approval', 'Regional manager / Project head', 'Head', 'Director'], Object.entries(R.approvals).map(([k, a]) => [esc(a.label) + ` <span class="muted">(${a.unit})</span>`, ...['manager', 'head', 'director'].map(l => `<input class="input" type="number" min="0" step="any" data-ap="${k}" data-lv="${l}" value="${a.levels[l]}" aria-label="${esc(a.label)} ${l}" style="max-width:140px">`)]))}</fieldset>
     <fieldset class="fs"><legend>Priority 200 levels (a dealer gets the first level whose score it reaches)</legend><div id="p2t" class="stack-s">${R.p200.tiers.map(t => `<div class="row p2t"><input class="input" data-t="name" value="${esc(t.name)}" style="max-width:180px" aria-label="Level name"><input class="input" type="number" min="0" max="100" data-t="min" value="${t.min}" style="max-width:120px" aria-label="From score"><button class="btn sm ghost" data-act="p2t-del">✕</button></div>`).join('')}</div><div class="row"><button class="btn sm" data-act="p2t-add">+ Level</button></div></fieldset>
     <fieldset class="fs"><legend>Priority 200 weights (they add up to 100)</legend><div class="fgrid">${Object.entries({ sales: 'Sales against target', breadth: 'Product breadth', payments: 'Payments on time', display: 'Showroom', activity: 'Activity in 90 days' }).map(([k, l]) => n('w-' + k, l, R.p200.weights[k], 'points')).join('')}</div></fieldset></div>
@@ -2087,7 +2130,7 @@ EM.ACTIONS['rules-save'] = async el => {
     el.dataset.sure = '1'; el.textContent = 'Save, I understand'; return;
   }
   const v = id => Number(qs('#ru-' + id).value), R = D.lists.rules;
-  const rules = { ...R, gst_pct: v('gst'), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'),
+  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'),
     approvals: Object.fromEntries(Object.keys(R.approvals).map(k => [k, { levels: Object.fromEntries([...document.querySelectorAll(`[data-ap="${k}"]`)].map(i => [i.dataset.lv, Number(i.value)])) }])),
     p200: { tiers: [...document.querySelectorAll('#p2t .p2t')].map(r => ({ name: r.querySelector('[data-t="name"]').value.trim(), min: Number(r.querySelector('[data-t="min"]').value) })).filter(t => t.name),
       weights: Object.fromEntries(['sales', 'breadth', 'payments', 'display', 'activity'].map(k => [k, v('w-' + k)])) } };
@@ -2165,7 +2208,7 @@ const SHEET_NOTE = {
   categories: 'Every kind of floor: LVT, SPC, Laminate, Engineered, Deck...',
   collections: 'Each collection with its category, box size (sq ft or m²) and specifications.',
   warehouses: 'Every warehouse: name, city, address.',
-  stock: 'Every design, and how many boxes are in each warehouse today (one row per design per warehouse). Square feet are worked out in the sheet.',
+  stock: 'Every design, and how many boxes are in each warehouse today (one row per design per warehouse). Sq ft are worked out in the sheet.',
 };
 EM.VIEWS.import = () => {
   const r = IMP.results, cnt = s => r ? r.filter(x => x.status === s).length : 0;
@@ -2758,11 +2801,11 @@ const FIELD_HELP = {
   next_action: 'What happens next, in a few words. It shows on Home when it is due.', next_date: 'When the next action is due. Past this date it shows as overdue in the bell.', notes: 'Anything else worth remembering.',
   designation: 'The person\'s role at the company. The choices are edited in Lists & stages.', responsibilities: 'What this person handles, in a few words.', is_primary: 'The main person to talk to at this company. Only one per company.',
   pipeline: 'Which board the opportunity is on: wholesale, retail lead or retail project.', title: 'A short name for this sale.', stage: 'Where the sale stands. The stages are edited in Lists & stages.',
-  value: 'The value in rupees. For a wholesale sale it is worked out from its designs, boxes and rate.', products: 'The product categories in this sale.', area_sqft: 'The area in square feet.',
+  value: 'The value in rupees. For a wholesale sale it is worked out from its designs, boxes and rate.', products: 'The product categories in this sale.', area_sqft: 'The area in sq ft.',
   application: 'The room or use.', budget: 'The budget band.', contact_id: 'The person at the company who brought this sale.', expected_close: 'When you expect it to close.', lost_reason: 'Why it was lost, from the list. Compulsory at Lost.', lost_detail: 'Exactly what happened, in your words: which design, how many boxes, what the client chose instead. Compulsory at Lost.',
   billing_address: 'The address the invoice goes to.', delivery_address: 'Where the boxes are delivered, if not the billing address.', payment_terms: 'e.g. 50% advance, balance before dispatch.', delivery_terms: 'e.g. ex-warehouse Bhiwandi, or delivered to site.', delivery_time: 'When the client needs it.', terms: 'The terms and conditions printed on the quotation.',
-  category: 'The kind of floor: LVT, SPC, Laminate... Categories are added with + Category or in Lists & stages.', sqft_per_box: 'The area one box covers, in square feet. Fill this or square metres; the other is worked out. Stock in square feet is worked out from it.',
-  sqm_per_box: 'The area one box covers, in square metres. Fill this or square feet.', pcs_per_box: 'How many planks or tiles are in one box.', low_stock: 'Warn below this many boxes: the bell gives a heads-up when stock drops under it.',
+  category: 'The kind of floor: LVT, SPC, Laminate... Categories are added with + Category or in Lists & stages.', sqft_per_box: 'The area one box covers, in sq ft. Fill this or square metres; the other is worked out. Stock in sq ft is worked out from it.',
+  sqm_per_box: 'The area one box covers, in square metres. Fill this or sq ft.', pcs_per_box: 'How many planks or tiles are in one box.', low_stock: 'Warn below this many boxes: the bell gives a heads-up when stock drops under it.',
   collection_id: 'The collection this design belongs to; it takes the collection\'s box size and specifications.', code: 'The design code, if it has one. A code can be used only once.',
   sub_type: 'Plank, tile, herringbone, chevron...', image: 'A link to the design\'s photo.',
 };
@@ -3074,18 +3117,20 @@ function salesList() {
   const O = OPSD(), out = [], P = D.access.prices;
   for (const o of O.orders) {
     if (!o.invoiced_at) continue;
-    const lines = O.lines.filter(l => l.order_id === o.id).map(l => { const p = INVD().products.find(x => x.id === l.product_id) || {}, c = colOf(p); return { product: p.name || 'Design', category: c.category || 'Not set', collection: c.name || 'Not set', boxes: l.boxes || 0, amount: Number(l.amount) || 0, sqft: sqftFor(p, l.boxes || 0) || 0 }; });
+    const lines = O.lines.filter(l => l.order_id === o.id).map(l => { const p = INVD().products.find(x => x.id === l.product_id) || {}, c = colOf(p); return { product: p.name || 'Design', category: c.category || 'Not set', collection: c.name || 'Not set', boxes: l.boxes || 0, amount: Number(l.amount) || 0, sqft: Number(l.sqft) || sqftFor(p, l.boxes || 0) || 0 }; });   // R4: sq ft supplied from the line (lines saved before R4: from the box size)
     out.push({ div: 'wholesale', id: o.id, ref: o.ref, at: dayIST(o.invoiced_at), owner: o.owner_id, client_id: o.client_id, region: o.region || (CL()[o.client_id] || {}).region || '', value: P ? Number(o.subtotal) || 0 : 0, lines, href: '#/order/' + o.id });
   }
   for (const p of Object.keys(PIPELINES).filter(k => PIPELINES[k].division === 'retail')) for (const o of D.opportunities.filter(x => x.pipeline === p && x.stage === wonStage(p, D.lists))) {
     const h = D.history.filter(x => x.opp_id === o.id && x.to_stage === o.stage).pop(), at = (h && h.at) || o.closed_at || o.updated_at;
-    out.push({ div: 'retail', id: o.id, ref: o.ref, title: o.title, at: dayIST(at), owner: o.owner_id, client_id: o.client_id, region: o.region || '', value: P ? Number(o.value) || 0 : 0, cats: (o.extra || {}).products || [], area: Number((o.extra || {}).area_sqft) || 0, href: '#/opp/' + o.id });
+    out.push({ div: 'retail', id: o.id, ref: o.ref, title: o.title, at: dayIST(at), owner: o.owner_id, client_id: o.client_id, region: o.region || '', value: P ? Number(o.value) || 0 : 0, cats: (o.extra || {}).products || [], area: Number((o.extra || {}).area_sqft) || 0, href: '#/opp/' + o.id,
+      lines: (OPSD().oppLines || []).filter(l => l.opp_id === o.id).map(l => { const p = lineProd(l.product_id) || {}; return { category: colOf(p).category || 'Not set', boxes: Number(l.boxes) || 0, sqft: Number(l.sqft) || 0, amount: Number(l.amount) || 0 }; }) });
   }
   return out;
 }
 /* what one sale adds up to, all of it or one category of it */
 const saleMeasure = (s, cat) => {
-  if (s.div === 'retail') return !cat || s.cats.includes(cat) ? { value: s.value, boxes: 0, sqft: s.area } : null;
+  if (s.div === 'retail' && !s.lines.length) return !cat || s.cats.includes(cat) ? { value: s.value, boxes: 0, sqft: s.area } : null;
+  if (s.div === 'retail' && cat && !s.lines.some(l => l.category === cat)) return null;   // R4: a Big E sale with lines counts its boxes and sq ft supplied
   const ls = cat ? s.lines.filter(l => l.category === cat) : s.lines;
   if (cat && !ls.length) return null;
   return { value: cat ? ls.reduce((a, l) => a + l.amount, 0) : s.value, boxes: ls.reduce((a, l) => a + l.boxes, 0), sqft: ls.reduce((a, l) => a + l.sqft, 0) };
@@ -3178,7 +3223,7 @@ function openTargetForm(t) {
   const divs = D.user.division === 'both' ? [['wholesale', 'EGO Premium'], ['retail', 'Big E']] : [[D.user.division, tgDivName(D.user.division)]];
   const o = (list, cur) => list.map(([k, l]) => `<option value="${esc(k)}" ${k === cur ? 'selected' : ''}>${esc(l)}</option>`).join('');
   if (t && !opts.some(x => x.type === t.period_type && x.key === t.period)) opts.unshift({ type: t.period_type, key: t.period, label: periodLabel(t.period_type, t.period) });
-  EM.modal(`<h2>${t ? 'Change the target' : 'Set a target'}</h2><p class="muted small">Value before GST is compulsory; boxes, square feet and new dealers are optional (Big E counts value and square feet). Achievement fills itself from invoiced sales.</p>
+  EM.modal(`<h2>${t ? 'Change the target' : 'Set a target'}</h2><p class="muted small">Value before GST is compulsory; boxes, sq ft and new dealers are optional (new dealers are for EGO Premium). Boxes and sq ft are the whole boxes and sq ft supplied on each sale. Achievement fills itself from invoiced sales.</p>
     <form id="tgf" class="stack" onsubmit="return false" style="margin-top:14px"><div class="fgrid">
       <div class="field"><label for="tgf-div">Company *</label><select class="input" id="tgf-div">${o(divs, v.division)}</select></div>
       <div class="field"><label for="tgf-level">Target for *</label><select class="input" id="tgf-level" data-tgf-level>${o(tgLevels(), v.level)}</select></div>
@@ -3189,8 +3234,8 @@ function openTargetForm(t) {
       <div class="field"><label for="tgf-period">Which *</label><select class="input" id="tgf-period">${opts.map(x => `<option value="${esc(x.key)}" data-pt="${x.type}" ${x.type === v.period_type && x.key === v.period ? 'selected' : ''} ${x.type === v.period_type ? '' : 'hidden disabled'}>${esc(x.label)}</option>`).join('')}</select></div>
       <div class="field"><label for="tgf-cat">Category</label><select class="input" id="tgf-cat"><option value="">Every category</option>${o(D.lists.categories.map(c => [c, c]), v.category)}</select></div>
       <div class="field"><label for="tgf-value">Value before GST *</label>${G.adorn({ type: 'money', key: 'value' }, `<input class="input" type="number" min="0" step="1" id="tgf-value" value="${esc(v.value || '')}">`)}</div>
-      <div class="field" data-tgf-ws><label for="tgf-boxes">Boxes</label><input class="input" type="number" min="0" step="1" id="tgf-boxes" value="${esc(v.boxes || '')}"></div>
-      <div class="field"><label for="tgf-sqft">Square feet</label><input class="input" type="number" min="0" step="1" id="tgf-sqft" value="${esc(v.sqft || '')}"></div>
+      <div class="field"><label for="tgf-boxes">Boxes</label><input class="input" type="number" min="0" step="1" id="tgf-boxes" value="${esc(v.boxes || '')}"></div>
+      <div class="field"><label for="tgf-sqft">Sq ft</label><input class="input" type="number" min="0" step="1" id="tgf-sqft" value="${esc(v.sqft || '')}"></div>
       <div class="field" data-tgf-ws><label for="tgf-nd">New dealers</label><input class="input" type="number" min="0" step="1" id="tgf-nd" value="${esc(v.new_dealers || '')}"></div>
       <div class="field span2"><label for="tgf-notes">Notes</label><textarea class="input" id="tgf-notes" rows="2">${esc(v.notes || '')}</textarea></div></div>
       ${errBox('tgf-err')}<div class="row sticky-actions"><button class="btn primary" data-act="tg-save" data-id="${t ? t.id : ''}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
@@ -3329,7 +3374,7 @@ function anSales() {
   const byRegion = groupBy(list, ([s]) => s.region || 'Not set').map(([k, a]) => [esc(k), ...figs(a, `Sales in the ${k} region`)]);
   /* categories and collections: the design lines of invoiced orders (Big E sales carry products, not designs) */
   const lines = list.filter(([s]) => s.div === 'wholesale').flatMap(([s]) => s.lines.map(l => ({ s, l })));
-  const lineFigs = (a, title) => [...(P ? [fig(inr0(a.reduce((t, x) => t + x.l.amount, 0)), { title, calc: `The sum of the line amounts (rate x boxes, before GST) of these designs on invoiced EGO Premium orders. Other charges on an order are not in any category. Filter: ${anFilterTxt()}.`, head: ['Order', 'Date', 'Design', 'Boxes', ...(P ? ['Line amount'] : [])], rows: a.map(x => ({ href: x.s.href, cells: [esc(x.s.ref), ds(x.s.at), esc(x.l.product), num(x.l.boxes), ...(P ? [inr0(x.l.amount)] : [])] })) })] : []), num(a.reduce((t, x) => t + x.l.boxes, 0)), num(Math.round(a.reduce((t, x) => t + x.l.sqft, 0)))];
+  const lineFigs = (a, title) => [...(P ? [fig(inr0(a.reduce((t, x) => t + x.l.amount, 0)), { title, calc: `The sum of the line amounts (sq ft supplied x rate per sq ft, or pieces or rft x rate for accessories; before GST) of these designs on invoiced EGO Premium orders. Other charges on an order are not in any category. Filter: ${anFilterTxt()}.`, head: ['Order', 'Date', 'Design', 'Boxes', 'Sq ft supplied', ...(P ? ['Line amount'] : [])], rows: a.map(x => ({ href: x.s.href, cells: [esc(x.s.ref), ds(x.s.at), esc(x.l.product), num(x.l.boxes), num(Math.round(x.l.sqft)), ...(P ? [inr0(x.l.amount)] : [])] })) })] : []), num(a.reduce((t, x) => t + x.l.boxes, 0)), num(Math.round(a.reduce((t, x) => t + x.l.sqft, 0)))];
   const lhead = first => [first, ...(P ? ['Value before GST'] : []), 'Boxes', 'Sq ft'];
   const byCat = groupBy(lines, x => x.l.category).map(([k, a]) => [esc(k), ...lineFigs(a, `${k}: designs invoiced`)]);
   const byCol = groupBy(lines, x => `${x.l.category} · ${x.l.collection}`).map(([k, a]) => [esc(k), ...lineFigs(a, `${k}: designs invoiced`)]);
@@ -4301,10 +4346,10 @@ EM.VIEWS.design500 = () => {
       ${sel('kind', 'Firm or solo', [['', 'Both'], ['design_firm', 'Architect firms'], ['architect', 'Solo architects']])}${sel('field', 'Any field', [['', 'Any field'], ...D5_FIELDS])}
       <label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="d5-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
     ${searchBox('Design 500 members: name, city, mobile, dealer or project')}
-    ${rows.length ? table(['Member', 'Owner', 'Last interaction', 'Next action', 'Connected dealers', 'Active projects', 'Samples given (count)', ...(P ? ['Business brought'] : [])], rows.slice(0, 500).map(c => { const x = X[c.id];
+    ${rows.length ? '<div class="d5-tbl" data-d5-table>' + table(['Member', 'Owner', 'Last interaction', 'Next action', 'Connected dealers', 'Active projects', 'Samples given', ...(P ? ['Business brought'] : [])], rows.slice(0, 500).map(c => { const x = X[c.id];
       return { href: `#/client/${c.id}`, cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(kindLabel(c.kind))} · ${esc(c.city || '')}${(c.extra || {}).design500_since ? ' · since ' + ds(c.extra.design500_since) : ''}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`,
         esc(staffName(c.owner_id)), x.last ? ds(dayIST(x.last)) : '<span class="muted">None yet</span>', x.next ? `${esc(x.next.action)} <div class="small muted">${ds(x.next.due_date)}</div>` : '<span class="muted">None booked</span>',
-        esc(x.dealers.join(', ')), x.active.length ? `${num(x.active.length)}<div class="small muted">${esc(x.active.map(p => p.name).slice(0, 3).join(', '))}</div>` : '0', '0', ...(P ? [money(x.business)] : [])] }; }))
+        esc(x.dealers.join(', ')), x.active.length ? `${num(x.active.length)}<div class="small muted">${esc(x.active.map(p => p.name).slice(0, 3).join(', '))}</div>` : '0', '0', ...(P ? [money(x.business)] : [])] }; })) + '</div>'
       : empty(all.length ? 'Nothing for this filter' : 'No Design 500 member yet', all.length ? 'Change or clear the filters above.' : 'Mark an architect or a firm as a Design 500 member (here, on their page, or with the Excel file); their projects and the business they bring are counted from what is saved.', all.length ? '' : '<button class="btn primary" data-act="d5-add">+ Add a member</button>')}</div>`;
 };
 EM.VIEWS.design500.title = () => 'Design 500';
@@ -4393,3 +4438,79 @@ EM.ACTIONS['d5-imp-save'] = async el => {
 /* R3b: the Date filters of Big E fulfilment and Installation (DF_STATE is declared further down than those screens) */
 DF_STATE.rf = () => EM.rfF;
 DF_STATE.inst = () => EM.inF;
+
+/* ================================================================ R4 (17 Oct): design lines from Excel, on the opportunity form
+   The sample is built at download from today's designs (dropdown), each design's unit and box size; the upload is read row by
+   row through THE quantity rule (qtyLine). Boxes are always worked out; a boxes figure typed in the file that disagrees is
+   flagged on its row, and the worked-out figure is what goes in. */
+const OL_SHEET = [['Design', 'design', true], ['Sq ft needed', 'sqft_need'], ['Wastage %', 'wastage_pct'], ['Unit', 'unit'], ['Pieces or rft', 'qty'], ['Boxes (worked out, leave blank)', 'boxes'], ['Rate', 'rate']];
+const olDesigns = () => INVD().products.filter(p => p.status !== 'Discontinued').map(p => ({ p, label: `${p.name}${p.code ? ' · ' + p.code : ''}`, unit: lineUnit(p.id), box: lineBox(p.id) }));
+EM.ACTIONS['ol-sample'] = async el => {
+  busy(el, true);
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(), fill = wb.addWorksheet('Fill this'), how = wb.addWorksheet('How to fill'), lists = wb.addWorksheet('Lists'), ds0 = olDesigns();
+    lists.getCell('A1').value = 'Design'; lists.getCell('B1').value = 'Unit'; lists.getCell('C1').value = 'Sq ft per box'; lists.getCell('E1').value = 'Sold by';
+    ds0.forEach((d, i) => { lists.getCell(i + 2, 1).value = d.label; lists.getCell(i + 2, 2).value = QTY_UNITS[d.unit]; lists.getCell(i + 2, 3).value = d.box || ''; });
+    Object.values(QTY_UNITS).forEach((u, i) => { lists.getCell(i + 2, 5).value = u; });
+    lists.state = 'hidden';
+    fill.columns = OL_SHEET.map(([h, , req]) => ({ header: h + (req ? ' *' : ''), width: Math.max(16, h.length + 4) }));
+    fill.getRow(1).font = { bold: true }; fill.views = [{ state: 'frozen', ySplit: 1 }];
+    for (let r = 2; r <= 201; r++) {
+      fill.getCell('A' + r).dataValidation = { type: 'list', allowBlank: true, formulae: [`Lists!$A$2:$A$${Math.max(2, ds0.length + 1)}`], showErrorMessage: true, errorTitle: 'Pick from the list', error: 'Choose a design from the dropdown.' };
+      fill.getCell('D' + r).dataValidation = { type: 'list', allowBlank: true, formulae: ['Lists!$E$2:$E$4'], showErrorMessage: true, error: 'sq ft, piece or rft.' };
+      for (const c of ['B', 'C', 'E', 'F', 'G']) fill.getCell(c + r).dataValidation = { type: 'decimal', operator: 'greaterThanOrEqual', allowBlank: true, formulae: [0], showErrorMessage: true, error: 'A number, 0 or more.' };
+    }
+    const ex = ds0.find(d => d.unit === 'sqft' && d.box);
+    if (ex) fill.addRow([ex.label, 1000, wastageDefault(D.lists.rules), 'sq ft', '', '', listRate(ex.p.id) || '']);
+    how.getCell('A1').value = 'EGO Master: design lines for one opportunity'; how.getCell('A1').font = { bold: true, size: 14 };
+    how.getCell('A2').value = `One design per row. Flooring and cladding: type the sq ft needed and the wastage % (${wastageDefault(D.lists.rules)}% if left blank); the boxes are worked out, rounded up to whole boxes, and the amount is the sq ft supplied x the rate per sq ft.`;
+    how.getCell('A3').value = 'Accessories (skirting, profiles, underlay foam, film, installation): type the pieces or rft in "Pieces or rft" and the rate per piece or rft. Unit comes from the design\'s category; a different unit typed here is flagged.';
+    how.getCell('A4').value = `Leave "Boxes" blank. A boxes figure typed in the file is checked against the rule and flagged on its row when it disagrees. Made on ${today()} by ${me().name}.`;
+    how.getColumn(1).width = 140;
+    const buf = await wb.xlsx.writeBuffer(), a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = `EGO Master design lines ${today()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    EM.toast('The design lines file is downloading, with today\'s designs in its dropdown.');
+  } catch (x) { bubbleNear(el, x.message); }
+  busy(el, false);
+};
+/* one row of the file, read through the rule: what goes in, and what is flagged */
+const olRow = (x, n) => {
+  const low = s => String(s || '').trim().toLowerCase(), d = olDesigns().find(y => low(y.label) === low(x.design) || low(y.p.name) === low(x.design) || (y.p.code && low(y.p.code) === low(x.design)));
+  const numOf = v => v === '' || v == null ? '' : Number(String(v).replace(/[,\s]/g, ''));
+  if (!d) return { row: n, status: 'error', note: x.design ? `"${x.design}" is not a design in the inventory` : 'Design is compulsory' };
+  const flags = [], typedUnit = low(x.unit), unitKey = Object.keys(QTY_UNITS).find(k => low(QTY_UNITS[k]) === typedUnit || k === typedUnit);
+  if (typedUnit && unitKey !== d.unit) flags.push(`Unit typed "${x.unit}", but ${colOf(d.p).category} is sold ${QTY_UNIT_LONG[d.unit]}`);
+  const line = { product_id: d.p.id, rate: numOf(x.rate) || 0, ...(d.unit === 'sqft' ? { sqft_need: numOf(x.sqft_need), wastage_pct: numOf(x.wastage_pct) === '' ? wastageDefault(D.lists.rules) : numOf(x.wastage_pct) } : { qty: numOf(x.qty) }) };
+  const q = lineCalc(line);
+  if (q.error) return { row: n, status: 'error', note: `${d.label}: ${q.error}` };
+  const typedBoxes = numOf(x.boxes);
+  if (typedBoxes !== '' && typedBoxes !== q.boxes) flags.push(`Boxes typed ${num(typedBoxes)}, the rule gives ${num(q.boxes)}${q.unit === 'sqft' ? ` (${num(q.supply)} sq ft / ${num(q.per_box)} sq ft per box, rounded up)` : ' (accessories carry no boxes)'}`);
+  return { row: n, status: flags.length ? 'flag' : 'ok', line, label: d.label, q, note: flags.join('. ') };
+};
+EM.olImp = null;
+document.addEventListener('change', async e => {
+  if (!e.target.matches('input[data-sheet="olines"]')) return;
+  const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
+  const box = qs('#ol-imp');
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const ws = wb.getWorksheet('Fill this') || wb.worksheets[0], heads = [], rows = [];
+    const txt = v => v == null ? '' : typeof v === 'object' ? (v.text || v.result || (v.richText ? v.richText.map(x => x.text).join('') : '')) : String(v);
+    ws.getRow(1).eachCell((c, i) => { heads[i] = txt(c.value).replace(/\s*\*$/, '').trim(); });
+    ws.eachRow((r, n) => { if (n === 1) return; const x = {}; let any = false;
+      OL_SHEET.forEach(([h, k]) => { const i = heads.indexOf(h); const v = i > 0 ? txt(r.getCell(i).value).trim() : ''; if (v) any = true; x[k] = v; });
+      if (any) rows.push(olRow(x, n)); });
+    if (!rows.length) throw new Error('No filled rows in the "Fill this" tab.');
+    EM.olImp = { file: file.name, rows };
+  } catch (x) { EM.olImp = { file: file.name, rows: [], error: x.message }; }
+  if (box) box.innerHTML = olImpHtml();
+});
+const olImpHtml = () => { const I = EM.olImp; if (!I) return ''; const c = s => I.rows.filter(r => r.status === s).length;
+  return `<div class="callout stack-s" data-ol-import><b>Read: ${esc(I.file)}</b>${I.error ? `<span>${esc(I.error)}</span>` : `<span class="small">${num(c('ok'))} fine · <b>${num(c('flag'))} flagged</b> · ${num(c('error'))} with a mistake (left out)</span>
+    ${table(['Row', 'Status', 'Design', 'Works out to', 'Flag or mistake'], I.rows.map(r => [String(r.row), `<span class="badge ${r.status === 'error' ? 'bad' : r.status === 'flag' ? 'warn' : 'ok'}">${r.status === 'error' ? 'Mistake' : r.status === 'flag' ? 'Flagged' : 'Fine'}</span>`, esc(r.label || ''), r.q ? calcTxt(r.q) : '', esc(r.note || '')]))}
+    ${I.rows.some(r => r.line) ? '<div class="row"><button class="btn sm primary" data-act="ol-imp-use">Put these lines in</button><button class="btn sm ghost" data-act="ol-imp-close">Close</button></div>' : ''}`}</div>`; };
+EM.ACTIONS['ol-imp-use'] = () => { const box = qs('#olines'), ls = EM.olImp.rows.filter(r => r.line).map(r => r.line); box.innerHTML = ls.map((l, i) => ordLine(i, l)).join(''); EM.olImp = null; qs('#ol-imp').innerHTML = ''; qs('#of').dispatchEvent(new Event('input', { bubbles: true })); EM.toast(`<b>${ls.length} design line${ls.length === 1 ? '' : 's'}</b> put in from the file. Check them, then save.`); };
+EM.ACTIONS['ol-imp-close'] = () => { EM.olImp = null; qs('#ol-imp').innerHTML = ''; };
