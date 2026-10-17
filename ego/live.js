@@ -26,7 +26,7 @@ function allowedTab(t) {
   if (t === 'bin') return isOwner() || !!D.access.can_delete;   // whoever may delete sees what they deleted; an Owner sees everything
   if (t === 'followups') return holds();   // My follow-ups opens from Home, like Lost sales from Opportunities
   if (t === 'integrations') return isOwner() && !D.access.viewing_as;   // every API key in one place: an Owner only
-  if (['clients', 'people', 'opps', 'import', 'inventory', 'analysis'].includes(t)) return holds();
+  if (['clients', 'people', 'opps', 'projects', 'import', 'inventory', 'analysis'].includes(t)) return holds();
   if (t === 'dealers') return holds() && canDiv('wholesale');
   if (t === 'architects') return holds();
   if (t === 'orders' || t === 'p200' || t === 'schemes') return holds() && canDiv('wholesale');
@@ -53,7 +53,9 @@ const NAV_ACTS = new Set(['hist-open', 'role-toggle', 'opp-mine', 'invf-clear', 
   /* seeing the records behind a figure, downloading the analysis or the targets sample, closing a file preview (13 Oct, batch 3) */
   'why', 'an-csv', 'tg-sample', 'tg-imp-close',
   /* batch 4: downloading the leads or interventions list, opening an intervention's files */
-  'ho-csv', 'iv-csv', 'iv-files']);
+  'ho-csv', 'iv-csv', 'iv-files',
+  /* R3a: the projects Excel sample and closing its preview */
+  'pj-sample', 'pj-imp-close']);
 const LOOK_ACTS = new Set(['hist-open', 'view-back', 'view-as', 'role-toggle', 'role-copy', 'role-del', 'div', 'sign-out', 'menu', 'theme', 'back', 'close-modal', 'notif-open', 'notif-close', 'notif-tab', 'notif-seen', 'invf-clear', 'list-open', 'alloc-open',
   /* the people who log in and their own password are account matters, not company data */
   'staff-add', 'staff-edit', 'staff-gen', 'staff-off', 'staff-off-go', 'staff-pass', 'staff-pass-go', 'staff-save', 'my-pass',
@@ -61,7 +63,7 @@ const LOOK_ACTS = new Set(['hist-open', 'view-back', 'view-as', 'role-toggle', '
   'int-key-add', 'int-key-go', 'int-key-revoke', 'int-key-revoke-go', 'int-copy', 'int-tool-add', 'int-tool-edit', 'int-tool-save', 'int-tool-del', 'int-tool-del-go', 'int-row-add', 'int-row-del',
   'fu-view', 'fu-dl', 'fu-share', 'fu-share-native', 'fu-share-copy', 'lost-csv',
   'why', 'an-csv', 'tg-sample', 'tg-imp-close',
-  'ho-csv', 'iv-csv', 'iv-files',
+  'ho-csv', 'iv-csv', 'iv-files', 'pj-sample', 'pj-imp-close',
   /* dealer portal logins are account matters, like staff logins (batch 4) */
   'pu-add', 'pu-go', 'pu-pass', 'pu-toggle']);
 /* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
@@ -86,13 +88,13 @@ EM.render = (...a) => {
   if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
-const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
+const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel' };
 const NAV_TAIL = ['complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
 // Menu order per view, as Bhargav set it on 5 Oct.
 const NAV_ORDER = {
-  wholesale: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', ...NAV_TAIL],
-  retail: ['home', 'people', 'architects', 'opps', 'orderbook', 'installation', ...NAV_TAIL],
-  both: ['home', 'people', 'dealers', 'architects', 'orderbook', 'opps', 'schemes', 'orders', 'installation', ...NAV_TAIL],
+  wholesale: ['home', 'people', 'architects', 'dealers', 'opps', 'projects', 'schemes', 'orders', 'orderbook', ...NAV_TAIL],
+  retail: ['home', 'people', 'architects', 'opps', 'projects', 'orderbook', 'installation', ...NAV_TAIL],
+  both: ['home', 'people', 'dealers', 'architects', 'orderbook', 'opps', 'projects', 'schemes', 'orders', 'installation', ...NAV_TAIL],
 };
 EM.navTabs = () => ({
   main: (NAV_ORDER[EM.div] || NAV_ORDER.both).map(k => [k, NAV_LABEL[k]])
@@ -102,6 +104,7 @@ EM.navTabs = () => ({
 Object.assign(ICON, {
   opps: ICON.leads, schemes: ICON.targets, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, p200: ICON.targets, orderbook: ICON.orders || ICON.leads, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),
+  projects: _i('<path d="M4 20.5h16"/><path d="M6 20.5V6.5l6-3 6 3v14"/><path d="M9.5 9h1.5M13 9h1.5M9.5 12.5h1.5M13 12.5h1.5M10.5 20.5v-4h3v4"/>'),
   account: _i('<circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/>'),
   bin: _i('<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13"/><path d="M10 11v5M14 11v5"/>'),
   analysis: _i('<path d="M4 20h16"/><path d="M7 16v-5M12 16V7M17 16v-8"/>'),
@@ -190,6 +193,11 @@ function fieldHtml(f, v, p, opt = {}) {
       const opts = D.clients.filter(c => f.to.includes(c.kind) && c.id !== opt.self).sort((a, b) => a.name.localeCompare(b.name)).map(c => [c.id, `${c.name} · ${kindLabel(c.kind)} · ${c.city}`]);
       return G.select(f, v, p, opts);
     }
+    /* R3a: a project of the pipeline's company; a dealer for a consumer lead (those near the person first); a Project Partner */
+    case 'project': return G.select(f, v, p, PJS().filter(x => x.division === (PIPELINES[opt.pipeline] || {}).division).map(x => [x.id, `${x.name} · ${x.city}`]));
+    case 'dealer': { const city = (CL()[opt.client] || {}).city, sug = dealerSuggest(city).map(x => x.d.id);
+      return G.select(f, v, p, [...sug.map(id => DDIR().find(d => d.id === id)).map(d => [d.id, `${d.name} · ${d.city} · suggested for ${city}`]), ...DDIR().filter(d => !sug.includes(d.id)).map(d => [d.id, `${d.name} · ${d.city}`])]).replace('<select', '<select data-keep-order'); }
+    case 'partner': return G.select(f, v, p, DDIR().filter(d => PARTNER_OK.includes(d.project_partner) || d.id === v).map(d => [d.id, `${d.name} · ${d.city} · Project Partner ${d.project_partner || 'not set'}`]));
     case 'cats': return fieldHtml({ ...f, type: 'multi', opts: D.lists.categories }, v, p);
     case 'cat': return G.select(f, v, p, D.lists.categories.map(c => [c, c]));
     case 'decimal': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
@@ -304,7 +312,8 @@ function showVal(f, v) {
   switch (f.type) {
     case 'mobile': return esc(fmtMobile(v));
     case 'owner': return esc(staffName(v));
-    case 'link': { const c = CL()[v]; return c ? `<a href="#/client/${c.id}">${esc(c.name)}</a>` : '<span class="muted">Outside your view</span>'; }
+    case 'link': case 'dealer': case 'partner': { const c = CL()[v] || DDIR().find(d => d.id === v); return c ? (CL()[v] ? `<a href="#/client/${c.id}">${esc(c.name)}</a>` : esc(c.name)) : '<span class="muted">Outside your view</span>'; }
+    case 'project': { const x = PJS().find(y => y.id === v); return x ? `<a href="#/project/${x.id}">${esc(x.name)}</a>` : '<span class="muted">Outside your view</span>'; }
     case 'yesno': return v ? 'Yes' : 'No';
     case 'multi': case 'cats': case 'cities': return v.map(x => `<span class="chip">${esc(x)}</span>`).join('');
     case 'money': return money(v);
@@ -476,7 +485,7 @@ const SOON = {
 const notConnectedCard = () => `<section class="card stack-s"><h3>Not connected yet</h3><p class="small muted">These parts of EGO Master show no figures until the system that feeds them is connected. Nothing here is estimated.</p>
   ${table(['Part', 'Waits for', ''], Object.values(SOON).map(([a, b]) => [esc(a), esc(b), '<span class="badge warn">Not connected yet</span>']))}</section>`;
 /* the demo's screens, if a bookmark or an old link reaches them */
-const DEMO_ROUTES = { worder: 'sales', fulfil: 'stock', targets: 'targets', champions: 'targets', leads: 'ads', lead: 'ads', projects: 'sales', project: 'sales', inbox: 'whatsapp', cockpit: 'targets', automations: 'whatsapp', ai: 'ai', integrations: 'ai', app: 'visits', map: 'ai', tech: 'ai' };
+const DEMO_ROUTES = { worder: 'sales', fulfil: 'stock', targets: 'targets', champions: 'targets', leads: 'ads', lead: 'ads', inbox: 'whatsapp', cockpit: 'targets', automations: 'whatsapp', ai: 'ai', integrations: 'ai', app: 'visits', map: 'ai', tech: 'ai' };
 for (const [r, k] of Object.entries(DEMO_ROUTES)) {
   EM.VIEWS[r] = () => `<div class="stack" style="max-width:720px"><span class="badge warn">Not connected yet</span><h1>${esc(SOON[k][0])}</h1><p class="muted">This part of EGO Master waits for: ${esc(SOON[k][1])} Until then it shows nothing rather than sample figures.</p><div class="row"><a class="btn primary" href="#/people">People</a><a class="btn" href="#/home">Home</a></div></div>`;
   EM.VIEWS[r].tab = 'soon';
@@ -507,7 +516,8 @@ function orgList(org, arg) {
     : [['all', 'All', all0], ['design_firm', 'Firms', ['design_firm']], ['architect', 'Solo architects', ['architect']]];
   const tab = subs.find(t => t[0] === arg) || subs[0];
   const all = D.clients.filter(c => all0.includes(c.kind) && inDiv(c));
-  const rows = all.filter(c => tab[2].includes(c.kind) && matches(`${c.name} ${c.city} ${c.ref || ''} ${c.gst}`, [c.mobile]));
+  const ppF = org === 'dealer' ? EM.ppF || '' : '', ppOf = c => (c.extra || {}).project_partner || '';
+  const rows = all.filter(c => tab[2].includes(c.kind) && (!ppF || (ppF === 'none' ? !ppOf(c) : ppOf(c) === ppF)) && matches(`${c.name} ${c.city} ${c.ref || ''} ${c.gst} ${(c.extra || {}).partner_capability || ''}`, [c.mobile]));
   const team = id => D.contacts.filter(k => k.client_id === id).length, open = id => D.opportunities.filter(o => o.client_id === id && !isClosed(o.pipeline, o.stage, D.lists)).length;
   const title = org === 'dealer' ? 'Dealers' : 'Architects', base = '#/' + (org === 'dealer' ? 'dealers' : 'architects');
   const rating = c => org === 'dealer' ? c.grade : (c.extra || {}).rating;
@@ -515,9 +525,10 @@ function orgList(org, arg) {
     <div class="row between"><div class="stack-s"><div class="kicker">${org === 'dealer' ? 'Distributors, dealers and sub-dealers, each with its team' : 'Architect firms and solo architects, each with its team'}</div><h1>${title}</h1><p class="muted">${rows.length} of ${all.length} · ${esc(scopeLabel())}</p></div>
       <div class="row" style="flex-wrap:wrap"><a class="btn" href="#/import">Import from Excel</a>${(org === 'dealer' ? DEALER_KINDS : ARCH_KINDS).map((k, i) => `<button class="btn ${(tab[2].length === 1 ? tab[2][0] === k : i === (org === 'dealer' ? 1 : 0)) ? 'primary' : ''}" data-act="org-add" data-kind="${k}">+ Add ${esc(kindName(k).toLowerCase())}</button>`).join('')}</div></div>
     ${subtabs(base, tab[0], subs.map(([k, l, ks]) => [k, `${l} <span class="muted">${all.filter(c => ks.includes(c.kind)).length}</span>`]))}
-    ${searchBox('Company name, city, mobile, GST or reference')}
-    ${all.length ? (rows.length ? table(['Company', 'Type', ...(org === 'dealer' ? ['Served by'] : []), 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
-      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), ...(org === 'dealer' ? [c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? esc(CL()[c.parent_id].name) : '<span class="badge bad">No distributor</span>') : 'EGO Premium'] : []), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
+    ${org === 'dealer' ? `<div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-pp-filter><label class="field" style="min-width:170px"><span class="small muted">Project Partner</span><select class="input" id="pp-f">${[['', 'Every dealer'], ['Yes', 'Yes'], ['Potential', 'Potential'], ['No', 'No'], ['none', 'Not filled']].map(([v, l]) => `<option value="${v}" ${ppF === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>` : ''}
+    ${searchBox('Company name, city, mobile, GST, reference or Project Partner capability')}
+    ${all.length ? (rows.length ? table(['Company', 'Type', ...(org === 'dealer' ? ['Served by', 'Project Partner'] : []), 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
+      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), ...(org === 'dealer' ? [c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? esc(CL()[c.parent_id].name) : '<span class="badge bad">No distributor</span>') : 'EGO Premium', ppOf(c) ? `<span class="badge ${ppOf(c) === 'Yes' ? 'ok' : ppOf(c) === 'Potential' ? 'info' : 'plain'}">${esc(ppOf(c))}</span>` : ''] : []), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
       + (rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing matches that search.</p>')
       : empty(`No ${title.toLowerCase()} yet`, `Add the company and its people in one go, or fill the Excel file and upload it.`, `<button class="btn primary" data-act="org-add" data-org="${org}">+ Add ${org === 'dealer' ? 'dealer' : 'architect firm'}</button><a class="btn" href="#/import">Import from Excel</a>`)}
   </div>`;
@@ -723,7 +734,7 @@ EM.VIEWS.client = arg => {
   const home = homeOf(c);
   return `<div class="stack">${crumbs(home, [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
-      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
+      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}${DEALER_KINDS.includes(c.kind) ? `<span class="badge ${(c.extra || {}).project_partner === 'Yes' ? 'ok' : (c.extra || {}).project_partner === 'Potential' ? 'info' : 'plain'}" data-pp-badge>Project Partner: ${esc((c.extra || {}).project_partner || 'not filled')}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
       <p class="muted">${esc(fmtMobile(c.mobile))} · ${esc(c.city)}${c.region ? ', ' + esc(c.region) : ''} · owner ${esc(staffName(c.owner_id))}</p></div>
       <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn" data-act="fu-add" data-client="${id}">+ Follow-up</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button>${D.access.can_delete ? `<button class="btn ghost" data-act="client-del" data-id="${id}">Delete</button>` : ''}</div></div>
     ${subtabs(`#/client/${id}`, tab, tabs)}
@@ -846,7 +857,7 @@ function filesBox(o) {   // o: { id, client, order, types, docs, canAdd, tags, t
       ${P ? `<div class="field" data-field="doc_amount"><label for="${b}-amt">Amount (optional)</label>${G.adorn({ type: 'money', key: 'amount' }, `<input class="input" type="number" min="0" step="0.01" id="${b}-amt">`)}</div>` : ''}`
     : `<div class="field" data-field="doc_name"><label for="${b}-name">Name (optional)</label><input class="input" id="${b}-name" placeholder="e.g. GST certificate 2026"></div>`}
       <div class="field span2" data-field="doc_files"><label for="${b}-file">Files: one or many, up to 25 MB each</label><input class="input" id="${b}-file" type="file" multiple accept="${FILE_ACCEPT}"></div></div>
-      ${errBox(b + '-err')}<div class="row"><button class="btn primary" data-act="fu-up" data-box="${o.id}" data-client="${o.client || ''}" data-order="${o.order || ''}" data-followup="${o.followup || ''}" data-plan="${o.plan || ''}">Upload</button></div></form>` : '';
+      ${errBox(b + '-err')}<div class="row"><button class="btn primary" data-act="fu-up" data-box="${o.id}" data-client="${o.client || ''}" data-order="${o.order || ''}" data-followup="${o.followup || ''}" data-plan="${o.plan || ''}" data-project="${o.project || ''}">Upload</button></div></form>` : '';
   const rows = o.docs.slice().sort((x, y) => String(y.created_at).localeCompare(String(x.created_at)));
   const list = rows.length ? table(['File', 'What it is', ...(tagCols ? ['Number', 'Date', ...(P ? ['Amount'] : [])] : []), ...(o.showOrder ? ['On order'] : []), 'Size', 'Added', ''], rows.map(d => [
     `<b>${esc(d.name)}</b>${d.file_name && d.file_name !== d.name ? `<div class="small muted">${esc(d.file_name)}</div>` : ''}`, esc(d.type), ...(tagCols ? [esc(d.doc_no || ''), d.doc_date ? ds(d.doc_date) : '', ...(P ? [d.amount != null ? inr0(d.amount) : ''] : [])] : []),
@@ -862,7 +873,7 @@ EM.ACTIONS['fu-up'] = async el => {
   const big = files.find(f => f.size > 25 * 1024 * 1024); if (big) return showErr(b + '-err', `${big.name} is over 25 MB.`);
   const fd = new FormData(); files.forEach(f => fd.append('file', f));
   fd.append('type', v('type')); fd.append('name', v('name')); fd.append('doc_no', v('no')); fd.append('doc_date', v('date')); fd.append('amount', v('amt'));
-  if (el.dataset.order) fd.append('order_id', el.dataset.order); else if (el.dataset.followup) fd.append('followup_id', el.dataset.followup); else if (el.dataset.plan) fd.append('plan_id', el.dataset.plan); else fd.append('client_id', el.dataset.client);
+  if (el.dataset.order) fd.append('order_id', el.dataset.order); else if (el.dataset.followup) fd.append('followup_id', el.dataset.followup); else if (el.dataset.plan) fd.append('plan_id', el.dataset.plan); else if (el.dataset.project) fd.append('project_id', el.dataset.project); else fd.append('client_id', el.dataset.client);
   busy(el, true);
   try { const r = await API('POST', '/api/documents', fd, true); D.documents.push(...r.documents); EM.toast(`<b>${r.documents.length} file${r.documents.length === 1 ? '' : 's'}</b> uploaded.`);
     const box = el.dataset.followup && el.closest('#overlay [data-files]'); if (box) box.outerHTML = fuFilesBox(el.dataset.followup); else EM.rerender(); }
@@ -932,15 +943,16 @@ EM.VIEWS.opps = arg => {
   const ps = pipesAllowed();
   if (!ps.length) return EM.noAccess('No pipeline is open to your role.');
   const p = ps.includes(arg) ? arg : ps[0];
-  const all = D.opportunities.filter(o => o.pipeline === p && (!EM.oppMine || o.owner_id === me().id) && matches(`${o.title} ${o.ref || ''} ${(CL()[o.client_id] || {}).name || ''} ${staffName(o.owner_id)} ${o.next_action || ''}`, [(CL()[o.client_id] || {}).mobile]));
+  const all = D.opportunities.filter(o => o.pipeline === p && (!EM.oppMine || o.owner_id === me().id) && matches(`${o.title} ${o.ref || ''} ${(CL()[o.client_id] || {}).name || ''} ${staffName(o.owner_id)} ${o.next_action || ''} ${(PJS().find(x => x.id === o.project_id) || {}).name || ''} ${o.dealer_id ? (DDIR().find(d => d.id === o.dealer_id) || {}).name || '' : ''}`, [(CL()[o.client_id] || {}).mobile]));
   const stages = D.lists.stages[p] || [];
   const t = today();
-  const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>
+  const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>${o.project_id && PJS().find(x => x.id === o.project_id) ? `<div class="small">Project: ${esc(PJS().find(x => x.id === o.project_id).name)}</div>` : ''}${o.dealer_id ? `<div class="small">Dealer: ${esc((DDIR().find(d => d.id === o.dealer_id) || { name: 'outside your view' }).name)}</div>` : ''}
     <div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}<button class="btn sm ghost" data-act="fu-add" data-client="${o.client_id}" data-opp="${o.id}" style="margin-top:4px">+ Follow-up</button></div>`;
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
-      <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label>${EM.div !== 'retail' && canDiv('wholesale') ? '<a class="btn" href="#/handover">Leads for dealers</a>' : ''}<a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
-    ${searchBox('Opportunity, company, owner or next action')}
+      <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
+    ${searchBox('Opportunity, company, project, dealer, owner or next action')}
+    ${PIPELINES[p].dealer ? `<p class="small muted" data-retail-note>Consumer leads: telesales qualify each one, then allocate it to a dealer (the dealers in the person's city are suggested). The dealer accepts it and moves it on in the dealer portal. A lead with no move for ${escDays()} day${escDays() === 1 ? '' : 's'} goes to the dealer's field sales owner in the bell.</p>` : ''}
     ${subtabs('#/opps', p, ps.map(k => [k, `${PIPELINES[k].plural} <span class="muted">${D.opportunities.filter(o => o.pipeline === k).length}</span>`]))}
     <p class="small muted">The board shows what is live. A won or lost one stays until the end of the month it closed in; every order, old and new, is in <a href="#/orderbook">Orders</a>.</p>
     ${all.length ? '' : EM.clientQ ? '<p class="muted">Nothing matches that search.</p>' : `<p class="small muted">No ${esc(PIPELINES[p].plural.toLowerCase())} yet. Add one from here, or from a dealer, an architect firm or a person. The stages below come from Lists & stages.</p>`}
@@ -948,6 +960,7 @@ EM.VIEWS.opps = arg => {
 };
 EM.VIEWS.opps.title = () => 'Opportunities';
 document.addEventListener('change', e => { if (e.target.id === 'opp-mine') { EM.oppMine = e.target.checked; EM.rerender(); } });
+document.addEventListener('change', e => { if (e.target.id === 'pp-f') { EM.ppF = e.target.value; EM.rerender(); } });
 
 /* ---------------------------------------------------------------- Lost sales (13 Oct)
    Every lost opportunity in your view: why, the details, the value, who, which client, when, and the
@@ -1019,7 +1032,7 @@ EM.VIEWS.opp = id => {
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.title)}</h1>
       <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}<span class="small muted">${esc(o.ref || '')}</span></div>
       <p class="muted"><a href="#/client/${o.client_id}">${esc(c.name)}</a>${contact ? ` · ${esc(contact.name)} ${esc(fmtMobile(contact.mobile))}` : ''}</p></div>
-      <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}<button class="btn" data-act="fu-add" data-client="${o.client_id}" data-opp="${id}">+ Follow-up</button><button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${D.access.can_delete ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
+      <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}${PIPELINES[o.pipeline].dealer && !isClosed(o.pipeline, o.stage, D.lists) ? `<button class="btn ${o.dealer_id ? '' : 'primary'}" data-act="ld-move" data-id="${id}">${o.dealer_id ? 'Move to another dealer' : 'Allocate to a dealer'}</button>` : ''}<button class="btn" data-act="fu-add" data-client="${o.client_id}" data-opp="${id}">+ Follow-up</button><button class="btn" data-act="opp-edit" data-id="${id}">Edit</button>${D.access.can_delete ? `<button class="btn ghost" data-act="opp-del" data-id="${id}">Delete</button>` : ''}</div></div>
     <section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>
       <div class="row"><select class="input" id="move-stage" data-keep-order aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
     ${(o.extra || {}).portal ? portalRequestNote(o) : ''}${PIPELINES[o.pipeline].lines ? oppLinesCard(o) : ''}
@@ -1035,7 +1048,8 @@ function openOppForm(o, keep) {
   const v = keep || (o ? { ...o, ...o.extra } : { owner_id: me().id });
   const clients = D.clients.filter(c => PIPES_FOR[KINDS[c.kind].group].some(p => pipesAllowed().includes(p))).sort((a, b) => a.name.localeCompare(b.name));
   if (!clients.length) return EM.modal(`<h2>Add an opportunity</h2><p class="muted">An opportunity belongs to a dealer, an architect firm or a person. Add one first.</p><div class="row" style="margin-top:14px">${addButtons()}<button class="btn" data-act="close-modal">Cancel</button></div>`);
-  const client = CL()[v.client_id] || clients[0];
+  /* opened from a board (Retail, Project): the first client offered is one that can hold that pipeline */
+  const client = CL()[v.client_id] || (v.pipeline && clients.find(c => PIPES_FOR[KINDS[c.kind].group].includes(v.pipeline))) || clients[0];
   const pipes = PIPES_FOR[KINDS[client.kind].group].filter(p => pipesAllowed().includes(p) || (o && o.pipeline === p));
   const pipeline = pipes.includes(v.pipeline) ? v.pipeline : pipes[0];
   const stages = D.lists.stages[pipeline] || [];
@@ -1066,10 +1080,10 @@ document.addEventListener('change', e => {
   keep.client_id = form.querySelector('[name=client_id]').value;
   if (qs('#olines')) { keep.lines = readOrder(); keep.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0); }
   if (qs('#ochg')) keep.charges = readCharges();
-  if (e.target.name === 'client_id') { keep.pipeline = ''; keep.contact_id = ''; keep.billing_address = ''; keep.delivery_address = ''; }
+  if (e.target.name === 'client_id') { keep.contact_id = '';   /* the pipeline stays when the new client may have it (a Retail or Project opportunity opened from its board) */ keep.billing_address = ''; keep.delivery_address = ''; }
   openOppForm(o, keep);
 });
-EM.ACTIONS['opp-add'] = el => openOppForm(null, el.dataset.client || el.dataset.pipeline ? { owner_id: me().id, client_id: el.dataset.client, pipeline: el.dataset.pipeline } : null);
+EM.ACTIONS['opp-add'] = el => openOppForm(null, el.dataset.client || el.dataset.pipeline ? { owner_id: me().id, client_id: el.dataset.client, pipeline: el.dataset.pipeline, project_id: el.dataset.project || '', dealer_id: el.dataset.dealer || '' } : null);
 EM.ACTIONS['opp-edit'] = el => openOppForm(D.opportunities.find(x => x.id === el.dataset.id));
 async function saveOpp(input, el, errId) {
   const { errors } = cleanOpp(input, ctxLocal());
@@ -1103,7 +1117,7 @@ EM.ACTIONS['opp-save'] = async el => {
   EM.closeModal(); EM.toast(`<b>${esc(r.opportunity.title)}</b> ${r.created ? 'added' : 'saved'} · ${esc(r.opportunity.stage)}`);
   location.hash = `#/opp/${r.opportunity.id}`; EM.rerender();
 };
-const oppInput = o => ({ ...o.extra, next_seen: { action: o.next_action || '', date: o.next_date || '' }, id: o.id, client_id: o.client_id, pipeline: o.pipeline, title: o.title, stage: o.stage, value: o.value ?? '', owner_id: o.owner_id, contact_id: o.contact_id, source: o.source, next_action: o.next_action, next_date: o.next_date, lost_reason: o.lost_reason });
+const oppInput = o => ({ ...o.extra, next_seen: { action: o.next_action || '', date: o.next_date || '' }, id: o.id, client_id: o.client_id, pipeline: o.pipeline, title: o.title, stage: o.stage, value: o.value ?? '', owner_id: o.owner_id, contact_id: o.contact_id, source: o.source, next_action: o.next_action, next_date: o.next_date, lost_reason: o.lost_reason, project_id: o.project_id || '', dealer_id: o.dealer_id || '' });
 EM.ACTIONS['opp-move'] = async el => {
   const o = D.opportunities.find(x => x.id === el.dataset.id), to = qs('#move-stage').value;
   if (to === o.stage) return;
@@ -2537,6 +2551,10 @@ function bubbleNear(el, msg) {
    Rest the pointer on a field, a button, a menu item, a stage or a card for two seconds and a
    small note says what it is and what it does. */
 const FIELD_HELP = {
+  /* R3a */
+  partner_capability: 'What this dealer can take on for projects: investment, installation team, areas, past projects.', project_id: 'The project (building or site) this opportunity belongs to.',
+  dealer_id: 'The dealer this consumer lead is allocated to. Picking one moves it to Dealer allocated; the dealer sees it in the dealer portal.',
+  partner_id: 'The dealer who supplies and serves this project. Only dealers marked Yes or Potential as Project Partner are offered.',
   doc_type: 'What the file is. On an order: PI, Invoice, Payment proof or Other.', doc_name: 'A name to find it by. Left blank, the file name is used.', doc_files: 'Pick or drop one or many files at once: PDF, photos, Word, Excel. Up to 25 MB each, 10 at a time.',
   doc_no: 'The PI or invoice number as it is in Tally. Optional.', doc_date: 'The date on the PI, invoice or payment. Optional.', doc_amount: 'The amount on it, in rupees. Optional; shown only to roles that see money.',
   reject_reason: 'Why the scheme is not approved, in plain words. Whoever drew it up reads this, changes the scheme and sends it again.',
@@ -2603,7 +2621,7 @@ const ACT_HELP = {
   'notif-open': 'Notifications: Internal (the system) and External (from outside).', 'notif-seen': 'Mark the recorded notifications as read.', 'div': 'Show EGO Premium (wholesale), Big E (retail) or both.',
   'sign-out': 'Sign out of EGO Master.', 'contact-add': 'Add a person to this company\'s team.', 'snag-add': 'Record a snag on this site.', 'snag-close': 'Close this snag, saying how it was put right.',
 };
-const NAV_HELP = { home: 'Today at a glance: counts, next actions due, what is not connected yet.', dealers: 'Distributors, dealers and sub-dealers, each with its team, sales and business.',
+const NAV_HELP = { projects: 'Projects: one building or site each, with its opportunities, contacts by role, Project Partner dealer, installation sites and files.', home: 'Today at a glance: counts, next actions due, what is not connected yet.', dealers: 'Distributors, dealers and sub-dealers, each with its team, sales and business.',
   architects: 'Architect firms and solo architects, each with its team.', people: 'Everyone: the people at every company, and personal contacts.', opps: 'The sales boards. A wholesale sale runs here until Order confirmed.', schemes: 'Dealer schemes: a target over a period, progress counted from invoiced orders.',
   orders: 'From the confirmed order: stock check and blocking, production for what is missing, PI, payment, invoice, dispatch.', orderbook: 'Every order, live and old: when each stage happened, who gave it, who closed it, who processed it.', installation: 'Big E installation sites, step by step.', complaints: 'Complaints, from logged to resolved.',
   approvals: 'Credit, discounts and settlements waiting for someone whose limit covers them.', p200: 'The dealers EGO develops first, scored from saved sales.', inventory: 'Categories, collections, designs, warehouses and stock.',
@@ -3277,8 +3295,8 @@ EM.ACTIONS['an-csv'] = () => {
    A History button beside every screen's title opens what happened there: added, changed, deleted, by whom
    and when, old to new where the change kept it. On a record page it is that record's own history. */
 const HIST_AREA = { dealers: 'dealers', architects: 'architects', people: 'people', clients: 'people', opps: 'opps', lost: 'opps', followups: 'followups', orders: 'orders', orderbook: 'orderbook', installation: 'installation', complaints: 'complaints',
-  approvals: 'approvals', schemes: 'schemes', p200: 'p200', handover: 'handover', analysis: 'analysis', targets: 'targets', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin' };
-const HIST_RECORD = ['client', 'opp', 'order', 'po', 'site', 'scheme', 'product', 'collection'];
+  approvals: 'approvals', schemes: 'schemes', p200: 'p200', handover: 'opps', projects: 'projects', analysis: 'analysis', targets: 'targets', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin' };
+const HIST_RECORD = ['client', 'opp', 'order', 'po', 'site', 'scheme', 'product', 'collection', 'project'];
 function histButton() {
   const { r, arg } = EM.route(), h1 = qs('#view h1'); if (!h1 || qs('#view [data-hist-open]')) return;
   const rec = HIST_RECORD.includes(r) ? arg.split('/')[0] : '', area = rec ? '' : HIST_AREA[r];
@@ -3468,14 +3486,21 @@ EM.ACTIONS['my-pass'] = async el => {
    is easy to use". So: one screen for the leads handed to dealers (opened from Opportunities, like Lost sales), a
    Development plan tab on each dealer, the plans and interventions under Priority 200, and the dealer's portal
    logins on the dealer's page for the Owner. Every figure is counted from saved records. */
-const LEADS = () => D.leads || [], DDIR = () => D.dealer_dir || [], PLANS = () => D.plans || [];
+/* R3a (17 Oct): Leads for dealers folded into EGO's Retail pipeline. A lead IS a Retail opportunity with a dealer allocated;
+   this shapes it for the dealer page, the ageing and Analysis › Dealer leads. Nothing is kept twice. */
+const RETAIL = 'ego_retail';
+const leadOfOpp = o => { const c = CL()[o.client_id] || {}, x = o.extra || {}, h = D.history.filter(y => y.opp_id === o.id).pop();
+  return { id: o.id, opp: o, ref: o.ref || '', name: c.name || o.c_name || 'Outside your view', mobile: c.mobile || o.c_mobile || '', city: c.city || o.c_city || '', area: (c.extra || {}).locality || '', need: x.products || [], sqft: x.area_sqft, source: o.source || '', notes: x.notes || '',
+    dealer_id: o.dealer_id, status: o.stage, lost_reason: o.lost_reason || '', status_note: h ? h.note || '' : '', won_value: x.won_value, handed_by: x.allocated_by || o.owner_id, handed_at: x.allocated_at || o.created_at, status_at: h ? h.at : o.created_at, status_by_dealer: !!x.stage_by_dealer }; };
+const LEADS = () => D.opportunities.filter(o => o.pipeline === RETAIL && o.dealer_id).map(leadOfOpp), DDIR = () => D.dealer_dir || [], PLANS = () => D.plans || [];
+const PJS = () => D.projects || [];
 const reload4 = async () => { Object.assign(D, await API('GET', '/api/bootstrap')); };
 const leadDealer = l => DDIR().find(d => d.id === l.dealer_id) || CL()[l.dealer_id] || { id: l.dealer_id, name: 'A dealer outside your view', owner_id: '', city: '' };
-const leadOpen = l => !LEAD_CLOSED.includes(l.status);
+const leadOpen = l => !isClosed(RETAIL, l.status, D.lists);
 const escDays = () => Number(D.lists.rules.lead_escalate_days) || 2;
 const leadAge = l => Math.max(0, Math.floor((Date.now() - tsMs(l.status_at)) / 864e5));
 const leadStale = l => leadOpen(l) && (Date.now() - tsMs(l.status_at)) >= escDays() * 864e5;
-const leadBadge = l => `<span class="badge ${l.status === 'Won' ? 'ok' : l.status === 'Lost' ? 'bad' : leadStale(l) ? 'warn' : 'info'}">${esc(l.status)}</span>`;
+const leadBadge = l => `<span class="badge ${l.status === wonStage(RETAIL, D.lists) ? 'ok' : l.status === lostStage(RETAIL, D.lists) ? 'bad' : leadStale(l) ? 'warn' : 'info'}">${esc(l.status)}</span>`;
 /* who to hand a lead to: dealers in that city first, then those covering it, then the same region; fewer open leads first */
 function dealerSuggest(city, not) {
   const c = String(city || '').toLowerCase(), region = (D.lists.cities.find(x => x.city.toLowerCase() === c) || {}).region;
@@ -3492,113 +3517,37 @@ const dealerPickHtml = (city, cur, not) => {
     <select class="input" id="ld-other" aria-label="Another dealer"><option value="">Choose</option>${others.map(d => `<option value="${d.id}" ${cur === d.id && !sug.some(x => x.d.id === cur) ? 'selected' : ''}>${esc(d.name)} · ${esc(d.city || '')}</option>`).join('')}</select></fieldset>`;
 };
 const pickedDealer = () => { const r = document.querySelector('input[name="ld-dealer"]:checked'); return (r && r.value) || (qs('#ld-other') || { value: '' }).value; };
-const LEAD_F = () => [{ key: 'name', label: 'Name', type: 'text', req: true }, { key: 'mobile', label: 'Mobile', type: 'mobile' }, { key: 'city', label: 'City', type: 'city', req: true },
-  { key: 'area', label: 'Area or locality', type: 'text' }, { key: 'need', label: 'What they want', type: 'cats' }, { key: 'sqft', label: 'Area to cover (sq ft)', type: 'number' },
-  { key: 'source', label: 'Source', type: 'select', list: 'sources', opts: CLIENT_FIELDS.find(f => f.key === 'source').opts, req: true }, { key: 'notes', label: 'Notes for the dealer', type: 'textarea' }];
-function openLeadForm(l, dealerId) {
-  EM.modal(`<h2>${l ? 'Change lead ' + esc(l.ref) : 'Hand a lead to a dealer'}</h2><p class="muted small">A homeowner or retail enquiry for a dealer near them. The dealer and their field sales owner are told in the bell; the dealer updates it in the dealer portal.</p>
-    <form id="ldf" class="stack" onsubmit="return false" style="margin-top:12px"><div class="fgrid">${LEAD_F().map(f => fieldHtml(f, l ? l[f.key] : '', 'ld')).join('')}</div>
-      ${l ? '' : `<div id="ld-pick">${dealerPickHtml('', dealerId)}</div>`}
-      ${errBox('ld-err')}<div class="row sticky-actions"><button class="btn primary" data-act="ld-save" data-id="${l ? l.id : ''}">${l ? 'Save' : 'Hand it over'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
-  const city = qs('#ld-city'); if (city && !l) city.addEventListener('change', () => { const keep = pickedDealer() || dealerId; qs('#ld-pick').innerHTML = dealerPickHtml(city.value, keep && !dealerSuggest(city.value).length ? keep : dealerId); });
-}
-EM.ACTIONS['ld-add'] = el => openLeadForm(null, el.dataset.dealer || '');
-EM.ACTIONS['ld-edit'] = el => openLeadForm(LEADS().find(x => x.id === el.dataset.id));
-EM.ACTIONS['ld-save'] = async el => {
-  const v = withDials(readForm(qs('#ldf'), LEAD_F()), LEAD_F()), id = el.dataset.id;
-  if (!id) v.dealer_id = pickedDealer();
-  busy(el, true);
-  try { await API('POST', id ? '/api/leads/' + id : '/api/leads', v); await reload4(); EM.closeModal(); EM.toast(id ? '<b>Lead saved</b>' : '<b>Lead handed over.</b> The dealer and their field sales owner have it in the bell.'); EM.rerender(); }
-  catch (x) { busy(el, false); showErr('ld-err', x.errors || x.message); }
-};
-EM.ACTIONS['ld-status'] = el => {
-  const l = LEADS().find(x => x.id === el.dataset.id), P = D.access.prices;
-  EM.modal(`<h2>Where lead ${esc(l.ref)} has got to</h2><p class="muted small">${esc(l.name)} · ${esc(leadDealer(l).name)} · ${esc(l.status)} for ${leadAge(l)} day${leadAge(l) === 1 ? '' : 's'}</p>
-    <form id="lsf" class="stack" onsubmit="return false" style="margin-top:12px"><div class="fgrid">
-      <div class="field"><label for="ls-st">Status *</label><select class="input" id="ls-st" data-keep-order>${LEAD_STATUSES.map(s => `<option ${s === l.status ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
-      <div class="field" id="ls-lost" ${l.status === 'Lost' ? '' : 'hidden'}><label for="ls-why">Why it was lost *</label><select class="input" id="ls-why"><option value="">Choose</option>${(D.lists.lost_reasons || []).map(r => `<option ${r === l.lost_reason ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></div>
-      ${P ? `<div class="field" id="ls-won" ${l.status === 'Won' ? '' : 'hidden'}><label for="ls-val">Sale value (optional)</label>${G.adorn({ type: 'money', key: 'won_value' }, `<input class="input" type="number" min="0" step="0.01" id="ls-val" value="${esc(l.won_value ?? '')}">`)}</div>` : ''}
-      <div class="field span2"><label for="ls-note">Note (optional)</label><input class="input" id="ls-note" maxlength="500" placeholder="e.g. Visited the site, quoting Oak SPC"></div></div>
-      ${errBox('ls-err')}<div class="row sticky-actions"><button class="btn primary" data-act="ld-status-go" data-id="${l.id}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
-  qs('#ls-st').addEventListener('change', e => { qs('#ls-lost').hidden = e.target.value !== 'Lost'; const w = qs('#ls-won'); if (w) w.hidden = e.target.value !== 'Won'; });
-};
-EM.ACTIONS['ld-status-go'] = async el => {
-  const b = { status: qs('#ls-st').value, lost_reason: qs('#ls-why').value, note: qs('#ls-note').value, won_value: qs('#ls-val') ? qs('#ls-val').value : '' };
-  busy(el, true);
-  try { const r = await API('POST', `/api/leads/${el.dataset.id}/status`, b); upsertLocal(D.leads, r.lead); await reload4(); EM.closeModal(); EM.toast(`<b>${esc(r.lead.ref)}</b> is now ${esc(r.lead.status)}.`); EM.rerender(); }
-  catch (x) { busy(el, false); showErr('ls-err', x.errors || x.message); }
-};
+/* allocate a consumer lead to a dealer, or move it to another one: it is the opportunity's Allocated dealer */
 EM.ACTIONS['ld-move'] = el => {
-  const l = LEADS().find(x => x.id === el.dataset.id);
-  EM.modal(`<h2>Give lead ${esc(l.ref)} to another dealer</h2><p class="muted small">${esc(l.name)}, ${esc(l.city)}. Now with ${esc(leadDealer(l).name)} (${esc(l.status)} for ${leadAge(l)} days). It starts again at ${esc(LEAD_STATUSES[0])}; both dealers' histories keep the move.</p>
-    <form id="lmf" class="stack" onsubmit="return false" style="margin-top:12px">${dealerPickHtml(l.city, '', l.dealer_id)}
+  const o = D.opportunities.find(x => x.id === el.dataset.id), l = leadOfOpp(o), alloc = nm(D.lists, 'stages.' + RETAIL, 'Dealer allocated');
+  EM.modal(`<h2>${o.dealer_id ? `Give lead ${esc(l.ref)} to another dealer` : `Allocate lead ${esc(l.ref)} to a dealer`}</h2><p class="muted small">${esc(l.name)}, ${esc(l.city)}. ${o.dealer_id ? `Now with ${esc(leadDealer(l).name)} (${esc(l.status)} for ${leadAge(l)} days). It starts again at ${esc(alloc)}; both dealers' histories keep the move.` : `It moves to ${esc(alloc)}; the dealer and their field sales owner are told in the bell.`}</p>
+    <form id="lmf" class="stack" onsubmit="return false" style="margin-top:12px">${dealerPickHtml(l.city, '', o.dealer_id)}
       <div class="field"><label for="lm-note">Why (optional)</label><input class="input" id="lm-note" maxlength="300" placeholder="e.g. No call back in 3 days"></div>
       ${errBox('lm-err')}<div class="row sticky-actions"><button class="btn primary" data-act="ld-move-go" data-id="${l.id}">Move it</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 };
 EM.ACTIONS['ld-move-go'] = async el => {
   busy(el, true);
-  try { await API('POST', `/api/leads/${el.dataset.id}/reassign`, { dealer_id: pickedDealer(), note: qs('#lm-note').value }); await reload4(); EM.closeModal(); EM.toast('<b>Lead moved.</b> The new dealer has it in the bell.'); EM.rerender(); }
-  catch (x) { busy(el, false); showErr('lm-err', x.errors || x.message); }
+  const o = D.opportunities.find(x => x.id === el.dataset.id), d = pickedDealer();
+  if (!d) { busy(el, false); return showErr('lm-err', 'Choose the dealer.'); }
+  const r = await saveOpp({ ...oppInput(o), dealer_id: d, stage_note: qs('#lm-note').value }, el, 'lm-err');
+  if (r) { EM.closeModal(); EM.toast(`<b>Lead allocated to ${esc((DDIR().find(x => x.id === d) || {}).name || 'the dealer')}.</b> They have it in the dealer portal and the bell.`); EM.rerender(); }
 };
-EM.ACTIONS['ld-del'] = async el => {
-  const l = LEADS().find(x => x.id === el.dataset.id);
-  if (!confirm(`Delete lead ${l.ref} (${l.name})? It stays in the Recycle bin for 30 days.`)) return;
-  try { await API('DELETE', '/api/leads/' + l.id); D.leads = LEADS().filter(x => x.id !== l.id); EM.toast(`Lead ${esc(l.ref)} deleted, in the Recycle bin for 30 days.`); EM.rerender(); } catch (x) { bubbleNear(el, x.message); }
-};
-const leadBtns = l => isBothView() ? '' : `<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm primary" data-act="ld-status" data-id="${l.id}">Update</button>${leadOpen(l) ? `<button class="btn sm ghost" data-act="ld-move" data-id="${l.id}">Move</button>` : ''}<button class="btn sm ghost" data-act="ld-edit" data-id="${l.id}">Change</button>${D.access.can_delete ? `<button class="btn sm ghost" data-act="ld-del" data-id="${l.id}">Delete</button>` : ''}</div>`;
+const leadBtns = l => isBothView() || !leadOpen(l) ? '' : `<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm ghost" data-act="ld-move" data-id="${l.id}">Move</button></div>`;
 const leadRow = (l, dealerCol = true) => { const d = leadDealer(l);
-  return { href: CL()[d.id] ? `#/client/${d.id}/leads` : '', cells: [`<b>${esc(l.ref)} · ${esc(l.name)}</b><div class="small muted">${esc(fmtMobile(l.mobile))}${l.mobile ? ' · ' : ''}${esc(l.city)}${l.area ? ', ' + esc(l.area) : ''}</div>${l.need.length ? `<div class="small">${esc(l.need.join(', '))}${l.sqft ? ` · ${num(l.sqft)} sq ft` : ''}</div>` : ''}`,
+  return { href: `#/opp/${l.id}`, cells: [`<b>${esc(l.ref)} · ${esc(l.name)}</b><div class="small muted">${esc(fmtMobile(l.mobile))}${l.mobile ? ' · ' : ''}${esc(l.city)}${l.area ? ', ' + esc(l.area) : ''}</div>${l.need.length ? `<div class="small">${esc(l.need.join(', '))}${l.sqft ? ` · ${num(l.sqft)} sq ft` : ''}</div>` : ''}`,
     ...(dealerCol ? [`${esc(d.name)}<div class="small muted">field sales ${esc(staffName(d.owner_id))}</div>`] : []),
-    `${leadBadge(l)}${l.status === 'Lost' && l.lost_reason ? `<div class="small muted">${esc(l.lost_reason)}</div>` : ''}${l.status_note ? `<div class="small muted">${esc(l.status_note)}</div>` : ''}<div class="small muted">${l.status_by_dealer ? 'by the dealer' : 'by EGO'}</div>`,
+    `${leadBadge(l)}${l.status === lostStage(RETAIL, D.lists) && l.lost_reason ? `<div class="small muted">${esc(l.lost_reason)}</div>` : ''}${l.status_note ? `<div class="small muted">${esc(l.status_note)}</div>` : ''}<div class="small muted">${l.status_by_dealer ? 'by the dealer' : 'by EGO'}</div>`,
     `<span class="${leadStale(l) ? 'err' : ''}">${leadAge(l)} d since the last update</span><div class="small muted">handed ${ds(dayIST(l.handed_at))}</div>`,
     `${esc(staffName(l.handed_by))}<div class="small muted">${esc(l.source)}</div>`, leadBtns(l)] }; };
-const LEAD_HEAD = (dealerCol = true) => ['Lead', ...(dealerCol ? ['Dealer'] : []), 'Status', 'Ageing', 'Handed by', ''];
-/* ---- the screen: every lead handed to a dealer that you may see, with ageing; opened from Opportunities */
-EM.hoF = { status: '', dealer: '', by: '', owner: '', city: '', period: 'all', from: '', to: '', field: '', fq: '' };
-DF_STATE.ho = () => EM.hoF;
-const HO_FIELDS = [['name', 'Lead'], ['mobile', 'Mobile'], ['city', 'City'], ['area', 'Area'], ['dealer', 'Dealer'], ['status', 'Status'], ['source', 'Source'], ['notes', 'Notes'], ['lost_reason', 'Lost reason'], ['by', 'Handed by']];
-const hoVal = (l, k) => k === 'dealer' ? leadDealer(l).name : k === 'by' ? staffName(l.handed_by) : String(l[k] ?? '');
-function hoRows(arg) {
-  const f = EM.hoF, st = arg === 'stale' && !f.status ? 'stale' : f.status, fq = f.fq.trim().toLowerCase();
-  return LEADS().filter(l => (!st || (st === 'open' ? leadOpen(l) : st === 'stale' ? leadStale(l) : l.status === st)) && (!f.dealer || l.dealer_id === f.dealer) && (!f.by || l.handed_by === f.by)
-    && (!f.owner || leadDealer(l).owner_id === f.owner) && (!f.city || l.city === f.city) && inPeriod(l.handed_at, f.period, f.from, f.to)
-    && (!fq || (f.field ? [hoVal(l, f.field)] : HO_FIELDS.map(([k]) => hoVal(l, k))).some(v => v.toLowerCase().includes(fq)))
-    && matches(`${l.ref} ${l.name} ${l.city} ${l.area} ${leadDealer(l).name} ${l.notes}`, [l.mobile]));
-}
-EM.VIEWS.handover = arg => {
-  if (!canDiv('wholesale')) return EM.noAccess('Leads are handed to EGO Premium dealers.');
-  const f = EM.hoF, all = LEADS(), rows = hoRows(arg), N = escDays();
-  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-hof="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
-  const uniq = (ids, nm2) => [...new Set(ids.filter(Boolean))].map(id => [id, nm2(id)]).sort((a, b) => a[1].localeCompare(b[1]));
-  const won = rows.filter(l => l.status === 'Won');
-  return `<div class="stack">${crumbs(['Opportunities', '#/opps'], ['Leads for dealers'])}
-    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Homeowner and retail enquiries handed to dealers</div><h1>Leads for dealers</h1>
-      <p class="muted" style="max-width:800px">Telesales hand an enquiry to a dealer near the customer. The dealer updates it in the dealer portal (or you do, here). A lead with no update for ${N} day${N === 1 ? '' : 's'} goes to the dealer's field sales owner in the bell (the number of days is in Lists &amp; stages › Rules and numbers).</p></div>
-      <div class="row"><button class="btn" data-act="ho-csv">Download for Excel</button><button class="btn primary" data-act="ld-add">Hand a lead to a dealer</button></div></div>
-    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-ho-filters>${dateFilter(f, 'ho', 'When it was handed')}
-      ${sel('status', 'Status', [['', arg === 'stale' ? `No update for ${N}+ days` : 'Every status'], ['open', 'Open (not won or lost)'], ['stale', `No update for ${N}+ days`], ...LEAD_STATUSES.map(s => [s, s])])}
-      ${sel('dealer', 'Dealer', [['', 'Every dealer'], ...uniq(all.map(l => l.dealer_id), id => leadDealer({ dealer_id: id }).name)])}${sel('owner', 'Field sales', [['', 'Everyone'], ...uniq(all.map(l => leadDealer(l).owner_id), staffName)])}
-      ${sel('by', 'Handed by', [['', 'Everyone'], ...uniq(all.map(l => l.handed_by), staffName)])}${sel('city', 'City', [['', 'Every city'], ...[...new Set(all.map(l => l.city))].sort().map(c => [c, c])])}
-      ${sel('field', 'Any field', [['', 'Any field'], ...HO_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="ho-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
-    ${searchBox('Lead, mobile, city, dealer or notes')}
-    <div class="grid g4">${tile('Open', num(rows.filter(leadOpen).length), rows.length !== all.length ? `of ${num(all.filter(leadOpen).length)} open in your view` : '')}${tile(`No update for ${N}+ days`, num(rows.filter(leadStale).length), 'chase the dealer', '#/handover/stale')}${tile('Won', num(won.length), rows.length ? `${pct(won.length, rows.length)}% of ${num(rows.length)} handed` : '')}${tile('Lost', num(rows.filter(l => l.status === 'Lost').length))}</div>
-    ${rows.length ? table(LEAD_HEAD(), rows.slice(0, 500).map(l => leadRow(l))) + (rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters, or download all of them.</p>` : '')
-      : empty(all.length ? 'Nothing for this filter' : 'No lead handed to a dealer yet', all.length ? 'Change or clear the filters above.' : 'When a homeowner or a shop calls and a dealer near them should take it, press "Hand a lead to a dealer".', all.length ? '' : '<button class="btn primary" data-act="ld-add">Hand a lead to a dealer</button>')}</div>`;
-};
+const LEAD_HEAD = (dealerCol = true) => ['Lead', ...(dealerCol ? ['Dealer'] : []), 'Stage', 'Ageing', 'Handed by', ''];
+/* ---- the old "Leads for dealers" address opens the Retail pipeline, where the leads now live (R3a) */
+EM.VIEWS.handover = () => EM.VIEWS.opps(RETAIL);
 EM.VIEWS.handover.tab = 'opps';
-EM.VIEWS.handover.title = () => 'Leads for dealers';
-document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.hof; if (k) { EM.hoF[k] = e.target.value; EM.rerender(); } });
-document.addEventListener('input', e => { if (e.target.id === 'ho-fq') { EM.hoF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#ho-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+EM.VIEWS.handover.title = () => 'Opportunities';
 const csvDownload = (name, head, lines) => {
-  const cell = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`, csv = '﻿' + [head, ...lines].map(l => l.map(cell).join(',')).join('\r\n');
+  const cell = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`, csv = '\ufeff' + [head, ...lines].map(l => l.map(cell).join(',')).join('\r\n');
   const u = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a');
   a.href = u; a.download = `${name} ${today()}.csv`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000);
-};
-EM.ACTIONS['ho-csv'] = () => {
-  const P = D.access.prices, rows = hoRows(EM.route().arg);
-  csvDownload('EGO leads for dealers', ['Number', 'Handed on', 'Name', 'Mobile', 'City', 'Area', 'Wants', 'Sq ft', 'Source', 'Notes', 'Dealer', 'Field sales', 'Handed by', 'Status', 'Lost reason', ...(P ? ['Sale value (Rs)'] : []), 'Last update', 'Days since the last update', 'Updated by'],
-    rows.map(l => [l.ref, dayIST(l.handed_at), l.name, l.mobile, l.city, l.area, l.need.join(', '), l.sqft ?? '', l.source, l.notes, leadDealer(l).name, staffName(leadDealer(l).owner_id), staffName(l.handed_by), l.status, l.lost_reason, ...(P ? [l.won_value ?? ''] : []), dayIST(l.status_at), leadAge(l), l.status_by_dealer ? 'Dealer' : 'EGO']));
-  EM.toast(`<b>${rows.length}</b> lead${rows.length === 1 ? '' : 's'} downloaded.`);
 };
 /* ---- on the dealer's page */
 function dealerTabs(c) {
@@ -3606,8 +3555,8 @@ function dealerTabs(c) {
 }
 const DEALER_TAB_BODY = {
   leads: c => { const ls = LEADS().filter(l => l.dealer_id === c.id);
-    return `<div class="stack"><div class="row between"><p class="small muted" style="max-width:720px">Enquiries handed to ${esc(c.name)}. ${ls.filter(leadOpen).length} open, ${ls.filter(leadStale).length} with no update for ${escDays()}+ days, ${ls.filter(l => l.status === 'Won').length} won of ${ls.length}.</p><button class="btn primary" data-act="ld-add" data-dealer="${c.id}">Hand a lead to ${esc(c.name)}</button></div>
-      ${ls.length ? table(LEAD_HEAD(false), ls.map(l => leadRow(l, false))) : empty('No lead handed to this dealer yet', 'Leads handed over by telesales appear here, with where each has got to.')}</div>`; },
+    return `<div class="stack" data-dealer-leads><div class="row between"><p class="small muted" style="max-width:720px">Consumer leads (Retail pipeline) allocated to ${esc(c.name)}. ${ls.filter(leadOpen).length} open, ${ls.filter(leadStale).length} with no update for ${escDays()}+ days, ${ls.filter(l => l.status === wonStage(RETAIL, D.lists)).length} won of ${ls.length}.</p>${allowedTab('opps') ? `<button class="btn primary" data-act="opp-add" data-pipeline="${RETAIL}" data-dealer="${c.id}">+ Consumer lead for ${esc(c.name)}</button>` : ''}</div>
+      ${ls.length ? table(LEAD_HEAD(false), ls.map(l => leadRow(l, false))) : empty('No lead allocated to this dealer yet', 'Consumer leads allocated to this dealer in the Retail pipeline appear here, with where each has got to.')}</div>`; },
   plan: c => clientPlan(c),
   portal: c => clientPortal(c),
 };
@@ -3767,20 +3716,199 @@ AN_TABS.push(['leads', 'Dealer leads']);
 function anLeads() {
   if (anCo() === 'retail') return '<div class="callout">Leads are handed to EGO Premium dealers. Switch the company to EGO Premium.</div>';
   const N = escDays(), ls = LEADS().filter(l => anIn(dayIST(l.handed_at)) && anWhoOk(leadDealer(l).owner_id) && anRegionOk(leadDealer(l).region || ''));
-  const LH = ['Lead', 'Dealer', 'Status', 'Ageing', 'Handed by', ''], lrow = l => leadRow(l);
-  const reached = l => ['Dealer contacted', 'Visited', 'Won'].includes(l.status), visited = l => ['Visited', 'Won'].includes(l.status);
+  const LH = LEAD_HEAD(), lrow = l => leadRow(l);
+  /* by stage role, whatever the stages are called now: accepted or further, site visit or further (Lost is never further) */
+  const S = D.lists.stages[RETAIL] || [], W = wonStage(RETAIL, D.lists), LO = lostStage(RETAIL, D.lists), at = (l, role) => l.status !== LO && S.indexOf(l.status) >= S.indexOf(role);
+  const ACC = nm(D.lists, 'stages.' + RETAIL, 'Dealer accepted'), SV = S.find((x, k) => k > S.indexOf(ACC) && x !== LO) || W;
+  const reached = l => at(l, ACC), visited = l => at(l, SV);
   const lf = (a, title, calc) => fig(num(a.length), { title, calc: `${calc} Leads handed over in the dates. Filter: ${anFilterTxt()}.`, head: LH, rows: a.map(lrow) });
-  const cols = (a, who) => [lf(a, `Handed to ${who}`, 'Every lead handed over.'), lf(a.filter(reached), `Contacted or further: ${who}`, 'Leads now at Dealer contacted, Visited or Won.'), lf(a.filter(visited), `Visited or won: ${who}`, 'Leads now at Visited or Won.'),
-    lf(a.filter(l => l.status === 'Won'), `Won: ${who}`, 'Leads now at Won.'), lf(a.filter(l => l.status === 'Lost'), `Lost: ${who}`, 'Leads now at Lost.'), lf(a.filter(leadStale), `No update for ${N}+ days: ${who}`, `Open leads whose last update is ${N} or more days old.`), a.length ? `${pct(a.filter(l => l.status === 'Won').length, a.length)}%` : ''];
-  const HEAD = first => [first, 'Handed', 'Contacted or further', 'Visited or won', 'Won', 'Lost', `No update ${N}+ days`, 'Won of handed'];
+  const cols = (a, who) => [lf(a, `Handed to ${who}`, 'Every lead handed over.'), lf(a.filter(reached), `Accepted or further: ${who}`, `Leads now at ${ACC} or a later stage.`), lf(a.filter(visited), `${SV} or further: ${who}`, `Leads now at ${SV} or a later stage.`),
+    lf(a.filter(l => l.status === W), `Won: ${who}`, `Leads now at ${W}.`), lf(a.filter(l => l.status === LO), `Lost: ${who}`, `Leads now at ${LO}.`), lf(a.filter(leadStale), `No update for ${N}+ days: ${who}`, `Open leads whose last update is ${N} or more days old.`), a.length ? `${pct(a.filter(l => l.status === W).length, a.length)}%` : ''];
+  const HEAD = first => [first, 'Handed', 'Accepted or further', `${SV} or further`, 'Won', 'Lost', `No update ${N}+ days`, 'Won of handed'];
   const byDealer = groupBy(ls, l => l.dealer_id).map(([k, a]) => [[`<b>${esc(leadDealer({ dealer_id: k }).name)}</b><div class="small muted">field sales ${esc(staffName(leadDealer({ dealer_id: k }).owner_id))}</div>`, ...cols(a, leadDealer({ dealer_id: k }).name)], a.length]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
   const bySource = groupBy(ls, l => l.source || 'Not given').map(([k, a]) => [esc(k), ...cols(a, k)]);
   const byHander = groupBy(ls, l => l.handed_by).map(([k, a]) => [esc(staffName(k)), ...cols(a, staffName(k))]);
   /* ageing: open leads by the days since their last update, right now */
   const open = ls.filter(leadOpen), buckets = [[`Under ${N} days`, 0, N - 1], [`${N} to 7 days`, N, 7], ['8 to 14 days', 8, 14], ['More than 14 days', 15, 1e9]].filter(([, a, b]) => b >= a).map(([l, a, b]) => { const x = open.filter(z => leadAge(z) >= a && leadAge(z) <= b); return [esc(l), lf(x, `Open, last update ${l} ago`, 'Open leads by the days since their last update, right now.')]; });
-  return `<div class="grid g4">${tile('Handed', lf(ls, 'All leads handed', 'Every lead handed over.'))}${tile('Won', lf(ls.filter(l => l.status === 'Won'), 'Won', 'Leads now at Won.'), ls.length ? `${pct(ls.filter(l => l.status === 'Won').length, ls.length)}% of handed` : '')}${tile(`No update ${N}+ days`, lf(ls.filter(leadStale), 'No update', `Open leads whose last update is ${N} or more days old.`))}${tile('Open', lf(open, 'Open', 'Leads not won or lost.'))}</div>
-    <p class="small muted">Counted from the leads handed to dealers (Opportunities › Leads for dealers), by the date each was handed over, at the status each has now. Click a figure to see the leads.</p>
+  return `<div class="grid g4">${tile('Handed', lf(ls, 'All leads handed', 'Every lead handed over.'))}${tile('Won', lf(ls.filter(l => l.status === W), 'Won', `Leads now at ${W}.`), ls.length ? `${pct(ls.filter(l => l.status === W).length, ls.length)}% of handed` : '')}${tile(`No update ${N}+ days`, lf(ls.filter(leadStale), 'No update', `Open leads whose last update is ${N} or more days old.`))}${tile('Open', lf(open, 'Open', 'Leads not won or lost.'))}</div>
+    <p class="small muted">Counted from the consumer leads allocated to dealers (Opportunities › Retail), by the date each was allocated, at the stage each is at now. Click a figure to see the leads.</p>
     ${anSec('Conversion by dealer', HEAD('Dealer'), byDealer, '', 'data-an-leads-dealer')}
     <div class="grid g2">${anSec('By source', HEAD('Source'), bySource)}${anSec('Open leads, by days since the last update', ['Last update', 'Open leads'], buckets)}</div>
     ${anSec('By who handed them over', HEAD('Handed by'), byHander)}`;
 }
+
+/* ================================================================ R3a (17 Oct): Projects, in both companies
+   A Project is one building or site (spec section 13): its opportunities per tower, phase or product, its contacts by role,
+   its Project Partner dealer (only Yes or Potential dealers are offered), its installation sites and its files.
+   The list has the filter bar, the Date filter with Custom dates, the search, the Excel sample and upload. */
+const pjDiv = () => EM.div === 'both' ? '' : EM.div;
+const pjCo = d => d === 'retail' ? 'Big E' : 'EGO Premium';
+const pjOpps = p => D.opportunities.filter(o => o.project_id === p.id);
+const pjPartner = p => p.partner_id ? (DDIR().find(d => d.id === p.partner_id) || CL()[p.partner_id] || { name: 'Outside your view' }) : null;
+const pjSites = p => (OPSD().sites || []).filter(x => x.project_id === p.id);
+EM.pjF = { type: '', stage: '', owner: '', city: '', partner: '', period: 'all', from: '', to: '', field: '', fq: '' };
+DF_STATE.pj = () => EM.pjF;
+const PJ_FILTER_FIELDS = [['name', 'Project name'], ['ref', 'Number'], ['type', 'Project type'], ['city', 'City'], ['address', 'Site address'], ['stage', 'Stage'], ['owner', 'Owner at EGO'], ['partner', 'Project Partner'], ['contacts', 'Contacts'], ['notes', 'Notes']];
+const pjVal = (p, k) => k === 'owner' ? staffName(p.owner_id) : k === 'partner' ? (pjPartner(p) || {}).name || '' : k === 'contacts' ? (p.contacts || []).map(c => `${c.role} ${c.name} ${c.mobile}`).join(' ') : String(p[k] ?? '');
+function pjRows() {
+  const f = EM.pjF, fq = f.fq.trim().toLowerCase();
+  return PJS().filter(p => inDiv(p) && (!f.type || p.type === f.type) && (!f.stage || p.stage === f.stage) && (!f.owner || p.owner_id === f.owner) && (!f.city || p.city === f.city) && (!f.partner || p.partner_id === f.partner)
+    && inPeriod(p.created_at, f.period, f.from, f.to) && (!fq || (f.field ? [pjVal(p, f.field)] : PJ_FILTER_FIELDS.map(([k]) => pjVal(p, k))).some(v => v.toLowerCase().includes(fq)))
+    && matches(`${p.name} ${p.ref || ''} ${p.city} ${p.address} ${p.type} ${pjVal(p, 'partner')} ${pjVal(p, 'contacts')}`, (p.contacts || []).map(c => c.mobile)));
+}
+EM.VIEWS.projects = () => {
+  const f = EM.pjF, all = PJS().filter(inDiv), rows = pjRows(), P = D.access.prices;
+  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-pjf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
+  const uniq = (vals, name) => [...new Set(vals.filter(Boolean))].map(v => [v, name(v)]).sort((a, b) => a[1].localeCompare(b[1]));
+  return `<div class="stack">
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : pjCo(EM.div)} · one building or site each</div><h1>Projects</h1><p class="muted">${rows.length} of ${all.length} · ${esc(scopeLabel())}</p></div>
+      <div class="row" style="flex-wrap:wrap"><button class="btn" data-act="pj-sample">Sample Excel</button><label class="btn" style="cursor:pointer" data-list-only>Upload Excel<input type="file" data-sheet="projects" accept=".xlsx" hidden></label><button class="btn primary" data-act="pj-add">+ Add project</button></div></div>
+    ${EM.pjImp ? pjImportPreview() : ''}
+    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-pj-filters>${dateFilter(f, 'pj', 'When it was added')}
+      ${sel('type', 'Project type', [['', 'Every type'], ...optsOf(PROJECT_FIELDS.find(x => x.key === 'type'), D.lists).map(t => [t, t])])}${sel('stage', 'Stage', [['', 'Every stage'], ...optsOf(PROJECT_FIELDS.find(x => x.key === 'stage'), D.lists).map(t => [t, t])])}
+      ${sel('owner', 'Owner at EGO', [['', 'Everyone'], ...uniq(all.map(p => p.owner_id), staffName)])}${sel('city', 'City', [['', 'Every city'], ...uniq(all.map(p => p.city), c => c)])}
+      ${sel('partner', 'Project Partner', [['', 'Every partner'], ...uniq(all.map(p => p.partner_id), id => (pjPartner({ partner_id: id }) || {}).name || id)])}
+      ${sel('field', 'Any field', [['', 'Any field'], ...PJ_FILTER_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="pj-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
+    ${searchBox('Projects: name, number, city, site address, Project Partner or contact')}
+    ${rows.length ? table(['Project', 'Type', 'City', 'Stage', 'Owner at EGO', 'Project Partner', 'Opportunities', ...(P ? ['Expected value'] : []), 'Added'], rows.slice(0, 500).map(p => ({ href: `#/project/${p.id}`,
+      cells: [`<b>${esc(p.name)}</b><div class="small muted">${esc(p.ref || '')}</div>${EM.div === 'both' ? segBadge(p.division) : ''}`, esc(p.type), esc(p.city), `<span class="badge info">${esc(p.stage)}</span>`, esc(staffName(p.owner_id)), esc((pjPartner(p) || {}).name || ''),
+        String(pjOpps(p).length), ...(P ? [money(p.value)] : []), ds(dayIST(p.created_at))] })))
+      : empty(all.length ? 'Nothing for this filter' : 'No projects yet', all.length ? 'Change or clear the filters above.' : 'A project is one building or site: a builder\'s tower, a hotel, an office fit-out. Add it, then its opportunities, its contacts and its Project Partner dealer.', all.length ? '' : '<button class="btn primary" data-act="pj-add">+ Add project</button>')}</div>`;
+};
+EM.VIEWS.projects.title = () => 'Projects';
+document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.pjf; if (k) { EM.pjF[k] = e.target.value; EM.rerender(); } });
+document.addEventListener('input', e => { if (e.target.id === 'pj-fq') { EM.pjF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#pj-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
+
+/* ---- the project page */
+EM.VIEWS.project = arg => {
+  const [id] = String(arg || '').split('/'), p = PJS().find(x => x.id === id);
+  if (!p) return `<div class="stack"><h1>Project not found</h1><p class="muted">It may have been deleted, or it is outside your view.</p><a class="btn" href="#/projects">Projects</a></div>`;
+  const ops = pjOpps(p), pipe = PROJECT_PIPE[p.division], partner = pjPartner(p), sites = pjSites(p), P = D.access.prices;
+  const free = (OPSD().sites || []).filter(x => x.division === p.division && !x.project_id);
+  const fields = showFields(PROJECT_FIELDS).filter(f => !['name', 'partner_id', 'notes'].includes(f.key));
+  return `<div class="stack">${crumbs(['Projects', '#/projects'], [p.name])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(p.name)}</h1>
+      <div class="row"><span class="badge info plain">${esc(p.type)}</span><span class="badge plain">${esc(p.stage)}</span><span class="badge plain">${esc(pjCo(p.division))}</span><span class="small muted">${esc(p.ref || '')}</span></div>
+      <p class="muted">${esc(p.city)}${p.address ? ' · ' + esc(p.address) : ''} · owner ${esc(staffName(p.owner_id))}</p></div>
+      <div class="row"><button class="btn" data-act="pj-edit" data-id="${p.id}">Edit</button><button class="btn primary" data-act="opp-add" data-pipeline="${pipe}" data-project="${p.id}">+ New opportunity</button>${D.access.can_delete ? `<button class="btn ghost" data-act="pj-del" data-id="${p.id}">Delete</button>` : ''}</div></div>
+    <div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, p[f.key])]))}${p.notes ? `<p class="small" style="white-space:pre-line">${esc(p.notes)}</p>` : ''}${p.prices_hidden ? '<p class="small muted">Money is hidden for your role.</p>' : ''}</section>
+      <section class="card stack-s" data-pj-partner><h3>Project Partner</h3>${partner ? kv([['Dealer', CL()[partner.id] ? `<a href="#/client/${partner.id}">${esc(partner.name)}</a>` : esc(partner.name)], ['Project Partner', esc(partner.project_partner || ((CL()[partner.id] || {}).extra || {}).project_partner || '')], ['Capability', esc(partner.partner_capability || ((CL()[partner.id] || {}).extra || {}).partner_capability || '') || NOTSET], ['City', esc(partner.city || '')]])
+        : `<p class="muted small">No Project Partner yet. Only dealers marked Yes or Potential as Project Partner (on the dealer's page) are offered.</p><div class="row"><button class="btn sm" data-act="pj-edit" data-id="${p.id}">Choose the Project Partner</button></div>`}</section></div>
+    <section class="card stack-s" data-pj-opps><div class="row between"><h3>Opportunities (${ops.length})</h3><button class="btn sm primary" data-act="opp-add" data-pipeline="${pipe}" data-project="${p.id}">+ New opportunity</button></div>
+      <p class="small muted">One per tower, phase or product, in the ${esc(PIPELINES[pipe].label.toLowerCase())} pipeline. "New opportunity" fills in this project.</p>
+      ${ops.length ? table(['Opportunity', 'Client', 'Stage', ...(P ? ['Value'] : []), 'Owner'], ops.map(o => ({ href: `#/opp/${o.id}`, cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(o.ref || '')}</div>`, esc(clientName(o.client_id)), stageBadge(o.stage), ...(P ? [money(o.value)] : []), esc(staffName(o.owner_id))] }))) : '<p class="muted small">No opportunity linked yet.</p>'}</section>
+    <section class="card stack-s" data-pj-contacts><div class="row between"><h3>Contacts by role (${(p.contacts || []).length})</h3><button class="btn sm" data-act="pj-edit" data-id="${p.id}">Add or change contacts</button></div>
+      ${(p.contacts || []).length ? table(['Role', 'Name', 'Mobile', 'Email'], p.contacts.map(c => [esc(c.role), `<b>${esc(c.name)}</b>`, esc(fmtMobile(c.mobile)), esc(c.email || '')])) : '<p class="muted small">No contact yet: add the owner, purchase manager, project manager, architect and contractor.</p>'}</section>
+    <section class="card stack-s" data-pj-sites><h3>Installation sites (${sites.length})</h3>
+      ${sites.length ? table(['Site', 'Step', 'Address', ''], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.name)}</b></a><div class="small muted">${esc(x.ref || '')}</div>`, esc(x.step), esc(x.address || ''), isBothView() ? '' : `<button class="btn sm ghost" data-act="pj-site" data-id="${p.id}" data-site="${x.id}" data-unlink="1">Unlink</button>`])) : '<p class="muted small">No installation site linked yet.</p>'}
+      ${free.length ? `<div class="row" style="align-items:flex-end"><label class="field" style="min-width:260px"><span class="small muted">Link an installation site</span><select class="input" id="pj-site-pick"><option value="">Choose</option>${free.map(x => `<option value="${x.id}">${esc(x.name)} · ${esc(x.step)}</option>`).join('')}</select></label><button class="btn sm" data-act="pj-site" data-id="${p.id}">Link it</button></div>` : `<p class="small muted">${p.division === 'retail' ? 'Every Big E site is already under a project, or none is added yet (Installation).' : 'Installation for EGO Premium arrives with the next batch; its sites will link here.'}</p>`}</section>
+    <section class="stack-s"><h3>Files</h3>${filesBox({ id: 'pj', project: p.id, types: ['Drawing', 'BOQ', 'Quotation', 'Site photo', 'Agreement', 'Other'], docs: D.documents.filter(d => d.project_id === p.id), canAdd: !isBothView(), title: 'Add files to this project', note: 'Drawings, BOQ, quotations, site photos: one or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No files on this project yet' })}</section></div>`;
+};
+EM.VIEWS.project.tab = 'projects';
+EM.VIEWS.project.title = id => (PJS().find(x => x.id === String(id).split('/')[0]) || { name: 'Project' }).name;
+
+/* ---- add or edit: the fields, the company (when both are yours), and the contacts by role */
+const pjContactLine = (i, c = {}) => `<div class="row" data-pj-contact style="gap:8px;align-items:flex-end;flex-wrap:wrap">
+  <label class="field" style="min-width:150px"><span class="small muted">Role</span><select class="input" data-k="role">${(D.lists.project_roles || PROJECT_ROLES).map(r => `<option ${r === c.role ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></label>
+  <label class="field" style="min-width:160px"><span class="small muted">Name</span><input class="input" data-k="name" value="${esc(c.name || '')}"></label>
+  <label class="field" style="min-width:140px"><span class="small muted">Mobile</span><input class="input" data-k="mobile" inputmode="tel" value="${esc(c.mobile || '')}"></label>
+  <label class="field" style="min-width:160px"><span class="small muted">Email</span><input class="input" data-k="email" type="email" value="${esc(c.email || '')}"></label>
+  <button type="button" class="btn sm ghost" data-act="pj-c-del">Remove</button></div>`;
+function openProjectForm(p) {
+  const v = p ? { ...p } : { owner_id: me().id, stage: optsOf(PROJECT_FIELDS.find(f => f.key === 'stage'), D.lists)[0] };
+  const co = p ? '' : !pjDiv() ? `<div class="field"><label for="pj-division">Company *</label><select class="input" id="pj-division">${['wholesale', 'retail'].filter(canDiv).map(d => `<option value="${d}">${pjCo(d)}</option>`).join('')}</select></div>` : '';
+  EM.modal(`<h2>${p ? 'Edit project ' + esc(p.ref || '') : 'Add a project'}</h2><p class="muted small">${p ? esc(pjCo(p.division)) : pjDiv() ? esc(pjCo(pjDiv())) : 'Choose the company'}. One building or site; its opportunities, sites and files go under it.</p>
+    <form id="pjf" class="stack" onsubmit="return false" style="margin-top:12px" data-id="${p ? p.id : ''}"><div class="fgrid">${co}${showFields(PROJECT_FIELDS).map(f => fieldHtml(f, v[f.key], 'pj')).join('')}</div>
+      ${fsHtml('Contacts by role', `<p class="small muted">Owner, purchase manager, project manager, architect, contractor (the roles are in Lists &amp; stages).</p><div id="pj-contacts" class="stack-s">${(v.contacts || []).map((c, i) => pjContactLine(i, c)).join('')}</div><div class="row"><button type="button" class="btn sm" data-act="pj-c-add">+ Add a contact</button></div>`)}
+      ${errBox('pj-err')}<div class="row sticky-actions"><button class="btn primary" data-act="pj-save">${p ? 'Save changes' : 'Add project'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+}
+EM.ACTIONS['pj-add'] = () => openProjectForm(null);
+EM.ACTIONS['pj-edit'] = el => openProjectForm(PJS().find(x => x.id === el.dataset.id));
+EM.ACTIONS['pj-c-add'] = () => { qs('#pj-contacts').insertAdjacentHTML('beforeend', pjContactLine(qs('#pj-contacts').children.length)); };
+EM.ACTIONS['pj-c-del'] = el => el.closest('[data-pj-contact]').remove();
+EM.ACTIONS['pj-save'] = async el => {
+  const form = qs('#pjf'), id = form.dataset.id, v = readForm(form, PROJECT_FIELDS);
+  v.contacts = [...form.querySelectorAll('[data-pj-contact]')].map(r => Object.fromEntries([...r.querySelectorAll('[data-k]')].map(x => [x.dataset.k, x.value.trim()])));
+  if (!id) v.division = pjDiv() || (qs('#pj-division') || { value: '' }).value;
+  busy(el, true);
+  try {
+    const r = await API('POST', id ? '/api/projects/' + id : '/api/projects', v);
+    D.projects = PJS(); upsertLocal(D.projects, r.project); EM.closeModal();
+    EM.toast(`<b>${esc(r.project.name)}</b> ${r.created ? 'added' : 'saved'} · ${esc(r.project.ref || '')}`);
+    location.hash = '#/project/' + r.project.id; EM.rerender();
+  } catch (x) { busy(el, false); showErr('pj-err', x.errors || x.message); }
+};
+EM.ACTIONS['pj-del'] = async el => {
+  const p = PJS().find(x => x.id === el.dataset.id), n = pjOpps(p).length;
+  if (!confirm(`Delete the project ${p.name}?${n ? ` Its ${n} opportunit${n === 1 ? 'y stays' : 'ies stay'}, unlinked.` : ''} It stays in the Recycle bin for 30 days.`)) return;
+  try { await API('DELETE', '/api/projects/' + p.id); D.projects = PJS().filter(x => x.id !== p.id); D.opportunities.forEach(o => { if (o.project_id === p.id) o.project_id = ''; }); EM.toast('Project deleted, in the Recycle bin for 30 days.'); location.hash = '#/projects'; } catch (x) { bubbleNear(el, x.message); }
+};
+EM.ACTIONS['pj-site'] = async el => {
+  const site = el.dataset.site || (qs('#pj-site-pick') || { value: '' }).value;
+  if (!site) return bubbleNear(el, 'Choose the site first.');
+  busy(el, true);
+  try { await API('POST', `/api/projects/${el.dataset.id}/sites`, { site_id: site, unlink: !!el.dataset.unlink }); await reload4(); EM.toast(el.dataset.unlink ? 'Site unlinked.' : 'Site linked to the project.'); EM.rerender(); } catch (x) { busy(el, false); bubbleNear(el, x.message); }
+};
+
+/* ---- the Projects Excel: built at download from today's lists (types, stages, cities, team, Project Partners), with real dropdowns */
+const PJ_SHEET = [['Company', 'company', true, 'EGO Premium or Big E.'], ['Project name', 'name', true, 'The building or site.'], ['Project type', 'type', true, 'From the list.'], ['City', 'city', true, 'From the city list.'],
+  ['Site address', 'address', false, 'Optional.'], ['Stage', 'stage', true, 'From the list.'], ['Owner at EGO', 'owner', true, 'As named in Team & access.'], ['Expected value (Rs)', 'value', false, 'Rupees. Optional.'],
+  ['Project Partner', 'partner', false, 'A dealer marked Yes or Potential as Project Partner. Optional.'], ['Notes', 'notes', false, 'Optional.']];
+EM.ACTIONS['pj-sample'] = async el => {
+  busy(el, true);
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(), fill = wb.addWorksheet('Fill this'), how = wb.addWorksheet('How to fill'), lists = wb.addWorksheet('Lists');
+    const L = { company: ['wholesale', 'retail'].filter(canDiv).map(pjCo), type: optsOf(PROJECT_FIELDS.find(f => f.key === 'type'), D.lists), city: D.lists.cities.map(c => c.city), stage: optsOf(PROJECT_FIELDS.find(f => f.key === 'stage'), D.lists),
+      owner: D.staff.filter(s => s.active).map(s => s.name), partner: DDIR().filter(d => PARTNER_OK.includes(d.project_partner)).map(d => d.name) };
+    Object.entries(L).forEach(([k, vals], i) => { lists.getCell(1, i + 1).value = k; vals.forEach((v, r) => { lists.getCell(r + 2, i + 1).value = v; }); });
+    lists.state = 'hidden';
+    fill.columns = PJ_SHEET.map(([h, , req]) => ({ header: h + (req ? ' *' : ''), width: Math.max(16, h.length + 6) }));
+    fill.getRow(1).font = { bold: true }; fill.views = [{ state: 'frozen', ySplit: 1 }];
+    PJ_SHEET.forEach(([, k, req], i) => { const letter = fill.getColumn(i + 1).letter, li = Object.keys(L).indexOf(k);
+      for (let r = 2; r <= 501; r++) { const cell = fill.getCell(letter + r);
+        if (li >= 0 && L[k].length) { const col = lists.getColumn(li + 1).letter; cell.dataValidation = { type: 'list', allowBlank: !req, formulae: [`Lists!$${col}$2:$${col}$${L[k].length + 1}`], showErrorMessage: true, errorTitle: 'Pick from the list', error: 'Choose a value from the dropdown.' }; }
+        else if (k === 'value') cell.dataValidation = { type: 'decimal', operator: 'greaterThanOrEqual', allowBlank: true, formulae: [0], showErrorMessage: true, error: 'A number, 0 or more.' }; } });
+    how.getCell('A1').value = 'EGO Master: projects'; how.getCell('A1').font = { bold: true, size: 14 };
+    how.getCell('A2').value = 'Fill the "Fill this" tab, one project per row. Columns with * are compulsory. The dropdowns hold today\'s lists, team and Project Partners.';
+    how.getCell('A3').value = `Made on ${today()} by ${me().name}. Upload it on the Projects screen: every row is checked and shown as new, update or a mistake before anything is saved. The same project name in the same city and company is updated.`;
+    PJ_SHEET.forEach(([h, , req, note], i) => { how.getCell('A' + (5 + i)).value = h; how.getCell('B' + (5 + i)).value = req ? 'Compulsory' : 'Optional'; how.getCell('C' + (5 + i)).value = note; });
+    how.getColumn(1).width = 24; how.getColumn(3).width = 80;
+    const buf = await wb.xlsx.writeBuffer(), a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = `EGO Master projects ${today()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    EM.toast('The projects file is downloading, with today\'s lists in its dropdowns.');
+  } catch (x) { bubbleNear(el, x.message); }
+  busy(el, false);
+};
+EM.pjImp = null;
+document.addEventListener('change', async e => {
+  if (!e.target.matches('input[data-sheet="projects"]')) return;
+  const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const wb = new window.ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+    const ws = wb.getWorksheet('Fill this') || wb.worksheets[0], heads = [], rows = [];
+    const txt = v => v == null ? '' : typeof v === 'object' ? (v.text || v.result || (v.richText ? v.richText.map(x => x.text).join('') : '')) : String(v);
+    ws.getRow(1).eachCell((c, i) => { heads[i] = txt(c.value).replace(/\s*\*$/, '').trim(); });
+    ws.eachRow((r, n) => { if (n === 1) return; const x = { row: n }; let any = false;
+      PJ_SHEET.forEach(([h, k]) => { const i = heads.indexOf(h); const v = i > 0 ? txt(r.getCell(i).value).trim() : ''; if (v) any = true; x[k] = v; });
+      if (any) rows.push(x); });
+    if (!rows.length) throw new Error('No filled rows in the "Fill this" tab.');
+    const res = await API('POST', '/api/projects/import', { rows, save: false });
+    EM.pjImp = { file: file.name, rows, res: res.rows }; EM.rerender();
+  } catch (x) { EM.pjImp = { file: file.name, error: x.message, rows: [], res: [] }; EM.rerender(); }
+});
+function pjImportPreview() {
+  const I = EM.pjImp, cnt = s => I.res.filter(r => r.status === s).length;
+  return `<section class="card stack-s" data-pj-import><div class="row between"><h3>Read: ${esc(I.file)}</h3><button class="btn sm ghost" data-act="pj-imp-close">Close</button></div>
+    ${I.error ? `<div class="callout warn">${esc(I.error)}</div>` : `<p class="small">${num(cnt('new'))} new · ${num(cnt('update'))} update · <b>${num(cnt('error'))} with a mistake</b>. ${I.saved ? 'Saved.' : 'Nothing is saved until you press Save.'}</p>
+    ${table(['Row', 'Status', 'Project', 'Mistake'], I.res.map(r => [String(r.row), `<span class="badge ${r.status === 'error' ? 'bad' : r.status === 'new' ? 'ok' : 'info'}">${r.status === 'error' ? 'Mistake' : r.status === 'new' ? 'New' : 'Update'}</span>`, esc(r.label), esc(r.error || '')]))}
+    ${!I.saved && (cnt('new') + cnt('update')) ? `<div class="row"><button class="btn primary" data-act="pj-imp-save">Save the ${num(cnt('new') + cnt('update'))} good rows${cnt('error') ? ' (rows with a mistake are skipped)' : ''}</button></div>` : ''}`}</section>`;
+}
+EM.ACTIONS['pj-imp-close'] = () => { EM.pjImp = null; EM.rerender(); };
+EM.ACTIONS['pj-imp-save'] = async el => {
+  busy(el, true);
+  try { const r = await API('POST', '/api/projects/import', { rows: EM.pjImp.rows, save: true }); EM.pjImp = { ...EM.pjImp, res: r.rows, saved: true }; await reload4(); EM.toast(`<b>${r.rows.filter(x => x.status !== 'error').length} projects saved</b>`); EM.rerender(); }
+  catch (x) { busy(el, false); bubbleNear(el, x.message); }
+};

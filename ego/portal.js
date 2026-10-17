@@ -20,7 +20,9 @@
   const ageDays = ts => ts ? Math.max(0, Math.floor((Date.now() - msOf(ts)) / 864e5)) : 0;
   const LAST = () => (B.lists.fulfilment_stages || []).slice(-1)[0];
   const due = o => Math.max(0, (Number(o.total) || 0) - (Number(o.paid) || 0));
-  const openLeads = () => B.leads.filter(l => !['Won', 'Lost'].includes(l.status));
+  /* the won and lost stages of EGO's Retail pipeline, by whatever name the Owner gave them (R3a) */
+  const WON = () => (B.lists.lead_won || 'Won'), LOST = () => (B.lists.lead_lost || 'Lost'), closedL = l => [WON(), LOST()].includes(l.status);
+  const openLeads = () => B.leads.filter(l => !closedL(l));
   const toast = h => { const t = qs('#toast'); if (!t) return; t.innerHTML = h; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), 3500); };
   const unread = () => B.notifications.filter(n => !B.seen_at || n.created_at > B.seen_at).length;
 
@@ -64,12 +66,12 @@
   const tile = (label, value, sub, href) => `<a class="card pt-tile" href="${href}"><span class="small muted">${esc(label)}</span><b class="num">${value}</b>${sub ? `<span class="small muted">${sub}</span>` : ''}</a>`;
   const head = (title, sub, extra = '') => `<div class="pt-head"><div><h1>${esc(title)}</h1>${sub ? `<p class="small muted">${sub}</p>` : ''}</div><div class="row" style="gap:6px">${extra}<a class="btn sm ghost" href="#/history" data-hist-open>History</a></div></div>`;
   const empty = (t, b) => `<div class="card empty stack-s"><h3>${esc(t)}</h3><p class="muted small">${b}</p></div>`;
-  const leadBadge = l => `<span class="badge ${l.status === 'Won' ? 'ok' : l.status === 'Lost' ? 'bad' : 'info'}">${esc(l.status)}</span>`;
+  const leadBadge = l => `<span class="badge ${l.status === WON() ? 'ok' : l.status === LOST() ? 'bad' : 'info'}">${esc(l.status)}</span>`;
   const leadCard = l => `<div class="card pt-item" data-lead="${l.id}"><div class="row between"><b>${esc(l.name)}</b>${leadBadge(l)}</div>
     <div class="small">${l.mobile ? `<a href="tel:${esc(l.mobile)}">${esc(l.mobile)}</a> · ` : ''}${esc(l.city)}${l.area ? ', ' + esc(l.area) : ''}</div>
     ${(l.need || []).length ? `<div class="small">${esc(l.need.join(', '))}${l.sqft ? ` · ${num(l.sqft)} sq ft` : ''}</div>` : ''}${l.notes ? `<div class="small muted">${esc(l.notes)}</div>` : ''}
-    <div class="small muted">${esc(l.ref)} · from EGO on ${ds(l.handed_at)} · ${['Won', 'Lost'].includes(l.status) ? (l.status === 'Lost' && l.lost_reason ? esc(l.lost_reason) : '') : `${ageDays(l.status_at)} day${ageDays(l.status_at) === 1 ? '' : 's'} since the last update`}</div>
-    ${['Won', 'Lost'].includes(l.status) ? '' : `<button class="btn sm primary" data-pa="lead" data-id="${l.id}">Update</button>`}</div>`;
+    <div class="small muted">${esc(l.ref)} · from EGO on ${ds(l.handed_at)} · ${closedL(l) ? (l.status === LOST() && l.lost_reason ? esc(l.lost_reason) : '') : `${ageDays(l.status_at)} day${ageDays(l.status_at) === 1 ? '' : 's'} since the last update`}</div>
+    ${closedL(l) ? '' : `<button class="btn sm primary" data-pa="lead" data-id="${l.id}">Update</button>`}</div>`;
   const stageLine = o => { const FS = B.lists.fulfilment_stages || [], i = FS.indexOf(o.ful_stage); return `<div class="pt-steps" aria-label="Stage ${i + 1} of ${FS.length}">${FS.map((s, j) => `<span class="${j < i ? 'done' : j === i ? 'cur' : ''}" title="${esc(s)}"></span>`).join('')}</div><div class="small"><b>${esc(o.ful_stage || 'Confirmed')}</b> <span class="muted">· step ${Math.max(1, i + 1)} of ${FS.length}</span></div>`; };
   const fileRow = d => `<div class="pt-file"><div><b>${esc(d.type)}</b> ${esc(d.doc_no || '')}<div class="small muted">${esc(d.name)}${d.doc_date ? ' · ' + ds(d.doc_date) : ''}${d.amount != null ? ' · ' + inr(d.amount) : ''}</div></div>
     <div class="row" style="gap:6px;flex-wrap:nowrap" data-file-acts><button class="btn sm" data-pa="view" data-id="${d.id}">View</button><button class="btn sm ghost" data-pa="dl" data-id="${d.id}">Download</button><button class="btn sm ghost" data-pa="share" data-id="${d.id}">Share</button></div></div>`;
@@ -167,7 +169,7 @@
         <div class="field" id="pl-won" hidden><label for="pl-val">Sale value in ₹ (optional)</label><input class="input" id="pl-val" type="number" min="0" step="1" inputmode="numeric"></div>
         <div class="field"><label for="pl-note">Note (optional)</label><input class="input" id="pl-note" maxlength="500" placeholder="e.g. Visited, sent a quote for SPC"></div>
         <div class="small err" id="pl-err" role="alert"></div><div class="row"><button class="btn primary" data-pa="lead-go" data-id="${l.id}">Save</button><button class="btn" data-pa="close">Cancel</button></div></form>`);
-      qs('#pl-st').addEventListener('change', e => { qs('#pl-lost').hidden = e.target.value !== 'Lost'; qs('#pl-won').hidden = e.target.value !== 'Won'; }); },
+      qs('#pl-st').addEventListener('change', e => { qs('#pl-lost').hidden = e.target.value !== LOST(); qs('#pl-won').hidden = e.target.value !== WON(); }); },
     'lead-go': el => send(el, '/api/portal/leads/' + el.dataset.id, { status: qs('#pl-st').value, lost_reason: qs('#pl-why').value, won_value: qs('#pl-val').value, note: qs('#pl-note').value }, '<b>Saved.</b> EGO can see it.', 'pl-err'),
     request: () => modal(`<h2>Order request</h2><p class="small muted">It goes to ${esc((B.dealer.contact || {}).name || 'your EGO contact')}, who confirms the designs, rates and dates with you.</p><form class="stack" onsubmit="return false">
       <div class="field"><label for="pr-what">What you would like to order *</label><textarea class="input" id="pr-what" rows="3" maxlength="500" placeholder="e.g. Oak SPC 6 mm, 120 boxes, for a villa in Baner"></textarea></div>

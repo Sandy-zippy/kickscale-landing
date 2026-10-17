@@ -30,10 +30,16 @@ const PIPELINES = {
   /* 6 Oct, EGO's own order: the sale ends at Order confirmed; stock is blocked, the PI sent, the money taken and the invoice raised in fulfilment */
   wholesale: { label: 'Wholesale opportunity', plural: 'Wholesale opportunities', division: 'wholesale', won: 'Order confirmed', lines: true },
   retail_lead: { label: 'Retail lead', plural: 'Retail leads', division: 'retail' },
-  retail_project: { label: 'Retail project', plural: 'Retail projects', division: 'retail' },
+  retail_project: { label: 'Retail project', plural: 'Retail projects', division: 'retail', project: true },
+  /* 17 Oct (R3a): EGO Premium's Project pipeline (spec section 13) and its Retail pipeline, the consumer lead
+     engine (spec section 15) where a lead is qualified and allocated to a dealer. Leads for dealers folded into it. */
+  ego_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'wholesale', project: true },
+  ego_retail: { label: 'Consumer lead', plural: 'Retail (consumer leads)', division: 'wholesale', dealer: true },
 };
 /* which pipelines a client of each group may have */
-const PIPES_FOR = { dealer: ['wholesale'], direct: ['wholesale'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'retail_lead', 'retail_project'], firm: ['wholesale', 'retail_lead', 'retail_project'] };
+const PIPES_FOR = { dealer: ['wholesale', 'ego_project'], direct: ['wholesale', 'ego_project', 'ego_retail'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], firm: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'] };
+/* the Project pipeline of each company: a project's opportunities sit in it */
+const PROJECT_PIPE = { wholesale: 'ego_project', retail: 'retail_project' };
 
 const SOURCES = ['Meta Ads', 'Google Ads', 'Website', 'WhatsApp', 'IndiaMART', 'JustDial', 'Runo', 'Sales Diary', 'QR code', 'Walk-in', 'Referral', 'Field visit', 'Architect', 'Existing relationship', 'Other'];
 
@@ -44,6 +50,8 @@ const DEFAULT_LISTS = {
     wholesale: ['New', 'Contacted', 'Qualified', 'Quotation', 'Order confirmed', 'Lost', 'Nurturing'],
     retail_lead: ['New', 'Contacted', 'Qualified', 'Appointment', 'Site visit', 'Sample', 'Quote', 'Won', 'Lost'],
     retail_project: ['New project', 'Qualified', 'Sample', 'Specification', 'Approval', 'Quotation', 'Negotiation', 'Won', 'Lost'],
+    ego_project: ['New Project', 'Qualified', 'Sample', 'Specification', 'Approval', 'Quotation', 'Negotiation', 'Won', 'Lost'],
+    ego_retail: ['New', 'Qualified', 'Dealer allocated', 'Dealer accepted', 'Site visit', 'Sample', 'Quote', 'Won', 'Lost'],
   },
   cities: [
     ['Mumbai', 'West'], ['Navi Mumbai', 'West'], ['Thane', 'West'], ['Pune', 'West'], ['Nashik', 'West'], ['Nagpur', 'West'], ['Ahmedabad', 'West'], ['Surat', 'West'], ['Vadodara', 'West'], ['Goa', 'West'],
@@ -111,7 +119,9 @@ const CLIENT_FIELDS = [
   { key: 'brands_sold', label: 'Other brands they sell', type: 'text', groups: ['dealer'], section: 'Products and market' },
   { key: 'competitors', label: 'Main competitors nearby', type: 'text', groups: ['dealer'], section: 'Products and market' },
   { key: 'customer_types', list: 'customer_types', label: 'They sell to', type: 'multi', opts: ['Homeowners', 'Builders', 'Architects and designers', 'Contractors', 'Corporate offices', 'Hotels', 'Institutions'], groups: ['dealer'], section: 'Products and market' },
-  { key: 'project_partner', label: 'Project partner', type: 'select', opts: ['Yes', 'No', 'Maybe'], groups: ['dealer'], section: 'Products and market' },
+  /* Project Partner (spec section 14, R3a): only Yes and Potential dealers are offered as a project's partner */
+  { key: 'project_partner', label: 'Project Partner', type: 'select', opts: ['Yes', 'No', 'Potential'], groups: ['dealer'], section: 'Products and market' },
+  { key: 'partner_capability', label: 'Project Partner capability', type: 'text', groups: ['dealer'], section: 'Products and market' },
 
   { key: 'showroom', label: 'Has a showroom', type: 'yesno', groups: ['dealer'], section: 'Infrastructure' },
   { key: 'display_area_sqft', label: 'Display area (sq ft)', type: 'number', groups: ['dealer'], section: 'Infrastructure' },
@@ -167,6 +177,8 @@ const OPP_FIELDS = [
   { key: 'application', label: 'Room or application', type: 'text' },
   { key: 'budget', list: 'budget_bands', label: 'Budget band', type: 'select', opts: ['Under 2 lakh', '2 to 5 lakh', '5 to 10 lakh', 'Above 10 lakh'] },
   { key: 'source', list: 'sources', label: 'Source', type: 'select', opts: SOURCES },
+  { key: 'project_id', label: 'Project', type: 'project', pipes: ['ego_project', 'retail_project'] },
+  { key: 'dealer_id', label: 'Allocated dealer', type: 'dealer', pipes: ['ego_retail'] },
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true },
   { key: 'contact_id', label: 'Point of contact', type: 'contact' },
   { key: 'next_action', list: 'next_actions', label: 'Next action', type: 'suggest', opts: NEXT_ACTIONS },
@@ -200,7 +212,46 @@ const wonStage = (p, lists) => nm(lists, 'stages.' + p, (PIPELINES[p] && PIPELIN
 const lostStage = (p, lists) => nm(lists, 'stages.' + p, 'Lost');
 const creditStage = (p, lists) => PIPELINES[p] && PIPELINES[p].credit ? nm(lists, 'stages.' + p, PIPELINES[p].credit) : null;
 const isClosed = (p, st, lists) => st === wonStage(p, lists) || st === lostStage(p, lists);
-const OPP_COLS = ['pipeline', 'title', 'stage', 'value', 'owner_id', 'contact_id', 'next_action', 'next_date', 'lost_reason', 'source'];
+const OPP_COLS = ['pipeline', 'title', 'stage', 'value', 'owner_id', 'contact_id', 'next_action', 'next_date', 'lost_reason', 'source', 'project_id', 'dealer_id'];
+
+/* A Project (17 Oct, R3a) is one building or site. Under it: its opportunities (per tower, phase or product),
+   its contacts by role, its Project Partner dealer and its installation sites. One per company. */
+const PROJECT_TYPES = ['Builder', 'Hotel', 'Corporate', 'Retail', 'Others'];
+const PROJECT_STAGES = ['Identified', 'Qualified', 'Sample', 'Specification', 'Approval', 'Quotation', 'Negotiation', 'Won', 'Lost', 'Execution', 'Installation', 'Collection', 'Completed'];
+const PROJECT_FIELDS = [
+  { key: 'name', label: 'Project name', type: 'text', req: true },
+  { key: 'type', list: 'project_types', label: 'Project type', type: 'select', opts: PROJECT_TYPES, req: true },
+  { key: 'city', label: 'City', type: 'city', req: true },
+  { key: 'address', label: 'Site address', type: 'address' },
+  { key: 'stage', list: 'project_stages', label: 'Stage', type: 'select', opts: PROJECT_STAGES, req: true },
+  { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true },
+  { key: 'value', label: 'Expected value (₹)', type: 'money' },
+  { key: 'partner_id', label: 'Project Partner dealer', type: 'partner' },
+  { key: 'notes', label: 'Notes', type: 'textarea' },
+];
+const PROJECT_ROLES = ['Owner', 'Purchase manager', 'Project manager', 'Architect', 'Contractor'];
+const PARTNER_OK = ['Yes', 'Potential'];
+function cleanProject(input, ctx) {
+  const errors = [], rec = {};
+  for (const f of PROJECT_FIELDS) {
+    const r = cleanValue(f, input[f.key], ctx, input);
+    if (r.error) { errors.push(`${f.label} ${r.error}`); continue; }
+    const empty = r.value === '' || r.value == null;
+    if (f.req && empty) { errors.push(`${f.label} is compulsory`); continue; }
+    rec[f.key] = empty ? (f.type === 'money' ? null : '') : r.value;
+  }
+  const roles = (ctx && ctx.lists && ctx.lists.project_roles) || PROJECT_ROLES;
+  rec.contacts = [];
+  for (const [i, k] of (Array.isArray(input.contacts) ? input.contacts : []).entries()) {
+    const name = String((k && k.name) || '').trim().slice(0, 120), role = String((k && k.role) || '').trim(), mob = normMobile((k && k.mobile) || '', k && k.mobile_dial);
+    if (!name && !(k && k.mobile)) continue;
+    if (!name) { errors.push(`Contact ${i + 1}: give the name`); continue; }
+    if (!roles.includes(role)) { errors.push(`Contact ${i + 1}: choose the role (${roles.join(', ')})`); continue; }
+    if (mob.error) { errors.push(`Contact ${i + 1}: mobile ${mob.error}`); continue; }
+    rec.contacts.push({ role, name, mobile: mob.value || '', email: String((k && k.email) || '').trim().slice(0, 120) });
+  }
+  return { rec, errors };
+}
 
 const fieldsFor = kind => {
   const g = KINDS[kind] && KINDS[kind].group;
@@ -415,7 +466,7 @@ function cleanValue(f, v, ctx, whole) {
       const id = ctx && ctx.staffByName && ctx.staffByName.get(String(v).toLowerCase());
       return id ? { value: id } : { error: `"${v}" is not a person on the team` };
     }
-    case 'link': case 'contact': return { value: v === '' ? '' : String(v) };
+    case 'link': case 'contact': case 'project': case 'dealer': case 'partner': return { value: v === '' ? '' : String(v) };
     case 'addresses': {
       const arr = (Array.isArray(v) ? v : String(v).split(/\n\s*\n/)).map(a => String(a || '').trim().slice(0, 600)).filter(Boolean);
       return { value: [...new Set(arr)].slice(0, 30) };
@@ -612,6 +663,7 @@ const LIST_GROUPS = [
   ['People and companies', [['sources', 'Sources'], ['states', 'States'], ['roles', 'Roles (people at a company)'], ['client_types', 'Kinds of personal client'], ['client_statuses', 'Status'], ['dealer_grades', 'Dealer ratings'],
     ['architect_ratings', 'Architect ratings'], ['positions', 'Architect positions'], ['specialisations', 'Specialisations'], ['focus_areas', 'Focus'], ['potentials', 'Potential'],
     ['relationships', 'Relationship (architects)'], ['customer_types', 'Who dealers sell to'], ['condition_tags', 'Condition tags (retail)']]],
+  ['Projects', [['project_types', 'Project types'], ['project_stages', 'Project stages'], ['project_roles', 'Project contact roles']]],
   ['Opportunities', [['lost_reasons', 'Lost reasons'], ['budget_bands', 'Budget bands'], ['next_actions', 'Next actions'], ['followup_sources', 'Follow-up sources'], ['payment_terms', 'Payment terms'], ['delivery_terms', 'Delivery terms']]],
   ['Inventory', [['categories', 'Product categories'], ['design_types', 'Design types'], ['ac_ratings', 'AC ratings']]],
 ];
@@ -625,9 +677,11 @@ const LIST_USES = (() => {
   add('opportunities', OPP_FIELDS, f => OPP_COLS.includes(f.key));
   add('collections', COLLECTION_FIELDS, f => !!f.col);
   add('products', PRODUCT_FIELDS, f => !!f.col);
+  add('projects', PROJECT_FIELDS, () => true);
   return out;
 })();
-for (const f of [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS]) if (f.list && !DEFAULT_LISTS[f.list]) DEFAULT_LISTS[f.list] = f.opts;
+DEFAULT_LISTS.project_roles = PROJECT_ROLES;
+for (const f of [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS, ...PROJECT_FIELDS]) if (f.list && !DEFAULT_LISTS[f.list]) DEFAULT_LISTS[f.list] = f.opts;
 /* where a follow-up came from or how it happened (13 Oct), recorded when it is done; editable in Lists & stages */
 DEFAULT_LISTS.followup_sources = ['Call', 'WhatsApp', 'Visit', 'Email', 'Meeting', 'Meta lead', 'IndiaMART', 'Walk-in', 'Referral', 'Other'];
 LIST_USES.followup_sources = [{ table: 'follow_ups', key: 'source', col: true, multi: false }];
@@ -730,6 +784,8 @@ const SCHEME_WHO = { all: 'Every dealer, distributor and sub-dealer', chosen: 'T
 const ROLE_SETS = {
   'stages.wholesale': ['Order confirmed', 'Lost', 'Nurturing'],
   'stages.retail_lead': ['Won', 'Lost'], 'stages.retail_project': ['Won', 'Lost'],
+  /* a consumer lead needs a dealer from Dealer allocated on; the dealer accepts it in the portal */
+  'stages.ego_project': ['Won', 'Lost'], 'stages.ego_retail': ['Dealer allocated', 'Dealer accepted', 'Won', 'Lost'],
   ...Object.fromEntries(Object.entries(OPS).map(([k, v]) => ['ops.' + k, v.locked])),
 };
 const roleNames = (lists, set) => (ROLE_SETS[set] || []).map(r => nm(lists, set, r));
