@@ -55,7 +55,7 @@
     files: () => { const f = F('files'); return B.documents.filter(d => (!f.st || d.type === f.st) && inPeriod(d.doc_date || d.created_at, f) && has(f, `${d.name} ${d.doc_no} ${(B.orders.find(o => o.id === d.order_id) || {}).ref || ''}`)); },
     leads: () => { const f = F('leads'); return B.leads.filter(l => (!f.st || l.status === f.st) && inPeriod(l.handed_at, f) && has(f, `${l.ref} ${l.name} ${l.mobile} ${l.city} ${l.area} ${l.notes}`)); },
     schemes: () => { const f = F('schemes'); return B.schemes.filter(sc => (!f.st || schState(sc) === f.st) && inPeriod(sc.start_on, f) && has(f, `${sc.name} ${sc.reward}`)); },
-    requests: () => { const f = F('requests'); return [...B.requests.map(r => ({ k: 'Order request', ref: r.ref, title: r.request || r.title, status: r.stage, at: r.created_at })), ...B.complaints.map(c => ({ k: 'Complaint', ref: c.ref, title: `${c.type}: ${c.description || ''}`, status: c.status, at: c.created_at, resolution: c.resolution }))]
+    requests: () => { const f = F('requests'); return [...B.requests.map(r => ({ k: 'Order request', ref: r.ref, title: r.request || r.title, status: r.stage, at: r.created_at })), ...B.complaints.map(c => ({ k: 'Complaint', id: c.id, ref: c.ref, title: `${c.type}: ${c.description || ''}`, status: c.status, at: c.created_at, resolution: c.resolution, install: [c.batch ? `Batch or lot ${c.batch}` : '', c.installed_by ? `Installed by ${(B.lists.installed_by || {})[c.installed_by] || c.installed_by}${c.installer_name ? ` (${c.installer_name})` : ''}` : ''].filter(Boolean).join(' · ') }))]
       .filter(x => (!f.st || x.k === f.st) && inPeriod(x.at, f) && has(f, `${x.ref} ${x.title} ${x.status}`)).sort((a, b) => String(b.at).localeCompare(String(a.at))); },
     history: () => { const f = F('history'); return (S.hist || []).filter(h => (!f.st || histKind(h) === f.st) && inPeriod(h.at, f) && has(f, h.summary)); },
   };
@@ -75,6 +75,9 @@
   const stageLine = o => { const FS = B.lists.fulfilment_stages || [], i = FS.indexOf(o.ful_stage); return `<div class="pt-steps" aria-label="Stage ${i + 1} of ${FS.length}">${FS.map((s, j) => `<span class="${j < i ? 'done' : j === i ? 'cur' : ''}" title="${esc(s)}"></span>`).join('')}</div><div class="small"><b>${esc(o.ful_stage || 'Confirmed')}</b> <span class="muted">· step ${Math.max(1, i + 1)} of ${FS.length}</span></div>`; };
   const fileRow = d => `<div class="pt-file"><div><b>${esc(d.type)}</b> ${esc(d.doc_no || '')}<div class="small muted">${esc(d.name)}${d.doc_date ? ' · ' + ds(d.doc_date) : ''}${d.amount != null ? ' · ' + inr(d.amount) : ''}</div></div>
     <div class="row" style="gap:6px;flex-wrap:nowrap" data-file-acts><button class="btn sm" data-pa="view" data-id="${d.id}">View</button><button class="btn sm ghost" data-pa="dl" data-id="${d.id}">Download</button><button class="btn sm ghost" data-pa="share" data-id="${d.id}">Share</button></div></div>`;
+  /* R5: the photos on a complaint, each to view, download and share */
+  const cmpFiles = id => { const fs = (B.complaint_files || []).filter(d => d.complaint_id === id); return fs.length ? `<div class="stack-s" data-pc-photos="${id}"><div class="small"><b>${fs.length} photo${fs.length === 1 ? '' : 's'}</b></div>${fs.map(fileRow).join('')}</div>` : ''; };
+  const docOf = id => B.documents.find(x => x.id === id) || (B.complaint_files || []).find(x => x.id === id);
   const orderCard = o => { const ls = B.lines.filter(l => l.order_id === o.id), fs = B.documents.filter(d => d.order_id === o.id);
     return `<div class="card pt-item" data-order="${o.id}"><div class="row between"><b>${esc(o.ref)}</b><span class="small muted">${ds(o.created_at)}</span></div>${stageLine(o)}
       ${ls.map(l => `<div class="small" data-p-line><b>${esc(l.product || 'Design')}</b>${l.code ? ' (' + esc(l.code) + ')' : ''}: <span data-p-boxes="${Number(l.boxes) || 0}">${esc(qtyText(l))}</span> · rate ${inr(l.rate)} / ${rateUnit(l)} · <span data-p-amt="${Number(l.amount) || 0}">${inr(l.amount)}</span> before GST</div>`).join('')}
@@ -118,7 +121,7 @@
     requests() {
       const rs = L.requests();
       return `<div class="stack">${head('Requests and complaints', 'Order requests go to your EGO contact as a new opportunity; complaints go to EGO\'s complaints desk.', '<button class="btn sm primary" data-pa="request">Order request</button><button class="btn sm" data-pa="complaint">Complaint</button>')}${filterBar('requests', ['Order request', 'Complaint'], 'Raised')}
-        ${rs.length ? rs.map(x => `<div class="card pt-item"><div class="row between"><b>${esc(x.k)} ${esc(x.ref)}</b><span class="badge info">${esc(x.status)}</span></div><div class="small">${esc(x.title)}</div>${x.resolution ? `<div class="small muted">Resolution: ${esc(x.resolution)}</div>` : ''}<div class="small muted">${ds(x.at)}</div></div>`).join('') : empty(B.requests.length + B.complaints.length ? 'Nothing for this filter' : 'Nothing raised yet', 'Raise an order request or a complaint with the buttons above.')}</div>`;
+        ${rs.length ? rs.map(x => `<div class="card pt-item"><div class="row between"><b>${esc(x.k)} ${esc(x.ref)}</b><span class="badge info">${esc(x.status)}</span></div><div class="small">${esc(x.title)}</div>${x.install ? `<div class="small muted" data-pc-install>${esc(x.install)}</div>` : ''}${x.resolution ? `<div class="small muted">Resolution: ${esc(x.resolution)}</div>` : ''}<div class="small muted">${ds(x.at)}</div>${x.id ? cmpFiles(x.id) : ''}</div>`).join('') : empty(B.requests.length + B.complaints.length ? 'Nothing for this filter' : 'Nothing raised yet', 'Raise an order request or a complaint with the buttons above.')}</div>`;
     },
     history() {
       if (!S.hist) { API('GET', '/api/portal/history').then(r => { S.hist = r.history; render(); }).catch(e => toast(esc(e.message))); return '<p class="muted">Loading the history…</p>'; }
@@ -149,6 +152,7 @@
   const closeModal = () => { const o = qs('#overlay'); o.classList.remove('on'); o.innerHTML = ''; };
   const err = (id, e) => { const el = qs('#' + id); if (el) el.textContent = (e.errors && e.errors.length ? e.errors.join('. ') : e.message) || 'Something went wrong.'; };
   const sel = (id, label, opts, req) => `<div class="field"><label for="${id}">${esc(label)}${req ? ' *' : ''}</label><select class="input" id="${id}"><option value="">Choose</option>${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select></div>`;
+  const sendForm = async (btn, path, fd, ok, errId) => { btn.disabled = true; try { B = await API('POST', path, fd, true); S.hist = null; closeModal(); toast(ok); render(); } catch (e) { btn.disabled = false; err(errId, e); } };
   const send = async (btn, path, body, ok, errId) => { btn.disabled = true; try { B = await API('POST', path, body); S.hist = null; closeModal(); toast(ok); render(); } catch (e) { btn.disabled = false; err(errId, e); } };
   const tok = () => { try { return localStorage.getItem('ego-live-token') || ''; } catch (e) { return window.__egoTok || ''; } };
   const A = {
@@ -182,17 +186,26 @@
       ${sel('pc-type', 'What it is about', B.lists.complaint_types, true)}${sel('pc-sev', 'How serious', B.lists.severities, true)}
       <div class="field"><label for="pc-order">Order (optional)</label><select class="input" id="pc-order"><option value="">Not about one order</option>${B.orders.map(o => `<option value="${o.id}">${esc(o.ref)} · ${ds(o.created_at)}</option>`).join('')}</select></div>
       <div class="field"><label for="pc-desc">What happened *</label><textarea class="input" id="pc-desc" rows="3" maxlength="2000"></textarea></div>
+      <div class="field"><label for="pc-batch">Batch or lot number</label><input class="input" id="pc-batch" maxlength="60" placeholder="As printed on the box"></div>
+      <div class="field"><label for="pc-inst">Installed by</label><select class="input" id="pc-inst"><option value="">Not known</option>${Object.entries(B.lists.installed_by || {}).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></div>
+      <div class="field"><label for="pc-iname">Installer's name (compulsory for Other)</label><input class="input" id="pc-iname" maxlength="120"></div>
+      <div class="field"><label for="pc-photos">Photos (optional): one or many, up to 10, 25 MB each</label><input class="input" id="pc-photos" type="file" multiple accept="image/*,application/pdf"></div>
       <div class="small err" id="pc-err" role="alert"></div><div class="row"><button class="btn primary" data-pa="complaint-go">Send</button><button class="btn" data-pa="close">Cancel</button></div></form>`),
-    'complaint-go': el => send(el, '/api/portal/complaints', { type: qs('#pc-type').value, severity: qs('#pc-sev').value, order_id: qs('#pc-order').value, description: qs('#pc-desc').value }, '<b>Complaint sent.</b> EGO\'s complaints desk has it.', 'pc-err'),
+    'complaint-go': el => { const files = [...qs('#pc-photos').files];
+      if (files.length > 10) return err('pc-err', new Error('Up to 10 photos at a time.'));
+      const big = files.find(f => f.size > 25 * 1024 * 1024); if (big) return err('pc-err', new Error(`${big.name} is over 25 MB.`));
+      const fd = new FormData(), v = { type: qs('#pc-type').value, severity: qs('#pc-sev').value, order_id: qs('#pc-order').value, description: qs('#pc-desc').value, batch: qs('#pc-batch').value, installed_by: qs('#pc-inst').value, installer_name: qs('#pc-iname').value };
+      Object.entries(v).forEach(([k, x]) => fd.append(k, x)); files.forEach(f => fd.append('file', f));
+      return sendForm(el, '/api/portal/complaints', fd, `<b>Complaint sent${files.length ? ` with ${files.length} photo${files.length === 1 ? '' : 's'}` : ''}.</b> EGO's complaints desk has it.`, 'pc-err'); },
     /* a file: View opens it in the browser (a link good for a day), Download saves it with its name, Share sends a 7-day link */
     view: async el => { const w = window.open('', '_blank'); try { const r = await API('POST', `/api/portal/files/${el.dataset.id}/share`, { view: true }); if (w) w.location = r.url; else location.href = r.url; } catch (e) { if (w) w.close(); toast(esc(e.message)); } },
-    dl: async el => { const d = B.documents.find(x => x.id === el.dataset.id);
+    dl: async el => { const d = docOf(el.dataset.id);
       try { const res = await fetch(`${window.EGOAPI.base}/api/portal/files/${d.id}?dl=1`, { headers: { authorization: 'Bearer ' + tok() } }); if (!res.ok) throw new Error('The file could not be downloaded.');
         const u = URL.createObjectURL(await res.blob()), a = document.createElement('a'); a.href = u; a.download = d.file_name || d.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000); } catch (e) { toast(esc(e.message)); } },
-    share: el => { const d = B.documents.find(x => x.id === el.dataset.id);
+    share: el => { const d = docOf(el.dataset.id);
       modal(`<h2>Share ${esc(d.type)} ${esc(d.doc_no || '')}</h2><p class="small muted">Anyone with the link can open this file until it expires.</p><div class="field"><label for="ps-days">Link works for</label><select class="input" id="ps-days">${[1, 3, 7, 14, 30].map(n => `<option value="${n}" ${n === 7 ? 'selected' : ''}>${n} day${n === 1 ? '' : 's'}</option>`).join('')}</select></div>
         <div class="row"><button class="btn primary" data-pa="share-go" data-id="${d.id}">Make the link</button><button class="btn" data-pa="close">Close</button></div><div id="ps-out" class="stack-s" style="margin-top:12px"></div>`); },
-    'share-go': async el => { const d = B.documents.find(x => x.id === el.dataset.id);
+    'share-go': async el => { const d = docOf(el.dataset.id);
       try { const r = await API('POST', `/api/portal/files/${d.id}/share`, { days: Number(qs('#ps-days').value) }), text = `${d.type} ${d.doc_no || ''} from EGO Premium: ${r.url}`;
         qs('#ps-out').innerHTML = `<input class="input" readonly value="${esc(r.url)}" aria-label="Link"><p class="small muted">Works until ${ds(r.expires)}.</p><div class="row" style="flex-wrap:wrap;gap:6px"><a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">WhatsApp</a><a class="btn sm" href="mailto:?subject=${encodeURIComponent(d.type + ' ' + (d.doc_no || ''))}&body=${encodeURIComponent(text)}">Email</a>${navigator.share ? '<button class="btn sm" data-pa="share-native">Other apps</button>' : ''}<button class="btn sm" data-pa="share-copy">Copy</button></div>`;
         A['share-native'] = () => navigator.share({ title: d.type, text, url: r.url }).catch(() => {});

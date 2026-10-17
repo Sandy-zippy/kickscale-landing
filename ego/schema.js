@@ -36,7 +36,7 @@ const PIPELINES = {
   retail_project: { label: 'Retail project', plural: 'Retail projects', division: 'retail', project: true, sqft: true },
   /* 17 Oct (R3a): EGO Premium's Project pipeline (spec section 13) and its Retail pipeline, the consumer lead
      engine (spec section 15) where a lead is qualified and allocated to a dealer. Leads for dealers folded into it. */
-  ego_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'wholesale', project: true },
+  ego_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'wholesale', project: true, designs: true },   // R5: design lines through qtyLine, no fulfilment of its own
   ego_retail: { label: 'Consumer lead', plural: 'Retail (consumer leads)', division: 'wholesale', dealer: true },
 };
 /* which pipelines a client of each group may have */
@@ -652,11 +652,11 @@ const TEMPLATES = {
   bige: { id: 'bige', company: 'Big E', division: 'retail', version: 'BIGE-3', file: 'Big-E-Upload-Template.xlsx',
     sheets: [SHEETS.dealers, SHEETS.dealer_people, SHEETS.architects, SHEETS.architect_people, CLIENTS_SHEET('retail')] },
   /* the shared inventory: the same file whichever company uploads it */
-  inv: { id: 'inv', company: 'Inventory', division: 'both', version: 'EGO-INV-3', file: 'EGO-Inventory-Upload-Template.xlsx', sheets: [
+  inv: { id: 'inv', company: 'Inventory', division: 'both', version: 'EGO-INV-4', accepts: ['EGO-INV-3'], file: 'EGO-Inventory-Upload-Template.xlsx', sheets: [
     { id: 'categories', sheet: 'Categories', tab: 'categories' },
     { id: 'collections', sheet: 'Collections', tab: 'collections', only: ['category', 'name', 'sqft_per_box', 'sqm_per_box', 'pcs_per_box', 'size_mm', 'thickness_mm', 'wear_layer'],
       refs: { category: ['Categories', 'name'] },
-      heads: { category: 'Category (pick from the Categories sheet)', name: 'Collection name (e.g. Divine)', sqft_per_box: 'Box size in square feet', sqm_per_box: 'Box size in square metres (fill this OR square feet)' } },
+      heads: { category: 'Category (pick from the Categories sheet)', name: 'Collection name (e.g. Divine)', sqft_per_box: 'Box size in sq ft', sqm_per_box: 'Box size in square metres (fill this OR sq ft)' } },
     { id: 'warehouses', sheet: 'Warehouses', tab: 'warehouses' },
     { id: 'stock', sheet: 'Designs & stock', tab: 'stock', refs: { category: ['Categories', 'name'], collection: ['Collections', 'name'], warehouse: ['Warehouses', 'name'] } },
   ] },
@@ -675,7 +675,7 @@ const STOCK_COLS = [
   { key: 'colour', type: 'text', header: 'Colour or shade' },
   { key: 'warehouse', type: 'text', header: 'Warehouse (pick from the Warehouses sheet)' },
   { key: 'boxes', type: 'number', header: 'Boxes in this warehouse today' },
-  { key: 'calc_sqft', type: 'calc', header: 'Square feet in this warehouse (worked out, do not type)' },
+  { key: 'calc_sqft', type: 'calc', header: 'Sq ft in this warehouse (worked out, do not type)' },
   { key: 'status', type: 'select', opts: ['Active', 'Discontinued'], header: 'Status' },
 ];
 const HINT = { decimal: '', mobile: ' (10 digits)', multi: ' (separate with commas)', cats: ' (separate with commas)', cities: ' (cities, separate with commas)', date: ' (DD/MM/YYYY)', owner: ' (username or name)', pincode: ' (6 digits)' };
@@ -692,6 +692,9 @@ function templateColumns(t) {
   /* the basics only, in the order given; the point of contact goes where 'POC' stands */
   return t.only.flatMap(k => k === 'POC' ? POC_COLS : pool.filter(f => f.key === k && !(k === 'kind' && t.kinds.length === 1)).map(f => k === 'kind' ? { ...col(f), opts: t.kinds } : col(f)));
 }
+/* R5: a copy downloaded before EGO-INV-4 still uploads: its old headers read as the new ones */
+const HEADER_WAS = { 'box size in square feet': 'box size in sq ft', 'box size in square metres (fill this or square feet)': 'box size in square metres (fill this or sq ft)', 'square feet in this warehouse (worked out, do not type)': 'sq ft in this warehouse (worked out, do not type)' };
+const tplTakes = (t, ver) => !!t && (t.version === ver || (t.accepts || []).includes(ver));
 const normHeader = h => String(h == null ? '' : h).replace(/\*/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 /* an example row is shown in every sheet and never imported */
 const EXAMPLE_MARK = 'EXAMPLE';
@@ -771,6 +774,8 @@ const DEFAULT_RULES = {
   complaint_settle_from: 15000,
   /* a lead handed to a dealer with no update for this many days goes to the dealer's field sales owner (13 Oct, batch 4) */
   lead_escalate_days: 2,
+  /* R5: a dealer with no order in this many days is on telesales' Priority calls as dormant */
+  dormant_days: 60,
   p200: { tiers: [{ name: 'A', min: 70 }, { name: 'B', min: 50 }, { name: 'C', min: 30 }, { name: 'Watchlist', min: 0 }],
     weights: { sales: 40, breadth: 20, payments: 15, display: 10, activity: 15 } },
 };
@@ -817,12 +822,13 @@ const DASHES = [['', 'Standard Home'], ['mgmt', 'Management'], ['head', 'Sales h
 const SCOPES_ALL = [['all', 'Everything, both companies'], ['division', 'Everything in their company'], ['region', 'Their region'], ['own', 'Their own and their team\'s'], ['none', 'No business records']];
 /* the screens each role has; a role not listed has every screen its access allows */
 const ROLE_TABS = {
-  ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account'],
-  ws_tele: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account'],
-  ws_finance: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'approvals', 'inventory', 'analysis', 'account'],
-  ws_warehouse: ['home', 'orders', 'orderbook', 'inventory', 'complaints', 'analysis', 'account'],
-  office_admin: ['home', 'people', 'architects', 'dealers', 'inventory', 'complaints', 'analysis', 'account'],
-  ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'analysis', 'account'],
+  /* 17 Oct (Bhargav): Projects, Design 500 and Installation for field sales, telesales, finance, marketing and office admin; Installation for the warehouse */
+  ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account', 'projects', 'design500', 'installation'],
+  ws_tele: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account', 'roadmap', 'projects', 'design500', 'installation', 'priority'],
+  ws_finance: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'approvals', 'inventory', 'analysis', 'account', 'projects', 'design500', 'installation'],
+  ws_warehouse: ['home', 'orders', 'orderbook', 'inventory', 'complaints', 'analysis', 'account', 'installation'],
+  office_admin: ['home', 'people', 'architects', 'dealers', 'inventory', 'complaints', 'analysis', 'account', 'projects', 'design500', 'installation'],
+  ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'analysis', 'account', 'projects', 'design500', 'installation'],
 };
 /* what a file kept on a fulfilment order is (13 Oct): EGO makes these in Tally and uploads the PDF here */
 const ORDER_DOC_TYPES = ['PI', 'Invoice', 'Payment proof', 'Other'];
@@ -959,7 +965,19 @@ function planProgress(plan, orders, lines, catOf) {
 const FIELD_TABS = {
   attendance: ['owner', 'director', 'ws_head', 'ws_rm', 'rt_head'],
   roadmap: ['owner', 'director', 'ws_head', 'ws_rm', 'rt_head', 'ws_tele', 'rt_tele'],
+  /* R5: Priority calls, for telesales, Owners and managers */
+  priority: ['owner', 'director', 'ws_head', 'ws_rm', 'rt_head', 'ws_tele', 'rt_tele'],
 };
+/* R5 (plan point 20): telesales see every dealer, architect and person in their company; their Home and My numbers stay their own */
+const TELE_ROLES = ['ws_tele', 'rt_tele'];
+/* R5 (plan point 9): who installed the floor a complaint is about */
+const COMPLAINT_INSTALLED_BY = { contractor: 'Our contractor', dealer: "A dealer's team", other: 'Other' };
+/* R5: what a file on an opportunity is; Quotation first (MOU: multiple quotation upload slots) */
+const OPP_DOC_TYPES = ['Quotation', 'Drawing', 'BOQ', 'Site photo', 'Other'];
+/* R5 Priority calls: what a call came to (Owner-editable list) */
+DEFAULT_LISTS.call_outcomes = ['Spoke, interested', 'Spoke, not now', 'Order taken', 'Call back later', 'Not answered', 'Wrong number'];
+LIST_LABEL.call_outcomes = 'Call outcomes';
+LIST_GROUPS.push(['Priority calls', [['call_outcomes', 'Call outcomes']]]);
 const canFieldTab = (acc, k) => !!acc && ((acc.tabs || []).length ? acc.tabs.includes(k) : (FIELD_TABS[k] || []).includes(acc.id));
 /* the kinds of visit on a Roadmap, in the kit's order; a client's kind decides its visit kind */
 const VISIT_KINDS = { distributor: 'Distributor', dealer: 'Dealer', sub_dealer: 'Sub-dealer', retailer: 'Retailer', architect: 'Architect', project: 'Project site', prospect: 'New prospect' };
