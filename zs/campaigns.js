@@ -75,7 +75,7 @@
   }
 
   /* one row's numbers, Meta's and ours */
-  function cells(o, enq, won, a, first) {
+  function cells(o, enq, won, a, conv, wonVal) {
     /* whole rupees: Meta reports paise, and ₹27,510.9 reads as a typo */
     var money = function (v) { return a.cost ? ZS.money(Math.round(v || 0)) : '₹ ••••'; };
     var per = function (v, by) { return !a.cost ? '₹ ••••' : by ? ZS.money(Math.round(v / by)) : '-'; };
@@ -84,18 +84,28 @@
       '<td class="num">' + n(o.clicks) + '</td>' +
       '<td class="num">' + n(o.leads) + '</td>' +
       '<td class="num ours">' + n(enq) + '</td>' +
+      '<td class="num">' + n(conv) + '</td>' +
       '<td class="num">' + n(won) + '</td>' +
+      '<td class="num">' + money(wonVal) + '</td>' +
       '<td class="num">' + per(o.spend, enq) + '</td>' +
       '<td class="num">' + per(o.spend, won) + '</td>';
+  }
+
+  /* conversations a campaign's ads started (the referral on the first message) */
+  function convOf(c) {
+    var m = (META && META.convAd) || {};
+    return (c.adsets || []).reduce(function (t, s) {
+      return t + (s.ads || []).reduce(function (u, x) { return u + (m[x.id] || 0); }, 0); }, 0);
   }
 
   function head(first) {
     return '<thead><tr class="grp"><th></th><th></th>' +
       '<th colspan="4">As Meta reports, before GST</th>' +
-      '<th colspan="4" class="ours">From the cockpit</th></tr>' +
+      '<th colspan="6" class="ours">From the cockpit</th></tr>' +
       '<tr><th>' + first + '</th><th>Status</th><th class="num">Spend</th>' +
       '<th class="num">Impressions</th><th class="num">Clicks</th><th class="num">Meta leads</th>' +
-      '<th class="num ours">Enquiries</th><th class="num">Engagements won</th>' +
+      '<th class="num ours">Enquiries</th><th class="num">Conversations</th><th class="num">Engagements won</th>' +
+      '<th class="num">Won value</th>' +
       '<th class="num">Cost per enquiry</th><th class="num">Cost per won deal</th></tr></thead>';
   }
 
@@ -204,10 +214,11 @@
         return '<tr data-act="openCampaign" data-id="' + esc(c.id) + '" style="cursor:pointer">' +
           '<td><b>' + esc(c.name) + '</b><span class="sub">Meta · ' + esc(GOAL[c.objective] || 'campaign') +
           ' · ' + (c.adsets || []).length + ' ad set' + ((c.adsets || []).length === 1 ? '' : 's') + '</span></td>' +
-          '<td>' + pill(c.status) + '</td>' + cells(c, board.enq[c.id] || 0, board.won[c.id] || 0, a) + '</tr>';
+          '<td>' + pill(c.status) + '</td>' + cells(c, board.enq[c.id] || 0, board.won[c.id] || 0, a,
+            convOf(c), board.wonVal[c.id] || 0) + '</tr>';
       }).join('') +
       (handRows.length
-        ? '<tr class="sect"><td colspan="10">Added by hand · ' + handRows.length + '</td></tr>' +
+        ? '<tr class="sect"><td colspan="12">Added by hand · ' + handRows.length + '</td></tr>' +
           handRows.map(function (c) {
             var enq = board.enq[c.id] || 0, won = board.won[c.id] || 0;
             var per = function (by) { return !a.cost ? '₹ ••••' : by && c.spend ? ZS.money(Math.round(c.spend / by)) : '-'; };
@@ -218,7 +229,8 @@
                 '" title="Remove" aria-label="Remove ' + esc(c.name) + '">&times;</button>' : '') + '</td>' +
               '<td class="num">' + (a.cost ? (c.spend ? ZS.money(c.spend) : '-') : '₹ ••••') + '</td>' +
               '<td class="byhand" colspan="3">Not pulled. Spend is the figure typed in.</td>' +
-              '<td class="num ours">' + n(enq) + '</td><td class="num">' + n(won) + '</td>' +
+              '<td class="num ours">' + n(enq) + '</td><td class="num">-</td><td class="num">' + n(won) + '</td>' +
+              '<td class="num">' + (a.cost ? ZS.money(Math.round(board.wonVal[c.id] || 0)) : '₹ ••••') + '</td>' +
               '<td class="num">' + per(enq) + '</td><td class="num">' + per(won) + '</td></tr>';
           }).join('')
         : '') +
@@ -236,6 +248,7 @@
     var sets = c.adsets || [];
     var nAds = sets.reduce(function (t, s) { return t + (s.ads || []).length; }, 0);
     var sum = function (s, m) { return (s.ads || []).reduce(function (t, x) { return t + (m[x.id] || 0); }, 0); };
+    var conv = (META && META.convAd) || {};
     var h = '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">' +
       '<a class="crumb" href="#/campaigns">Campaigns</a><span class="crumb-sep">/</span>' +
       '<span class="crumb now asis">' + esc(c.name) + '</span></div>' +
@@ -253,13 +266,13 @@
         var ads = s.ads || [];
         return '<tr><td><b>' + esc(s.name) + '</b><span class="sub">Ad set · ' + ads.length + ' ad' +
           (ads.length === 1 ? '' : 's') + '</span></td><td>' + pill(s.status) + '</td>' +
-          cells(s, sum(s, board.enqAd), sum(s, board.wonAd), a) + '</tr>' +
+          cells(s, sum(s, board.enqAd), sum(s, board.wonAd), a, sum(s, conv), sum(s, board.wonValAd)) + '</tr>' +
           ads.map(function (x) {
             return '<tr class="child"><td><b>' + esc(x.name) + '</b><span class="sub">Ad</span></td>' +
               '<td>' + pill(x.status) + '</td>' +
-              cells(x, board.enqAd[x.id] || 0, board.wonAd[x.id] || 0, a) + '</tr>';
+              cells(x, board.enqAd[x.id] || 0, board.wonAd[x.id] || 0, a, conv[x.id] || 0, board.wonValAd[x.id] || 0) + '</tr>';
           }).join('');
-      }).join('') : '<tr><td colspan="10">No ad sets in this campaign.</td></tr>') +
+      }).join('') : '<tr><td colspan="12">No ad sets in this campaign.</td></tr>') +
       '</tbody></table></div></section>';
     return h;
   }

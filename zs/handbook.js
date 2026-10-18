@@ -365,20 +365,20 @@
 /* ---------------------------------------------------------------- */
 { id: 'whatsapp-templates', title: 'Writing a WhatsApp template',
   where: [['Templates', '#/settings/whatsapp'], ['What connecting needs', '#/settings/connections']], text:
-"Settings, WhatsApp, Templates, and the button reads Write a template.\n\n" +
+"Settings, WhatsApp, Templates, and the button reads New template.\n\n" +
 "A template is a message Meta has approved in advance. Without one you can only " +
 "reply inside 24 hours of them writing to you, which is almost never when you " +
 "need to.\n\n" +
-"Writing it here is the first half. The second is Meta: it has to be submitted " +
-"and approved before it can be sent, and that needs the WhatsApp Business " +
-"Account connected. What is written here is stored and ready, and goes out for " +
-"approval the day the number is connected.\n\n" +
+"Submit to Meta sends it for approval from that screen. The list shows Pending, " +
+"then Approved or Rejected with Meta's reason in words, the moment Meta answers; " +
+"Check Meta again asks on demand. Once approved, Start a chat in the Inbox sends " +
+"it to a client, an enquiry or a typed number.\n\n" +
 "Pick the category honestly. Utility is about something they already did: an " +
 "order, an appointment, a payment. Marketing is anything else, and it is the one " +
 "users can block and the one Meta caps per user. Choosing Marketing and calling " +
 "it Utility is how a number gets its quality rating cut.\n\n" +
-"Put variables in by CLICKING them, never by typing. They are numbered in the " +
-"order they appear, and typing one by hand breaks the numbering so the message " +
+"Put variables in by CLICKING them, never by typing. They are numbered {{1}}, " +
+"{{2}} in the order they appear, each with a sample Meta reads, and typing one by hand breaks the numbering so the message " +
 "arrives with the wrong words in the wrong slots. The picker lists every " +
 "variable the cockpit can fill: the client, the contact, the engagement, the " +
 "fee, the stage, the next meeting, the invoice and its due date.\n\n" +

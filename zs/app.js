@@ -729,6 +729,8 @@
     doc_edit:      ['Documents', 'edit'],
 
     wa_template:   ['WhatsApp', 'edit'],  wa_settings:   ['WhatsApp', 'edit'],
+    wa_send:       ['WhatsApp', 'add'],   wa_start:      ['WhatsApp', 'add'],
+    meta_refresh:  ['Team & settings', 'edit'], meta_connect: ['Team & settings', 'edit'],
 
     data_export:   ['Team & settings', 'edit'], data_import: ['Team & settings', 'add'],
 
@@ -3088,7 +3090,7 @@
           acts = '<button class="minibtn" data-act="metaCheck">Check again</button>';
         } else {
           head = c.id === 'adaccount'
-            ? '<b>Last pulled ' + esc(when(c.last)) + '.</b> Next pull at 08:47.'
+            ? '<b>Last pulled ' + esc(when(c.last)) + '.</b> Pulled every hour while a campaign runs, otherwise daily at 08:47.'
             : c.last ? '<b>Last ' + k.thing + ' ' + esc(when(c.last)) + '.</b> ' + esc(k.ok)
             : '<b>Connected.</b> Nothing has arrived yet. ' + esc(k.ok);
           fix = esc(k.fix);
@@ -3100,6 +3102,14 @@
           acts += '<a class="minibtn" href="#/inbox">Open the Inbox</a>';
         } else {
           acts += '<a class="minibtn" href="#/floor">Open the Sales board</a>';
+        }
+        /* the sending tier: how many different people a chat can be STARTED with
+           in a moving 24 hours. Meta's own figure when it gives one. */
+        if (c.id === 'whatsapp') {
+          var tier = (st && st.tier) || { cap: 250, assumed: true };
+          fix += '<p class="hint" data-tier="' + (tier.assumed ? 'assumed' : 'meta') + '" style="margin-top:6px"><b>Sending limit:</b> ' +
+            (tier.cap === null ? 'no limit' : ZS.fmt(tier.cap) + ' different people per 24 hours') +
+            (tier.assumed ? ' (assumed: Meta has not reported the tier yet)' : ', as Meta reports it') + '.</p>';
         }
         return '<div class="card pad conncard" data-conn="' + esc(c.id) + '" data-state="' + esc(c.state) + '">' +
           '<div class="cardhead"><span class="agico">' + k.mark + '</span><h3>' + esc(c.label) + '</h3>' +

@@ -29,7 +29,9 @@
   var KINDS = {
     client:      { label: 'Client',     icon: '◱' },
     opportunity: { label: 'Engagement', icon: '▤' },
-    document:    { label: 'Document',   icon: '▦' }
+    document:    { label: 'Document',   icon: '▦' },
+    /* its wording only: Meta deleted the template itself */
+    template:    { label: 'WhatsApp template', icon: '✉' }
   };
 
   V.bin = function () {
@@ -82,7 +84,8 @@
       counts = Object.keys(counts).reduce(function (a, k) {
         if (!(k === 'clients' && r.kind === 'client') &&
             !(k === 'opportunities' && r.kind === 'opportunity') &&
-            !(k === 'documents' && r.kind === 'document')) a[k] = counts[k];
+            !(k === 'documents' && r.kind === 'document') &&
+            !(k === 'wa_templates' && r.kind === 'template')) a[k] = counts[k];
         return a;
       }, {});
     } else {

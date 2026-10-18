@@ -87,7 +87,9 @@
       (mayAssign
         ? 'Hand one to somebody and it moves to their inbox until you take it back.'
         : 'You see the conversations handed to you.') +
-      '</p></div></div>';
+      '</p></div>' +
+      (G.acc().clients ? '<div class="right"><button class="btn" data-act="startChat">+ Start a chat</button></div>' : '') +
+      '</div>';
 
     /* the filters: channel first, because "show me WhatsApp" is the question */
     var counts = { all: all.length };
@@ -154,6 +156,8 @@
         (who ? '<span class="pill dim">' + esc(who.name) + '</span>'
              : '<span class="pill warn">nobody yet</span>') +
         (t.client_id ? '<span class="pill ok">a client</span>' : '') +
+        (t.ref_ad ? '<span class="pill info" title="' + esc(t.ref_headline || '') + '">from an ad</span>' : '') +
+        (t.opted_out_at ? '<span class="pill dim">said STOP</span>' : '') +
       '</div></button>';
   }
 
@@ -168,7 +172,11 @@
     var h = '<div class="card" style="padding:0;display:flex;flex-direction:column;height:100%">' +
       '<div class="convhead">' +
         '<div><b>' + esc(t.name || t.handle) + '</b>' +
-        '<span>' + esc(c.label) + ' &middot; ' + esc(t.handle) + '</span></div>' +
+        '<span>' + esc(c.label) + ' &middot; ' + esc(t.handle) + '</span>' +
+        /* the ad that started it, by name: campaign, ad set, ad */
+        (t.ref_ad ? '<span>From an ad: ' + esc([t.ref_campaign, t.ref_adset, t.ref_adname].filter(Boolean).join(' \u00b7 ') ||
+          t.ref_headline || 'an ad not yet in the last pull') + '</span>' : '') +
+        '</div>' +
         (t.client_id
           ? '<button class="minibtn" data-act="openClient" data-id="' + esc(t.client_id) +
             '">Open the client</button>'
@@ -230,17 +238,37 @@
     return h + '</div>';
   }
 
+  /* Every sent message says where it got to, in words: Sending, Sent,
+     Delivered, Read or Failed, and a failure says why and what to do. Meta's
+     codes are never shown; the reason Meta gave is matched to plain words. */
+  var STATE = { sent: 'Sent', delivered: 'Delivered', read: 'Read', failed: 'Failed', sending: 'Sending\u2026' };
+  function failWords(why) {
+    var w = String(why || '');
+    if (/not (a valid )?whatsapp|no whatsapp|undeliverable|131026/i.test(w)) return 'The number has no WhatsApp account, or could not take it. Check the number or call them.';
+    if (/re-?engagement|24 hours|outside .*window|131047/i.test(w)) return 'Reply window closed. They need to write first.';
+    if (/ecosystem|healthy|marketing messages|131049/i.test(w)) return 'Meta held it back: they had many marketing messages lately. Try in a few days.';
+    if (/limit|spam rate|131048|130429/i.test(w)) return 'The number reached its limit for today. It goes again tomorrow.';
+    if (/media|too large|size/i.test(w)) return 'The file is larger than WhatsApp takes. Send a smaller file or a link.';
+    if (/paused|disabled/i.test(w)) return 'Meta paused this template. Pick another one, or check it under Settings, WhatsApp.';
+    return 'WhatsApp did not take it. Try again; if it fails twice, check Settings, Connections.';
+  }
   function bubble(m) {
     var out = m.direction === 'out';
     var by = out && m.by_staff ? ZS.staffById(m.by_staff) : null;
-    return '<div class="bub' + (out ? ' out' : '') + '">' +
-      '<div class="bubtext">' + esc(m.body || '') + '</div>' +
+    var st = String(m.state || '').toLowerCase();
+    var failed = out && st === 'failed';
+    var tpl = out ? (/^\[([a-z0-9_]+)\] /.exec(m.body || '') || [])[1] : null;
+    var text = tpl ? String(m.body).slice(tpl.length + 3) : (m.body || '');
+    return '<div class="bub' + (out ? ' out' : '') + (failed ? ' fail' : '') + '">' +
+      '<div class="bubtext">' + esc(text) + '</div>' +
       '<div class="bubfoot">' + esc(when(m.at)) +
         /* who wrote it is an internal fact and never travels outward */
         (by ? ' &middot; ' + esc(by.name.split(' ')[0]) : '') +
-        (m.state ? ' &middot; ' + esc(m.state) : '') +
-        (m.fail ? ' &middot; <b>' + esc(m.fail) + '</b>' : '') +
-      '</div></div>';
+        (tpl ? ' &middot; template ' + esc(tpl) : '') +
+        (out && STATE[st] ? ' &middot; <span class="st' + (st === 'read' ? ' read' : '') + '">' + STATE[st] + '</span>' : '') +
+      '</div>' +
+      (failed ? '<div class="failline"><b>Not delivered.</b> ' + esc(failWords(m.fail)) + '</div>' : '') +
+      '</div>';
   }
 
   /* ---------------- actions ---------------- */
@@ -307,39 +335,9 @@
       });
     },
 
-    pickTemplate: function (id) {
-      if (!window.API || !API.signedIn()) return G.toast('Sign in to the server first.', true);
-      G.modal('An approved template', 'Reading what Meta has approved…', '<p class="m">One moment.</p>');
-      var show = function () {
-        var list = TEMPLATES || [];
-        var ok = list.filter(function (t) { return String(t.status).toUpperCase() === 'APPROVED'; });
-        G.modal('An approved template',
-          ok.length + ' approved on this WhatsApp account. A template with {{1}} in it ' +
-          'needs filling in before it can go, so those are listed and not offered yet.',
-          ok.length
-            ? ok.map(function (t) {
-                var holes = (t.vars || []).length;
-                return '<div class="pickrow"><div class="t"><b>' + esc(t.name) + '</b>' +
-                  '<span>' + esc(String(t.body || '').slice(0, 120)) + '</span></div>' +
-                  (holes
-                    ? '<span class="pill warn">' + holes + ' to fill in</span>'
-                    : '<button class="minibtn" data-act="sendTemplate" data-id="' +
-                      esc(id + '|' + t.name + '|' + (t.language || 'en')) + '">Send it</button>') +
-                  '</div>';
-              }).join('')
-            : '<p class="m">Nothing approved came back. ' + esc(TEMPLATES_WHY || '') + '</p>');
-      };
-      if (TEMPLATES) return show();
-      API.templates().then(function (r) {
-        TEMPLATES = (r && r.templates) || [];
-        TEMPLATES_WHY = (r && r.why) || '';
-        show();
-      }).catch(function (e) {
-        TEMPLATES = [];
-        TEMPLATES_WHY = (e && e.message) || 'Meta did not answer.';
-        show();
-      });
-    },
+    /* the closed-window block and the Template button: Start a chat, with the
+       number locked to this conversation */
+    pickTemplate: function (id) { G.startChat({ thread: id }); },
 
     sendTemplate: function (arg) {
       var p = String(arg).split('|');
@@ -356,6 +354,248 @@
            '&mobile=' + encodeURIComponent(t.channel === 'whatsapp' ? t.handle : '') +
            '&source=' + encodeURIComponent(t.channel));
     }
+  });
+
+
+  /* ---------------- Start a chat ----------------
+
+     ⚠️ OUTSIDE 24 HOURS OF THEIR LAST MESSAGE, ONLY AN APPROVED TEMPLATE CAN
+     START A CHAT. So this dialog offers approved templates and nothing else,
+     fills the {{n}} blanks from the record using the field each template
+     remembers, shows the message on a phone before it goes, and sends through
+     the server, which checks the approval again. A typed number never makes a
+     client by itself (locked 30 Sep); the conversation opens in the Inbox and
+     one tap there makes them one. */
+  var SC = null;
+
+  function contactOf(c) {
+    var ct = c ? ZS.primaryContact(c) : null;
+    var digits = (ct && ct.mobile) || (c && c.mobile) || '';
+    return { ct: ct, dial: (ct && ct.dial) || (c && c.dial) || ZS.DEFAULT_DIAL, digits: String(digits).replace(/\D/g, '') };
+  }
+  function lastWrote(digits) {
+    var tail = String(digits || '').slice(-9);
+    if (tail.length < 9) return null;
+    var t = (D().threads || []).filter(function (x) { return String(x.handle || '').slice(-9) === tail; })[0];
+    if (!t || !t.last_at) return null;
+    var d = Math.floor((Date.now() - new Date(t.last_at).getTime()) / 86400000);
+    return d <= 0 ? 'last message today' : 'last message ' + d + ' day' + (d === 1 ? '' : 's') + ' ago';
+  }
+  function scTemplates() {
+    var t = G.waTemplatesNow ? G.waTemplatesNow() : null;
+    return ((t && t.templates) || []).filter(function (x) { return x.status === 'APPROVED'; });
+  }
+  function scTpl() {
+    return scTemplates().filter(function (x) { return x.name + '|' + x.language === SC.tpl; })[0] || null;
+  }
+  function nOf(text) {
+    var m = 0;
+    String(text || '').replace(/\{\{\s*(\d+)\s*\}\}/g, function (w, n) { m = Math.max(m, Number(n)); return w; });
+    return m;
+  }
+  /* the record the blanks fill from: the client, their first open engagement */
+  function scCtx() {
+    var c = SC.client ? G.clientById(SC.client) : null;
+    var o = SC.opp ? (D().opportunities || []).filter(function (x) { return x.id === SC.opp; })[0] : null;
+    if (o && !c) c = G.clientById(o.client);
+    if (c && !o) o = (D().opportunities || []).filter(function (x) { return x.client === c.id && ZS.isOpen(x); })[0] || null;
+    if (!c) return null;
+    return { client: c, contact: ZS.primaryContact(c), opp: o, me: G.me(),
+             invoice: o ? (D().invoices || []).filter(function (i) { return i.opp === o.id; })[0] || null : null,
+             owed: o ? ZS.owedOn(D().invoices, o.id) : 0 };
+  }
+  function prefill() {
+    var t = scTpl();
+    SC.vals = [];
+    if (!t) return;
+    var ctx = scCtx();
+    for (var i = 0; i < nOf(t.body); i++) {
+      /* a template made in Meta remembers nothing: {{1}} is nearly always the
+         first name, so that one is offered and the rest are typed */
+      var key = (t.fills || [])[i] || (i === 0 && !(t.fills || []).length ? 'contact_first_name' : '');
+      var v = '';
+      if (key && ctx) {
+        var r = ZS.waFill('{{' + key + '}}', ctx);
+        v = r.missing.length ? '' : r.text;
+      }
+      SC.vals[i] = v;
+    }
+  }
+  function scWhy() {
+    if (!SC.wa && !(SC.digits && ZS.validPhone(SC.dial, SC.digits))) {
+      return SC.who === 'number' ? 'Type the number, with its country code picked.' : 'Pick who it goes to.';
+    }
+    var t = scTpl();
+    if (!t) return 'Pick a template.';
+    for (var i = 0; i < nOf(t.body); i++) {
+      if (!String(SC.vals[i] || '').trim()) {
+        return scCtx() ? 'Fill in {{' + (i + 1) + '}}. The record has nothing for it.'
+                       : 'Type ' + (i === 0 ? 'the first name' : 'what goes in {{' + (i + 1) + '}}') + '. There is no record to fill it from.';
+      }
+    }
+    if (t.header_type === 'IMAGE' && !/^https:\/\/\S+$/.test(SC.image || '')) return 'Give the web address of the header image (https://).';
+    return '';
+  }
+
+  function scBody() {
+    var tpls = scTemplates(), t = scTpl(), why = scWhy();
+    var h = '<div class="twocol" style="margin:0"><div>';
+    if (SC.wa) {
+      h += '<div class="f"><label>Who</label><p class="m" style="margin:0"><b>' + esc(SC.name || ('+' + SC.wa)) +
+        '</b> · +' + esc(SC.wa) + '</p></div>';
+    } else {
+      h += '<div class="f"><label>Who</label><div class="modes">' +
+        [['client', 'A client'], ['opp', 'An enquiry'], ['number', 'A number']].map(function (m) {
+          return '<label class="modepick"><input type="radio" name="sc-who" value="' + m[0] + '" data-scwho="1"' +
+            (SC.who === m[0] ? ' checked' : '') + '> ' + m[1] + '</label>';
+        }).join('') + '</div></div>';
+      if (SC.who === 'number') {
+        h += '<div style="margin-top:10px">' + G.mobileField('sc-num', 'sc_mobile', SC.dial, SC.digits, 'Mobile number') +
+          '<span class="hint">Not on the cockpit yet. The chat opens in the Inbox, and one tap makes them a client.</span></div>';
+      } else {
+        h += '<div style="margin-top:10px"><input type="search" id="sc-q" value="' + esc(SC.q) + '" style="width:100%" ' +
+          'placeholder="' + (SC.who === 'opp' ? 'Find an enquiry' : 'Find a client') + '" aria-label="Find">' +
+          '<div class="card" style="padding:0;margin-top:6px" id="sc-hits">' + scHits() + '</div></div>';
+      }
+    }
+    h += '<div class="f" style="margin-top:14px"><label for="sc-tpl">Template</label>' +
+      '<select id="sc-tpl"><option value="">Pick an approved template</option>' + tpls.map(function (x) {
+        return '<option value="' + esc(x.name + '|' + x.language) + '"' + (SC.tpl === x.name + '|' + x.language ? ' selected' : '') + '>' +
+          esc(x.name + ' · ' + ({ MARKETING: 'Marketing', UTILITY: 'Utility' }[x.category] || x.category) + ' · ' + x.language) + '</option>';
+      }).join('') + '</select><span class="hint">Approved only. ' + tpls.length + ' on this WhatsApp account.</span></div>';
+    if (t && nOf(t.body)) {
+      h += '<div class="f" style="margin-top:14px"><label>Fill the blanks</label><div class="opts">' +
+        SC.vals.map(function (v, i) {
+          return '<div class="optrow"><span class="optn">' + (i + 1) + '</span><input aria-label="Variable ' + (i + 1) + '" data-scval="' + i + '" value="' + esc(v) + '"></div>';
+        }).join('') + '</div>' +
+        (scCtx() ? '<span class="hint">Filled from ' + esc(scCtx().client.name) + '’s record. A change here changes only this message.</span>' : '') +
+        '</div>';
+    }
+    if (t && t.header_type === 'IMAGE') {
+      h += '<div class="f" style="margin-top:14px"><label for="sc-img">Header image</label><input id="sc-img" value="' + esc(SC.image) + '" placeholder="https://"></div>';
+    }
+    h += '</div><div class="waside" id="sc-prev">' + (t ? G.waPhone(t, SC.vals, [], { short: true }) : '') + '</div></div>';
+    h += '<p class="err" id="sc-why"' + (why ? '' : ' hidden') + '>' + esc(why) + '</p>' +
+      '<div class="sendrow" style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">' +
+      '<button class="btn" type="button" id="sc-send" data-act="scSend"' + (why || SC.busy ? ' disabled' : '') + '>' + (SC.busy ? 'Sending…' : 'Send') + '</button>' +
+      '<button class="btn alt" type="button" data-act="scClose">Cancel</button>' +
+      '<span class="hint" style="flex:1;min-width:200px">Goes out from +91 99893 98484' +
+        (t ? ' as a ' + ({ MARKETING: 'Marketing', UTILITY: 'Utility' }[t.category] || '') + ' message' : '') +
+        '. The conversation opens in the Inbox.</span></div>';
+    return h;
+  }
+
+  function scHits() {
+    var q = String(SC.q || '').toLowerCase();
+    var rows;
+    if (SC.who === 'opp') {
+      rows = (D().opportunities || []).filter(ZS.isOpen).map(function (o) {
+        var c = G.clientById(o.client);
+        return { id: o.id, kind: 'opp', c: c, title: (o.title || o.ref || 'Enquiry'), sub: c ? c.name : '' };
+      });
+    } else {
+      rows = (D().clients || []).map(function (c) { return { id: c.id, kind: 'client', c: c, title: c.name, sub: '' }; });
+    }
+    rows = rows.filter(function (r) { return !q || (r.title + ' ' + r.sub).toLowerCase().indexOf(q) >= 0; }).slice(0, 6);
+    if (!rows.length) return '<p class="m" style="padding:10px">Nothing matches.</p>';
+    return rows.map(function (r) {
+      var k = contactOf(r.c), has = k.digits && ZS.validPhone(k.dial, k.digits);
+      var picked = (r.kind === 'opp' ? SC.opp : SC.client) === r.id;
+      var lw = has ? lastWrote(k.digits) : null;
+      return '<div class="pickrow"><div class="t"><b>' + esc(r.title) + '</b><span>' +
+        esc([r.sub, has ? k.dial + ' ' + k.digits : '', lw].filter(Boolean).join(' · ')) + '</span></div>' +
+        (!has ? '<span class="pill warn">No mobile</span>'
+          : picked ? '<span class="pill ok">Picked</span>'
+          : '<button class="minibtn" data-act="scPick" data-id="' + esc(r.kind + '|' + r.id) + '">Pick</button>') + '</div>';
+    }).join('');
+  }
+
+  function scDraw(full) {
+    var body = document.getElementById('m-body');
+    if (!body || !SC) return;
+    if (full) { body.innerHTML = scBody(); return; }
+    var t = scTpl(), why = scWhy();
+    var p = document.getElementById('sc-prev'); if (p) p.innerHTML = t ? G.waPhone(t, SC.vals, [], { short: true }) : '';
+    var w = document.getElementById('sc-why'); if (w) { w.textContent = why; w.hidden = !why; }
+    var s = document.getElementById('sc-send'); if (s) s.disabled = !!why || SC.busy;
+  }
+
+  /* opts: {client, opp, thread, tpl: 'name|lang'}. From a conversation the
+     number is locked to that conversation's own. */
+  G.startChat = function (opts) {
+    opts = opts || {};
+    if (!window.API || !API.signedIn()) return G.toast('Sign in to the server first.', true);
+    SC = { who: opts.opp ? 'opp' : opts.client ? 'client' : 'client', q: '', client: opts.client || null,
+           opp: opts.opp || null, dial: ZS.DEFAULT_DIAL, digits: '', wa: null, name: '', tpl: opts.tpl || '',
+           vals: [], image: '', busy: false };
+    if (opts.thread) {
+      var th = (D().threads || []).filter(function (x) { return x.id === opts.thread; })[0];
+      if (th) { SC.wa = String(th.handle).replace(/\D/g, ''); SC.name = th.name; SC.client = th.client_id || null; }
+    }
+    var c = SC.client ? G.clientById(SC.client) : SC.opp ? G.clientById(((D().opportunities || []).filter(function (o) { return o.id === SC.opp; })[0] || {}).client) : null;
+    if (c && !SC.wa) { var k = contactOf(c); SC.dial = k.dial; SC.digits = k.digits; SC.name = (k.ct && k.ct.name) || c.name; }
+    prefill();
+    G.modal('Start a chat', 'Outside 24 hours of their last message, only an approved template can start a chat.', scBody());
+    /* the template list may still be on its way; draw again when it lands */
+    if (!scTemplates().length) setTimeout(function () { if (SC) { prefill(); scDraw(true); } }, 1500);
+  };
+
+  Object.assign(A, {
+    startChat: function (arg) {
+      var p = String(arg || '').split('|');
+      if (p[0] === 'client') return G.startChat({ client: p[1] });
+      if (p[0] === 'opp') return G.startChat({ opp: p[1] });
+      if (p[0] === 'tpl') return G.startChat({ tpl: p[1] + '|' + p[2] });
+      return G.startChat({});
+    },
+    scPick: function (arg) {
+      var p = String(arg).split('|');
+      if (p[0] === 'opp') { SC.opp = p[1]; SC.client = null; } else { SC.client = p[1]; SC.opp = null; }
+      var c = scCtx() && scCtx().client, k = contactOf(c);
+      SC.dial = k.dial; SC.digits = k.digits; SC.name = (k.ct && k.ct.name) || (c && c.name) || '';
+      prefill(); scDraw(true);
+    },
+    scClose: function () { SC = null; var dm = document.getElementById('modal'); if (dm && dm.open) dm.close(); },
+    scSend: function () {
+      if (!SC || SC.busy || scWhy()) return;
+      var t = scTpl();
+      SC.busy = true; scDraw();
+      var who = SC.name || (SC.wa ? '+' + SC.wa : SC.dial + ' ' + SC.digits);
+      var c = scCtx();
+      API.waStart({ wa: SC.wa || undefined, dial: SC.dial, digits: SC.digits, name: SC.name || '',
+        client_id: c ? c.client.id : null, opp_id: c && c.opp ? c.opp.id : null,
+        template: t.name, language: t.language, params: { body: SC.vals, image: SC.image || '' } })
+        .then(function (r) {
+          SC = null;
+          var dm = document.getElementById('modal'); if (dm && dm.open) dm.close();
+          G.toast('Sent to ' + who + '.');
+          return (G.pullNow ? Promise.resolve(G.pullNow()) : Promise.resolve()).then(function () {
+            if (location.hash.indexOf('#/inbox') !== 0) G.go('#/inbox');
+            A.openThread(r.thread);
+          });
+        }).catch(function (e) {
+          if (SC) { SC.busy = false; scDraw(); }
+          /* in words, never a red dot: "not sent" with no reason is how somebody
+             walks away believing they reached a client */
+          G.toast((e && e.message) || 'It did not go. Nothing was sent.', true);
+        });
+    }
+  });
+
+  document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (!SC || !el) return;
+    if (el.id === 'sc-q') { SC.q = el.value; var hl = document.getElementById('sc-hits'); if (hl) hl.innerHTML = scHits(); return; }
+    if (el.id === 'sc-num') { SC.digits = String(el.value || '').replace(/\D/g, ''); SC.name = ''; scDraw(); return; }
+    if (el.id === 'sc-img') { SC.image = el.value; scDraw(); return; }
+    if (el.dataset && el.dataset.scval !== undefined) { SC.vals[Number(el.dataset.scval)] = el.value; scDraw(); }
+  });
+  document.addEventListener('change', function (e) {
+    var el = e.target;
+    if (!SC || !el) return;
+    if (el.dataset && el.dataset.scwho) { SC.who = el.value; SC.q = ''; SC.client = null; SC.opp = null; SC.digits = ''; prefill(); scDraw(true); return; }
+    if (el.id === 'sc-num-dial') { SC.dial = el.value; scDraw(); return; }
+    if (el.id === 'sc-tpl') { SC.tpl = el.value; prefill(); scDraw(true); }
   });
 
   var TEMPLATES_WHY = '';
@@ -398,6 +638,7 @@
     }
   });
 
+  G.inboxBubble = bubble;
   /* what the overview and Jarvis can both ask for */
   G.inboxThreads = threads;
 })();

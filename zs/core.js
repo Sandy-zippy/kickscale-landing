@@ -2834,8 +2834,8 @@
         var cl = o.client || o.client_id;
         if (cl && !(cl in first)) first[cl] = { c: campOf(o), ad: adCampaign[o.ad] ? o.ad : null };
       });
-    var enq = {}, won = {}, enqAd = {}, wonAd = {};
-    var bump = function (m, k) { if (k) m[k] = (m[k] || 0) + 1; };
+    var enq = {}, won = {}, enqAd = {}, wonAd = {}, wonVal = {}, wonValAd = {};
+    var bump = function (m, k, by) { if (k) m[k] = (m[k] || 0) + (by === undefined ? 1 : by); };
     opps.forEach(function (o) {
       if (!range || inRange(String(o.created || '').slice(0, 10), range)) {
         bump(enq, campOf(o));
@@ -2843,10 +2843,15 @@
       }
       if (o.outcome === 'won' && (!range || inRange(String(o.closed || '').slice(0, 10), range))) {
         var f = first[o.client || o.client_id];
-        if (f) { bump(won, f.c); bump(wonAd, f.ad); }
+        if (f) {
+          bump(won, f.c); bump(wonAd, f.ad);
+          /* won value: what it was won at, else the agreed fee */
+          var v = Number(o.won_price || o.fee || 0) || 0;
+          bump(wonVal, f.c, v); bump(wonValAd, f.ad, v);
+        }
       }
     });
-    return { enq: enq, won: won, enqAd: enqAd, wonAd: wonAd };
+    return { enq: enq, won: won, enqAd: enqAd, wonAd: wonAd, wonVal: wonVal, wonValAd: wonValAd };
   }
 
   /* ---- reading a document ----

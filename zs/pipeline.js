@@ -279,7 +279,8 @@
             esc(st) + '</option>';
         }).join('') + '</select></span>' +
       '<a class="btn alt" href="#/client/' + esc(c.id) + '">Client</a>' +
-      (G.acc().clients ? '<button class="btn alt" data-act="editOpp" data-id="' + esc(o.id) + '">Edit</button>' : '') +
+      (G.acc().clients ? '<button class="btn alt" data-act="editOpp" data-id="' + esc(o.id) + '">Edit</button>' +
+        '<button class="btn alt" data-act="startChat" data-id="opp|' + esc(o.id) + '">WhatsApp them</button>' : '') +
       (ZS.canDelete(G.me())
         ? '<button class="btn danger" data-act="askDeleteOpp" data-id="' + esc(o.id) + '">Delete</button>'
         : '') +

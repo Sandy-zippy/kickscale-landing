@@ -1070,17 +1070,15 @@
     /* ⚠️ THIS ANSWER WAS WRITTEN BEFORE THE WHATSAPP SECTION EXISTED and was
        never revisited. It said templates do not live in here at all and sent you
        to Campaigns, which has Meta, Google and LinkedIn on it and no WhatsApp.
-       Meanwhile Settings, WhatsApp, Templates has had a Write a template button
+       Meanwhile Settings, WhatsApp, Templates has had a New template button
        on it for some time. An answer that has outlived the screen it describes
        is worse than no answer: it is confidently wrong and it wastes a trip. */
-    var w = D().whatsapp || {};
-    var n = (w.templates || []).length;
     return { say: 'Yes. <b>Settings → WhatsApp → Templates</b>, and the button says ' +
-      '<b>Write a template</b>. You have <b>' + n + '</b> written so far.<br><br>' +
-      'Writing one here is the first half. The second half is <b>Meta</b>: a template has to be ' +
-      'submitted and approved by them before it can actually be sent, and that needs the WABA ' +
-      'connected, which it is not yet. So what you write here is stored, versioned and ready, ' +
-      'and it goes out for approval the day the number is connected.<br><br>' +
+      '<b>New template</b>.<br><br>' +
+      '<b>Submit to Meta</b> sends it to Meta for approval straight from there, and the list shows ' +
+      'Pending, then Approved or Rejected with Meta\'s reason the moment Meta answers. ' +
+      'Outside 24 hours of their last message, only an approved template can start a chat; ' +
+      'once one is approved, <b>Start a chat</b> in the Inbox sends it.<br><br>' +
       'Three things to know while writing. Pick <b>Utility</b> if the message is about something ' +
       'they already did and <b>Marketing</b> if it is not, because Marketing is the one users can ' +
       'block and it is capped per user by Meta. Put variables in by clicking, never by typing, or ' +

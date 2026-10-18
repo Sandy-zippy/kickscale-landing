@@ -1249,6 +1249,56 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important}
 }
+
+/* ===== NEW RULES, META PART 3 (18 Oct, Picasso). Copy into console.html as is.
+   Token-only: no new colours, fonts or icons. ===== */
+/* filter row: selects sit beside the chips */
+.chips select{width:auto;min-height:34px;padding:6px 28px 6px 10px;font-size:12.5px}
+/* a table cell allowed to wrap, for a rejection reason */
+.tbl td.wrapok{white-space:normal;min-width:220px;max-width:330px}
+.tbl td .why{display:block;font-size:11.5px;color:var(--bad-ink);margin-top:4px;line-height:1.4}
+.tbl td .why b{color:var(--tx);font-weight:600}
+/* the WhatsApp-style phone preview */
+.waphone{width:100%;max-width:300px;margin:0 auto;border:1px solid var(--line2);border-radius:30px;background:var(--coal);padding:9px}
+.waphone .wptop{display:flex;align-items:center;gap:9px;padding:8px 12px 10px}
+.waphone .wptop b{display:block;font-size:13px}
+.waphone .wptop span{font-size:10.5px;color:var(--dim)}
+.waphone .wptop .agico{width:28px;height:28px;border-radius:50%;font:700 10px var(--d);color:var(--accent)}
+.waphone .wpchat{background:var(--wa-bg);border-radius:4px 4px 22px 22px;min-height:330px;padding:12px 10px 18px;display:flex;flex-direction:column;gap:4px}
+.waphone .wpday{align-self:center;font-size:10.5px;color:var(--dim);background:var(--char);padding:3px 9px;border-radius:6px;margin-bottom:8px}
+.wabub{align-self:flex-start;max-width:92%;background:var(--char);border-radius:2px 10px 10px 10px;padding:6px 6px 4px}
+.wabub .wimg{aspect-ratio:1.91/1;background:var(--char2);border-radius:7px;display:grid;place-items:center;font-size:11px;color:var(--dim);margin-bottom:6px}
+.wabub b{display:block;font-size:13px;padding:0 3px 3px}
+.wabub p{margin:0;padding:0 3px;font-size:13px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.wabub i{display:block;font-style:normal;font-size:11px;color:var(--dim);padding:5px 3px 0}
+.wabub .wtime{display:block;text-align:right;font-size:10px;color:var(--dim);margin-top:2px}
+.wabub mark{background:var(--lime-wash);color:inherit;border-radius:3px;padding:0 2px}
+.wabtns{align-self:flex-start;width:92%;display:grid;gap:3px}
+.wabtns span{background:var(--char);border-radius:8px;padding:8px;text-align:center;font-size:12.5px;font-weight:500;color:var(--info-ink)}
+.waside{position:sticky;top:16px}
+.waside>.hint{display:block;text-align:center;margin-top:9px}
+/* delivery state on every sent message */
+.bubfoot .st{font-weight:600;color:var(--mut)}
+.bubfoot .st.read{color:var(--info-ink)}
+.bub.fail{background:var(--note-bg);border:1px solid var(--bad)}
+.bub .failline{font-size:12px;color:var(--bad-ink);margin-top:6px;line-height:1.4}
+.bub .failline b{color:var(--tx)}
+.bub .failline .minibtn{margin-top:7px}
+/* label above an option row (Fill from / Sample) */
+.opthead{display:flex;gap:7px;font:600 10px var(--d);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);padding-left:27px}
+.opthead span{flex:1;min-width:0}.opthead span+span{flex:2}
+.twocol>*{min-width:0}
+/* KIT FIX: a modepick or option row inside a .f field must not take the field-label style or full width */
+.f label.modepick{display:flex;white-space:nowrap;margin:0;font:inherit;font-size:12.5px;letter-spacing:0;text-transform:none;color:var(--tx)}
+.optrow input,.optrow select{width:auto;min-width:0;flex:1 1 0}
+.optrow input{flex-grow:2}
+/* KIT FIX: a done step still used the old orange; it becomes the lime wash */
+.stagebtn.done{background:var(--lime-wash);border-color:var(--line2);color:var(--mut)}
+/* the step strip on the campaign builder: numbers before the words */
+.stagestrip .stagebtn i{font-style:normal;margin-right:6px;opacity:.75}
+/* a line that states a count */
+.countline{margin:10px 0 0;font-size:13px;color:var(--tx2);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.countline b{font-family:var(--mono);color:var(--tx)}
 </style>
 </head>
 <body>
@@ -1306,33 +1356,33 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 
 <div id="toast" hidden></div>
 
-<script src="places.js?b=1792216988"></script>
-<script src="vocab.js?b=1792216988"></script>
-<script src="api.js?b=1792216988"></script>
-<script src="core.js?b=1792216988"></script>
-<script src="app.js?b=1792216988"></script>
-<script src="stock.js?b=1792216988"></script>
-<script src="crm.js?b=1792216988"></script>
-<script src="pipeline.js?b=1792216988"></script>
-<script src="autos.js?b=1792216988"></script>
-<script src="processing.js?b=1792216988"></script>
-<script src="whatsapp.js?b=1792216988"></script>
-<script src="campaigns.js?b=1792216988"></script>
-<script src="bin.js?b=1792216988"></script>
-<script src="inbox.js?b=1792216988"></script>
-<script src="chatbot.js?b=1792216988"></script>
-<script src="outreach.js?b=1792216988"></script>
-<script src="diary.js?b=1792216988"></script>
-<script src="handbook.js?b=1792216988"></script>
-<script src="jarvis.js?b=1792216988"></script>
-<script src="jarvis-desk.js?b=1792216988"></script>
-<script src="dates.js?b=1792216988"></script>
+<script src="places.js?b=1792307434"></script>
+<script src="vocab.js?b=1792307434"></script>
+<script src="api.js?b=1792307434"></script>
+<script src="core.js?b=1792307434"></script>
+<script src="app.js?b=1792307434"></script>
+<script src="stock.js?b=1792307434"></script>
+<script src="crm.js?b=1792307434"></script>
+<script src="pipeline.js?b=1792307434"></script>
+<script src="autos.js?b=1792307434"></script>
+<script src="processing.js?b=1792307434"></script>
+<script src="whatsapp.js?b=1792307434"></script>
+<script src="campaigns.js?b=1792307434"></script>
+<script src="bin.js?b=1792307434"></script>
+<script src="inbox.js?b=1792307434"></script>
+<script src="chatbot.js?b=1792307434"></script>
+<script src="outreach.js?b=1792307434"></script>
+<script src="diary.js?b=1792307434"></script>
+<script src="handbook.js?b=1792307434"></script>
+<script src="jarvis.js?b=1792307434"></script>
+<script src="jarvis-desk.js?b=1792307434"></script>
+<script src="dates.js?b=1792307434"></script>
 <!-- The invoice PDF: the drawing library, the embedded font (the rupee sign is
      not in any PDF standard font), and the layout itself. -->
-<script src="vendor/jspdf.js?b=1792216988"></script>
-<script src="vendor/invoice-fonts.js?b=1792216988"></script>
-<script src="invoice.js?b=1792216988"></script>
-<script src="jarvis-view.js?b=1792216988"></script>
+<script src="vendor/jspdf.js?b=1792307434"></script>
+<script src="vendor/invoice-fonts.js?b=1792307434"></script>
+<script src="invoice.js?b=1792307434"></script>
+<script src="jarvis-view.js?b=1792307434"></script>
 <script>window.GE && window.GE.boot();</script>
 </body>
 </html>

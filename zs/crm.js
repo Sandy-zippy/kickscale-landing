@@ -275,7 +275,8 @@
         row('GST number', esc(c.gst || '')) + row('Tax ID', esc(c.tax_id || '')) +
         '</ul>' +
         (G.acc().clients ? '<div class="invadd" style="margin-top:12px">' +
-          '<button class="btn alt" data-act="editClient" data-id="' + esc(c.id) + '">Edit the profile</button></div>' : '') +
+          '<button class="btn alt" data-act="editClient" data-id="' + esc(c.id) + '">Edit the profile</button>' +
+          '<button class="btn alt" data-act="startChat" data-id="client|' + esc(c.id) + '">WhatsApp them</button></div>' : '') +
         '</div>';
     }
 

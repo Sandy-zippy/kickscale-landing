@@ -2,15 +2,14 @@
 
    This lives in Settings because it is plumbing, not daily work. Three tabs:
 
-     Templates — write one, pick variables rather than typing them, submit it.
-     Health    — which tier the number is on, the quality rating, and how close
-                 to the ceiling today's sending is.
-     Delivery  — what was sent, what landed, what failed and WHY, in Meta's own
-                 error codes with the thing to actually do about each.
+     Templates: the list Meta holds, made here and submitted to Meta for real
+                (Meta part 3A, 18 Oct 2026), with Approved / Pending / Rejected
+                and Meta's reason in words.
+     Health:    which tier the number is on, the quality rating, and how close
+                to the ceiling today's sending is.
+     Delivery:  what was sent, what landed, what failed and WHY.
 
-   Nothing here sends. There is no WABA connected and no server to send from,
-   and the screen says so rather than implying otherwise. What it does do is
-   make a template that will be accepted, which is most of the work. */
+   Sending happens from the Inbox and Start a chat, never from this screen. */
 (function () {
   'use strict';
   var G = window.GE, V = G.VIEWS, A = G.ACTIONS;
@@ -47,11 +46,11 @@
     var h = '<div class="cardhead pad"><div><h3>WhatsApp</h3>' +
       '<p class="m" style="margin:4px 0 0">Templates, the sending limit we are on, and what actually ' +
       'landed. Meta decides most of this, so the rules below are theirs.</p></div>' +
-      '<span class="pill ' + (w.connected ? 'ok' : 'warn') + '">' +
-      (w.connected ? 'connected' : 'not connected yet') + '</span></div>';
+      (TPL && TPL.checked && TPL.checked.ok ? '<span class="pill ok">Connected</span>'
+        : '<span class="pill dim">Waiting for setup</span>') + '</div>';
 
     h += '<div class="tabs" style="padding:0 16px">' +
-      [['templates', 'Templates', w.templates.length],
+      [['templates', 'Templates', TPL ? (TPL.templates || []).length : null],
        ['health', 'Sending limit', null],
        ['delivery', 'What landed', ZS.waStats(w.sends).failed || null]].map(function (t) {
         return '<button class="tab ' + (t[0] === TAB ? 'on' : '') + '" data-act="waTab" data-id="' +
@@ -59,125 +58,299 @@
           (t[2] ? ' <span class="tcount">' + t[2] + '</span>' : '') + '</button>';
       }).join('') + '</div>';
 
-    if (TAB === 'templates') h += templatesTab(w);
+    if (TAB === 'templates') h += templatesTab();
     else if (TAB === 'health') h += healthTab(w);
     else h += deliveryTab(w);
     return h;
   };
 
-  /* ---------------- templates ---------------- */
+  /* ---------------- templates ----------------
 
-  function templatesTab(w) {
+     Server-backed since Meta part 3A (18 Oct): the list is what Meta holds,
+     read from the server's copy, and "Submit to Meta" really submits. Status
+     comes back on the template-status webhook, or on "Check Meta again". The
+     old browser-only list (d.whatsapp.templates) is left where it is, unread. */
+
+  var TPL = null, TPL_KEY = '', TPL_BUSY = false, TPL_WHY = '';
+  var TST = 'all', TCAT = '', TLANG = '', TQ = '';
+  var LANGS = [['en', 'English'], ['en_US', 'English (US)'], ['en_GB', 'English (UK)'], ['hi', 'Hindi'],
+               ['te', 'Telugu'], ['ta', 'Tamil'], ['ar', 'Arabic']];
+  var langName = function (k) { return (LANGS.filter(function (l) { return l[0] === k; })[0] || [k, k])[1]; };
+  var CAT = { MARKETING: 'Marketing', UTILITY: 'Utility', AUTHENTICATION: 'Authentication' };
+  /* Meta's rejection codes, in words, with what to change. Never the code itself. */
+  var WHY = {
+    INVALID_FORMAT: ['the layout breaks one of its rules, often a variable at the very start or end, or two side by side.',
+                     'put words around each variable and submit again.'],
+    TAG_CONTENT_MISMATCH: ['the words do not match the category picked.',
+                           'change the category, or keep a Utility message to facts they asked for, then submit again.'],
+    INCORRECT_CATEGORY: ['it reads as marketing, not an update on something they asked for.',
+                         'change the category to Marketing, or keep it to the facts, then submit again.'],
+    PROMOTIONAL: ['it reads as an offer where a Utility message is expected.',
+                  'change the category to Marketing, then submit again.'],
+    ABUSIVE_CONTENT: ['the words broke WhatsApp’s commerce or business rules.',
+                      'rewrite it plainly, without pressure or claims, then submit again.'],
+    SCAM: ['it looked like a scam to their review.', 'name the business, drop urgency words, then submit again.']
+  };
+  function whyWords(code) {
+    var w = WHY[String(code || '').toUpperCase()];
+    return w ? '<b>Meta says:</b> ' + esc(w[0]) + ' <b>Fix:</b> ' + esc(w[1])
+             : 'Meta did not say why. Open it in WhatsApp Manager.';
+  }
+
+  function loadTemplates(force) {
+    if (!window.API || !API.signedIn()) return;
+    var r = G.range(), key = r.from + '|' + r.to;
+    if (!force && TPL && TPL_KEY === key) return;
+    TPL_KEY = key;
+    API.waTemplates(r.from, r.to).then(function (out) { TPL = out || { templates: [] }; TPL_WHY = ''; G.render(); })
+      .catch(function (e) { TPL = TPL || { templates: [] }; TPL_WHY = (e && e.message) || 'The server did not answer.'; G.render(); });
+  }
+  G.waTemplatesNow = function () { loadTemplates(); return TPL; };
+  G.waEditForTest = function () { return EDIT; };
+  G.setTemplatesForTest = function (t) { TPL = t; TPL_KEY = G.range().from + '|' + G.range().to; EDIT = null; };
+
+  function stLabel(t) {
+    var s = String(t.status || '').toUpperCase();
+    if (s === 'APPROVED') return '<span class="pill ok">Approved</span>';
+    if (s === 'PENDING' || s === 'IN_APPEAL') return '<span class="pill info">Pending</span><span class="sub">Meta usually answers within the hour</span>';
+    if (s === 'REJECTED') return '<span class="pill bad">Rejected</span><span class="why">' + whyWords(t.reason) + '</span>';
+    if (s === 'DRAFT') return '<span class="pill dim">Draft</span>';
+    if (s === 'DELETED') return '<span class="pill dim">Deleted on Meta</span><span class="sub">Submit it again under a new name</span>';
+    if (s === 'PAUSED' || s === 'DISABLED') return '<span class="pill warn">Paused by Meta</span>';
+    return '<span class="pill dim">' + esc(s.toLowerCase() || 'unknown') + '</span>';
+  }
+  var bucket = function (t) {
+    var s = String(t.status || '').toUpperCase();
+    return s === 'IN_APPEAL' ? 'PENDING' : s === 'DISABLED' ? 'PAUSED' : s;
+  };
+
+  function templatesTab() {
+    loadTemplates();
     var h = '<div class="pad">';
+    if (EDIT) return h + editor() + '</div>';
 
-    if (EDIT) return h + editor(w) + '</div>';
+    var all = (TPL && TPL.templates) || [];
+    var ck = TPL && TPL.checked;
+    h += '<div class="cardhead" style="margin-bottom:12px"><div><h3>WhatsApp templates</h3>' +
+      '<p class="m" style="margin:4px 0 0">Messages Meta approves in advance. ' +
+      (ck ? (ck.ok ? 'Last checked with Meta <b>' + esc(G.whenSaid ? G.whenSaid(ck.at) : ck.at) + '</b>.'
+                   : 'The last check with Meta did not go through: ' + esc(ck.note) + '.')
+          : 'Not checked with Meta yet.') + '</p></div>' +
+      '<div class="right"><button class="btn alt" data-act="waCheckMeta"' + (TPL_BUSY ? ' disabled' : '') + '>' +
+      (TPL_BUSY ? 'Checking…' : 'Check Meta again') + '</button>' +
+      (G.acc().settings ? '<button class="btn" data-act="waNew">+ New template</button>' : '') + '</div></div>';
 
-    h += '<p class="m">A template is a message Meta has approved in advance. Without one you ' +
-      'can only reply inside 24 hours of them writing to you, which is almost never when you ' +
-      'need to.</p>';
+    h += '<div class="wbar"><b>Outside 24 hours of their last message, only an approved template can start a chat.</b> ' +
+      'Inside the 24 hours you can write anything from the Inbox.</div>';
+    h += G.rangeBar();
+    h += '<p class="hint" style="margin:-8px 0 12px">The Date filter is on the submitted date, and on Sent and Read. ' +
+      'Templates made in Meta have no submitted date here, so they always show.</p>';
 
-    h += '<div class="right" style="margin:12px 0"><button class="btn" data-act="waNew">' +
-      '+ Write a template</button></div>';
+    var counts = { all: all.length };
+    all.forEach(function (t) { var b = bucket(t); counts[b] = (counts[b] || 0) + 1; });
+    var langs = []; all.forEach(function (t) { if (langs.indexOf(t.language) < 0) langs.push(t.language); });
+    h += '<div class="chips" style="margin-bottom:12px">' +
+      [['all', 'All'], ['APPROVED', 'Approved'], ['PENDING', 'Pending'], ['REJECTED', 'Rejected'], ['DRAFT', 'Drafts']]
+        .map(function (c) {
+          return '<button class="chip" data-act="waTplSt" data-id="' + c[0] + '" aria-pressed="' +
+            (TST === c[0] ? 'true' : 'false') + '">' + c[1] + ' <i>' + (counts[c[0]] || 0) + '</i></button>';
+        }).join('') +
+      '<select id="wa-fcat" aria-label="Category"><option value="">Any category</option>' +
+        ['MARKETING', 'UTILITY'].map(function (k) {
+          return '<option value="' + k + '"' + (TCAT === k ? ' selected' : '') + '>' + CAT[k] + '</option>';
+        }).join('') + '</select>' +
+      '<select id="wa-flang" aria-label="Language"><option value="">Any language</option>' +
+        langs.map(function (k) {
+          return '<option value="' + esc(k) + '"' + (TLANG === k ? ' selected' : '') + '>' + esc(langName(k)) + '</option>';
+        }).join('') + '</select>' +
+      '<input type="search" id="wa-fq" placeholder="Search templates" aria-label="Search templates" value="' + esc(TQ) + '">' +
+      '</div>';
 
-    if (!w.templates.length) {
-      h += '<div class="card"><p class="m">Nothing written yet.</p></div></div>';
-      return h;
-    }
+    if (!TPL) return h + '<div class="card pad"><p class="m">' +
+      (window.API && API.signedIn() ? 'Reading the templates…' : 'Sign in to the server to see the templates.') + '</p></div></div>';
+    if (TPL_WHY) h += '<p class="err">' + esc(TPL_WHY) + '</p>';
 
-    h += '<div class="scroller"><table class="tbl"><thead><tr>' +
-      '<th>Name</th><th>Category</th><th>Variables</th><th>State</th><th>Quality</th>' +
-      '<th class="num">Sent</th><th class="num">Failed</th><th></th></tr></thead><tbody>' +
-      w.templates.map(function (t) {
-        var st = ZS.WA_STATES[t.state] || ZS.WA_STATES.DRAFT;
-        var q = ZS.WA_QUALITY[t.quality] || ZS.WA_QUALITY.PENDING;
-        var vars = ZS.templateVars(t);
-        var mine = (w.sends || []).filter(function (s) { return s.template === t.id; });
-        var failed = mine.filter(function (s) { return s.state === 'failed'; }).length;
-        return '<tr>' +
-          '<td><b>' + esc(t.name) + '</b><span class="sub">' + esc(String(t.body).slice(0, 58)) +
-            (String(t.body).length > 58 ? '…' : '') + '</span></td>' +
-          '<td>' + esc((ZS.WA_CATEGORIES[t.category] || {}).label || t.category) + '</td>' +
-          '<td>' + (vars.length
-            ? '<span class="pill dim">' + vars.length + '</span>'
-            : '<span style="color:var(--dim)">none</span>') + '</td>' +
-          '<td><span class="pill ' + st.pill + '" title="' + esc(st.note) + '">' + esc(st.label) + '</span></td>' +
-          '<td><span class="pill ' + q.pill + '">' + esc(q.label) + '</span></td>' +
-          '<td class="num">' + mine.length + '</td>' +
-          '<td class="num">' + (failed ? '<span style="color:var(--bad)">' + failed + '</span>' : '0') + '</td>' +
-          '<td><button class="minibtn" data-act="waEdit" data-id="' + esc(t.id) + '">Open</button>' +
-          '<button class="xbtn" data-act="waDrop" data-id="' + esc(t.id) + '" ' +
-          'aria-label="Remove ' + esc(t.name) + '">&times;</button></td></tr>';
-      }).join('') + '</tbody></table></div>';
+    var q = TQ.toLowerCase();
+    var list = all.filter(function (t) {
+      if (TST !== 'all' && bucket(t) !== TST) return false;
+      if (TCAT && t.category !== TCAT) return false;
+      if (TLANG && t.language !== TLANG) return false;
+      if (q && (t.name + ' ' + (t.body || '')).toLowerCase().indexOf(q) < 0) return false;
+      /* submitted date only where we made it; one made in Meta has none */
+      if (t.by_staff && t.created_at && !G.inRange(String(t.created_at).slice(0, 10))) return false;
+      return true;
+    });
+    if (!list.length) return h + '<div class="card pad"><p class="m">Nothing on this filter.</p></div></div>';
 
+    h += '<section class="card" style="padding:0"><div class="scroller" style="border:0"><table class="tbl"><thead><tr>' +
+      '<th>Template</th><th>Category</th><th>Language</th><th>Status</th><th>Submitted</th>' +
+      '<th class="num">Sent</th><th class="num">Read</th><th></th></tr></thead><tbody>' +
+      list.map(function (t) {
+        var rej = bucket(t) === 'REJECTED';
+        var body = String(t.body || '');
+        return '<tr data-tpl="' + esc(t.name) + '"><td' + (rej ? ' class="wrapok"' : '') + '><b>' + esc(t.name) + '</b><span class="sub">' +
+          esc(body.slice(0, 58)) + (body.length > 58 ? '…' : '') + '</span></td>' +
+          '<td>' + esc(CAT[t.category] || t.category || '·') + '</td>' +
+          '<td>' + esc(langName(t.language)) + '</td>' +
+          '<td' + (rej ? ' class="wrapok"' : '') + '>' + stLabel(t) + '</td>' +
+          '<td>' + (t.by_staff && t.created_at ? esc(ZS.fmtDate ? ZS.fmtDate(String(t.created_at).slice(0, 10)) : String(t.created_at).slice(0, 10)) : 'In Meta') + '</td>' +
+          '<td class="num">' + (t.sent || '·') + '</td>' +
+          '<td class="num">' + (t.sent ? Math.round(100 * (t.read || 0) / t.sent) + '%' : '·') + '</td>' +
+          '<td><button class="minibtn" data-act="waOpenTpl" data-id="' + esc(t.name) + '">' + (rej ? 'Fix it' : 'Open') + '</button>' +
+          (TPL.mayEdit && G.me() && G.me().role === 'owner' && bucket(t) !== 'DRAFT'
+            ? '<button class="xbtn" data-act="waDropTpl" data-id="' + esc(t.name) + '" aria-label="Delete ' + esc(t.name) + '">&times;</button>' : '') +
+          '</td></tr>';
+      }).join('') + '</tbody></table></div></section>';
     return h + '</div>';
   }
 
-  /* ---------------- the editor, with the variable picker ---------------- */
+  /* ---------------- the phone preview, shared with Start a chat ---------------- */
 
-  function editor(w) {
-    var t = EDIT;
-    var vars = ZS.templateVars(t);
-    var bad = ZS.validateTemplate(t);
+  function marked(text, vals, mark) {
+    return esc(String(text || '')).replace(/\{\{\s*(\d+)\s*\}\}/g, function (w, n) {
+      var v = (vals || [])[Number(n) - 1];
+      return v ? (mark ? '<mark>' + esc(v) + '</mark>' : esc(v)) : w;
+    });
+  }
+  G.waPhone = function (t, vals, headVals, opts) {
+    opts = opts || {};
+    var hd = t.header_type === 'IMAGE' ? '<div class="wimg">Image</div>'
+      : t.header_type === 'TEXT' && t.header_text ? '<b>' + marked(t.header_text, headVals, true) + '</b>' : '';
+    return '<div class="waphone" aria-label="Preview on a phone">' +
+      '<div class="wptop"><span class="agico">ZS</span><div><b>ZippyScale</b><span>Business account</span></div></div>' +
+      '<div class="wpchat"' + (opts.short ? ' style="min-height:260px"' : '') + '>' +
+      (opts.short ? '' : '<span class="wpday">Today</span>') +
+      '<div class="wabub">' + hd + '<p>' + (marked(t.body, vals, true) || 'The message goes here.') + '</p>' +
+      (t.footer ? '<i>' + esc(t.footer) + '</i>' : '') + '<span class="wtime">' + (opts.short ? 'now' : esc(ZS.nowTime ? ZS.nowTime() : '')) + '</span></div>' +
+      ((t.buttons || []).length ? '<div class="wabtns">' + t.buttons.map(function (b) {
+        return '<span>' + esc(b.text || '') + '</span>'; }).join('') + '</div>' : '') +
+      '</div></div>';
+  };
 
-    var h = '<div class="cardhead"><h3>' + (t.id && byId(w, t.id) ? 'Edit' : 'New') + ' template</h3>' +
-      '<button class="minibtn" data-act="waCancel">Close</button></div>';
+  /* ---------------- the form ---------------- */
 
-    h += '<form id="waform"><div class="fgroup"><h4>What it is</h4><div class="fbody">' +
-      '<div class="f"><label for="wa-name">Name</label>' +
-      '<input id="wa-name" name="name" value="' + esc(t.name) + '" autocomplete="off" ' +
-      'placeholder="build_handover">' +
-      '<span class="hint">Lowercase, numbers and underscores. Meta refuses anything else.</span></div>' +
-      '<div class="f"><label for="wa-cat">Category</label><select id="wa-cat" name="category">' +
-        Object.keys(ZS.WA_CATEGORIES).map(function (k) {
-          return '<option value="' + k + '"' + (t.category === k ? ' selected' : '') + '>' +
-            esc(ZS.WA_CATEGORIES[k].label) + '</option>';
-        }).join('') + '</select>' +
-      '<span class="hint">' + esc((ZS.WA_CATEGORIES[t.category] || {}).note || '') + '</span></div>' +
-      '<div class="f"><label for="wa-lang">Language</label>' +
-      '<input id="wa-lang" name="language" value="' + esc(t.language) + '" autocomplete="off"></div>' +
+  function blankTemplate() {
+    return { name: '', language: 'en', category: 'MARKETING', header_type: 'NONE', header_text: '', body: '',
+             footer: '', buttons: [{ type: 'QUICK_REPLY', text: 'Stop promotions' }],
+             samples: { body: [], header: [] }, fills: [], image: '' };
+  }
+  function nVars(text) {
+    var m = 0;
+    String(text || '').replace(/\{\{\s*(\d+)\s*\}\}/g, function (w, n) { m = Math.max(m, Number(n)); return w; });
+    return m;
+  }
+  /* Said before Submit, so the button is never pressed into a refusal. The
+     server checks the same rules again and has the last word. */
+  function missingWhy(t) {
+    if (!/^[a-z0-9_]+$/.test(t.name || '')) return 'Give it a name: lowercase letters, numbers and underscores.';
+    if (!String(t.body || '').trim()) return 'Write the message.';
+    for (var i = 0; i < nVars(t.body); i++) {
+      if (!String(t.samples.body[i] || '').trim()) return 'Give a sample for {{' + (i + 1) + '}}. Meta reads the samples to approve it.';
+    }
+    if (t.header_type === 'TEXT' && nVars(t.header_text) && !String(t.samples.header[0] || '').trim()) return 'Give a sample for the header variable.';
+    if (t.header_type === 'IMAGE' && !t.image) return 'Add the sample image for the header.';
+    return '';
+  }
+
+  function editor() {
+    var t = EDIT, n = nVars(t.body), why = missingWhy(t);
+    var fillOpts = function (sel) {
+      return '<option value="">Typed each time</option>' + ZS.WA_VARS.map(function (v) {
+        return '<option value="' + esc(v.key) + '"' + (sel === v.key ? ' selected' : '') + '>' + esc(v.label) + '</option>';
+      }).join('');
+    };
+    var modes = function (name, cur, list) {
+      return '<div class="modes">' + list.map(function (o) {
+        return '<label class="modepick"><input type="radio" name="' + name + '" value="' + o[0] + '"' +
+          (cur === o[0] ? ' checked' : '') + ' data-wamode="' + name + '"> ' + esc(o[1]) + '</label>';
+      }).join('') + '</div>';
+    };
+    var h = '<div style="display:flex;gap:6px;align-items:center;margin-bottom:14px">' +
+      '<button class="crumb" data-act="waCancel">Templates</button><span class="crumb-sep">/</span>' +
+      '<span class="crumb now asis">' + (t.fixing ? 'Fix ' + esc(t.name) : 'New template') + '</span></div>';
+    h += '<div class="twocol"><form id="waform">';
+    h += '<div class="fgroup"><h4>What it is</h4><div class="fbody">' +
+      '<div class="f"><label for="wa-name">Name</label><input id="wa-name" data-wa="name" value="' + esc(t.name) + '"' +
+        (t.fixing ? ' readonly' : '') + ' autocomplete="off">' +
+        '<span class="hint">Lowercase, numbers and underscores. Meta refuses anything else.</span></div>' +
+      '<div class="f"><label for="wa-lang">Language</label><select id="wa-lang" data-wa="language">' +
+        LANGS.map(function (l) { return '<option value="' + l[0] + '"' + (t.language === l[0] ? ' selected' : '') + '>' + esc(l[1]) + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="f wide" style="grid-column:1/-1"><label>Category</label>' +
+        modes('category', t.category, [['MARKETING', 'Marketing'], ['UTILITY', 'Utility']]) +
+        '<span class="hint">Marketing: offers, follow-ups, news. Utility: an update on something they already asked for ' +
+        '(an invoice, a booking). Meta rejects a Utility template that sells.</span></div>' +
       '</div></div>';
 
-    h += '<div class="fgroup"><h4>The message</h4><div class="fbody">' +
-      field('wa-header', 'header', 'Header', t.header, 'Optional. One line, 60 characters.') +
-      field('wa-body', 'body', 'Body', t.body, 'The message itself. Up to 1024 characters.', true) +
-      field('wa-footer', 'footer', 'Footer', t.footer, 'Optional. 60 characters, no variables worth putting here.') +
+    h += '<div class="fgroup"><h4>Header <em>optional</em></h4><div class="fbody">' +
+      '<div class="f wide" style="grid-column:1/-1">' +
+        modes('header_type', t.header_type, [['NONE', 'None'], ['TEXT', 'Text'], ['IMAGE', 'Image']]) + '</div>' +
+      (t.header_type === 'TEXT'
+        ? '<div class="f wide" style="grid-column:1/-1"><label for="wa-head">Header text</label>' +
+          '<input id="wa-head" data-wa="header_text" value="' + esc(t.header_text) + '" maxlength="60">' +
+          '<span class="hint">One line, 60 characters. It can carry one variable, {{1}}. ' +
+          '<span id="wa-headn">' + String(t.header_text || '').length + '</span> / 60</span></div>' +
+          (nVars(t.header_text)
+            ? '<div class="f wide" style="grid-column:1/-1"><label for="wa-hs">Sample for the header {{1}}</label>' +
+              '<input id="wa-hs" data-wasample="header|0" value="' + esc(t.samples.header[0] || '') + '"></div>' : '')
+        : '') +
+      (t.header_type === 'IMAGE'
+        ? '<div class="f wide" style="grid-column:1/-1"><label class="btn alt upl" for="wa-img">' +
+            (t.image ? 'Change the image' : 'Upload the image') + '</label>' +
+          '<input type="file" id="wa-img" accept="image/jpeg,image/png" hidden>' +
+          (t.image ? '<span class="hint">Sample image added. <a href="' + esc(t.image) + '" target="_blank" rel="noopener">View it</a> · ' +
+            '<button type="button" class="minibtn" data-act="waImgDrop">Remove</button></span>' : '') +
+          '<span class="hint">JPG or PNG, up to 5 MB. Meta reviews it with the words. When you send it, you give the image’s web address.</span></div>'
+        : '') +
       '</div></div>';
 
-    /* what it will actually look like */
-    h += '<div class="card pad" style="margin-top:14px">' +
-      '<p class="eyebrow">Against a real engagement</p>' + preview(t) + '</div>';
+    h += '<div class="fgroup"><h4>Message</h4><div class="fbody">' +
+      '<div class="f wide" style="grid-column:1/-1"><label for="wa-body">Body</label>' +
+        '<textarea id="wa-body" data-wa="body" rows="4">' + esc(t.body) + '</textarea>' +
+        '<div class="varrow"><button type="button" class="minibtn" data-act="waVarPick" data-id="body">+ Add a variable</button>' +
+        (VARFOR ? picker('body') : '') + '</div>' +
+        '<span class="hint">Variables are added from the list, never typed. <span id="wa-bodyn">' +
+        String(t.body || '').length + '</span> / 1024</span></div>' +
+      (n ? '<div class="f wide" style="grid-column:1/-1"><label>Sample for each variable</label>' +
+        '<div class="opthead"><span>Fills from</span><span>Sample Meta sees</span></div><div class="opts">' +
+        Array.apply(null, { length: n }).map(function (x, i) {
+          return '<div class="optrow"><span class="optn">' + (i + 1) + '</span>' +
+            '<select aria-label="Variable ' + (i + 1) + ' fills from" data-wafill="' + i + '">' + fillOpts(t.fills[i] || '') + '</select>' +
+            '<input aria-label="Sample for variable ' + (i + 1) + '" data-wasample="body|' + i + '" value="' + esc(t.samples.body[i] || '') + '"></div>';
+        }).join('') + '</div><span class="hint">Meta needs a sample for every variable before it will review.</span></div>' : '') +
+      '<div class="f wide" style="grid-column:1/-1"><label for="wa-foot">Footer <span class="unit">optional</span></label>' +
+        '<input id="wa-foot" data-wa="footer" value="' + esc(t.footer) + '" maxlength="60"><span class="hint">60 characters, no variables.</span></div>' +
+      '</div></div>';
 
-    h += (bad ? '<p class="err" style="margin-top:12px">' + esc(bad) + '</p>'
-               : '<p class="hint" style="margin-top:12px">Ready to submit.' +
-                 (vars.length ? ' Carries ' + vars.length + ' variable' + (vars.length === 1 ? '' : 's') + '.' : '') +
-                 '</p>');
+    h += '<div class="fgroup"><h4>Buttons <em>optional, up to 3 here</em></h4><div class="fbody" style="grid-template-columns:1fr">' +
+      '<div class="opts" style="margin:0">' + t.buttons.map(function (b, i) {
+        return '<div class="optrow"><span class="optn">' + (i + 1) + '</span>' +
+          '<select aria-label="Button ' + (i + 1) + ' type" data-wabtn="' + i + '|type">' +
+            [['QUICK_REPLY', 'Quick reply'], ['URL', 'Visit website'], ['PHONE_NUMBER', 'Call']].map(function (o) {
+              return '<option value="' + o[0] + '"' + (b.type === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') +
+          '</select><input aria-label="Button ' + (i + 1) + ' words" data-wabtn="' + i + '|text" value="' + esc(b.text || '') + '" maxlength="25">' +
+          (b.type === 'URL' ? '<input aria-label="Button ' + (i + 1) + ' web address" data-wabtn="' + i + '|url" value="' + esc(b.url || '') + '" placeholder="https://">' : '') +
+          (b.type === 'PHONE_NUMBER' ? '<input aria-label="Button ' + (i + 1) + ' phone" data-wabtn="' + i + '|phone_number" value="' + esc(b.phone_number || '') + '" placeholder="+91…">' : '') +
+          '<button type="button" class="xbtn" data-act="waBtnDrop" data-id="' + i + '" aria-label="Remove button ' + (i + 1) + '">&times;</button></div>';
+      }).join('') + '</div>' +
+      (t.buttons.length < 3 ? '<button type="button" class="minibtn" data-act="waBtnAdd">+ Add a button</button>' : '') +
+      '<span class="hint">Marketing templates keep a Stop promotions button. Anyone who taps it or writes STOP never gets a campaign again.</span>' +
+      '</div></div>';
 
-    h += '<div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">' +
-      '<button class="btn alt" type="submit" name="how" value="save">Save as a draft</button>' +
-      '<button class="btn" type="submit" name="how" value="submit"' + (bad ? ' disabled' : '') +
-      '>Submit to Meta</button></div></form>';
-
+    h += '<p class="err" id="wa-why"' + (why ? '' : ' hidden') + '>' + esc(why) + '</p>' +
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+      '<button class="btn alt" type="submit" name="how" value="draft"' + (TPL_BUSY ? ' disabled' : '') + '>Save as a draft</button>' +
+      '<button class="btn" type="submit" name="how" value="submit" id="wa-submit"' + (why || TPL_BUSY ? ' disabled' : '') + '>' +
+        (TPL_BUSY ? 'Sending to Meta…' : 'Submit to Meta') + '</button>' +
+      '<span class="hint">Meta usually answers within the hour. This list shows Approved or Rejected the moment Meta says.</span></div>';
+    h += '</form><div class="waside"><div id="wa-prev">' + G.waPhone(t, t.samples.body, t.samples.header) + '</div>' +
+      '<span class="hint">Live preview with the samples. Highlighted words change per person.</span></div></div>';
     return h;
   }
 
-  /* One text field with its own "Add a variable" button. */
-  function field(id, name, label, val, hint, big) {
-    return '<div class="f wide"><label for="' + id + '">' + esc(label) + '</label>' +
-      (big
-        ? '<textarea id="' + id + '" name="' + name + '" rows="5" data-watext="' + name + '">' + esc(val || '') + '</textarea>'
-        : '<input id="' + id + '" name="' + name + '" value="' + esc(val || '') + '" ' +
-          'autocomplete="off" data-watext="' + name + '">') +
-      '<div class="varrow">' +
-      '<button type="button" class="minibtn" data-act="waVarPick" data-id="' + name + '">+ Add a variable</button>' +
-      (VARFOR === name ? picker(name) : '') +
-      '</div>' +
-      (hint ? '<span class="hint">' + esc(hint) + '</span>' : '') +
-      '</div>';
-  }
-
-  /* Click, search, insert. There is deliberately no way to type a variable:
-     a hand-typed {{clinet_name}} is a message that goes out with a hole in it
-     and you find out about it from the client. */
+  /* Click, search, insert. There is deliberately no way to type a variable: the
+     picker puts in the NEXT {{n}}, Meta's format, and remembers which field
+     fills it, so Start a chat can fill it from the record. */
   function picker(name) {
     var q = VARQ.toLowerCase().trim();
     var hits = ZS.WA_VARS.filter(function (v) {
@@ -187,57 +360,44 @@
     var h = '<div class="varpick"><div class="varhead">' +
       '<input id="varq" placeholder="Search variables…" value="' + esc(VARQ) + '" autocomplete="off">' +
       '<button type="button" class="xbtn" data-act="waVarClose" aria-label="Close">&times;</button></div>';
-
-    if (!hits.length) {
-      h += '<p class="m pad">Nothing matches. Every variable this cockpit can fill is on this ' +
-        'list; if what you want is not here, it is not a field we hold.</p></div>';
-      return h;
-    }
-    h += '<div class="varlist">' + ZS.waVarGroups().map(function (g) {
-      var mine = hits.filter(function (v) { return v.group === g; });
-      if (!mine.length) return '';
-      return '<p class="eyebrow">' + esc(g) + '</p>' + mine.map(function (v) {
-        return '<button type="button" class="varopt" data-act="waVarAdd" data-id="' +
-          esc(name + '|' + v.key) + '">' +
-          '<b>' + esc(v.label) + '</b><code>{{' + esc(v.key) + '}}</code>' +
-          (v.care ? '<i>' + esc(v.care) + '</i>' : '') + '</button>';
-      }).join('');
-    }).join('') + '</div></div>';
+    h += '<div class="varlist">' +
+      '<button type="button" class="varopt" data-act="waVarAdd" data-id="' + esc(name + '|') + '"><b>Typed each time</b></button>' +
+      ZS.waVarGroups().map(function (g) {
+        var mine = hits.filter(function (v) { return v.group === g; });
+        if (!mine.length) return '';
+        return '<p class="eyebrow">' + esc(g) + '</p>' + mine.map(function (v) {
+          return '<button type="button" class="varopt" data-act="waVarAdd" data-id="' + esc(name + '|' + v.key) + '">' +
+            '<b>' + esc(v.label) + '</b>' + (v.care ? '<i>' + esc(v.care) + '</i>' : '') + '</button>';
+        }).join('');
+      }).join('') + '</div></div>';
     return h;
   }
 
-  /* Filled against a real engagement, so a variable that resolves to nothing is
-     visible here rather than in a client's chat. */
-  function preview(t) {
-    var opp = (D().opportunities || []).filter(function (o) { return ZS.isOpen(o) || o.proc; })[0] ||
-              (D().opportunities || [])[0];
-    if (!opp) return '<p class="m">No engagement to preview against yet.</p>';
-    var c = G.clientById(opp.client);
-    var inv = (D().invoices || []).filter(function (i) { return i.opp === opp.id; })[0] || null;
-    var ctx = { client: c, contact: ZS.primaryContact(c), opp: opp, invoice: inv,
-                owed: ZS.owedOn(D().invoices, opp.id), me: G.me() };
-    var parts = ['header', 'body', 'footer'].map(function (k) { return ZS.waFill(t[k] || '', ctx); });
-    var missing = [];
-    parts.forEach(function (p) { p.missing.forEach(function (m) { if (missing.indexOf(m) < 0) missing.push(m); }); });
-
-    var h = '<div class="wapreview">' +
-      (parts[0].text ? '<b>' + esc(parts[0].text) + '</b>' : '') +
-      '<p>' + esc(parts[1].text || 'The message goes here.').replace(/\n/g, '<br>') + '</p>' +
-      (parts[2].text ? '<i>' + esc(parts[2].text) + '</i>' : '') +
-      '</div>' +
-      '<p class="hint" style="margin-top:8px">Filled against <b>' + esc(c ? c.name : '—') + '</b> · ' +
-      esc(opp.ref || opp.id) + '</p>';
-
-    if (missing.length) {
-      h += '<p class="err" style="margin-top:6px">' +
-        missing.map(function (k) { return '{{' + esc(k) + '}}'; }).join(', ') +
-        ' resolved to nothing on this engagement. It would send as a blank.</p>';
-    }
-    return h;
+  /* typing updates the record and the preview without re-drawing the form, so
+     the cursor never jumps */
+  function livePreview() {
+    var p = document.getElementById('wa-prev');
+    if (p && EDIT) p.innerHTML = G.waPhone(EDIT, EDIT.samples.body, EDIT.samples.header);
+    var why = EDIT ? missingWhy(EDIT) : '';
+    var w = document.getElementById('wa-why'), s = document.getElementById('wa-submit');
+    if (w) { w.textContent = why; w.hidden = !why; }
+    if (s) s.disabled = !!why || TPL_BUSY;
+    ['body', 'head'].forEach(function (k) {
+      var c = document.getElementById('wa-' + k + 'n');
+      if (c && EDIT) c.textContent = String(EDIT[k === 'body' ? 'body' : 'header_text'] || '').length;
+    });
   }
 
-  function byId(w, id) {
-    return (w.templates || []).filter(function (t) { return t.id === id; })[0] || null;
+  function fromServer(t) {
+    return { name: t.name, language: t.language || 'en', category: t.category === 'UTILITY' ? 'UTILITY' : 'MARKETING',
+      header_type: t.header_type === 'TEXT' || t.header_type === 'IMAGE' ? t.header_type : 'NONE',
+      header_text: t.header_text || '', body: t.body || '', footer: t.footer || '',
+      buttons: (t.buttons || []).map(function (b) { return { type: b.type, text: b.text, url: b.url, phone_number: b.phone_number }; }),
+      samples: { body: (t.samples && t.samples.body) || [], header: (t.samples && t.samples.header) || [] },
+      fills: t.fills || [], image: '', fixing: String(t.status).toUpperCase() === 'REJECTED' };
+  }
+  function tplByName(name) {
+    return ((TPL && TPL.templates) || []).filter(function (t) { return t.name === name; })[0] || null;
   }
 
   /* ---------------- the sending limit ---------------- */
@@ -380,58 +540,100 @@
 
   Object.assign(A, {
     waTab: function (t) { TAB = t; VARFOR = null; G.render(); },
-    waNew: function () { EDIT = ZS.newTemplate({}); VARFOR = null; G.render(); },
+    waNew: function () { EDIT = blankTemplate(); VARFOR = null; G.render(); },
     waCancel: function () { EDIT = null; VARFOR = null; VARQ = ''; G.render(); },
-    waEdit: function (id) {
-      var t = byId(wa(), id);
-      if (!t) return;
-      EDIT = JSON.parse(JSON.stringify(t));
-      VARFOR = null;
-      G.render();
+    waTplSt: function (k) { TST = k; G.render(); },
+    waCheckMeta: function () {
+      if (!window.API || !API.signedIn()) return G.toast('Sign in to the server first.', true);
+      TPL_BUSY = true; G.render();
+      API.waCheck().then(function (out) {
+        TPL_BUSY = false;
+        TPL = Object.assign({}, TPL || {}, out || {});
+        var list = (out && out.templates) || [];
+        var ap = list.filter(function (t) { return t.status === 'APPROVED'; }).length;
+        var pe = list.filter(function (t) { return t.status === 'PENDING'; }).length;
+        G.toast('Checked. ' + ap + ' approved, ' + pe + ' pending.');
+        loadTemplates(true);
+      }).catch(function (e) {
+        TPL_BUSY = false; G.toast((e && e.message) || 'Meta did not answer.', true); G.render();
+      });
     },
-    waDrop: function (id) {
-      var w = wa(), t = byId(w, id);
+    waOpenTpl: function (name) {
+      var t = tplByName(name);
       if (!t) return;
-      if (!confirm('Remove the template "' + t.name + '"? This cannot be undone.')) return;
-      w.templates = w.templates.filter(function (x) { return x.id !== id; });
-      G.log('wa_template', t.name + ' removed');
-      G.save(); G.toast('Removed.'); G.render();
+      var s = String(t.status).toUpperCase();
+      if ((s === 'REJECTED' || s === 'DRAFT' || s === 'DELETED') && TPL.mayEdit) {
+        EDIT = fromServer(t);
+        if (s === 'DELETED') { EDIT.name = ''; EDIT.fixing = false; }
+        VARFOR = null; G.render(); return;
+      }
+      G.modal(t.name, (CAT[t.category] || '') + ' · ' + langName(t.language),
+        '<div class="twocol" style="margin:0"><div>' + stLabel(t) +
+        '<p class="m" style="margin-top:10px">' + (s === 'APPROVED'
+          ? 'Approved by Meta. It can start a chat with anybody, at any time.'
+          : 'Not approved yet, so it cannot start a chat.') + '</p>' +
+        (s === 'APPROVED' ? '<button class="btn" data-act="startChat" data-id="tpl|' + esc(t.name) + '|' + esc(t.language) + '">Start a chat with it</button>' : '') +
+        '</div><div class="waside">' + G.waPhone(t, (t.samples || {}).body, (t.samples || {}).header, { short: true }) + '</div></div>');
     },
-    waVarPick: function (name) { keepEdits(); VARFOR = (VARFOR === name ? null : name); VARQ = ''; G.render(); },
-    waVarClose: function () { keepEdits(); VARFOR = null; VARQ = ''; G.render(); },
+    waDropTpl: function (name) {
+      if (!confirm('Delete the template "' + name + '" on Meta? Meta will not let the name be used again for 30 days. ' +
+                   'Its wording stays in the bin for 30 days.')) return;
+      API.waDropTemplate(name).then(function () {
+        G.toast('Deleted on Meta. The wording is in the bin.');
+        loadTemplates(true);
+      }).catch(function (e) { G.toast((e && e.message) || 'Meta did not delete it.', true); });
+    },
+    waBtnAdd: function () { if (EDIT && EDIT.buttons.length < 3) EDIT.buttons.push({ type: 'QUICK_REPLY', text: '' }); G.render(); },
+    waBtnDrop: function (i) { if (EDIT) EDIT.buttons.splice(Number(i), 1); G.render(); },
+    waImgDrop: function () { if (EDIT) EDIT.image = ''; G.render(); },
+    waVarPick: function () { VARFOR = VARFOR ? null : 'body'; VARQ = ''; G.render(); },
+    waVarClose: function () { VARFOR = null; VARQ = ''; G.render(); },
     waVarAdd: function (arg) {
-      var p = String(arg).split('|'), name = p[0], key = p[1];
-      keepEdits();
+      var key = String(arg).split('|')[1] || '';
       if (!EDIT) return;
-      EDIT[name] = String(EDIT[name] || '').replace(/\s+$/, '');
-      EDIT[name] += (EDIT[name] ? ' ' : '') + '{{' + key + '}}';
+      var n = nVars(EDIT.body) + 1;
+      EDIT.body = String(EDIT.body || '').replace(/\s+$/, '');
+      EDIT.body += (EDIT.body ? ' ' : '') + '{{' + n + '}}';
+      EDIT.fills[n - 1] = key;
       VARFOR = null; VARQ = '';
-      G.save(); G.render();
+      G.render();
     }
   });
 
-  /* Whatever is typed into the editor survives a re-render, because opening the
-     variable picker re-renders and losing half a message to that would be
-     infuriating. */
-  function keepEdits() {
+  /* every field of the form writes straight into EDIT as it is typed */
+  document.addEventListener('input', function (e) {
+    var el = e.target, d = el && el.dataset;
+    if (!d) return;
+    if (el.id === 'varq') { VARQ = el.value; G.render(); return; }
+    if (el.id === 'wa-fq') { TQ = String(el.value || ''); G.render(); return; }
     if (!EDIT) return;
-    ['name', 'category', 'language', 'header', 'body', 'footer'].forEach(function (k) {
-      var el = document.getElementById('wa-' + (k === 'category' ? 'cat' : k === 'language' ? 'lang' : k));
-      if (el) EDIT[k] = el.value;
-    });
-  }
-  G.waKeepEdits = keepEdits;
-
-  var prevInput = A.onInput;
-  A.onInput = function (e) {
-    if (prevInput) prevInput(e);
-    if (e.target.id === 'varq') { VARQ = e.target.value; G.render(); return; }
-    /* live preview as the message is written */
-    if (e.target.dataset && e.target.dataset.watext && EDIT) {
-      EDIT[e.target.dataset.watext] = e.target.value;
+    if (d.wa) { EDIT[d.wa] = el.value; livePreview(); }
+    else if (d.wasample) {
+      var p = d.wasample.split('|');
+      EDIT.samples[p[0]][Number(p[1])] = el.value; livePreview();
+    } else if (d.wabtn) {
+      var q = d.wabtn.split('|');
+      EDIT.buttons[Number(q[0])][q[1]] = el.value; livePreview();
     }
-  };
-  document.addEventListener('input', function (e) { A.onInput(e); });
+  });
+  document.addEventListener('change', function (e) {
+    var el = e.target, d = el && el.dataset;
+    if (!d) return;
+    if (el.id === 'wa-fcat') { TCAT = el.value; G.render(); return; }
+    if (el.id === 'wa-flang') { TLANG = el.value; G.render(); return; }
+    if (!EDIT) return;
+    if (d.wamode) { EDIT[d.wamode] = el.value; G.render(); return; }
+    if (d.wa === 'language') { EDIT.language = el.value; return; }
+    if (d.wafill) { EDIT.fills[Number(d.wafill)] = el.value; return; }
+    if (d.wabtn) { var q = d.wabtn.split('|'); EDIT.buttons[Number(q[0])][q[1]] = el.value; G.render(); return; }
+    if (el.id === 'wa-img' && el.files && el.files[0]) {
+      var f = el.files[0];
+      if (f.size > 5 * 1024 * 1024) return G.toast('The image is over 5 MB.', true);
+      var rd = new FileReader();
+      rd.onload = function () { EDIT.image = String(rd.result || ''); G.render(); };
+      rd.readAsDataURL(f);
+    }
+  });
 
   var prevSubmit = A.onSubmit;
   A.onSubmit = function (e) {
@@ -451,28 +653,30 @@
 
     if (e.target.id === 'waform') {
       e.preventDefault();
-      keepEdits();
-      var w2 = wa();
-      var how = (e.submitter && e.submitter.value) || 'save';
-      var bad = ZS.validateTemplate(EDIT);
-      if (how === 'submit' && bad) { G.toast(bad, true); return; }
-      if (!ZS.validTemplateName(EDIT.name)) { G.toast('Give it a name first.', true); return; }
-
-      if (how === 'submit') {
-        EDIT.state = 'IN_REVIEW';
-        EDIT.submitted = ZS.today();
-      }
-      var existing = byId(w2, EDIT.id);
-      if (existing) w2.templates = w2.templates.map(function (t) { return t.id === EDIT.id ? EDIT : t; });
-      else w2.templates.push(EDIT);
-
-      G.log('wa_template', EDIT.name + (how === 'submit' ? ' submitted to Meta' : ' saved as a draft'));
-      G.save();
-      G.toast(how === 'submit'
-        ? 'Submitted. Meta usually answers within the hour.'
-        : 'Saved as a draft.');
-      EDIT = null; VARFOR = null; VARQ = '';
-      G.render();
+      if (!EDIT || TPL_BUSY) return;
+      if (!window.API || !API.signedIn()) return G.toast('Sign in to the server first.', true);
+      var how = (e.submitter && e.submitter.value) || 'draft';
+      var why = missingWhy(EDIT);
+      if (how === 'submit' && why) return G.toast(why, true);
+      var n = nVars(EDIT.body);
+      var out = Object.assign({}, EDIT, { how: how,
+        samples: { body: EDIT.samples.body.slice(0, n), header: EDIT.samples.header.slice(0, 1) },
+        fills: EDIT.fills.slice(0, n),
+        buttons: EDIT.buttons.filter(function (b) { return String(b.text || '').trim(); }) });
+      delete out.fixing;
+      TPL_BUSY = true; G.render();
+      API.waSaveTemplate(out).then(function () {
+        TPL_BUSY = false;
+        G.toast(how === 'draft' ? 'Saved as a draft. Nothing went to Meta.'
+                                : 'Sent to Meta. It shows Pending until Meta answers, usually within the hour.');
+        EDIT = null; VARFOR = null; VARQ = '';
+        loadTemplates(true);
+        G.render();
+      }).catch(function (err) {
+        TPL_BUSY = false;
+        G.toast((err && err.message) || 'Meta did not take it. Nothing was submitted.', true);
+        G.render();
+      });
       return;
     }
   };

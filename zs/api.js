@@ -578,6 +578,15 @@
   async function metaRefresh() { return call('POST', '/api/meta/refresh'); }
   async function metaStatus() { return call('GET', '/api/meta/status'); }
 
+  /* WhatsApp templates as Meta holds them, and starting a chat with one */
+  async function waTemplates(from, to) {
+    return call('GET', '/api/wa/templates?from=' + encodeURIComponent(from || '') + '&to=' + encodeURIComponent(to || ''));
+  }
+  async function waCheck() { return call('POST', '/api/wa/templates/check'); }
+  async function waSaveTemplate(t) { return call('POST', '/api/wa/templates', { body: t }); }
+  async function waDropTemplate(name) { return call('DELETE', '/api/wa/templates/' + encodeURIComponent(name)); }
+  async function waStart(b) { return call('POST', '/api/wa/start', { body: b }); }
+
   /* the chatbot: a menu, saved whole — bot and steps in one write, because a bot
      saved without its steps greets somebody and then says nothing */
   async function bots() { return call('GET', '/api/bots'); }
@@ -662,6 +671,8 @@
     thread: thread, assignThread: assignThread,
     sendOnThread: sendOnThread, templates: templates,
     metaCampaigns: metaCampaigns, metaRefresh: metaRefresh, metaStatus: metaStatus,
+    waTemplates: waTemplates, waCheck: waCheck, waSaveTemplate: waSaveTemplate,
+    waDropTemplate: waDropTemplate, waStart: waStart,
     bots: bots, saveBot: saveBot,
     findProspects: findProspects, saveProspect: saveProspect,
     sendOutreach: sendOutreach, readReplies: readReplies,
