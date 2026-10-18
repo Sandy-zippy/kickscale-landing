@@ -556,7 +556,7 @@
      in background tabs to about once a minute anyway, so this asks for roughly
      what it will be given. */
 
-  var PULSE_MS = 20000;
+  var PULSE_MS = 10000;     /* visible tab: an arrival shows within ~10 s plus the pull (Bhargav was promised 20 s). Hidden stays HIDDEN_MS. */
   var HIDDEN_MS = 60000;     /* a backgrounded tab, and only when it can tell you */
   var pulseTimer = null;
   var lastPulse = null;
