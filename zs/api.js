@@ -156,7 +156,7 @@
     var data = await res.json().catch(function () { return null; });
     if (!res.ok) {
       var msg = (data && data.error) || ('The server returned ' + res.status + '.');
-      throw Object.assign(new Error(msg), { status: res.status, reference: data && data.reference });
+      throw Object.assign(new Error(msg), { status: res.status, reference: data && data.reference, data: data });
     }
     state.lastError = null;
     return data;
@@ -586,6 +586,19 @@
   async function waSaveTemplate(t) { return call('POST', '/api/wa/templates', { body: t }); }
   async function waDropTemplate(name) { return call('DELETE', '/api/wa/templates/' + encodeURIComponent(name)); }
   async function waStart(b) { return call('POST', '/api/wa/start', { body: b }); }
+  async function waRetry(id) { return call('POST', '/api/wa/retry/' + encodeURIComponent(id)); }
+
+  /* WhatsApp campaigns: the plan (who said STOP, the limit, the rate), making
+     one, its results, calling it off, the bin, and a test to my own number */
+  async function waCampaigns(from, to) {
+    return call('GET', '/api/wa/campaigns?from=' + encodeURIComponent(from || '') + '&to=' + encodeURIComponent(to || ''));
+  }
+  async function waPlan() { return call('GET', '/api/wa/campaigns/plan'); }
+  async function waCampaignNew(b) { return call('POST', '/api/wa/campaigns', { body: b }); }
+  async function waCampaign(id) { return call('GET', '/api/wa/campaigns/' + encodeURIComponent(id)); }
+  async function waCampaignCancel(id) { return call('POST', '/api/wa/campaigns/' + encodeURIComponent(id) + '/cancel'); }
+  async function waCampaignDrop(id) { return call('DELETE', '/api/wa/campaigns/' + encodeURIComponent(id)); }
+  async function waTestToMe(b) { return call('POST', '/api/wa/campaigns/test', { body: b }); }
 
   /* the chatbot: a menu, saved whole — bot and steps in one write, because a bot
      saved without its steps greets somebody and then says nothing */
@@ -672,7 +685,9 @@
     sendOnThread: sendOnThread, templates: templates,
     metaCampaigns: metaCampaigns, metaRefresh: metaRefresh, metaStatus: metaStatus,
     waTemplates: waTemplates, waCheck: waCheck, waSaveTemplate: waSaveTemplate,
-    waDropTemplate: waDropTemplate, waStart: waStart,
+    waDropTemplate: waDropTemplate, waStart: waStart, waRetry: waRetry,
+    waCampaigns: waCampaigns, waPlan: waPlan, waCampaignNew: waCampaignNew, waCampaign: waCampaign,
+    waCampaignCancel: waCampaignCancel, waCampaignDrop: waCampaignDrop, waTestToMe: waTestToMe,
     bots: bots, saveBot: saveBot,
     findProspects: findProspects, saveProspect: saveProspect,
     sendOutreach: sendOutreach, readReplies: readReplies,

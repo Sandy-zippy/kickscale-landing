@@ -29,10 +29,12 @@
   var CHAN = {
     whatsapp:  { label: 'WhatsApp',  tone: 'ok',   mark: 'W' },
     instagram: { label: 'Instagram', tone: 'em',   mark: 'IG' },
-    messenger: { label: 'Messenger', tone: 'info', mark: 'M' }
+    messenger: { label: 'Messenger', tone: 'info', mark: 'M' },
+    comments:  { label: 'Comments',  tone: 'warn', mark: 'C' }
   };
 
-  var FILTER = 'all';       /* all | whatsapp | instagram | messenger */
+  var FILTER = 'all';       /* all | whatsapp | instagram | messenger | comments */
+  var CAMP = null;          /* a WhatsApp campaign's id: its conversations only */
   var Q = '';               /* search: name, handle or the last line */
   var MINE = false;
   var OPEN = null;          /* the conversation being read */
@@ -43,6 +45,7 @@
   function threads() {
     var list = (D().threads || []).slice();
     if (FILTER !== 'all') list = list.filter(function (t) { return t.channel === FILTER; });
+    if (CAMP) list = list.filter(function (t) { return t.wa_campaign === CAMP; });
     if (MINE) list = list.filter(function (t) { return t.assigned_to === (G.me() || {}).id; });
     /* the shared Date filter, on when they last wrote or were written to */
     list = list.filter(function (t) { return G.inRange(String(t.last_at || '').slice(0, 10)); });
@@ -99,15 +102,25 @@
     h += G.rangeBar();
     h += '<div class="chips" style="margin-bottom:14px">' +
       [['all', 'All channels'], ['whatsapp', 'WhatsApp'], ['instagram', 'Instagram'],
-       ['messenger', 'Messenger']]
+       ['messenger', 'Messenger'], ['comments', 'Comments']]
         .map(function (c) {
+          /* the Comments chip says in its tooltip when Meta will not let us read them */
+          var tip = '';
+          if (c[0] === 'comments') {
+            var st = G.metaStatusNow ? G.metaStatusNow() : null;
+            var cc = ((st && st.cards) || []).filter(function (x) { return x.id === 'comments'; })[0];
+            tip = cc ? (cc.state === 'wait' ? (cc.line || '') + ' ' + (cc.step || '') : (cc.line || '')) : '';
+          }
           return '<button class="chip" data-act="inboxChannel" data-id="' + c[0] + '" ' +
+            (tip ? 'title="' + esc(tip.trim()) + '" ' : '') +
             'aria-pressed="' + (FILTER === c[0] ? 'true' : 'false') + '">' + esc(c[1]) +
             '<i>' + (counts[c[0]] || 0) + '</i></button>';
         }).join('') +
       '<button class="chip" data-act="inboxMine" aria-pressed="' + (MINE ? 'true' : 'false') +
       '">Mine<i>' + all.filter(function (t) {
         return t.assigned_to === (me || {}).id; }).length + '</i></button>' +
+      (CAMP ? '<button class="chip" data-act="inboxNoCamp" aria-pressed="true" title="Show every conversation again">' +
+        'One WhatsApp campaign &times;</button>' : '') +
       (unread ? '<span class="pill em" style="align-self:center">' +
         unread + ' unread</span>' : '') +
       '<input type="search" id="inboxq" placeholder="Search conversations" value="' + esc(Q) + '">' +
@@ -158,6 +171,7 @@
         (t.client_id ? '<span class="pill ok">a client</span>' : '') +
         (t.ref_ad ? '<span class="pill info" title="' + esc(t.ref_headline || '') + '">from an ad</span>' : '') +
         (t.opted_out_at ? '<span class="pill dim">said STOP</span>' : '') +
+        (t.wa_campaign ? '<span class="pill info">campaign</span>' : '') +
       '</div></button>';
   }
 
@@ -176,6 +190,8 @@
         /* the ad that started it, by name: campaign, ad set, ad */
         (t.ref_ad ? '<span>From an ad: ' + esc([t.ref_campaign, t.ref_adset, t.ref_adname].filter(Boolean).join(' \u00b7 ') ||
           t.ref_headline || 'an ad not yet in the last pull') + '</span>' : '') +
+        (t.wa_campaign ? '<span>Last written to by a <a href="#/campaigns/wa/' + esc(t.wa_campaign) +
+          '">WhatsApp campaign</a></span>' : '') +
         '</div>' +
         (t.client_id
           ? '<button class="minibtn" data-act="openClient" data-id="' + esc(t.client_id) +
@@ -200,7 +216,14 @@
        Outside the 24 hours WhatsApp rejects a plain message rather than
        delivering it late, and discovering that from Meta's error means four
        lines have already been written and believed sent. */
-    if (t.channel !== 'whatsapp' && !left) {
+    if (t.channel === 'comments') {
+      /* answering a comment from here is not built: said, with the way there */
+      h += '<div class="convsend shut"><p class="closed">Answer comments on Facebook.' +
+        '<span>A comment on a post or an ad lands here so nothing is missed. Replying to it from the ' +
+        'cockpit is not built yet.</span></p>' +
+        '<a class="btn alt" target="_blank" rel="noopener" href="https://www.facebook.com/925570163977473">' +
+        'Open the Page on Facebook</a></div>';
+    } else if (t.channel !== 'whatsapp' && !left) {
       /* Instagram and Messenger: no templates, so nothing can go until they
          write. Send stays on screen and disabled, never hidden. */
       var who = String(t.name || '').trim();
@@ -267,7 +290,9 @@
         (tpl ? ' &middot; template ' + esc(tpl) : '') +
         (out && STATE[st] ? ' &middot; <span class="st' + (st === 'read' ? ' read' : '') + '">' + STATE[st] + '</span>' : '') +
       '</div>' +
-      (failed ? '<div class="failline"><b>Not delivered.</b> ' + esc(failWords(m.fail)) + '</div>' : '') +
+      (failed ? '<div class="failline"><b>Not delivered.</b> ' + esc(failWords(m.fail)) +
+        (m.params ? ' <button class="minibtn" data-act="waRetry" data-id="' + esc(m.id) + '">Try again</button>' : '') +
+        '</div>' : '') +
       '</div>';
   }
 
@@ -275,6 +300,16 @@
 
   Object.assign(A, {
     inboxChannel: function (which) { FILTER = which; G.render(); },
+    inboxNoCamp: function () { CAMP = null; G.render(); },
+    /* Try again on a failed template: the same words, on the same bubble */
+    waRetry: function (id) {
+      if (!window.API || !API.signedIn()) return G.toast('Sign in to the server first.', true);
+      G.toast('Trying again\u2026');
+      API.waRetry(id).then(function (r) {
+        G.toast('Sent again.');
+        return API.thread(r.thread || OPEN).then(function (x) { LOADED[r.thread || OPEN] = (x && x.messages) || []; G.render(); });
+      }).catch(function (e) { G.toast((e && e.message) || 'It did not go again.', true); });
+    },
     inboxMine: function () { MINE = !MINE; G.render(); },
 
     openThread: function (id) {
@@ -412,7 +447,7 @@
     for (var i = 0; i < nOf(t.body); i++) {
       /* a template made in Meta remembers nothing: {{1}} is nearly always the
          first name, so that one is offered and the rest are typed */
-      var key = (t.fills || [])[i] || (i === 0 && !(t.fills || []).length ? 'contact_first_name' : '');
+      var key = (t.fills || [])[i] || ZS.waGuess(t, i);
       var v = '';
       if (key && ctx) {
         var r = ZS.waFill('{{' + key + '}}', ctx);
@@ -574,6 +609,17 @@
             A.openThread(r.thread);
           });
         }).catch(function (e) {
+          var th = e && e.data && e.data.thread;
+          if (th) {
+            /* it is on the conversation as Failed, with Try again */
+            SC = null;
+            var dm2 = document.getElementById('modal'); if (dm2 && dm2.open) dm2.close();
+            G.toast('Not delivered: ' + ((e && e.message) || 'WhatsApp did not take it.'), true);
+            return (G.pullNow ? Promise.resolve(G.pullNow()) : Promise.resolve()).then(function () {
+              if (location.hash.indexOf('#/inbox') !== 0) G.go('#/inbox');
+              A.openThread(th);
+            });
+          }
           if (SC) { SC.busy = false; scDraw(); }
           /* in words, never a red dot: "not sent" with no reason is how somebody
              walks away believing they reached a client */
@@ -639,6 +685,8 @@
   });
 
   G.inboxBubble = bubble;
+  /* Inbox showing one WhatsApp campaign's conversations (from its results) */
+  G.inboxCampaign = function (id) { CAMP = id || null; FILTER = 'all'; G.go('#/inbox'); };
   /* what the overview and Jarvis can both ask for */
   G.inboxThreads = threads;
 })();

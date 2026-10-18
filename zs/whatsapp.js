@@ -417,7 +417,7 @@
 
     h += '<p class="m">Meta caps how many <b>different people</b> you can start a conversation ' +
       'with in a moving 24 hours. The cap climbs on its own, but only while quality holds ' +
-      '<i>and</i> you are actually using at least half of what you already have — so sitting ' +
+      '<i>and</i> you are actually using at least half of what you already have. So sitting ' +
       'well under the limit is itself what keeps you off the next tier.</p>';
 
     /* where we stand */
@@ -439,8 +439,8 @@
         '<div class="capbar"><div class="capfill' + (pct >= 90 ? ' full' : pct >= 50 ? ' half' : '') +
         '" style="width:' + pct + '%"></div></div>' +
         '<p class="hint">' + used + ' of ' + ZS.fmt(cap) + ' unique numbers today · ' + pct + '%' +
-        (pct < 50 ? ' — under half, so the limit will not climb from here.'
-                  : pct >= 90 ? ' — nearly out. Sends will start being refused.' : '') + '</p>';
+        (pct < 50 ? '. Under half, so the limit will not climb from here.'
+                  : pct >= 90 ? '. Nearly out, so sends will start being refused.' : '') + '</p>';
     } else {
       h += '<p class="hint" style="margin-top:14px">No cap at this tier.</p>';
     }
@@ -452,7 +452,7 @@
       li('Verify the business', 'The fastest route off 250. Business verification in Meta Business Manager.') +
       li('Or send 2,000', 'Delivered to unique numbers in a 30-day window, on high-quality templates.') +
       li('Above 2,000', 'Automatic within about six hours, when quality holds and you have used half your limit in 7 days.') +
-      li('Quality rating', health.label + ' — ' + health.note) +
+      li('Quality rating', health.label + '. ' + health.note) +
       '</ul></div>';
 
     /* the honest bit */

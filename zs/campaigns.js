@@ -36,6 +36,16 @@
   var GOAL = { OUTCOME_LEADS: 'lead form', OUTCOME_ENGAGEMENT: 'messages', OUTCOME_TRAFFIC: 'traffic',
                OUTCOME_SALES: 'sales', OUTCOME_AWARENESS: 'awareness', OUTCOME_APP_PROMOTION: 'app' };
 
+  /* Campaigns is everything outbound: Meta ads, and WhatsApp messages sent to
+     many people at once */
+  function TABS(on) {
+    return '<div class="tabs">' + [['meta', 'Meta ads', '#/campaigns'], ['wa', 'WhatsApp campaigns', '#/campaigns/wa']]
+      .map(function (t) {
+        return '<a class="tab' + (t[0] === on ? ' on' : '') + '" href="' + t[2] + '"' +
+          (t[0] === on ? ' aria-current="page"' : '') + '>' + t[1] + '</a>';
+      }).join('') + '</div>';
+  }
+
   function pill(st) {
     var p = STATUS[st] || [st ? String(st).toLowerCase().replace(/_/g, ' ') : 'unknown', 'dim'];
     return '<span class="pill ' + p[1] + '">' + esc(p[0]) + '</span>';
@@ -120,6 +130,7 @@
 
   V.campaigns = function (arg) {
     var a = G.acc();
+    if (String(arg || '').indexOf('wa') === 0) return TABS('wa') + G.waCampaignsView(String(arg).slice(3));
     if (!a.reports) return G.deny('Not in your view', 'Campaign spend is switched off for your role.');
     load();
     var r = G.range();
@@ -134,7 +145,7 @@
     });
     var lastOk = META && META.lastOk;
 
-    var h = '<div class="ph"><div><h1>Campaigns</h1><p>Every Meta campaign, pulled in. ' +
+    var h = TABS('meta') + '<div class="ph"><div><h1>Campaigns</h1><p>Every Meta campaign, pulled in. ' +
       (lastOk ? 'Last pulled from Meta <b>' + esc(said(lastOk)) + '</b>, next at ' + nextPull() + '.'
               : 'Nothing pulled from Meta yet.') + '</p></div>' +
       '<div class="right">' +
@@ -356,4 +367,705 @@
 
   /* for the tests: put an answer in place as if the server had sent it */
   G.setMetaForTest = function (m) { META = m; KEY = G.range().from + '|' + G.range().to; };
+})();
+
+/* WhatsApp campaigns (Meta part 3B): one approved template to many people.
+
+   WHO is picked here, in the browser, which holds the book: by filter over the
+   clients and enquiries, or from an Excel sheet. Each person goes up with the
+   words that fill the template for them. The SERVER is the judge of what goes:
+   approved templates only, STOP always skipped (checked again a moment before
+   each message), one per number, and never past the number's daily limit. The
+   numbers on the "Check and send" card come from the same rules, so what the
+   card says is what the server does. */
+(function () {
+  'use strict';
+  var G = window.GE, A = G.ACTIONS;
+  var esc = function (s) { return ZS.esc(s); };
+  function D() { return G.D(); }
+  var n = function (x) { return Number(x || 0).toLocaleString('en-IN'); };
+
+  var LIST = null, LIST_KEY = null;     /* the list for the Date filter in LIST_KEY */
+  var PLAN = null, PLAN_AT = 0;         /* who said STOP, the limit, used today, the rate */
+  var ONE = {};                          /* id -> results */
+  var CHIP = 'all', Q = '';
+  var WB = null;                         /* the builder, while one is open */
+  var CATW = { MARKETING: 'Marketing', UTILITY: 'Utility', AUTHENTICATION: 'Authentication' };
+
+  function api() { return window.API && API.signedIn(); }
+  function plan(force) {
+    if (!api()) return PLAN;
+    if (!force && PLAN && Date.now() - PLAN_AT < 60000) return PLAN;
+    PLAN_AT = Date.now();
+    API.waPlan().then(function (p) { PLAN = p; redraw(); }).catch(function () {});
+    return PLAN;
+  }
+  function redraw() { if (location.hash.indexOf('#/campaigns/wa') === 0) G.render(); }
+  function loadList(force) {
+    var r = G.range(), key = r.from + '|' + r.to;
+    if (!api() || (!force && key === LIST_KEY)) return;
+    LIST_KEY = key;
+    API.waCampaigns(r.from, r.to).then(function (o) { LIST = (o && o.campaigns) || []; redraw(); })
+      .catch(function () { LIST = LIST || []; redraw(); });
+  }
+  function loadOne(id) {
+    if (!api()) return;
+    API.waCampaign(id).then(function (o) { ONE[id] = o; redraw(); }).catch(function (e) {
+      ONE[id] = { error: (e && e.message) || 'It could not be read.' }; redraw();
+    });
+  }
+  function approved() {
+    var t = G.waTemplatesNow ? G.waTemplatesNow() : null;
+    return ((t && t.templates) || []).filter(function (x) { return x.status === 'APPROVED'; });
+  }
+  function nOf(text) {
+    var m = 0;
+    String(text || '').replace(/\{\{\s*(\d+)\s*\}\}/g, function (w, k) { m = Math.max(m, Number(k)); return w; });
+    return m;
+  }
+  function when(iso) { return G.whenSaid ? G.whenSaid(iso) : String(iso || '').slice(0, 16); }
+  function dayWord(d) { return d.getDate() + ' ' + d.toLocaleString('en-GB', { month: 'short' }); }
+
+  /* ---------------- who: one person per number ---------------- */
+
+  /* digits as WhatsApp wants them: country code first, no plus, no leading 0 */
+  function toNum(dial, digits) {
+    var d = String(dial || '').replace(/\D/g, '');
+    var x = String(digits || '').replace(/\D/g, '').replace(/^0+/, '');
+    if (!d || !x) return '';
+    if (x.length > 10 && x.indexOf(d) === 0) x = x.slice(d.length);
+    return ZS.validPhone(dial, x) ? d + x : '';
+  }
+  function personOf(c, o) {
+    var ct = o ? ZS.oppContact(o, c) : ZS.primaryContact(c);
+    var dial = (ct && ct.dial) || (c && c.dial) || ZS.DEFAULT_DIAL;
+    var digits = (ct && ct.mobile) || (c && c.mobile) || '';
+    return { name: (ct && ct.name) || (c && c.name) || '', company: c ? c.name : '', client_id: c ? c.id : null,
+             to: toNum(dial, digits), raw: digits,
+             ctx: { client: c, contact: ct, opp: o || null, me: G.me(),
+                    invoice: o ? (D().invoices || []).filter(function (i) { return i.opp === o.id; })[0] || null : null,
+                    owed: o && ZS.owedOn ? ZS.owedOn(D().invoices, o.id) : 0 } };
+  }
+
+  var FIELDS = {
+    who: { label: 'Who', opts: function () { return [['clients', 'Clients'], ['enquiries', 'Enquiries']]; } },
+    stage: { label: 'Stage', opts: function () { return ZS.STAGES.map(function (x) { return [x, x]; }); } },
+    source: { label: 'Source', opts: function () { return Object.keys(ZS.SOURCES).map(function (k) { return [k, String(ZS.SOURCES[k]).split(' \u2014 ')[0]]; }); } },
+    sector: { label: 'Sector', opts: function () {
+      var seen = {};
+      (D().clients || []).forEach(function (c) { if (c.sector) seen[c.sector] = 1; });
+      return Object.keys(seen).sort().map(function (x) { return [x, x]; });
+    } }
+  };
+  function condOf(f) { return (WB.conds.filter(function (c) { return c.f === f; })[0] || {}).v || ''; }
+
+  /* the people the filter picks, before anybody is left out */
+  function byFilter() {
+    var who = condOf('who') || 'enquiries', stage = condOf('stage'), src = condOf('source'), sec = condOf('sector');
+    var out = [];
+    if (who === 'clients') {
+      (D().clients || []).forEach(function (c) {
+        if (sec && c.sector !== sec) return;
+        var cd = String(c.created || c.since || '').slice(0, 10);
+        if (cd && !G.inRange(cd)) return;
+        var opps = (D().opportunities || []).filter(function (o) { return o.client === c.id; });
+        if (stage && !opps.some(function (o) { return o.stage === stage; })) return;
+        if (src && c.source !== src && !opps.some(function (o) { return o.source === src; })) return;
+        out.push(personOf(c, opps.filter(ZS.isOpen)[0] || opps[0] || null));
+      });
+    } else {
+      (D().opportunities || []).forEach(function (o) {
+        var c = G.clientById(o.client);
+        if (stage ? o.stage !== stage : !ZS.isOpen(o)) return;
+        if (src && o.source !== src) return;
+        if (sec && (!c || c.sector !== sec)) return;
+        if (!G.inRange(String(o.created || '').slice(0, 10))) return;
+        out.push(personOf(c, o));
+      });
+    }
+    return out;
+  }
+
+  /* the words for each {{n}}: the field picked, else the fallback typed */
+  function varsFor(p, t) {
+    var out = [];
+    for (var i = 0; i < nOf(t.body); i++) {
+      var f = WB.fills[i] || { field: '', fallback: '' }, v = '';
+      if (f.field && p.ctx) {
+        var r = ZS.waFill('{{' + f.field + '}}', p.ctx);
+        v = r.missing.length ? '' : r.text;
+      }
+      out.push(String(v || f.fallback || '').trim());
+    }
+    return out;
+  }
+
+  /* the card's ledger, by the server's own rules */
+  function tally() {
+    var t = tplOf(), people = WB.mode === 'excel' ? (WB.rows || []).filter(function (r) { return !r.bad; }) : byFilter();
+    var stop = {}; ((PLAN && PLAN.stop) || []).forEach(function (x) { stop[x] = 1; });
+    var seen = {}, k = { match: people.length, stop: 0, nonumber: 0, dup: 0, blank: 0, will: 0, list: [] };
+    people.forEach(function (p) {
+      var why = '';
+      if (!p.to) why = 'nonumber';
+      else if (stop[p.to.slice(-9)]) why = 'stop';
+      else if (seen[p.to.slice(-9)]) why = 'dup';
+      else if (t && varsFor(p, t).some(function (v) { return !v; })) why = 'blank';
+      if (p.to) seen[p.to.slice(-9)] = 1;
+      if (why) k[why]++; else k.will++;
+      k.list.push({ p: p, why: why });
+    });
+    return k;
+  }
+
+  function tplOf() {
+    if (!WB || !WB.tpl) return null;
+    return approved().filter(function (x) { return x.name + '|' + x.language === WB.tpl; })[0] || null;
+  }
+
+  /* ---------------- the screens ---------------- */
+
+  G.waCampaignsView = function (rest) {
+    if (!G.acc().clients) return G.deny('Not in your view', 'WhatsApp campaigns are switched off for your role.');
+    if (!api()) {
+      return '<div class="card pad"><p class="m">Sign in to the server to send WhatsApp campaigns. They go out from ' +
+        'the server, a few at a time, so they keep going with this page closed.</p></div>';
+    }
+    if (rest === 'new' || rest.indexOf('new/') === 0) return builder(rest.slice(4));
+    if (rest) return results(rest);
+    return list();
+  };
+
+  var STATUS = { scheduled: ['Scheduled', 'info'], sending: ['Sending', 'warn'], sent: ['Sent', 'ok'],
+                 cancelled: ['Called off', 'dim'] };
+  function spill(st) { var p = STATUS[st] || [st, 'dim']; return '<span class="pill ' + p[1] + '">' + p[0] + '</span>'; }
+
+  function list() {
+    loadList();
+    var rows = (LIST || []).filter(function (c) {
+      if (CHIP !== 'all' && c.status !== CHIP) return false;
+      return !Q || (c.name + ' ' + c.template).toLowerCase().indexOf(Q) >= 0;
+    });
+    var cnt = function (st) { return (LIST || []).filter(function (c) { return st === 'all' || c.status === st; }).length; };
+    var h = '<div class="ph"><div><h1>WhatsApp campaigns</h1><p>Messages sent to many people at once, from ' +
+      '+91 99893 98484. STOP from anyone takes them off every campaign for good.</p></div>' +
+      (G.acc().settings ? '<div class="right"><a class="btn" href="#/campaigns/wa/new">+ New WhatsApp campaign</a></div>' : '') +
+      '</div>' + G.rangeBar();
+    h += '<div class="chips" style="margin-bottom:12px">' +
+      [['all', 'All'], ['scheduled', 'Scheduled'], ['sending', 'Sending'], ['sent', 'Sent'], ['cancelled', 'Called off']]
+        .map(function (c) {
+          return '<button class="chip" data-act="wcChip" data-id="' + c[0] + '" aria-pressed="' +
+            (CHIP === c[0] ? 'true' : 'false') + '">' + c[1] + '<i>' + cnt(c[0]) + '</i></button>';
+        }).join('') +
+      '<input type="search" id="wcq" placeholder="Search campaigns" value="' + esc(Q) + '"></div>';
+    if (LIST === null) return h + '<div class="card pad"><p class="m">Reading the campaigns…</p></div>';
+    if (!rows.length) {
+      return h + '<div class="card pad"><p class="m">' + (LIST.length ? 'Nothing on this filter.'
+        : 'No WhatsApp campaign in these dates. ' + (G.acc().settings ? '<a href="#/campaigns/wa/new">Make the first one</a>.' : '')) + '</p></div>';
+    }
+    var pct = function (a, b) { return b ? ' · ' + Math.round(100 * a / b) + '%' : ''; };
+    return h + '<section class="card" style="padding:0"><div class="scroller"><table class="tbl stick1"><thead><tr>' +
+      '<th>Campaign</th><th>Status</th><th>Sent on</th><th class="num">People</th><th class="num">Delivered</th>' +
+      '<th class="num">Read</th><th class="num">Replied</th><th class="num">Failed</th></tr></thead><tbody>' +
+      rows.map(function (c) {
+        return '<tr data-act="wcOpen" data-id="' + esc(c.id) + '" style="cursor:pointer"><td><b>' + esc(c.name) +
+          '</b><span class="sub">' + esc(c.template) + '</span></td><td>' + spill(c.status) + '</td>' +
+          '<td>' + esc(when(c.started_at || c.send_at)) + '</td><td class="num">' + n(c.people) + '</td>' +
+          '<td class="num">' + n(c.delivered) + pct(c.delivered, c.sent) + '</td><td class="num">' + n(c.seen) + pct(c.seen, c.sent) +
+          '</td><td class="num">' + n(c.replied) + '</td><td class="num">' + n(c.failed) + '</td></tr>';
+      }).join('') + '</tbody></table></div></section>';
+  }
+
+  /* ---------------- the builder ---------------- */
+
+  function fresh(copy) {
+    var d = new Date(Date.now() + 86400000);
+    WB = { mode: 'filter', conds: [{ f: 'who', v: 'enquiries' }], rows: null, bad: [], read: 0, tpl: '', fills: [],
+           how: 'now', date: ZS.today ? d.toISOString().slice(0, 10) : '', time: '10:30', name: '', busy: false, err: '' };
+    if (copy) {
+      WB.tpl = copy.template + '|' + copy.language;
+      WB.fills = (copy.fills || []).map(function (f) { return { field: f.field || '', fallback: f.fallback || '' }; });
+      WB.name = copy.name + ' (again)';
+      if (copy.audience && copy.audience.conds) WB.conds = copy.audience.conds.slice();
+    }
+  }
+  function guessFills() {
+    var t = tplOf();
+    if (!t) { WB.fills = []; return; }
+    var out = [];
+    for (var i = 0; i < nOf(t.body); i++) {
+      var had = WB.fills[i];
+      out.push(had && (had.field || had.fallback) ? had
+        : { field: (t.fills || [])[i] || ZS.waGuess(t, i), fallback: i === 0 ? 'there' : '' });
+    }
+    WB.fills = out;
+  }
+
+  function builder(copyId) {
+    if (!G.acc().settings) return G.deny('Not in your view', 'Sending campaigns is the owner’s.');
+    if (!WB) {
+      var src = copyId && ONE[copyId] && ONE[copyId].campaign;
+      fresh(src || null);
+      guessFills();
+    }
+    plan();
+    var tpls = approved(), t = tplOf(), k = tally();
+    var p = PLAN || {}, tier = p.tier || { cap: 250, assumed: true };
+    var room = tier.cap === null ? Infinity : Math.max(0, tier.cap - (p.used || 0));
+    var rate = (p.rate || {})[t ? t.category : 'MARKETING'] || 0;
+    var stepNow = !k.match ? 1 : !t ? 2 : 4;
+
+    var h = '<div class="ph" style="margin-bottom:14px"><div><a class="crumb" href="#/campaigns/wa">WhatsApp campaigns</a> ' +
+      '<span class="crumb-sep">/</span> <span class="crumb now asis">New campaign</span>' +
+      '<h1 style="margin-top:6px">New WhatsApp campaign</h1></div></div>';
+    h += '<div class="stagestrip" style="margin-bottom:16px">' +
+      [['wb1', 'Who gets it'], ['wb2', 'The message'], ['wb3', 'When'], ['wb4', 'Check and send']].map(function (s, i) {
+        var cls = i + 1 < stepNow ? ' done' : i + 1 === stepNow ? ' now' : '';
+        return '<button class="stagebtn' + cls + '" type="button" data-act="wcStep" data-id="' + s[0] + '"><i>' + (i + 1) + '</i>' + s[1] + '</button>';
+      }).join('') + '</div>';
+
+    h += '<div class="twocol"><div>';
+    /* 1 · who */
+    h += '<div class="fgroup" id="wb1"><h4>1 · Who gets it</h4><div class="fbody" style="grid-template-columns:1fr">' +
+      '<div class="modes">' + [['filter', 'Pick by filter'], ['excel', 'Upload an Excel']].map(function (m) {
+        return '<label class="modepick"><input type="radio" name="wb-mode" value="' + m[0] + '" data-wbmode="1"' +
+          (WB.mode === m[0] ? ' checked' : '') + '> ' + m[1] + '</label>'; }).join('') + '</div>';
+    if (WB.mode === 'filter') {
+      h += '<div>' + WB.conds.map(function (c, i) {
+        return '<div class="condrow"><select class="condv" aria-label="Field" data-wbcf="' + i + '">' +
+          Object.keys(FIELDS).map(function (f) {
+            return '<option value="' + f + '"' + (c.f === f ? ' selected' : '') + '>' + FIELDS[f].label + '</option>'; }).join('') +
+          '</select><span class="condv">is</span><select class="condv" aria-label="Value" data-wbcv="' + i + '">' +
+          (c.f === 'who' ? '' : '<option value="">Any</option>') +
+          FIELDS[c.f].opts().map(function (o) {
+            return '<option value="' + esc(o[0]) + '"' + (c.v === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') +
+          '</select>' + (i ? '<button class="xbtn" type="button" data-act="wcDropCond" data-id="' + i + '" aria-label="Remove">&times;</button>' : '<span></span>') + '</div>';
+      }).join('') +
+        (WB.conds.length < 4 ? '<button class="minibtn" type="button" data-act="wcAddCond">+ Add a filter</button>' : '') +
+        '<div style="margin-top:10px">' + G.rangeBar('Date filter on when they came in. ' + ZS.rangeLabel(G.range())) + '</div>' +
+        '<p class="countline"><span><b>' + n(k.match) + '</b> match. <b>' + n(k.stop) + '</b> said STOP and are left out.</span>' +
+        '<button class="minibtn" type="button" data-act="wcSeeWho">See who</button></p></div>';
+    } else {
+      h += '<div class="stepbox" style="margin-top:0"><div class="scanrow" style="margin-top:0">' +
+        '<button class="minibtn" type="button" data-act="wcSample">Download sample</button>' +
+        '<label class="upl">Upload the Excel<input type="file" id="wb-file" accept=".xlsx" hidden></label>' +
+        '<span class="hint">The sample is made now, with today’s country codes, stages and sources in its dropdowns.</span></div>' +
+        (WB.rows ? '<p class="countline"><span><b>' + n(WB.read) + '</b> rows read. <b>' + n(WB.rows.filter(function (r) { return !r.bad; }).length) +
+          '</b> ready.' + (WB.bad.length ? ' <b>' + WB.bad.length + '</b> need a fix: ' + esc(badWords()) + '.' : '') + '</span>' +
+          (WB.bad.length ? '<button class="minibtn" type="button" data-act="wcBadOut">Download the ' + WB.bad.length + '</button>' : '') + '</p>' +
+          (WB.bad.length ? '<div class="card" style="padding:0;margin-top:8px">' + WB.bad.slice(0, 8).map(function (r) {
+            return '<div class="pickrow"><div class="t"><b>Row ' + r.n + ': ' + esc(r.name || 'no name') + '</b><span>' + esc(r.bad) + '</span></div></div>';
+          }).join('') + (WB.bad.length > 8 ? '<p class="hint" style="padding:8px 12px;margin:0">and ' + (WB.bad.length - 8) + ' more in the download.</p>' : '') + '</div>' : '')
+          : '') + '</div>';
+    }
+    h += '</div></div>';
+
+    /* 2 · the message */
+    h += '<div class="fgroup" id="wb2"><h4>2 · The message</h4><div class="fbody" style="grid-template-columns:1fr">' +
+      '<div class="f"><label for="wb-tpl">Approved template</label><select id="wb-tpl"><option value="">Pick an approved template</option>' +
+      tpls.map(function (x) {
+        return '<option value="' + esc(x.name + '|' + x.language) + '"' + (WB.tpl === x.name + '|' + x.language ? ' selected' : '') + '>' +
+          esc(x.name + ' · ' + (CATW[x.category] || x.category) + ' · ' + x.language) + '</option>'; }).join('') +
+      '</select><span class="hint">Pending and rejected templates are not offered. <a href="#/settings/whatsapp" style="color:var(--accent)">Write a new one</a></span></div>';
+    if (t && nOf(t.body)) {
+      var groups = ZS.waVarGroups();
+      h += '<div class="f"><label>Fill each variable</label><div class="opthead"><span>From this field</span><span>If it is empty, use</span></div><div class="opts">' +
+        WB.fills.map(function (f, i) {
+          return '<div class="optrow"><span class="optn">' + (i + 1) + '</span><select aria-label="Variable ' + (i + 1) + ' field" data-wbff="' + i + '">' +
+            '<option value="">Nothing: always the fallback</option>' + groups.map(function (g) {
+              return '<optgroup label="' + esc(g) + '">' + ZS.WA_VARS.filter(function (v) { return v.group === g; }).map(function (v) {
+                return '<option value="' + v.key + '"' + (f.field === v.key ? ' selected' : '') + '>' + esc(v.label) + '</option>'; }).join('') + '</optgroup>';
+            }).join('') + '</select><input aria-label="Variable ' + (i + 1) + ' if empty" data-wbfb="' + i + '" value="' + esc(f.fallback) + '" placeholder="Leave empty to skip them"></div>';
+        }).join('') + '</div><span class="hint">No fallback and an empty field: that person is skipped and listed as Blank field.</span></div>';
+    }
+    h += '</div></div>';
+
+    /* 3 · when */
+    h += '<div class="fgroup" id="wb3"><h4>3 · When</h4><div class="fbody">' +
+      '<div class="f wide" style="grid-column:1/-1"><div class="modes">' + [['now', 'Send now'], ['schedule', 'Schedule']].map(function (m) {
+        return '<label class="modepick"><input type="radio" name="wb-how" value="' + m[0] + '" data-wbhow="1"' + (WB.how === m[0] ? ' checked' : '') + '> ' + m[1] + '</label>'; }).join('') + '</div></div>' +
+      (WB.how === 'schedule' ? '<div class="f"><label for="wb-d">Date</label><input id="wb-d" type="date" value="' + esc(WB.date) + '"></div>' +
+        '<div class="f"><label for="wb-t">Time, India</label><input id="wb-t" type="time" value="' + esc(WB.time) + '"></div>' : '') +
+      '<span class="hint" style="grid-column:1/-1">Goes out at a steady pace, not all at once, so the number stays healthy.</span></div></div>';
+    h += '</div>';
+
+    /* 4 · check and send */
+    var fits = k.will <= room;
+    var cost = Math.round(k.will * rate);
+    var startAt = WB.how === 'schedule' ? new Date(WB.date + 'T' + (WB.time || '10:30') + ':00+05:30') : new Date();
+    var why = !k.will ? 'Nobody is left to send to.' : !t ? 'Pick a template.' : String(WB.name || '').trim().length < 2 ? 'Give the campaign a name.'
+      : WB.how === 'schedule' && (isNaN(startAt) || startAt.getTime() < Date.now()) ? 'Pick a date and time that has not passed.' : '';
+    h += '<div class="waside" id="wb4"><section class="card pad"><div class="cardhead"><h3>4 · Check and send</h3>' +
+      (fits ? '<span class="pill ok">Fits today</span>' : '<span class="pill warn">Over today’s limit</span>') + '</div>' +
+      '<ul class="ledger"><li><span>' + (WB.mode === 'excel' ? 'Ready rows in the Excel' : 'Match the filter') + '</span><b>' + n(k.match) + '</b></li>' +
+      '<li><span>Said STOP, left out</span><b>' + n(k.stop) + '</b></li>' +
+      '<li><span>No WhatsApp number</span><b>' + n(k.nonumber) + '</b></li>' +
+      (k.dup ? '<li><span>Same number twice, sent once</span><b>' + n(k.dup) + '</b></li>' : '') +
+      (k.blank ? '<li><span>Blank field, no fallback</span><b>' + n(k.blank) + '</b></li>' : '') +
+      '<li class="tot"><span>Will get it</span><b>' + n(k.will) + '</b></li>' +
+      '<li><span>Daily limit on this number</span><b>' + (tier.cap === null ? 'no limit' : n(tier.cap) + ' new chats') + '</b></li>' +
+      '<li><span>Cost, estimate</span><b>about ₹' + n(cost) + '</b></li></ul>' +
+      '<p class="hint" style="margin:8px 0 12px">Estimate from Meta’s rate for ' + esc(CATW[t ? t.category : 'MARKETING'] || 'Marketing') +
+      ' messages in India, ₹' + rate + ' each before GST (rate card of ' + esc((p.rate || {}).date || '1 Jan 2026') + '). The real figure is on Meta’s bill.' +
+      (tier.assumed ? ' The limit of 250 is assumed until Meta reports the tier.' : '') + '</p>' +
+      '<div class="f"><label for="wb-name">Campaign name</label><input id="wb-name" value="' + esc(WB.name) + '" placeholder="Proposal follow-up, Oct"></div>' +
+      '<p class="err" id="wb-why"' + (why || WB.err ? '' : ' hidden') + '>' + esc(WB.err || why) + '</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" type="button" id="wb-go" data-act="wcSend"' +
+      (why || WB.busy ? ' disabled' : '') + '>' + (WB.busy ? 'Saving…' : (WB.how === 'schedule' ? 'Schedule for ' : 'Send to ') + n(k.will) + ' ' + (k.will === 1 ? 'person' : 'people')) + '</button>' +
+      '<button class="btn alt" type="button" data-act="wcTest"' + (t ? '' : ' disabled') + '>Send me a test</button></div>' +
+      '<p class="hint" style="margin-top:10px">STOP from anyone, at any time, takes them off every campaign for good. ' +
+      'Send me a test goes to your own number only.</p></section>';
+    if (!fits && room !== Infinity) {
+      var d1 = startAt, d2 = new Date(startAt.getTime() + 86400000);
+      h += '<div class="wbar warn" style="margin-top:12px"><span>' + n(k.will - room) + ' do not fit ' +
+        (room < (tier.cap || 0) ? 'in what is left today' : 'in one day') + '. ' + n(room) + ' go on ' + dayWord(d1) + ', the other ' +
+        n(k.will - room) + ' from ' + dayWord(d2) + ' at the same time, by themselves.</span></div>';
+    }
+    if (t) {
+      var firstP = (k.list.filter(function (x) { return !x.why; })[0] || {}).p;
+      h += '<div style="margin-top:12px">' + G.waPhone(t, firstP ? varsFor(firstP, t) : ((t.samples || {}).body || []), [], { short: true }) +
+        '<span class="hint" style="display:block;text-align:center;margin-top:8px">' +
+        (firstP ? 'The first person’s message, as it will read.' : 'With Meta’s samples until somebody is picked.') + '</span></div>';
+    }
+    h += '</div></div>';
+    return h;
+  }
+
+  function badWords() {
+    var by = {};
+    WB.bad.forEach(function (r) { by[r.bad] = (by[r.bad] || 0) + 1; });
+    return Object.keys(by).map(function (w) { return by[w] + ' ' + w.toLowerCase(); }).join(', ');
+  }
+
+  /* ---------------- results ---------------- */
+
+  var FAIL = [
+    [/not (a valid )?whatsapp|no whatsapp|undeliverable|131026|not in allowed list/i, 'Not on WhatsApp', 'their end',
+     'The number has no WhatsApp account, or could not take it.', 'check the number on the record, or call them.'],
+    [/ecosystem|healthy|marketing messages|131049/i, 'Meta held it back', 'Meta’s rule, not your message',
+     'These people had many marketing messages from businesses lately, so Meta held some back.', 'nothing today. Do not resend for a few days.'],
+    [/limit|spam rate|131048|130429/i, 'Over today’s limit', 'ours to plan',
+     'The number reached its new chats for the day.', 'Try again tomorrow from the conversation.'],
+    [/paused|disabled|removed the template/i, 'Template paused', 'Meta’s rule',
+     'Meta paused or removed the template before these went.', 'copy the campaign with another approved template.'],
+    [/stopped half way/i, 'Stopped half way', 'ours',
+     'The cockpit stopped in the middle of sending. It may have gone.', 'open the conversation before trying again.'],
+    [/./, 'WhatsApp did not take it', 'unclear',
+     'WhatsApp did not say why in a way the cockpit knows.', 'Try again from the conversation; if it fails twice, check Settings, Connections.']
+  ];
+  function failKind(why) { for (var i = 0; i < FAIL.length; i++) if (FAIL[i][0].test(String(why || ''))) return i; return FAIL.length - 1; }
+
+  function results(id) {
+    var o = ONE[id];
+    if (!o) { loadOne(id); return '<div class="card pad"><p class="m">Reading the campaign…</p></div>'; }
+    if (o.error) return '<div class="card pad"><p class="m">' + esc(o.error) + ' <a href="#/campaigns/wa">Back to the list</a></p></div>';
+    var c = o.campaign, sends = o.sends || [];
+    var pct = function (a) { return c.sent ? ' · ' + Math.round(100 * a / c.sent) + '%' : ''; };
+    var failed = sends.filter(function (s) { return s.status === 'failed' || s.state === 'failed'; });
+    var stops = sends.filter(function (s) { return s.reason === 'stop'; }).length + o.replies.filter(function (r) { return r.opted_out_at; }).length;
+    var h = '<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px"><a class="crumb" href="#/campaigns/wa">WhatsApp campaigns</a>' +
+      '<span class="crumb-sep">/</span><span class="crumb now asis">' + esc(c.name) + '</span></div>' +
+      '<div class="ph"><div><h1>' + esc(c.name) + '</h1><p>' + spill(c.status) + ' ' + esc(c.template) + ' to ' + n(c.people) + ' ' +
+      (c.people === 1 ? 'person' : 'people') + '. ' +
+      (c.started_at ? 'Started ' + esc(when(c.started_at)) + (c.finished_at ? ', finished ' + esc(when(c.finished_at)) : '') + '. '
+        : 'Goes out ' + esc(when(c.send_at)) + '. ') +
+      'Figures as Meta reported them, ' + esc(when(o.at || new Date().toISOString())) + '.</p></div>' +
+      '<div class="right"><button class="btn alt" data-act="wcCheck" data-id="' + esc(c.id) + '">Check Meta again</button>' +
+      (G.acc().settings ? '<button class="btn alt" data-act="wcCopy" data-id="' + esc(c.id) + '">Copy as a new campaign</button>' : '') +
+      (G.acc().delete && (c.status === 'sent' || c.status === 'cancelled') ? '<button class="btn alt" data-act="wcDrop" data-id="' + esc(c.id) + '">Delete</button>' : '') +
+      '</div></div>';
+    if (c.status === 'scheduled' || c.status === 'sending') {
+      var soon = c.status === 'scheduled' && new Date(c.send_at).getTime() - Date.now() < 15000;
+      h += '<div class="wbar' + (soon ? ' warn' : '') + '"><span>' + (c.status === 'sending'
+        ? '<b>' + n(c.tried) + ' of ' + n(c.people) + ' sent.</b> The rest go a few at a time, with this page open or closed.'
+        : soon ? '<b>Goes out in a few seconds.</b> Changed your mind?' : '<b>Scheduled for ' + esc(when(c.send_at)) + '.</b>') + '</span>' +
+        (G.acc().settings ? '<button class="minibtn" data-act="wcCancel" data-id="' + esc(c.id) + '">' + (soon ? 'Undo' : 'Call it off') + '</button>' : '') + '</div>';
+      setTimeout(function () { if (location.hash === '#/campaigns/wa/' + id) loadOne(id); }, soon ? 4000 : 20000);
+    }
+    h += '<div class="kpis" style="margin-bottom:14px">' +
+      '<div class="kpi"><b class="num">' + n(c.sent) + '</b><span>Sent</span></div>' +
+      '<div class="kpi"><b class="num">' + n(c.delivered) + pct(c.delivered) + '</b><span>Delivered</span></div>' +
+      '<div class="kpi"><b class="num">' + n(c.seen) + pct(c.seen) + '</b><span>Read</span></div>' +
+      '<div class="kpi ok"><b class="num">' + n(c.replied) + pct(c.replied) + '</b><span>Replied</span></div>' +
+      '<div class="kpi' + (c.failed ? ' bad' : '') + '"><b class="num">' + n(c.failed) + '</b><span>Failed</span></div></div>';
+
+    /* why they failed, grouped, in words */
+    var groups = {};
+    failed.forEach(function (s) { var k = failKind(s.fail || s.reason); (groups[k] = groups[k] || []).push(s); });
+    var left = c.counts || {};
+    h += '<div class="twocol"><section class="card" style="padding:0"><div class="cardhead pad"><h3>' +
+      (failed.length ? 'Why ' + failed.length + ' failed' : 'Nothing failed') + '</h3>' +
+      (failed.length ? '<button class="minibtn" data-act="wcFailOut" data-id="' + esc(c.id) + '">Download the ' + failed.length + '</button>' : '') + '</div>' +
+      Object.keys(groups).map(function (k) {
+        var f = FAIL[k];
+        return '<div class="failrow"><span class="failn">' + groups[k].length + '</span><div class="t"><b>' + esc(f[1]) + '</b><span>' + esc(f[2]) +
+          '</span><p class="failwhy">' + esc(f[3]) + '</p><p class="failfix"><b>Do this:</b> ' + esc(f[4]) + '</p>' +
+          groups[k].slice(0, 5).map(function (s) {
+            return '<p class="hint" style="margin:4px 0 0">' + esc(s.name || ('+' + s.to_num)) +
+              (s.message_id ? ' <button class="minibtn" data-act="wcRetry" data-id="' + esc(c.id + '|' + s.message_id) + '">Try again</button>' : '') + '</p>';
+          }).join('') + '</div></div>';
+      }).join('') +
+      '<p class="hint" style="margin:0;padding:12px 14px">Left out before sending: ' + esc(leftWords(left, sends)) + '.</p></section>';
+    h += '<section class="card" style="padding:0"><div class="cardhead pad"><h3>' + n(o.replies.length) + ' replied</h3>' +
+      '<button class="minibtn" data-act="wcInbox" data-id="' + esc(c.id) + '">Open in the Inbox</button></div>' +
+      (o.replies.length ? o.replies.slice(0, 30).map(function (r) {
+        var opp = r.client_id ? (D().opportunities || []).filter(function (x) { return x.client === r.client_id && ZS.isOpen(x); })[0] : null;
+        var tag = r.opted_out_at ? '<span class="pill warn">Said STOP</span>' : opp ? '<span class="pill dim">Enquiry</span>'
+          : r.client_id ? '<span class="pill ok">Client</span>' : '';
+        return '<div class="pickrow"><div class="t"><b>' + esc(r.name || ('+' + r.to_num)) + '</b><span>“' +
+          esc(String(r.said || '').slice(0, 80)) + '” · ' + esc(when(r.at)) + '</span></div>' + tag + '</div>';
+      }).join('') : '<p class="m pad">No reply yet.</p>') +
+      '<p class="hint" style="margin:0;padding:12px 14px">Replies sit in the Inbox tagged with this campaign. ' +
+      (stops ? n(stops) + ' said STOP and never get a campaign again.' : 'Nobody has said STOP.') + '</p></section></div>';
+    /* History */
+    h += '<section class="card pad" style="margin-top:14px"><div class="cardhead"><h3>History</h3></div>' +
+      ((o.history || []).length ? '<ul class="ledger">' + o.history.map(function (x) {
+        var who = x.by_staff ? ZS.staffById(x.by_staff) : null;
+        return '<li><span>' + esc(x.text) + '</span><b style="font-weight:400;white-space:nowrap">' + esc(when(x.at)) +
+          (who ? ' · ' + esc(who.name.split(' ')[0]) : '') + '</b></li>';
+      }).join('') + '</ul>' : '<p class="m">Nothing yet.</p>') + '</section>';
+    return h;
+  }
+  function leftWords(c, sends) {
+    var k = { stop: 0, nonumber: 0, dup: 0, blank: 0, cancelled: 0 };
+    sends.forEach(function (s) { if (s.status === 'skipped' && s.reason in k) k[s.reason]++; });
+    var w = [];
+    if (k.stop) w.push(k.stop + ' said STOP');
+    if (k.nonumber) w.push(k.nonumber + ' had no WhatsApp number');
+    if (k.dup) w.push(k.dup + ' were the same number twice');
+    if (k.blank) w.push(k.blank + ' had a blank field');
+    if (k.cancelled) w.push(k.cancelled + ' not sent because it was called off');
+    return w.join(', ') || 'nobody';
+  }
+
+  /* ---------------- Excel: the sample, made now, and the upload, checked ---------------- */
+
+  var EXCELJS = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+  function needXL(cb) {
+    if (window.ExcelJS) return cb();
+    var sc = document.createElement('script'); sc.src = EXCELJS; sc.onload = cb;
+    sc.onerror = function () { G.toast('The Excel maker could not load. Check the internet connection.', true); };
+    document.head.appendChild(sc);
+  }
+  var COLS = [['Name', 1], ['Company', 0], ['Country code', 1, 'codes'], ['Mobile', 1], ['Stage', 0, 'stages'], ['Source', 0, 'sources']];
+  function lists() {
+    return { codes: ZS.DIAL_CODES.map(function (d) { return d[0] + ' ' + d[1]; }), stages: ZS.STAGES.slice(),
+             sources: Object.keys(ZS.SOURCES).map(function (k) { return String(ZS.SOURCES[k]).split(' \u2014 ')[0]; }) };
+  }
+  function download(wb, name) {
+    wb.xlsx.writeBuffer().then(function (buf) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      a.download = name; document.body.appendChild(a); a.click(); setTimeout(function () { a.remove(); }, 500);
+    });
+  }
+  function sample() {
+    needXL(function () {
+      var L = lists(), wb = new window.ExcelJS.Workbook();
+      var fill = wb.addWorksheet('Fill this'), how = wb.addWorksheet('How to fill'), ls = wb.addWorksheet('Lists');
+      var keys = Object.keys(L);
+      keys.forEach(function (k, i) { ls.getCell(1, i + 1).value = k; L[k].forEach(function (v, r) { ls.getCell(r + 2, i + 1).value = v; }); });
+      ls.state = 'hidden';
+      fill.columns = COLS.map(function (c) { return { header: c[0] + (c[1] ? ' *' : ''), width: Math.max(16, c[0].length + 6) }; });
+      fill.getRow(1).font = { bold: true }; fill.views = [{ state: 'frozen', ySplit: 1 }];
+      COLS.forEach(function (c, i) {
+        if (!c[2]) return;
+        var letter = ls.getColumn(keys.indexOf(c[2]) + 1).letter, last = L[c[2]].length + 1;
+        for (var r = 2; r <= 1001; r++) {
+          fill.getCell(r, i + 1).dataValidation = { type: 'list', allowBlank: !c[1], showErrorMessage: true,
+            formulae: ['Lists!$' + letter + '$2:$' + letter + '$' + last], errorTitle: 'Pick from the list', error: 'Choose a value from the dropdown.' };
+        }
+      });
+      for (var r = 2; r <= 1001; r++) fill.getCell(r, 4).numFmt = '@';
+      fill.addRow(['Ravi Teja', 'Teja Motors', '+91 India', '9876543210', 'Enquiry', 'Referral']);
+      how.getCell('A1').value = 'ZippyScale: people for a WhatsApp campaign'; how.getCell('A1').font = { bold: true, size: 14 };
+      how.getCell('A2').value = 'One row per person. Columns with * are required. The first row is an example: replace it.';
+      how.getCell('A3').value = 'Mobile: the number only, without the country code. Pick the country code from its dropdown.';
+      how.getCell('A4').value = 'Made on ' + ZS.today() + ' with today’s stages and sources. If they change, download a fresh sheet.';
+      how.getCell('A5').value = 'Anybody who said STOP is left out by the cockpit, whatever the sheet says.';
+      how.getColumn(1).width = 100;
+      download(wb, 'ZippyScale-WhatsApp-campaign-sheet.xlsx');
+      G.toast('The sheet is downloading, with today’s lists in its dropdowns.');
+    });
+  }
+  function cellText(v) {
+    if (v == null) return '';
+    if (typeof v === 'object') v = v.text || v.result || (v.richText ? v.richText.map(function (x) { return x.text; }).join('') : '');
+    return String(v).trim();
+  }
+  /* each row checked against today's lists, with the reason in words */
+  function checkRows(raw) {
+    var L = lists(), seen = {}, rows = [], bad = [];
+    raw.forEach(function (r) {
+      var v = r.v, name = v[0], code = String(v[2] || '').split(' ')[0], digits = String(v[3] || '').replace(/\D/g, '');
+      var why = '';
+      if (!digits) why = 'No number';
+      else if (!code || !ZS.DIAL_CODES.some(function (d) { return d[0] === code; })) why = 'Country code not on the list';
+      else if (!toNum(code, digits)) why = 'Not a mobile for ' + code;
+      else if (v[4] && L.stages.indexOf(v[4]) < 0) why = 'Stage not on today’s list';
+      else if (v[5] && L.sources.indexOf(v[5]) < 0) why = 'Source not on today’s list';
+      var to = why ? '' : toNum(code, digits);
+      if (!why && seen[to.slice(-9)]) why = 'Same number as row ' + seen[to.slice(-9)];
+      if (to) seen[to.slice(-9)] = r.n;
+      /* somebody already on the book fills from their real record */
+      var c = to ? (D().clients || []).filter(function (x) {
+        var k = ZS.primaryContact(x), m = String((k && k.mobile) || x.mobile || '').replace(/\D/g, '');
+        return m && m.slice(-9) === to.slice(-9); })[0] : null;
+      var p = c ? personOf(c, (D().opportunities || []).filter(function (o) { return o.client === c.id && ZS.isOpen(o); })[0] || null)
+        : { name: name, company: v[1], client_id: null, to: to,
+            ctx: { client: { name: v[1], source: v[5] }, contact: { name: name }, opp: v[4] ? { stage: v[4] } : null, me: G.me() } };
+      p.to = to; p.n = r.n; p.bad = why; p.raw = v;
+      rows.push(p);
+      if (why) bad.push({ n: r.n, name: name, bad: why, v: v });
+    });
+    return { rows: rows, bad: bad };
+  }
+  function upload(file) {
+    needXL(function () {
+      var fr = new FileReader();
+      fr.onload = function (e) {
+        var wb = new window.ExcelJS.Workbook();
+        wb.xlsx.load(e.target.result).then(function () {
+          var ws = wb.getWorksheet('Fill this') || wb.worksheets[0], raw = [];
+          ws.eachRow({ includeEmpty: false }, function (row, i) {
+            if (i === 1) return;
+            var v = COLS.map(function (c, k) { return cellText(row.getCell(k + 1).value); });
+            if (v.some(function (x) { return x; })) raw.push({ n: i, v: v });
+          });
+          var out = checkRows(raw);
+          WB.read = raw.length; WB.rows = out.rows; WB.bad = out.bad;
+          G.render();
+        }, function () { G.toast('That file could not be read. Download the sample and fill it.', true); });
+      };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+  function rowsOut(name, head, rows) {
+    needXL(function () {
+      var wb = new window.ExcelJS.Workbook(), ws = wb.addWorksheet('Fix these');
+      ws.addRow(head).font = { bold: true };
+      rows.forEach(function (r) { ws.addRow(r); });
+      download(wb, name);
+    });
+  }
+
+  /* ---------------- actions ---------------- */
+
+  function sendIt() {
+    var t = tplOf(), k = tally();
+    if (!t || !k.will || WB.busy) return;
+    WB.busy = true; WB.err = ''; G.render();
+    var at = WB.how === 'schedule' ? new Date(WB.date + 'T' + (WB.time || '10:30') + ':00+05:30').toISOString() : null;
+    var people = k.list.map(function (x) {
+      return { to: x.p.to || '', name: x.p.name || x.p.company || '', client_id: x.p.client_id || null, vars: varsFor(x.p, t) };
+    });
+    API.waCampaignNew({ name: String(WB.name).trim(), template: t.name, language: t.language, how: WB.how, send_at: at,
+      people: people, fills: WB.fills,
+      audience: WB.mode === 'excel' ? { mode: 'excel', rows: WB.read } : { mode: 'filter', conds: WB.conds, range: G.range() } })
+      .then(function (r) {
+        WB = null; LIST_KEY = null; delete ONE[r.id];
+        G.toast(at ? 'Scheduled for ' + when(at) + '.' : 'Going out in ten seconds. Undo is on the next screen.');
+        G.go('#/campaigns/wa/' + r.id);
+      }).catch(function (e) {
+        WB.busy = false; WB.err = (e && e.message) || 'It was not saved. Nothing was sent.'; G.render();
+      });
+  }
+
+  Object.assign(A, {
+    wcChip: function (k) { CHIP = k; G.render(); },
+    wcOpen: function (id) { G.go('#/campaigns/wa/' + id); },
+    wcStep: function (id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+    wcAddCond: function () {
+      var used = WB.conds.map(function (c) { return c.f; });
+      var f = Object.keys(FIELDS).filter(function (x) { return used.indexOf(x) < 0; })[0];
+      if (f) WB.conds.push({ f: f, v: '' });
+      G.render();
+    },
+    wcDropCond: function (i) { WB.conds.splice(Number(i), 1); G.render(); },
+    wcSeeWho: function () {
+      var k = tally(), W = { stop: 'Said STOP', nonumber: 'No WhatsApp number', dup: 'Same number twice', blank: 'Blank field' };
+      G.modal('Who matches', k.match + ' people. Those left out say why.', '<div class="card" style="padding:0">' +
+        (k.list.length ? k.list.slice(0, 300).map(function (x) {
+          return '<div class="pickrow"><div class="t"><b>' + esc(x.p.name || x.p.company || 'No name') + '</b><span>' +
+            esc([x.p.company, x.p.to ? '+' + x.p.to : ''].filter(Boolean).join(' · ')) + '</span></div>' +
+            (x.why ? '<span class="pill ' + (x.why === 'stop' ? 'warn' : 'dim') + '">' + W[x.why] + '</span>' : '<span class="pill ok">Gets it</span>') + '</div>';
+        }).join('') : '<p class="m pad">Nobody matches.</p>') + '</div>' +
+        '<div style="margin-top:12px"><button class="btn alt" type="button" data-act="closeModal">Close</button></div>');
+    },
+    wcSample: sample,
+    wcBadOut: function () {
+      rowsOut('ZippyScale-WhatsApp-rows-to-fix.xlsx', COLS.map(function (c) { return c[0]; }).concat(['What to fix']),
+        WB.bad.map(function (r) { return r.v.concat([r.bad]); }));
+    },
+    wcSend: sendIt,
+    wcTest: function () {
+      var t = tplOf(); if (!t) return;
+      var first = (tally().list.filter(function (x) { return !x.why; })[0] || {}).p || {};
+      API.waTestToMe({ template: t.name, language: t.language, vars: varsFor(first, t) })
+        .then(function (r) { G.toast('Test sent to +' + r.to + ', your own number.'); })
+        .catch(function (e) { G.toast((e && e.message) || 'The test did not go.', true); });
+    },
+    wcCancel: function (id) {
+      API.waCampaignCancel(id).then(function (r) {
+        G.toast(r.stopped + ' not sent. The campaign is called off.'); LIST_KEY = null; loadOne(id);
+      }).catch(function (e) { G.toast((e && e.message) || 'It could not be called off.', true); });
+    },
+    wcCheck: function (id) { loadOne(id); G.toast('Asking again.'); },
+    wcCopy: function (id) { WB = null; G.go('#/campaigns/wa/new/' + id); },
+    wcDrop: function (id) {
+      API.waCampaignDrop(id).then(function () {
+        G.toast('Deleted. It is in the Bin for 30 days.'); LIST_KEY = null; delete ONE[id]; G.go('#/campaigns/wa');
+      }).catch(function (e) { G.toast((e && e.message) || 'It was not deleted.', true); });
+    },
+    wcInbox: function (id) { if (G.inboxCampaign) G.inboxCampaign(id); },
+    wcRetry: function (arg) {
+      var p = String(arg).split('|');
+      API.waRetry(p[1]).then(function () { G.toast('Sent again.'); loadOne(p[0]); })
+        .catch(function (e) { G.toast((e && e.message) || 'It did not go again.', true); });
+    },
+    wcFailOut: function (id) {
+      var o = ONE[id]; if (!o) return;
+      rowsOut('ZippyScale-WhatsApp-failed.xlsx', ['Name', 'Number', 'Why'], (o.sends || []).filter(function (s) {
+        return s.status === 'failed' || s.state === 'failed'; }).map(function (s) {
+        var f = FAIL[failKind(s.fail || s.reason)]; return [s.name || '', '+' + (s.to_num || ''), f[1] + '. ' + f[3]]; }));
+    }
+  });
+
+  document.addEventListener('input', function (e) {
+    var el = e.target; if (!el) return;
+    if (el.id === 'wcq') { Q = String(el.value || '').toLowerCase().trim(); G.render(); return; }
+    if (!WB) return;
+    if (el.id === 'wb-name') {
+      WB.name = el.value;
+      var go = document.getElementById('wb-go'), t = tplOf(), k = tally();
+      var why = !k.will ? 'Nobody is left to send to.' : !t ? 'Pick a template.' : String(WB.name || '').trim().length < 2 ? 'Give the campaign a name.' : '';
+      if (go) go.disabled = !!why;
+      var w = document.getElementById('wb-why'); if (w) { w.textContent = why; w.hidden = !why; }
+      return;
+    }
+    if (el.dataset && el.dataset.wbfb !== undefined) { WB.fills[Number(el.dataset.wbfb)].fallback = el.value; return; }
+  });
+  document.addEventListener('change', function (e) {
+    var el = e.target; if (!el || !WB) return;
+    var ds = el.dataset || {};
+    if (ds.wbmode) { WB.mode = el.value; G.render(); return; }
+    if (ds.wbhow) { WB.how = el.value; G.render(); return; }
+    if (ds.wbcf !== undefined) { WB.conds[Number(ds.wbcf)] = { f: el.value, v: el.value === 'who' ? 'enquiries' : '' }; G.render(); return; }
+    if (ds.wbcv !== undefined) { WB.conds[Number(ds.wbcv)].v = el.value; G.render(); return; }
+    if (ds.wbff !== undefined) { WB.fills[Number(ds.wbff)].field = el.value; G.render(); return; }
+    if (ds.wbfb !== undefined) { G.render(); return; }
+    if (el.id === 'wb-tpl') { WB.tpl = el.value; WB.fills = []; guessFills(); G.render(); return; }
+    if (el.id === 'wb-d') { WB.date = el.value; G.render(); return; }
+    if (el.id === 'wb-t') { WB.time = el.value; G.render(); return; }
+    if (el.id === 'wb-file' && el.files && el.files[0]) { upload(el.files[0]); el.value = ''; }
+  });
+  /* leaving the builder forgets it, so New starts clean */
+  window.addEventListener('hashchange', function () {
+    if (location.hash.indexOf('#/campaigns/wa/new') !== 0) WB = null;
+  });
+
+  /* for the checks */
+  G.waCampForTest = { tally: function () { return tally(); }, setPlan: function (p) { PLAN = p; PLAN_AT = Date.now(); },
+    builder: function () { return WB; }, checkRows: checkRows, setList: function (l) { LIST = l; LIST_KEY = G.range().from + '|' + G.range().to; },
+    setOne: function (id, o) { ONE[id] = o; } };
 })();

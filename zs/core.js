@@ -4086,6 +4086,28 @@ function outreachTrades(list) {
     return { text: out, missing: missing };
   }
 
+  /* Which record field fills {{n}} of a template that remembers nothing (one
+     made in Meta). Read off the sample Meta holds and the words around it, so
+     every blank the record CAN fill is filled: {{1}} is the first name, a
+     company-looking blank ("for {{2}}", "{{2}}'s") is the client's name, a
+     money-looking one is what is owed. A link, a date or a time is left for a
+     person: the record does not know which link or which meeting. */
+  function waGuess(t, i) {
+    var body = String((t && t.body) || '');
+    var sample = String((((t && t.samples) || {}).body || [])[i] || '');
+    var at = body.indexOf('{{' + (i + 1) + '}}');
+    var before = at >= 0 ? body.slice(Math.max(0, at - 30), at).toLowerCase() : '';
+    var after = at >= 0 ? body.slice(at + String(i + 1).length + 4, at + String(i + 1).length + 10) : '';
+    if (/^https?:|www\.|\.pdf$/i.test(sample)) return '';
+    if (/\d{1,2}(:\d{2})?\s*(am|pm)|\b(mon|tue|wed|thu|fri|sat|sun)\b|\b\d{1,2} (jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(sample)) return '';
+    if (/(₹|rs\.?|inr|amount|owed|due|pay)\s*$/i.test(before) || /^(₹|rs\.?\s*)\d|^\d[\d,]*(\.\d+)?$/i.test(sample)) return 'amount_owed';
+    if (/invoice\s*(no\.?|number|#)?\s*$/i.test(before)) return 'invoice_ref';
+    if (i === 0) return 'contact_first_name';
+    if (/^'s\b|^’s\b/.test(after) || /\b(for|with|at|reach|reaching|of|about|help|map|grow|growing|like|on behalf of)\s*\*?$/.test(before) ||
+        i === 1) return 'client_name';
+    return '';
+  }
+
   function templateVars(t) {
     var found = [];
     [t && t.header, t && t.body, t && t.footer].forEach(function (part) {
@@ -4534,7 +4556,7 @@ function outreachTrades(list) {
     WA_TIERS: WA_TIERS, WA_CATEGORIES: WA_CATEGORIES, WA_STATES: WA_STATES,
     WA_QUALITY: WA_QUALITY, WA_HEALTH: WA_HEALTH, WA_ERRORS: WA_ERRORS,
     waError: waError, waTier: waTier, waTierIndex: waTierIndex,
-    WA_VARS: WA_VARS, waVarGroups: waVarGroups, waResolve: waResolve, waFill: waFill,
+    WA_VARS: WA_VARS, waVarGroups: waVarGroups, waResolve: waResolve, waFill: waFill, waGuess: waGuess,
     newTemplate: newTemplate, validTemplateName: validTemplateName, validateTemplate: validateTemplate,
     templateVars: templateVars, waStats: waStats, waFailures: waFailures,
     TRIGGERS: TRIGGERS, ACTS: ACTS, autoKind: autoKind, audienceOf: audienceOf,

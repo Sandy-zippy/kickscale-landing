@@ -3046,7 +3046,7 @@
                  check: 'in WhatsApp Manager, the number still shows Connected and the cockpit app is ' +
                         'still subscribed. Then press Check again.' },
     instagram: { mark: 'IG', thing: 'message', ok: '',
-                 fix: 'Only you and Sandy can message until step 4 and Meta\u2019s review.',
+                 fix: 'Waiting on Meta\u2019s review, step 5. Until then only people with a role on the app can message.',
                  check: 'the Instagram account is still linked to the ZippyScale.in Page and Allow ' +
                         'access to messages is on in the Instagram app.' },
     messenger: { mark: 'M', thing: 'message', ok: '',
@@ -3059,14 +3059,18 @@
                         'on the list for the ZippyScale.in Page. Then press Check again.' },
     adaccount: { mark: 'AD', thing: 'pull',
                  ok: '', fix: 'Read only. Creating, pausing or editing ads stays in Meta Ads Manager.',
-                 check: 'the Cockpit system user still has the ad account under Assigned assets (step 2).' }
+                 check: 'the Cockpit system user still has the ad account under Assigned assets (step 2).' },
+    comments:  { mark: 'C', thing: 'comment', ok: '', fix: '',
+                 check: 'the cockpit app is still connected to the ZippyScale.in Page, with comments allowed.' },
+    templates: { mark: 'T', thing: 'check', ok: '', fix: '', check: '' },
+    billing:   { mark: '\u20b9', thing: '', ok: '', fix: '', check: '' }
   };
   function metaCards() {
     var st = metaStatusNow();
-    var cards = (st && st.cards) || ['whatsapp', 'instagram', 'messenger', 'leadads', 'adaccount']
+    var cards = (st && st.cards) || ['whatsapp', 'instagram', 'messenger', 'leadads', 'adaccount', 'comments', 'templates', 'billing']
       .map(function (id) {
         return { id: id, label: { whatsapp: 'WhatsApp', instagram: 'Instagram', messenger: 'Messenger',
-          leadads: 'Lead ads', adaccount: 'Ad account' }[id], state: 'wait',
+          leadads: 'Lead ads', adaccount: 'Ad account', comments: 'Comments', templates: 'Templates', billing: 'Billing' }[id], state: 'wait',
           step: (window.API && API.signedIn()) ? 'Reading the state from the server.' : 'Sign in to the server to see it.' };
       });
     var when = function (iso) { return (window.GE && GE.whenSaid) ? GE.whenSaid(iso) : String(iso || '').slice(0, 16); };
@@ -3076,9 +3080,20 @@
         var k = CARD[c.id] || { mark: '?', thing: 'message', fix: '', check: '' };
         var pill = c.state === 'ok' ? '<span class="pill ok">Connected</span>'
           : c.state === 'quiet' ? '<span class="pill warn">Gone quiet</span>'
+          : c.state === 'info' ? '<span class="pill info">Check by hand</span>'
           : '<span class="pill dim">Waiting for setup</span>';
         var head, fix, acts = '';
-        if (c.state === 'wait') {
+        if (c.state === 'info') {
+          head = '<b>' + esc(c.line || '') + '</b>';
+          fix = 'Meta does not tell the cockpit whether a card is on file, so this one is checked by hand.';
+        } else if (c.id === 'templates' && c.state === 'ok') {
+          head = '<b>' + esc(c.line || '') + '</b> Last checked with Meta ' + esc(when(c.last)) + '.';
+          fix = 'Meta tells the cockpit when it approves or rejects one.';
+        } else if (c.id === 'comments') {
+          head = c.state === 'wait' ? '<b>' + esc(c.line || '') + '</b> ' + esc(c.step || '')
+            : '<b>' + (c.last ? 'Last comment ' + esc(when(c.last)) + '.' : 'Connected. No comment yet.') + '</b> ' + esc(c.line || '');
+          fix = 'Comments on the Page\u2019s posts and ads land in the Inbox under Comments. Answer them on Facebook.';
+        } else if (c.state === 'wait') {
           head = '<b>Waiting for setup.</b> ' + esc(c.step || '');
           fix = esc(k.fix);
         } else if (c.state === 'quiet') {
@@ -3095,7 +3110,11 @@
             : '<b>Connected.</b> Nothing has arrived yet. ' + esc(k.ok);
           fix = esc(k.fix);
         }
-        if (c.id === 'adaccount') {
+        if (c.id === 'billing') {
+          acts += '<a class="minibtn" target="_blank" rel="noopener" href="https://business.facebook.com/billing_hub">Open billing_hub</a>';
+        } else if (c.id === 'templates') {
+          acts += '<a class="minibtn" href="#/settings/whatsapp">Open Templates</a>';
+        } else if (c.id === 'adaccount') {
           acts += '<a class="minibtn" href="#/campaigns">Open Campaigns</a>' +
             '<button class="minibtn" data-act="metaRefresh">Refresh from Meta</button>';
         } else if (c.id !== 'leadads') {
@@ -3983,7 +4002,7 @@
     products: productList,
     productById_view: productById_view,
     clientById: clientById, onFloor: onFloor, pendingMsgs: pendingMsgs,
-    range: range, inRange: inRange, rangeBar: rangeBar, micButton: micButton,
+    range: range, inRange: inRange, rangeBar: rangeBar, micButton: micButton, metaStatusNow: metaStatusNow,
     micReset: micReset, hearing: function () { return HEARING; },
     log: log, KINDS: KINDS, KIND_GROUPS: KIND_GROUPS,
     /* A model is behind Jarvis only when there is a server to hold the key.
