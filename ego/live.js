@@ -1510,7 +1510,7 @@ EM.VIEWS.orders = arg => {
       any: [['ref', 'Number', p => p.ref], ['design', 'Design', p => prodName(p.product_id)], ['container', 'Container', p => p.container]], date: p => p.created_at, dateWhat: 'When the production order was placed' });
     O = { ...O, production: pf.rows };
     body = pf.html
-      + stageBoard(OS_('production_stages'), O.production, p => p.stage, p => `<a class="card stack-s" style="text-decoration:none" href="#/po/${p.id}" data-po-card="${p.id}"><b>${esc(p.ref)}</b><span class="small">${esc(prodName(p.product_id))}</span><span class="small muted">${num(p.boxes)} boxes · for ${nSales(p)} sale${nSales(p) === 1 ? '' : 's'}</span>${lateBadge(lateOf[p.id])}</a>`)
+      + stageBoard(OS_('production_stages'), O.production, p => p.stage, p => `<a class="mini" style="display:flex;flex-direction:column;gap:2px;text-decoration:none;color:inherit" href="#/po/${p.id}" data-po-card="${p.id}"><b>${esc(p.ref)}</b><span class="small">${esc(prodName(p.product_id))}</span><span class="small muted">${num(p.boxes)} boxes · for ${nSales(p)} sale${nSales(p) === 1 ? '' : 's'}</span>${lateBadge(lateOf[p.id])}</a>`)
       + (O.production.length ? table(['Production order', 'Design', 'Boxes', 'For sales', 'Stage', 'ETA', 'Days late', 'Warehouse'], O.production.map(p => ({ href: '#/po/' + p.id,
         cells: [`<b>${esc(p.ref)}</b>${p.container ? `<div class="small muted">${esc(p.container)}</div>` : ''}`, esc(prodName(p.product_id)), num(p.boxes), esc([...new Set(waitsOf(w => w.po_id === p.id).map(w => (O.orders.find(o => o.id === w.order_id) || {}).ref))].join(', ')), `<span class="badge info">${esc(p.stage)}</span>`, p.eta ? ds(p.eta) : '', lateBadge(lateOf[p.id]) || '<span class="muted small">On time</span>', esc((INVD().warehouses.find(w => w.id === p.warehouse_id) || {}).name || '')] })))
         : (EM.poF.tg || {}).late ? '<p class="small muted">No production order is late.</p>'
@@ -1523,7 +1523,7 @@ EM.VIEWS.orders.title = () => 'Fulfilment';
 const shortLines = id => { const O = OPSD(); return O.lines.filter(l => l.order_id === id).map(l => { const got = O.allocations.filter(a => a.line_id === l.id).reduce((a, x) => a + x.boxes, 0), wait = O.waits.filter(w => w.line_id === l.id && !w.done).reduce((a, w) => a + w.boxes, 0); return { l, got, wait, miss: Math.max(0, l.boxes - got - wait) }; }); };
 const missingOf = id => shortLines(id).reduce((a, x) => a + x.miss, 0);
 const ordCard = o => { const miss = [FN('Stock check'), FN('Waiting on production')].includes(o.ful_stage) ? missingOf(o.id) : 0;
-  return `<a class="card stack-s" style="text-decoration:none" href="#/order/${o.id}"><b>${esc(o.ref)}</b><span class="small">${esc(clientName(o.client_id))}</span><span class="small muted">${num(OPSD().lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0))} boxes</span>${miss ? `<span class="badge bad">Short ${num(miss)} boxes</span>` : ''}${o.credit_hold ? '<span class="badge warn">Credit hold</span>' : ''}</a>`; };
+  return `<a class="mini" style="display:flex;flex-direction:column;gap:2px;text-decoration:none;color:inherit" href="#/order/${o.id}"><b>${esc(o.ref)}</b><span class="small">${esc(clientName(o.client_id))}</span><span class="small muted">${num(OPSD().lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0))} boxes</span>${miss ? `<span class="badge bad">Short ${num(miss)} boxes</span>` : ''}${o.credit_hold ? '<span class="badge warn">Credit hold</span>' : ''}</a>`; };
 /* the designs on a wholesale opportunity, with the money worked out */
 function oppLinesCard(o) {
   const ls = (OPSD().oppLines || []).filter(l => l.opp_id === o.id), ex = o.extra || {}, ord = OPSD().orders.find(x => x.opp_id === o.id), pend = pendingFor('opp', o.id), apprs = OPSD().approvals.filter(a => a.entity === 'opp' && a.record_id === o.id);
@@ -1976,10 +1976,10 @@ EM.VIEWS.complaints = arg => {
   const rows = all.filter(c => tab === 'all' || c.status === tab);
   return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="muted">${D.access.raise_only ? 'Only the complaints you reported, with their status. Telesales handles them.</p><p class="muted" hidden>' : ''}Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
     ${fbar}
-    ${stageBoard(CS, all, c => c.status, c => `<a class="card stack-s" style="text-decoration:none" href="#/complaint/${c.id}"><b>${esc(c.ref)}</b><span class="small">${esc(c.type)}</span><span class="small muted">${esc(clientName(c.client_id))}</span></a>`)}
+    ${stageBoard(CS, all, c => c.status, c => `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/complaint/${c.id}" data-cmp-card><b>${esc(c.ref)}</b><div class="small">${esc(c.type)}</div><div class="small muted">${esc(clientName(c.client_id))}</div></a>`)}
     ${subtabs('#/complaints', tab, [['all', `All <span class="muted">${all.length}</span>`], ...CS.map(s => [s, `${esc(s)} <span class="muted">${all.filter(c => c.status === s).length}</span>`])])}
     ${rows.length ? table(['Complaint', 'Company', 'From', 'Kind', 'Severity', 'Status', 'Handled by', 'Logged'], rows.map(c => ({ href: '#/complaint/' + c.id, cells: [`<b>${esc(c.ref)}</b>`, segBadge(c.division), esc(clientName(c.client_id)), esc(c.type), esc(c.severity), `<span class="badge ${c.status === lastOf(CS) ? 'ok' : 'warn'}">${esc(c.status)}</span>`, esc(staffName(c.owner_id)), ds(c.created_at.slice(0, 10))] })))
-      : '<p class="small muted">No complaints here.</p>'}</div>`;
+      : D.access.raise_only && !all.length ? empty('Nothing reported yet', 'Tap + Complaint; telesales takes it and the status shows here.') : '<p class="small muted">No complaints here.</p>'}</div>`;
 };
 EM.VIEWS.complaints.title = () => 'Complaints';
 EM.ACTIONS['cmp-add'] = el => {
@@ -2051,7 +2051,7 @@ EM.VIEWS.approvals = arg => {
     ${subtabs('#/approvals', tab, ['Pending', 'Approved', 'Rejected'].map(s => [s, `${s} <span class="muted">${all.filter(a => a.status === s).length}</span>`]))}
     ${rows.length ? table(['What', 'Company', 'Amount', 'Asked by', 'When', ''], rows.map(a => [`<a href="${href(a)}"><b>${esc(label(a))}</b></a><div class="small muted">${esc(a.reason)}</div>`, segBadge(a.division), a.kind === 'scheme' ? (D.access.prices ? `${inr0(a.amount)} target per dealer` : '') : apAmt(a), esc(staffName(a.requested_by)), a.created_at ? ds(String(a.created_at).slice(0, 10)) : '',
       a.status === 'Pending' ? act(a) : `${esc(staffName(a.decided_by))}${a.decision_note ? ' · ' + esc(a.decision_note) : ''}`]))
-      : empty(`Nothing ${tab.toLowerCase()}`, 'Requests appear here when an order goes over a credit limit, a discount is above someone\'s limit, a complaint settlement is large, or a dealer scheme is drawn up.')}</div>`;
+      : RO ? empty(all.length ? `Nothing ${tab.toLowerCase()}` : 'Nothing asked yet', 'Tap Ask for approval; the answer shows here.') : empty(`Nothing ${tab.toLowerCase()}`, 'Requests appear here when an order goes over a credit limit, a discount is above someone\'s limit, a complaint settlement is large, or a dealer scheme is drawn up.')}</div>`;
 };
 EM.VIEWS.approvals.title = () => 'Approvals';
 EM.navBadge = Object.assign(EM.navBadge || {}, { approvals: () => D.access.raise_only ? 0 : OPSD().approvals.filter(a => a.status === 'Pending' && canDecide(D.lists.rules, a.kind, D.access.level, a.amount)).length + (canSch('approve') ? SCH().list.filter(sc => sc.status === 'Draft').length : 0) });
