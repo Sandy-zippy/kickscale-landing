@@ -12,7 +12,7 @@
   const qs = s => document.querySelector(s);
   const ic = (n, cls) => `<svg class="${cls || 'fd-ic'}" aria-hidden="true"><use href="icons.svg#i-${n}"/></svg>`;
   let B = null, root = null;
-  const S = { cam: null, camErr: '', stream: null, shot: null, shotUrl: '', gps: null, confirm: null, sheet: '', busy: false, base: null, req: null, rf: 'all' };
+  const S = { cam: null, camErr: '', stream: null, shot: null, shotUrl: '', gps: null, confirm: null, sheet: '', busy: false, base: null, req: null, rf: 'all', ask: null, af: 'all' };
   const F = () => B.field || { visits: [], days: [], start: '10:00' };
   const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const ist = ts => new Date((ts ? Date.parse(ts) : Date.now()) + 5.5 * 36e5);
@@ -68,6 +68,7 @@
     if (op.type === 'end' && f.attendance && !f.attendance.end_at) { f.attendance.end_at = op.at; (f.visits || []).forEach(x => { if (x.status === 'planned') x.status = 'missed'; }); }
     if (op.type === 'checkin' && v && v.status === 'planned') Object.assign(v, { status: 'in', checkin_at: op.at, checkin_noloc: !op.gps, checkin_lat: op.gps && op.gps.lat, checkin_lng: op.gps && op.gps.lng, checkin_acc: op.gps && op.gps.acc, waiting: true });
     if (op.type === 'outcome' && v && (v.status === 'in' || v.status === 'done')) Object.assign(v, { status: 'done', outcome: op.outcome, note: op.note || '', extra: { ...(v.extra || {}), boxes: op.boxes, follow_on: op.follow_on }, waiting: true });
+    if (op.type === 'ask') { const A = f.asks || (f.asks = { approvals: [], complaints: [] }), k = op.ghost.t === 'approval' ? 'approvals' : 'complaints'; if (!(A[k] || []).some(r => r.key === op.key)) A[k] = [{ ...op.ghost, key: op.key, waiting: true, created_at: op.at }, ...(A[k] || [])]; }
     if (op.type === 'req' && !(f.reqs || []).some(r => r.key === op.key)) f.reqs = [{ ...op.ghost, key: op.key, waiting: true, created_at: op.at }, ...(f.reqs || [])];
   }
   /* a fresh copy of the day from the server, with every waiting entry laid over it */
@@ -100,7 +101,7 @@
     } finally {
       Q.busy = false; await qLoad();
       if (sent) { try { const r = await API('GET', '/api/field/me'); S.base = r.field; } catch (e) {} toast(`<b>Sent: ${sent} entr${sent === 1 ? 'y' : 'ies'}</b>`); }
-      setField(S.base || B.field); if (!S.cam && !S.sheet && route() !== 'req') render(); else paintBanner();
+      setField(S.base || B.field); if (!S.cam && !S.sheet && !['req', 'raise'].includes(route())) render(); else paintBanner();
     }
   }
   const banner = () => { const n = Q.items.length, off = navigator.onLine === false; return !n && !off ? '' : `<div class="fd-offline" role="status">${ic('wifi-off')}<span><b>${off ? 'No signal.' : 'Sending.'}</b> Saved on this phone, will send when signal returns.</span>${n ? `<span class="fd-pill">${n}</span>` : ''}</div>`; };
@@ -185,8 +186,78 @@
     } catch (x) { R.busy = false; R.err = { all: x.message }; render(); }
   }
 
+  /* ---- S2 (Bhargav 18 Oct eve): field sales RAISE an approval request or a complaint (in Me), and see only their own in My requests */
+  const DEALERISH = ['distributor', 'dealer', 'sub_dealer'];
+  const newAsk = t => ({ t, q: '', pick: null, what: '', amount: '', why: '', product: '', batch: '', note: '', photos: [], urls: [], err: {} });
+  const askKinds = () => { const R = ((B.lists || {}).rules || {}).approvals || {}; return [...Object.entries(R).filter(([k]) => k !== 'complaint').map(([k, a]) => [k, a.label, a.unit]), ['other', 'Something else', '']]; };
+  function askPicksHtml() {
+    const A = S.ask, q = A.q.trim().toLowerCase(), all = pickables().filter(x => x.t === 'client' && DEALERISH.includes(x.kind));
+    const list = (q ? all.filter(x => `${x.name} ${x.sub} ${x.mobile}`.toLowerCase().includes(q)) : all).slice(0, 6);
+    if (A.pick && !list.some(x => x.id === A.pick.id)) list.unshift(A.pick);
+    if (!list.length) return `<div class="fd-meta">${q ? 'No dealer by that name in your view.' : 'Type a name to search your dealers, distributors and sub-dealers.'}</div>`;
+    return list.map(x => `<button type="button" class="fd-pick${A.pick && A.pick.id === x.id ? ' on' : ''}" data-fa="ask-pick" data-id="${x.id}"><span class="fd-tile">${ic((KIND[VKIND[x.kind]] || KIND.retailer)[0])}</span><span><b>${esc(x.name)}</b><span>${esc(x.sub)}</span></span></button>`).join('');
+  }
+  const asks = () => F().asks || { approvals: [], complaints: [] };
+  const back = (title, sub) => `<header class="fd-top"><a class="fd-back" href="#/me" aria-label="Back">${ic('arrow-back-up')}</a><div class="fd-hello"><b>${esc(title)}</b><span>${esc(sub)}</span></div></header>`;
+  async function saveAsk() {
+    const A = S.ask, e = {}, ap = A.t === 'approval', k = askKinds().find(x => x[0] === A.what), amt = A.amount.replace(/[,\s₹%/-]/g, '');
+    if (!A.pick) e.who = 'Pick the dealer';
+    if (ap) { if (!k) e.what = 'Choose what it is for'; if (amt && !(Number(amt) >= 0)) e.amount = 'Amount is a number'; if (!A.why.trim()) e.why = 'Write why, so management can decide'; }
+    else if (!A.product.trim() && !A.note.trim()) e.product = 'Write the product or what happened';
+    A.err = e; if (Object.keys(e).length) { render(); const f = qs('.fd-field.has-err'); if (f) f.scrollIntoView({ block: 'center' }); return; }
+    const fd = new FormData(); fd.append('client_id', A.pick.id);
+    if (ap) { fd.append('kind', A.what); fd.append('amount', amt); fd.append('reason', A.why.trim()); }
+    else { fd.append('product', A.product.trim()); fd.append('batch', A.batch.trim()); fd.append('note', A.note.trim()); A.photos.forEach((f, i) => fd.append('photo', f, f.name || `complaint-${i + 1}.jpg`)); }
+    const ghost = ap ? { t: 'approval', c_name: A.pick.name, label: k[1], unit: k[2], amount: amt ? Number(amt) : 0, status: 'Pending', reason: A.why.trim() } : { t: 'complaint', c_name: A.pick.name, type: A.product.trim(), batch: A.batch.trim(), photos: A.photos.length, status: '' };
+    A.busy = true; render();
+    try {
+      const w = await write(ap ? '/api/field/approval' : '/api/field/complaint', fd, { type: 'ask', ghost }, `${ap ? 'Approval' : 'Complaint'} · ${A.pick.name}`);
+      A.urls.forEach(u => URL.revokeObjectURL(u)); S.ask = null; S.af = 'all'; location.hash = '#/requests'; render();
+      toast(w.queued ? '<b>Saved on this phone.</b> It will send when signal returns.' : ap ? '<b>Sent for approval.</b> Management decides.' : `<b>Complaint ${esc(w.r.ref)} sent.</b> With ${esc(w.r.owner)} in telecalling.${w.r.photo_note ? ' ' + esc(w.r.photo_note) : ''}`, w.queued ? w.n : undefined);
+    } catch (x) { A.busy = false; A.err = { all: x.message }; render(); }
+  }
+
   /* ---- screens */
   const V = {
+    /* #/raise/approval and #/raise/complaint (kit frames raiseAp, raiseCmp) */
+    raise() {
+      const t = (location.hash.split('/')[2] || '') === 'complaint' ? 'complaint' : 'approval';
+      if (!S.ask || S.ask.t !== t) S.ask = newAsk(t);
+      const A = S.ask, e = A.err || {}, fe = k => e[k] ? `<span class="fd-err">${esc(e[k])}</span>` : '', k = askKinds().find(x => x[0] === A.what);
+      const dealer = `<div class="fd-field${e.who ? ' has-err' : ''}"><span class="fd-label">Dealer</span><div class="fd-search">${ic('search')}<input class="fd-input" type="search" data-ask="q" value="${esc(A.q)}" aria-label="Search dealer, distributor or sub-dealer" autocomplete="off"></div><div class="fd-picks" data-ask-picks>${askPicksHtml()}</div>${fe('who')}</div>`;
+      const body = t === 'approval' ? `${dealer}
+        <div class="fd-field${e.what ? ' has-err' : ''}"><span class="fd-label">What for</span><div class="fd-chips" role="radiogroup">${askKinds().map(([v, l]) => `<label class="fd-chip"><input type="radio" name="fd-askk" value="${v}" ${A.what === v ? 'checked' : ''}>${esc(l)}</label>`).join('')}</div>${fe('what')}</div>
+        <div class="fd-field${e.amount ? ' has-err' : ''}"><label for="fa-amt">Amount, if any</label><div class="fd-adorn">${k && k[2] === '₹' ? '<span class="fd-pre">₹</span>' : ''}<input class="fd-input" id="fa-amt" data-ask="amount" inputmode="decimal" value="${esc(A.amount)}" placeholder="Optional">${k && k[2] === '%' ? '<span class="fd-suf">%</span>' : k && k[2] === '₹' ? '<span class="fd-suf">/-</span>' : ''}</div>${fe('amount')}</div>
+        <div class="fd-field${e.why ? ' has-err' : ''}"><label for="fa-why">Why</label><textarea class="fd-input" id="fa-why" data-ask="why" maxlength="500">${esc(A.why)}</textarea>${fe('why')}</div>
+        <div class="fd-note">${ic('info-circle')}<span>You see the answer in My requests.</span></div>`
+        : `${dealer}
+        <div class="fd-field${e.product ? ' has-err' : ''}"><label for="fa-prod">Product</label><input class="fd-input" id="fa-prod" data-ask="product" value="${esc(A.product)}" maxlength="120">${fe('product')}</div>
+        <div class="fd-field"><label for="fa-batch">Batch or lot</label><input class="fd-input" id="fa-batch" data-ask="batch" value="${esc(A.batch)}" maxlength="60" placeholder="On the box label, if you have it"></div>
+        <div class="fd-field"><span class="fd-label">Photos</span><div class="fd-photos">${A.photos.map((f, i) => `<div class="fd-thumb"><img src="${A.urls[i]}" alt="Complaint photo ${i + 1}"><button type="button" aria-label="Remove photo" data-fa="ask-photo-x" data-i="${i}">${ic('x')}</button></div>`).join('')}${A.photos.length < 10 ? `<label class="fd-photo-add">${ic('camera')}Add<input type="file" accept="image/*" capture="environment" multiple data-ask-file></label>` : ''}</div><span class="fd-help">Up to 10. They open, download and share from the complaint on the team screens.</span></div>
+        <div class="fd-field"><label for="fa-note">Note</label><textarea class="fd-input" id="fa-note" data-ask="note" maxlength="2000">${esc(A.note)}</textarea></div>`;
+      return back(t === 'approval' ? 'Ask for approval' : 'Report a complaint', t === 'approval' ? 'Management decides' : 'Telecalling takes it from here') + `<main class="fd-view"><form class="fd-form" onsubmit="return false" data-askform="${t}">${body}
+        <span class="fd-err" role="alert">${esc(e.all || '')}</span>
+        <div class="fd-savebar"><button type="button" class="fd-btn primary lg block" data-fa="ask-save"${A.busy ? ' aria-busy="true" disabled' : ''}>${t === 'approval' ? 'Send for approval' : 'Send complaint'}</button></div></form></main>`;
+    },
+    /* #/requests (kit frame myAsks): read-only, only what this person raised */
+    requests() {
+      const X = asks(), done = X.done || 'Resolved', f = S.af;
+      const rows = [...(X.approvals || []).map(a => ({ ...a, t: 'approval' })), ...(X.complaints || []).map(c => ({ ...c, t: 'complaint' }))].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+      const cnt = { all: rows.length, approval: (X.approvals || []).length, complaint: (X.complaints || []).length }, show = rows.filter(r => f === 'all' || r.t === f);
+      const pill = r => r.waiting ? `<span class="fd-pill warn">${ic('cloud-upload')}Waiting</span>`
+        : r.t === 'approval' ? (r.status === 'Approved' ? `<span class="fd-pill ok">${ic('circle-check')}Approved</span>` : r.status === 'Rejected' ? '<span class="fd-pill bad">Rejected</span>' : `<span class="fd-pill warn">${ic('clock')}Waiting for approval</span>`)
+        : r.status === done ? `<span class="fd-pill ok">${ic('circle-check')}${esc(r.status)}</span>` : r.status && r.status !== ((B.lists.ops || {}).complaint_statuses || ['Open'])[0] ? `<span class="fd-pill warn">${esc(r.status)}</span>` : `<span class="fd-pill">${esc(r.status || 'Open')}</span>`;
+      const what = r => r.t === 'approval' ? [r.label, r.amount ? (r.unit === '%' ? r.amount + '%' : '₹' + Math.round(r.amount).toLocaleString('en-IN')) : ''].filter(Boolean).join(' · ')
+        : [r.ref, r.product || r.type, r.batch ? 'batch ' + r.batch : '', r.photos ? `${r.photos} photo${r.photos === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
+      const last = r => r.waiting ? [ic('wifi-off'), 'Saved on this phone, will send when signal returns']
+        : r.t === 'approval' ? (r.status === 'Pending' ? [ic('clock'), `Asked ${dayShort(r.created_at)}. Management decides.`] : [ic(r.status === 'Approved' ? 'circle-check' : 'circle-x'), `${r.status} by ${r.by_name || 'management'}${r.decided_at ? ' ' + dayShort(r.decided_at) : ''}${r.decision_note ? `. Reason: ${r.decision_note}` : ''}`])
+        : [ic(r.status === done ? 'circle-check' : 'phone'), r.status === done && r.resolution ? `Resolved: ${r.resolution}` : `With ${r.owner_name || 'telecalling'} since ${dayShort(r.created_at)}`];
+      const card = r => { const l = last(r); return `<article class="fd-req" data-ask-row="${r.t}"><div class="fd-row between"><span class="fd-kind">${ic(r.t === 'approval' ? 'circle-check' : 'alert-triangle')}${r.t === 'approval' ? 'Approval' : 'Complaint'}</span>${pill(r)}</div>
+        <div class="fd-name">${esc(r.c_name || '')}</div><div class="fd-what">${esc(what(r))}</div><div class="fd-last">${l[0]}<span>${esc(l[1])}</span></div></article>`; };
+      return back('My requests', 'Only what you raised') + `<main class="fd-view">
+        <div class="fd-filter">${[['all', 'All'], ['approval', 'Approvals'], ['complaint', 'Complaints']].map(([k, l]) => `<label class="fd-chip"><input type="radio" name="fd-af" value="${k}" ${f === k ? 'checked' : ''}>${l} ${cnt[k]}</label>`).join('')}</div>
+        ${show.length ? `<div class="fd-reqs">${show.map(card).join('')}</div>` : `<div class="fd-card"><b>${rows.length ? 'None here' : 'Nothing raised yet'}</b><div class="fd-meta" style="margin-top:6px">${rows.length ? 'Pick another filter above.' : 'Ask for approval or report a complaint from Me. What happens to it shows here.'}</div></div>`}</main>`;
+    },
     today() {
       const a = att(), n = vis().length, nx = nextV(), late = a && a.late_min;
       const kinds = Object.entries(vis().reduce((o, v) => (o[v.kind] = (o[v.kind] || 0) + 1, o), {})).map(([k, c]) => `${(KIND[k] || KIND.retailer)[1]} ${c}`).join(' · ');
@@ -286,7 +357,12 @@
       const th = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       return top('Me', `${B.access.name} · ${CO[B.user.division] || ''}`) + `<main class="fd-view">
         <div class="fd-card fd-row"><span class="fd-avatar" style="width:56px;height:56px;font-size:18px">${esc(initials(B.user.name))}</span><span class="fd-grow"><b style="font-size:18px">${esc(B.user.name)}</b><span class="fd-meta" style="display:block">${esc(CO[B.user.division] || '')}${B.user.region ? ' · ' + esc(B.user.region) : ''}${boss ? ' · Manager: ' + esc(boss.name) : ''}</span></span></div>
+        <div class="fd-sec">Raise</div>
+        <div class="fd-raise">
+          <a href="#/raise/approval"><span class="fd-tile">${ic('circle-check')}</span><b>Ask for approval</b><span>Discount, credit or anything that needs a yes</span></a>
+          <a href="#/raise/complaint"><span class="fd-tile">${ic('alert-triangle')}</span><b>Report a complaint</b><span>A dealer's problem with a product</span></a></div>
         <div class="fd-list">
+          <a href="#/requests">${ic('list-check')}<span class="fd-grow"><b>My requests</b><span>${(() => { const X = asks(), w = [...(X.approvals || []).filter(a => a.waiting || a.status === 'Pending'), ...(X.complaints || []).filter(c => c.waiting || c.status !== (X.done || 'Resolved'))].length, n = (X.approvals || []).length + (X.complaints || []).length; return n ? `${w} waiting · ${n - w} answered` : 'Nothing raised yet'; })()}</span></span>${ic('chevron-right')}</a>
           <a href="#/requirements">${ic('list-check')}<span class="fd-grow"><b>My requirements</b><span>${(F().reqs || []).length} saved</span></span>${ic('chevron-right')}</a>
           <div>${ic('clock')}<span class="fd-grow"><b>Start time ${esc(F().start)}</b><span>Set by the Owner. Starting after it shows a late mark.</span></span></div>
           <div>${ic('moon')}<span class="fd-grow"><b>Theme</b></span><span class="fd-seg" style="min-width:150px"><label><input type="radio" name="fd-th" value="light" ${th === 'light' ? 'checked' : ''}>Light</label><label><input type="radio" name="fd-th" value="dark" ${th === 'dark' ? 'checked' : ''}>Dark</label></span></div>
@@ -398,13 +474,13 @@
   }
 
   /* ---- render */
-  const route = () => { const r = (location.hash || '#/today').split('/')[1] || 'today'; return V[r] && (NAV.some(n => n[0] === r && n[3]) || r === 'requirements') ? r : 'today'; };
+  const route = () => { const r = (location.hash || '#/today').split('/')[1] || 'today'; return V[r] && (NAV.some(n => n[0] === r && n[3]) || ['requirements', 'raise', 'requests'].includes(r)) ? r : 'today'; };
   function render() {
     if (!root) return;
     if (S.cam && !S.confirm) { if (!qs('.fd-cam') || S.camErr !== (qs('.fd-cam').dataset.err || '')) { root.innerHTML = camHtml(); qs('.fd-cam').dataset.err = S.camErr; const v = qs('.fd-cam video'); if (v && S.stream) v.srcObject = S.stream; } return; }
     if (S.confirm) { root.innerHTML = confirmHtml(); return; }
     const r = route(), keep = qs('.fd-toast [data-fa="undo"]') && qs('.fd-toast');   // a toast with Undo outlives the screen being drawn again
-    root.innerHTML = V[r]().replace('<main class="fd-view">', '<main class="fd-view">' + banner()) + nav(r === 'requirements' ? 'req' : r) + (S.sheet ? sheetHtml() : '');
+    root.innerHTML = V[r]().replace('<main class="fd-view">', '<main class="fd-view">' + banner()) + nav(r === 'requirements' ? 'req' : ['raise', 'requests'].includes(r) ? 'me' : r) + (S.sheet ? sheetHtml() : '');
     if (keep) root.appendChild(keep);
   }
   const A = {
@@ -415,6 +491,9 @@
     'req-photo-x': el => { const R = S.req, i = +el.dataset.i; URL.revokeObjectURL(R.urls[i]); R.photos.splice(i, 1); R.urls.splice(i, 1); render(); },
     'req-card-x': () => { const R = S.req; if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); R.card = null; R.cardUrl = ''; render(); },
     'req-save': saveReq,
+    'ask-pick': el => { const A = S.ask, x = pickables().find(p => p.id === el.dataset.id); if (!x) return; A.pick = x; delete A.err.who; render(); },
+    'ask-photo-x': el => { const A = S.ask, i = +el.dataset.i; URL.revokeObjectURL(A.urls[i]); A.photos.splice(i, 1); A.urls.splice(i, 1); render(); },
+    'ask-save': saveAsk,
     board: () => { const b = qs('#fd-board'); if (b) b.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
     undo: async el => { const n = +el.dataset.n; if (!Q.items.some(x => x.n === n)) { toast('<b>Already sent.</b> It cannot be taken back here.'); return; } await qDel(n); await qLoad(); setField(S.base); render(); toast('<b>Taken back.</b> Nothing was sent.'); },
     team: () => { try { sessionStorage.setItem('ego-team', '1'); } catch (e) {} location.hash = '#/home'; location.reload(); },
@@ -449,6 +528,9 @@
         if (e.target.name === 'fd-cat' && S.req) { S.req.cat = e.target.value; { const h = qs('[data-req-boxes]'); if (h) h.textContent = reqBoxes(S.req); } delete S.req.err.cat; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.fd-err'); if (x) x.remove(); } }
         if (e.target.name === 'fd-tl' && S.req) S.req.timeline = e.target.value;
         if (e.target.name === 'fd-rf') { S.rf = e.target.value; render(); }
+        if (e.target.name === 'fd-af') { S.af = e.target.value; render(); }
+        if (e.target.name === 'fd-askk' && S.ask) { S.ask.what = e.target.value; delete S.ask.err.what; render(); }
+        if (e.target.matches('[data-ask-file]') && S.ask) { const A = S.ask; for (const f of [...e.target.files].slice(0, 10 - A.photos.length)) { A.photos.push(f); A.urls.push(URL.createObjectURL(f)); } render(); }
         if (e.target.dataset && e.target.dataset.reqFile && S.req) { const R = S.req, fs = [...e.target.files];
           if (e.target.dataset.reqFile === 'card' && fs[0]) { if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); R.card = fs[0]; R.cardUrl = URL.createObjectURL(fs[0]); }
           if (e.target.dataset.reqFile === 'photos') for (const f of fs.slice(0, 20 - R.photos.length)) { R.photos.push(f); R.urls.push(URL.createObjectURL(f)); }
@@ -457,6 +539,7 @@
       });
       window.addEventListener('hashchange', () => { S.sheet = ''; render(); window.scrollTo(0, 0); });
       /* typing in + Requirement is kept as it is typed, without drawing the screen again (the search redraws only its list) */
+      document.addEventListener('input', e => { const a = e.target.dataset && e.target.dataset.ask; if (a && S.ask) { S.ask[a] = e.target.value; if (a === 'q') { const p = qs('[data-ask-picks]'); if (p) p.innerHTML = askPicksHtml(); } return; } });
       document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.req; if (!k || !S.req) return; S.req[k] = e.target.value; if (k === 'sqft') { const h = qs('[data-req-boxes]'); if (h) h.textContent = reqBoxes(S.req); } if (k === 'q') { const p = qs('[data-picks]'); if (p) p.innerHTML = picksHtml(); } });
       document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('fd-more') && S.req) S.req.more = e.target.open; }, true);
       /* weak network: send what waits when signal returns, every 30 s, and show the banner when it goes */
@@ -464,7 +547,7 @@
       window.addEventListener('offline', () => paintBanner());
       setInterval(flush, 30000);
       /* the Roadmap may change on the desktop while the phone is open: read it again when the app comes back */
-      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !S.cam && !S.sheet && route() !== 'req') API('GET', '/api/field/me').then(r => { setField(r.field); render(); }).catch(() => {}); });
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !S.cam && !S.sheet && !['req', 'raise'].includes(route())) API('GET', '/api/field/me').then(r => { setField(r.field); render(); }).catch(() => {}); });
       /* the app opens with no signal: a service worker keeps the page files (sw.js) */
       if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
     }

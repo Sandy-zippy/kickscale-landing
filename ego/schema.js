@@ -1018,13 +1018,22 @@ const SCOPES_ALL = [['all', 'Everything, both companies'], ['division', 'Everyth
 const ROLE_TABS = {
   /* R6a (17 Oct): Samples, Displays and Training for every role that sees Dealers (migration 0022) */
   /* 17 Oct (Bhargav): Projects, Design 500 and Installation for field sales, telesales, finance, marketing and office admin; Installation for the warehouse */
-  ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training'],
+  /* S2 (Bhargav 18 Oct eve): field sales RAISE approval requests and complaints (migration 0026 adds Approvals) */
+  ws_field: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training', 'approvals'],
   ws_tele: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'inventory', 'analysis', 'account', 'roadmap', 'projects', 'design500', 'installation', 'priority', 'samples', 'displays', 'training'],
   ws_finance: ['home', 'people', 'architects', 'dealers', 'opps', 'schemes', 'orders', 'orderbook', 'complaints', 'approvals', 'inventory', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training'],
   ws_warehouse: ['home', 'orders', 'orderbook', 'inventory', 'complaints', 'analysis', 'account', 'installation'],
   office_admin: ['home', 'people', 'architects', 'dealers', 'inventory', 'complaints', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training'],
   ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training'],
 };
+/* S2 (Bhargav 18 Oct eve): these roles RAISE approval requests and complaints and see only what they raised, with its status;
+   approvals are decided by management (an approval level), complaints handled by telecalling. Never approve, settle or move. */
+const RAISE_ONLY = ['ws_field'];
+/* an approval asked for by hand: the kinds in Rules and numbers (not Complaint settlement, which a settlement raises), or anything else */
+const ASK_OTHER = 'Something else';
+const apLabel = (rules, kind) => kind === 'other' ? ASK_OTHER : kind === 'scheme' ? 'Dealer scheme' : (((rules || {}).approvals || {})[kind] || { label: kind }).label;
+/* who may decide an approval: within their limit for a kind in Rules and numbers; "Something else" by any approval level */
+const canDecide = (rules, kind, level, amount) => rules.approvals[kind] ? levelLimit(rules, kind, level) >= amount : !!level && level !== 'none';
 /* what a file kept on a fulfilment order is (13 Oct): EGO makes these in Tally and uploads the PDF here */
 const ORDER_DOC_TYPES = ['PI', 'Invoice', 'Payment proof', 'Other'];
 const SCHEME_WHO = { all: 'Every dealer, distributor and sub-dealer', chosen: 'The dealers chosen below', rating: 'Dealers with these ratings' };

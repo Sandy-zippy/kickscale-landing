@@ -1968,7 +1968,7 @@ EM.ACTIONS['snag-close-go'] = el => opsAct(el, `snags/${el.dataset.id}/close`, {
 /* ---- complaints */
 EM.VIEWS.complaints = arg => {
   const CS = OS_('complaint_statuses'), all = OPSD().complaints.filter(inDiv).filter(c => (!EM.cseg || c.division === EM.cseg) && matches(`${c.ref} ${clientName(c.client_id)} ${c.type} ${c.description || ''}`, [])), tab = CS.includes(arg) ? arg : 'all', rows = all.filter(c => tab === 'all' || c.status === tab);
-  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="muted">Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
+  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="muted">${D.access.raise_only ? 'Only the complaints you reported, with their status. Telecalling handles them.</p><p class="muted" hidden>' : ''}Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
     ${searchBox('Complaint number, company, kind or what happened')}
     ${stageBoard(CS, all, c => c.status, c => `<a class="card stack-s" style="text-decoration:none" href="#/complaint/${c.id}"><b>${esc(c.ref)}</b><span class="small">${esc(c.type)}</span><span class="small muted">${esc(clientName(c.client_id))}</span></a>`)}
     ${subtabs('#/complaints', tab, [['all', `All <span class="muted">${all.length}</span>`], ...CS.map(s => [s, `${esc(s)} <span class="muted">${all.filter(c => c.status === s).length}</span>`])])}
@@ -1984,7 +1984,7 @@ EM.ACTIONS['cmp-add'] = el => {
   EM.modal(`<h2>Log a complaint</h2><div class="fgrid" style="margin-top:12px">
     ${G.select({ key: 'client', label: 'From', req: true }, el.dataset.client || '', 'cp', cs.map(c => [c.id, `${c.name} · ${kindLabel(c.kind)}`]))}
     ${G.select({ key: 'type', label: 'Kind', req: true }, '', 'cp', D.lists.complaint_types.map(v => [v, v]))}${G.select({ key: 'sev', label: 'Severity', req: true }, 'Medium', 'cp', D.lists.severities.map(v => [v, v]))}
-    ${G.select({ key: 'ch', label: 'Came in by' }, '', 'cp', D.lists.complaint_channels.map(v => [v, v]))}${G.select({ key: 'own', label: 'Handled by' }, me().id, 'cp', D.staff.filter(x => x.active).map(x => [x.id, x.name]), false)}
+    ${G.select({ key: 'ch', label: 'Came in by' }, '', 'cp', D.lists.complaint_channels.map(v => [v, v]))}${D.access.raise_only ? '<p class="small muted" data-cp-tele>Telecalling takes it from here: it goes to the dealer\'s telesales person.</p>' : G.select({ key: 'own', label: 'Handled by' }, me().id, 'cp', D.staff.filter(x => x.active).map(x => [x.id, x.name]), false)}
     <div class="field span2"><label for="cp-desc">What happened</label><textarea class="input" id="cp-desc" rows="3"></textarea></div>
     ${cmpInstallFields('cp')}
     <div class="field span2" data-field="cp_photos"><label for="cp-photos">Photos: one or many, up to 10 at a time, 25 MB each</label><input class="input" id="cp-photos" type="file" multiple accept="${FILE_ACCEPT}"></div></div>${errBox('cp-err')}
@@ -1999,7 +1999,7 @@ EM.ACTIONS['cmp-save'] = async el => {
   const files = [...(qs('#cp-photos') || { files: [] }).files];
   if (files.length > 10) return showErr('cp-err', 'Up to 10 photos at a time.');
   const big = files.find(f => f.size > 25 * 1024 * 1024); if (big) return showErr('cp-err', `${big.name} is over 25 MB.`);
-  const r = await opsAct(el, 'complaints', { client_id: qs('#cp-client').value, type: qs('#cp-type').value, severity: qs('#cp-sev').value, channel: qs('#cp-ch').value, owner_id: qs('#cp-own').value, description: qs('#cp-desc').value, batch: qs('#cp-batch').value, installed_by: qs('#cp-inst').value, installer_name: qs('#cp-iname').value, installer_id: (qs('#cp-iid') || {}).value || '' }, null, 'cp-err');
+  const r = await opsAct(el, 'complaints', { client_id: qs('#cp-client').value, type: qs('#cp-type').value, severity: qs('#cp-sev').value, channel: qs('#cp-ch').value, owner_id: (qs('#cp-own') || {}).value || '', description: qs('#cp-desc').value, batch: qs('#cp-batch').value, installed_by: qs('#cp-inst').value, installer_name: qs('#cp-iname').value, installer_id: (qs('#cp-iid') || {}).value || '' }, null, 'cp-err');
   if (!r) return;
   if (files.length) { const fd = new FormData(); files.forEach(f => fd.append('file', f)); fd.append('type', 'Photo'); fd.append('complaint_id', r.id);
     try { const u = await API('POST', '/api/documents', fd, true); D.documents.push(...u.documents); EM.toast(`<b>${esc(r.ref)}</b> logged with ${u.documents.length} photo${u.documents.length === 1 ? '' : 's'}.`); } catch (x) { EM.toast(`<b>${esc(r.ref)}</b> logged; the photos did not upload: ${esc(x.message)} Add them on the complaint.`, 8000); } }
@@ -2013,7 +2013,8 @@ EM.VIEWS.complaint = id => {
     <div class="stack-s"><h1>${esc(c.ref)} · ${esc(c.type)}</h1><p class="muted"><a href="#/client/${c.client_id}">${esc(clientName(c.client_id))}</a> · ${esc(c.severity)}${c.channel ? ' · by ' + esc(c.channel) : ''} · ${esc(staffName(c.owner_id))} · ${ds(c.created_at.slice(0, 10))}</p></div>
     ${pend.length ? `<div class="callout warn"><b>Waiting for approval.</b> ${pend.map(a => esc(a.reason)).join(' · ')}</div>` : ''}
     <section class="card stack-s">${stageChips(CS, c.status)}<p>${esc(c.description || '')}</p>${cmpInstallText(c) ? `<p class="small" data-cmp-install>${cmpInstallText(c)}</p>` : ''}<p class="small" data-cmp-cert>Installer: ${cmpCert(c)}</p>${c.resolution ? `<p><b>Resolution:</b> ${esc(c.resolution)}${c.cost != null && D.access.prices ? ` · cost ${inr0(c.cost)}` : ''}</p>` : ''}</section>
-    ${c.status !== lastOf(CS) ? `<section class="card stack-s"><h3>Update</h3><div class="fgrid">${G.select({ key: 'st', label: 'Status' }, c.status, 'cu', CS.map(v => [v, v]), false)}
+    ${D.access.raise_only ? `<p class="small muted" data-ro>Telecalling handles it; the status here changes as they work on it.</p>` : ''}
+    ${c.status !== lastOf(CS) && !D.access.raise_only ? `<section class="card stack-s"><h3>Update</h3><div class="fgrid">${G.select({ key: 'st', label: 'Status' }, c.status, 'cu', CS.map(v => [v, v]), false)}
       <div class="field span2"><label for="cu-res">Resolution (compulsory to resolve)</label><input class="input" id="cu-res" value="${esc(c.resolution || '')}"></div>
       <div class="field"><label for="cu-cost">Settlement cost</label>${G.adorn({ type: 'money', key: 'cost' }, `<input class="input" id="cu-cost" type="number" min="0" step="1" value="${c.cost ?? ''}">`)}</div></div>${errBox('cu-err')}
       <div class="row"><button class="btn primary" data-act="cmp-upd" data-id="${id}">Save</button></div></section>` : ''}
@@ -2027,18 +2028,18 @@ EM.ACTIONS['cmp-upd'] = el => opsAct(el, `complaints/${el.dataset.id}/status`, {
 
 /* ---- approvals */
 const myLimit = kind => levelLimit(D.lists.rules, kind, D.access.level);
-const apAmt = a => (D.lists.rules.approvals[a.kind] || {}).unit === '%' ? a.amount + '%' : inr0(a.amount);
+const apAmt = a => !a.amount && !D.lists.rules.approvals[a.kind] ? '' : (D.lists.rules.approvals[a.kind] || {}).unit === '%' ? a.amount + '%' : inr0(a.amount);
 /* everything waiting for a yes in one place (11 Oct): credit, discounts, complaint settlements, and dealer schemes drawn up */
 const schAsks = () => SCH().list.map(sc => ({ id: sc.id, scheme: sc, kind: 'scheme', status: sc.status === 'Draft' ? 'Pending' : sc.status === 'Rejected' ? 'Rejected' : 'Approved', division: sc.division || 'wholesale', amount: sc.target,
   reason: `${sc.name}${sc.reward ? ' · reward: ' + sc.reward : ''} · ${ds(sc.start_on)} to ${ds(sc.end_on)}`, requested_by: sc.created_by, created_at: sc.created_at || sc.updated_at || '',
   decided_by: sc.status === 'Rejected' ? sc.rejected_by : sc.approved_by, decision_note: sc.status === 'Rejected' ? sc.reject_reason : '' }));
 EM.VIEWS.approvals = arg => {
-  const label = a => a.kind === 'scheme' ? 'Dealer scheme' : (D.lists.rules.approvals[a.kind] || { label: a.kind }).label;
-  const all = [...OPSD().approvals, ...schAsks()].filter(a => matches(`${a.scheme ? a.scheme.name : clientName(a.client_id)} ${label(a)} ${a.reason || ''} ${staffName(a.requested_by)}`, [])), tab = ['Pending', 'Approved', 'Rejected'].includes(arg) ? arg : 'Pending', rows = all.filter(a => a.status === tab).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
-  const href = a => a.kind === 'scheme' ? '#/scheme/' + a.id : a.entity === 'opp' ? '#/opp/' + a.record_id : a.entity === 'order' ? '#/order/' + a.record_id : a.entity === 'complaint' ? '#/complaint/' + a.record_id : '#/approvals';
-  const act = a => a.kind === 'scheme' ? (canSch('approve') ? `<button class="btn sm primary" data-act="sch-approve" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="sch-reject" data-id="${a.id}">Reject</button>` : '<span class="small muted">The Owner or a Director approves</span>')
-    : myLimit(a.kind) >= a.amount ? `<button class="btn sm primary" data-act="ap-yes" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="ap-no" data-id="${a.id}">Reject</button>` : '<span class="small muted">Above your limit</span>';
-  return `<div class="stack"><div class="stack-s"><div class="kicker">Credit, discounts, complaint settlements, dealer schemes</div><h1>Approvals</h1><p class="muted">Everything waiting for a yes. A request goes to whoever's limit covers it (limits in Lists & stages › Rules and numbers); a dealer scheme goes to the Owner or a Director. The Owner has no limit.</p></div>
+  const label = a => apLabel(D.lists.rules, a.kind), RO = !!D.access.raise_only;
+  const all = [...OPSD().approvals, ...(RO ? [] : schAsks())].filter(a => matches(`${a.scheme ? a.scheme.name : clientName(a.client_id)} ${label(a)} ${a.reason || ''} ${staffName(a.requested_by)}`, [])), tab = ['Pending', 'Approved', 'Rejected'].includes(arg) ? arg : 'Pending', rows = all.filter(a => a.status === tab).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+  const href = a => a.kind === 'scheme' ? '#/scheme/' + a.id : a.entity === 'opp' ? '#/opp/' + a.record_id : a.entity === 'order' ? '#/order/' + a.record_id : a.entity === 'complaint' ? '#/complaint/' + a.record_id : a.entity === 'request' ? '#/client/' + a.record_id : '#/approvals';
+  const act = a => RO ? '<span class="small muted" data-ro>Management decides</span>' : a.kind === 'scheme' ? (canSch('approve') ? `<button class="btn sm primary" data-act="sch-approve" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="sch-reject" data-id="${a.id}">Reject</button>` : '<span class="small muted">The Owner or a Director approves</span>')
+    : canDecide(D.lists.rules, a.kind, D.access.level, a.amount) ? `<button class="btn sm primary" data-act="ap-yes" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="ap-no" data-id="${a.id}">Reject</button>` : '<span class="small muted">Above your limit</span>';
+  return `<div class="stack">${RO ? `<div class="row between"><div class="stack-s"><div class="kicker">Only what you asked for</div><h1>Approvals</h1><p class="muted">Ask for a discount, credit or anything that needs a yes. Management decides; the answer shows here.</p></div><button class="btn primary" data-act="ap-ask">+ Ask for approval</button></div>` : `<div class="stack-s"><div class="kicker">Credit, discounts, complaint settlements, dealer schemes</div><h1>Approvals</h1><p class="muted">Everything waiting for a yes. A request goes to whoever's limit covers it (limits in Lists & stages › Rules and numbers); a dealer scheme goes to the Owner or a Director. The Owner has no limit.</p></div>`}
     ${searchBox('Company, scheme, kind, reason or who asked')}
     ${subtabs('#/approvals', tab, ['Pending', 'Approved', 'Rejected'].map(s => [s, `${s} <span class="muted">${all.filter(a => a.status === s).length}</span>`]))}
     ${rows.length ? table(['What', 'Company', 'Amount', 'Asked by', 'When', ''], rows.map(a => [`<a href="${href(a)}"><b>${esc(label(a))}</b></a><div class="small muted">${esc(a.reason)}</div>`, segBadge(a.division), a.kind === 'scheme' ? (D.access.prices ? `${inr0(a.amount)} target per dealer` : '') : apAmt(a), esc(staffName(a.requested_by)), a.created_at ? ds(String(a.created_at).slice(0, 10)) : '',
@@ -2046,7 +2047,23 @@ EM.VIEWS.approvals = arg => {
       : empty(`Nothing ${tab.toLowerCase()}`, 'Requests appear here when an order goes over a credit limit, a discount is above someone\'s limit, a complaint settlement is large, or a dealer scheme is drawn up.')}</div>`;
 };
 EM.VIEWS.approvals.title = () => 'Approvals';
-EM.navBadge = Object.assign(EM.navBadge || {}, { approvals: () => OPSD().approvals.filter(a => a.status === 'Pending' && myLimit(a.kind) >= a.amount).length + (canSch('approve') ? SCH().list.filter(sc => sc.status === 'Draft').length : 0) });
+EM.navBadge = Object.assign(EM.navBadge || {}, { approvals: () => D.access.raise_only ? 0 : OPSD().approvals.filter(a => a.status === 'Pending' && canDecide(D.lists.rules, a.kind, D.access.level, a.amount)).length + (canSch('approve') ? SCH().list.filter(sc => sc.status === 'Draft').length : 0) });
+/* S2: field sales ask for approval by hand (the same rule as the field app's Ask for approval); management decides */
+EM.ACTIONS['ap-ask'] = () => {
+  const cs = D.clients.filter(inDiv).filter(c => KINDS[c.kind] && KINDS[c.kind].group === 'dealer').sort((a, b) => a.name.localeCompare(b.name)), R = D.lists.rules;
+  const kinds = [...Object.entries(R.approvals).filter(([k]) => k !== 'complaint').map(([k, a]) => [k, a.label]), ['other', ASK_OTHER]];
+  EM.modal(`<h2>Ask for approval</h2><p class="small muted">Management decides. You see the answer here and in the bell.</p><div class="fgrid" style="margin-top:12px">
+    ${G.select({ key: 'client', label: 'Dealer', req: true }, '', 'aa', cs.map(c => [c.id, `${c.name} · ${kindLabel(c.kind)}`]))}
+    ${G.select({ key: 'kind', label: 'What for', req: true }, '', 'aa', kinds)}
+    <div class="field"><label for="aa-amt">Amount, if any</label><input class="input" id="aa-amt" inputmode="decimal" placeholder="% for a discount, ₹ for credit"></div>
+    <div class="field span2"><label for="aa-why">Why (compulsory)</label><textarea class="input" id="aa-why" rows="3" maxlength="500"></textarea></div></div>${errBox('aa-err')}
+    <div class="row" style="margin-top:12px"><button class="btn primary" data-act="ap-ask-save">Send for approval</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+EM.ACTIONS['ap-ask-save'] = async el => {
+  if (!qs('#aa-why').value.trim()) return showErr('aa-err', 'Write why, so management can decide.');
+  const r = await opsAct(el, 'approvals', { client_id: qs('#aa-client').value, kind: qs('#aa-kind').value, amount: qs('#aa-amt').value, reason: qs('#aa-why').value }, '<b>Sent for approval.</b> Management decides.', 'aa-err');
+  if (r) location.hash = '#/approvals/Pending';
+};
 EM.ACTIONS['ap-yes'] = el => opsAct(el, `approvals/${el.dataset.id}/decide`, { decision: 'Approved' }, '<b>Approved</b>');
 EM.ACTIONS['ap-no'] = el => { const note = prompt('Why is it rejected?') || ''; return opsAct(el, `approvals/${el.dataset.id}/decide`, { decision: 'Rejected', note }, '<b>Rejected</b>'); };
 
