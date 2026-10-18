@@ -693,10 +693,12 @@
     var fits = k.will <= room;
     var cost = Math.round(k.will * rate);
     var startAt = WB.how === 'schedule' ? new Date(WB.date + 'T' + (WB.time || '10:30') + ':00+05:30') : new Date();
-    var why = !k.will ? 'Nobody is left to send to.' : !t ? 'Pick a template.' : String(WB.name || '').trim().length < 2 ? 'Give the campaign a name.'
+    var lock = G.waBlocked ? G.waBlocked() : null;
+    var why = lock ? lock : !k.will ? 'Nobody is left to send to.' : !t ? 'Pick a template.' : String(WB.name || '').trim().length < 2 ? 'Give the campaign a name.'
       : WB.how === 'schedule' && (isNaN(startAt) || startAt.getTime() < Date.now()) ? 'Pick a date and time that has not passed.' : '';
     h += '<div class="waside" id="wb4"><section class="card pad"><div class="cardhead"><h3>4 · Check and send</h3>' +
-      (fits ? '<span class="pill ok">Fits today</span>' : '<span class="pill warn">Over today’s limit</span>') + '</div>' +
+      (lock ? '<span class="pill warn">Sending locked</span>' : fits ? '<span class="pill ok">Fits today</span>' : '<span class="pill warn">Over today’s limit</span>') + '</div>' +
+      (lock ? '<p class="closed locked" data-locked="campaign" style="margin:0 0 10px">' + esc(lock) + '</p>' : '') +
       '<ul class="ledger"><li><span>' + (WB.mode === 'excel' ? 'Ready rows in the Excel' : 'Match the filter') + '</span><b>' + n(k.match) + '</b></li>' +
       '<li><span>Said STOP, left out</span><b>' + n(k.stop) + '</b></li>' +
       '<li><span>No WhatsApp number</span><b>' + n(k.nonumber) + '</b></li>' +
@@ -712,7 +714,7 @@
       '<p class="err" id="wb-why"' + (why || WB.err ? '' : ' hidden') + '>' + esc(WB.err || why) + '</p>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" type="button" id="wb-go" data-act="wcSend"' +
       (why || WB.busy ? ' disabled' : '') + '>' + (WB.busy ? 'Saving…' : (WB.how === 'schedule' ? 'Schedule for ' : 'Send to ') + n(k.will) + ' ' + (k.will === 1 ? 'person' : 'people')) + '</button>' +
-      '<button class="btn alt" type="button" data-act="wcTest"' + (t ? '' : ' disabled') + '>Send me a test</button></div>' +
+      '<button class="btn alt" type="button" data-act="wcTest"' + (t && !lock ? '' : ' disabled aria-disabled="true"') + '>Send me a test</button></div>' +
       '<p class="hint" style="margin-top:10px">STOP from anyone, at any time, takes them off every campaign for good. ' +
       'Send me a test goes to your own number only.</p></section>';
     if (!fits && room !== Infinity) {
@@ -748,6 +750,8 @@
      'The number reached its new chats for the day.', 'Try again tomorrow from the conversation.'],
     [/paused|disabled|removed the template/i, 'Template paused', 'Meta’s rule',
      'Meta paused or removed the template before these went.', 'copy the campaign with another approved template.'],
+    [/once Meta approves/i, 'Waiting for Meta', 'Meta’s review',
+     'Sending from the cockpit opens once Meta approves our WhatsApp access (submitted 18 Oct).', 'nothing to do; it opens when Meta approves.'],
     [/stopped half way/i, 'Stopped half way', 'ours',
      'The cockpit stopped in the middle of sending. It may have gone.', 'open the conversation before trying again.'],
     [/./, 'WhatsApp did not take it', 'unclear',
@@ -967,6 +971,7 @@
         G.toast(at ? 'Scheduled for ' + when(at) + '.' : 'Going out in ten seconds. Undo is on the next screen.');
         G.go('#/campaigns/wa/' + r.id);
       }).catch(function (e) {
+        if (e && e.data && e.data.blocked && G.setWaBlock) G.setWaBlock(e.message);
         WB.busy = false; WB.err = (e && e.message) || 'It was not saved. Nothing was sent.'; G.render();
       });
   }
@@ -999,11 +1004,14 @@
     },
     wcSend: sendIt,
     wcTest: function () {
-      var t = tplOf(); if (!t) return;
+      var t = tplOf(); if (!t || (G.waBlocked && G.waBlocked())) return;
       var first = (tally().list.filter(function (x) { return !x.why; })[0] || {}).p || {};
       API.waTestToMe({ template: t.name, language: t.language, vars: varsFor(first, t) })
         .then(function (r) { G.toast('Test sent to +' + r.to + ', your own number.'); })
-        .catch(function (e) { G.toast((e && e.message) || 'The test did not go.', true); });
+        .catch(function (e) {
+          if (e && e.data && e.data.blocked && G.setWaBlock) G.setWaBlock(e.message);
+          G.toast((e && e.message) || 'The test did not go.', true);
+        });
     },
     wcCancel: function (id) {
       API.waCampaignCancel(id).then(function (r) {
@@ -1038,7 +1046,7 @@
     if (el.id === 'wb-name') {
       WB.name = el.value;
       var go = document.getElementById('wb-go'), t = tplOf(), k = tally();
-      var why = !k.will ? 'Nobody is left to send to.' : !t ? 'Pick a template.' : String(WB.name || '').trim().length < 2 ? 'Give the campaign a name.' : '';
+      var why = (G.waBlocked && G.waBlocked()) || (!k.will ? 'Nobody is left to send to.' : !t ? 'Pick a template.' : String(WB.name || '').trim().length < 2 ? 'Give the campaign a name.' : '');
       if (go) go.disabled = !!why;
       var w = document.getElementById('wb-why'); if (w) { w.textContent = why; w.hidden = !why; }
       return;

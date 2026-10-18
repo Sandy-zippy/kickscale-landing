@@ -41,6 +41,10 @@
   var LOADED = {};          /* thread id -> its messages, once fetched */
   var TEMPLATES = null;     /* what Meta has approved, fetched once */
   var BUSY = false;
+  var DRAFT = {};           /* thread id -> the reply half typed, kept through every redraw */
+  var SCROLL = {};          /* thread id -> {top, bottom}: where the reader was */
+  var IG_WAIT = 'Instagram DMs start arriving once Meta approves our Instagram access (review pending).';
+  function blocked() { return G.waBlocked ? G.waBlocked() : null; }
 
   function threads() {
     var list = (D().threads || []).slice();
@@ -111,6 +115,8 @@
             var cc = ((st && st.cards) || []).filter(function (x) { return x.id === 'comments'; })[0];
             tip = cc ? (cc.state === 'wait' ? (cc.line || '') + ' ' + (cc.step || '') : (cc.line || '')) : '';
           }
+          /* never a silent 0: an empty Instagram says why */
+          if (c[0] === 'instagram' && !counts.instagram) tip = IG_WAIT;
           return '<button class="chip" data-act="inboxChannel" data-id="' + c[0] + '" ' +
             (tip ? 'title="' + esc(tip.trim()) + '" ' : '') +
             'aria-pressed="' + (FILTER === c[0] ? 'true' : 'false') + '">' + esc(c[1]) +
@@ -136,7 +142,9 @@
       '<div class="threadlist">' +
         (list.length
           ? list.map(threadRow).join('')
-          : '<p class="m" style="padding:14px">Nothing on this filter.</p>') +
+          : (FILTER === 'instagram' && !counts.instagram
+              ? '<p class="m" data-empty="instagram" style="padding:14px">' + esc(IG_WAIT) + '</p>'
+              : '<p class="m" style="padding:14px">Nothing on this filter.</p>')) +
       '</div>' +
       '<div class="threadview">' + (OPEN ? conversation(OPEN, mayAssign) : nothingOpen()) + '</div>' +
       '</div>';
@@ -238,6 +246,16 @@
         (who ? esc(who) + ' writes' : 'they write') + '"></textarea>' +
         '<div class="sendrow"><button class="btn" type="button" disabled aria-disabled="true">Send</button>' +
         '<span class="hint">Meta&rsquo;s rule for Instagram and Messenger, not ours.</span></div></form>';
+    } else if (t.channel === 'whatsapp' && blocked()) {
+      /* ⚠️ LOCKED BEFORE HE TYPES. The last send Meta refused for permission set
+         this on the server; the first send that goes clears it. */
+      h += '<form class="convsend shut locked" data-locked="whatsapp" onsubmit="return false">' +
+        '<p class="closed"><span class="pill warn">Sending locked</span> ' + esc(blocked()) + '</p>' +
+        '<textarea rows="2" disabled aria-disabled="true" placeholder="Locked until Meta approves">' +
+        esc(DRAFT[t.id] || '') + '</textarea>' +
+        '<div class="sendrow"><button class="btn" type="button" disabled aria-disabled="true">Send</button>' +
+        '<button class="btn alt" type="button" disabled aria-disabled="true">Template</button>' +
+        '<span class="hint">Messages they send still arrive here.</span></div></form>';
     } else if (t.channel === 'whatsapp' && !left) {
       h += '<div class="convsend shut">' +
         '<p class="closed">Reply window closed. They need to write first.' +
@@ -246,7 +264,7 @@
         'Send an approved template</button></div>';
     } else {
       h += '<form class="convsend" id="sendform" data-id="' + esc(t.id) + '">' +
-        '<textarea id="sendbox" name="text" rows="2" placeholder="Write a reply…"></textarea>' +
+        '<textarea id="sendbox" name="text" rows="2" placeholder="Write a reply…">' + esc(DRAFT[t.id] || '') + '</textarea>' +
         '<div class="sendrow">' +
           '<button class="btn" type="submit"' + (BUSY ? ' disabled' : '') + '>' +
             (BUSY ? 'Sending…' : 'Send') + '</button>' +
@@ -267,6 +285,7 @@
   var STATE = { sent: 'Sent', delivered: 'Delivered', read: 'Read', failed: 'Failed', sending: 'Sending\u2026' };
   function failWords(why) {
     var w = String(why || '');
+    if (/once Meta approves/i.test(w)) return w;   /* already in our words */
     if (/not (a valid )?whatsapp|no whatsapp|undeliverable|131026/i.test(w)) return 'The number has no WhatsApp account, or could not take it. Check the number or call them.';
     if (/re-?engagement|24 hours|outside .*window|131047/i.test(w)) return 'Reply window closed. They need to write first.';
     if (/ecosystem|healthy|marketing messages|131049/i.test(w)) return 'Meta held it back: they had many marketing messages lately. Try in a few days.';
@@ -329,6 +348,7 @@
         var b = document.getElementById('convbody');
         if (b) b.scrollTop = b.scrollHeight;
       }).catch(function (e) {
+        if (OPEN !== id) return;   /* a late answer for a conversation already left */
         G.toast((e && e.message) || 'That conversation is not yours to read.', true);
         OPEN = null;
         G.render();
@@ -457,6 +477,7 @@
     }
   }
   function scWhy() {
+    if (blocked()) return blocked();
     if (!SC.wa && !(SC.digits && ZS.validPhone(SC.dial, SC.digits))) {
       return SC.who === 'number' ? 'Type the number, with its country code picked.' : 'Pick who it goes to.';
     }
@@ -610,6 +631,7 @@
           });
         }).catch(function (e) {
           var th = e && e.data && e.data.thread;
+          if (e && e.data && e.data.blocked && G.setWaBlock) G.setWaBlock(e.message);
           if (th) {
             /* it is on the conversation as Failed, with Try again */
             SC = null;
@@ -620,7 +642,8 @@
               A.openThread(th);
             });
           }
-          if (SC) { SC.busy = false; scDraw(); }
+          if (e && e.data && e.data.blocked && G.setWaBlock) G.setWaBlock(e.message);
+          if (SC) { SC.busy = false; scDraw(true); }
           /* in words, never a red dot: "not sent" with no reason is how somebody
              walks away believing they reached a client */
           G.toast((e && e.message) || 'It did not go. Nothing was sent.', true);
@@ -651,6 +674,7 @@
     BUSY = true; G.render();
     API.sendOnThread(id, payload).then(function () {
       BUSY = false;
+      if (payload && payload.text) delete DRAFT[id];
       var box = document.getElementById('sendbox');
       if (box) box.value = '';
       return API.thread(id).then(function (r) {
@@ -661,6 +685,7 @@
       });
     }).catch(function (e) {
       BUSY = false;
+      if (e && e.data && e.data.blocked && G.setWaBlock) G.setWaBlock(e.message);
       /* ⚠️ SAID IN WORDS, NOT AS A RED DOT. "Not sent" with no reason is how
          somebody walks away believing a client has been answered. */
       G.toast((e && e.message) || 'It did not go. Nothing was sent.', true);
@@ -678,11 +703,46 @@
   });
 
   document.addEventListener('input', function (e) {
+    if (e.target && e.target.id === 'sendbox' && OPEN) { DRAFT[OPEN] = e.target.value; return; }
     if (e.target && e.target.id === 'inboxq') {
       Q = String(e.target.value || '').toLowerCase().trim();
       G.render();
     }
   });
+
+  /* where the reader was in the open conversation, kept through redraws */
+  document.addEventListener('scroll', function (e) {
+    var b = e.target;
+    if (!b || b.id !== 'convbody' || !OPEN) return;
+    SCROLL[OPEN] = { top: b.scrollTop, bottom: b.scrollHeight - b.scrollTop - b.clientHeight < 40 };
+  }, true);
+  if (G.onRender) G.onRender(function () {
+    var b = document.getElementById('convbody');
+    if (!b || !OPEN || !LOADED[OPEN]) return;
+    var s = SCROLL[OPEN];
+    /* at the bottom (or never scrolled): stay at the bottom, so a new message shows */
+    b.scrollTop = !s || s.bottom ? b.scrollHeight : s.top;
+  });
+
+  /* ⚠️ THE OPEN CONVERSATION IS RE-READ WHEN THE PULSE MOVES. Until 18 Oct a
+     message that arrived while somebody had the conversation open only showed
+     after a reload. Called by the pulse after the pull lands; the redraw keeps
+     the reply being typed (DRAFT) and where they had scrolled to (SCROLL). */
+  G.inboxRefresh = function () {
+    if (!OPEN || !window.API || !API.signedIn()) return null;
+    var id = OPEN;
+    return API.thread(id).then(function (r) {
+      if (!r || OPEN !== id) return;
+      LOADED[id] = r.messages || [];
+      if (r.thread) {
+        var i = (D().threads || []).map(function (x) { return x.id; }).indexOf(id);
+        if (i >= 0) D().threads[i] = r.thread;
+      }
+      if (String(location.hash || '').indexOf('#/inbox') === 0) G.render();
+    }).catch(function () { /* the next pulse tries again */ });
+  };
+  G.inboxOpenForTest = function (id, msgs) { OPEN = id; if (msgs) LOADED[id] = msgs; };
+  G.inboxDraftForTest = function () { return DRAFT; };
 
   G.inboxBubble = bubble;
   /* Inbox showing one WhatsApp campaign's conversations (from its results) */

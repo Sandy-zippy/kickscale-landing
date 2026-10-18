@@ -571,12 +571,16 @@
     }
     lastAsk = Date.now();
 
-    API.pulse().then(function (p) {
+    return API.pulse().then(function (p) {
       if (!p) return;
+      setWaBlock(p.waBlocked);
       if (!lastPulse) { lastPulse = p; return; }       /* the first read is the baseline */
-      var moved = p.clients !== lastPulse.clients ||
-                  p.opportunities !== lastPulse.opportunities ||
-                  p.top !== lastPulse.top;
+      var booked = p.clients !== lastPulse.clients ||
+                   p.opportunities !== lastPulse.opportunities ||
+                   p.top !== lastPulse.top;
+      /* conversations: a message in or out, a tick, a comment, a campaign send */
+      var talked = p.msgs !== lastPulse.msgs;
+      var moved = booked || talked;
       var newClients = p.clients - lastPulse.clients;
       var newOpps = p.opportunities - lastPulse.opportunities;
 
@@ -591,10 +595,21 @@
          seconds later, tries again. */
       if (!moved) { lastPulse = p; return; }
 
+      var before = {};
+      (D.threads || []).forEach(function (t) { before[t.id] = String(t.last_at || ''); });
       return flushFirst().then(function () { return API.pull(); }).then(function (remote) {
         lastPulse = p;
         adoptRemote(remote);
-        announce(newClients, newOpps);
+        var fresh = talked ? (D.threads || []).filter(function (t) {
+          return t.last_dir === 'in' && String(t.last_at || '') > (before[t.id] || '');
+        }) : [];
+        if (booked) announce(newClients, newOpps);
+        /* the open conversation re-read in place, keeping the reply being typed */
+        var again = talked && window.GE && GE.inboxRefresh ? GE.inboxRefresh() : null;
+        var typing = window.GE && typeof GE.unsaved === 'function' && GE.unsaved();
+        if (!booked && !typing) render();
+        if (fresh.length) announceMessage(fresh);
+        return again;
       });
     }).catch(function () { /* offline is not an error worth shouting about */ });
   }
@@ -651,6 +666,54 @@
       } catch (e) { /* some browsers refuse a constructor outside a worker */ }
     }
     render();
+  }
+
+  /* "WhatsApp sending blocked", as the server last said it. Every pulse
+     carries it, so the reply box is locked BEFORE anybody types. */
+  var WA_BLOCK = null, WA_BLOCK_KNOWN = false;
+  function setWaBlock(line) {
+    line = line || null;
+    var changed = line !== waBlocked();
+    WA_BLOCK = line; WA_BLOCK_KNOWN = true;
+    if (changed) render();
+  }
+  function waBlocked() {
+    if (WA_BLOCK_KNOWN) return WA_BLOCK;
+    return (MSTAT && MSTAT.waBlocked && MSTAT.waBlocked.line) || null;
+  }
+
+  var CHAN_WORD = { whatsapp: 'WhatsApp message', instagram: 'Instagram message',
+                    messenger: 'Messenger message', comments: 'comment' };
+  function announceMessage(list) {
+    var t = list.slice().sort(function (a, b) { return String(b.last_at).localeCompare(String(a.last_at)); })[0];
+    var word = CHAN_WORD[t.channel] || 'message';
+    var line = 'New ' + word + ' from ' + (t.name || t.handle || 'somebody') +
+      (list.length > 1 ? ' (and ' + (list.length - 1) + ' more)' : '');
+    chime();
+    if (!document.hidden) { toast(line); return; }
+    if (notifyOn()) {
+      try {
+        var n = new Notification('ZippyScale', { body: line, tag: 'zs-msg', icon: 'img/zippyscale-logo-mark-dark.png' });
+        n.onclick = function () { try { window.focus(); } catch (e) {} location.hash = '#/inbox'; n.close(); };
+      } catch (e) {}
+    }
+  }
+
+  /* A short two-note chime, made in the browser (no file to load). A browser
+     that has not been clicked yet refuses sound; the toast still shows. */
+  var AC = null;
+  function chime() {
+    try {
+      AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+      [[880, 0], [1320, 0.12]].forEach(function (n) {
+        var o = AC.createOscillator(), g = AC.createGain(), t0 = AC.currentTime + n[1];
+        o.frequency.value = n[0]; o.type = 'sine';
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.25);
+        o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0 + 0.3);
+      });
+    } catch (e) { /* no sound is not a fault */ }
   }
 
   function askToNotify() {
@@ -1134,6 +1197,7 @@
      rebuilt, so it has to be found and re-focused by id. */
 
   var LAST_HASH = null;
+  var AFTER_RENDER = [];   /* screens that keep their own scroll (the open conversation) */
 
   /* Not every control has an id — the target tables key their inputs on
      data-ptarget, one per person per column — so focus is found again by
@@ -1203,6 +1267,7 @@
 
     if (sameScreen) { window.scrollTo(0, keepY); restoreFocus(keepFocus); }
     else window.scrollTo(0, 0);
+    AFTER_RENDER.forEach(function (fn) { try { fn(sameScreen); } catch (e) { console.error(e); } });
     /* the button that said "Listening" was just thrown away with the rest of the
        screen; tell its replacement what is going on */
     paintMic();
@@ -3046,11 +3111,11 @@
                  check: 'in WhatsApp Manager, the number still shows Connected and the cockpit app is ' +
                         'still subscribed. Then press Check again.' },
     instagram: { mark: 'IG', thing: 'message', ok: '',
-                 fix: 'Waiting on Meta\u2019s review, step 5. Until then only people with a role on the app can message.',
+                 fix: 'Instagram DMs start arriving once Meta approves our Instagram access (review pending).',
                  check: 'the Instagram account is still linked to the ZippyScale.in Page and Allow ' +
                         'access to messages is on in the Instagram app.' },
     messenger: { mark: 'M', thing: 'message', ok: '',
-                 fix: 'Only you and Sandy can message until step 4 and Meta\u2019s review.',
+                 fix: 'Only you and Sandy can message until Meta\u2019s review.',
                  check: 'the cockpit app is still connected to the ZippyScale.in Page under Business ' +
                         'settings, Integrations.' },
     leadads:   { mark: 'LA', thing: 'form', ok: '',
@@ -3110,6 +3175,12 @@
             : '<b>Connected.</b> Nothing has arrived yet. ' + esc(k.ok);
           fix = esc(k.fix);
         }
+        /* sending blocked by Meta: said on the card, before anybody tries */
+        var lock = c.id === 'whatsapp' ? waBlocked() : null;
+        if (lock) {
+          pill = '<span class="pill warn">Sending locked</span>';
+          head = '<b>Messages arrive. Sending is locked.</b> ' + esc(lock);
+        }
         if (c.id === 'billing') {
           acts += '<a class="minibtn" target="_blank" rel="noopener" href="https://business.facebook.com/billing_hub">Open billing_hub</a>';
         } else if (c.id === 'templates') {
@@ -3130,7 +3201,8 @@
             (tier.cap === null ? 'no limit' : ZS.fmt(tier.cap) + ' different people per 24 hours') +
             (tier.assumed ? ' (assumed: Meta has not reported the tier yet)' : ', as Meta reports it') + '.</p>';
         }
-        return '<div class="card pad conncard" data-conn="' + esc(c.id) + '" data-state="' + esc(c.state) + '">' +
+        return '<div class="card pad conncard" data-conn="' + esc(c.id) + '" data-state="' + esc(c.state) + '"' +
+          (lock ? ' data-locked="1"' : '') + '>' +
           '<div class="cardhead"><span class="agico">' + k.mark + '</span><h3>' + esc(c.label) + '</h3>' +
           pill + '</div><p class="state">' + head + '</p>' +
           '<div class="fix">' + fix + '</div><div class="acts">' + acts + '</div></div>';
@@ -4003,6 +4075,8 @@
     productById_view: productById_view,
     clientById: clientById, onFloor: onFloor, pendingMsgs: pendingMsgs,
     range: range, inRange: inRange, rangeBar: rangeBar, micButton: micButton, metaStatusNow: metaStatusNow,
+    waBlocked: waBlocked, setWaBlock: setWaBlock, onRender: function (fn) { AFTER_RENDER.push(fn); },
+    pulseTick: function () { return pulseTick(); }, pulseBaseline: function (p) { lastPulse = p; },
     micReset: micReset, hearing: function () { return HEARING; },
     log: log, KINDS: KINDS, KIND_GROUPS: KIND_GROUPS,
     /* A model is behind Jarvis only when there is a server to hold the key.

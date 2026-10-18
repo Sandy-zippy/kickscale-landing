@@ -449,6 +449,11 @@ body{display:block}
 .convsend .sendrow{display:flex;gap:9px;align-items:center;margin-top:9px;flex-wrap:wrap}
 .convsend .sendrow .hint{flex:1;min-width:120px}
 .convsend.shut{background:var(--note-bg)}
+/* sending locked by Meta: it must LOOK locked, not merely refuse */
+.convsend.locked{border-top:2px solid var(--warn,#b7791f)}
+.convsend.locked textarea{opacity:.55;cursor:not-allowed;background:var(--bg2,transparent)}
+.convsend.locked .btn[disabled]{opacity:.45;cursor:not-allowed}
+.closed.locked{font-size:13px;color:var(--tx2)}
 @media (max-width:900px){
   .inbox2{grid-template-columns:1fr}
   .threadlist{max-height:none}
@@ -857,6 +862,7 @@ td .sub{display:block;font-size:11px;color:var(--dim)}
 .conncard .cardhead{margin-bottom:10px}
 .conncard .agico{font-family:var(--d);font-size:11px;font-weight:700;color:var(--accent);border-radius:8px}
 .conncard .cardhead h3{margin:0}
+.conncard .cardhead .pill{white-space:nowrap;flex-shrink:0}
 .conncard .state{font-size:13px;color:var(--tx2);margin:0}
 .conncard .state b{color:var(--tx);font-weight:600}
 .conncard .fix{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--mut);flex:1}
@@ -1359,33 +1365,33 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 
 <div id="toast" hidden></div>
 
-<script src="places.js?b=1792309696"></script>
-<script src="vocab.js?b=1792309696"></script>
-<script src="api.js?b=1792309696"></script>
-<script src="core.js?b=1792309696"></script>
-<script src="app.js?b=1792309696"></script>
-<script src="stock.js?b=1792309696"></script>
-<script src="crm.js?b=1792309696"></script>
-<script src="pipeline.js?b=1792309696"></script>
-<script src="autos.js?b=1792309696"></script>
-<script src="processing.js?b=1792309696"></script>
-<script src="whatsapp.js?b=1792309696"></script>
-<script src="campaigns.js?b=1792309696"></script>
-<script src="bin.js?b=1792309696"></script>
-<script src="inbox.js?b=1792309696"></script>
-<script src="chatbot.js?b=1792309696"></script>
-<script src="outreach.js?b=1792309696"></script>
-<script src="diary.js?b=1792309696"></script>
-<script src="handbook.js?b=1792309696"></script>
-<script src="jarvis.js?b=1792309696"></script>
-<script src="jarvis-desk.js?b=1792309696"></script>
-<script src="dates.js?b=1792309696"></script>
+<script src="places.js?b=1792321149"></script>
+<script src="vocab.js?b=1792321149"></script>
+<script src="api.js?b=1792321149"></script>
+<script src="core.js?b=1792321149"></script>
+<script src="app.js?b=1792321149"></script>
+<script src="stock.js?b=1792321149"></script>
+<script src="crm.js?b=1792321149"></script>
+<script src="pipeline.js?b=1792321149"></script>
+<script src="autos.js?b=1792321149"></script>
+<script src="processing.js?b=1792321149"></script>
+<script src="whatsapp.js?b=1792321149"></script>
+<script src="campaigns.js?b=1792321149"></script>
+<script src="bin.js?b=1792321149"></script>
+<script src="inbox.js?b=1792321149"></script>
+<script src="chatbot.js?b=1792321149"></script>
+<script src="outreach.js?b=1792321149"></script>
+<script src="diary.js?b=1792321149"></script>
+<script src="handbook.js?b=1792321149"></script>
+<script src="jarvis.js?b=1792321149"></script>
+<script src="jarvis-desk.js?b=1792321149"></script>
+<script src="dates.js?b=1792321149"></script>
 <!-- The invoice PDF: the drawing library, the embedded font (the rupee sign is
      not in any PDF standard font), and the layout itself. -->
-<script src="vendor/jspdf.js?b=1792309696"></script>
-<script src="vendor/invoice-fonts.js?b=1792309696"></script>
-<script src="invoice.js?b=1792309696"></script>
-<script src="jarvis-view.js?b=1792309696"></script>
+<script src="vendor/jspdf.js?b=1792321149"></script>
+<script src="vendor/invoice-fonts.js?b=1792321149"></script>
+<script src="invoice.js?b=1792321149"></script>
+<script src="jarvis-view.js?b=1792321149"></script>
 <script>window.GE && window.GE.boot();</script>
 </body>
 </html>
