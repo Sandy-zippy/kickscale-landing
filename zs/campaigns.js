@@ -712,9 +712,9 @@
       (tier.assumed ? ' The limit of 250 is assumed until Meta reports the tier.' : '') + '</p>' +
       '<div class="f"><label for="wb-name">Campaign name</label><input id="wb-name" value="' + esc(WB.name) + '" placeholder="Proposal follow-up, Oct"></div>' +
       '<p class="err" id="wb-why"' + (why || WB.err ? '' : ' hidden') + '>' + esc(WB.err || why) + '</p>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" type="button" id="wb-go" data-act="wcSend"' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn" type="button" id="wb-go" data-act="wcSend"' + G.waLock() +
       (why || WB.busy ? ' disabled' : '') + '>' + (WB.busy ? 'Saving…' : (WB.how === 'schedule' ? 'Schedule for ' : 'Send to ') + n(k.will) + ' ' + (k.will === 1 ? 'person' : 'people')) + '</button>' +
-      '<button class="btn alt" type="button" data-act="wcTest"' + (t && !lock ? '' : ' disabled aria-disabled="true"') + '>Send me a test</button></div>' +
+      '<button class="btn alt" type="button" data-act="wcTest"' + G.waLock() + (t && !lock ? '' : ' disabled' + (lock ? '' : ' aria-disabled="true"')) + '>Send me a test</button></div>' +
       '<p class="hint" style="margin-top:10px">STOP from anyone, at any time, takes them off every campaign for good. ' +
       'Send me a test goes to your own number only.</p></section>';
     if (!fits && room !== Infinity) {

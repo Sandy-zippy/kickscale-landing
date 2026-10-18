@@ -572,7 +572,7 @@
         '<p class="m" style="margin-top:10px">' + (s === 'APPROVED'
           ? 'Approved by Meta. It can start a chat with anybody, at any time.'
           : 'Not approved yet, so it cannot start a chat.') + '</p>' +
-        (s === 'APPROVED' ? '<button class="btn" data-act="startChat" data-id="tpl|' + esc(t.name) + '|' + esc(t.language) + '">Start a chat with it</button>' : '') +
+        (s === 'APPROVED' ? '<button class="btn" data-act="startChat" data-id="tpl|' + esc(t.name) + '|' + esc(t.language) + '"' + G.waLock() + '>Start a chat with it</button>' : '') +
         '</div><div class="waside">' + G.waPhone(t, (t.samples || {}).body, (t.samples || {}).header, { short: true }) + '</div></div>');
     },
     waDropTpl: function (name) {

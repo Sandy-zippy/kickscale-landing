@@ -681,6 +681,13 @@
     if (WA_BLOCK_KNOWN) return WA_BLOCK;
     return (MSTAT && MSTAT.waBlocked && MSTAT.waBlocked.line) || null;
   }
+  /* The ONE look for a WhatsApp action that cannot send yet: put these
+     attributes on the button and the [data-walock] rule mutes it, with the
+     line as its tooltip. Empty when sending is open. */
+  function waLock() {
+    var l = waBlocked();
+    return l ? ' data-walock="1" aria-disabled="true" title="' + esc(l) + '"' : '';
+  }
 
   var CHAN_WORD = { whatsapp: 'WhatsApp message', instagram: 'Instagram message',
                     messenger: 'Messenger message', comments: 'comment' };
@@ -4075,7 +4082,7 @@
     productById_view: productById_view,
     clientById: clientById, onFloor: onFloor, pendingMsgs: pendingMsgs,
     range: range, inRange: inRange, rangeBar: rangeBar, micButton: micButton, metaStatusNow: metaStatusNow,
-    waBlocked: waBlocked, setWaBlock: setWaBlock, onRender: function (fn) { AFTER_RENDER.push(fn); },
+    waBlocked: waBlocked, waLock: waLock, setWaBlock: setWaBlock, onRender: function (fn) { AFTER_RENDER.push(fn); },
     pulseTick: function () { return pulseTick(); }, pulseBaseline: function (p) { lastPulse = p; },
     micReset: micReset, hearing: function () { return HEARING; },
     log: log, KINDS: KINDS, KIND_GROUPS: KIND_GROUPS,

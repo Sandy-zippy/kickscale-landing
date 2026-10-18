@@ -95,7 +95,7 @@
         ? 'Hand one to somebody and it moves to their inbox until you take it back.'
         : 'You see the conversations handed to you.') +
       '</p></div>' +
-      (G.acc().clients ? '<div class="right"><button class="btn" data-act="startChat">+ Start a chat</button></div>' : '') +
+      (G.acc().clients ? '<div class="right"><button class="btn" data-act="startChat"' + G.waLock() + '>+ Start a chat</button></div>' : '') +
       '</div>';
 
     /* the filters: channel first, because "show me WhatsApp" is the question */
@@ -253,8 +253,8 @@
         '<p class="closed"><span class="pill warn">Sending locked</span> ' + esc(blocked()) + '</p>' +
         '<textarea rows="2" disabled aria-disabled="true" placeholder="Locked until Meta approves">' +
         esc(DRAFT[t.id] || '') + '</textarea>' +
-        '<div class="sendrow"><button class="btn" type="button" disabled aria-disabled="true">Send</button>' +
-        '<button class="btn alt" type="button" disabled aria-disabled="true">Template</button>' +
+        '<div class="sendrow"><button class="btn" type="button" disabled' + G.waLock() + '>Send</button>' +
+        '<button class="btn alt" type="button" disabled' + G.waLock() + '>Template</button>' +
         '<span class="hint">Messages they send still arrive here.</span></div></form>';
     } else if (t.channel === 'whatsapp' && !left) {
       h += '<div class="convsend shut">' +
@@ -580,6 +580,8 @@
      number is locked to that conversation's own. */
   G.startChat = function (opts) {
     opts = opts || {};
+    /* locked: say why, open no dialog that ends in a dead Send */
+    if (G.waBlocked && G.waBlocked()) return G.toast(G.waBlocked());
     if (!window.API || !API.signedIn()) return G.toast('Sign in to the server first.', true);
     SC = { who: opts.opp ? 'opp' : opts.client ? 'client' : 'client', q: '', client: opts.client || null,
            opp: opts.opp || null, dial: ZS.DEFAULT_DIAL, digits: '', wa: null, name: '', tpl: opts.tpl || '',
