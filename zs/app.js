@@ -1327,6 +1327,9 @@
         .sort(function (a, b) { return bellMs(b.last_at) - bellMs(a.last_at); });
       var state = card ? (card.state === 'wait' ? 'blocked' : card.state === 'quiet' ? 'failed' : 'ok')
         : (c[0] === 'whatsapp' || mine.length ? 'ok' : 'blocked');
+      /* Instagram and Messenger: subscribed reads "ok" on the card, but customers cannot reach us
+         until Meta's App Review passes. Until the first conversation lands, say so (as the Inbox does). */
+      if (c[0] !== 'whatsapp' && state === 'ok' && !mine.length) state = 'blocked';
       /* a real customer message is never hidden behind a setup state: if it arrived, it shows */
       if (rows.length) state = 'working';
       else if (state === 'ok') state = 'empty';
