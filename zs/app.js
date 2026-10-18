@@ -352,6 +352,13 @@
                          'invoice_template'];
 
   var LAST_SEEN = {};
+  /* ⚠️ NOTHING GOES UP UNTIL THE SERVER'S BOOK HAS COME DOWN (18 Oct 2026).
+     A fresh browser holding a token booted, saved its blank()/seed store, found
+     LAST_SEEN empty, so every setting "differed", and the boot flush POSTed the
+     blanks over nine live settings before the pull ran. The baseline now exists
+     only after adoptRemote primes it, so the only thing that can ever differ from
+     it is an edit made in this session. */
+  var primed = false;
   /* ⚠️ THIS HASHES THE CONTENT. IT USED TO MEASURE ITS LENGTH.
      `JSON.stringify(r).length` is the same for 69999 and 61000, for "Pitched"
      and "Offered", for any edit that swaps characters without adding one. So the
@@ -380,6 +387,7 @@
   /* Record what everything looks like now, WITHOUT queueing any of it. Used
      right after a pull, so the first local edit is the first thing pushed. */
   function primeChanges() {
+    primed = true;
     LAST_SEEN = {};
     (D.clients || []).forEach(function (c) { LAST_SEEN['c:' + c.id] = stamp(c); });
     (D.opportunities || []).forEach(function (o) { LAST_SEEN['o:' + o.id] = stamp(o); });
@@ -389,7 +397,7 @@
   }
 
   function queueChanges() {
-    if (!window.API || !API.signedIn()) return;
+    if (!window.API || !API.signedIn() || !primed) return;
     (D.clients || []).forEach(function (c) {
       var k = 'c:' + c.id, now = stamp(c);
       if (LAST_SEEN[k] !== now) { LAST_SEEN[k] = now; API.touch('clients', c); }
@@ -423,7 +431,12 @@
     });
     SYNCED_SETTINGS.forEach(function (key) {
       var k = 's:' + key, now = stamp(D[key]);
-      if (LAST_SEEN[k] !== now) { LAST_SEEN[k] = now; API.touchSetting(key); }
+      if (LAST_SEEN[k] !== now) {
+        /* emptied by an edit only if there WAS a baseline it was emptied from */
+        var v = D[key], wasSeen = LAST_SEEN[k] !== undefined;
+        LAST_SEEN[k] = now;
+        API.touchSetting(key, wasSeen && (v == null || v === '' || (typeof v === 'object' && !Object.keys(v).length)));
+      }
     });
   }
 
@@ -549,8 +562,12 @@
   var lastPulse = null;
   var lastAsk = 0;
 
+  /* ⚠️ ARMED WHEREVER A SIGNED-IN SESSION EXISTS, ONCE (18 Oct 2026). It used to
+     be armed only from G_afterLogin, which at boot ran before the session was
+     restored and was never called after a server sign-in: zero /api/pulse in 60 s,
+     so a WhatsApp sat on the server until a reload. Idempotent: one timer. */
   function pulseStart() {
-    pulseStop();
+    if (pulseTimer) return;
     if (!window.API || !API.signedIn()) return;
     pulseTimer = setInterval(pulseTick, PULSE_MS);
     /* ask once now, so a tab brought back to the front is right immediately
@@ -2594,7 +2611,7 @@
   function unsynced() {
     var out = { clients: [], opportunities: [], invoices: [], followups: [] };
     Object.keys(out).forEach(function (k) {
-      (D[k] || []).forEach(function (r) { if (r && !r._synced) out[k].push(r); });
+      (D[k] || []).forEach(function (r) { if (r && !r._synced && !r._seed) out[k].push(r); });
     });
     return out;
   }
@@ -2736,7 +2753,7 @@
       var have = {};
       (D[k] || []).forEach(function (r) { have[r.id] = true; });
       (was[k] || []).forEach(function (r) {
-        if (have[r.id] || deleted[r.id]) return;
+        if (have[r.id] || deleted[r.id] || r._seed) return;
         /* the server lost it. Keep it, and send it back. */
         delete r._synced;
         D[k] = (D[k] || []).concat([r]);
@@ -2786,6 +2803,7 @@
     }
     try { localStorage.setItem(ZS.APP_KEY, JSON.stringify(D)); } catch (e) {}
     render();
+    pulseStart();
   }
 
   /* Pull now and adopt what comes back. Anything that changes the server's copy
@@ -3499,7 +3517,12 @@
      in, and your book lives in your own browser. Moving it between machines is
      Settings → Your data → Export, which writes a file you keep. */
   function seed() {
-    if (window.SEEDER) window.SEEDER(D, D.products || []);
+    if (!window.SEEDER) return;
+    window.SEEDER(D, D.products || []);
+    /* sample records are never the server's business: never rescued, never sent */
+    ['clients', 'opportunities', 'invoices', 'followups'].forEach(function (k) {
+      (D[k] || []).forEach(function (r) { r._seed = true; });
+    });
   }
   function hasDemo() { return !!window.SEEDER; }
 
@@ -3519,6 +3542,7 @@
     loadSheet();
     wire();
     if (D.session) G_afterLogin();
+    pulseStart();
     render();
   }
 
@@ -3658,6 +3682,7 @@
         $('#lg-go').textContent = 'Checking…';
 
         /* Only the server's answer opens the setup path. Anything else signs in. */
+        primed = false;   /* a new sign-in pushes nothing until its book has come down */
         (serverNeedsSetup === true
           ? API.createOwner(nm0, ln0, pw0)
           : API.signIn(ln0, pw0)

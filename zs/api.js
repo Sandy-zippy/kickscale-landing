@@ -213,9 +213,11 @@
     state.pending = count();
     schedule();
   }
-  function touchSetting(key) {
+  /* clear: the person emptied a key that had a value. Only then may the server
+     let an empty value overwrite a real one. */
+  function touchSetting(key, clear) {
     if (!signedIn()) return;
-    queue.settings[key] = true;
+    queue.settings[key] = clear ? 'clear' : true;
     state.pending = count();
     schedule();
   }
@@ -355,8 +357,9 @@
         catch (e) { failed++; queue.followups[fid] = true; if (e.offline) throw e; }
       }
       for (var key of Object.keys(queue.settings)) {
+        var clear = queue.settings[key] === 'clear';
         delete queue.settings[key];
-        try { await call('POST', '/api/settings', { body: { key: key, value: D[key] } }); sent++; }
+        try { await call('POST', '/api/settings', { body: { key: key, value: D[key], clear: clear } }); sent++; }
         catch (e) { failed++; if (e.offline) { queue.settings[key] = true; throw e; } }
       }
       state.lastSync = new Date().toISOString();
