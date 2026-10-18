@@ -430,3 +430,79 @@ textarea.fd-input { min-height: 96px; resize: vertical; }
 .fb-person .fb-r { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
 @media (max-width: 1100px) { .fb-plan { grid-template-columns: 1fr; } .fb-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .fb .fd-ic { width: 16px; height: 16px; }
+
+/* =============== S2p. RAISE (field sales: ask for approval, report a complaint; Me screen) =============== */
+.fd-back { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; flex: none; border: 0; cursor: pointer;
+  background: var(--fd-card); color: var(--fd-text); box-shadow: var(--fd-shadow); text-decoration: none; }
+.fd-back:focus-visible, .fd-raise a:focus-visible { outline: 2px solid var(--fd-ink); outline-offset: 2px; }
+.fd-raise { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fd-raise a { display: grid; align-content: start; gap: 6px; min-height: 128px; padding: 14px; border-radius: var(--fd-r); background: var(--fd-card);
+  box-shadow: var(--fd-shadow); text-decoration: none; color: inherit; transition: transform .14s var(--fd-ease); }
+.fd-raise a:active { transform: scale(.96); }
+.fd-raise .fd-tile { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--fd-ink); color: var(--fd-on-ink); margin-bottom: 4px; }
+.fd-raise b { font-size: 17px; font-weight: 700; letter-spacing: -.012em; line-height: 1.25; }
+.fd-raise span:not(.fd-tile) { font-size: var(--fd-fs-meta); color: var(--fd-muted); line-height: 1.35; }
+.fd-note { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fd-fs-meta); color: var(--fd-muted); padding: 2px 2px 0; }
+.fd-note .fd-ic { width: 20px; height: 20px; margin-top: 1px; }
+@media (max-width: 359px) { .fd-raise { grid-template-columns: 1fr; } }
+
+/* =============== F0. SHARED FILTER BAR (staff app, every list; desktop and phone) =============== */
+.flt { display: grid; gap: 8px; padding: 8px; background: var(--ge-bg); border: 1px solid var(--ge-border); border-radius: var(--r-sm, 12px); min-width: 0; }
+.flt-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.flt svg { width: 16px; height: 16px; flex: none; stroke-width: 1.75; }
+/* every control is one 34px pill (44px on touch) */
+.flt-q, .flt-dd, .flt-tg, .flt-any, .flt-dates { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 34px; min-width: 0;
+  border: 1px solid var(--ge-border); border-radius: 999px; background: var(--ge-bg); color: var(--ge-text); font-size: 13px; }
+.flt-q:focus-within, .flt-dd:focus-within, .flt-tg:has(input:focus-visible), .flt-any:focus-within, .flt-dates:focus-within { outline: 2px solid var(--ge-text); outline-offset: 1px; }
+.flt input, .flt select { font: inherit; color: inherit; background: transparent; border: 0; outline: 0; min-width: 0; height: 100%; padding: 0; }
+/* search: takes the spare room on the first line */
+.flt-q { flex: 1 1 220px; padding: 0 12px; color: var(--ge-text-muted); }
+.flt-q input { flex: 1; color: var(--ge-text); }
+/* dropdown: "Source  Every source v"; the word in front is the field, the bold part the value */
+.flt-dd { padding: 0 28px 0 12px; cursor: pointer; }
+.flt-dd::after { content: ''; position: absolute; right: 12px; top: 50%; width: 6px; height: 6px; margin-top: -5px; border: solid var(--ge-text-muted); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); pointer-events: none; }
+.flt-k { color: var(--ge-text-muted); white-space: nowrap; }
+.flt-dd select { appearance: none; -webkit-appearance: none; font-weight: 600; cursor: pointer; field-sizing: content; max-width: 190px; text-overflow: ellipsis; }
+.flt-dd.is-set, .flt-any.is-set, .flt-dates { border-color: var(--ge-text); background: var(--ge-surface-2); }
+/* quick toggle (Only mine, From field sales): a pill that fills when on */
+.flt-tg { padding: 0 12px; cursor: pointer; font-weight: 600; white-space: nowrap; user-select: none; }
+.flt-tg input { position: absolute; opacity: 0; pointer-events: none; }
+.flt-tg svg { display: none; }
+.flt-tg:has(input:checked) { background: var(--ge-accent); border-color: var(--ge-accent); color: var(--ge-bg); }
+.flt-tg:has(input:checked) svg { display: block; }
+/* Pick any field ... contains ... : one joined pill */
+.flt-any { padding: 0 0 0 12px; }
+.flt-any select { appearance: none; -webkit-appearance: none; font-weight: 600; cursor: pointer; field-sizing: content; max-width: 160px; padding-right: 4px; }
+.flt-any .flt-k { padding: 0 2px; }
+.flt-any input { width: 130px; padding: 0 12px 0 8px; border-left: 1px solid var(--ge-border); }
+/* Custom dates: From / To, shown only when Date filter = Custom dates */
+.flt-dates { padding: 0 6px 0 12px; }
+.flt-dates input[type="date"] { width: 128px; }
+/* applied filters: removable chips + Clear all, only when something is set */
+.flt-on { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 2px 0; border-top: 1px solid var(--ge-border); }
+.flt-n { font-size: 12px; color: var(--ge-text-muted); margin-right: 4px; font-variant-numeric: tabular-nums; }
+.flt-n b { color: var(--ge-text); }
+.flt-chip { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 4px 0 10px; border-radius: 999px; border: 0; background: var(--ge-surface-2); color: var(--ge-text); font: inherit; font-size: 12px; cursor: pointer; }
+.flt-chip b { font-weight: 600; }
+.flt-chip svg { width: 14px; height: 14px; padding: 2px; box-sizing: content-box; border-radius: 50%; color: var(--ge-text-muted); }
+.flt-chip:hover svg { background: var(--ge-border); color: var(--ge-text); }
+.flt-chip:focus-visible, .flt-clear:focus-visible { outline: 2px solid var(--ge-text); outline-offset: 1px; }
+.flt-clear { border: 0; background: none; font: inherit; font-size: 12px; font-weight: 600; color: var(--ge-text); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 4px 6px; margin-left: auto; }
+/* phone: a tidy two-column grid; the field word sits small above its value */
+@media (max-width: 640px) {
+  .flt-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .flt-q, .flt-any, .flt-dates, .flt-date, .flt-row > .wide { grid-column: 1 / -1; }
+  .flt-dd, .flt-tg { height: 44px; border-radius: 12px; }
+  .flt-dd { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding: 0 26px 0 12px; }
+  .flt-dd .flt-k { font-size: 11px; line-height: 1.2; }
+  .flt-dd select { max-width: 100%; width: 100%; height: auto; line-height: 1.3; overflow: hidden; white-space: nowrap; }
+  .flt-tg { justify-content: center; }
+  .flt-any input, .flt-dates input[type="date"] { flex: 1; width: auto; }
+  .flt-clear { margin-left: 0; }
+}
+@media (pointer: coarse) {
+  .flt-q, .flt-dd, .flt-tg, .flt-any, .flt-dates { height: 44px; }
+  .flt input, .flt select { font-size: 16px; }
+  .flt-dd select { font-size: 15px; }   /* no iOS zoom on focus */
+  .flt-chip { height: 36px; }
+}

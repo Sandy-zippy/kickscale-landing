@@ -146,3 +146,7 @@ body.pt-on #shell { display: none; }
 .sectabs a { text-decoration: none; padding: 7px 14px; border-radius: 8px; color: var(--ge-text-muted); font-weight: 500; white-space: nowrap; }
 .sectabs a:hover { color: var(--ge-text); }
 .sectabs a.on { background: var(--ge-primary); color: var(--ge-on-primary, #111); font-weight: 600; }
+
+/* Bhargav 18 Oct: the tile menu is always two columns of fixed pairs; an empty slot holds its place, and goes in the one-column folded menu */
+@media (max-width: 1000px) { .navgrid { grid-template-columns: 1fr 1fr; } }
+#shell.folded .navslot { display: none; }

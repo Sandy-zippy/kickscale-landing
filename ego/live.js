@@ -102,18 +102,19 @@ const NAV_PARENT = Object.fromEntries(Object.entries(NAV_GROUP).flatMap(([g, ks]
 const navOk = k => NAV_GROUP[k] ? NAV_GROUP[k].some(([t]) => allowedTab(t)) : allowedTab(k);
 EM.navParent = t => NAV_PARENT[t] || t;
 EM.navHref = k => NAV_GROUP[k] ? (NAV_GROUP[k].find(([t]) => allowedTab(t)) || [k])[0] : k;
-const NAV_TAIL = ['fieldteam', 'complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
-// Menu order per view, as Bhargav set it on 5 Oct.
-const NAV_ORDER = {
-  wholesale: ['home', 'people', 'architects', 'design500', 'dealers', 'opps', 'projects', 'schemes', 'orders', 'orderbook', 'installation', ...NAV_TAIL],
-  retail: ['home', 'people', 'architects', 'design500', 'dealers', 'opps', 'projects', 'orders', 'orderbook', 'installation', ...NAV_TAIL],
-  both: ['home', 'people', 'dealers', 'architects', 'design500', 'orderbook', 'opps', 'projects', 'schemes', 'orders', 'installation', ...NAV_TAIL],
-};
+// One menu order for every login and every company view, set by Bhargav on 18 Oct. A role or view that cannot open
+// an item loses it; the rest keep their places. On the two-column tile menu the items sit in fixed pairs (NAV_PAIRS):
+// when a role lacks one item of a pair its slot stays empty, so no pair ever shifts.
+const NAV_ORDER = ['home', 'people', 'architects', 'dealers', 'opps', 'approvals', 'projects', 'orders', 'orderbook', 'installation', 'fieldteam', 'complaints', 'inventory', 'import', 'design500', 'schemes', 'analysis', 'p200'];
+const NAV_PAIRS = NAV_ORDER.flatMap((k, i) => i % 2 ? [] : [[k, NAV_ORDER[i + 1]]]);
 EM.navTabs = () => ({
-  main: (NAV_ORDER[EM.div] || NAV_ORDER.both).map(k => [k, NAV_LABEL[k]])
+  main: NAV_ORDER.map(k => [k, NAV_LABEL[k]])
     .filter(([k]) => navOk(k) && !(['p200', 'schemes'].includes(k) && EM.div === 'retail')),
   shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['integrations', 'Integrations'], ['bin', 'Recycle bin'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
+/* the tile menu in its fixed pairs: null is an empty slot (a pair with neither item is left out) */
+EM.navSlots = nav => { const on = Object.fromEntries(nav.main);
+  return [...NAV_PAIRS.flatMap(pr => pr.some(k => on[k]) ? pr.map(k => on[k] ? [k, on[k]] : null) : []), ...nav.shared]; };
 Object.assign(ICON, {
   opps: ICON.leads, schemes: ICON.targets, architects: ICON.firms, people: ICON.clients, inventory: ICON.stock, p200: ICON.targets, orderbook: ICON.orders || ICON.leads, import: _i('<path d="M12 3.5v11M7.5 10l4.5 4.5 4.5-4.5"/><path d="M4 15.5v3A2 2 0 0 0 6 20.5h12a2 2 0 0 0 2-2v-3"/>'),
   lists: _i('<path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'),

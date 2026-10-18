@@ -102,7 +102,7 @@ const EM = {
     else { try { body = view(arg); } catch (err) { console.error(err); if (window.EGOREPORT) window.EGOREPORT(err, r); body = `<div class="stack"><h1>This screen hit a problem</h1><p class="muted">${esc(err.message)}</p><a class="btn" href="#/home">Home</a></div>`; } }
     const nav = EM.navTabs();
     const link = ([k, l]) => `<a href="#/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`;
-    const items = [...nav.main, ...nav.shared];
+    const items = EM.navSlots ? EM.navSlots(nav) : [...nav.main, ...nav.shared];
     // Fixed order: the selected section is highlighted where it is, it never moves.
     const badge = k => (EM.navBadge && EM.navBadge[k] ? EM.navBadge[k]() : 0);
     const navOn = EM.navParent ? EM.navParent(tab) : tab; const card = ([k, l]) => { const n = badge(k); return `<a href="#/${EM.navHref ? EM.navHref(k) : k}" data-nav="${k}" class="navcard ${k === navOn ? 'on' : ''}" title="${esc(l)}" aria-label="${esc(l)}${n ? `, ${n} unread` : ''}" aria-current="${k === navOn ? 'page' : 'false'}">${ICON[k] || ICON.home}<span>${l}</span>${n ? `<i class="nbadge">${n}</i>` : ''}</a>`; };
@@ -116,7 +116,7 @@ const EM = {
       </div>
       ${EM.topExtras()}
       <nav class="sidenav" aria-label="Sections">
-        <div class="navgrid">${items.map(card).join('')}</div>
+        <div class="navgrid">${items.map(x => x ? card(x) : '<span class="navslot" aria-hidden="true"></span>').join('')}</div>
       </nav>
       <div class="side-note live"><span class="dot"></span>Live records. Every figure is counted from what your team saved.</div>`;
     // Back to the screen you came from (the app's own history, so it never leaves the app) or to the main menu.
