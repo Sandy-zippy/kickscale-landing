@@ -1027,7 +1027,7 @@ const ROLE_TABS = {
   ws_marketing: ['home', 'people', 'architects', 'dealers', 'opps', 'analysis', 'account', 'projects', 'design500', 'installation', 'samples', 'displays', 'training'],
 };
 /* S2 (Bhargav 18 Oct eve): these roles RAISE approval requests and complaints and see only what they raised, with its status;
-   approvals are decided by management (an approval level), complaints handled by telecalling. Never approve, settle or move. */
+   approvals are decided by management (an approval level), complaints handled by telesales. Never approve, settle or move. */
 const RAISE_ONLY = ['ws_field'];
 /* an approval asked for by hand: the kinds in Rules and numbers (not Complaint settlement, which a settlement raises), or anything else */
 const ASK_OTHER = 'Something else';
@@ -1062,7 +1062,7 @@ const TOOLS = [
   ['WhatsApp Cloud API', 'WhatsApp messages', ['Phone number ID', 'Business account ID', 'Access token']],
   ['IndiaMART', 'Enquiries', ['CRM key']],
   ['Gmail (Apps Script)', 'Email', ['Script URL', 'Shared secret']],
-  ['Runo', 'Calls and telecalling', ['API key']],
+  ['Runo', 'Calls and telesales', ['API key']],
   ['Sales Diary', 'Field visits', ['API key']],
   ['JustDial', 'Enquiries', ['API key']],
   ['Google Gemini', 'AI model', ['API key']],

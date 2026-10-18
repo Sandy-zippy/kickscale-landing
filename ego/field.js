@@ -213,7 +213,7 @@
     try {
       const w = await write(ap ? '/api/field/approval' : '/api/field/complaint', fd, { type: 'ask', ghost }, `${ap ? 'Approval' : 'Complaint'} · ${A.pick.name}`);
       A.urls.forEach(u => URL.revokeObjectURL(u)); S.ask = null; S.af = 'all'; location.hash = '#/requests'; render();
-      toast(w.queued ? '<b>Saved on this phone.</b> It will send when signal returns.' : ap ? '<b>Sent for approval.</b> Management decides.' : `<b>Complaint ${esc(w.r.ref)} sent.</b> With ${esc(w.r.owner)} in telecalling.${w.r.photo_note ? ' ' + esc(w.r.photo_note) : ''}`, w.queued ? w.n : undefined);
+      toast(w.queued ? '<b>Saved on this phone.</b> It will send when signal returns.' : ap ? '<b>Sent for approval.</b> Management decides.' : `<b>Complaint ${esc(w.r.ref)} sent.</b> With ${esc(w.r.owner)} in telesales.${w.r.photo_note ? ' ' + esc(w.r.photo_note) : ''}`, w.queued ? w.n : undefined);
     } catch (x) { A.busy = false; A.err = { all: x.message }; render(); }
   }
 
@@ -233,9 +233,9 @@
         : `${dealer}
         <div class="fd-field${e.product ? ' has-err' : ''}"><label for="fa-prod">Product</label><input class="fd-input" id="fa-prod" data-ask="product" value="${esc(A.product)}" maxlength="120">${fe('product')}</div>
         <div class="fd-field"><label for="fa-batch">Batch or lot</label><input class="fd-input" id="fa-batch" data-ask="batch" value="${esc(A.batch)}" maxlength="60" placeholder="On the box label, if you have it"></div>
-        <div class="fd-field"><span class="fd-label">Photos</span><div class="fd-photos">${A.photos.map((f, i) => `<div class="fd-thumb"><img src="${A.urls[i]}" alt="Complaint photo ${i + 1}"><button type="button" aria-label="Remove photo" data-fa="ask-photo-x" data-i="${i}">${ic('x')}</button></div>`).join('')}${A.photos.length < 10 ? `<label class="fd-photo-add">${ic('camera')}Add<input type="file" accept="image/*" capture="environment" multiple data-ask-file></label>` : ''}</div><span class="fd-help">Up to 10. They open, download and share from the complaint on the team screens.</span></div>
+        <div class="fd-field"><span class="fd-label">Photos</span><div class="fd-photos">${A.photos.map((f, i) => { const im = /^image\//.test(f.type || ''); return `<div class="fd-thumb${im ? '' : ' is-file'}" role="img" aria-label="Complaint photo ${i + 1}: ${esc(f.name || 'file')}">${im ? `<img src="${A.urls[i]}" alt="">` : ''}<span class="fd-fname">${esc(f.name || 'File')}</span><button type="button" aria-label="Remove photo ${i + 1}" data-fa="ask-photo-x" data-i="${i}">${ic('x')}</button></div>`; }).join('')}${A.photos.length < 10 ? `<label class="fd-photo-add">${ic('camera')}Add<input type="file" accept="image/*" capture="environment" multiple data-ask-file></label>` : ''}</div><span class="fd-help">Up to 10. They open, download and share from the complaint on the team screens.</span></div>
         <div class="fd-field"><label for="fa-note">Note</label><textarea class="fd-input" id="fa-note" data-ask="note" maxlength="2000">${esc(A.note)}</textarea></div>`;
-      return back(t === 'approval' ? 'Ask for approval' : 'Report a complaint', t === 'approval' ? 'Management decides' : 'Telecalling takes it from here') + `<main class="fd-view"><form class="fd-form" onsubmit="return false" data-askform="${t}">${body}
+      return back(t === 'approval' ? 'Ask for approval' : 'Report a complaint', t === 'approval' ? 'Management decides' : 'Telesales takes it from here') + `<main class="fd-view"><form class="fd-form" onsubmit="return false" data-askform="${t}">${body}
         <span class="fd-err" role="alert">${esc(e.all || '')}</span>
         <div class="fd-savebar"><button type="button" class="fd-btn primary lg block" data-fa="ask-save"${A.busy ? ' aria-busy="true" disabled' : ''}>${t === 'approval' ? 'Send for approval' : 'Send complaint'}</button></div></form></main>`;
     },
@@ -251,7 +251,7 @@
         : [r.ref, r.product || r.type, r.batch ? 'batch ' + r.batch : '', r.photos ? `${r.photos} photo${r.photos === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
       const last = r => r.waiting ? [ic('wifi-off'), 'Saved on this phone, will send when signal returns']
         : r.t === 'approval' ? (r.status === 'Pending' ? [ic('clock'), `Asked ${dayShort(r.created_at)}. Management decides.`] : [ic(r.status === 'Approved' ? 'circle-check' : 'circle-x'), `${r.status} by ${r.by_name || 'management'}${r.decided_at ? ' ' + dayShort(r.decided_at) : ''}${r.decision_note ? `. Reason: ${r.decision_note}` : ''}`])
-        : [ic(r.status === done ? 'circle-check' : 'phone'), r.status === done && r.resolution ? `Resolved: ${r.resolution}` : `With ${r.owner_name || 'telecalling'} since ${dayShort(r.created_at)}`];
+        : [ic(r.status === done ? 'circle-check' : 'phone'), r.status === done && r.resolution ? `Resolved: ${r.resolution}` : `With ${r.owner_name || 'telesales'} since ${dayShort(r.created_at)}`];
       const card = r => { const l = last(r); return `<article class="fd-req" data-ask-row="${r.t}"><div class="fd-row between"><span class="fd-kind">${ic(r.t === 'approval' ? 'circle-check' : 'alert-triangle')}${r.t === 'approval' ? 'Approval' : 'Complaint'}</span>${pill(r)}</div>
         <div class="fd-name">${esc(r.c_name || '')}</div><div class="fd-what">${esc(what(r))}</div><div class="fd-last">${l[0]}<span>${esc(l[1])}</span></div></article>`; };
       return back('My requests', 'Only what you raised') + `<main class="fd-view">
@@ -541,6 +541,8 @@
       /* typing in + Requirement is kept as it is typed, without drawing the screen again (the search redraws only its list) */
       document.addEventListener('input', e => { const a = e.target.dataset && e.target.dataset.ask; if (a && S.ask) { S.ask[a] = e.target.value; if (a === 'q') { const p = qs('[data-ask-picks]'); if (p) p.innerHTML = askPicksHtml(); } return; } });
       document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.req; if (!k || !S.req) return; S.req[k] = e.target.value; if (k === 'sqft') { const h = qs('[data-req-boxes]'); if (h) h.textContent = reqBoxes(S.req); } if (k === 'q') { const p = qs('[data-picks]'); if (p) p.innerHTML = picksHtml(); } });
+      /* a picked photo that will not draw shows as a file tile with its name, never a broken image */
+      document.addEventListener('error', e => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest && t.closest('[data-askform] .fd-thumb')) { t.closest('.fd-thumb').classList.add('is-file'); t.remove(); } }, true);
       document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('fd-more') && S.req) S.req.more = e.target.open; }, true);
       /* weak network: send what waits when signal returns, every 30 s, and show the banner when it goes */
       window.addEventListener('online', () => { paintBanner(); flush(); });

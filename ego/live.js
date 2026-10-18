@@ -498,7 +498,7 @@ const scopeLabel = () => ({ all: 'sees both companies', division: `sees all of $
 /* What is still to come, said plainly instead of shown as numbers. */
 const SOON = {
   sales: ['Invoices, outstanding and ledgers', 'Tally. Orders are taken here; invoices, payments and outstanding will be read from Tally.'],
-  calls: ['Calls and telecalling', 'Runo, through its API key.'],
+  calls: ['Calls and telesales', 'Runo, through its API key.'],
   visits: ['Field visits', 'Sales Diary, once its makers share their API documentation.'],
   whatsapp: ['WhatsApp messages', 'The WhatsApp Business number and Meta approval.'],
   ads: ['Ad and portal leads', 'Meta, Google, IndiaMART and JustDial lead feeds.'],
@@ -1968,7 +1968,7 @@ EM.ACTIONS['snag-close-go'] = el => opsAct(el, `snags/${el.dataset.id}/close`, {
 /* ---- complaints */
 EM.VIEWS.complaints = arg => {
   const CS = OS_('complaint_statuses'), all = OPSD().complaints.filter(inDiv).filter(c => (!EM.cseg || c.division === EM.cseg) && matches(`${c.ref} ${clientName(c.client_id)} ${c.type} ${c.description || ''}`, [])), tab = CS.includes(arg) ? arg : 'all', rows = all.filter(c => tab === 'all' || c.status === tab);
-  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="muted">${D.access.raise_only ? 'Only the complaints you reported, with their status. Telecalling handles them.</p><p class="muted" hidden>' : ''}Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
+  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="muted">${D.access.raise_only ? 'Only the complaints you reported, with their status. Telesales handles them.</p><p class="muted" hidden>' : ''}Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
     ${searchBox('Complaint number, company, kind or what happened')}
     ${stageBoard(CS, all, c => c.status, c => `<a class="card stack-s" style="text-decoration:none" href="#/complaint/${c.id}"><b>${esc(c.ref)}</b><span class="small">${esc(c.type)}</span><span class="small muted">${esc(clientName(c.client_id))}</span></a>`)}
     ${subtabs('#/complaints', tab, [['all', `All <span class="muted">${all.length}</span>`], ...CS.map(s => [s, `${esc(s)} <span class="muted">${all.filter(c => c.status === s).length}</span>`])])}
@@ -1984,7 +1984,7 @@ EM.ACTIONS['cmp-add'] = el => {
   EM.modal(`<h2>Log a complaint</h2><div class="fgrid" style="margin-top:12px">
     ${G.select({ key: 'client', label: 'From', req: true }, el.dataset.client || '', 'cp', cs.map(c => [c.id, `${c.name} · ${kindLabel(c.kind)}`]))}
     ${G.select({ key: 'type', label: 'Kind', req: true }, '', 'cp', D.lists.complaint_types.map(v => [v, v]))}${G.select({ key: 'sev', label: 'Severity', req: true }, 'Medium', 'cp', D.lists.severities.map(v => [v, v]))}
-    ${G.select({ key: 'ch', label: 'Came in by' }, '', 'cp', D.lists.complaint_channels.map(v => [v, v]))}${D.access.raise_only ? '<p class="small muted" data-cp-tele>Telecalling takes it from here: it goes to the dealer\'s telesales person.</p>' : G.select({ key: 'own', label: 'Handled by' }, me().id, 'cp', D.staff.filter(x => x.active).map(x => [x.id, x.name]), false)}
+    ${G.select({ key: 'ch', label: 'Came in by' }, '', 'cp', D.lists.complaint_channels.map(v => [v, v]))}${D.access.raise_only ? '<p class="small muted" data-cp-tele>Telesales takes it from here: it goes to the dealer\'s telesales person.</p>' : G.select({ key: 'own', label: 'Handled by' }, me().id, 'cp', D.staff.filter(x => x.active).map(x => [x.id, x.name]), false)}
     <div class="field span2"><label for="cp-desc">What happened</label><textarea class="input" id="cp-desc" rows="3"></textarea></div>
     ${cmpInstallFields('cp')}
     <div class="field span2" data-field="cp_photos"><label for="cp-photos">Photos: one or many, up to 10 at a time, 25 MB each</label><input class="input" id="cp-photos" type="file" multiple accept="${FILE_ACCEPT}"></div></div>${errBox('cp-err')}
@@ -2013,7 +2013,7 @@ EM.VIEWS.complaint = id => {
     <div class="stack-s"><h1>${esc(c.ref)} · ${esc(c.type)}</h1><p class="muted"><a href="#/client/${c.client_id}">${esc(clientName(c.client_id))}</a> · ${esc(c.severity)}${c.channel ? ' · by ' + esc(c.channel) : ''} · ${esc(staffName(c.owner_id))} · ${ds(c.created_at.slice(0, 10))}</p></div>
     ${pend.length ? `<div class="callout warn"><b>Waiting for approval.</b> ${pend.map(a => esc(a.reason)).join(' · ')}</div>` : ''}
     <section class="card stack-s">${stageChips(CS, c.status)}<p>${esc(c.description || '')}</p>${cmpInstallText(c) ? `<p class="small" data-cmp-install>${cmpInstallText(c)}</p>` : ''}<p class="small" data-cmp-cert>Installer: ${cmpCert(c)}</p>${c.resolution ? `<p><b>Resolution:</b> ${esc(c.resolution)}${c.cost != null && D.access.prices ? ` · cost ${inr0(c.cost)}` : ''}</p>` : ''}</section>
-    ${D.access.raise_only ? `<p class="small muted" data-ro>Telecalling handles it; the status here changes as they work on it.</p>` : ''}
+    ${D.access.raise_only ? `<p class="small muted" data-ro>Telesales handles it; the status here changes as they work on it.</p>` : ''}
     ${c.status !== lastOf(CS) && !D.access.raise_only ? `<section class="card stack-s"><h3>Update</h3><div class="fgrid">${G.select({ key: 'st', label: 'Status' }, c.status, 'cu', CS.map(v => [v, v]), false)}
       <div class="field span2"><label for="cu-res">Resolution (compulsory to resolve)</label><input class="input" id="cu-res" value="${esc(c.resolution || '')}"></div>
       <div class="field"><label for="cu-cost">Settlement cost</label>${G.adorn({ type: 'money', key: 'cost' }, `<input class="input" id="cu-cost" type="number" min="0" step="1" value="${c.cost ?? ''}">`)}</div></div>${errBox('cu-err')}

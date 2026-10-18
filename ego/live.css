@@ -150,3 +150,10 @@ body.pt-on #shell { display: none; }
 /* Bhargav 18 Oct: the tile menu is always two columns of fixed pairs; an empty slot holds its place, and goes in the one-column folded menu */
 @media (max-width: 1000px) { .navgrid { grid-template-columns: 1fr 1fr; } }
 #shell.folded .navslot { display: none; }
+
+/* S2 gate (Captain 18 Oct): the Save / Send bar sits clear of the raised + in the bottom bar, and the last field scrolls clear of it */
+.fd .fd-savebar { bottom: calc(var(--fd-bar) + 34px + env(safe-area-inset-bottom, 0px)); margin-bottom: 24px; }
+/* a picked file that is not an image (or will not draw): a file tile with its name, the X in its own corner */
+.fd-thumb .fd-fname { display: none; }
+.fd-thumb.is-file { display: grid; align-content: end; padding: 8px; border: 1px solid var(--fd-line, rgba(127,127,127,.3)); background: var(--fd-card); }
+.fd-thumb.is-file .fd-fname { display: block; font-size: 12px; font-weight: 600; line-height: 1.3; color: var(--fd-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
