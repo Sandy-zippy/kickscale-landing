@@ -534,26 +534,34 @@ EM.qByView = {};
 Object.defineProperty(EM, 'clientQ', { get: () => EM.qByView[(location.hash.split('/')[1] || 'home')] || '', set: v => { EM.qByView[(location.hash.split('/')[1] || 'home')] = v; } });
 const searchBox = ph => `<label class="field" style="max-width:420px"><span class="small muted">Search</span><input class="input" id="cq" value="${esc(EM.clientQ)}" placeholder="${ph}"></label>`;
 const matches = (txt, mobiles) => { const q = EM.clientQ.toLowerCase(), qd = q.replace(/\D/g, ''); return !q || txt.toLowerCase().includes(q) || (qd.length >= 4 && mobiles.some(m => String(m || '').includes(qd))); };
+EM.orgF = {}; EM.pplF = { tg: {}, period: 'all' };
+/* S3: the Company dropdown of a filter bar, only in the view that shows both companies */
+const coDD = get => EM.div === 'both' ? [['co', 'Company', 'EGO Premium and Big E', get, v => (DIVS[v] || { co: v }).co]] : [];
 function orgList(org, arg) {
   const all0 = org === 'dealer' ? DEALER_KINDS : ARCH_KINDS;
   const subs = org === 'dealer' ? [['all', 'All', all0], ['distributor', 'Distributors', ['distributor']], ['dealer', 'Dealers', ['dealer']], ['sub_dealer', 'Sub-dealers', ['sub_dealer']]]
     : [['all', 'All', all0], ['design_firm', 'Firms', ['design_firm']], ['architect', 'Solo architects', ['architect']]];
   const tab = subs.find(t => t[0] === arg) || subs[0];
   const all = D.clients.filter(c => all0.includes(c.kind) && inDiv(c));
-  const ppF = org === 'dealer' ? EM.ppF || '' : '', ppOf = c => (c.extra || {}).project_partner || '';
-  const rows = all.filter(c => tab[2].includes(c.kind) && (!ppF || (ppF === 'none' ? !ppOf(c) : ppOf(c) === ppF)) && matches(`${c.name} ${c.city} ${c.ref || ''} ${c.gst} ${(c.extra || {}).partner_capability || ''}`, [c.mobile]));
+  const ppOf = c => (c.extra || {}).project_partner || '', rating = c => org === 'dealer' ? c.grade : (c.extra || {}).rating;
+  const st = EM.orgF[org] = EM.orgF[org] || { tg: {}, period: 'all' };
+  const { html: fbar, rows } = filterBar(st, 'org' + org, { label: org === 'dealer' ? 'dealers' : 'architects', rows: all.filter(c => tab[2].includes(c.kind)), ph: 'Company name, city, mobile, GST, reference or Project Partner capability',
+    text: c => `${c.name} ${c.city} ${c.ref || ''} ${c.gst} ${(c.extra || {}).partner_capability || ''}`, mobiles: c => [c.mobile],
+    dd: [...(org === 'dealer' ? [['pp', 'Project Partner', 'Every dealer', c => ppOf(c) || 'none', v => v === 'none' ? 'Not filled' : v, ['Yes', 'Potential', 'No', ['none', 'Not filled']]]] : []),
+      ['city', 'City', 'Every city', c => c.city || ''], ['region', 'Region', 'Every region', c => c.region || ''], ['rating', 'Rating', 'Every rating', c => rating(c) || ''],
+      ['owner', 'Looked after by', 'Everyone', c => c.owner_id, staffName], ...coDD(c => c.division)],
+    any: [['name', 'Company', c => c.name], ['ref', 'Reference', c => c.ref], ['gst', 'GST', c => c.gst], ['mobile', 'Mobile', c => c.mobile], ['cap', 'Project Partner capability', c => (c.extra || {}).partner_capability]],
+    date: c => c.created_at, dateWhat: 'When it was added' });
   const team = id => D.contacts.filter(k => k.client_id === id).length, open = id => D.opportunities.filter(o => o.client_id === id && !isClosed(o.pipeline, o.stage, D.lists)).length;
   const title = org === 'dealer' ? 'Dealers' : 'Architects', base = '#/' + (org === 'dealer' ? 'dealers' : 'architects');
-  const rating = c => org === 'dealer' ? c.grade : (c.extra || {}).rating;
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">${org === 'dealer' ? 'Distributors, dealers and sub-dealers, each with its team' : 'Architect firms and solo architects, each with its team'}</div><h1>${title}</h1><p class="muted">${rows.length} of ${all.length} · ${esc(scopeLabel())}</p></div>
       <div class="row" style="flex-wrap:wrap"><a class="btn" href="#/import">Import from Excel</a>${(org === 'dealer' ? DEALER_KINDS : ARCH_KINDS).map((k, i) => `<button class="btn ${(tab[2].length === 1 ? tab[2][0] === k : i === (org === 'dealer' ? 1 : 0)) ? 'primary' : ''}" data-act="org-add" data-kind="${k}">+ Add ${esc(kindName(k).toLowerCase())}</button>`).join('')}</div></div>
     ${subtabs(base, tab[0], subs.map(([k, l, ks]) => [k, `${l} <span class="muted">${all.filter(c => ks.includes(c.kind)).length}</span>`]))}
-    ${org === 'dealer' ? `<div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-pp-filter><label class="field" style="min-width:170px"><span class="small muted">Project Partner</span><select class="input" id="pp-f">${[['', 'Every dealer'], ['Yes', 'Yes'], ['Potential', 'Potential'], ['No', 'No'], ['none', 'Not filled']].map(([v, l]) => `<option value="${v}" ${ppF === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>` : ''}
-    ${searchBox('Company name, city, mobile, GST, reference or Project Partner capability')}
-    ${all.length ? (rows.length ? table(['Company', 'Type', ...(org === 'dealer' ? ['Served by', 'Project Partner'] : []), 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
-      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), ...(org === 'dealer' ? [c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? esc(CL()[c.parent_id].name) : '<span class="badge bad">No distributor</span>') : esc((DIVS[c.division] || DIVS.wholesale).co), ppOf(c) ? `<span class="badge ${ppOf(c) === 'Yes' ? 'ok' : ppOf(c) === 'Potential' ? 'info' : 'plain'}">${esc(ppOf(c))}</span>` : ''] : []), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] })))
-      + (rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing matches that search.</p>')
+    ${fbar}
+    ${all.length ? (rows.length ? '<div class="org-tbl" data-org-table>' + table(['Company', 'Type', ...(org === 'dealer' ? ['Served by', 'Project Partner'] : []), 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
+      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), ...(org === 'dealer' ? [c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? esc(CL()[c.parent_id].name) : '<span class="badge bad">No distributor</span>') : esc((DIVS[c.division] || DIVS.wholesale).co), ppOf(c) ? `<span class="badge ${ppOf(c) === 'Yes' ? 'ok' : ppOf(c) === 'Potential' ? 'info' : 'plain'}">${esc(ppOf(c))}</span>` : ''] : []), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] }))) + '</div>'
+      + (rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing for these filters. Change or clear them above.</p>')
       : empty(`No ${title.toLowerCase()} yet`, `Add the company and its people in one go, or fill the Excel file and upload it.`, `<button class="btn primary" data-act="org-add" data-org="${org}">+ Add ${org === 'dealer' ? 'dealer' : 'architect firm'}</button><a class="btn" href="#/import">Import from Excel</a>`)}
   </div>`;
 }
@@ -568,25 +576,30 @@ function peopleRows() {
   for (const k of D.contacts) {
     const c = CL()[k.client_id];
     if (!c || !inDiv(c)) continue;
-    out.push({ id: k.id, name: k.name, role: k.designation || '', resp: k.responsibilities || '', mobile: k.mobile, email: k.email || '', company: c, type: DEALER_KINDS.includes(c.kind) ? 'dealer' : ARCH_KINDS.includes(c.kind) ? 'architect' : 'personal', href: `#/client/${c.id}/contacts` });
+    out.push({ id: k.id, name: k.name, role: k.designation || '', resp: k.responsibilities || '', mobile: k.mobile, email: k.email || '', at: k.created_at, company: c, type: DEALER_KINDS.includes(c.kind) ? 'dealer' : ARCH_KINDS.includes(c.kind) ? 'architect' : 'personal', href: `#/client/${c.id}/contacts` });
   }
-  for (const c of D.clients) if (PERSONAL_KINDS.includes(c.kind) && inDiv(c)) out.push({ id: c.id, name: c.name, role: (c.extra || {}).client_type || '', resp: '', mobile: c.mobile, email: c.email || '', company: null, type: 'personal', href: `#/client/${c.id}` });
+  for (const c of D.clients) if (PERSONAL_KINDS.includes(c.kind) && inDiv(c)) out.push({ id: c.id, name: c.name, role: (c.extra || {}).client_type || '', resp: '', mobile: c.mobile, email: c.email || '', at: c.created_at, company: null, type: 'personal', href: `#/client/${c.id}` });
   return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 EM.VIEWS.people = arg => {
   const all = peopleRows();
   const subs = [['all', 'All'], ...(allowedTab('dealers') ? [['dealer', 'At a dealer']] : []), ['architect', 'At an architect firm'], ['personal', 'Personal']];
   const tab = subs.find(t => t[0] === arg) || subs[0];
-  const rows = all.filter(x => (tab[0] === 'all' || x.type === tab[0]) && matches(`${x.name} ${x.role} ${x.company ? x.company.name : ''} ${x.email}`, [x.mobile]));
-  const TYPE = { dealer: 'Dealer', architect: 'Architect firm', personal: 'Personal' };
+  const TYPE = { dealer: 'Dealer', architect: 'Architect firm', personal: 'Personal' }, co = x => x.company || CL()[x.id] || {};
+  const { html: fbar, rows } = filterBar(EM.pplF, 'ppl', { label: 'people', rows: all.filter(x => tab[0] === 'all' || x.type === tab[0]), ph: 'Name, role, company, mobile or email',
+    text: x => `${x.name} ${x.role} ${x.company ? x.company.name : ''} ${x.email}`, mobiles: x => [x.mobile],
+    dd: [['role', 'Role', 'Every role', x => x.role], ['firm', 'Belongs to', 'Every company', x => x.company ? x.company.id : '', id => (CL()[id] || {}).name || id],
+      ['city', 'City', 'Every city', x => co(x).city || ''], ['owner', 'Looked after by', 'Everyone', x => co(x).owner_id, staffName], ...coDD(x => co(x).division)],
+    any: [['name', 'Name', x => x.name], ['role', 'Role', x => x.role], ['company', 'Belongs to', x => x.company ? x.company.name : ''], ['mobile', 'Mobile', x => x.mobile], ['email', 'Email', x => x.email], ['resp', 'Responsibilities', x => x.resp]],
+    date: x => x.at, dateWhat: 'When they were added' });
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">Everyone in one place</div><h1>People</h1><p class="muted">${rows.length} of ${all.length}. Every person belongs to a dealer, an architect firm, or is a personal contact.</p></div>
       <div class="row"><a class="btn" href="#/import">Import from Excel</a><button class="btn primary" data-act="person-add">+ Add person</button></div></div>
     ${subtabs('#/people', tab[0], subs.map(([k, l]) => [k, `${l} <span class="muted">${k === 'all' ? all.length : all.filter(x => x.type === k).length}</span>`]))}
-    ${searchBox('Name, role, company, mobile or email')}
+    ${fbar}
     ${all.length ? (rows.length ? table(['Name', 'Role', 'Belongs to', 'Type', 'Mobile', 'Email'], rows.slice(0, 400).map(x => ({ href: x.href,
       cells: [`<b>${esc(x.name)}</b>${x.resp ? `<div class="small muted">${esc(x.resp)}</div>` : ''}${EM.div === 'both' ? segBadge(x.company ? x.company.division : (CL()[x.id] || {}).division) : ''}`, esc(x.role), x.company ? esc(x.company.name) : '<span class="muted">Personal</span>', esc(TYPE[x.type]), esc(fmtMobile(x.mobile)), esc(x.email)] })))
-      + (rows.length > 400 ? `<p class="small muted">Showing 400 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing matches that search.</p>')
+      + (rows.length > 400 ? `<p class="small muted">Showing 400 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing for these filters. Change or clear them above.</p>')
       : empty('No people yet', 'Add a dealer or an architect firm with its team, or add a personal contact.', addButtons())}
   </div>`;
 };
@@ -970,34 +983,39 @@ function fieldReqCard(opps) {
     ${rows.length ? table(['Requirement', 'Who', 'Raised by', 'Saved', 'Stage'], rows.slice(0, 30).map(o => ({ href: '#/opp/' + o.id, cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(PIPELINES[o.pipeline].label)}${o.extra.area_sqft ? ` · ${num(o.extra.area_sqft)} sq ft` : ''}</div>`, esc(o.c_name || clientName(o.client_id)), esc(staffName(o.extra.raised_by)), esc(ds(dayIST(o.created_at))), `<span class="badge info">${esc(o.stage)}</span>`] })))
       : '<p class="small muted">None waiting. A Requirement saved on a field sales phone shows here at once, and rings your bell.</p>'}</section>`;
 }
-EM.ACTIONS['opp-field-on'] = () => { EM.oppField = true; location.hash = '#/opps'; };
+EM.ACTIONS['opp-field-on'] = () => { EM.oppF.tg.field = true; location.hash = '#/opps'; };
 /* ---------------------------------------------------------------- opportunities */
 const pipesAllowed = () => Object.keys(PIPELINES).filter(p => canDiv(PIPELINES[p].division) && (EM.div === 'both' || PIPELINES[p].division === EM.div));
-EM.oppMine = false; EM.oppField = false;
+EM.oppF = { tg: {}, period: 'all' };   // S3: the Opportunities filter bar state (Only mine / From field sales are its toggles)
 /* R2b: a Requirement saved on a field sales phone is an opportunity with who raised it */
 const fromField = o => !!(o && o.extra && o.extra.raised_by);
 EM.VIEWS.opps = arg => {
   const ps = pipesAllowed();
   if (!ps.length) return EM.noAccess('No pipeline is open to your role.');
   const p = ps.includes(arg) ? arg : ps[0];
-  const all = D.opportunities.filter(o => o.pipeline === p && (!EM.oppMine || o.owner_id === me().id) && (!EM.oppField || fromField(o)) && matches(`${o.title} ${o.ref || ''} ${(CL()[o.client_id] || {}).name || ''} ${staffName(o.owner_id)} ${o.next_action || ''} ${(PJS().find(x => x.id === o.project_id) || {}).name || ''} ${o.dealer_id ? (DDIR().find(d => d.id === o.dealer_id) || {}).name || '' : ''}`, [(CL()[o.client_id] || {}).mobile]));
+  const CLI = o => CL()[o.client_id] || {};
+  const { html: fbar, rows: all } = filterBar(EM.oppF, 'opp', { label: 'opportunities', rows: D.opportunities.filter(o => o.pipeline === p), ph: 'Opportunity, company, project, dealer, owner or next action',
+    text: o => `${o.title} ${o.ref || ''} ${CLI(o).name || ''} ${staffName(o.owner_id)} ${o.next_action || ''} ${(PJS().find(x => x.id === o.project_id) || {}).name || ''} ${o.dealer_id ? (DDIR().find(d => d.id === o.dealer_id) || {}).name || '' : ''}`, mobiles: o => [CLI(o).mobile],
+    tg: [['mine', 'Only mine', o => o.owner_id === me().id], ['field', 'From field sales', fromField]],
+    dd: [['source', 'Source', 'Every source', o => o.source || ''], ['stage', 'Stage', 'Every stage', o => o.stage, null, D.lists.stages[p] || []], ['owner', 'Owner', 'Everyone', o => o.owner_id, staffName],
+      ['city', 'City', 'Every city', o => CLI(o).city || ''], ['region', 'Region', 'Every region', o => CLI(o).region || ''], ['kind', 'Kind', 'Every kind', o => CLI(o).kind || '', kindLabel]],
+    any: [['title', 'Opportunity', o => o.title], ['company', 'Company', o => CLI(o).name], ['ref', 'Reference', o => o.ref], ['next', 'Next action', o => o.next_action], ['value', 'Value', o => D.access.prices ? o.value : '']],
+    date: o => o.created_at, dateWhat: 'When it was added' });
   const stages = D.lists.stages[p] || [];
   const t = today();
   const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>${o.project_id && PJS().find(x => x.id === o.project_id) ? `<div class="small">Project: ${esc(PJS().find(x => x.id === o.project_id).name)}</div>` : ''}${o.dealer_id ? `<div class="small">Dealer: ${esc((DDIR().find(d => d.id === o.dealer_id) || { name: 'outside your view' }).name)}</div>` : ''}
     ${fromField(o) ? `<div class="small"><span class="badge info">From field sales</span> ${esc(staffName(o.extra.raised_by))}</div>` : ''}<div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}<button class="btn sm ghost" data-act="fu-add" data-client="${o.client_id}" data-opp="${o.id}" style="margin-top:4px">+ Follow-up</button></div>`;
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
-      <div class="row"><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-mine" ${EM.oppMine ? 'checked' : ''}> Only mine</label><label class="chip" style="padding:8px 10px"><input type="checkbox" id="opp-field" ${EM.oppField ? 'checked' : ''}> From field sales</label><a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
-    ${searchBox('Opportunity, company, project, dealer, owner or next action')}
+      <div class="row"><a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
+    ${fbar}
     ${PIPELINES[p].dealer ? `<p class="small muted" data-retail-note>Consumer leads: telesales qualify each one, then allocate it to a dealer (the dealers in the person's city are suggested). The dealer accepts it and moves it on in the dealer portal. A lead with no move for ${escDays()} day${escDays() === 1 ? '' : 's'} goes to the dealer's field sales owner in the bell.</p>` : ''}
     ${subtabs('#/opps', p, ps.map(k => [k, `${PIPELINES[k].plural} <span class="muted">${D.opportunities.filter(o => o.pipeline === k).length}</span>`]))}
     <p class="small muted">The board shows what is live. A won or lost one stays until the end of the month it closed in; every order, old and new, is in <a href="#/orderbook">Orders</a>.</p>
-    ${all.length ? '' : EM.clientQ ? '<p class="muted">Nothing matches that search.</p>' : `<p class="small muted">No ${esc(PIPELINES[p].plural.toLowerCase())} yet. Add one from here, or from a dealer, an architect firm or a person. The stages below come from Lists & stages.</p>`}
+    ${all.length ? '' : D.opportunities.some(o => o.pipeline === p) ? '<p class="muted">Nothing for these filters. Change or clear them above.</p>' : `<p class="small muted">No ${esc(PIPELINES[p].plural.toLowerCase())} yet. Add one from here, or from a dealer, an architect firm or a person. The stages below come from Lists & stages.</p>`}
     ${stageBoard(stages, all.filter(o => !isClosed(o.pipeline, o.stage, D.lists) || thisMonth(o.closed_at || o.updated_at)), o => o.stage, card, ls => D.access.prices && ls.some(o => o.value) ? `<div class="small muted">${inr(ls.reduce((a, o) => a + (Number(o.value) || 0), 0))}</div>` : '')}</div>`;
 };
 EM.VIEWS.opps.title = () => 'Opportunities';
-document.addEventListener('change', e => { if (e.target.id === 'opp-mine') { EM.oppMine = e.target.checked; EM.rerender(); } if (e.target.id === 'opp-field') { EM.oppField = e.target.checked; EM.rerender(); } });
-document.addEventListener('change', e => { if (e.target.id === 'pp-f') { EM.ppF = e.target.value; EM.rerender(); } });
 
 /* ---------------------------------------------------------------- Lost sales (13 Oct)
    Every lost opportunity in your view: why, the details, the value, who, which client, when, and the
@@ -2813,6 +2831,48 @@ function inPeriod(ts, p, from, to) {
   if (p === 'year') return ym >= `${fy}-04` && ym <= `${fy + 1}-03`; if (p === 'lastyear') return ym >= `${fy - 1}-04` && ym <= `${fy}-03`;
   return true;
 }
+/* S3: THE filter bar (Picasso F0, design/CONTRACT.txt). Every list calls it once and gets back the bar and the rows it lets through:
+   const { html, rows } = filterBar(st, key, cfg)
+   st: the list's state object kept in EM (survives going into a record and back). key: unique per list (also its Date filter key).
+   cfg: { label, rows, ph, text: r => searchable text, mobiles: r => [mobile], attr: extra attribute on the bar,
+          tg: [[k, label, r => bool]], dd: [[k, label, 'Every ...', r => value or [values], name(v)?, fixed options?]],
+          any: [[k, label, r => text]], date: r => timestamp, dateWhat: what the date means (tooltip) }
+   Options come from the rows on screen (or the live list passed as fixed options), each with its count. */
+function filterBar(st, key, cfg) {
+  FLT[key] = st; DF_STATE[key] = () => st; st.tg = st.tg || {}; st.period = st.period || 'all';
+  const all = cfg.rows, tg = cfg.tg || [], dd = cfg.dd || [], any = cfg.any || [], fq = (st.fq || '').trim().toLowerCase();
+  const vals = (d, r) => { const v = d[3](r); return (Array.isArray(v) ? v : [v]).map(x => x == null ? '' : String(x)); };
+  const anyOf = r => (st.field ? any.filter(a => a[0] === st.field) : any).map(a => String(a[2](r) || ''));
+  const rows = all.filter(r => tg.every(t => !st.tg[t[0]] || t[2](r)) && dd.every(d => !st[d[0]] || vals(d, r).includes(st[d[0]]))
+    && (!cfg.date || inPeriod(cfg.date(r), st.period, st.from, st.to)) && (!fq || anyOf(r).some(v => v.toLowerCase().includes(fq)))
+    && (!cfg.text || matches(cfg.text(r), cfg.mobiles ? cfg.mobiles(r) : [])));
+  const nm = d => d[4] || (v => v);
+  const opts = d => { const cnt = {}; for (const r of all) for (const v of new Set(vals(d, r))) if (v) cnt[v] = (cnt[v] || 0) + 1;
+    const list = d[5] ? d[5].map(v => Array.isArray(v) ? v : [v, nm(d)(v)]) : Object.keys(cnt).map(v => [v, nm(d)(v)]).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+    if (st[d[0]] && !list.some(x => x[0] === st[d[0]])) list.push([st[d[0]], nm(d)(st[d[0]])]);
+    return list.map(([v, l]) => [v, `${l} (${num(cnt[v] || 0)})`]); };
+  const o = (v, l, cur) => `<option value="${esc(v)}" ${(cur || '') === v ? 'selected' : ''}>${esc(l)}</option>`, ic = n => fic(n, '');
+  const custom = st.period === 'custom', dateTxt = custom ? `${st.from ? ds(st.from) : 'the start'} to ${st.to ? ds(st.to) : 'today'}` : (PERIODS.find(p => p[0] === st.period) || ['', ''])[1];
+  const chips = [...(cfg.text && EM.clientQ ? [['q', 'Search', `"${EM.clientQ}"`]] : []), ...tg.filter(t => st.tg[t[0]]).map(t => ['tg:' + t[0], t[1], 'Yes']),
+    ...dd.filter(d => st[d[0]]).map(d => [d[0], d[1], nm(d)(st[d[0]])]), ...(fq ? [['fq', (any.find(a => a[0] === st.field) || [0, 'Any field'])[1], `contains "${st.fq.trim()}"`]] : []),
+    ...(cfg.date && st.period !== 'all' ? [['date', 'Date', dateTxt]] : [])];
+  const html = `<div class="flt" role="search" aria-label="Filter ${esc(cfg.label)}" data-flt-bar="${key}" ${cfg.attr || ''}><div class="flt-row">
+    ${cfg.text ? `<label class="flt-q">${ic('search')}<input type="search" id="cq" value="${esc(EM.clientQ)}" placeholder="${esc(cfg.ph)}" aria-label="Search"></label>` : ''}
+    ${tg.map(t => `<label class="flt-tg"><input type="checkbox" data-flt="${key}" data-fk="tg:${t[0]}" ${st.tg[t[0]] ? 'checked' : ''}>${ic('check')}${esc(t[1])}</label>`).join('')}
+    ${dd.map((d, i) => `<label class="flt-dd${st[d[0]] ? ' is-set' : ''}${dd.length % 2 && i === dd.length - 1 ? ' wide' : ''}"><span class="flt-k">${esc(d[1])}</span><select data-flt="${key}" data-fk="${d[0]}" aria-label="${esc(d[1])}">${o('', d[2], st[d[0]])}${opts(d).map(([v, l]) => o(v, l, st[d[0]])).join('')}</select></label>`).join('')}
+    ${any.length ? `<span class="flt-any${fq ? ' is-set' : ''}"><select data-flt="${key}" data-fk="field" aria-label="Pick any field">${o('', 'Pick any field', st.field)}${any.map(a => o(a[0], a[1], st.field)).join('')}</select><span class="flt-k">contains</span><input data-flt-q="${key}" value="${esc(st.fq || '')}" aria-label="contains" placeholder="Type to filter"></span>` : ''}
+    ${cfg.date ? `<label class="flt-dd flt-date${st.period !== 'all' ? ' is-set' : ''}" title="${esc(cfg.dateWhat || '')}"><span class="flt-k">Date filter</span><select data-df="${key}" data-dfk="period" aria-label="Date filter" data-keep-order>${PERIODS.map(([v, l]) => o(v, l, st.period)).join('')}</select></label>
+    ${custom ? `<span class="flt-dates"><input type="date" data-df="${key}" data-dfk="from" value="${esc(st.from || '')}" aria-label="From date"><span class="flt-k">to</span><input type="date" data-df="${key}" data-dfk="to" value="${esc(st.to || '')}" aria-label="To date"></span>` : ''}` : ''}</div>
+    ${chips.length ? `<div class="flt-on"><span class="flt-n"><b>${num(rows.length)}</b> of ${num(all.length)}</span>${chips.map(([k, l, v]) => `<button class="flt-chip" data-act="flt-x" data-flt-x="${key}" data-k="${esc(k)}" aria-label="Remove filter ${esc(l)} ${esc(v)}">${esc(l)}: <b>${esc(v)}</b>${ic('x')}</button>`).join('')}<button class="flt-clear" data-act="flt-clear" data-flt-x="${key}">Clear all</button></div>` : ''}</div>`;
+  return { html, rows };
+}
+const FLT = {};
+const fltClear = (st, k) => { if (k === 'q') EM.clientQ = ''; else if (k.startsWith('tg:')) st.tg[k.slice(3)] = false; else if (k === 'fq') { st.fq = ''; st.field = ''; } else if (k === 'date') { st.period = 'all'; st.from = ''; st.to = ''; } else st[k] = ''; };
+EM.ACTIONS['flt-x'] = el => { const st = FLT[el.dataset.fltX]; if (st) fltClear(st, el.dataset.k); EM.rerender(); };
+EM.ACTIONS['flt-clear'] = el => { const st = FLT[el.dataset.fltX]; if (st) { for (const k of Object.keys(st)) if (!['tg', 'period', 'from', 'to'].includes(k)) st[k] = ''; st.tg = {}; fltClear(st, 'date'); EM.clientQ = ''; } EM.rerender(); };
+for (const a of ['flt-x', 'flt-clear']) { NAV_ACTS.add(a); LOOK_ACTS.add(a); }
+document.addEventListener('change', e => { const d = e.target.dataset || {}, st = d.flt && FLT[d.flt]; if (!st) return; if (d.fk.startsWith('tg:')) st.tg[d.fk.slice(3)] = e.target.checked; else st[d.fk] = e.target.value; EM.rerender(); });
+document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.fltQ; if (!k || !FLT[k]) return; FLT[k].fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs(`[data-flt-q="${k}"]`); if (el) { el.focus(); el.setSelectionRange(pos, pos); } });
 EM.VIEWS.orderbook = () => {
   const f = EM.ob, all = buildOrders();
   const segOf = x => x.kind === 'Wholesale' ? 'wholesale' : 'retail';
@@ -4506,21 +4566,17 @@ const d5Val = (c, k, x) => k === 'owner' ? staffName(c.owner_id) : k === 'dealer
 EM.VIEWS.design500 = arg => {
   if (String(arg || '') === 'plans') return d5Plans();   // R6b (plan point 18)
   const f = EM.d5F, fq = f.fq.trim().toLowerCase(), all = d5Members(), P = D.access.prices, X = Object.fromEntries(all.map(c => [c.id, d5Of(c)]));
-  const rows = all.filter(c => (!f.owner || c.owner_id === f.owner) && (!f.city || c.city === f.city) && (!f.kind || c.kind === f.kind) && inPeriod((c.extra || {}).design500_since || '', f.period, f.from, f.to)
-    && (!fq || (f.field ? [d5Val(c, f.field, X[c.id])] : D5_FIELDS.map(([k]) => d5Val(c, k, X[c.id]))).some(v => v.toLowerCase().includes(fq))) && matches(`${c.name} ${c.city} ${c.ref || ''} ${X[c.id].dealers.join(' ')} ${X[c.id].projects.map(p => p.name).join(' ')}`, [c.mobile]))
-    .sort((a, b) => X[b.id].business - X[a.id].business || a.name.localeCompare(b.name));
-  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-d5f="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
-  const uniq = (vals, name) => [...new Set(vals.filter(Boolean))].map(v => [v, name(v)]).sort((a, b) => a[1].localeCompare(b[1]));
+  const { html: fbar, rows: rows0 } = filterBar(f, 'd5', { label: 'Design 500', rows: all, attr: 'data-d5-filters', ph: 'Design 500 members: name, city, mobile, dealer or project',
+    text: c => `${c.name} ${c.city} ${c.ref || ''} ${X[c.id].dealers.join(' ')} ${X[c.id].projects.map(p => p.name).join(' ')}`, mobiles: c => [c.mobile],
+    dd: [['owner', 'Owner', 'Everyone', c => c.owner_id, staffName], ['city', 'City', 'Every city', c => c.city || ''], ['kind', 'Firm or solo', 'Both', c => c.kind, kindLabel, [['design_firm', 'Architect firms'], ['architect', 'Solo architects']]], ...coDD(c => c.division)],
+    any: D5_FIELDS.map(([k, l]) => [k, l, c => d5Val(c, k, X[c.id])]), date: c => (c.extra || {}).design500_since || '', dateWhat: 'Member since' });
+  const rows = rows0.sort((a, b) => X[b.id].business - X[a.id].business || a.name.localeCompare(b.name));
   return `<div class="stack" data-d5>
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : esc(DIVS[EM.div].co)} · the architects and interior designers who specify us</div><h1>Design 500</h1><p class="muted">${rows.length} of ${all.length} members · ${esc(scopeLabel())}</p></div>
       <div class="row" style="flex-wrap:wrap"><button class="btn" data-act="d5-sample">Sample Excel</button><label class="btn" style="cursor:pointer" data-list-only>Upload Excel<input type="file" data-sheet="design500" accept=".xlsx" hidden></label><button class="btn primary" data-act="d5-add">+ Add a member</button></div></div>
     ${D5_TABS('list', all.length)}
     ${EM.d5Imp ? d5ImportPreview() : ''}
-    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-d5-filters>${dateFilter(f, 'd5', 'Member since')}
-      ${sel('owner', 'Owner', [['', 'Everyone'], ...uniq(all.map(c => c.owner_id), staffName)])}${sel('city', 'City', [['', 'Every city'], ...uniq(all.map(c => c.city), x => x)])}
-      ${sel('kind', 'Firm or solo', [['', 'Both'], ['design_firm', 'Architect firms'], ['architect', 'Solo architects']])}${sel('field', 'Any field', [['', 'Any field'], ...D5_FIELDS])}
-      <label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="d5-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
-    ${searchBox('Design 500 members: name, city, mobile, dealer or project')}
+    ${fbar}
     ${rows.length ? '<div class="d5-tbl" data-d5-table>' + table(['Member', 'Owner', 'Last interaction', 'Next action', 'Connected dealers', 'Active projects', 'Samples given', ...(P ? ['Business brought'] : [])], rows.slice(0, 500).map(c => { const x = X[c.id];
       return { href: `#/client/${c.id}`, cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(kindLabel(c.kind))} · ${esc(c.city || '')}${(c.extra || {}).design500_since ? ' · since ' + ds(c.extra.design500_since) : ''}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`,
         esc(staffName(c.owner_id)), x.last ? ds(dayIST(x.last)) : '<span class="muted">None yet</span>', x.next ? `${esc(x.next.action)} <div class="small muted">${ds(x.next.due_date)}</div>` : '<span class="muted">None booked</span>',
@@ -4528,8 +4584,6 @@ EM.VIEWS.design500 = arg => {
       : empty(all.length ? 'Nothing for this filter' : 'No Design 500 member yet', all.length ? 'Change or clear the filters above.' : 'Mark an architect or a firm as a Design 500 member (here, on their page, or with the Excel file); their projects and the business they bring are counted from what is saved.', all.length ? '' : '<button class="btn primary" data-act="d5-add">+ Add a member</button>')}</div>`;
 };
 EM.VIEWS.design500.title = () => 'Design 500';
-document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.d5f; if (k) { EM.d5F[k] = e.target.value; EM.rerender(); } });
-document.addEventListener('input', e => { if (e.target.id === 'd5-fq') { EM.d5F.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#d5-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
 const d5Co = c => c.division === 'retail' ? 'Big E' : 'EGO Premium';
 EM.ACTIONS['d5-add'] = () => {
   const cands = D.clients.filter(c => ARCH_KINDS.includes(c.kind) && inDiv(c) && (c.extra || {}).design500 !== 'Yes').sort((a, b) => a.name.localeCompare(b.name));
@@ -4740,25 +4794,21 @@ const prRow = (r, tele) => [`<span class="badge ${r.rank <= 1 ? 'bad' : r.rank <
   isBothView() ? '' : `<button class="btn sm primary" data-act="pr-called" data-key="${esc(r.key)}">Called</button>`];
 EM.VIEWS.priority = () => {
   const f = EM.prF, fq = f.fq.trim().toLowerCase(), all = priorityRows(), tele = prTele();
-  const rows = all.filter(r => (!f.why || prWhyHas(f.why, r.kind)) && (!f.who || r.owner === f.who) && inPeriod(r.date, f.period, f.from, f.to)
-    && (!fq || (f.field ? [prVal(r, f.field)] : PR_FIELDS.map(([k]) => prVal(r, k))).some(v => v.toLowerCase().includes(fq))) && matches(`${r.c.name} ${r.why} ${r.detail} ${r.c.city || ''}`, [r.c.mobile]));
-  const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-prf="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   const owners = [...new Set(all.map(r => r.owner).filter(Boolean))].map(id => [id, staffName(id)]).sort((a, b) => a[1].localeCompare(b[1]));
+  const { html: fbar, rows } = filterBar(f, 'pr', { label: 'Priority calls', rows: all, attr: 'data-pr-filters', ph: 'Priority calls: name, reason, mobile or city', text: r => `${r.c.name} ${r.why} ${r.detail} ${r.c.city || ''}`, mobiles: r => [r.c.mobile],
+    dd: [['why', 'Why', 'Every reason', r => [r.kind, ...(prWhyHas('rd', r.kind) ? ['rd'] : [])], v => v === 'rd' ? 'Due a reorder or dormant' : PR_WHY[v] || v, [...Object.entries(PR_WHY), ['rd', 'Due a reorder or dormant']]],
+      ...(tele ? [] : [['who', 'Whose', 'Everyone', r => r.owner, staffName, owners]])],
+    any: PR_FIELDS.map(([k, l]) => [k, l, r => prVal(r, k)]), date: r => r.date, dateWhat: 'Date (due, raised or last order)' });
   return `<div class="stack" data-priority>
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : esc(DIVS[EM.div].co)} · ${tele ? 'your calls, and every dealer in the company' : esc(scopeLabel())}</div><h1>Priority calls</h1>
       <p class="muted">${num(rows.length)} to call now · worked out at ${tFmt(new Date().toISOString())} from saved records: follow-ups due, Requirements from field sales, hot leads, dealers due a reorder, dealers with no order in ${num(dormantDays())} days.</p></div>
       <button class="btn" data-act="pr-refresh">${fic('refresh')}Refresh</button></div>
     <div class="grid g4" data-pr-counts>${PR_TILES.map(([k, l, ks]) => `<button class="card tile" style="text-align:left;cursor:pointer" data-act="pr-why" data-k="${k}" aria-pressed="${f.why === k}"><div class="small muted">${esc(l)}</div><b style="font-size:22px">${num(all.filter(r => ks.includes(r.kind)).length)}</b></button>`).join('')}</div>
-    <div class="card row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-pr-filters>${dateFilter(f, 'pr', 'Date (due, raised or last order)')}
-      ${sel('why', 'Why', [['', 'Every reason'], ...Object.entries(PR_WHY).map(([k, l]) => [k, `${l} (${num(all.filter(r => r.kind === k).length)})`]), ['rd', `Due a reorder or dormant (${num(all.filter(r => prWhyHas('rd', r.kind)).length)})`]])}${tele ? '' : sel('who', 'Whose', [['', 'Everyone'], ...owners])}${sel('field', 'Any field', [['', 'Any field'], ...PR_FIELDS])}
-      <label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="pr-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
-    ${searchBox('Priority calls: name, reason, mobile or city')}
+    ${fbar}
     ${rows.length ? `<div data-pr-table>${table(['Why', 'Who', 'Details', 'Mobile', ...(tele ? [] : ['Whose']), ''], rows.slice(0, 300).map(r => prRow(r, tele)))}</div>`
       : empty(all.length ? 'Nothing for this filter' : 'Nobody to call right now', all.length ? 'Change or clear the filters above.' : 'Follow-ups due, Requirements from field sales, new leads, dealers due a reorder and dormant dealers come here by themselves. Well done.')}</div>`;
 };
 EM.VIEWS.priority.title = () => 'Priority calls';
-document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.prf; if (k) { EM.prF[k] = e.target.value; EM.rerender(); } });
-document.addEventListener('input', e => { if (e.target.id === 'pr-fq') { EM.prF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#pr-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
 EM.ACTIONS['pr-why'] = el => { EM.prF.why = EM.prF.why === el.dataset.k ? '' : el.dataset.k; EM.rerender(); };
 EM.ACTIONS['pr-refresh'] = async el => { busy(el, true); try { Object.assign(D, await API('GET', '/api/bootstrap')); EM.toast('<b>Priority calls</b> worked out again.'); } catch (x) { EM.toast(esc(x.message)); } EM.rerender(); };
 /* the top card of telesales Home: the first calls on the list */
