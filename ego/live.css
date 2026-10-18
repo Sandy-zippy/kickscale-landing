@@ -141,3 +141,8 @@ body.pt-on #shell { display: none; }
 .d5-tbl .tbl td:first-child { min-width: 180px; }
 /* R6b: a page's tabs wrap onto a second row instead of running off the edge (dealer page at 1280: Displays stays reachable) */
 .subtabs { flex-wrap: wrap; overflow-x: visible; row-gap: 2px; }
+/* R8: the tabs of a grouped menu item (Dealers, Field team, Opportunities), above the screen's own tabs */
+.sectabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; padding: 4px; border: 1px solid var(--ge-border); border-radius: 12px; background: var(--ge-surface, transparent); width: fit-content; max-width: 100%; }
+.sectabs a { text-decoration: none; padding: 7px 14px; border-radius: 8px; color: var(--ge-text-muted); font-weight: 500; white-space: nowrap; }
+.sectabs a:hover { color: var(--ge-text); }
+.sectabs a.on { background: var(--ge-primary); color: var(--ge-on-primary, #111); font-weight: 600; }

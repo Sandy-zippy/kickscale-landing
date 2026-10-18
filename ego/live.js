@@ -94,7 +94,15 @@ EM.render = (...a) => {
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
 const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', design500: 'Design 500', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap', priority: 'Priority calls', samples: 'Samples', displays: 'Displays', training: 'Training' };
-const NAV_TAIL = ['samples', 'displays', 'training', 'priority', 'attendance', 'roadmap', 'complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
+/* R8 (Bhargav 18 Oct): Samples, Displays and Training are tabs of Dealers, Attendance and Roadmap one item "Field team",
+   Priority calls a tab of Opportunities (and the telesales Home top card). Each keeps its own route and its own access. */
+NAV_LABEL.fieldteam = 'Field team';
+const NAV_GROUP = { dealers: [['dealers', 'Dealers'], ['samples', 'Samples'], ['displays', 'Displays'], ['training', 'Training']], fieldteam: [['attendance', 'Attendance'], ['roadmap', 'Roadmap']], opps: [['opps', 'Opportunities'], ['priority', 'Priority calls']] };
+const NAV_PARENT = Object.fromEntries(Object.entries(NAV_GROUP).flatMap(([g, ks]) => ks.map(([k]) => [k, g])));
+const navOk = k => NAV_GROUP[k] ? NAV_GROUP[k].some(([t]) => allowedTab(t)) : allowedTab(k);
+EM.navParent = t => NAV_PARENT[t] || t;
+EM.navHref = k => NAV_GROUP[k] ? (NAV_GROUP[k].find(([t]) => allowedTab(t)) || [k])[0] : k;
+const NAV_TAIL = ['fieldteam', 'complaints', 'approvals', 'analysis', 'p200', 'inventory', 'import'];
 // Menu order per view, as Bhargav set it on 5 Oct.
 const NAV_ORDER = {
   wholesale: ['home', 'people', 'architects', 'design500', 'dealers', 'opps', 'projects', 'schemes', 'orders', 'orderbook', 'installation', ...NAV_TAIL],
@@ -103,7 +111,7 @@ const NAV_ORDER = {
 };
 EM.navTabs = () => ({
   main: (NAV_ORDER[EM.div] || NAV_ORDER.both).map(k => [k, NAV_LABEL[k]])
-    .filter(([k]) => allowedTab(k) && !(['p200', 'schemes'].includes(k) && EM.div === 'retail')),
+    .filter(([k]) => navOk(k) && !(['p200', 'schemes'].includes(k) && EM.div === 'retail')),
   shared: [['team', 'Team & access'], ['lists', 'Lists & stages'], ['integrations', 'Integrations'], ['bin', 'Recycle bin'], ['account', 'My account']].filter(([k]) => allowedTab(k)),
 });
 Object.assign(ICON, {
@@ -1488,10 +1496,15 @@ EM.VIEWS.orders = arg => {
           `<span class="badge info">${esc(o.ful_stage)}</span>`, esc([...new Set(waitsOf(w => w.order_id === o.id).map(w => poRef(w.po_id)))].join(', '))] }))) : ''}`;
   } else {
     const nSales = p => new Set(waitsOf(w => w.po_id === p.id).map(w => w.order_id)).size;
-    O = { ...O, production: O.production.filter(p => matches(`${p.ref} ${prodName(p.product_id)} ${p.container || ''}`, [])) };
-    body = stageBoard(OS_('production_stages'), O.production, p => p.stage, p => `<a class="card stack-s" style="text-decoration:none" href="#/po/${p.id}"><b>${esc(p.ref)}</b><span class="small">${esc(prodName(p.product_id))}</span><span class="small muted">${num(p.boxes)} boxes · for ${nSales(p)} sale${nSales(p) === 1 ? '' : 's'}</span></a>`)
-      + (O.production.length ? table(['Production order', 'Design', 'Boxes', 'For sales', 'Stage', 'Expected', 'Warehouse'], O.production.map(p => ({ href: '#/po/' + p.id,
-        cells: [`<b>${esc(p.ref)}</b>${p.container ? `<div class="small muted">${esc(p.container)}</div>` : ''}`, esc(prodName(p.product_id)), num(p.boxes), esc([...new Set(waitsOf(w => w.po_id === p.id).map(w => (O.orders.find(o => o.id === w.order_id) || {}).ref))].join(', ')), `<span class="badge info">${esc(p.stage)}</span>`, p.eta ? ds(p.eta) : '', esc((INVD().warehouses.find(w => w.id === p.warehouse_id) || {}).name || '')] })))
+    /* R7: days late on every card and row, and a Late filter (only production orders running or finished late) */
+    const lateOf = {}; for (const p of O.production) lateOf[p.id] = poPlanOf(p).late;
+    const nLate = O.production.filter(p => lateOf[p.id] > 0).length;
+    O = { ...O, production: O.production.filter(p => (!EM.poLate || lateOf[p.id] > 0) && matches(`${p.ref} ${prodName(p.product_id)} ${p.container || ''}`, [])) };
+    body = `<div class="row" style="gap:8px" data-po-filter><button class="btn sm ${EM.poLate ? '' : 'primary'}" data-act="po-late" data-v="">All production orders</button><button class="btn sm ${EM.poLate ? 'primary' : ''}" data-act="po-late" data-v="1">Late (${nLate})</button></div>`
+      + stageBoard(OS_('production_stages'), O.production, p => p.stage, p => `<a class="card stack-s" style="text-decoration:none" href="#/po/${p.id}" data-po-card="${p.id}"><b>${esc(p.ref)}</b><span class="small">${esc(prodName(p.product_id))}</span><span class="small muted">${num(p.boxes)} boxes · for ${nSales(p)} sale${nSales(p) === 1 ? '' : 's'}</span>${lateBadge(lateOf[p.id])}</a>`)
+      + (O.production.length ? table(['Production order', 'Design', 'Boxes', 'For sales', 'Stage', 'ETA', 'Days late', 'Warehouse'], O.production.map(p => ({ href: '#/po/' + p.id,
+        cells: [`<b>${esc(p.ref)}</b>${p.container ? `<div class="small muted">${esc(p.container)}</div>` : ''}`, esc(prodName(p.product_id)), num(p.boxes), esc([...new Set(waitsOf(w => w.po_id === p.id).map(w => (O.orders.find(o => o.id === w.order_id) || {}).ref))].join(', ')), `<span class="badge info">${esc(p.stage)}</span>`, p.eta ? ds(p.eta) : '', lateBadge(lateOf[p.id]) || '<span class="muted small">On time</span>', esc((INVD().warehouses.find(w => w.id === p.warehouse_id) || {}).name || '')] })))
+        : EM.poLate ? '<p class="small muted">No production order is late.</p>'
         : '<p class="small muted">No production orders yet. One is made at Stock check for what a sale cannot take from the warehouses, or placed directly.</p>');
   }
   return `<div class="stack">${head}${body}</div>`;
@@ -1795,32 +1808,65 @@ EM.ACTIONS['al-prod'] = async el => {
 };
 
 /* production orders */
+/* R7: planned vs actual per stage. prodPlan (schema.js) is the one rule, the Worker checks the same; the actual date of a
+   stage is the day it was moved there (the stage history). Days late show per stage, on the order and on the board. */
+const poActual = id => { const a = {}; for (const l of (OPSD().plogs || [])) if (l.record_id === id && !a[l.to_stage]) a[l.to_stage] = dayIST(l.at); return a; };
+const poPlanOf = p => prodPlan(p, OS_('production_stages'), D.lists.rules, poActual(p.id), today(), PNn('Received at warehouse'));
+const lateBadge = n => n > 0 ? `<span class="badge bad" data-days-late="${n}">${n} day${n === 1 ? '' : 's'} late</span>` : '';
+const delayOpts = () => `<option value="">Choose</option>${(D.lists.prod_delay_reasons || []).map(r => `<option>${esc(r)}</option>`).join('')}`;
 EM.VIEWS.po = id => {
   const p = OPSD().production.find(x => x.id === id);
   if (!p) return `<div class="stack"><h1>Production order not found</h1><a class="btn" href="#/orders/production">Production</a></div>`;
   const PS = OS_('production_stages'), nextS = PS[PS.indexOf(p.stage) + 1], waits = OPSD().waits.filter(w => w.po_id === id), forSales = waits.reduce((a, w) => a + w.boxes, 0);
+  const plan = poPlanOf(p), delays = (p.extra || {}).delays || [], lastEta = delays.filter(d => d.eta && d.days > 0).pop(), REC = PNn('Received at warehouse');
   return `<div class="stack">${crumbs(['Orders', '#/orders'], ['Production', '#/orders/production'], [p.ref])}
-    <div class="row between"><div class="stack-s"><h1>${esc(p.ref)}</h1><p class="muted">${esc(prodName(p.product_id))} · ${num(p.boxes)} boxes${p.factory ? ' · ' + esc(p.factory) : ''}${p.eta ? ' · expected ' + ds(p.eta) : ''}${p.container ? ' · container ' + esc(p.container) : ''}</p></div>
-      ${nextS && canStockUI() ? `<button class="btn primary" data-act="po-next" data-id="${id}" data-to="${esc(nextS)}">Move to ${esc(nextS)}</button>` : ''}</div>
+    <div class="row between"><div class="stack-s"><h1>${esc(p.ref)} ${lateBadge(plan.late)}</h1><p class="muted">${esc(prodName(p.product_id))} · ${num(p.boxes)} boxes${p.factory ? ' · ' + esc(p.factory) : ''}${p.eta ? ' · ETA ' + ds(p.eta) : ''}${p.container ? ' · container ' + esc(p.container) : ''}</p></div>
+      <div class="row">${nextS && canStockUI() ? `<button class="btn" data-act="po-plan" data-id="${id}">Change dates</button><button class="btn primary" data-act="po-next" data-id="${id}" data-to="${esc(nextS)}">Move to ${esc(nextS)}</button>` : ''}</div></div>
     <section class="card stack-s">${stageChips(PS, p.stage)}</section>
+    <section class="card stack-s" data-po-plan><h3>Planned and actual</h3><p class="small muted">Planned from the order date (${ds(plan.rows[0].planned)}) and the Owner's normal days per stage (Lists & stages › Rules and numbers); ${esc(REC)} is planned on the ETA. A date changed on this order stays on it. Days late = actual date less planned date, or today less planned date once it has passed.</p>
+      ${table(['Stage', 'Planned', 'Actual', 'Days late'], plan.rows.map(r => ({ cells: [`<b>${esc(r.stage)}</b>`, ds(r.planned), r.actual ? ds(r.actual) : '<span class="muted small">Not yet</span>', r.late ? `<span class="badge bad" data-stage-late="${esc(r.stage)}">${r.late}${r.running ? ' and counting' : ''}</span>` : '<span class="muted small">On time</span>'] })))}</section>
     ${poSupplier(p)}
-    <section class="card stack-s"><h3>The sales this production order serves</h3>
+    <section class="card stack-s" data-po-waits><h3>The sales this production order serves</h3>
       <p class="small">${num(p.boxes)} boxes ordered from production · ${num(forSales)} for the sales below · ${num(Math.max(0, p.boxes - forSales))} spare, which go into stock when received.</p>
-      ${waits.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Boxes for it', 'Status'], waits.map(w => { const o = OPSD().orders.find(x => x.id === w.order_id) || {}; return { href: '#/order/' + w.order_id, cells: [`<b>${esc(o.ref || '')}</b>`, esc((oppOf(o) || { title: '' }).title), esc(clientName(o.client_id)), num(w.boxes), w.done ? '<span class="badge ok">Arrived, blocked</span>' : '<span class="badge warn">Waiting</span>'] }; })) : '<p class="small muted">No sale is waiting for it; everything it brings goes into stock.</p>'}</section>
+      ${lastEta ? `<div class="callout warn" data-eta-slip><b>ETA moved later</b> ${ds(lastEta.from)} to ${ds(lastEta.to)} (${lastEta.days} day${lastEta.days === 1 ? '' : 's'}), ${esc(lastEta.reason)}. ${lastEta.told.length ? `${lastEta.told.length} waiting order${lastEta.told.length === 1 ? '' : 's'} told: each owner's bell and the dealer's portal.` : 'No order was waiting on it.'}</div>` : ''}
+      ${waits.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Owner', 'Boxes for it', 'Status', 'Told of the new ETA'], waits.map(w => { const o = OPSD().orders.find(x => x.id === w.order_id) || {}; return { href: '#/order/' + w.order_id, cells: [`<b>${esc(o.ref || '')}</b>`, esc((oppOf(o) || { title: '' }).title), esc(clientName(o.client_id)), esc(staffName(o.owner_id)), num(w.boxes), w.done ? '<span class="badge ok">Arrived, blocked</span>' : '<span class="badge warn">Waiting</span>', lastEta && lastEta.told.includes(w.order_id) ? `<span class="badge info" data-told="${w.order_id}">Told ${ds(dayIST(lastEta.at))}</span>` : ''] }; })) : '<p class="small muted">No sale is waiting for it; everything it brings goes into stock.</p>'}</section>
+    <section class="card stack-s" data-po-delays><h3>Delay history (${delays.length})</h3>${delays.length ? table(['When', 'What', 'Planned', 'Now', 'Days', 'Delay reason', 'By'], delays.slice().reverse().map(d => [ds(dayIST(d.at)), esc(d.kind === 'late' ? `${d.stage} reached late` : `${d.eta ? 'ETA' : d.stage} moved ${d.days > 0 ? 'later' : 'earlier'}`), ds(d.from), ds(d.to), d.days > 0 ? `<b>${d.days}</b>` : num(d.days), esc(d.reason || '') + (d.note ? `<div class="small muted">${esc(d.note)}</div>` : ''), esc(staffName(d.by))]))
+      : '<p class="small muted">No delay so far. A stage reached after its planned date, or a planned date or ETA moved later, asks for the delay reason and is kept here.</p>'}</section>
     <section class="stack-s"><h3>History</h3><div id="log-p"><p class="muted">Loading…</p></div></section></div>`;
 };
 EM.VIEWS.po.tab = 'orders';
 EM.VIEWS.po.title = id => (OPSD().production.find(x => x.id === id) || { ref: 'Production order' }).ref;
 EM.VIEWS.po.after = id => showLog('production', id, '#log-p');
 EM.ACTIONS['po-next'] = el => {
-  const id = el.dataset.id, to = el.dataset.to, p = OPSD().production.find(x => x.id === id);
-  if (to === PNn('Received at warehouse') || to === 'Shipped') return EM.modal(`<h2>${esc(to)}</h2><div class="fgrid" style="margin-top:12px">
+  const id = el.dataset.id, to = el.dataset.to, p = OPSD().production.find(x => x.id === id), PS = OS_('production_stages');
+  const row = poPlanOf(p).rows[PS.indexOf(to)], late = row && today() > row.planned ? daysBetween(row.planned, today()) : 0;
+  if (to === PNn('Received at warehouse') || to === 'Shipped' || late) return EM.modal(`<h2>${esc(to)}</h2><div class="fgrid" style="margin-top:12px">
+      ${late ? `<div class="callout warn span2" data-late-move>${esc(to)} was planned for ${ds(row.planned)}: this is <b>${late} day${late === 1 ? '' : 's'} late</b>. Say why; it goes on the delay history.</div><div class="field"><label for="po-dr">Delay reason *</label><select class="input" id="po-dr" data-keep-order>${delayOpts()}</select></div><div class="field"><label for="po-dn">Note</label><input class="input" id="po-dn"></div>` : ''}
       ${to === PNn('Received at warehouse') ? `<div class="field"><label for="po-wh">Arrived at</label><select class="input" id="po-wh">${INVD().warehouses.map(w => `<option value="${w.id}">${esc(w.name)}</option>`).join('')}</select></div><div class="field"><label for="po-rec">Boxes received</label><input class="input" id="po-rec" type="number" min="0" step="1" value="${p.boxes}"></div>` : ''}
-      <div class="field"><label for="po-ct">Container number</label><input class="input" id="po-ct" value="${esc(p.container || '')}"></div></div>${errBox('po-err')}
+      ${to === PNn('Received at warehouse') || to === 'Shipped' ? `<div class="field"><label for="po-ct">Container number</label><input class="input" id="po-ct" value="${esc(p.container || '')}"></div>` : ''}</div>${errBox('po-err')}
     <div class="row" style="margin-top:12px"><button class="btn primary" data-act="po-next-go" data-id="${id}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
   return opsAct(el, `production/${id}/next`, {}, `<b>${esc(to)}</b>`);
 };
-EM.ACTIONS['po-next-go'] = el => opsAct(el, `production/${el.dataset.id}/next`, { warehouse_id: (qs('#po-wh') || {}).value, received: qs('#po-rec') ? Number(qs('#po-rec').value) : undefined, container: (qs('#po-ct') || {}).value }, '<b>Production order moved on</b>', 'po-err');
+EM.ACTIONS['po-next-go'] = el => opsAct(el, `production/${el.dataset.id}/next`, { warehouse_id: (qs('#po-wh') || {}).value, received: qs('#po-rec') ? Number(qs('#po-rec').value) : undefined, container: (qs('#po-ct') || {}).value, delay_reason: (qs('#po-dr') || {}).value, delay_note: (qs('#po-dn') || {}).value }, '<b>Production order moved on</b>', 'po-err');
+/* R7: change the ETA or a planned date. Later needs the delay reason; a later ETA tells every order waiting on it */
+EM.ACTIONS['po-plan'] = el => {
+  const p = OPSD().production.find(x => x.id === el.dataset.id), PS = OS_('production_stages'), cur = PS.indexOf(p.stage), REC = PNn('Received at warehouse'), plan = poPlanOf(p);
+  const waiting = OPSD().waits.filter(w => w.po_id === p.id && !w.done).length;
+  EM.modal(`<h2>Change dates: ${esc(p.ref)}</h2><p class="muted small">A date moved later needs the delay reason. When the ETA moves later, every order waiting on this production order (${waiting} now) is told: its owner's bell and the dealer's portal show the new date.</p>
+    <div class="fgrid" style="margin-top:12px" id="pp-form"><div class="field"><label for="pp-eta">ETA (${esc(REC)})</label><input class="input" type="date" id="pp-eta" value="${esc(p.eta || plan.rows[PS.indexOf(REC)].planned)}"></div>
+      ${plan.rows.map((r, i) => i > cur && i > 0 && r.stage !== REC ? `<div class="field"><label for="pp-${i}">${esc(r.stage)} planned</label><input class="input" type="date" id="pp-${i}" data-pp-stage="${esc(r.stage)}" value="${esc(r.planned)}"></div>` : '').join('')}
+      <div class="field"><label for="pp-dr">Delay reason (when a date moves later)</label><select class="input" id="pp-dr" data-keep-order>${delayOpts()}</select></div><div class="field"><label for="pp-dn">Note</label><input class="input" id="pp-dn"></div></div>${errBox('pp-err')}
+    <div class="row sticky-actions" style="margin-top:12px"><button class="btn primary" data-act="po-plan-go" data-id="${p.id}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+};
+EM.ACTIONS['po-plan-go'] = async el => {
+  const p = OPSD().production.find(x => x.id === el.dataset.id), plan = poPlanOf(p), planned = {};
+  for (const i of document.querySelectorAll('[data-pp-stage]')) { const r = plan.rows.find(x => x.stage === i.dataset.ppStage); if (r && i.value !== r.planned) planned[i.dataset.ppStage] = i.value; }
+  const eta = qs('#pp-eta').value, body = { planned, delay_reason: qs('#pp-dr').value, delay_note: qs('#pp-dn').value };
+  if (eta !== (p.eta || '')) body.eta = eta;
+  const r = await opsAct(el, `production/${p.id}/plan`, body, null, 'pp-err');
+  if (r) EM.toast(`<b>Dates saved</b>${r.told.length ? `. ${r.told.length} waiting order${r.told.length === 1 ? '' : 's'} told of the new ETA.` : ''}`);
+};
+EM.ACTIONS['po-late'] = el => { EM.poLate = !!el.dataset.v; EM.rerender(); };
 EM.ACTIONS['po-add'] = () => {
   const I = INVD();
   EM.modal(`<h2>Place a production order</h2><div class="fgrid" style="margin-top:12px">
@@ -2049,42 +2095,63 @@ function schemeMembers(sc) {
 function schemeRows(sc) {
   const O = OPSD();
   return schemeMembers(sc).map(c => {
-    const inv = O.orders.filter(o => o.client_id === c.id && o.invoiced_at && dayOf(o.invoiced_at) >= sc.start_on && dayOf(o.invoiced_at) <= sc.end_on);
-    const achieved = inv.reduce((a, o) => a + (o.subtotal || 0), 0), first = O.orders.filter(o => o.client_id === c.id).map(o => dayOf(o.created_at)).sort()[0];
+    const inv = schemeSales(sc, c.id, sc.start_on, sc.end_on);   // R7: the shared sales list, value before GST
+    const achieved = inv.reduce((a, x) => a + x.value, 0), rw = schemeReward(sc, achieved), first = O.orders.filter(o => o.client_id === c.id).map(o => dayOf(o.created_at)).sort()[0];
     const settle = SCH().dealers.find(x => x.scheme_id === sc.id && x.client_id === c.id && x.settled);
-    return { c, achieved, pct: sc.target ? Math.round(achieved / sc.target * 100) : 0, won: achieved >= sc.target, isNew: !!(first && first >= sc.start_on && first <= sc.end_on && inv.length), settle };
+    return { c, achieved, rw, pct: sc.target ? Math.round(achieved / sc.target * 100) : 0, won: achieved >= sc.target, isNew: !!(first && first >= sc.start_on && first <= sc.end_on && inv.length), settle };
   }).sort((a, b) => b.pct - a.pct || a.c.name.localeCompare(b.c.name));
 }
+/* R7: a dealer's sales between two dates, from salesList (invoiced for EGO Premium, won for Big E), value before GST */
+const schemeSales = (sc, cid, from, to) => salesList().filter(x => x.div === (sc.division || 'wholesale') && x.client_id === cid && x.at >= from && x.at <= to);
+const slabTxt = x => x.pct ? `${x.pct}% of sales` : inr0(x.amount);
+const slabsTxt = sc => (sc.slabs || []).map(x => `from ${inr0(x.from)} = ${slabTxt(x)}`).join(' · ');
 const schemeState = sc => sc.status === 'Draft' ? ['Draft: waiting for approval', 'warn'] : sc.status === 'Rejected' ? ['Rejected', 'bad'] : sc.status === 'Settled' ? ['Settled', 'ok'] : today() < sc.start_on ? [`Approved: starts ${ds(sc.start_on)}`, 'info'] : today() <= sc.end_on ? ['Running', 'info'] : ['Ended: to settle', 'warn'];
 const canSch = right => (D.access.schemes || []).includes(right);   // draw up, approve, settle: switched in Roles & access
-EM.VIEWS.schemes = () => {
-  const L = SCH().list;
+EM.VIEWS.schemes = arg => {
+  const L = SCH().list, tabs = subtabs('#/schemes', arg === 'report' ? 'report' : 'list', [['list', `Schemes <span class="muted">${L.length}</span>`], ['report', 'Effectiveness']]);
+  if (arg === 'report') return schemeReport(tabs);
   return `<div class="stack"><div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">EGO Premium · dealer schemes</div><h1>Schemes</h1>
       <p class="muted" style="max-width:780px">A target over a period, as EGO runs them today (a 7-month dealer scheme). Approved by the Owner or a Director, settled at the end by the Owner, a Director or Wholesale Finance. Each dealer's progress is counted from orders invoiced inside the period, before GST; nothing is typed.</p></div>
-      ${canSch('edit') ? '<button class="btn primary" data-act="sch-add">+ Draw up a scheme</button>' : ''}</div>
+      ${canSch('edit') ? '<button class="btn primary" data-act="sch-add">+ Draw up a scheme</button>' : ''}</div>${tabs}
     ${L.length ? table(['Scheme', 'Period', ...(D.access.prices ? ['Target per dealer'] : []), 'Dealers', 'Reached the target', 'Status'], L.map(sc => { const rows = schemeRows(sc), st = schemeState(sc);
       return { href: '#/scheme/' + sc.id, cells: [`<b>${esc(sc.name)}</b><div class="small muted">${esc(sc.ref || '')}</div>`, `${ds(sc.start_on)} to ${ds(sc.end_on)}`, ...(D.access.prices ? [inr0(sc.target)] : []), num(rows.length), D.access.prices ? num(rows.filter(r => r.won).length) : '<span class="muted">Hidden</span>', `<span class="badge ${st[1]}">${esc(st[0])}</span>`] }; }))
       : empty('No schemes yet', 'Draw up the scheme running today: its period, the target per dealer, which dealers, and the reward. It runs once the Owner or a Director approves it.', canSch('edit') ? '<button class="btn primary" data-act="sch-add">+ Draw up a scheme</button>' : '')}</div>`;
 };
 EM.VIEWS.schemes.title = () => 'Schemes';
+/* R7: per scheme, the enrolled dealers' sales in the period against the same length of period just before it, the uplift,
+   the reward cost (what the slabs or the target earn) and the reward cost for each rupee of uplift. Value before GST. */
+function schemeEffect(sc) {
+  const len = daysBetween(sc.start_on, sc.end_on) + 1, bTo = addDaysTo(sc.start_on, -1), bFrom = addDaysTo(sc.start_on, -len), rows = schemeRows(sc);
+  const during = rows.reduce((a, r) => a + r.achieved, 0), before = rows.reduce((a, r) => a + schemeSales(sc, r.c.id, bFrom, bTo).reduce((x, y) => x + y.value, 0), 0);
+  const cost = rows.reduce((a, r) => a + r.rw.reward, 0), up = during - before;
+  return { sc, rows, during, before, bFrom, bTo, up, upPct: before > 0 ? Math.round(up / before * 1000) / 10 : null, cost, perRupee: up > 0 ? Math.round(cost / up * 100) / 100 : null };
+}
+function schemeReport(tabs) {
+  const P = D.access.prices, list = SCH().list.filter(sc => ['Approved', 'Settled'].includes(sc.status)).map(schemeEffect);
+  return `<div class="stack"><div class="stack-s"><div class="kicker">EGO Premium · dealer schemes</div><h1>Schemes</h1><p class="muted" style="max-width:820px">Did the scheme pay? For each approved scheme: the sales of its dealers inside the scheme period against the same number of days just before it, the uplift, what the rewards cost, and the reward cost for each ₹1 of uplift. Counted from invoiced orders, value before GST; nothing typed.</p></div>${tabs}
+    ${!P ? '<p class="muted">Amounts are hidden for your role.</p>' : list.length ? `<div data-sch-report>${table(['Scheme', 'Period', 'Dealers', 'Sales in the scheme', 'Same length before', 'Uplift', 'Reward cost', 'Reward cost per ₹1 of uplift'], list.map(e => ({ href: '#/scheme/' + e.sc.id, cells: [`<b>${esc(e.sc.name)}</b><div class="small muted">${esc(e.sc.ref || '')}</div>`, `${ds(e.sc.start_on)} to ${ds(e.sc.end_on)}<div class="small muted">before: ${ds(e.bFrom)} to ${ds(e.bTo)}</div>`, num(e.rows.length),
+      `<span data-eff-during="${e.during}">${inr0(e.during)}</span>`, `<span data-eff-before="${e.before}">${inr0(e.before)}</span>`, `<span data-eff-up="${e.upPct == null ? '' : e.upPct}">${e.upPct == null ? (e.during > 0 ? 'New sales (nothing before)' : 'No sales') : (e.upPct > 0 ? '+' : '') + e.upPct + '%'}</span>`, `<span data-eff-cost="${e.cost}">${inr0(e.cost)}</span>`, `<span data-eff-per="${e.perRupee == null ? '' : e.perRupee}">${e.perRupee == null ? 'No uplift' : '₹' + e.perRupee.toFixed(2)}</span>`] })))}</div>`
+      : empty('No approved scheme yet', 'The report fills in once a scheme is approved: its dealers\' sales in the period against the same length before.')}</div>`;
+}
 EM.VIEWS.scheme = id => {
   const sc = SCH().list.find(x => x.id === id);
   if (!sc) return `<div class="stack"><h1>Scheme not found</h1><a class="btn" href="#/schemes">Schemes</a></div>`;
   const rows = schemeRows(sc), st = schemeState(sc), P = D.access.prices, ended = today() > sc.end_on;
   const msg = r => `Dear ${r.c.name}, your progress on the EGO Premium scheme "${sc.name}" (${ds(sc.start_on)} to ${ds(sc.end_on)}): ₹${Math.round(r.achieved).toLocaleString('en-IN')} of ₹${Math.round(sc.target).toLocaleString('en-IN')} (${r.pct}%).${r.won ? ' Target reached, congratulations!' : ` ₹${Math.round(sc.target - r.achieved).toLocaleString('en-IN')} to go.`}${sc.reward ? ' Reward: ' + sc.reward + '.' : ''} EGO Premium`;
   const send = r => { const w = String(r.c.whatsapp || r.c.mobile || '').replace(/\D/g, ''), t = encodeURIComponent(msg(r));
-    return `${w ? `<a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${t}">WhatsApp</a>` : ''}${r.c.email ? `<a class="btn sm ghost" href="mailto:${esc(r.c.email)}?subject=${encodeURIComponent('Your progress: ' + sc.name)}&body=${t}">Email</a>` : ''}`; };
+    return `<div class="row" style="gap:6px;flex-wrap:wrap">${w ? `<a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/${w}?text=${t}">WhatsApp</a>` : ''}${r.c.email ? `<a class="btn sm ghost" href="mailto:${esc(r.c.email)}?subject=${encodeURIComponent('Your progress: ' + sc.name)}&body=${t}">Email</a>` : ''}</div>`; };
   return `<div class="stack">${crumbs(['Schemes', '#/schemes'], [sc.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(sc.name)}</h1><div class="row"><span class="badge ${st[1]}">${esc(st[0])}</span><span class="small muted">${esc(sc.ref || '')}</span></div></div>
       <div class="row">${['Draft', 'Rejected'].includes(sc.status) && canSch('edit') ? `<button class="btn" data-act="sch-edit" data-id="${id}">${sc.status === 'Rejected' ? 'Change and send again' : 'Edit'}</button>` : ''}${sc.status === 'Draft' && canSch('approve') ? `<button class="btn primary" data-act="sch-approve" data-id="${id}">Approve</button><button class="btn ghost" data-act="sch-reject" data-id="${id}">Reject</button>` : ''}${sc.status === 'Approved' && ended && canSch('settle') ? `<button class="btn primary" data-act="sch-settle" data-id="${id}">Settle</button>` : ''}${D.access.can_delete ? `<button class="btn ghost" data-act="sch-del" data-id="${id}">Delete</button>` : ''}</div></div>
     ${sc.reject_reason ? `<div class="callout ${sc.status === 'Rejected' ? 'warn' : ''}" data-sch-rejected><b>${sc.status === 'Rejected' ? 'Rejected' : 'Sent again after a rejection'}</b> by ${esc(staffName(sc.rejected_by))} · ${whenTxt(sc.rejected_at)}: ${esc(sc.reject_reason)}${sc.status === 'Rejected' ? '<br><span class="small">Whoever drew it up changes it and sends it again for approval.</span>' : ''}</div>` : ''}
-    <div class="grid g4">${tile('Dealers in it', num(rows.length))}${P ? tile('Reached the target', num(rows.filter(r => r.won).length)) : ''}${P ? tile('New dealers activated', num(rows.filter(r => r.isNew).length), 'first order inside the period') : ''}${P ? tile('Invoiced in the period', inr0(rows.reduce((a, r) => a + r.achieved, 0)), 'before GST') : ''}</div>
-    <section class="card stack-s"><h3>The scheme</h3>${kv([['Period', `${ds(sc.start_on)} to ${ds(sc.end_on)}`], ...(P ? [['Target per dealer', inr0(sc.target)]] : []), ['For', esc(SCHEME_WHO[sc.who]) + (sc.who === 'rating' ? ': ' + esc((sc.ratings || []).join(', ')) : '')], ['Reward', esc(sc.reward || '') || NOTSET], ['Notes', esc(sc.notes || '') || NOTSET],
+    <div class="grid g4">${tile('Dealers in it', num(rows.length))}${P ? tile('Reached the target', num(rows.filter(r => r.won).length)) : ''}${P ? tile('New dealers activated', num(rows.filter(r => r.isNew).length), 'first order inside the period') : ''}${P ? tile('Invoiced in the period', inr0(rows.reduce((a, r) => a + r.achieved, 0)), 'before GST') : ''}${P ? tile('Reward earned', inr0(rows.reduce((a, r) => a + r.rw.reward, 0)), (sc.slabs || []).length ? 'from the slabs reached' : 'on reaching the target') : ''}</div>
+    <section class="card stack-s"><h3>The scheme</h3>${kv([['Period', `${ds(sc.start_on)} to ${ds(sc.end_on)}`], ...(P ? [['Target per dealer', inr0(sc.target)]] : []), ['For', esc(SCHEME_WHO[sc.who]) + (sc.who === 'rating' ? ': ' + esc((sc.ratings || []).join(', ')) : '')], ...(P ? [['Slabs (value before GST)', esc(slabsTxt(sc)) || '<span class="muted">No slabs: the reward is earned on reaching the target</span>']] : []), ['Reward type', esc(sc.reward_type || '') || NOTSET], ...(P && !(sc.slabs || []).length ? [['Reward value', sc.reward_value ? (sc.reward_type === 'Percentage' ? sc.reward_value + '% of sales' : inr0(sc.reward_value)) : NOTSET]] : []), ['Paid by', esc(sc.paid_by || '') || NOTSET], ['Paid on', sc.paid_on ? ds(sc.paid_on) : NOTSET], ['Reward', esc(sc.reward || '') || NOTSET], ['Notes', esc(sc.notes || '') || NOTSET],
       ['Drawn up by', esc(staffName(sc.created_by))], ['Approved by', sc.approved_by ? `${esc(staffName(sc.approved_by))} · ${whenTxt(sc.approved_at)}` : NOTSET], ['Settled by', sc.settled_by ? `${esc(staffName(sc.settled_by))} · ${whenTxt(sc.settled_at)}` : NOTSET]])}</section>
     <section class="card stack-s"><h3>Each dealer's progress</h3><p class="small muted">Counted from orders invoiced between ${ds(sc.start_on)} and ${ds(sc.end_on)}, before GST. Send each dealer their progress on WhatsApp or by email.</p>
-      ${rows.length ? table(['Dealer', 'Rating', ...(P ? ['Invoiced', '% of target'] : []), 'Status', ...(sc.status === 'Settled' ? ['Settlement'] : []), ...(P ? ['Send progress'] : [])], rows.map(r => [`<a href="#/client/${r.c.id}"><b>${esc(r.c.name)}</b></a><div class="small muted">${esc(kindLabel(r.c.kind))} · ${esc(r.c.city)}</div>`, esc(r.c.grade || ''),
-        ...(P ? [inr0(r.achieved), `${r.pct}%`] : []), P ? (r.won ? '<span class="badge ok">Reached</span>' : '<span class="badge plain">Not yet</span>') + (r.isNew ? ' <span class="badge info">New dealer</span>' : '') : '', ...(sc.status === 'Settled' ? [esc((r.settle || {}).settle_note || '')] : []), ...(P ? [send(r)] : [])]))
-        : '<p class="muted">No dealer matches this scheme yet.</p>'}</section></div>`;
+      ${rows.length ? `<div data-sch-progress>` + table(['Dealer', ...(P ? ['Invoiced', 'Slab reached', 'Reward earned', 'To the next slab'] : []), 'Status', ...(sc.status === 'Settled' ? ['Settlement'] : []), ...(P ? ['Send progress'] : [])], rows.map(r => [`<a href="#/client/${r.c.id}"><b>${esc(r.c.name)}</b></a><div class="small muted">${esc(kindLabel(r.c.kind))} · ${esc(r.c.city)}${r.c.grade ? ' · rating ' + esc(r.c.grade) : ''}</div>`,
+        ...(P ? [`${inr0(r.achieved)}<div class="small muted">${r.pct}% of target</div>`, (sc.slabs || []).length ? (r.rw.slab ? `<span class="badge ok" data-slab="${r.rw.slab}">Slab ${r.rw.slab} of ${r.rw.of}</span><div class="small muted">${esc(slabTxt(r.rw.at))}</div>` : '<span class="badge plain" data-slab="0">None yet</span>') : '<span class="muted small">No slabs</span>',
+          `<span data-reward="${r.rw.reward}">${inr0(r.rw.reward)}</span>`, r.rw.next ? `<span data-to-next="${r.rw.toNext}">${inr0(r.rw.toNext)}</span>${r.rw.near ? ' <span class="badge warn">Within 10%</span>' : ''}` : '<span class="badge ok">Top slab</span>'] : []), P ? (r.won ? '<span class="badge ok">Reached</span>' : '<span class="badge plain">Not yet</span>') + (r.isNew ? ' <span class="badge info">New dealer</span>' : '') : '', ...(sc.status === 'Settled' ? [esc((r.settle || {}).settle_note || '')] : []), ...(P ? [send(r)] : [])]))
+        + '</div>' : '<p class="muted">No dealer matches this scheme yet.</p>'}</section></div>`;
 };
 EM.VIEWS.scheme.tab = 'schemes';
 EM.VIEWS.scheme.title = id => (SCH().list.find(x => x.id === id) || { name: 'Scheme' }).name;
@@ -2101,17 +2168,28 @@ function openSchemeForm(sc) {
       ${G.select({ key: 'who', label: 'Which dealers', req: true }, v.who, 'scf', Object.entries(SCHEME_WHO), false).replace('<select', '<select data-sch-who')}
       <div data-sch-part="rating" ${v.who === 'rating' ? '' : 'hidden'} class="span2">${G.multi({ key: 'ratings', label: 'Dealer ratings' }, v.ratings, 'scf', D.lists.dealer_grades || [])}</div>
       <div data-sch-part="chosen" ${v.who === 'chosen' ? '' : 'hidden'} class="span2">${G.multi({ key: 'dealers', label: 'Dealers' }, v.dealers, 'scf', dealers)}</div>
-      <div class="field span2"><label for="scf-reward">Reward</label><input class="input" id="scf-reward" value="${esc(v.reward || '')}" placeholder="e.g. 2% credit note, or a trip"></div>
+      <fieldset class="fs span2" data-sch-slabs><legend>Slabs (optional, on sales before GST)</legend><p class="small muted">From an amount, the dealer earns a % of their sales or a fixed rupee reward. With no slab, the reward value is earned on reaching the target.</p>
+        <div id="scf-slabs" class="stack-s">${(v.slabs || []).map(slabRow).join('')}</div><div class="row"><button class="btn sm" type="button" data-act="sch-slab-add">+ Slab</button></div></fieldset>
+      <div class="field"><label for="scf-rtype">Reward type</label><select class="input" id="scf-rtype" data-keep-order><option value="">Choose</option>${SCHEME_REWARD_TYPES.map(t => `<option ${v.reward_type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="field"><label for="scf-rval">Reward value (with no slabs: ₹, or % when the type is Percentage)</label><input class="input" type="number" min="0" step="any" id="scf-rval" value="${esc(v.reward_value || '')}"></div>
+      <div class="field"><label for="scf-paidby">Paid by</label><select class="input" id="scf-paidby" data-keep-order><option value="">Choose</option>${(D.lists.scheme_paid_by || []).map(t => `<option ${v.paid_by === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
+      <div class="field"><label for="scf-paidon">Paid on</label><input class="input" type="date" id="scf-paidon" value="${esc(v.paid_on || '')}"></div>
+      <div class="field span2"><label for="scf-reward">Reward note</label><input class="input" id="scf-reward" value="${esc(v.reward || '')}" placeholder="e.g. credit note against the next order, or a trip"></div>
       <div class="field span2"><label for="scf-notes">Notes</label><textarea class="input" id="scf-notes" rows="2">${esc(v.notes || '')}</textarea></div></div>
       ${errBox('scf-err')}<div class="row sticky-actions"><button class="btn primary" data-act="sch-save" data-id="${sc ? sc.id : ''}">${sc ? (sc.status === 'Rejected' ? 'Save and send again for approval' : 'Save') : 'Save as draft'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
 document.addEventListener('change', e => { if (!e.target.matches('[data-sch-who]')) return; document.querySelectorAll('[data-sch-part]').forEach(x => { x.hidden = x.dataset.schPart !== e.target.value; }); });
+const slabRow = x => `<div class="row" data-slab-row style="gap:8px;flex-wrap:wrap"><input class="input" type="number" min="0" step="1" data-sl="from" value="${esc((x || {}).from || '')}" placeholder="From ₹" aria-label="Slab from (₹)" style="max-width:170px"><input class="input" type="number" min="0" step="any" data-sl="val" value="${esc((x || {}).pct || (x || {}).amount || '')}" placeholder="Reward" aria-label="Slab reward" style="max-width:130px"><select class="input" data-sl="unit" aria-label="Slab reward in" style="max-width:170px"><option value="pct" ${(x || {}).amount ? '' : 'selected'}>% of sales</option><option value="amount" ${(x || {}).amount ? 'selected' : ''}>₹ fixed</option></select><button class="btn sm ghost" type="button" data-act="sch-slab-del" aria-label="Remove slab">✕</button></div>`;
+EM.ACTIONS['sch-slab-add'] = () => qs('#scf-slabs').insertAdjacentHTML('beforeend', slabRow(null));
+EM.ACTIONS['sch-slab-del'] = el => el.closest('[data-slab-row]').remove();
 EM.ACTIONS['sch-add'] = () => openSchemeForm(null);
 EM.ACTIONS['sch-edit'] = el => openSchemeForm(SCH().list.find(x => x.id === el.dataset.id));
 const schReload = async () => { Object.assign(D, await API('GET', '/api/bootstrap')); };
 EM.ACTIONS['sch-save'] = async el => {
   const f = qs('#scf'), pick = n => [...f.querySelectorAll(`[name="${n}"]:checked`)].map(x => x.value);
-  const b = { name: qs('#scf-name').value, start_on: qs('#scf-start').value, end_on: qs('#scf-end').value, target: Number(qs('#scf-target').value || 0), who: f.querySelector('[data-sch-who]').value, ratings: pick('ratings'), dealers: pick('dealers'), reward: qs('#scf-reward').value, notes: qs('#scf-notes').value };
+  const b = { name: qs('#scf-name').value, start_on: qs('#scf-start').value, end_on: qs('#scf-end').value, target: Number(qs('#scf-target').value || 0), who: f.querySelector('[data-sch-who]').value, ratings: pick('ratings'), dealers: pick('dealers'), reward: qs('#scf-reward').value, notes: qs('#scf-notes').value,
+    slabs: [...document.querySelectorAll('[data-slab-row]')].map(r => { const g = k => r.querySelector(`[data-sl="${k}"]`).value; return { from: Number(g('from')), [g('unit')]: Number(g('val')) }; }),
+    reward_type: qs('#scf-rtype').value, reward_value: Number(qs('#scf-rval').value || 0), paid_by: qs('#scf-paidby').value, paid_on: qs('#scf-paidon').value };
   if (el.dataset.id) b.id = el.dataset.id;
   const again = el.textContent.includes('again');   // a rejected scheme goes back for approval
   busy(el, true);
@@ -2148,6 +2226,7 @@ EM.ACTIONS['rules-open'] = () => {
   const R = D.lists.rules, n = (id, label, v, unit) => `<div class="field"><label for="ru-${id}">${label}</label>${G.adorn(unit === '₹' ? { type: 'money', key: id } : { key: 'x' }, `<input class="input" type="number" min="0" step="any" id="ru-${id}" value="${v}">`).replace('class="suf">undefined<', `class="suf">${unit || ''}<`).replace('<span class="suf"></span>', '')}</div>`;
   EM.modal(`<h2>Rules and numbers</h2><p class="muted small">The numbers the processing uses. Changes apply from the next order, approval or score.</p>
     <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('wastage', 'Wastage on a new line', wastageDefault(R), '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}${n('dorm', 'A dealer is dormant (Priority calls) after', R.dormant_days ?? 60, 'days with no order')}${n('swin', 'Sales count against a sample for', R.sample_window_days ?? 90, 'days after it is given')}${n('chp', 'EGO Champion points per won sale', R.champion_points ?? 10, 'points')}</div></fieldset>
+    <fieldset class="fs" data-prod-days><legend>Normal days per production stage</legend><p class="small muted">The days each stage takes after the one before. Each production order's planned dates are worked out from its order date with these; a date changed on one order stays on it.</p><div class="fgrid">${OS_('production_stages').slice(1).map((st, k) => `<div class="field"><label for="ru-pd-${k}">${esc(st)}</label><input class="input" type="number" min="0" step="1" id="ru-pd-${k}" data-pd="${esc(st)}" value="${prodDays(R, OS_('production_stages'), k + 1)}"></div>`).join('')}</div></fieldset>
     <fieldset class="fs" data-cat-units><legend>How each category is sold</legend><p class="small muted">Flooring and cladding are per sq ft, with whole boxes. Accessories (skirting, profiles, underlay foam, film, installation) are per piece or per running ft (rft). A new category starts from its name; change any here.</p>
       ${table(['Category', 'Sold'], allCats().map(c => [esc(c), `<select class="input" data-cu="${esc(c)}" aria-label="${esc(c)} sold" style="max-width:240px">${Object.entries(QTY_UNIT_LONG).map(([k, l]) => `<option value="${k}" ${catUnit(c, R) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`]))}</fieldset>
     <fieldset class="fs"><legend>Approval limits (the Owner has none)</legend>${table(['Approval', 'Regional manager / Project head', 'Head', 'Director'], Object.entries(R.approvals).map(([k, a]) => [esc(a.label) + ` <span class="muted">(${a.unit})</span>`, ...['manager', 'head', 'director'].map(l => `<input class="input" type="number" min="0" step="any" data-ap="${k}" data-lv="${l}" value="${a.levels[l]}" aria-label="${esc(a.label)} ${l}" style="max-width:140px">`)]))}</fieldset>
@@ -2163,7 +2242,7 @@ EM.ACTIONS['rules-save'] = async el => {
     el.dataset.sure = '1'; el.textContent = 'Save, I understand'; return;
   }
   const v = id => Number(qs('#ru-' + id).value), R = D.lists.rules;
-  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'), sample_window_days: v('swin'), champion_points: v('chp'),
+  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), prod_days: Object.fromEntries([...document.querySelectorAll('[data-pd]')].map(x => [x.dataset.pd, Number(x.value)])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'), sample_window_days: v('swin'), champion_points: v('chp'),
     approvals: Object.fromEntries(Object.keys(R.approvals).map(k => [k, { levels: Object.fromEntries([...document.querySelectorAll(`[data-ap="${k}"]`)].map(i => [i.dataset.lv, Number(i.value)])) }])),
     p200: { tiers: [...document.querySelectorAll('#p2t .p2t')].map(r => ({ name: r.querySelector('[data-t="name"]').value.trim(), min: Number(r.querySelector('[data-t="min"]').value) })).filter(t => t.name),
       weights: Object.fromEntries(['sales', 'breadth', 'payments', 'display', 'activity'].map(k => [k, v('w-' + k)])) } };
@@ -2424,11 +2503,12 @@ function rolesMatrix() {
 }
 /* R5: the impact notice for Bhargav Naidu's 17 Oct ruling on role access (applied by migration 0021, additive), shown to the Owner */
 const ROLE_RULING = [[['ws_field', 'ws_tele', 'ws_finance', 'ws_marketing', 'office_admin'], 'Projects, Design 500 and Installation added to their menu'], [['ws_warehouse'], 'Installation added to their menu'],
-  [['rt_head', 'rt_finance'], 'they move the Big E stock, money and dispatch steps'], [['ws_tele', 'rt_tele'], 'Priority calls added to their menu']];
+  [['rt_head'], 'they move the Big E stock, money and dispatch steps'], [['ws_tele', 'rt_tele'], 'Priority calls added to their menu']];
 function roleRuling() {
   const ppl = ids => D.staff.filter(x => x.active && ids.includes(x.role)).length, nameOf = id => (D.roles.find(r => r.id === id) || { name: id }).name;
   return `<div class="callout" data-role-ruling role="note"><b>Access changed by Bhargav Naidu's ruling of 17 Oct.</b> What it touches:<ul style="margin:6px 0 6px 18px">${ROLE_RULING.map(([ids, what]) => `<li>${esc(ids.map(nameOf).join(', '))} (${num(ppl(ids))} ${ppl(ids) === 1 ? 'person' : 'people'}): ${esc(what)}</li>`).join('')}</ul>
-    <span class="small">Each person gets it at their next reload or sign-in; each role's History has the line. Field Sales open the phone app: their Projects, Design 500 and Installation are on the desktop team screens, from Me. Any of it can be switched off below.</span></div>`;
+    <span class="small">Each person gets it at their next reload or sign-in; each role's History has the line. Field Sales open the phone app: their Projects, Design 500 and Installation are on the desktop team screens, from Me. Any of it can be switched off below.</span></div>
+    <div class="callout" data-role-ruling-r8 role="note"><b>Access changed by Bhargav Naidu's ruling of 18 Oct.</b> ${esc(nameOf('rt_finance'))} (${num(ppl(['rt_finance']))} ${ppl(['rt_finance']) === 1 ? 'person' : 'people'}): moves the Big E money step only (Advance received, Balance received, Closed); the stock and dispatch steps are taken off. ${esc(nameOf('rt_head'))} keeps every step. The role's History has the line.</div>`;
 }
 const saveRoleSw = async (id, patch) => {
   if (D.access.viewing_as) return EM.toast('Press Back to me first: nothing changes while viewing as someone.');
@@ -2886,7 +2966,7 @@ function helpFor(t) {
   if (fe) { const f = ALL_FIELDS().find(x => x.key === fe.dataset.field), lab = ((fe.querySelector('label') || {}).textContent || '').replace(/\s*\*$/, '');
     return [fe, `<b>${esc(lab)}</b><br>${esc(FIELD_HELP[fe.dataset.field] || (f ? TYPE_HELP[f.type] || '' : ''))}${f && f.req ? '<br><span class="muted">Compulsory.</span>' : ''}${f && f.list ? '<br><span class="muted">The choices are in Lists & stages.</span>' : ''}`]; }
   const act = t.closest('[data-act]'); if (act && ACT_HELP[act.dataset.act]) return [act, esc(ACT_HELP[act.dataset.act])];
-  const nav = t.closest('.navcard'); if (nav) { const k = (nav.getAttribute('href') || '').slice(2); return NAV_HELP[k] ? [nav, `<b>${esc(nav.textContent.trim())}</b><br>${esc(NAV_HELP[k])}`] : null; }
+  const nav = t.closest('.navcard'); if (nav) { const k = nav.dataset.nav || (nav.getAttribute('href') || '').slice(2); return NAV_HELP[k] ? [nav, `<b>${esc(nav.textContent.trim())}</b><br>${esc(NAV_HELP[k])}`] : null; }
   const lane = t.closest('.lane[data-stage]'); if (lane && !t.closest('a, .mini')) return [lane, `<b>${esc(lane.dataset.stage)}</b><br>${lane.querySelectorAll('a, .mini').length} here. The stages and their order come from Lists & stages.`];
   const opp = t.closest('[data-href^="#/opp/"], a[href^="#/opp/"]');
   if (opp) { const o = D.opportunities.find(x => x.id === (opp.dataset.href || opp.getAttribute('href')).split('/')[2]); if (o) return [opp, `<b>${esc(o.title)}</b><br>${esc((CL()[o.client_id] || {}).name || '')} · ${esc(o.stage)}${D.access.prices && o.value ? ' · ' + money(o.value) : ''}<br>${esc(o.next_action || '')}${o.next_date ? ' by ' + ds(o.next_date) : ''}<br><span class="muted">Click to open it.</span>`]; }
@@ -3525,7 +3605,7 @@ EM.VIEWS.analysis = arg => {
   const ppl = D.staff.filter(s => s.active && (D.access.scope === 'all' || D.access.scope === 'division' || D.access.scope === 'region' || [me().id, ...under(me().id)].includes(s.id)));
   const heads = ppl.filter(s => D.staff.some(x => x.reports_to === s.id && x.active));
   const regions = [...new Set((D.lists.cities || []).map(c => c.region).filter(Boolean))].sort();
-  const body = { sales: anSales, pipeline: anPipeline, followups: anFollowups, fulfilment: anFulfilment, targets: anTargets, leads: anLeads }[tab]();
+  const body = { sales: anSales, pipeline: anPipeline, followups: anFollowups, fulfilment: anFulfilment, targets: anTargets, leads: anLeads, delays: anDelays }[tab]();
   return `<div class="stack"><div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${esc(scopeLabel())}</div><h1>Analysis</h1>
       <p class="muted" style="max-width:820px">Counted only from what is saved in EGO Master, within what you may see. Click any figure to see the records behind it and how it is worked out.</p></div>
       <button class="btn" data-act="an-csv">Download for Excel</button></div>
@@ -3986,6 +4066,23 @@ EM.ACTIONS['pu-toggle'] = async el => { const u = PUS().find(x => x.id === el.da
 
 /* ---------------------------------------------------------------- Analysis › Dealer leads: does each dealer act on the leads it is given? */
 AN_TABS.push(['leads', 'Dealer leads']);
+/* R7: Production delays, inside Analysis (no new menu item). Production orders placed in the dates: per stage how many
+   were late and the average days late of those, and the delay reasons given, most used first (from each order's delay history). */
+AN_TABS.push(['delays', 'Production delays']);
+function anDelays() {
+  const pos = OPSD().production.filter(p => anIn(dayIST(p.created_at))), PS = OS_('production_stages'), plans = pos.map(p => [p, poPlanOf(p)]);
+  const byStage = PS.slice(1).map(st => { const late = plans.map(([p, pl]) => [p, pl.rows.find(r => r.stage === st)]).filter(([, r]) => r && r.late > 0);
+    return { cells: [esc(st), fig(num(late.length), { title: `Late at ${st}`, calc: 'Production orders placed in the dates that reached this stage after its planned date, or are past it and not there yet.', head: ['Production order', 'Planned', 'Actual', 'Days late'], rows: late.map(([p, r]) => ({ href: '#/po/' + p.id, cells: [`<b>${esc(p.ref)}</b>`, ds(r.planned), r.actual ? ds(r.actual) : 'Not yet', num(r.late)] })) }),
+      late.length ? (late.reduce((a, [, r]) => a + r.late, 0) / late.length).toFixed(1) : '<span class="muted small">None late</span>'], st };
+  });
+  const reasons = {}; for (const p of pos) for (const d of ((p.extra || {}).delays || [])) if (d.reason && d.days > 0) { const x = reasons[d.reason] = reasons[d.reason] || { n: 0, days: 0 }; x.n++; x.days += d.days; }
+  const top = Object.entries(reasons).sort((a, b) => b[1].n - a[1].n || b[1].days - a[1].days);
+  const lateNow = plans.filter(([, pl]) => pl.late > 0);
+  return `<div class="grid g4">${tile('Production orders in the dates', num(pos.length))}${tile('Late now or finished late', num(lateNow.length))}${tile('Delay reasons given', num(top.reduce((a, [, x]) => a + x.n, 0)))}</div>
+    <div class="grid g2"><section class="card stack-s" data-an-delays-stage><h3>By stage</h3><p class="small muted">Average days late counts only the production orders late at that stage.</p>${table(['Stage', 'Production orders late', 'Average days late'], byStage)}</section>
+      <section class="card stack-s" data-an-delays-reasons><h3>Top delay reasons</h3>${top.length ? table(['Delay reason', 'Times given', 'Days late in all'], top.map(([r, x]) => [esc(r), num(x.n), num(x.days)])) : '<p class="small muted">No delay reason given in the dates.</p>'}</section></div>
+    ${anSec('Late production orders', ['Production order', 'Design', 'Stage', 'ETA', 'Days late'], lateNow.map(([p, pl]) => ({ href: '#/po/' + p.id, cells: [`<b>${esc(p.ref)}</b>`, esc(prodName(p.product_id)), esc(p.stage), p.eta ? ds(p.eta) : '', lateBadge(pl.late)] })), 'Right now.', 'data-an-delays-late')}`;
+}
 function anLeads() {
   if (anCo() === 'retail') return '<div class="callout">Leads are handed to EGO Premium dealers. Switch the company to EGO Premium.</div>';
   const N = escDays(), ls = LEADS().filter(l => anIn(dayIST(l.handed_at)) && anWhoOk(leadDealer(l).owner_id) && anRegionOk(leadDealer(l).region || ''));
@@ -4746,10 +4843,10 @@ const regFiles = r => D.documents.filter(d => d.register_id === r.id).length;
 const REG_HEAD = { sample: () => ['Sample', 'Given to', 'Qty', ...(D.access.prices ? ['Value'] : []), 'Billed or free', 'Date given', 'Return status', 'Files'],
   display: () => ['Display', 'Dealer', 'Type', 'Condition', 'Installed on', 'Last inspection', 'Replacement due', ...(D.access.prices ? ['Cost'] : []), 'Photos'],
   training: () => ['Training', 'Who', 'Audience', 'Course kind', 'Date', 'Score', 'Expiry', 'Certificate'] };
-const regBtns = r => isBothView() ? '' : `<div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm ghost" data-act="rg-edit" data-id="${r.id}">Change</button>${D.access.can_delete ? `<button class="btn sm ghost" data-act="rg-del" data-id="${r.id}">Delete</button>` : ''}</div>`;
+const regBtns = r => isBothView() ? '' : `<div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm ghost" data-act="rg-edit" data-id="${r.id}">Change</button>${D.access.can_delete ? `<button class="btn sm ghost" data-act="rg-del" data-id="${r.id}">Delete</button>` : ''}</div>`;
 const REG_ROW = {
   sample: r => [`<b>${esc(regWhat(r))}</b><div class="small muted">${esc(r.ref)}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, regWhoHref(r) ? `<a href="${regWhoHref(r)}">${esc(regWho(r))}</a><div class="small muted">${esc(regWhoKind(r))}</div>` : '', num(r.extra.qty || 0), ...(D.access.prices ? [money(r.value)] : []), esc(r.extra.billed || ''), ds(r.on_date), `<span class="badge ${r.status === 'Lost' ? 'bad' : r.status === 'Returned' ? 'ok' : 'plain'}">${esc(r.status)}</span>`, `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Files (${regFiles(r)})</button>${regBtns(r)}`],
-  display: r => [`<b>${esc(regWhat(r))}</b><div class="small muted">${esc(r.ref)}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, r.client_id ? `<a href="#/client/${r.client_id}/displays">${esc(regWho(r))}</a>` : '', esc(r.extra.display_type || ''), `<span class="badge ${r.status === 'Damaged' ? 'bad' : r.status === 'Worn' ? 'warn' : 'ok'}">${esc(r.status)}</span>`, ds(r.on_date), r.extra.last_inspection ? ds(r.extra.last_inspection) : '<span class="muted small">Not inspected</span>', dueBadge(r), ...(D.access.prices ? [money(r.value)] : []), `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Photos (${regFiles(r)})</button>${regBtns(r)}`],
+  display: r => [`<b>${esc(regWhat(r))}</b><div class="small muted">${esc(r.ref)}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, r.client_id ? `<a href="#/client/${r.client_id}/displays">${esc(regWho(r))}</a>` : '', esc(r.extra.display_type || ''), `<span class="badge ${r.status === 'Damaged' ? 'bad' : r.status === 'Worn' ? 'warn' : 'ok'}">${esc(r.status)}</span>`, ds(r.on_date), r.extra.last_inspection ? ds(r.extra.last_inspection) : '<span class="muted small">Not inspected</span>', dueBadge(r), ...(D.access.prices ? [money(r.value)] : []), `<div class="row" data-rg-acts style="gap:6px;flex-wrap:wrap;padding-right:4px"><button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Photos (${regFiles(r)})</button>${regBtns(r)}</div>`],
   training: r => [`<b>${esc(r.extra.course || '')}</b><div class="small muted">${esc(r.ref)}${r.extra.product ? ' · ' + esc(r.extra.product) : ''}${r.extra.trainer ? ' · by ' + esc(r.extra.trainer) : ''}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, `${esc(r.extra.person || '')}${r.client_id ? `<div class="small"><a href="#/client/${r.client_id}">${esc(regWho(r))}</a></div>` : ''}`, esc(r.extra.audience || ''), `${esc(r.extra.course_kind || '')}${r.extra.course_kind === CERT_COURSE ? `<div>${!r.due_date || r.due_date >= today() ? `<span class="badge ok">Certified till ${r.due_date ? ds(r.due_date) : 'no expiry date'}</span>` : '<span class="badge bad">Expired</span>'}</div>` : ''}`, ds(r.on_date), r.extra.score != null ? num(r.extra.score) : '', r.due_date ? ds(r.due_date) : '<span class="muted small">No expiry</span>', `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Certificate (${regFiles(r)})</button>${regBtns(r)}`],
 };
 const regTable = (kind, rows) => `<div data-rg-table="${kind}">${table(REG_HEAD[kind](), rows.slice(0, 500).map(r => ({ cells: REG_ROW[kind](r) })))}</div>${rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : ''}`;
@@ -5047,3 +5144,19 @@ function d5Plans() {
       ${searchBox('Design 500 plans: intervention, member, person or outcome')}
       ${rows.length ? `<div data-d5-ivs>${table(IV_HEAD(true).map(h => h === 'Dealer' ? 'Member' : h), rows.slice(0, 500).map(x => ivRow(x, true)))}</div>` : '<p class="small muted">Nothing for this filter.</p>'}</section></div>`;
 }
+
+/* ---- R8 (Bhargav 18 Oct): the grouped screens carry the tabs of their group. Each tab is the old address of that screen, so
+   old links, bells and saved bookmarks land on the right tab; each tab shows only when the role may open it. */
+ICON.fieldteam = ICON.attendance;
+const secTabs = (g, cur) => {
+  const ok = NAV_GROUP[g].filter(([t]) => allowedTab(t));
+  if (ok.length < 2 && cur === g) return '';   // Opportunities alone needs no tab strip
+  return `<nav class="sectabs" aria-label="${esc(NAV_LABEL[g])}" data-sectabs="${g}">${ok.map(([t, l]) => `<a href="#/${t}" data-sectab="${t}" class="${t === cur ? 'on' : ''}" aria-current="${t === cur ? 'page' : 'false'}">${l}</a>`).join('')}</nav>`;
+};
+for (const [g, tabs] of Object.entries(NAV_GROUP)) for (const [t] of tabs) {
+  const v = EM.VIEWS[t], w = arg => secTabs(g, t) + v(arg);
+  Object.assign(w, v); EM.VIEWS[t] = w;
+}
+NAV_HELP.fieldteam = 'Field team: Attendance (who started the day, when, where, the photo, late marks) and Roadmap (each person\'s visits for the day).';
+NAV_HELP.dealers += ' Tabs: Samples, Displays, Training.';
+NAV_HELP.opps += ' Tab: Priority calls.';

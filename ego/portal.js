@@ -81,6 +81,7 @@
   const orderCard = o => { const ls = B.lines.filter(l => l.order_id === o.id), fs = B.documents.filter(d => d.order_id === o.id);
     return `<div class="card pt-item" data-order="${o.id}"><div class="row between"><b>${esc(o.ref)}</b><span class="small muted">${ds(o.created_at)}</span></div>${stageLine(o)}
       ${ls.map(l => `<div class="small" data-p-line><b>${esc(l.product || 'Design')}</b>${l.code ? ' (' + esc(l.code) + ')' : ''}: <span data-p-boxes="${Number(l.boxes) || 0}">${esc(qtyText(l))}</span> · rate ${inr(l.rate)} / ${rateUnit(l)} · <span data-p-amt="${Number(l.amount) || 0}">${inr(l.amount)}</span> before GST</div>`).join('')}
+      ${o.expected ? `<div class="small" data-p-expected="${o.expected}">Expected <b>${ds(o.expected)}</b>${o.expected_was ? ` <span class="muted">(was ${ds(o.expected_was)})</span>` : ''}</div>` : ''}
       <div class="small">Total ${inr(o.total)} · paid ${inr(o.paid)}${due(o) > 0.5 ? ` · <b>due ${inr(due(o))}</b>` : ''}${o.invoiced_at ? ` · invoiced ${ds(o.invoiced_at)}` : ''}</div>
       ${fs.length ? fs.map(fileRow).join('') : '<p class="small muted">No PI or invoice on this order yet.</p>'}</div>`; };
   const planCard = p => { const bar = (got, want) => want ? `<div class="pt-bar"><span style="width:${Math.min(100, Math.round(got / want * 100))}%"></span></div>` : '';
@@ -182,19 +183,20 @@
       <div class="field"><label for="pr-by">Needed by (optional)</label><input class="input" id="pr-by" type="date"></div>
       <div class="small err" id="pr-err" role="alert"></div><div class="row"><button class="btn primary" data-pa="request-go">Send</button><button class="btn" data-pa="close">Cancel</button></div></form>`),
     'request-go': el => send(el, '/api/portal/requests', { what: qs('#pr-what').value, categories: [...document.querySelectorAll('input[name="pr-cat"]:checked')].map(x => x.value), boxes: qs('#pr-boxes').value, need_by: qs('#pr-by').value }, '<b>Order request sent.</b> Your EGO contact has it.', 'pr-err'),
-    complaint: () => modal(`<h2>Complaint</h2><p class="small muted">It goes to EGO's complaints desk and to your EGO contact.</p><form class="stack" onsubmit="return false">
+    complaint: () => { modal(`<h2>Complaint</h2><p class="small muted">It goes to EGO's complaints desk and to your EGO contact.</p><form class="stack" onsubmit="return false">
       ${sel('pc-type', 'What it is about', B.lists.complaint_types, true)}${sel('pc-sev', 'How serious', B.lists.severities, true)}
       <div class="field"><label for="pc-order">Order (optional)</label><select class="input" id="pc-order"><option value="">Not about one order</option>${B.orders.map(o => `<option value="${o.id}">${esc(o.ref)} · ${ds(o.created_at)}</option>`).join('')}</select></div>
       <div class="field"><label for="pc-desc">What happened *</label><textarea class="input" id="pc-desc" rows="3" maxlength="2000"></textarea></div>
       <div class="field"><label for="pc-batch">Batch or lot number</label><input class="input" id="pc-batch" maxlength="60" placeholder="As printed on the box"></div>
-      <div class="field"><label for="pc-inst">Installed by</label><select class="input" id="pc-inst"><option value="">Not known</option>${Object.entries(B.lists.installed_by || {}).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></div>
-      <div class="field"><label for="pc-iname">Installer's name (compulsory for Other)</label><input class="input" id="pc-iname" maxlength="120"></div>
+      <div class="field"><label for="pc-inst">Installed by</label><select class="input" id="pc-inst" data-pc-inst><option value="">Not known</option>${(B.lists.installers || []).map(r => `<option value="${esc(r.id)}">${esc(r.name)}</option>`).join('')}<option value="other">Not in the list</option></select></div>
+      <div class="field" id="pc-iname-f" hidden><label for="pc-iname">Installer's name *</label><input class="input" id="pc-iname" maxlength="120" placeholder="Contractor, firm or person"></div>
       <div class="field"><label for="pc-photos">Photos (optional): one or many, up to 10, 25 MB each</label><input class="input" id="pc-photos" type="file" multiple accept="image/*,application/pdf"></div>
-      <div class="small err" id="pc-err" role="alert"></div><div class="row"><button class="btn primary" data-pa="complaint-go">Send</button><button class="btn" data-pa="close">Cancel</button></div></form>`),
+      <div class="small err" id="pc-err" role="alert"></div><div class="row"><button class="btn primary" data-pa="complaint-go">Send</button><button class="btn" data-pa="close">Cancel</button></div></form>`);
+      qs('#pc-inst').addEventListener('change', e => { const other = e.target.value === 'other'; qs('#pc-iname-f').hidden = !other; if (other) qs('#pc-iname').focus(); }); },
     'complaint-go': el => { const files = [...qs('#pc-photos').files];
       if (files.length > 10) return err('pc-err', new Error('Up to 10 photos at a time.'));
       const big = files.find(f => f.size > 25 * 1024 * 1024); if (big) return err('pc-err', new Error(`${big.name} is over 25 MB.`));
-      const fd = new FormData(), v = { type: qs('#pc-type').value, severity: qs('#pc-sev').value, order_id: qs('#pc-order').value, description: qs('#pc-desc').value, batch: qs('#pc-batch').value, installed_by: qs('#pc-inst').value, installer_name: qs('#pc-iname').value };
+      const fd = new FormData(), v = { type: qs('#pc-type').value, severity: qs('#pc-sev').value, order_id: qs('#pc-order').value, description: qs('#pc-desc').value, batch: qs('#pc-batch').value, installer_id: qs('#pc-inst').value === 'other' ? '' : qs('#pc-inst').value, installed_by: qs('#pc-inst').value === 'other' ? 'other' : '', installer_name: qs('#pc-inst').value === 'other' ? qs('#pc-iname').value : '' };
       Object.entries(v).forEach(([k, x]) => fd.append(k, x)); files.forEach(f => fd.append('file', f));
       return sendForm(el, '/api/portal/complaints', fd, `<b>Complaint sent${files.length ? ` with ${files.length} photo${files.length === 1 ? '' : 's'}` : ''}.</b> EGO's complaints desk has it.`, 'pc-err'); },
     /* a file: View opens it in the browser (a link good for a day), Download saves it with its name, Share sends a 7-day link */

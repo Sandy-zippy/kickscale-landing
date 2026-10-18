@@ -894,7 +894,10 @@ const OPS_LISTS = [['complaint_types', 'Complaint types', ['Product · swelling'
   ['complaint_channels', 'Complaint channels', ['WhatsApp', 'Phone', 'Dealer', 'Email', 'Field visit']], ['severities', 'Severity', ['Low', 'Medium', 'High']],
   ['snag_types', 'Snag types', ['Uneven joint', 'Gap at skirting', 'Scratch / chip', 'Squeaking', 'Colour variation', 'Swelling near wet area']],
   ['readiness_items', 'Site readiness checklist', ['Civil & electrical work complete', 'Subfloor level (±3 mm / 2 m)', 'Moisture below limit', 'Painting / false ceiling done', 'Secure storage for material', 'Lift / access for material', 'Site contact available']],
-  ['delay_reasons', 'Site delay reasons', ['Customer / site not ready', 'Material shortage', 'Installer unavailable', 'Transport', 'Design / measurement change']]];
+  ['delay_reasons', 'Site delay reasons', ['Customer / site not ready', 'Material shortage', 'Installer unavailable', 'Transport', 'Design / measurement change']],
+  /* R7: why a production stage finished late or its planned date / ETA moved later; who pays a scheme reward */
+  ['prod_delay_reasons', 'Production delay reasons', ['Factory capacity', 'Raw material short at the factory', 'Quality check failed', 'Vessel or shipping line delay', 'Port or customs hold', 'Container rolled to the next vessel', 'Payment to the supplier pending', 'Other']],
+  ['scheme_paid_by', 'Scheme reward paid by', ['EGO Premium', 'Supplier', 'Shared with the supplier']]];
 DEFAULT_LISTS.ops = Object.fromEntries(Object.entries(OPS).map(([k, v]) => [k, v.list]));
 for (const [k, , v] of OPS_LISTS) DEFAULT_LISTS[k] = v;
 LIST_GROUPS.push(['Operations lists', OPS_LISTS.map(([k, l]) => [k, l])]);
@@ -918,6 +921,8 @@ const DEFAULT_RULES = {
   sample_window_days: 90,
   /* R6b: EGO Champion points for each won sale they are tagged on */
   champion_points: 10,
+  /* R7: normal days per production stage (after the stage before); empty = PROD_DAYS */
+  prod_days: {},
   p200: { tiers: [{ name: 'A', min: 70 }, { name: 'B', min: 50 }, { name: 'C', min: 30 }, { name: 'Watchlist', min: 0 }],
     weights: { sales: 40, breadth: 20, payments: 15, display: 10, activity: 15 } },
 };
@@ -928,6 +933,53 @@ const levelLimit = (rules, kind, level) => { if (level === 'owner') return Infin
 const LEVELS = [['none', 'Nothing'], ['manager', 'Up to the manager limits'], ['head', 'Up to the head limits'], ['director', 'Up to the director limits'], ['owner', 'No limit']];
 const opsStages = (lists, k) => ((lists || {}).ops || {})[k] || OPS[k].list;
 const lastOf = a => a[a.length - 1];
+
+/* ---------------------------------------------------------------- R7 (18 Oct): production planned vs actual
+
+   Each stage of a production order gets a planned date: the order date plus the Owner's normal days per stage
+   (Rules and numbers; the days a stage takes after the one before). Received at warehouse is planned on the ETA.
+   A planned date changed on one order is kept on that order (extra.planned) and the stages after it follow it.
+   The actual date of a stage is the day it was moved there (the stage history). Days late = actual - planned, or,
+   for the next stage not reached yet, today - planned once that day has passed. One helper for the Worker and
+   every screen. */
+const PROD_DAYS = { 'In production': 2, 'Quality check': 21, Shipped: 5, 'In transit': 2, 'Received at warehouse': 15, 'Allocated & closed': 1 };
+const addDaysTo = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+const daysBetween = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5);
+const prodDays = (rules, stages, i) => { const v = ((rules || {}).prod_days || {})[stages[i]];
+  if (v !== undefined && v !== null && v !== '' && isFinite(Number(v))) return Math.max(0, Math.round(Number(v)));
+  return PROD_DAYS[stages[i]] ?? PROD_DAYS[OPS.production_stages.list[i]] ?? 0; };
+/* actual: { stage: 'YYYY-MM-DD' } from the stage history; today: 'YYYY-MM-DD' */
+function prodPlan(po, stages, rules, actual, today, received) {
+  const ex = (po && typeof po.extra === 'object' && po.extra) || {}, over = ex.planned || {}, cur = stages.indexOf(po.stage), rows = [];
+  const start = istDay(po.created_at) || today, recv = received || 'Received at warehouse';
+  for (let i = 0; i < stages.length; i++) {
+    const s = stages[i];
+    const planned = i === 0 ? start : s === recv && po.eta ? po.eta : over[s] || addDaysTo(rows[i - 1].planned, prodDays(rules, stages, i));
+    const act = i === 0 ? start : i <= cur ? ((actual || {})[s] || '') : '';
+    const late = act ? Math.max(0, daysBetween(planned, act)) : i === cur + 1 && today > planned ? daysBetween(planned, today) : 0;
+    rows.push({ stage: s, planned, actual: act, late, running: !act && late > 0 });
+  }
+  const done = rows.slice(0, cur + 1), next = rows[cur + 1];
+  return { rows, late: Math.max(done.length ? done[done.length - 1].late : 0, next ? next.late : 0) };
+}
+
+/* ---------------------------------------------------------------- R7 (18 Oct): scheme slabs and the reward
+
+   A scheme may have slabs (from Rs 5,00,000 = 2%, from Rs 10,00,000 = 3%): each slab gives a % of the sales (value
+   before GST) or a fixed rupee reward. With no slabs, reaching the target earns the reward value (a % of the sales
+   when the reward type is Percentage). Sales are the dealer's in the scheme period, before GST, never typed. */
+const SCHEME_REWARD_TYPES = ['Credit note', 'Gift', 'Cash', 'Percentage'];
+function schemeReward(sc, sales) {
+  const s = Number(sales) || 0, slabs = ((sc && sc.slabs) || []).slice().sort((a, b) => a.from - b.from);
+  const pay = x => Number(x.pct) > 0 ? Math.round(s * Number(x.pct)) / 100 : Number(x.amount) || 0;
+  if (slabs.length) {
+    let i = -1; slabs.forEach((x, j) => { if (s >= x.from) i = j; });
+    const at = slabs[i] || null, next = slabs[i + 1] || null;
+    return { slab: i + 1, of: slabs.length, at, next, reward: at ? pay(at) : 0, toNext: next ? Math.max(0, next.from - s) : 0, near: !!next && s >= next.from * 0.9 };
+  }
+  const t = Number(sc.target) || 0, hit = t > 0 && s >= t, pct = sc.reward_type === 'Percentage';
+  return { slab: 0, of: 0, at: null, next: hit ? null : { from: t }, reward: hit ? pay(pct ? { pct: sc.reward_value } : { amount: sc.reward_value }) : 0, toNext: hit ? 0 : Math.max(0, t - s), near: !hit && t > 0 && s >= t * 0.9 };
+}
 const DISCOUNT_FIELD = { key: 'discount_pct', label: 'Discount (%)', type: 'decimal' };
 
 /* ---------------------------------------------------------------- dealer schemes (6 Oct)

@@ -105,7 +105,7 @@ const EM = {
     const items = [...nav.main, ...nav.shared];
     // Fixed order: the selected section is highlighted where it is, it never moves.
     const badge = k => (EM.navBadge && EM.navBadge[k] ? EM.navBadge[k]() : 0);
-    const card = ([k, l]) => { const n = badge(k); return `<a href="#/${k}" class="navcard ${k === tab ? 'on' : ''}" title="${esc(l)}" aria-label="${esc(l)}${n ? `, ${n} unread` : ''}" aria-current="${k === tab ? 'page' : 'false'}">${ICON[k] || ICON.home}<span>${l}</span>${n ? `<i class="nbadge">${n}</i>` : ''}</a>`; };
+    const navOn = EM.navParent ? EM.navParent(tab) : tab; const card = ([k, l]) => { const n = badge(k); return `<a href="#/${EM.navHref ? EM.navHref(k) : k}" data-nav="${k}" class="navcard ${k === navOn ? 'on' : ''}" title="${esc(l)}" aria-label="${esc(l)}${n ? `, ${n} unread` : ''}" aria-current="${k === navOn ? 'page' : 'false'}">${ICON[k] || ICON.home}<span>${l}</span>${n ? `<i class="nbadge">${n}</i>` : ''}</a>`; };
     qs('#shell').classList.toggle('folded', EM.folded());
     qs('#side').innerHTML = `
       <div class="side-top"><button class="iconbtn menubtn" data-act="menu" aria-label="${EM.folded() ? 'Open' : 'Close'} the menu" aria-expanded="${!EM.folded()}">${ICON.menu}</button>
