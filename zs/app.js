@@ -36,6 +36,8 @@
       /* conversations: WhatsApp and Instagram, one row per person per channel */
       threads: [],
       mayAssign: false,
+      /* the bell: what THIS person has read (server-held, per staff member) */
+      bell: { upto: null, read: [] },
       /* What every invoice says about us: our details, our bank, our wording.
          The layout is fixed in invoice.js; these are the parts that change. */
       invoice_template: null,
@@ -597,7 +599,9 @@
                    p.top !== lastPulse.top;
       /* conversations: a message in or out, a tick, a comment, a campaign send */
       var talked = p.msgs !== lastPulse.msgs;
-      var moved = booked || talked;
+      /* this person read something on another device: the bell and badge follow */
+      var marked = p.bell !== lastPulse.bell;
+      var moved = booked || talked || marked;
       var newClients = p.clients - lastPulse.clients;
       var newOpps = p.opportunities - lastPulse.opportunities;
 
@@ -804,6 +808,7 @@
     msg_approve:   ['Clients', 'add'],    msg_dismiss:    ['Clients', 'edit'],
 
     opp_new:       ['Pipeline', 'add'],   opp_stage:      ['Pipeline', 'edit'],
+    stage_move:    ['Pipeline', 'edit'],  opp_assign:     ['Pipeline', 'edit'],
     opp_won:       ['Pipeline', 'win'],   opp_lost:       ['Pipeline', 'lose'],
     opp_reopen:    ['Pipeline', 'edit'],  opp_line:       ['Pipeline', 'edit'],
     opp_edit:      ['Pipeline', 'edit'],
@@ -1112,6 +1117,7 @@
     reports:     '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
     campaigns:   '<path d="M3 11v3a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1Z"/><path d="M17 8.5a4 4 0 0 1 0 7"/>',
     jarvis:      '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.2"/>',
+    bell:        '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
     targets:     '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/><circle cx="12" cy="12" r="0.6" fill="currentColor"/>',
     activity:    '<path d="M3 12h4l3 8 4-16 3 8h4"/>',
     team:        '<circle cx="8" cy="9" r="3"/><circle cx="17" cy="10" r="2.4"/><path d="M2.5 19a5.5 5.5 0 0 1 11 0M15 19a4.5 4.5 0 0 1 6.5-4"/>',
@@ -1154,15 +1160,22 @@
     var route = (location.hash || '#/home').split('/')[1] || 'home';
     var open = railOpen();
     document.body.className = open ? 'railopen' : 'railshut';
+    /* The Inbox number is conversations with something unread, every channel,
+       from the threads the server sent THIS person (so assignment is respected).
+       Approval cards no longer count here: they are in the bell. */
+    var inboxN = inboxUnread();
     $('#nav').innerHTML = navFor().map(function (n) {
-      var badge = n[0] === 'inbox' ? pendingMsgs().length : 0;
+      var badge = n[0] === 'inbox' ? inboxN : 0;
       /* title carries the label so a collapsed rail is still discoverable */
       return '<a href="#/' + n[0] + '" class="' + (n[0] === route ? 'on' : '') + '" ' +
-        'title="' + esc(n[1]) + '" aria-label="' + esc(n[1]) + '"' +
+        'title="' + esc(n[1]) + '" aria-label="' + esc(n[1] + (badge ? ', ' + badge + ' unread' : '')) + '"' +
         (n[0] === route ? ' aria-current="page"' : '') + '>' +
         navIcon(n[0]) + '<span>' + esc(n[1]) + '</span>' +
-        (badge ? '<i>' + badge + '</i>' : '') + '</a>';
+        (badge ? '<i>' + pillN(badge) + '</i>' : '') + '</a>';
     }).join('');
+    var here = (NAV.filter(function (n) { return n[0] === (TITLE_OF[route] || route); })[0] || [])[1] || 'Cockpit';
+    document.title = (inboxN ? '(' + pillN(inboxN) + ') ' : '') + here + ' \u00b7 ZippyScale';
+    paintBell();
     /* ⚠️ THERE WAS NO WAY OUT.
 
        The user chip used to open the demo switcher. Gating that on hasDemo()
@@ -1201,6 +1214,198 @@
         : '') +
       (hasDemo() ? '<button class="btn alt" data-act="switchUser">Switch user</button>' : '') +
       '<button class="btn alt" data-act="closeModal">Cancel</button></div>');
+  }
+
+  /* ================= THE BELL (18 Oct 2026) =================
+     One shared component: the rail Inbox badge, the tab title and the bell all
+     read the same functions here. Internal items are worked out from records the
+     server already sent this person (so roles and assignment hold); what is READ
+     is the server's, per staff member (D.bell), so phone and laptop agree.
+     Customer conversations keep their unread on the thread itself. Nothing in
+     here writes on sign-in: only a click on an item or Mark all read POSTs. */
+  var TITLE_OF = { opp: 'floor', oppnew: 'floor', client: 'clients', clientnew: 'clients', person: 'team' };
+  var BELL_CH = [['whatsapp', 'WhatsApp', 'ok', 'W'], ['instagram', 'Instagram', 'em', 'IG'], ['messenger', 'Messenger', 'info', 'M']];
+  var BELL_MORE = false, BELL_LAST = null, BELL_DAYS = 14;
+  function pillN(n) { return n > 99 ? '99+' : String(n); }
+  function inboxUnread() {
+    return (D.threads || []).filter(function (t) { return t.unread > 0; }).length;
+  }
+  /* a plain date is a day in India, never a UTC midnight (the "2026-10-20Z" trap) */
+  function bellMs(s) {
+    s = String(s || '');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) s += 'T00:00:00+05:30';
+    else if (/^\d{4}-\d{2}-\d{2} \d/.test(s)) s = s.replace(' ', 'T') + 'Z';
+    var t = new Date(s).getTime();
+    return isNaN(t) ? 0 : t;
+  }
+  function bellWhen(s) {
+    var t = bellMs(s); if (!t) return '';
+    var d = new Date(t), now = new Date(), mins = Math.round((now - d) / 60000);
+    var dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(String(s));
+    var day = function (x) { return x.toDateString(); };
+    if (!dateOnly && mins >= 0 && mins < 60) return mins < 1 ? 'now' : mins + ' min';
+    if (day(d) === day(now)) return dateOnly ? 'Today' : d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    if (day(d) === day(new Date(now - 86400000))) return 'Yesterday';
+    return d.getDate() + ' ' + d.toLocaleString('en-GB', { month: 'short' });
+  }
+  function firstLine(x) { return String(x || '').split(/\n/)[0].trim().slice(0, 140); }
+  function bellRead() { return D.bell || (D.bell = { upto: null, read: [] }); }
+  function isUnread(it) {
+    var b = bellRead();
+    return bellMs(it.at) > bellMs(b.upto) && (b.read || []).indexOf(it.id) < 0;
+  }
+  function staffName(id) { var u = id && ZS.staffById(id); return (u && u.name ? u.name.split(' ')[0] : '') || 'Somebody'; }
+
+  function bellInternal() {
+    var u = me(); if (!u) return [];
+    var since = Date.now() - BELL_DAYS * 86400000, out = [];
+    var opps = {}; (D.opportunities || []).forEach(function (o) { opps[o.id] = o; });
+    var cname = function (o) { return ((o && clientById(o.client)) || {}).name || 'a client'; };
+    (D.activity || []).forEach(function (a) {
+      if (bellMs(a.at) < since) return;
+      var o = opps[a.opp];
+      if (a.kind === 'opp_new' && !a.by && o) {
+        var lead = /^Meta lead ad/i.test(o.landed || '') || /Meta Lead ads/.test(a.text || '');
+        out.push({ id: 'act:' + a.id, k: 'clients', who: cname(o), at: a.at, go: '#/opp/' + o.id,
+          kind: 'New enquiry \u00b7 ' + (lead ? 'Lead ad' : 'Website'),
+          line: lead ? 'From "' + (o.campaign || 'a lead form') + '". ' + firstLine(o.scope) : (firstLine(o.scope) || a.text) });
+      } else if (a.kind === 'stage_move' && a.by && a.by !== u.id && o) {
+        out.push({ id: 'act:' + a.id, k: 'floor', who: staffName(a.by) + ' moved ' + cname(o), kind: 'Stage change',
+          line: a.text, at: a.at, go: '#/opp/' + o.id });
+      } else if (a.kind === 'opp_assign' && a.by && a.by !== u.id && o && o.assigned_to === u.id) {
+        /* ponytail: "to you" is read off who holds it NOW; a later hand-on drops the item */
+        out.push({ id: 'act:' + a.id, k: 'team', who: staffName(a.by) + ' gave you ' + cname(o), kind: 'Assigned to you',
+          line: 'Engagement: ' + (o.title || 'untitled') + (o.fee ? ', ' + ZS.money(o.fee) : ''), at: a.at, go: '#/opp/' + o.id });
+      } else if (a.kind === 'impact') {
+        out.push({ id: 'act:' + a.id, k: 'activity', who: 'Impact notice', kind: 'Changed', line: a.text, at: a.at, go: '#/activity' });
+      }
+    });
+    var today = ZS.today();
+    (D.invoices || []).forEach(function (i) {
+      var o = opps[i.opp], no = 'Invoice ' + (i.ref || i.n || '');
+      var go = '#/client/' + (i.client || (o && o.client) || '');
+      if (i.state === 'paid' && i.paid && bellMs(i.paid) >= since) {
+        out.push({ id: 'inv:' + i.id + ':paid', k: 'sheet', who: no + ' paid', kind: cname(o),
+          line: ZS.money(i.amount) + ' received.', at: i.paid, go: go });
+      } else if (i.state !== 'paid' && i.state !== 'draft' && i.due && i.due < today) {
+        out.push({ id: 'inv:' + i.id + ':over', k: 'sheet', who: no + ' overdue', kind: cname(o), warn: true,
+          line: ZS.money(i.amount) + ' due since ' + bellWhen(i.due), at: i.due, go: go });
+      }
+    });
+    (D.followups || []).forEach(function (f) {
+      if (f.done || !f.due || String(f.due).slice(0, 10) > today) return;
+      if (!(f.owner === u.id || (!f.owner && u.role === 'owner'))) return;
+      var due = String(f.due).slice(0, 10), o = opps[f.opp];
+      var late = Math.round((bellMs(today) - bellMs(due)) / 86400000);
+      var what = firstLine(f.note) || f.method || 'Follow up';
+      if (late >= 2) {
+        /* the escalation is its own item, timed when it became one, so an earlier Mark all read does not hide it */
+        var escAt = new Date(bellMs(due) + 2 * 86400000).toISOString();
+        out.push({ id: 'fu:' + f.id + ':esc', k: 'diary', warn: true, who: 'Follow-up escalated', kind: cname(o),
+          line: late + ' days late: ' + what, at: escAt, go: o ? '#/opp/' + o.id : '#/diary' });
+      } else {
+        out.push({ id: 'fu:' + f.id + ':due', k: 'diary', who: late ? 'Follow-up due yesterday' : 'Follow-up due today',
+          kind: cname(o), line: what, at: due, go: o ? '#/opp/' + o.id : '#/diary' });
+      }
+    });
+    (D.proposals || []).forEach(function (p) {
+      if (p.status !== 'pending' || !(u.role === 'owner' || p.owner === u.id)) return;
+      var ag = (ZS.agentById && ZS.agentById(p.agent)) || {};
+      out.push({ id: 'yes:' + p.id, k: 'agents', who: ag.name || 'An agent', kind: 'Waiting for your yes',
+        line: p.title || p.summary || 'A proposal', at: p.at, go: '#/jarvis' });
+    });
+    return out.sort(function (a, b) { return bellMs(b.at) - bellMs(a.at); });
+  }
+
+  /* each external group: WORKING, EMPTY AND WHY, BLOCKED or FAILED, from the Meta card */
+  function bellGroups() {
+    var st = metaStatusNow(), cards = (st && st.cards) || [];
+    return BELL_CH.map(function (c) {
+      var card = cards.filter(function (x) { return x.id === c[0]; })[0];
+      var mine = (D.threads || []).filter(function (t) { return t.channel === c[0]; });
+      var rows = mine.filter(function (t) { return t.unread > 0; })
+        .sort(function (a, b) { return bellMs(b.last_at) - bellMs(a.last_at); });
+      var state = card ? (card.state === 'wait' ? 'blocked' : card.state === 'quiet' ? 'failed' : 'ok')
+        : (c[0] === 'whatsapp' || mine.length ? 'ok' : 'blocked');
+      /* a real customer message is never hidden behind a setup state: if it arrived, it shows */
+      if (rows.length) state = 'working';
+      else if (state === 'ok') state = 'empty';
+      var lastIn = mine.filter(function (t) { return t.last_dir === 'in'; })
+        .sort(function (a, b) { return bellMs(b.last_at) - bellMs(a.last_at); })[0];
+      return { ch: c[0], label: c[1], tone: c[2], mark: c[3], state: state,
+               rows: state === 'working' ? rows : [], lastIn: lastIn, card: card };
+    });
+  }
+  function bellCounts() {
+    var ints = bellInternal(), groups = bellGroups();
+    var intN = ints.filter(isUnread).length;
+    var extN = groups.reduce(function (n, g) { return n + g.rows.length; }, 0);
+    return { ints: ints, groups: groups, intN: intN, extN: extN, total: intN + extN };
+  }
+
+  function bellItemHTML(it, unread) {
+    return '<button class="bpitem' + (unread ? ' new' : '') + '" type="button" data-act="bellGo" data-id="' + esc(it.id) + '">' +
+      '<span class="bpic' + (it.warn ? ' warn' : '') + (it.mark ? ' ch' : '') + '">' + (it.mark ? esc(it.mark) : navIcon(it.k)) + '</span>' +
+      '<span class="bpwho"><b>' + esc(it.who) + '</b>' + (it.kind ? ' <span>' + esc(it.kind) + '</span>' : '') + '</span>' +
+      '<span class="bptime">' + esc(bellWhen(it.at)) + '</span>' +
+      '<span class="bpline">' + esc(it.line || '') + '</span></button>';
+  }
+  function bellGroupHTML(g) {
+    var h = '<div class="bpgrp" data-grp="' + g.ch + '"><span class="pill ' + g.tone + '">' + esc(g.label) + '</span>' +
+      (g.state === 'working' ? '<em>' + g.rows.length + ' new</em>'
+        : g.state === 'blocked' ? '<span class="pill dim">' + (g.ch === 'whatsapp' ? 'Waiting for setup' : 'Waiting for Meta') + '</span>'
+        : g.state === 'failed' ? '<span class="pill warn">Gone quiet</span>' : '<em>Nothing new</em>') + '</div>';
+    if (g.state === 'working') return h + g.rows.map(function (t) {
+      return bellItemHTML({ id: 'th:' + t.id, mark: g.mark, who: t.name || t.handle || 'Somebody', line: t.last_body, at: t.last_at }, true);
+    }).join('');
+    if (g.state === 'empty') return h + '<p class="bpstate">' + (g.lastIn
+      ? 'No new ' + g.label + ' messages. The last one came in ' + (/:/.test(bellWhen(g.lastIn.last_at)) ? 'at ' : '') +
+        esc(bellWhen(g.lastIn.last_at)) + ', from ' + esc(g.lastIn.name || g.lastIn.handle || 'a customer') + '.'
+      : 'No ' + g.label + ' messages yet. They land here the moment one arrives.') + '</p>';
+    if (g.state === 'blocked') return h + '<p class="bpstate">' + (g.ch === 'whatsapp'
+      ? 'Starts once the WhatsApp number is connected to the cockpit.' : 'Starts once Meta approves our access.') + '</p>';
+    var since = g.lastIn ? bellWhen(g.lastIn.last_at) : '';
+    return h + '<div class="bpstate fail"><b>' + esc(g.label) + ' has gone quiet.</b> Nothing has reached the cockpit' +
+      (since ? ' since ' + esc(since) : ' for a while') + ', and that is unusual. Customers can still write to you. ' +
+      'Check Settings, Connections.<div class="acts"><button class="minibtn" type="button" data-act="metaCheck">Check again</button>' +
+      '<a class="minibtn" href="#/settings/connections">Open Connections</a></div></div>';
+  }
+  function bellPanelHTML(c) {
+    var unread = c.ints.filter(isUnread), shown, rest;
+    if (unread.length) { shown = unread.slice(0, 3); rest = c.ints.filter(function (x) { return shown.indexOf(x) < 0; }).slice(0, 30); }
+    else { shown = c.ints.slice(0, 3); rest = c.ints.slice(3, 30); }
+    var ints = shown.concat(BELL_MORE ? rest : []);
+    var alerts = false;
+    try { alerts = typeof Notification !== 'undefined' && Notification.permission === 'default'; } catch (e) {}
+    return '<div class="bphead"><div><h2 id="bp-title">Notifications</h2><p>' + (c.total ? c.total + ' new' : 'All caught up') + '</p></div>' +
+      '<button class="dclose" type="button" data-act="bellClose" aria-label="Close" style="margin-left:auto">&times;</button></div>' +
+      '<div class="bpbody">' +
+      (c.total ? '' : '<div class="bpall"><b>You are all caught up</b><p>Anything new shows up here the moment it arrives.</p></div>') +
+      '<section class="bpsec" data-sec="internal" aria-labelledby="bp-int"><div class="bpsech"><h3 id="bp-int">Internal' + (c.intN ? '<i>' + pillN(c.intN) + '</i>' : '') + '</h3>' +
+      '<span>Inside the cockpit</span>' + (c.intN ? '<button class="minibtn" type="button" data-act="bellAllInt">Mark all read</button>' : '') + '</div>' +
+      (ints.length ? ints.map(function (it) { return bellItemHTML(it, isUnread(it)); }).join('') +
+        (!BELL_MORE && rest.length ? '<button class="bpmore" type="button" data-act="bellMore">Show ' + rest.length + ' older</button>' : '')
+        : '<p class="bpstate" style="padding:12px 16px">Nothing new inside the cockpit. Enquiries, stage changes, invoices and follow-ups land here.</p>') +
+      '</section>' +
+      '<section class="bpsec" data-sec="external" aria-labelledby="bp-ext"><div class="bpsech"><h3 id="bp-ext">External' + (c.extN ? '<i>' + pillN(c.extN) + '</i>' : '') + '</h3>' +
+      '<span>Customer messages</span>' + (c.extN ? '<button class="minibtn" type="button" data-act="bellAllExt">Mark all read</button>' : '') + '</div>' +
+      c.groups.map(bellGroupHTML).join('') + '</section></div>' +
+      (alerts ? '<div class="bpfoot">Desktop alerts are off. <button class="minibtn" type="button" data-act="askNotify">Turn them on</button></div>' : '');
+  }
+  function bellOpen() { var p = document.getElementById('bell'); try { return !!(p && p.matches(':popover-open')); } catch (e) { return false; } }
+  function paintBell() {
+    var b = document.getElementById('bellbtn'); if (!b) return;
+    var c = bellCounts();
+    b.innerHTML = navIcon('bell') + (c.total ? '<i' + (BELL_LAST !== null && c.total > BELL_LAST ? ' class="pop"' : '') + '>' + pillN(c.total) + '</i>' : '');
+    b.setAttribute('aria-label', 'Notifications, ' + c.total + ' new');
+    BELL_LAST = c.total;
+    if (bellOpen()) document.getElementById('bell').innerHTML = bellPanelHTML(c);
+  }
+  function bellHide() { var p = document.getElementById('bell'); try { if (bellOpen()) p.hidePopover(); } catch (e) {} }
+  function bellMark(payload) {
+    if (!window.API || !API.signedIn()) return Promise.resolve(null);
+    return API.bellRead(payload).then(function (r) { if (r && r.bell) { D.bell = r.bell; saveLocal(); paintChrome(); } return r; })
+      .catch(function () { toast('Not saved on the server. It will show as new again on your other devices.', true); return null; });
   }
 
   function pendingMsgs() {
@@ -1365,12 +1570,15 @@
   }
 
   var toastT = null;
-  function toast(msg, bad) {
+  var TOAST_UNDO = null;
+  function toast(msg, bad, undo) {
     var t = $('#toast');
     t.textContent = msg; t.hidden = false;
     t.className = bad ? 'bad' : '';
+    TOAST_UNDO = typeof undo === 'function' ? undo : null;
+    if (TOAST_UNDO) t.insertAdjacentHTML('beforeend', ' <button class="minibtn" type="button" data-act="toastUndo" style="margin-left:10px">Undo</button>');
     clearTimeout(toastT);
-    toastT = setTimeout(function () { t.hidden = true; }, 3400);
+    toastT = setTimeout(function () { t.hidden = true; TOAST_UNDO = null; }, TOAST_UNDO ? 7000 : 3400);
   }
 
   function modal(title, sub, body) {
@@ -2702,6 +2910,8 @@
          server scopes these, so what arrives IS what this person may read. */
       threads: remote.threads || [],
       mayAssign: !!remote.mayAssign,
+      /* ⚠️ absent from here means reset on every sync: the bell's read marks */
+      bell: remote.bell || { upto: null, read: [] },
       /* ⚠️ absent from here means wiped on every sync, the trap that ate the bin */
       prospects: remote.prospects || [],
       sends: remote.sends || [],
@@ -3467,6 +3677,50 @@
       location.replace(location.pathname + '?fresh=' + Date.now() + location.hash);
     },
     metaCheck: function () { metaStatusNow(true); toast('Asking the server again.'); },
+
+    /* ---- the bell ---- */
+    bellClose: function () { bellHide(); },
+    bellMore: function () { BELL_MORE = true; paintBell(); },
+    bellGo: function (id) {
+      bellHide();
+      if (String(id).indexOf('th:') === 0) {
+        /* the same path as tapping it in the Inbox: opens it and zeroes its unread there too */
+        if (location.hash.indexOf('#/inbox') !== 0) go('#/inbox');
+        return ACTIONS.openThread && ACTIONS.openThread(String(id).slice(3));
+      }
+      var it = bellInternal().filter(function (x) { return x.id === id; })[0];
+      if (!it) return;
+      if (isUnread(it)) {
+        bellRead().read = (bellRead().read || []).concat([id]);
+        saveLocal();
+        bellMark({ items: [id] });
+      }
+      go(it.go);
+    },
+    bellAllInt: function () {
+      var at = new Date().toISOString();
+      bellRead().upto = at; saveLocal(); paintChrome();
+      bellMark({ upto: at });
+      toast('Marked read. Internal is clear.');
+    },
+    bellAllExt: function () {
+      var ids = [];
+      bellGroups().forEach(function (g) { g.rows.forEach(function (t) { ids.push(t.id); }); });
+      if (!ids.length) return;
+      var was = (D.threads || []).filter(function (t) { return ids.indexOf(t.id) >= 0; })
+        .map(function (t) { return { id: t.id, unread: t.unread }; });
+      (D.threads || []).forEach(function (t) { if (ids.indexOf(t.id) >= 0) t.unread = 0; });
+      saveLocal(); render();
+      bellMark({ threads: ids }).then(function (r) {
+        var back = (r && r.cleared && r.cleared.length) ? r.cleared : was;
+        toast('Marked read. ' + ids.length + (ids.length === 1 ? ' conversation' : ' conversations') + ', Inbox updated.', false, function () {
+          (D.threads || []).forEach(function (t) { back.forEach(function (b) { if (b.id === t.id) t.unread = b.unread; }); });
+          saveLocal(); render();
+          bellMark({ restore: back });
+        });
+      });
+    },
+    toastUndo: function () { var f = TOAST_UNDO; TOAST_UNDO = null; $('#toast').hidden = true; if (f) f(); },
     /* for the tests: the server's answer, as if it had arrived */
     setMetaStatusForTest: function (st) { MSTAT = st; MSTAT_AT = Date.now(); },
     setRange: function (k) {
@@ -4083,6 +4337,13 @@
     });
 
     window.addEventListener('hashchange', render);
+    /* the bell: native popover, so Esc and a click outside close it; opening marks nothing read */
+    var bp = document.getElementById('bell');
+    if (bp) bp.addEventListener('toggle', function (e) {
+      var b = document.getElementById('bellbtn');
+      if (b) b.setAttribute('aria-expanded', e.newState === 'open' ? 'true' : 'false');
+      if (e.newState === 'open') paintBell(); else BELL_MORE = false;
+    });
 
     /* Stop watching a tab nobody is looking at, and catch up the moment one
        comes back to the front. */

@@ -74,7 +74,7 @@
   --note-ink:#E8DFA8;
   --note-line:#3A3418;
   --wa-bg:#10150E;            /* the WhatsApp message preview */
-  --shadow:var(--shadow);
+  --shadow:rgba(0,0,0,.5);   /* KIT FIX 18 Oct: it pointed at itself, so every dark shadow vanished */
   --glow:0 0 0 1px rgba(217,234,102,.25);
   --d:'Archivo',system-ui,sans-serif;
   --b:'Inter',system-ui,sans-serif;
@@ -1309,6 +1309,122 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 /* a line that states a count */
 .countline{margin:10px 0 0;font-size:13px;color:var(--tx2);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .countline b{font-family:var(--mono);color:var(--tx)}
+
+/* ===== NEW RULES: the bell + the Inbox count (copy as is into console.html) ===== */
+
+/* KIT FIX: the dark --shadow pointed at itself (--shadow:var(--shadow)), so every
+   box-shadow that read it was dropped in dark. One value, lands everywhere. */
+/* (fixed at the token, line ~77) */
+
+/* KIT FIX: the old top-bar ".nav" block (flex-wrap:wrap, Archivo 12.5px, padding 7px 11px,
+   underline) and its 900px rule (order:3, width:100%) still hit the rail. At 1280x720 the
+   19 rail items wrapped into a second column, and on a phone the rail foot jumped above the
+   menu. Scoped back to the rail here; lands everywhere. */
+.rail .nav{flex-wrap:nowrap;margin-left:0;order:0;width:auto;overflow-x:hidden;overflow-y:auto}
+.rail .nav a{padding:0 11px;border-bottom:0;font-family:var(--b);font-size:13.5px;flex:none}
+.railshut .rail .nav a{padding:0}
+@media(max-width:860px){.rail .nav a{padding:0}}
+
+/* KIT FIX: the legacy top-bar ".nav a i" (margin-left:5px, square) was winning
+   over the rail badge. Rail badge is one pill, pushed right, same as the bell. */
+.rail .nav a i,.bellbtn i{margin-left:auto;font-style:normal;background:var(--lime);color:var(--lime-ink);
+  font-family:var(--b);font-size:10.5px;font-weight:700;min-width:18px;height:18px;line-height:18px;
+  padding:0 5px;border-radius:9px;text-align:center;font-variant-numeric:tabular-nums}
+.railshut .rail .nav a i{position:absolute;top:2px;right:6px;margin:0;box-shadow:0 0 0 2px var(--coal)}
+@media(max-width:860px){.rail .nav a i{position:absolute;top:2px;right:6px;margin:0;box-shadow:0 0 0 2px var(--coal)}}
+
+/* the bell sits in the rail head, beside the logo */
+.bellbtn{margin-left:auto;position:relative;flex:none;width:40px;height:40px;border-radius:8px;
+  display:grid;place-items:center;background:none;border:0;color:var(--mut);cursor:pointer}
+.bellbtn:hover{background:var(--char);color:var(--tx)}
+.bellbtn[aria-expanded="true"]{background:var(--lime-wash);color:var(--tx)}
+.bellbtn:focus-visible,.bpitem:focus-visible,.bpsech .minibtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bellbtn svg{width:19px;height:19px}
+.bellbtn i{position:absolute;top:2px;right:0;margin:0;box-shadow:0 0 0 2px var(--coal)}
+.bellbtn i.pop{animation:zs-pop .22s ease-out}
+@keyframes zs-pop{50%{transform:scale(1.25)}}
+/* shut rail and phone: the mark on top, the bell under it */
+.railshut .railhead{flex-direction:column;gap:6px;padding:12px 0 10px}
+.railshut .bellbtn{margin-left:0}
+@media(max-width:860px){.railhead{flex-direction:column;gap:6px;padding:12px 0 10px;justify-content:center}
+  .railhead .logo-full{display:none}.railhead .logo-mark{display:block}.bellbtn{margin-left:0}}
+
+/* the panel: a native popover (light dismiss + Esc for free), opens beside the rail,
+   never over it, so the rail foot stays reachable */
+.bellpanel{position:fixed;inset:auto;margin:0;top:8px;left:calc(var(--rail) + 8px);
+  width:min(420px,calc(100vw - var(--rail) - 16px));max-height:calc(100dvh - 16px);
+  padding:0;display:none;flex-direction:column;overflow:hidden;
+  background:var(--coal);color:var(--tx);border:1px solid var(--line2);border-radius:var(--r);
+  box-shadow:0 18px 48px var(--shadow);font-size:13px}
+.bellpanel:popover-open,.bellpanel.open{display:flex}
+.railshut .bellpanel{left:calc(var(--rail-shut) + 8px);width:min(420px,calc(100vw - var(--rail-shut) - 16px))}
+@media(max-width:860px){.bellpanel{left:calc(var(--rail-shut) + 8px);width:min(420px,calc(100vw - var(--rail-shut) - 16px))}}
+.bellpanel::backdrop{background:transparent}
+
+.bphead{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.bphead h2{font-family:var(--d);font-size:16px;font-weight:600;margin:0}
+.bphead p{margin:1px 0 0;font-size:12px;color:var(--mut)}
+.bpbody{overflow-y:auto;flex:1;overscroll-behavior:contain}
+
+.bpsec+.bpsec{border-top:6px solid var(--ink)}
+.bpsech{position:sticky;top:0;z-index:1;background:var(--coal);display:flex;align-items:center;gap:10px;
+  padding:11px 16px 9px;border-bottom:1px solid var(--line)}
+.bpsech h3{font-family:var(--d);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin:0;color:var(--tx)}
+.bpsech h3 i{font-style:normal;margin-left:6px;background:var(--lime);color:var(--lime-ink);
+  border-radius:9px;padding:1px 6px;font-size:10.5px;letter-spacing:0}
+.bpsech span{font-size:12px;color:var(--dim)}
+.bpsech .minibtn{margin-left:auto;min-height:32px}
+
+.bpgrp{display:flex;align-items:center;gap:8px;padding:10px 16px 6px}
+.bpgrp b{font-size:12.5px}
+.bpgrp em{font-style:normal;font-size:12px;color:var(--dim)}
+
+.bpitem{display:grid;grid-template-columns:30px 1fr auto;gap:2px 11px;align-items:start;width:100%;
+  min-height:56px;padding:10px 16px;background:none;border:0;border-bottom:1px solid var(--line);
+  text-align:left;cursor:pointer;color:var(--mut);font-size:13px;position:relative}
+.bpitem:hover{background:var(--char)}
+.bpitem.new{color:var(--tx)}
+.bpitem.new::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:var(--lime)}
+.bpic{grid-row:span 2;width:30px;height:30px;border-radius:8px;background:var(--char2);color:var(--mut);
+  display:grid;place-items:center}
+.bpic svg{width:16px;height:16px}
+.bpitem.new .bpic{color:var(--tx)}
+.bpic.warn{background:rgba(224,163,46,.16);color:var(--warn-ink)}
+.bpic.ch{font-family:var(--d);font-size:10.5px;font-weight:700}
+.bpwho{min-width:0;line-height:1.35}
+.bpwho b{font-weight:600}
+.bpitem:not(.new) .bpwho b{font-weight:500}
+.bpwho span{color:var(--dim);font-size:12px}
+.bpline{grid-column:2 / 4;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--mut);line-height:1.4}
+.bpitem.new .bpline{color:var(--tx2)}
+.bptime{font-size:11.5px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
+.bpmore{display:block;width:100%;padding:10px 16px;background:none;border:0;border-bottom:1px solid var(--line);
+  color:var(--accent);font-size:12.5px;text-align:left;cursor:pointer;min-height:40px}
+
+/* an external group that has nothing to list says why, in one of three ways */
+.bpstate{margin:0;padding:2px 16px 12px 57px;font-size:13px;color:var(--mut);line-height:1.5}
+.bpstate.fail{color:var(--tx2)}
+.bpstate.fail b{color:var(--warn-ink)}
+.bpstate .acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.bpstate .acts .minibtn{min-height:32px}
+
+.bpall{padding:22px 16px 18px;text-align:center;border-bottom:1px solid var(--line)}
+.bpall b{display:block;font-family:var(--d);font-size:15px;margin-bottom:3px}
+.bpall p{margin:0 auto;max-width:300px;color:var(--mut);font-size:13px}
+.bpfoot{border-top:1px solid var(--line);padding:10px 16px;font-size:12px;color:var(--dim);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bpfoot a{color:var(--accent)}
+
+/* phone: a full-width sheet from the bottom, with a scrim */
+@media(max-width:600px){
+  .bellpanel,.railshut .bellpanel{left:0;right:0;top:auto;bottom:0;width:100%;max-height:88dvh;
+    border-radius:16px 16px 0 0;border-left:0;border-right:0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
+  .bellpanel::backdrop{background:rgba(0,0,0,.55)}
+  .bphead{padding-top:18px;position:relative}
+  .bphead::before{content:"";position:absolute;top:7px;left:50%;width:36px;height:4px;margin-left:-18px;border-radius:2px;background:var(--line2)}
+  .bpitem{min-height:60px}
+  .bpsech .minibtn,.bpstate .acts .minibtn,.bphead .dclose{min-height:44px;min-width:44px}
+}
+@media(prefers-reduced-motion:reduce){.bellbtn i.pop{animation:none}}
 </style>
 </head>
 <body>
@@ -1339,6 +1455,8 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
     <div class="railhead">
       <img class="logo-full" src="img/zippyscale-logo-full-dark.png" alt="ZippyScale">
       <img class="logo-mark" src="img/zippyscale-logo-mark-dark.png" alt="ZippyScale">
+      <button class="bellbtn" id="bellbtn" type="button" popovertarget="bell" aria-haspopup="dialog"
+        aria-expanded="false" aria-label="Notifications"></button>
     </div>
     <div class="nav" id="nav"></div>
     <div class="railfoot">
@@ -1358,6 +1476,8 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
   </div>
 </div>
 
+<div id="bell" class="bellpanel" popover role="dialog" aria-labelledby="bp-title"></div>
+
 <dialog id="modal">
   <div class="dhead"><div><h2 id="m-title"></h2><p id="m-sub"></p></div>
     <button class="dclose" data-act="closeModal" aria-label="Close">&times;</button></div>
@@ -1366,33 +1486,33 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 
 <div id="toast" hidden></div>
 
-<script src="places.js?b=1792326955"></script>
-<script src="vocab.js?b=1792326955"></script>
-<script src="api.js?b=1792326955"></script>
-<script src="core.js?b=1792326955"></script>
-<script src="app.js?b=1792326955"></script>
-<script src="stock.js?b=1792326955"></script>
-<script src="crm.js?b=1792326955"></script>
-<script src="pipeline.js?b=1792326955"></script>
-<script src="autos.js?b=1792326955"></script>
-<script src="processing.js?b=1792326955"></script>
-<script src="whatsapp.js?b=1792326955"></script>
-<script src="campaigns.js?b=1792326955"></script>
-<script src="bin.js?b=1792326955"></script>
-<script src="inbox.js?b=1792326955"></script>
-<script src="chatbot.js?b=1792326955"></script>
-<script src="outreach.js?b=1792326955"></script>
-<script src="diary.js?b=1792326955"></script>
-<script src="handbook.js?b=1792326955"></script>
-<script src="jarvis.js?b=1792326955"></script>
-<script src="jarvis-desk.js?b=1792326955"></script>
-<script src="dates.js?b=1792326955"></script>
+<script src="places.js?b=1792330393"></script>
+<script src="vocab.js?b=1792330393"></script>
+<script src="api.js?b=1792330393"></script>
+<script src="core.js?b=1792330393"></script>
+<script src="app.js?b=1792330393"></script>
+<script src="stock.js?b=1792330393"></script>
+<script src="crm.js?b=1792330393"></script>
+<script src="pipeline.js?b=1792330393"></script>
+<script src="autos.js?b=1792330393"></script>
+<script src="processing.js?b=1792330393"></script>
+<script src="whatsapp.js?b=1792330393"></script>
+<script src="campaigns.js?b=1792330393"></script>
+<script src="bin.js?b=1792330393"></script>
+<script src="inbox.js?b=1792330393"></script>
+<script src="chatbot.js?b=1792330393"></script>
+<script src="outreach.js?b=1792330393"></script>
+<script src="diary.js?b=1792330393"></script>
+<script src="handbook.js?b=1792330393"></script>
+<script src="jarvis.js?b=1792330393"></script>
+<script src="jarvis-desk.js?b=1792330393"></script>
+<script src="dates.js?b=1792330393"></script>
 <!-- The invoice PDF: the drawing library, the embedded font (the rupee sign is
      not in any PDF standard font), and the layout itself. -->
-<script src="vendor/jspdf.js?b=1792326955"></script>
-<script src="vendor/invoice-fonts.js?b=1792326955"></script>
-<script src="invoice.js?b=1792326955"></script>
-<script src="jarvis-view.js?b=1792326955"></script>
+<script src="vendor/jspdf.js?b=1792330393"></script>
+<script src="vendor/invoice-fonts.js?b=1792330393"></script>
+<script src="invoice.js?b=1792330393"></script>
+<script src="jarvis-view.js?b=1792330393"></script>
 <script>window.GE && window.GE.boot();</script>
 </body>
 </html>

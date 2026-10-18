@@ -571,6 +571,8 @@
     return call('POST', '/api/threads/' + id + '/send', { body: payload });
   }
   async function templates() { return call('GET', '/api/templates'); }
+  /* the bell: { items }, { upto }, { threads } or { restore }. Only ever from a click. */
+  async function bellRead(payload) { return call('POST', '/api/bell/read', { body: payload }); }
 
   /* Meta, read-only: campaign figures for a window, a pull on demand, and the
      state of the five connections */
@@ -695,7 +697,7 @@
     findProspects: findProspects, saveProspect: saveProspect,
     sendOutreach: sendOutreach, readReplies: readReplies,
     saveDraft: saveDraft, discardDraft: discardDraft, draftToGmail: draftToGmail, markByHand: markByHand,
-    pulse: pulse,
+    pulse: pulse, bellRead: bellRead,
     readDoc: readDoc,
     /* configuration */
     url: function () { return state.url; },
