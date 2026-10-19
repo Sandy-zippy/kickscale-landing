@@ -178,12 +178,12 @@
     'lead-go': el => send(el, '/api/portal/leads/' + el.dataset.id, { status: qs('#pl-st').value, lost_reason: qs('#pl-why').value, won_value: qs('#pl-val').value, note: qs('#pl-note').value }, '<b>Saved.</b> EGO can see it.', 'pl-err'),
     request: () => modal(`<h2>Order request</h2><p class="small muted">It goes to ${esc((B.dealer.contact || {}).name || 'your EGO contact')}, who confirms the designs, rates and dates with you.</p><form class="stack" onsubmit="return false">
       <div class="field"><label for="pr-what">What you would like to order *</label><textarea class="input" id="pr-what" rows="3" maxlength="500" placeholder="e.g. Oak SPC 6 mm, 120 boxes, for a villa in Baner"></textarea></div>
-      <fieldset class="fs"><legend>Categories (optional)</legend><div class="pt-checks">${B.lists.categories.map(c => `<label class="small"><input type="checkbox" name="pr-cat" value="${esc(c)}"> ${esc(c)}</label>`).join('')}</div></fieldset>
+      <div class="field"><label for="pr-cat">Categories (optional)</label>${MSEL.html({ name: 'pr-cat', id: 'pr-cat', opts: B.lists.categories })}</div>
       <div class="field"><label for="pr-boxes">Boxes (optional)</label><input class="input" id="pr-boxes" type="number" min="0" step="1" inputmode="numeric"></div>
       <div class="field"><label for="pr-by">Needed by (optional)</label><input class="input" id="pr-by" type="date"></div>
       <div class="small err" id="pr-err" role="alert"></div><div class="row"><button class="btn primary" data-pa="request-go">Send</button><button class="btn" data-pa="close">Cancel</button></div></form>`),
     'request-go': el => send(el, '/api/portal/requests', { what: qs('#pr-what').value, categories: [...document.querySelectorAll('input[name="pr-cat"]:checked')].map(x => x.value), boxes: qs('#pr-boxes').value, need_by: qs('#pr-by').value }, '<b>Order request sent.</b> Your EGO contact has it.', 'pr-err'),
-    complaint: () => { modal(`<h2>Complaint</h2><p class="small muted">It goes to EGO's complaints desk and to your EGO contact.</p><form class="stack" onsubmit="return false">
+    complaint: () => { modal(`<h2>Complaint</h2><p class="small" data-cmp-who><b>${esc(CMP_WHO)}</b></p><p class="small muted">It goes to EGO's complaints desk and to your EGO contact.</p><form class="stack" onsubmit="return false">
       ${sel('pc-type', 'What it is about', B.lists.complaint_types, true)}${sel('pc-sev', 'How serious', B.lists.severities, true)}
       <div class="field"><label for="pc-order">Order (optional)</label><select class="input" id="pc-order"><option value="">Not about one order</option>${B.orders.map(o => `<option value="${o.id}">${esc(o.ref)} · ${ds(o.created_at)}</option>`).join('')}</select></div>
       <div class="field"><label for="pc-desc">What happened *</label><textarea class="input" id="pc-desc" rows="3" maxlength="2000"></textarea></div>

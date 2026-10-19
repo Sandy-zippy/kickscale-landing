@@ -7,6 +7,8 @@
      a ?api= parameter would let a forwarded link send passwords elsewhere. */
   const API = /(^|\.)zippyscale\.in$/.test(location.hostname) ? 'https://ego-master.zippyscale-cockpit-server.workers.dev' : 'http://localhost:8787';
   const KEY = 'ego-live-token';
+  /* T3 19 Oct: Android's install prompt can fire before field.js loads, so it is kept here for the Install EGO Field button */
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__egoBIP = e; document.dispatchEvent(new Event('ego-bip')); });
   const store = {
     get() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return window.__egoTok || ''; } },
     set(v) { window.__egoTok = v; try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY); } catch (e) {} },
@@ -75,7 +77,7 @@
     };
   }
 
-  const FILES = ['schema.js', 'app.js', 'live.js'];
+  const FILES = ['schema.js', 'msel.js', 'app.js', 'live.js'];   // msel.js: the one multi-select (19 Oct)
   async function start() {
     if (!store.get()) return gate();
     let boot;
@@ -86,7 +88,9 @@
     const empty = ['dealer', 'market', 'employee', 'sku', 'lead', 'project', 'architect', 'installer', 'connection', 'stock'];
     /* a dealer portal login (13 Oct, batch 4) gets the dealer portal, never the team's app */
     /* R4: the portal and the field app read lines through the one quantity rule in schema.js, so it loads first */
-    const schemaFirst = () => typeof qtyLine === 'function' ? Promise.resolve() : new Promise((ok, bad) => { const v = document.querySelector('meta[name="build"]'), s = document.createElement('script'); s.src = 'schema.js' + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error('schema.js')); document.body.appendChild(s); });
+    const load1 = f => new Promise((ok, bad) => { const v = document.querySelector('meta[name="build"]'), s = document.createElement('script'); s.src = f + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error(f)); document.body.appendChild(s); });
+    /* T3 19 Oct: the one multi-select (msel.js) loads with it, for the portal and the field app alike */
+    const schemaFirst = async () => { if (typeof qtyLine !== 'function') await load1('schema.js'); if (!window.MSEL) await load1('msel.js'); };
     if (boot.portal) {
       if (window.EGOPORTAL) return window.EGOPORTAL.refresh(boot);
       await schemaFirst();

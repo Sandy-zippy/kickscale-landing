@@ -70,6 +70,10 @@
     if (op.type === 'outcome' && v && (v.status === 'in' || v.status === 'done')) Object.assign(v, { status: 'done', outcome: op.outcome, note: op.note || '', extra: { ...(v.extra || {}), boxes: op.boxes, follow_on: op.follow_on }, waiting: true });
     if (op.type === 'ask') { const A = f.asks || (f.asks = { approvals: [], complaints: [] }), k = op.ghost.t === 'approval' ? 'approvals' : 'complaints'; if (!(A[k] || []).some(r => r.key === op.key)) A[k] = [{ ...op.ghost, key: op.key, waiting: true, created_at: op.at }, ...(A[k] || [])]; }
     if (op.type === 'req' && !(f.reqs || []).some(r => r.key === op.key)) f.reqs = [{ ...op.ghost, key: op.key, waiting: true, created_at: op.at }, ...(f.reqs || [])];
+    /* T5: an SDR inspection or Give waiting to send shows at once: the dealer leaves "SDR inspection due", the lines show */
+    if (op.type === 'sdr' || op.type === 'sdrgive') { const X = f.sdr || (f.sdr = { regs: [], due: [] });
+      if (!(X.regs || []).some(r => r.key === op.key)) X.regs = [...(X.regs || []), ...op.ghost.map((g, i) => ({ ...g, id: g.id || `wait_${op.key}_${i}`, key: op.key, waiting: true, created_at: op.at }))];
+      if (op.type === 'sdr') X.due = (X.due || []).filter(d => d.client_id !== op.cid); }
   }
   /* a fresh copy of the day from the server, with every waiting entry laid over it */
   function setField(f) { if (!f) return; S.base = JSON.parse(JSON.stringify(f)); const x = JSON.parse(JSON.stringify(f)); for (const it of Q.items) applyOp(x, it.op); B.field = x; saveBoot(); }
@@ -101,7 +105,7 @@
     } finally {
       Q.busy = false; await qLoad();
       if (sent) { try { const r = await API('GET', '/api/field/me'); S.base = r.field; } catch (e) {} toast(`<b>Sent: ${sent} entr${sent === 1 ? 'y' : 'ies'}</b>`); }
-      setField(S.base || B.field); if (!S.cam && !S.sheet && !['req', 'raise'].includes(route())) render(); else paintBanner();
+      setField(S.base || B.field); if (!S.cam && !S.sheet && !['req', 'raise', 'sdr'].includes(route())) render(); else paintBanner();
     }
   }
   const banner = () => { const n = Q.items.length, off = navigator.onLine === false; return !n && !off ? '' : `<div class="fd-offline" role="status">${ic('wifi-off')}<span><b>${off ? 'No signal.' : 'Sending.'}</b> Saved on this phone, will send when signal returns.</span>${n ? `<span class="fd-pill">${n}</span>` : ''}</div>`; };
@@ -123,7 +127,7 @@
   function visitRow(v, n) {
     const isNext = nextV() && v.id === nextV().id, st = v.status === 'done' ? 'done' : v.status === 'missed' ? 'missed' : v.status === 'in' ? 'in' : isNext ? 'next' : 'pending';
     const pill = st === 'done' ? `<span class="fd-pill ok">Done ${hm(v.checkin_at)}</span>` : st === 'missed' ? '<span class="fd-pill bad">Missed</span>' : st === 'in' ? `<span class="fd-pill ok">${ic('map-pin-check')}Checked in ${hm(v.checkin_at)}</span>` : st === 'next' ? '<span class="fd-pill ink">Next</span>' : '';
-    const acts = st === 'next' || st === 'pending' ? `<div class="fd-acts">${dirBtn(v)}${checkBtn(v, st === 'next')}</div>` : st === 'in' ? `<div class="fd-acts"><button class="fd-btn primary" data-fa="sheet" data-id="${v.id}">${ic('pencil')}How did it go</button></div>` : '';
+    const acts = st === 'next' || st === 'pending' ? `<div class="fd-acts">${dirBtn(v)}${checkBtn(v, st === 'next')}</div>` : st === 'in' ? `<div class="fd-acts"><button class="fd-btn primary" data-fa="sheet" data-id="${v.id}">${ic('pencil')}How did it go</button></div>${sdrBtn(v) ? `<div class="fd-acts">${sdrBtn(v)}</div>` : ''}` : st === 'done' && sdrBtn(v) ? `<div class="fd-acts">${sdrBtn(v)}</div>` : '';
     return `<li class="fd-visit is-${st}" data-visit="${v.id}"><span class="fd-n" aria-label="Visit ${n}">${st === 'done' ? ic('check') : st === 'missed' ? ic('x') : n}</span><div class="fd-body">
       <div class="fd-row between">${kind(v.kind)}${pill}</div><div class="fd-name">${esc(v.name)}</div><div class="fd-meta">${esc(where(v))}${v.mobile ? ` · <a href="tel:${esc(v.mobile)}">${esc(v.mobile)}</a>` : ''}</div>
       ${st === 'done' ? `<div class="fd-out">${esc(outLine(v))}</div>` : st === 'missed' ? `<div class="fd-out fd-meta">Not checked in by the end of the day. Your manager can see it.</div>` : ''}${acts}</div></li>`;
@@ -134,7 +138,7 @@
   const KIND_OK = { distributor: ['dealer', 'project'], dealer: ['dealer', 'project'], sub_dealer: ['dealer', 'project'], architect: ['dealer', 'project'], design_firm: ['dealer', 'project'], direct: ['dealer', 'consumer', 'project'], retail: ['consumer', 'project'], project: ['project'] };
   const KIND_DEF = { distributor: 'dealer', dealer: 'dealer', sub_dealer: 'dealer', architect: 'project', design_firm: 'project', direct: 'consumer', retail: 'consumer', project: 'project' };
   const VKIND = { distributor: 'distributor', dealer: 'dealer', sub_dealer: 'sub_dealer', architect: 'architect', design_firm: 'architect', direct: 'retailer', retail: 'retailer', project: 'project' };
-  const newReq = () => ({ who: 'existing', q: '', pick: null, kind: 'consumer', cat: '', sqft: '', photos: [], urls: [], card: null, cardUrl: '', name: '', mobile: '', area: '', budget: '', site: '', timeline: '', note: '', more: false, visit: '', visitName: '', err: {} });
+  const newReq = () => ({ who: 'existing', q: '', pick: null, kind: 'consumer', cats: [], sqft: '', photos: [], urls: [], card: null, cardUrl: '', name: '', mobile: '', area: '', budget: '', site: '', timeline: '', note: '', more: false, visit: '', visitName: '', err: {} });
   const reqKinds = () => { const R = S.req, retail = B.user.division === 'retail', ok = R.who === 'existing' && R.pick ? KIND_OK[R.pick.kind] || ['consumer'] : ['dealer', 'consumer', 'project'];
     return Object.entries(REQK).filter(([k]) => !(retail && k === 'dealer')).map(([k, l]) => [k, l, !ok.includes(k)]); };
   /* everything this person may pick: their dealers, architects and people, projects in view, and whoever is on their Roadmap */
@@ -166,12 +170,12 @@
     if (R.who === 'existing' && !R.pick) e.who = 'Pick who this is for';
     if (R.who === 'new') { if (!R.name.trim()) e.name = 'Fill in the name'; if (!/^[6-9]\d{9}$/.test(mob)) e.mobile = 'A mobile has 10 digits'; if (!R.area.trim()) e.area = 'Fill in the area'; }
     if (reqKinds().some(([k, , off]) => k === R.kind && off) || !REQK[R.kind]) e.kind = 'Choose what it is';
-    if (!R.cat) e.cat = 'Choose the category';
+    if (!R.cats.length) e.cat = 'Choose at least one category';
     const sq = R.sqft.replace(/[,\s]/g, ''); if (sq && !(Number(sq) > 0)) e.sqft = 'sq ft is a number';
     const bud = R.budget.replace(/[,\s]/g, ''); if (bud && !(Number(bud) >= 0)) e.budget = 'Budget is a number';
     R.err = e; if (Object.keys(e).length) { render(); const f = qs('.fd-field.has-err'); if (f) f.scrollIntoView({ block: 'center' }); return; }
     const fd = new FormData();
-    fd.append('kind', R.kind); fd.append('category', R.cat); fd.append('sq_ft', sq); fd.append('budget', bud); fd.append('site', R.site); fd.append('timeline', R.timeline); fd.append('note', R.note);
+    fd.append('kind', R.kind); R.cats.forEach(c => fd.append('category', c)); fd.append('sq_ft', sq); fd.append('budget', bud); fd.append('site', R.site); fd.append('timeline', R.timeline); fd.append('note', R.note);
     if (R.visit) fd.append('visit_id', R.visit);
     if (R.who === 'existing') fd.append(R.pick.t === 'project' ? 'project_id' : 'client_id', R.pick.id); else { fd.append('name', R.name.trim()); fd.append('mobile', mob); fd.append('area', R.area.trim()); }
     if (R.who === 'new' && R.card) fd.append('card', R.card, R.card.name || 'card.jpg');
@@ -179,7 +183,7 @@
     const name = R.who === 'existing' ? R.pick.name : R.name.trim();
     R.busy = true; render();
     try {
-      const w = await write('/api/field/req', fd, { type: 'req', ghost: { c_name: name, category: R.cat, area_sqft: sq ? Math.round(Number(sq)) : null, kind: R.kind } }, `Requirement · ${name}`);
+      const w = await write('/api/field/req', fd, { type: 'req', ghost: { c_name: name, category: R.cats.join(', '), categories: R.cats.slice(), area_sqft: sq ? Math.round(Number(sq)) : null, kind: R.kind } }, `Requirement · ${name}`);
       R.urls.forEach(u => URL.revokeObjectURL(u)); if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); S.req = null; S.rf = 'all';
       location.hash = '#/requirements'; render();
       toast(w.queued ? '<b>Saved on this phone.</b> It will send when signal returns.' : `<b>Requirement saved.</b> With ${esc(w.r.owner)} in telesales.`, w.queued ? w.n : undefined);
@@ -198,7 +202,7 @@
     return list.map(x => `<button type="button" class="fd-pick${A.pick && A.pick.id === x.id ? ' on' : ''}" data-fa="ask-pick" data-id="${x.id}"><span class="fd-tile">${ic((KIND[VKIND[x.kind]] || KIND.retailer)[0])}</span><span><b>${esc(x.name)}</b><span>${esc(x.sub)}</span></span></button>`).join('');
   }
   const asks = () => F().asks || { approvals: [], complaints: [] };
-  const back = (title, sub) => `<header class="fd-top"><a class="fd-back" href="#/me" aria-label="Back">${ic('arrow-back-up')}</a><div class="fd-hello"><b>${esc(title)}</b><span>${esc(sub)}</span></div></header>`;
+  const back = (title, sub, to) => `<header class="fd-top"><a class="fd-back" href="${to || '#/me'}" aria-label="Back">${ic('arrow-back-up')}</a><div class="fd-hello"><b>${esc(title)}</b><span>${esc(sub)}</span></div></header>`;
   async function saveAsk() {
     const A = S.ask, e = {}, ap = A.t === 'approval', k = askKinds().find(x => x[0] === A.what), amt = A.amount.replace(/[,\s₹%/-]/g, '');
     if (!A.pick) e.who = 'Pick the dealer';
@@ -217,8 +221,95 @@
     } catch (x) { A.busy = false; A.err = { all: x.message }; render(); }
   }
 
+  /* ---- T5 (19 Oct): Sample Display Record (SDR) inside a dealer visit (design/CONTRACT.txt SDR, PHONE INSPECT).
+     The lines, inspections and decisions come with the day (fieldMe.sdr), so the screen opens with no signal; Save
+     inspection and Give displays go through write() like every other entry (the offline queue, one idempotency-key). */
+  const SDRX = () => F().sdr || { regs: [], due: [], days: 30, give: false, prices: false };
+  const DEALER_K = ['distributor', 'dealer', 'sub_dealer'];
+  const COND = { 'Well maintained': ['good', 'circle-check'], 'Needs attention': ['attn', 'alert-triangle'], Damaged: ['dmg', 'alert-octagon'], Missing: ['miss', 'circle-dashed'] };
+  const inr = n => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+  const dShort = d => { const x = new Date(d + 'T00:00:00Z'); return `${x.getUTCDate()} ${MON[x.getUTCMonth()]}`; };
+  function sdrOf(cid) {
+    const R = SDRX().regs || [], lines = R.filter(r => r.kind === 'display' && r.client_id === cid).map(sdrLine), checks = R.filter(r => r.kind === 'sdr_check' && r.client_id === cid);
+    const act = lines.filter(l => l.status === 'Active'), latest = sdrLatest(lines, checks), due = sdrDue(lines, checks, SDRX().days || 30, F().day)[cid] || null;
+    return { lines, act, latest, due, value: act.reduce((t, l) => t + (l.total || 0), 0) };
+  }
+  const sdrName = cid => { const c = (B.clients || []).find(x => x.id === cid), v = vis().find(x => x.client_id === cid), d = (SDRX().due || []).find(x => x.client_id === cid); return (c && c.name) || (v && v.name) || (d && d.name) || 'Dealer'; };
+  const sdrVisit = (cid, vid) => vis().find(v => v.id === vid) || vis().find(v => v.client_id === cid && (v.status === 'in' || v.status === 'done')) || null;
+  const sdrBtn = v => v.client_id && DEALER_K.includes(VKIND[((B.clients || []).find(c => c.id === v.client_id) || {}).kind] || v.kind) ? `<a class="fd-btn" href="#/sdr/${v.client_id}/${v.id}" data-sdr-open="${v.client_id}">${ic('presentation')}Displays (SDR)</a>` : '';
+  const prodsOf = cat => { const I = B.inventory || {}, cols = new Set((I.collections || []).filter(c => c.category === cat).map(c => c.id)); return (I.products || []).filter(p => cols.has(p.collection_id)); };
+  const newGline = () => ({ category: '', product_id: '', item: '', qty: '1', unit_cost: '' });
+  async function saveSdr() {
+    const X = S.sdr, o = sdrOf(X.cid), e = {}, lines = [];
+    for (const l of o.act) { const c = X.cond[l.id]; if (!c) continue; const rem = (X.rem[l.id] || '').trim(); if (c !== 'Well maintained' && !rem) e[l.id] = 'Write what is wrong, so management can decide'; lines.push({ line: l.id, cond: c, remark: c === 'Well maintained' ? '' : rem }); }
+    if (!lines.length && !Object.keys(e).length) e.all = 'Choose a condition for at least one display.';
+    X.err = e; if (Object.keys(e).length) { render(); const f = qs('.fd-field.has-err') || qs('.fd-err[role=alert]'); if (f) f.scrollIntoView({ block: 'center' }); return; }
+    const fd = new FormData(), v = sdrVisit(X.cid, X.vid), name = sdrName(X.cid);
+    fd.append('client_id', X.cid); fd.append('on_date', F().day); if (v) fd.append('visit_id', v.id); fd.append('lines', JSON.stringify(lines));
+    for (const x of lines) (X.photos[x.line] || []).forEach((f, i) => fd.append('photo_' + x.line, f, f.name || `inspection-${i + 1}.jpg`));
+    const flag = lines.filter(x => x.cond !== 'Well maintained').length;
+    X.busy = true; render();
+    try {
+      const w = await write('/api/registers/sdr/inspect', fd, { type: 'sdr', cid: X.cid, ghost: [{ kind: 'sdr_check', client_id: X.cid, on_date: F().day, owner_id: B.user.id, status: flag ? 'Needs a decision' : 'All well maintained', extra: { lines } }] }, `SDR inspection · ${name}`);
+      Object.values(X.urls).flat().forEach(u => URL.revokeObjectURL(u)); S.sdr = null; history.pushState(null, '', v ? '#/visits' : '#/today'); render(); window.scrollTo(0, 0);   // no hashchange: its redraw would wipe the toast below
+      toast(w.queued ? '<b>Saved on this phone.</b> It will send when signal returns.' : `<b>Inspection ${esc(w.r.check.ref)} saved.</b> ${flag ? `${flag} display${flag === 1 ? ' goes' : 's go'} to management for a decision.` : 'Every display checked is Well maintained.'}${w.r.photo_note ? ' ' + esc(w.r.photo_note) : ''}`, w.queued ? w.n : undefined);
+    } catch (x) { X.busy = false; X.err = { all: x.message }; render(); }
+  }
+  async function saveGive() {
+    const X = S.sdr, G = X.give, P = SDRX().prices, e = {}, lines = [];
+    G.lines.forEach((l, i) => { const prod = (B.inventory && (B.inventory.products || []).find(p => p.id === l.product_id)) || null, q = Number(l.qty), u = Number(String(l.unit_cost).replace(/[,\s]/g, ''));
+      if (!l.category) e['c' + i] = 'Choose the category'; if (!prod && !l.item.trim()) e['p' + i] = 'Choose the product or type it';
+      if (!(q >= 1) || !Number.isInteger(q)) e['q' + i] = 'Qty is a whole number, 1 or more'; if (P && !(u >= 0 && String(l.unit_cost).trim() !== '')) e['u' + i] = 'Our cost per unit is compulsory';
+      lines.push({ category: l.category, product_id: prod ? prod.id : '', item: prod ? prod.name : l.item.trim(), qty: q, ...(P ? { unit_cost: u } : {}) }); });
+    G.err = e; if (Object.keys(e).length) { render(); const f = qs('.fd-field.has-err'); if (f) f.scrollIntoView({ block: 'center' }); return; }
+    const fd = new FormData(), name = sdrName(X.cid); fd.append('client_id', X.cid); fd.append('on_date', F().day); fd.append('given_by', B.user.id); fd.append('lines', JSON.stringify(lines));
+    G.photos.forEach((f, i) => fd.append('photo', f, f.name || `display-${i + 1}.jpg`));
+    G.busy = true; render();
+    try {
+      const w = await write('/api/registers/sdr/give', fd, { type: 'sdrgive', cid: X.cid, ghost: lines.map(l => ({ kind: 'display', client_id: X.cid, item: l.item, product_id: l.product_id, on_date: F().day, status: 'Active', value: P ? l.qty * l.unit_cost : null, owner_id: B.user.id, extra: { category: l.category, qty: l.qty, unit_cost: P ? l.unit_cost : null, given_by: B.user.id } })) }, `Give displays · ${name}`);
+      G.urls.forEach(u => URL.revokeObjectURL(u)); X.give = null; render();
+      toast(w.queued ? '<b>Saved on this phone.</b> It will send when signal returns.' : `<b>${w.r.lines.length} display${w.r.lines.length === 1 ? '' : 's'} given to ${esc(name)}.</b>${w.r.photo_note ? ' ' + esc(w.r.photo_note) : ''}`, w.queued ? w.n : undefined);
+    } catch (x) { G.busy = false; G.err = { all: x.message }; render(); }
+  }
+
   /* ---- screens */
   const V = {
+    /* #/sdr/<dealer>/<visit> (kit frame sdrInspect): what is at the dealer, Inspect each active line, Give displays */
+    sdr() {
+      const [, , cid, vid] = location.hash.split('/');
+      if (!S.sdr || S.sdr.cid !== cid) S.sdr = { cid, vid: vid || '', cond: {}, rem: {}, photos: {}, urls: {}, err: {}, give: null };
+      const X = S.sdr, o = sdrOf(cid), P = SDRX().prices, v = sdrVisit(cid, X.vid), e = X.err || {}, name = sdrName(cid);
+      const head = back('Displays (SDR)', `${name} · ${v ? 'visit ' + dShort(F().day) : dShort(F().day)}`, v ? '#/visits' : '#/today');
+      if (X.give) {
+        const G = X.give, ge = G.err || {}, fe = k => ge[k] ? `<span class="fd-err">${esc(ge[k])}</span>` : '', tot = G.lines.reduce((t, l) => t + (Number(l.qty) || 0) * (Number(l.unit_cost) || 0), 0);
+        return back('Give displays', `${name} · ${dShort(F().day)}`, `#/sdr/${cid}/${X.vid}`).replace(`href="#/sdr/${cid}/${X.vid}"`, `href="#/sdr/${cid}/${X.vid}" data-fa="sdr-give-x"`) + `<main class="fd-view"><form class="fd-form" onsubmit="return false" data-sdr-give>
+          <div class="fd-meta">One product per line. Given by ${esc(B.user.name)}, today.</div>
+          ${G.lines.map((l, i) => `<div class="fd-card fd-form" data-gline="${i}"><div class="fd-row between"><b>Line ${i + 1}</b>${G.lines.length > 1 ? `<button type="button" class="fd-btn" data-fa="sdr-gline-x" data-i="${i}" aria-label="Remove line ${i + 1}">${ic('x')}Remove</button>` : ''}</div>
+            <div class="fd-field${ge['c' + i] ? ' has-err' : ''}"><label for="sg-c${i}">Category</label><select class="fd-input" id="sg-c${i}" data-sg="category" data-i="${i}"><option value="">Choose</option>${(B.lists.categories || []).map(c => `<option ${l.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>${fe('c' + i)}</div>
+            <div class="fd-field${ge['p' + i] ? ' has-err' : ''}"><label for="sg-p${i}">Product</label><select class="fd-input" id="sg-p${i}" data-sg="product_id" data-i="${i}"><option value="">Not a design (type it below)</option>${prodsOf(l.category).map(p => `<option value="${p.id}" ${l.product_id === p.id ? 'selected' : ''}>${esc(p.name)}${p.code ? ' · ' + esc(p.code) : ''}</option>`).join('')}</select>
+              ${l.product_id ? '' : `<input class="fd-input" data-sg="item" data-i="${i}" value="${esc(l.item)}" placeholder="Product (if not a design)" aria-label="Product (if not a design)" maxlength="120" style="margin-top:8px">`}${fe('p' + i)}</div>
+            <div class="fd-field${ge['q' + i] ? ' has-err' : ''}"><label for="sg-q${i}">Qty</label><input class="fd-input" id="sg-q${i}" data-sg="qty" data-i="${i}" inputmode="numeric" value="${esc(l.qty)}">${fe('q' + i)}</div>
+            ${P ? `<div class="fd-field${ge['u' + i] ? ' has-err' : ''}"><label for="sg-u${i}">Our cost per unit</label><div class="fd-adorn"><span class="fd-pre">₹</span><input class="fd-input" id="sg-u${i}" data-sg="unit_cost" data-i="${i}" inputmode="decimal" value="${esc(l.unit_cost)}"></div>${fe('u' + i)}<span class="fd-help" data-gtot="${i}">Total ${inr((Number(l.qty) || 0) * (Number(l.unit_cost) || 0))}</span></div>` : ''}</div>`).join('')}
+          <button type="button" class="fd-btn block" data-fa="sdr-gline-add">${ic('plus')}Add line</button>
+          <div class="fd-field"><span class="fd-label">Photos</span><div class="fd-photos">${G.photos.map((f, i) => `<div class="fd-thumb"><img src="${G.urls[i]}" alt="Display photo ${i + 1}"><button type="button" aria-label="Remove photo ${i + 1}" data-fa="sdr-gphoto-x" data-i="${i}">${ic('x')}</button></div>`).join('')}${G.photos.length < 10 ? `<label class="fd-photo-add">${ic('camera')}Add<input type="file" accept="image/*" capture="environment" multiple data-sdr-gfile></label>` : ''}</div></div>
+          ${P ? `<div class="fd-card fd-row between" data-gsum><span>${G.lines.length} line${G.lines.length === 1 ? '' : 's'} · display value given</span><b>${inr(tot)}</b></div>` : '<div class="fd-note">' + ic('info-circle') + '<span>Our cost per unit: management fills it in.</span></div>'}
+          <span class="fd-err" role="alert">${esc(ge.all || '')}</span>
+          <div class="fd-savebar"><button type="button" class="fd-btn primary lg block" data-fa="sdr-give-save"${G.busy ? ' aria-busy="true" disabled' : ''}>Save displays</button></div></form></main>`;
+      }
+      const d = o.due, isDue = d && d.next && d.next <= F().day;
+      const sum = `<div class="fd-card fd-row between" data-sdr-sum><span><b>${o.act.length} active line${o.act.length === 1 ? '' : 's'}</b><span class="fd-meta" style="display:block">${P ? `Display value ${inr(o.value)} · ` : ''}last checked ${d && d.last ? dShort(d.last) : 'not yet'}</span></span>${isDue ? `<span class="fd-pill warn" data-sdr-due-pill>${ic('clock')}Due</span>` : d && d.next ? `<span class="fd-pill">Next ${dShort(d.next)}</span>` : ''}</div>`;
+      const insp = l => { const c = X.cond[l.id], flag = c && c !== 'Well maintained', lt = o.latest[l.id], urls = X.urls[l.id] || [];
+        return `<div class="fd-insp${flag ? ' is-flag' : ''}" data-insp="${l.id}"><div><div class="fd-name">${esc(l.item || 'Design')}</div><div class="fd-meta">${esc([l.category, 'qty ' + l.qty, l.given_on ? 'given ' + dShort(l.given_on) : '', lt ? `last ${lt.cond}` : ''].filter(Boolean).join(' · '))}</div></div>
+          <fieldset class="fd-cond" role="radiogroup"><legend>Condition</legend>${Object.entries(COND).map(([w, [k, i]]) => `<label class="${k}"><input type="radio" name="sdrc-${l.id}" value="${esc(w)}" ${c === w ? 'checked' : ''}>${ic(i)}${esc(w)}</label>`).join('')}</fieldset>
+          ${flag ? `<div class="fd-field${e[l.id] ? ' has-err' : ''}"><label for="sdrr-${l.id}">Remarks <span class="fd-meta">(needed)</span></label><textarea class="fd-input" id="sdrr-${l.id}" data-sdr-rem="${l.id}" placeholder="What is wrong with it?" maxlength="1000">${esc(X.rem[l.id] || '')}</textarea>${e[l.id] ? `<span class="fd-err">${esc(e[l.id])}</span>` : ''}</div>` : ''}
+          <div class="fd-photos">${(X.photos[l.id] || []).map((f, i) => `<div class="fd-thumb"><img src="${urls[i]}" alt="Photo ${i + 1} of ${esc(l.item || 'this display')}"><button type="button" aria-label="Remove photo ${i + 1}" data-fa="sdr-photo-x" data-line="${l.id}" data-i="${i}">${ic('x')}</button></div>`).join('')}<label class="fd-photo-add">${ic('camera')}Photo<input type="file" accept="image/*" capture="environment" multiple data-sdr-file="${l.id}"></label></div></div>`; };
+      const give = SDRX().give ? `<button type="button" class="fd-btn block" data-fa="sdr-give">${ic('square-plus')}Give displays</button>` : '';
+      return head + `<main class="fd-view">${sum}
+        ${o.act.length ? o.act.filter(l => !String(l.id).startsWith('wait_')).map(insp).join('') + `<div class="fd-note">${ic('info-circle')}<span>Anything not Well maintained goes to management at once for a decision.</span></div>${give}
+          <span class="fd-err" role="alert">${esc(e.all || '')}</span>
+          <div class="fd-savebar"><button type="button" class="fd-btn primary lg block" data-fa="sdr-save"${X.busy ? ' aria-busy="true" disabled' : ''}>Save inspection</button></div>`
+        : `<div class="fd-card"><b>No display at ${esc(name)} yet</b><div class="fd-meta" style="margin-top:6px">${SDRX().give ? 'Give displays to record what we put up here, line by line.' : 'Displays given here show once field sales or management record them.'}</div></div>${give}`}</main>`;
+    },
     /* #/raise/approval and #/raise/complaint (kit frames raiseAp, raiseCmp) */
     raise() {
       const t = (location.hash.split('/')[2] || '') === 'complaint' ? 'complaint' : 'approval';
@@ -230,7 +321,7 @@
         <div class="fd-field${e.amount ? ' has-err' : ''}"><label for="fa-amt">Amount, if any</label><div class="fd-adorn">${k && k[2] === '₹' ? '<span class="fd-pre">₹</span>' : ''}<input class="fd-input" id="fa-amt" data-ask="amount" inputmode="decimal" value="${esc(A.amount)}" placeholder="Optional">${k && k[2] === '%' ? '<span class="fd-suf">%</span>' : k && k[2] === '₹' ? '<span class="fd-suf">/-</span>' : ''}</div>${fe('amount')}</div>
         <div class="fd-field${e.why ? ' has-err' : ''}"><label for="fa-why">Why</label><textarea class="fd-input" id="fa-why" data-ask="why" maxlength="500">${esc(A.why)}</textarea>${fe('why')}</div>
         <div class="fd-note">${ic('info-circle')}<span>You see the answer in My requests.</span></div>`
-        : `${dealer}
+        : `<div class="fd-note" data-cmp-who>${ic('info-circle')}<span>${esc(CMP_WHO)}</span></div>${dealer}
         <div class="fd-field${e.product ? ' has-err' : ''}"><label for="fa-prod">Product</label><input class="fd-input" id="fa-prod" data-ask="product" value="${esc(A.product)}" maxlength="120">${fe('product')}</div>
         <div class="fd-field"><label for="fa-batch">Batch or lot</label><input class="fd-input" id="fa-batch" data-ask="batch" value="${esc(A.batch)}" maxlength="60" placeholder="On the box label, if you have it"></div>
         <div class="fd-field"><span class="fd-label">Photos</span><div class="fd-photos">${A.photos.map((f, i) => { const im = /^image\//.test(f.type || ''); return `<div class="fd-thumb${im ? '' : ' is-file'}" role="img" aria-label="Complaint photo ${i + 1}: ${esc(f.name || 'file')}">${im ? `<img src="${A.urls[i]}" alt="">` : ''}<span class="fd-fname">${esc(f.name || 'File')}</span><button type="button" aria-label="Remove photo ${i + 1}" data-fa="ask-photo-x" data-i="${i}">${ic('x')}</button></div>`; }).join('')}${A.photos.length < 10 ? `<label class="fd-photo-add">${ic('camera')}Add<input type="file" accept="image/*" capture="environment" multiple data-ask-file></label>` : ''}</div><span class="fd-help">Up to 10. They open, download and share from the complaint on the team screens.</span></div>
@@ -274,7 +365,8 @@
         <div class="fd-card">${n ? `<div class="fd-row between"><b>${doneN()} of ${n} visits done</b>${missedV().length ? `<span class="fd-pill bad">${missedV().length} missed</span>` : ''}</div><div style="margin-top:10px">${steps()}</div><div class="fd-meta" style="margin-top:10px">${esc(kinds)}</div>`
           : '<b>No visits on your Roadmap today</b><div class="fd-meta" style="margin-top:6px">Your manager, the Owner or telesales add them. They show here as soon as they are saved.</div>'}</div>
         ${nx ? `<div class="fd-sec">Next visit</div><div class="fd-card fd-next"><div class="fd-row between">${kind(nx.kind)}<span class="fd-pill ink">${vis().indexOf(nx) + 1} of ${n}</span></div><div class="fd-name">${esc(nx.name)}</div><div class="fd-meta">${esc(where(nx))}</div>
-          <div class="fd-btns">${dirBtn(nx)}${checkBtn(nx, true)}</div>${started() ? '' : '<div class="fd-meta">Start my day first, then Check in opens.</div>'}</div>` : ''}</main>`;
+          <div class="fd-btns">${dirBtn(nx)}${checkBtn(nx, true)}</div>${started() ? '' : '<div class="fd-meta">Start my day first, then Check in opens.</div>'}</div>` : ''}
+        ${(SDRX().due || []).length ? `<div class="fd-sec">SDR inspection due</div><div class="fd-list" data-sdr-due>${SDRX().due.map(d => `<a href="#/sdr/${esc(d.client_id)}" data-sdr-due-row="${esc(d.client_id)}">${ic('presentation')}<span class="fd-grow"><b>${esc(d.name || sdrName(d.client_id))}</b><span>Due ${dShort(d.next)} · overdue ${d.overdue} day${d.overdue === 1 ? '' : 's'}${d.city ? ' · ' + esc(d.city) : ''}</span></span>${ic('chevron-right')}</a>`).join('')}</div>` : ''}</main>`;
     },
     visits() {
       const n = vis().length;
@@ -299,8 +391,8 @@
         <div class="fd-field"><span class="fd-label">Who</span>${seg('fd-who', R.who, [['existing', 'Existing'], ['new', 'New prospect']])}</div>
         ${who}
         <div class="fd-field${e.kind ? ' has-err' : ''}"><span class="fd-label">What it is</span>${seg('fd-kind', R.kind, kinds)}${fe('kind')}</div>
-        <div class="fd-field${e.cat ? ' has-err' : ''}"><span class="fd-label">Category</span><div class="fd-chips" role="radiogroup">${(B.lists.categories || []).map(c => `<label class="fd-chip"><input type="radio" name="fd-cat" value="${esc(c)}" ${R.cat === c ? 'checked' : ''}>${esc(c)}</label>`).join('')}</div>${fe('cat')}</div>
-        <div class="fd-field${e.sqft ? ' has-err' : ''}"><label for="fr-sq">Area</label><div class="fd-adorn"><input class="fd-input" id="fr-sq" data-req="sqft" inputmode="numeric" value="${esc(R.sqft)}"><span class="fd-suf">sq ft</span></div>${fe('sqft')}<span class="fd-help" data-req-boxes>${reqBoxes(R)}</span></div>
+        <div class="fd-field${e.cat ? ' has-err' : ''}"><label for="fr-cat">Category</label>${MSEL.html({ name: 'fd-cats', id: 'fr-cat', opts: B.lists.categories || [], sel: R.cats, phone: true })}<span class="fd-help">Pick every category the site needs.</span>${e.cat ? `<span class="msel-err" role="alert">${ic('alert-triangle')}${esc(e.cat)}</span>` : ''}</div>
+        <div class="fd-field${e.sqft ? ' has-err' : ''}"><label for="fr-sq">Area</label><div class="fd-adorn"><input class="fd-input" id="fr-sq" data-req="sqft" inputmode="numeric" value="${esc(R.sqft)}"><span class="fd-suf">sq ft</span></div>${fe('sqft')}<div data-req-boxes>${reqBoxes(R)}</div></div>
         <div class="fd-field"><span class="fd-label">Site photos</span><div class="fd-photos">${R.photos.map((f, i) => `<div class="fd-thumb"><img src="${R.urls[i]}" alt="Site photo ${i + 1}"><button type="button" aria-label="Remove photo" data-fa="req-photo-x" data-i="${i}">${ic('x')}</button></div>`).join('')}<label class="fd-photo-add">${ic('camera')}Add<input type="file" accept="image/*" capture="environment" multiple data-req-file="photos"></label></div></div>
         <details class="fd-more"${R.more ? ' open' : ''}><summary>More details: budget, site, timeline${ic('chevron-down')}</summary><div class="fd-form">
           <div class="fd-field${e.budget ? ' has-err' : ''}"><label for="fr-bud">Budget</label><div class="fd-adorn"><span class="fd-pre">₹</span><input class="fd-input" id="fr-bud" data-req="budget" inputmode="numeric" value="${esc(R.budget)}"><span class="fd-suf">/-</span></div>${fe('budget')}</div>
@@ -473,14 +565,44 @@
     catch (e) { el.removeAttribute('aria-busy'); el.disabled = false; qs('#fd-sheet-err').textContent = e.message; }
   }
 
+  /* ---- T3 (Bhargav 19 Oct, "a pure app interface, completely"): a field person who opens EGO Field in a phone browser tab
+     sees how to install it first (design/CONTRACT.txt I1). Never once installed (standalone), never on a computer. */
+  const UA = navigator.userAgent || '';
+  const IOS = /iPhone|iPad|iPod/.test(UA) || (/Macintosh/.test(UA) && navigator.maxTouchPoints > 1);
+  const PHONE = IOS || /Android/i.test(UA);
+  const standalone = () => !!((window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true);
+  let instSkip = false;
+  const skipped = () => { if (instSkip) return true; try { return sessionStorage.getItem('ego-inst-skip') === '1'; } catch (e) { return false; } };
+  const needInstall = () => PHONE && !standalone() && !skipped();
+  function instHtml() {
+    const other = IOS && /CriOS|FxiOS|EdgiOS|OPiOS|GSA\/|DuckDuckGo|YaBrowser|FBAN|FBAV|Instagram|Line\//.test(UA);
+    const iosSteps = `<ol class="fd-inst-steps">
+      <li><span class="fd-inst-n">1</span><div><b>Tap Share</b><p>The ${ic('share-2')} button in the Safari bar.</p><div class="fd-mock" aria-hidden="true"><span class="fd-mock-url">zippyscale.in</span><div class="fd-mock-bar">${ic('chevron-right').replace('fd-ic"', 'fd-ic" style="transform:scaleX(-1)"')}${ic('chevron-right')}<span class="fd-hl">${ic('share-2')}</span>${ic('list-check')}${ic('square-plus')}</div></div></div></li>
+      <li><span class="fd-inst-n">2</span><div><b>Tap Add to Home Screen</b><p>Scroll down the list if you do not see it.</p><div class="fd-mock" aria-hidden="true"><div class="fd-mock-row dim">Add to Favourites ${ic('list-check')}</div><div class="fd-mock-row fd-hl">Add to Home Screen ${ic('square-plus')}</div></div></div></li>
+      <li><span class="fd-inst-n">3</span><div><b>Tap Add</b><p>Top right. The EGO Field icon appears on your Home Screen.</p><div class="fd-mock" aria-hidden="true"><div class="fd-mock-top"><span>Cancel</span><b>Add to Home Screen</b><em class="fd-hl">Add</em></div></div></div></li></ol>`;
+    const android = `<button type="button" class="fd-btn primary lg block" data-fa="inst-go">${ic('square-plus')}Install EGO Field</button><p class="fd-inst-lead" style="margin:0">Chrome asks once. Tap Install.</p>
+      <details class="fd-more"${window.__egoBIP && !S.instMenu ? '' : ' open'}><summary>No Install button? Use the menu ${ic('chevron-down')}</summary><ol class="fd-inst-steps">
+      <li><span class="fd-inst-n">1</span><div><b>Tap the menu</b><p>The ${ic('dots-vertical')} at the top right of Chrome.</p></div></li>
+      <li><span class="fd-inst-n">2</span><div><b>Tap Install app</b><p>On some phones it says Add to Home screen.</p><div class="fd-mock" aria-hidden="true"><div class="fd-mock-row dim">New tab ${ic('plus')}</div><div class="fd-mock-row fd-hl">Install app ${ic('device-mobile')}</div></div></div></li>
+      <li><span class="fd-inst-n">3</span><div><b>Tap Install</b><p>The EGO Field icon appears on your Home Screen.</p></div></li></ol></details>`;
+    return `<div class="fd-inst" role="dialog" aria-labelledby="inst-h" data-inst="${IOS ? other ? 'ios-other' : 'ios' : 'android'}">
+      <div class="fd-inst-app"><img src="field-192.png" alt="EGO Field icon" width="64" height="64"><span><b>EGO Field</b><span>EGO Premium field sales</span></span></div>
+      <h1 id="inst-h">Install EGO Field</h1><p class="fd-inst-lead">It opens full screen like any app on your phone, without the browser bar.</p>
+      ${other ? `<div class="fd-inst-warn" role="note">${ic('alert-triangle')}<b>Open it in Safari first</b><p>On iPhone, Add to Home Screen works from Safari. Copy the link, open Safari, paste it, then follow the steps.</p><button type="button" class="fd-btn" data-fa="inst-copy">${ic('copy')}Copy link</button></div>` : ''}
+      ${IOS ? iosSteps : android}
+      <div class="fd-inst-then">${ic('device-mobile')}<span>Then open EGO Field from your Home Screen and sign in once more.</span></div>
+      <a class="fd-inst-skip" href="#/today" data-fa="inst-skip">Continue in browser for now</a></div>`;
+  }
+
   /* ---- render */
-  const route = () => { const r = (location.hash || '#/today').split('/')[1] || 'today'; return V[r] && (NAV.some(n => n[0] === r && n[3]) || ['requirements', 'raise', 'requests'].includes(r)) ? r : 'today'; };
+  const route = () => { const r = (location.hash || '#/today').split('/')[1] || 'today'; return V[r] && (NAV.some(n => n[0] === r && n[3]) || ['requirements', 'raise', 'requests', 'sdr'].includes(r)) ? r : 'today'; };
   function render() {
     if (!root) return;
+    if (needInstall()) { root.innerHTML = instHtml(); return; }
     if (S.cam && !S.confirm) { if (!qs('.fd-cam') || S.camErr !== (qs('.fd-cam').dataset.err || '')) { root.innerHTML = camHtml(); qs('.fd-cam').dataset.err = S.camErr; const v = qs('.fd-cam video'); if (v && S.stream) v.srcObject = S.stream; } return; }
     if (S.confirm) { root.innerHTML = confirmHtml(); return; }
     const r = route(), keep = qs('.fd-toast [data-fa="undo"]') && qs('.fd-toast');   // a toast with Undo outlives the screen being drawn again
-    root.innerHTML = V[r]().replace('<main class="fd-view">', '<main class="fd-view">' + banner()) + nav(r === 'requirements' ? 'req' : ['raise', 'requests'].includes(r) ? 'me' : r) + (S.sheet ? sheetHtml() : '');
+    root.innerHTML = V[r]().replace('<main class="fd-view">', '<main class="fd-view">' + banner()) + nav(r === 'requirements' ? 'req' : ['raise', 'requests'].includes(r) ? 'me' : r === 'sdr' ? 'visits' : r) + (S.sheet ? sheetHtml() : '');
     if (keep) root.appendChild(keep);
   }
   const A = {
@@ -494,27 +616,36 @@
     'ask-pick': el => { const A = S.ask, x = pickables().find(p => p.id === el.dataset.id); if (!x) return; A.pick = x; delete A.err.who; render(); },
     'ask-photo-x': el => { const A = S.ask, i = +el.dataset.i; URL.revokeObjectURL(A.urls[i]); A.photos.splice(i, 1); A.urls.splice(i, 1); render(); },
     'ask-save': saveAsk,
+    'sdr-save': saveSdr, 'sdr-give-save': saveGive,
+    'sdr-give': () => { S.sdr.give = { lines: [newGline()], photos: [], urls: [], err: {} }; render(); window.scrollTo(0, 0); },
+    'sdr-give-x': () => { const G = S.sdr && S.sdr.give; if (G) G.urls.forEach(u => URL.revokeObjectURL(u)); if (S.sdr) S.sdr.give = null; render(); },
+    'sdr-gline-add': () => { S.sdr.give.lines.push(newGline()); render(); },
+    'sdr-gline-x': el => { S.sdr.give.lines.splice(+el.dataset.i, 1); S.sdr.give.err = {}; render(); },
+    'sdr-gphoto-x': el => { const G = S.sdr.give, i = +el.dataset.i; URL.revokeObjectURL(G.urls[i]); G.photos.splice(i, 1); G.urls.splice(i, 1); render(); },
+    'sdr-photo-x': el => { const X = S.sdr, k = el.dataset.line, i = +el.dataset.i; URL.revokeObjectURL(X.urls[k][i]); X.photos[k].splice(i, 1); X.urls[k].splice(i, 1); render(); },
     board: () => { const b = qs('#fd-board'); if (b) b.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
     undo: async el => { const n = +el.dataset.n; if (!Q.items.some(x => x.n === n)) { toast('<b>Already sent.</b> It cannot be taken back here.'); return; } await qDel(n); await qLoad(); setField(S.base); render(); toast('<b>Taken back.</b> Nothing was sent.'); },
+    'inst-skip': () => { instSkip = true; try { sessionStorage.setItem('ego-inst-skip', '1'); } catch (e) {} if (location.hash !== '#/today') location.hash = '#/today'; render(); },
+    'inst-go': async () => { const p = window.__egoBIP; if (!p) { S.instMenu = true; render(); return; } window.__egoBIP = null; try { p.prompt(); await p.userChoice; } catch (e) {} S.instMenu = true; render(); },
+    'inst-copy': () => { const u = location.origin + location.pathname; const ok = () => toast('<b>Link copied.</b> Open Safari, paste it in the address bar.');
+      try { navigator.clipboard.writeText(u).then(ok, () => toast(`Copy this link: <b>${esc(u)}</b>`)); } catch (e) { toast(`Copy this link: <b>${esc(u)}</b>`); } },
     team: () => { try { sessionStorage.setItem('ego-team', '1'); } catch (e) {} location.hash = '#/home'; location.reload(); },
     out: () => { if (Q.items.length && !confirm(`${Q.items.length} entr${Q.items.length === 1 ? 'y is' : 'ies are'} still waiting to send. Signing out keeps them on this phone for your next sign-in. Sign out?`)) return; window.EGOAPI.signOut(); },
   };
   /* R4: "About N boxes with X% wastage", from THE quantity rule (qtyLine) and the category's typical box size (the middle
      of its collections' sq ft per box). Hidden when the category is not sold per sq ft or no collection has a box size. */
   const typicalBox = cat => { const xs = ((B.inventory || {}).collections || []).filter(c => c.category === cat).map(c => Number((c.extra || {}).sqft_per_box) || 0).filter(x => x > 0).sort((a, b) => a - b); return xs.length ? xs[Math.floor((xs.length - 1) / 2)] : 0; };
-  const reqBoxes = R => { const sq = Number(String(R.sqft || '').replace(/[,\s]/g, '')), rules = (B.lists || {}).rules || (window.D && D.lists && D.lists.rules) || {}, w = wastageDefault(rules);
-    if (!R.cat || !(sq > 0) || catUnit(R.cat, rules) !== 'sqft') return ''; const q = qtyLine({ unit: 'sqft', sqft_need: sq, wastage_pct: w, per_box: typicalBox(R.cat) });
-    return q.error ? '' : `About ${q.boxes.toLocaleString('en-IN')} boxes with ${w}% wastage`; };
+  /* T3 19 Oct: several categories = one area for the whole site, so no single boxes figure: it is worked out per category on the opportunity */
+  const reqBoxes = R => { const sq = Number(String(R.sqft || '').replace(/[,\s]/g, '')), rules = (B.lists || {}).rules || (window.D && D.lists && D.lists.rules) || {}, w = wastageDefault(rules), cs = R.cats || [];
+    if (cs.length > 1) return `<div class="fd-note">${ic('info-circle')}<span>Boxes are worked out per category on the opportunity.</span></div>`;
+    const cat = cs[0]; if (!cat || !(sq > 0) || catUnit(cat, rules) !== 'sqft') return ''; const q = qtyLine({ unit: 'sqft', sqft_need: sq, wastage_pct: w, per_box: typicalBox(cat) });
+    return q.error ? '' : `<span class="fd-help">About ${q.boxes.toLocaleString('en-IN')} boxes with ${w}% wastage</span>`; };
   function start(boot) {
     B = boot;
     document.body.classList.remove('gated'); document.body.classList.add('fd-on');
     qs('#gate').innerHTML = '';
     try { const t = localStorage.getItem('ego-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
-    /* Add to home screen: the field app's own name and icon (design/CONTRACT.txt) */
-    const head = (tag, attrs) => { const el = document.createElement(tag); Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v)); document.head.appendChild(el); };
-    head('link', { rel: 'manifest', href: 'field.webmanifest' }); head('link', { rel: 'apple-touch-icon', href: 'field-180.png' });
-    head('meta', { name: 'apple-mobile-web-app-capable', content: 'yes' }); head('meta', { name: 'mobile-web-app-capable', content: 'yes' }); head('meta', { name: 'apple-mobile-web-app-title', content: 'EGO Field' });
-    head('meta', { name: 'theme-color', content: '#F4F4F5', media: '(prefers-color-scheme: light)' }); head('meta', { name: 'theme-color', content: '#0A0A0B', media: '(prefers-color-scheme: dark)' });
+    /* Add to home screen: the manifest, icon and app-capable tags are static in index.html (T3, 19 Oct), so iOS reads them before any script */
     if (!root) {
       root = document.createElement('div'); root.className = 'fd'; root.id = 'fd';
       document.body.insertBefore(root, qs('#overlay'));
@@ -525,7 +656,7 @@
         if (e.target.id === 'fd-vphoto') { const n = qs('[data-photo-n]'); if (n) n.textContent = e.target.files[0] ? '1 photo' : 'Photo'; }
         if (e.target.name === 'fd-who' && S.req) { S.req.who = e.target.value; S.req.err = {}; if (e.target.value === 'new' && S.req.kind === 'dealer' && B.user.division === 'retail') S.req.kind = 'consumer'; render(); }
         if (e.target.name === 'fd-kind' && S.req) { S.req.kind = e.target.value; delete S.req.err.kind; }
-        if (e.target.name === 'fd-cat' && S.req) { S.req.cat = e.target.value; { const h = qs('[data-req-boxes]'); if (h) h.textContent = reqBoxes(S.req); } delete S.req.err.cat; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.fd-err'); if (x) x.remove(); } }
+        if (e.target.name === 'fd-cats' && S.req) { S.req.cats = MSEL.val(e.target.closest('.msel')); { const h = qs('[data-req-boxes]'); if (h) h.innerHTML = reqBoxes(S.req); } if (S.req.cats.length) { delete S.req.err.cat; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.msel-err'); if (x) x.remove(); } } }
         if (e.target.name === 'fd-tl' && S.req) S.req.timeline = e.target.value;
         if (e.target.name === 'fd-rf') { S.rf = e.target.value; render(); }
         if (e.target.name === 'fd-af') { S.af = e.target.value; render(); }
@@ -535,12 +666,22 @@
           if (e.target.dataset.reqFile === 'card' && fs[0]) { if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); R.card = fs[0]; R.cardUrl = URL.createObjectURL(fs[0]); }
           if (e.target.dataset.reqFile === 'photos') for (const f of fs.slice(0, 20 - R.photos.length)) { R.photos.push(f); R.urls.push(URL.createObjectURL(f)); }
           render(); }
+        if (S.sdr && e.target.name && e.target.name.startsWith('sdrc-')) { const k = e.target.name.slice(5); S.sdr.cond[k] = e.target.value; delete S.sdr.err[k]; delete S.sdr.err.all; render(); }
+        if (S.sdr && e.target.dataset.sdrFile) { const X = S.sdr, k = e.target.dataset.sdrFile; X.photos[k] = X.photos[k] || []; X.urls[k] = X.urls[k] || []; for (const f of [...e.target.files].slice(0, 10 - X.photos[k].length)) { X.photos[k].push(f); X.urls[k].push(URL.createObjectURL(f)); } render(); }
+        if (S.sdr && S.sdr.give && e.target.matches('[data-sdr-gfile]')) { const G = S.sdr.give; for (const f of [...e.target.files].slice(0, 10 - G.photos.length)) { G.photos.push(f); G.urls.push(URL.createObjectURL(f)); } render(); }
+        if (S.sdr && S.sdr.give && e.target.tagName === 'SELECT' && e.target.dataset.sg) { const l = S.sdr.give.lines[+e.target.dataset.i]; l[e.target.dataset.sg] = e.target.value; if (e.target.dataset.sg === 'category') l.product_id = ''; render(); }
         if (e.target.name === 'fd-th') { document.documentElement.dataset.theme = e.target.value; try { localStorage.setItem('ego-theme', e.target.value); } catch (x) {} }
       });
-      window.addEventListener('hashchange', () => { S.sheet = ''; render(); window.scrollTo(0, 0); });
+      document.addEventListener('ego-bip', () => { if (needInstall()) render(); });
+      window.addEventListener('hashchange', () => { S.sheet = ''; if (S.sdr && route() !== 'sdr') S.sdr = null; render(); window.scrollTo(0, 0); });
       /* typing in + Requirement is kept as it is typed, without drawing the screen again (the search redraws only its list) */
+      document.addEventListener('input', e => { const d = e.target.dataset || {}; if (!S.sdr) return;
+        if (d.sdrRem) { S.sdr.rem[d.sdrRem] = e.target.value; return; }
+        if (d.sg && S.sdr.give && e.target.tagName === 'INPUT') { const G = S.sdr.give, l = G.lines[+d.i]; l[d.sg] = e.target.value;
+          const t = qs(`[data-gtot="${d.i}"]`); if (t) t.textContent = 'Total ' + inr((Number(l.qty) || 0) * (Number(l.unit_cost) || 0));
+          const sm = qs('[data-gsum] b'); if (sm) sm.textContent = inr(G.lines.reduce((a, x) => a + (Number(x.qty) || 0) * (Number(x.unit_cost) || 0), 0)); } });
       document.addEventListener('input', e => { const a = e.target.dataset && e.target.dataset.ask; if (a && S.ask) { S.ask[a] = e.target.value; if (a === 'q') { const p = qs('[data-ask-picks]'); if (p) p.innerHTML = askPicksHtml(); } return; } });
-      document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.req; if (!k || !S.req) return; S.req[k] = e.target.value; if (k === 'sqft') { const h = qs('[data-req-boxes]'); if (h) h.textContent = reqBoxes(S.req); } if (k === 'q') { const p = qs('[data-picks]'); if (p) p.innerHTML = picksHtml(); } });
+      document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.req; if (!k || !S.req) return; S.req[k] = e.target.value; if (k === 'sqft') { const h = qs('[data-req-boxes]'); if (h) h.innerHTML = reqBoxes(S.req); } if (k === 'q') { const p = qs('[data-picks]'); if (p) p.innerHTML = picksHtml(); } });
       /* a picked photo that will not draw shows as a file tile with its name, never a broken image */
       document.addEventListener('error', e => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest && t.closest('[data-askform] .fd-thumb')) { t.closest('.fd-thumb').classList.add('is-file'); t.remove(); } }, true);
       document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('fd-more') && S.req) S.req.more = e.target.open; }, true);
@@ -549,7 +690,7 @@
       window.addEventListener('offline', () => paintBanner());
       setInterval(flush, 30000);
       /* the Roadmap may change on the desktop while the phone is open: read it again when the app comes back */
-      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !S.cam && !S.sheet && !['req', 'raise'].includes(route())) API('GET', '/api/field/me').then(r => { setField(r.field); render(); }).catch(() => {}); });
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !S.cam && !S.sheet && !['req', 'raise', 'sdr'].includes(route())) API('GET', '/api/field/me').then(r => { setField(r.field); render(); }).catch(() => {}); });
       /* the app opens with no signal: a service worker keeps the page files (sw.js) */
       if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
     }

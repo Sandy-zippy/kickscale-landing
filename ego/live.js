@@ -18,6 +18,7 @@ const isOwner = () => D.user.role === 'owner';
 const holds = () => D.access.scope !== 'none';
 const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.user.division;
 function allowedTab(t) {
+  if (t === 'sdr') t = 'displays';   // T4: Sample Display Record (SDR) keeps the screen key 'displays'
   if (['home', 'account', 'soon'].includes(t)) return true;
   if (t === 'attendance' || t === 'roadmap' || t === 'priority') return holds() && canFieldTab(D.access, t);   // R5: Priority calls for telesales, Owners, managers   // R2a: managers, Owners, telesales (FIELD_TABS)
   /* each role has its own screens (8 Oct); within them, the access rules below still apply */
@@ -72,10 +73,13 @@ const LOOK_ACTS = new Set(['hist-open', 'view-back', 'view-as', 'role-toggle', '
   /* dealer portal logins are account matters, like staff logins (batch 4) */
   'pu-add', 'pu-go', 'pu-pass', 'pu-toggle']);
 /* in Both, the buttons that would change something are hidden (the guard stops any that remain) */
-const hideChangeButtons = root => { if (!isBothView() || !root) return; root.querySelectorAll('[data-act]').forEach(b => { if (!LOOK_ACTS.has(b.dataset.act)) b.setAttribute('hidden', ''); }); root.querySelectorAll('input[type="file"], #move-stage, [data-list-only]').forEach(x => x.setAttribute('hidden', '')); };
+/* T3 19 Oct (Bhargav: "Everyone can register complaints"): a view-only role still raises a complaint and notes the ones it raised */
+const RAISE_ACTS = new Set(['cmp-add', 'cmp-save', 'cmp-note']);
+const raiseOk = el => RAISE_ACTS.has(el.dataset.act) && ownReadonly() && !D.access.viewing_as;
+const hideChangeButtons = root => { if (!isBothView() || !root) return; root.querySelectorAll('[data-act]').forEach(b => { if (!LOOK_ACTS.has(b.dataset.act) && !raiseOk(b)) b.setAttribute('hidden', ''); }); root.querySelectorAll('input[type="file"], #move-stage, [data-list-only]').forEach(x => x.setAttribute('hidden', '')); };
 EM.guard = el => {
   if (D.access.viewing_as && !['view-back', 'div', 'sign-out', 'list-open', 'alloc-open'].includes(el.dataset.act) && !NAV_ACTS.has(el.dataset.act)) { bubbleNear(el, `This is what ${D.access.viewing_as.name} sees and can press. Nothing saves while viewing as: press Back to me.`); return false; }
-  if (!isBothView() || LOOK_ACTS.has(el.dataset.act)) return true;
+  if (!isBothView() || LOOK_ACTS.has(el.dataset.act) || raiseOk(el)) return true;
   bubbleNear(el, ownReadonly() ? `${D.access.name} is view only: you can see, not change.` : 'Both shows EGO Premium and Big E together, to look at. Switch to Wholesale · EGO or Retail · Big E to add or change anything.');
   return false;
 };
@@ -93,12 +97,12 @@ EM.render = (...a) => {
   if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
-const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', design500: 'Design 500', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap', priority: 'Priority calls', samples: 'Samples', displays: 'Displays', training: 'Training' };
+const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', design500: 'Design 500', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap', priority: 'Priority calls', samples: 'Samples', displays: 'Sample Display Record (SDR)', sdr: 'Sample Display Record (SDR)', training: 'Training' };
 /* R8 (Bhargav 18 Oct): Samples, Displays and Training are tabs of Dealers, Attendance and Roadmap one item "Field team",
    Priority calls a tab of Opportunities (and the telesales Home top card). Each keeps its own route and its own access. */
 NAV_LABEL.fieldteam = 'Field team';
-const NAV_GROUP = { dealers: [['dealers', 'Dealers'], ['samples', 'Samples'], ['displays', 'Displays'], ['training', 'Training']], fieldteam: [['attendance', 'Attendance'], ['roadmap', 'Roadmap']], opps: [['opps', 'Opportunities'], ['priority', 'Priority calls']] };
-const NAV_PARENT = Object.fromEntries(Object.entries(NAV_GROUP).flatMap(([g, ks]) => ks.map(([k]) => [k, g])));
+const NAV_GROUP = { dealers: [['dealers', 'Dealers'], ['samples', 'Samples'], ['sdr', 'Sample Display Record (SDR)'], ['training', 'Training']], fieldteam: [['attendance', 'Attendance'], ['roadmap', 'Roadmap']], opps: [['opps', 'Opportunities'], ['priority', 'Priority calls']] };
+const NAV_PARENT = { ...Object.fromEntries(Object.entries(NAV_GROUP).flatMap(([g, ks]) => ks.map(([k]) => [k, g]))), displays: 'dealers' };   // T4: the SDR screen's key
 const navOk = k => NAV_GROUP[k] ? NAV_GROUP[k].some(([t]) => allowedTab(t)) : allowedTab(k);
 EM.navParent = t => NAV_PARENT[t] || t;
 EM.navHref = k => NAV_GROUP[k] ? (NAV_GROUP[k].find(([t]) => allowedTab(t)) || [k])[0] : k;
@@ -185,10 +189,9 @@ const G = {
   adorn: (f, input) => { const u = unitOf(f); return u ? `<div class="adorn" data-unit="${esc(u)}">${u === 'money' ? '<span class="pre">₹</span>' : ''}${input}<span class="suf">${u === 'money' ? '/-' : esc(u)}</span></div>` : input; },
   /* several values: a dropdown with ticks and a search, not a wall of chips */
   /* opts: plain values, or [value, label] pairs (a record picked by id, shown by name) */
-  multi: (f, v, p, opts) => { const sel = Array.isArray(v) ? v : [], kv2 = opts.map(o => Array.isArray(o) ? o : [o, o]);
-    return G.wrap(f, p, `<div class="ms" data-ms="${f.key}"><button type="button" class="input ms-btn" id="${p}-${f.key}" aria-expanded="false">${sel.length ? esc(kv2.filter(([o]) => sel.includes(o)).map(([, l]) => l).join(', ')) : '<span class="muted">Choose…</span>'}</button>
-      <div class="ms-pop" hidden><input class="input ms-q" placeholder="Search" aria-label="Search ${esc(f.label)}">${kv2.map(([o, l]) => `<label class="ms-opt"><input type="checkbox" name="${f.key}" value="${esc(o)}" ${sel.includes(o) ? 'checked' : ''}> ${esc(l)}</label>`).join('')}
-      <div class="row"><button type="button" class="btn sm ms-done">Done</button><span class="small muted ms-n">${sel.length} chosen</span></div></div></div>`, true); },
+  /* T3 19 Oct: the one multi-select (msel.js, kit M1): picked items as chips, a list with ticks, search when more than 8, Done.
+     An old single string reads as one pick. */
+  multi: (f, v, p, opts) => G.wrap(f, p, MSEL.html({ name: f.key, id: `${p}-${f.key}`, opts, sel: listOf(v), noun: f.noun || (f.type === 'cats' ? 'categories' : f.type === 'cities' ? 'cities' : 'options') }), true),
   mobile: (f, v, p) => { const m = splitMobile(v); return G.wrap(f, p, `<div class="mob" data-mobile="${f.key}"><select class="input dial" name="${f.key}_dial" aria-label="Country code for ${esc(f.label)}">${DIAL_CODES.map(c => `<option ${c === m.dial ? 'selected' : ''}>${c}</option>`).join('')}</select><input class="input" id="${p}-${f.key}" name="${f.key}" inputmode="tel" autocomplete="off" value="${esc(m.num)}" placeholder="10-digit mobile"></div>`); },
   select: (f, v, p, opts, blank = true) => G.wrap(f, p, `<select class="input" id="${p}-${f.key}" name="${f.key}"${f.key === 'designation' ? ' data-designation' : ''}>${blank ? '<option value="">Choose</option>' : ''}${opts.map(([k, l]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`),
 };
@@ -218,11 +221,11 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'partner': return G.select(f, v, p, DDIR().filter(d => (PARTNER_OK.includes(d.project_partner) && (!opt.division || d.division === opt.division)) || d.id === v).map(d => [d.id, `${d.name} · ${d.city} · Project Partner ${d.project_partner || 'not set'}`]));
     /* R6b: the EGO Champion of the pipeline's company */
     case 'champion': return G.select(f, v, p, REGS().filter(r => r.kind === 'champion' && r.division === (PIPELINES[opt.pipeline] || {}).division).map(r => [r.id, `${r.item} · ${r.extra.ch_role || ''}${r.client_id ? ' · ' + clientName(r.client_id) : ''}`]));
-    case 'cats': return fieldHtml({ ...f, type: 'multi', opts: D.lists.categories }, v, p);
+    case 'cats': return G.multi(f, v, p, D.lists.categories);
     case 'cat': return G.select(f, v, p, D.lists.categories.map(c => [c, c]));
     case 'decimal': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
     case 'collection': return G.select(f, v, p, INVD().collections.map(c => [c.id, `${c.name} · ${c.category}`]));
-    case 'cities': return fieldHtml({ ...f, type: 'multi', opts: D.lists.cities.map(c => c.city) }, v, p);
+    case 'cities': return G.multi(f, v, p, D.lists.cities.map(c => c.city));
     case 'multi': return G.multi(f, v, p, optsOf(f, D.lists));
     case 'stage': return G.select(f, v, p, ((D.lists.stages || {})[opt.pipeline] || []).map(s => [s, s]), false).replace('<select', '<select data-keep-order');
     case 'lost': return G.select(f, v, p, D.lists.lost_reasons.map(s => [s, s]));
@@ -247,20 +250,7 @@ function readForm(root, fields) {
   }
   return o;
 }
-/* the multi-select dropdown */
-document.addEventListener('click', e => {
-  const btn = e.target.closest('.ms-btn, .ms-done');
-  document.querySelectorAll('.ms-pop:not([hidden])').forEach(p => { if (!p.parentElement.contains(e.target) || (btn && btn.classList.contains('ms-done') && p.contains(btn))) { p.hidden = true; p.parentElement.querySelector('.ms-btn').setAttribute('aria-expanded', 'false'); } });
-  if (btn && btn.classList.contains('ms-btn')) { const pop = btn.nextElementSibling, open = pop.hidden; pop.hidden = !open; btn.setAttribute('aria-expanded', String(open)); if (open) pop.querySelector('.ms-q').focus(); }
-});
-document.addEventListener('change', e => {
-  const ms = e.target.closest && e.target.closest('.ms');
-  if (!ms || e.target.type !== 'checkbox') return;
-  const sel = [...ms.querySelectorAll('input[type=checkbox]:checked')].map(x => x.closest('label').textContent.trim());
-  ms.querySelector('.ms-btn').innerHTML = sel.length ? esc(sel.join(', ')) : '<span class="muted">Choose…</span>';
-  ms.querySelector('.ms-n').textContent = sel.length + ' chosen';
-});
-document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('ms-q')) { const q = e.target.value.toLowerCase(); e.target.parentElement.querySelectorAll('.ms-opt').forEach(l => { l.hidden = q && !l.textContent.toLowerCase().includes(q); }); } });
+/* the multi-select dropdown: msel.js (T3 19 Oct), one for the team's app, the field app and the portal */
 /* type to search (11 Oct): any dropdown of 8 or more choices gets a box on top that shortlists as you type,
    A to Z (a list with an order of its own, like stages, keeps it). The <select> stays and holds the value, so
    forms and listeners read it as before. A free-text box with data-suggest offers its list the same way. */
@@ -336,7 +326,7 @@ function showVal(f, v) {
     case 'project': { const x = PJS().find(y => y.id === v); return x ? `<a href="#/project/${x.id}">${esc(x.name)}</a>` : '<span class="muted">Outside your view</span>'; }
     case 'champion': { const x = REGS().find(y => y.id === v); return x ? `<a href="#/champion/${x.id}" data-champ-link>${esc(x.item)}</a>` : '<span class="muted">Outside your view</span>'; }
     case 'yesno': return v ? 'Yes' : 'No';
-    case 'multi': case 'cats': case 'cities': return v.map(x => `<span class="chip">${esc(x)}</span>`).join('');
+    case 'multi': case 'cats': case 'cities': return listOf(v).map(x => `<span class="chip">${esc(x)}</span>`).join('');
     case 'money': return money(v);
     case 'date': return ds(v);
     case 'select': return esc(optLabel(f, v));
@@ -1103,7 +1093,7 @@ function openOppForm(o, keep) {
   const stages = D.lists.stages[pipeline] || [];
   if (!stages.includes(v.stage)) v.stage = stages[0];
   const withLines = PIPELINES[pipeline].lines || PIPELINES[pipeline].sqft || PIPELINES[pipeline].designs, fields = showFields(oppFieldsFor(pipeline)).filter(f => f.key !== 'pipeline' && !((PIPELINES[pipeline].lines || PIPELINES[pipeline].sqft) && f.key === 'value') && (!LOST_KEYS.includes(f.key) || v.stage === lostStage(pipeline, D.lists)));
-  const autoName = oppAutoName(client.name, (v.products || [])[0] || PIPELINES[pipeline].label, o && o.created_at);
+  const autoName = oppAutoName(client.name, listOf(v.products)[0] || PIPELINES[pipeline].label, o && o.created_at);
   const oh = f => { const h = fieldHtml(f, v[f.key], 'of', { pipeline, client: client.id }); return f.key === 'stage' ? h.replace('<select', '<select data-opp-redraw') : f.key === 'title' ? h.replace('<input', `<input placeholder="Left blank: ${esc(autoName)}"`) : h; };
   const lines0 = (v.lines || (o ? (OPSD().oppLines || []).filter(l => l.opp_id === o.id) : [])), inFul = o && allOrders().some(x => x.opp_id === o.id);
   EM.modal(`<h2>${o ? 'Edit opportunity' : 'Add an opportunity'}</h2>
@@ -1974,7 +1964,7 @@ EM.VIEWS.complaints = arg => {
       ['client', 'From', 'Every company', c => c.client_id, clientName], ['city', 'City', 'Every city', c => (CL()[c.client_id] || {}).city || ''], ...coDD(c => c.division)],
     any: [['ref', 'Number', c => c.ref], ['company', 'Company', c => clientName(c.client_id)], ['what', 'What happened', c => c.description], ['batch', 'Batch or lot', c => c.batch]], date: c => c.created_at, dateWhat: 'When it was logged' });
   const rows = all.filter(c => tab === 'all' || c.status === tab);
-  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="muted">${D.access.raise_only ? 'Only the complaints you reported, with their status. Telesales handles them.</p><p class="muted" hidden>' : ''}Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
+  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : DIVS[EM.div].co}</div><h1>Complaints</h1><p class="small" data-cmp-who><b>${esc(CMP_WHO)}</b></p><p class="muted">${D.access.raise_only ? 'Only the complaints you reported, with their status. Telesales handles them.</p><p class="muted" hidden>' : ''}Logged, handled and resolved with what was done. A settlement of <span data-rule>${inr0(D.lists.rules.complaint_settle_from)}</span> or more needs approval.</p></div><button class="btn primary" data-act="cmp-add">+ Complaint</button></div>
     ${fbar}
     ${stageBoard(CS, all, c => c.status, c => `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/complaint/${c.id}" data-cmp-card><b>${esc(c.ref)}</b><div class="small">${esc(c.type)}</div><div class="small muted">${esc(clientName(c.client_id))}</div></a>`)}
     ${subtabs('#/complaints', tab, [['all', `All <span class="muted">${all.length}</span>`], ...CS.map(s => [s, `${esc(s)} <span class="muted">${all.filter(c => c.status === s).length}</span>`])])}
@@ -1987,7 +1977,7 @@ EM.ACTIONS['cmp-add'] = el => {
   EM.modal(`<h2>Log a complaint</h2><div class="fgrid" style="margin-top:12px">
     ${G.select({ key: 'client', label: 'From', req: true }, el.dataset.client || '', 'cp', cs.map(c => [c.id, `${c.name} · ${kindLabel(c.kind)}`]))}
     ${G.select({ key: 'type', label: 'Kind', req: true }, '', 'cp', D.lists.complaint_types.map(v => [v, v]))}${G.select({ key: 'sev', label: 'Severity', req: true }, 'Medium', 'cp', D.lists.severities.map(v => [v, v]))}
-    ${G.select({ key: 'ch', label: 'Came in by' }, '', 'cp', D.lists.complaint_channels.map(v => [v, v]))}${D.access.raise_only ? '<p class="small muted" data-cp-tele>Telesales takes it from here: it goes to the dealer\'s telesales person.</p>' : G.select({ key: 'own', label: 'Handled by' }, me().id, 'cp', D.staff.filter(x => x.active).map(x => [x.id, x.name]), false)}
+    ${G.select({ key: 'ch', label: 'Came in by' }, '', 'cp', D.lists.complaint_channels.map(v => [v, v]))}${!canResolveComplaint(D.access.id) ? '<p class="small muted" data-cp-tele>Telesales takes it from here: it goes to the dealer\'s telesales person.</p>' : G.select({ key: 'own', label: 'Handled by' }, me().id, 'cp', D.staff.filter(x => x.active).map(x => [x.id, x.name]), false)}
     <div class="field span2"><label for="cp-desc">What happened</label><textarea class="input" id="cp-desc" rows="3"></textarea></div>
     ${cmpInstallFields('cp')}
     <div class="field span2" data-field="cp_photos"><label for="cp-photos">Photos: one or many, up to 10 at a time, 25 MB each</label><input class="input" id="cp-photos" type="file" multiple accept="${FILE_ACCEPT}"></div></div>${errBox('cp-err')}
@@ -2016,8 +2006,10 @@ EM.VIEWS.complaint = id => {
     <div class="stack-s"><h1>${esc(c.ref)} · ${esc(c.type)}</h1><p class="muted"><a href="#/client/${c.client_id}">${esc(clientName(c.client_id))}</a> · ${esc(c.severity)}${c.channel ? ' · by ' + esc(c.channel) : ''} · ${esc(staffName(c.owner_id))} · ${ds(c.created_at.slice(0, 10))}</p></div>
     ${pend.length ? `<div class="callout warn"><b>Waiting for approval.</b> ${pend.map(a => esc(a.reason)).join(' · ')}</div>` : ''}
     <section class="card stack-s">${stageChips(CS, c.status)}<p>${esc(c.description || '')}</p>${cmpInstallText(c) ? `<p class="small" data-cmp-install>${cmpInstallText(c)}</p>` : ''}<p class="small" data-cmp-cert>Installer: ${cmpCert(c)}</p>${c.resolution ? `<p><b>Resolution:</b> ${esc(c.resolution)}${c.cost != null && D.access.prices ? ` · cost ${inr0(c.cost)}` : ''}</p>` : ''}</section>
-    ${D.access.raise_only ? `<p class="small muted" data-ro>Telesales handles it; the status here changes as they work on it.</p>` : ''}
-    ${c.status !== lastOf(CS) && !D.access.raise_only ? `<section class="card stack-s"><h3>Update</h3><div class="fgrid">${G.select({ key: 'st', label: 'Status' }, c.status, 'cu', CS.map(v => [v, v]), false)}
+    <p class="small" data-cmp-who><b>${esc(CMP_WHO)}</b></p>
+    ${!canResolveComplaint(D.access.id) ? `<p class="small muted" data-ro>Telesales handles it; the status here changes as they work on it.</p>` : ''}
+    ${!canResolveComplaint(D.access.id) && (!isBothView() || (ownReadonly() && c.created_by === me().id)) ? `<section class="card stack-s" data-cmp-note><h3>Add a note</h3><div class="field"><label for="cn-note">Note (it goes in the History below)</label><input class="input" id="cn-note" maxlength="300"></div>${errBox('cn-err')}<div class="row"><button class="btn primary" data-act="cmp-note" data-id="${id}">Add note</button></div></section>` : ''}
+    ${c.status !== lastOf(CS) && canResolveComplaint(D.access.id) ? `<section class="card stack-s"><h3>Update</h3><div class="fgrid">${G.select({ key: 'st', label: 'Status' }, c.status, 'cu', CS.map(v => [v, v]), false)}
       <div class="field span2"><label for="cu-res">Resolution (compulsory to resolve)</label><input class="input" id="cu-res" value="${esc(c.resolution || '')}"></div>
       <div class="field"><label for="cu-cost">Settlement cost</label>${G.adorn({ type: 'money', key: 'cost' }, `<input class="input" id="cu-cost" type="number" min="0" step="1" value="${c.cost ?? ''}">`)}</div></div>${errBox('cu-err')}
       <div class="row"><button class="btn primary" data-act="cmp-upd" data-id="${id}">Save</button></div></section>` : ''}
@@ -2027,6 +2019,7 @@ EM.VIEWS.complaint = id => {
 EM.VIEWS.complaint.tab = 'complaints';
 EM.VIEWS.complaint.title = id => (OPSD().complaints.find(x => x.id === id) || { ref: 'Complaint' }).ref;
 EM.VIEWS.complaint.after = id => showLog('complaint', id, '#log-c');
+EM.ACTIONS['cmp-note'] = el => opsAct(el, `complaints/${el.dataset.id}/note`, { note: qs('#cn-note').value }, '<b>Note added</b>', 'cn-err');
 EM.ACTIONS['cmp-upd'] = el => opsAct(el, `complaints/${el.dataset.id}/status`, { status: qs('#cu-st').value, resolution: qs('#cu-res').value, cost: qs('#cu-cost').value }, '<b>Complaint saved</b>', 'cu-err');
 
 /* ---- approvals */
@@ -2045,7 +2038,7 @@ EM.VIEWS.approvals = arg => {
   const tab = ['Pending', 'Approved', 'Rejected'].includes(arg) ? arg : 'Pending', rows = all.filter(a => a.status === tab).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   const href = a => a.kind === 'scheme' ? '#/scheme/' + a.id : a.entity === 'opp' ? '#/opp/' + a.record_id : a.entity === 'order' ? '#/order/' + a.record_id : a.entity === 'complaint' ? '#/complaint/' + a.record_id : a.entity === 'request' ? '#/client/' + a.record_id : '#/approvals';
   const act = a => RO ? '<span class="small muted" data-ro>Management decides</span>' : a.kind === 'scheme' ? (canSch('approve') ? `<button class="btn sm primary" data-act="sch-approve" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="sch-reject" data-id="${a.id}">Reject</button>` : '<span class="small muted">The Owner or a Director approves</span>')
-    : canDecide(D.lists.rules, a.kind, D.access.level, a.amount) ? `<button class="btn sm primary" data-act="ap-yes" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="ap-no" data-id="${a.id}">Reject</button>` : '<span class="small muted">Above your limit</span>';
+    : a.entity === 'complaint' && !canResolveComplaint(D.access.id) ? '<span class="small muted">Telesales and management</span>' : canDecide(D.lists.rules, a.kind, D.access.level, a.amount) ? `<button class="btn sm primary" data-act="ap-yes" data-id="${a.id}">Approve</button><button class="btn sm ghost" data-act="ap-no" data-id="${a.id}">Reject</button>` : '<span class="small muted">Above your limit</span>';
   return `<div class="stack">${RO ? `<div class="row between"><div class="stack-s"><div class="kicker">Only what you asked for</div><h1>Approvals</h1><p class="muted">Ask for a discount, credit or anything that needs a yes. Management decides; the answer shows here.</p></div><button class="btn primary" data-act="ap-ask">+ Ask for approval</button></div>` : `<div class="stack-s"><div class="kicker">Credit, discounts, complaint settlements, dealer schemes</div><h1>Approvals</h1><p class="muted">Everything waiting for a yes. A request goes to whoever's limit covers it (limits in Lists & stages › Rules and numbers); a dealer scheme goes to the Owner or a Director. The Owner has no limit.</p></div>`}
     ${fbar}
     ${subtabs('#/approvals', tab, ['Pending', 'Approved', 'Rejected'].map(s => [s, `${s} <span class="muted">${all.filter(a => a.status === s).length}</span>`]))}
@@ -2200,8 +2193,8 @@ function openSchemeForm(sc) {
       <div class="field"><label for="scf-end">Ends on *</label><input class="input" type="date" id="scf-end" value="${esc(v.end_on)}"></div>
       <div class="field"><label for="scf-target">Target per dealer *</label>${G.adorn({ type: 'money', key: 'target' }, `<input class="input" type="number" min="0" step="1" id="scf-target" value="${esc(v.target || '')}">`)}</div>
       ${G.select({ key: 'who', label: 'Which dealers', req: true }, v.who, 'scf', Object.entries(SCHEME_WHO), false).replace('<select', '<select data-sch-who')}
-      <div data-sch-part="rating" ${v.who === 'rating' ? '' : 'hidden'} class="span2">${G.multi({ key: 'ratings', label: 'Dealer ratings' }, v.ratings, 'scf', D.lists.dealer_grades || [])}</div>
-      <div data-sch-part="chosen" ${v.who === 'chosen' ? '' : 'hidden'} class="span2">${G.multi({ key: 'dealers', label: 'Dealers' }, v.dealers, 'scf', dealers)}</div>
+      <div data-sch-part="rating" ${v.who === 'rating' ? '' : 'hidden'} class="span2">${G.multi({ key: 'ratings', label: 'Dealer ratings', noun: 'ratings' }, v.ratings, 'scf', D.lists.dealer_grades || [])}</div>
+      <div data-sch-part="chosen" ${v.who === 'chosen' ? '' : 'hidden'} class="span2">${G.multi({ key: 'dealers', label: 'Dealers', noun: 'dealers' }, v.dealers, 'scf', dealers)}</div>
       <fieldset class="fs span2" data-sch-slabs><legend>Slabs (optional, on sales before GST)</legend><p class="small muted">From an amount, the dealer earns a % of their sales or a fixed rupee reward. With no slab, the reward value is earned on reaching the target.</p>
         <div id="scf-slabs" class="stack-s">${(v.slabs || []).map(slabRow).join('')}</div><div class="row"><button class="btn sm" type="button" data-act="sch-slab-add">+ Slab</button></div></fieldset>
       <div class="field"><label for="scf-rtype">Reward type</label><select class="input" id="scf-rtype" data-keep-order><option value="">Choose</option>${SCHEME_REWARD_TYPES.map(t => `<option ${v.reward_type === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
@@ -2259,7 +2252,7 @@ const OPS_LIST_GROUP = () => ['Operations stages', 'The stages of the processing
 EM.ACTIONS['rules-open'] = () => {
   const R = D.lists.rules, n = (id, label, v, unit) => `<div class="field"><label for="ru-${id}">${label}</label>${G.adorn(unit === '₹' ? { type: 'money', key: id } : { key: 'x' }, `<input class="input" type="number" min="0" step="any" id="ru-${id}" value="${v}">`).replace('class="suf">undefined<', `class="suf">${unit || ''}<`).replace('<span class="suf"></span>', '')}</div>`;
   EM.modal(`<h2>Rules and numbers</h2><p class="muted small">The numbers the processing uses. Changes apply from the next order, approval or score.</p>
-    <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('wastage', 'Wastage on a new line', wastageDefault(R), '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}${n('dorm', 'A dealer is dormant (Priority calls) after', R.dormant_days ?? 60, 'days with no order')}${n('swin', 'Sales count against a sample for', R.sample_window_days ?? 90, 'days after it is given')}${n('chp', 'EGO Champion points per won sale', R.champion_points ?? 10, 'points')}</div></fieldset>
+    <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('wastage', 'Wastage on a new line', wastageDefault(R), '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}${n('dorm', 'A dealer is dormant (Priority calls) after', R.dormant_days ?? 60, 'days with no order')}${n('swin', 'Sales count against a sample for', R.sample_window_days ?? 90, 'days after it is given')}${n('sdri', 'Sample Display Record (SDR): inspect each dealer\'s displays every', R.sdr_inspect_days ?? 30, 'days')}${n('chp', 'EGO Champion points per won sale', R.champion_points ?? 10, 'points')}</div></fieldset>
     <fieldset class="fs" data-prod-days><legend>Normal days per production stage</legend><p class="small muted">The days each stage takes after the one before. Each production order's planned dates are worked out from its order date with these; a date changed on one order stays on it.</p><div class="fgrid">${OS_('production_stages').slice(1).map((st, k) => `<div class="field"><label for="ru-pd-${k}">${esc(st)}</label><input class="input" type="number" min="0" step="1" id="ru-pd-${k}" data-pd="${esc(st)}" value="${prodDays(R, OS_('production_stages'), k + 1)}"></div>`).join('')}</div></fieldset>
     <fieldset class="fs" data-cat-units><legend>How each category is sold</legend><p class="small muted">Flooring and cladding are per sq ft, with whole boxes. Accessories (skirting, profiles, underlay foam, film, installation) are per piece or per running ft (rft). A new category starts from its name; change any here.</p>
       ${table(['Category', 'Sold'], allCats().map(c => [esc(c), `<select class="input" data-cu="${esc(c)}" aria-label="${esc(c)} sold" style="max-width:240px">${Object.entries(QTY_UNIT_LONG).map(([k, l]) => `<option value="${k}" ${catUnit(c, R) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`]))}</fieldset>
@@ -2276,7 +2269,7 @@ EM.ACTIONS['rules-save'] = async el => {
     el.dataset.sure = '1'; el.textContent = 'Save, I understand'; return;
   }
   const v = id => Number(qs('#ru-' + id).value), R = D.lists.rules;
-  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), prod_days: Object.fromEntries([...document.querySelectorAll('[data-pd]')].map(x => [x.dataset.pd, Number(x.value)])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'), sample_window_days: v('swin'), champion_points: v('chp'),
+  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), prod_days: Object.fromEntries([...document.querySelectorAll('[data-pd]')].map(x => [x.dataset.pd, Number(x.value)])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'), sample_window_days: v('swin'), sdr_inspect_days: v('sdri'), champion_points: v('chp'),
     approvals: Object.fromEntries(Object.keys(R.approvals).map(k => [k, { levels: Object.fromEntries([...document.querySelectorAll(`[data-ap="${k}"]`)].map(i => [i.dataset.lv, Number(i.value)])) }])),
     p200: { tiers: [...document.querySelectorAll('#p2t .p2t')].map(r => ({ name: r.querySelector('[data-t="name"]').value.trim(), min: Number(r.querySelector('[data-t="min"]').value) })).filter(t => t.name),
       weights: Object.fromEntries(['sales', 'breadth', 'payments', 'display', 'activity'].map(k => [k, v('w-' + k)])) } };
@@ -2510,7 +2503,7 @@ const peopleTable = () => table(['Name', 'Username', 'Role', 'Division', 'Region
   s.active ? `${isOwner() && s.id !== me().id ? `<button class="btn sm" data-act="view-as" data-id="${s.id}">View as</button>` : ''}<button class="btn sm ghost" data-act="staff-edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-act="staff-pass" data-id="${s.id}">New password</button>${s.id !== me().id ? `<button class="btn sm ghost" data-act="staff-off" data-id="${s.id}">Switch off</button>` : ''}` : '']));
 /* Roles & access (8 Oct): every switch of every role, for management. Each click saves at once; the
    people in that role get it at their next reload or sign-in. "View as" shows exactly what they see. */
-const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['design500', 'Design 500'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['projects', 'Projects'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel'], ['attendance', 'Attendance'], ['roadmap', 'Roadmap'], ['priority', 'Priority calls'], ['samples', 'Samples'], ['displays', 'Displays'], ['training', 'Training']];
+const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['design500', 'Design 500'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['projects', 'Projects'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel'], ['attendance', 'Attendance'], ['roadmap', 'Roadmap'], ['priority', 'Priority calls'], ['samples', 'Samples'], ['displays', 'Sample Display Record (SDR)'], ['training', 'Training']];
 const ROLE_SWITCHES = [['prices', 'Sees money (rates, values, payments)'], ['readonly', 'View only (changes nothing)'], ['users', 'Manages logins (Team & access)'], ['stock', 'Changes the inventory'], ['can_delete', 'Deletes records'], ['can_lists', 'Edits lists, stages and rules'], ['can_targets', 'Sets targets (founders for anyone, others for their team)']];
 EM.roleOpen = EM.roleOpen || '';
 function rolesMatrix() {
@@ -2852,7 +2845,7 @@ function filterBar(st, key, cfg) {
     if (st[d[0]] && !list.some(x => x[0] === st[d[0]])) list.push([st[d[0]], nm(d)(st[d[0]])]);
     return list.map(([v, l]) => [v, `${l} (${num(cnt[v] || 0)})`]); };
   const o = (v, l, cur) => `<option value="${esc(v)}" ${(cur || '') === v ? 'selected' : ''}>${esc(l)}</option>`, ic = n => fic(n, '');
-  const custom = st.period === 'custom', dateTxt = custom ? `${st.from ? ds(st.from) : 'the start'} to ${st.to ? ds(st.to) : 'today'}` : (PERIODS.find(p => p[0] === st.period) || ['', ''])[1];
+  const PER = cfg.periods || PERIODS, custom = st.period === 'custom', dateTxt = custom ? `${st.from ? ds(st.from) : 'the start'} to ${st.to ? ds(st.to) : 'today'}` : (PER.find(p => p[0] === st.period) || ['', ''])[1];
   const chips = [...(cfg.text && EM.clientQ ? [['q', 'Search', `"${EM.clientQ}"`]] : []), ...tg.filter(t => st.tg[t[0]]).map(t => ['tg:' + t[0], t[1], 'Yes']),
     ...dd.filter(d => st[d[0]]).map(d => [d[0], d[1], nm(d)(st[d[0]])]), ...(fq ? [['fq', (any.find(a => a[0] === st.field) || [0, 'Any field'])[1], `contains "${st.fq.trim()}"`]] : []),
     ...(cfg.date && st.period !== 'all' ? [['date', 'Date', dateTxt]] : [])];
@@ -2861,7 +2854,7 @@ function filterBar(st, key, cfg) {
     ${tg.map(t => `<label class="flt-tg"><input type="checkbox" data-flt="${key}" data-fk="tg:${t[0]}" ${st.tg[t[0]] ? 'checked' : ''}>${ic('check')}${esc(t[1])}</label>`).join('')}
     ${dd.map((d, i) => `<label class="flt-dd${st[d[0]] ? ' is-set' : ''}${dd.length % 2 && i === dd.length - 1 ? ' wide' : ''}"><span class="flt-k">${esc(d[1])}</span><select data-flt="${key}" data-fk="${d[0]}" aria-label="${esc(d[1])}">${o('', d[2], st[d[0]])}${opts(d).map(([v, l]) => o(v, l, st[d[0]])).join('')}</select></label>`).join('')}
     ${any.length ? `<span class="flt-any${fq ? ' is-set' : ''}"><select data-flt="${key}" data-fk="field" aria-label="Pick any field">${o('', 'Pick any field', st.field)}${any.map(a => o(a[0], a[1], st.field)).join('')}</select><span class="flt-k">contains</span><input data-flt-q="${key}" value="${esc(st.fq || '')}" aria-label="contains" placeholder="Type to filter"></span>` : ''}
-    ${cfg.date ? `<label class="flt-dd flt-date${st.period !== 'all' ? ' is-set' : ''}" title="${esc(cfg.dateWhat || '')}"><span class="flt-k">Date filter</span><select data-df="${key}" data-dfk="period" aria-label="Date filter" data-keep-order>${PERIODS.map(([v, l]) => o(v, l, st.period)).join('')}</select></label>
+    ${cfg.date ? `<label class="flt-dd flt-date${st.period !== 'all' ? ' is-set' : ''}" title="${esc(cfg.dateWhat || '')}"><span class="flt-k">Date filter</span><select data-df="${key}" data-dfk="period" aria-label="Date filter" data-keep-order>${PER.map(([v, l]) => o(v, l, st.period)).join('')}</select></label>
     ${custom ? `<span class="flt-dates"><input type="date" data-df="${key}" data-dfk="from" value="${esc(st.from || '')}" aria-label="From date"><span class="flt-k">to</span><input type="date" data-df="${key}" data-dfk="to" value="${esc(st.to || '')}" aria-label="To date"></span>` : ''}` : ''}</div>
     ${chips.length ? `<div class="flt-on">${cfg.ext ? '' : `<span class="flt-n"><b>${num(rows.length)}</b> of ${num(all.length)}</span>`}${chips.map(([k, l, v]) => `<button class="flt-chip" data-act="flt-x" data-flt-x="${key}" data-k="${esc(k)}" aria-label="Remove filter ${esc(l)} ${esc(v)}">${esc(l)}: <b>${esc(v)}</b>${ic('x')}</button>`).join('')}<button class="flt-clear" data-act="flt-clear" data-flt-x="${key}">Clear all</button></div>` : ''}</div>`;
   return { html, rows };
@@ -3309,8 +3302,8 @@ function salesList() {
     out.push({ div: 'wholesale', id: o.id, ref: o.ref, at: dayIST(o.invoiced_at), owner: o.owner_id, client_id: o.client_id, region: o.region || (CL()[o.client_id] || {}).region || '', value: P ? Number(o.subtotal) || 0 : 0, lines, href: '#/order/' + o.id });
   }
   for (const p of Object.keys(PIPELINES).filter(k => PIPELINES[k].division === 'retail')) for (const o of D.opportunities.filter(x => x.pipeline === p && x.stage === wonStage(p, D.lists))) {
-    const h = D.history.filter(x => x.opp_id === o.id && x.to_stage === o.stage).pop(), at = (h && h.at) || o.closed_at || o.updated_at;
-    out.push({ div: 'retail', id: o.id, ref: o.ref, title: o.title, at: dayIST(at), owner: o.owner_id, client_id: o.client_id, region: o.region || '', value: P ? oppNet(o) : 0, cats: (o.extra || {}).products || [], area: Number((o.extra || {}).area_sqft) || 0, href: '#/opp/' + o.id,
+    const at = wonDay(o, D.history);   // T5: THE dating rule (schema.js), the Worker's own
+    out.push({ div: 'retail', id: o.id, ref: o.ref, title: o.title, at, owner: o.owner_id, client_id: o.client_id, region: o.region || '', value: P ? oppNet(o) : 0, cats: listOf((o.extra || {}).products), area: Number((o.extra || {}).area_sqft) || 0, href: '#/opp/' + o.id,
       lines: (OPSD().oppLines || []).filter(l => l.opp_id === o.id).map(l => { const p = lineProd(l.product_id) || {}; return { category: colOf(p).category || 'Not set', boxes: Number(l.boxes) || 0, sqft: Number(l.sqft) || 0, amount: Number(l.amount) || 0 }; }) });
   }
   return out;
@@ -3875,7 +3868,7 @@ EM.ACTIONS['my-pass'] = async el => {
    this shapes it for the dealer page, the ageing and Analysis › Dealer leads. Nothing is kept twice. */
 const RETAIL = 'ego_retail';
 const leadOfOpp = o => { const c = CL()[o.client_id] || {}, x = o.extra || {}, h = D.history.filter(y => y.opp_id === o.id).pop();
-  return { id: o.id, opp: o, ref: o.ref || '', name: c.name || o.c_name || 'Outside your view', mobile: c.mobile || o.c_mobile || '', city: c.city || o.c_city || '', area: (c.extra || {}).locality || '', need: x.products || [], sqft: x.area_sqft, source: o.source || '', notes: x.notes || '',
+  return { id: o.id, opp: o, ref: o.ref || '', name: c.name || o.c_name || 'Outside your view', mobile: c.mobile || o.c_mobile || '', city: c.city || o.c_city || '', area: (c.extra || {}).locality || '', need: listOf(x.products), sqft: x.area_sqft, source: o.source || '', notes: x.notes || '',
     dealer_id: o.dealer_id, status: o.stage, lost_reason: o.lost_reason || '', status_note: h ? h.note || '' : '', won_value: x.won_value, handed_by: x.allocated_by || o.owner_id, handed_at: x.allocated_at || o.created_at, status_at: h ? h.at : o.created_at, status_by_dealer: !!x.stage_by_dealer }; };
 const LEADS = () => D.opportunities.filter(o => o.pipeline === RETAIL && o.dealer_id).map(leadOfOpp), DDIR = () => D.dealer_dir || [], PLANS = () => D.plans || [];
 const PJS = () => D.projects || [];
@@ -4797,11 +4790,12 @@ EM.ACTIONS['pr-called-save'] = async el => {
    record of course kind Installer certification). Both companies. One table on the server; one list, one form, one Excel
    sample and upload here, each told which register it is. */
 const REGS = () => D.registers || [];
-Object.assign(ICON, { samples: fic('color-swatch', 'ic'), displays: fic('presentation', 'ic'), training: fic('school', 'ic') });   // from the app icon set (design/icons.svg)
-Object.assign(HIST_AREA, { samples: 'samples', displays: 'displays', training: 'training' });
+Object.assign(ICON, { samples: fic('color-swatch', 'ic'), displays: fic('presentation', 'ic'), sdr: fic('presentation', 'ic'), training: fic('school', 'ic') });   // from the app icon set (design/icons.svg)
+Object.assign(HIST_AREA, { samples: 'samples', displays: 'displays', sdr: 'displays', training: 'training' });
 Object.assign(NAV_HELP, { samples: 'Samples: boards, catalogues and swatches given to dealers, architects, people and projects, billed or free, and the sales that came after.',
-  displays: 'Displays at dealers: what is on show, its condition, and when it is due for replacement (the bell reminds the dealer\'s owner and their manager).',
+  displays: 'Sample Display Record (SDR): displays given to dealers, line by line with our cost; field sales inspect them every month (Well maintained, Needs attention, Damaged, Missing); management decides Replace, Mark as loss or Keep as is. Three ratios: orders vs display, well maintained share, lost or replaced vs given.',
   training: 'Training: who was trained on what, the score, the certificate and its expiry. Installer certification shows on complaints and installation sites.' });
+const lcLabel = l => /^[A-Z]{2,}/.test(l) ? l : l.toLowerCase();   // T4: 'SDR line' keeps its capitals
 const REG_ROUTE = { sample: 'samples', display: 'displays', training: 'training' }, REG_OF = { samples: 'sample', displays: 'display', training: 'training' };
 const regCo = d => d === 'retail' ? 'Big E' : 'EGO Premium';
 const regProd = id => (INVD() && INVD().products.find(p => p.id === id)) || null;
@@ -4844,7 +4838,6 @@ const regFstate = k => (EM.regF[k] = EM.regF[k] || { period: 'all' });
 const REG_DF = { sample: 'rgs', display: 'rgd', training: 'rgt' };
 const REG_FILT = {   // two dropdowns per register, beside the Date filter, Owner and any field
   sample: [['a', 'Billed or free', r => r.extra.billed, () => ['Billed', 'Free']], ['b', 'Return status', r => r.status, () => SAMPLE_RETURN]],
-  display: [['a', 'Display type', r => r.extra.display_type, () => optsOf(REG_FIELDS.display.find(f => f.key === 'display_type'), D.lists)], ['b', 'Condition', r => r.status, () => DISPLAY_CONDITION]],
   training: [['a', 'Audience', r => r.extra.audience, () => TRAINING_AUDIENCE], ['b', 'Course kind', r => r.extra.course_kind, () => regCourseKinds()]],
 };
 const regCourseKinds = () => [...new Set([...optsOf(REG_FIELDS.training.find(f => f.key === 'course_kind'), D.lists), CERT_COURSE])];
@@ -4860,18 +4853,16 @@ const regBar = kind => { const f = regFstate(kind), T = REG_TXT[kind];
 const regRows = kind => regBar(kind).rows;
 const regFiles = r => D.documents.filter(d => d.register_id === r.id).length;
 const REG_HEAD = { sample: () => ['Sample', 'Given to', 'Qty', ...(D.access.prices ? ['Value'] : []), 'Billed or free', 'Date given', 'Return status', 'Files'],
-  display: () => ['Display', 'Dealer', 'Type', 'Condition', 'Installed on', 'Last inspection', 'Replacement due', ...(D.access.prices ? ['Cost'] : []), 'Photos'],
   training: () => ['Training', 'Who', 'Audience', 'Course kind', 'Date', 'Score', 'Expiry', 'Certificate'] };
 const regBtns = r => isBothView() ? '' : `<div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm ghost" data-act="rg-edit" data-id="${r.id}">Change</button>${D.access.can_delete ? `<button class="btn sm ghost" data-act="rg-del" data-id="${r.id}">Delete</button>` : ''}</div>`;
 const REG_ROW = {
   sample: r => [`<b>${esc(regWhat(r))}</b><div class="small muted">${esc(r.ref)}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, regWhoHref(r) ? `<a href="${regWhoHref(r)}">${esc(regWho(r))}</a><div class="small muted">${esc(regWhoKind(r))}</div>` : '', num(r.extra.qty || 0), ...(D.access.prices ? [money(r.value)] : []), esc(r.extra.billed || ''), ds(r.on_date), `<span class="badge ${r.status === 'Lost' ? 'bad' : r.status === 'Returned' ? 'ok' : 'plain'}">${esc(r.status)}</span>`, `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Files (${regFiles(r)})</button>${regBtns(r)}`],
-  display: r => [`<b>${esc(regWhat(r))}</b><div class="small muted">${esc(r.ref)}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, r.client_id ? `<a href="#/client/${r.client_id}/displays">${esc(regWho(r))}</a>` : '', esc(r.extra.display_type || ''), `<span class="badge ${r.status === 'Damaged' ? 'bad' : r.status === 'Worn' ? 'warn' : 'ok'}">${esc(r.status)}</span>`, ds(r.on_date), r.extra.last_inspection ? ds(r.extra.last_inspection) : '<span class="muted small">Not inspected</span>', dueBadge(r), ...(D.access.prices ? [money(r.value)] : []), `<div class="row" data-rg-acts style="gap:6px;flex-wrap:wrap;padding-right:4px"><button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Photos (${regFiles(r)})</button>${regBtns(r)}</div>`],
   training: r => [`<b>${esc(r.extra.course || '')}</b><div class="small muted">${esc(r.ref)}${r.extra.product ? ' · ' + esc(r.extra.product) : ''}${r.extra.trainer ? ' · by ' + esc(r.extra.trainer) : ''}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, `${esc(r.extra.person || '')}${r.client_id ? `<div class="small"><a href="#/client/${r.client_id}">${esc(regWho(r))}</a></div>` : ''}`, esc(r.extra.audience || ''), `${esc(r.extra.course_kind || '')}${r.extra.course_kind === CERT_COURSE ? `<div>${!r.due_date || r.due_date >= today() ? `<span class="badge ok">Certified till ${r.due_date ? ds(r.due_date) : 'no expiry date'}</span>` : '<span class="badge bad">Expired</span>'}</div>` : ''}`, ds(r.on_date), r.extra.score != null ? num(r.extra.score) : '', r.due_date ? ds(r.due_date) : '<span class="muted small">No expiry</span>', `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Certificate (${regFiles(r)})</button>${regBtns(r)}`],
 };
 const regTable = (kind, rows) => `<div data-rg-table="${kind}">${table(REG_HEAD[kind](), rows.slice(0, 500).map(r => ({ cells: REG_ROW[kind](r) })))}</div>${rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : ''}`;
 const REG_TXT = {
   sample: { kicker: 'boards, catalogues and swatches given out, billed or free', add: '+ Add a sample', ph: 'Samples: given to, item or number', none: 'No sample saved yet', noneTxt: 'Note each sample board, catalogue or swatch given to a dealer, architect, person or project: billed or free, and whether it came back. The sales after it are counted by themselves.' },
-  display: { kicker: 'what is on show at each dealer, and when it is due for replacement', add: '+ Add a display', ph: 'Displays: dealer, design or number', none: 'No display saved yet', noneTxt: 'Note each board, stand or mock-up floor at a dealer, with its photos, condition and replacement due date. The bell reminds the dealer\'s owner and their manager 7 days before and on the day.' },
+  display: { kicker: 'displays given to dealers', add: '+ Give displays', ph: 'SDR: dealer, city or product', none: 'No display given yet', noneTxt: 'Give displays to a dealer from Sample Display Record (SDR).' },
   training: { kicker: 'who was trained on what; installer certification', add: '+ Add a training record', ph: 'Training: person, firm or course', none: 'No training saved yet', noneTxt: 'Note each training: the audience, the person or firm, the course, the score, the certificate and its expiry. An installer with an unexpired Installer certification shows as certified on complaints and installation sites.' },
 };
 function regView(kind) {
@@ -4901,17 +4892,183 @@ function sampleReport() {
     ${rows.length ? table(['Dealer or architect', 'Samples', ...(P ? ['Sample value', `Sales in the ${W} days after`, 'Sales per ₹1'] : ['Sales after (count)'])], rows.map(({ c, a, x }) => ({ href: `#/client/${c.id}/samples`, cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(kindLabel(c.kind))} · ${esc(c.city || '')}</div>`, num(a.length), ...(P ? [inr0(x.spend), inr0(x.sales), x.spend ? (x.sales / x.spend).toFixed(1) : ''] : [num(x.after.length)])] })))
       : empty('No sample to a dealer or architect in these dates', 'Samples given to dealers and architects are added up here against the sales that came after them.')}</div>`;
 }
-for (const [scr, kind] of Object.entries(REG_OF)) { EM.VIEWS[scr] = arg => kind === 'sample' && String(arg || '') === 'report' ? sampleReport() : regView(kind); EM.VIEWS[scr].title = () => REG_KINDS[kind].plural; }
+for (const [scr, kind] of Object.entries(REG_OF)) { if (kind === 'display') continue; EM.VIEWS[scr] = arg => kind === 'sample' && String(arg || '') === 'report' ? sampleReport() : regView(kind); EM.VIEWS[scr].title = () => REG_KINDS[kind].plural; }   // T4: displays is the SDR
 
 /* ---- on the dealer and architect pages: Samples (with spend vs sales after), Displays (dealers) */
-const regTabs = c => [['samples', `Samples (${REGS().filter(r => r.kind === 'sample' && r.client_id === c.id).length})`], ...(DEALER_KINDS.includes(c.kind) ? [['displays', `Displays (${REGS().filter(r => r.kind === 'display' && r.client_id === c.id).length})`]] : [])];
+const regTabs = c => [['samples', `Samples (${REGS().filter(r => r.kind === 'sample' && r.client_id === c.id).length})`], ...(DEALER_KINDS.includes(c.kind) ? [['sdr', `SDR (${REGS().filter(r => r.kind === 'display' && r.client_id === c.id && sdrLine(r).status === 'Active').length})`]] : [])];
 const REG_TAB_BODY = {
   samples: c => { const rs = REGS().filter(r => r.kind === 'sample' && r.client_id === c.id);
     return `<div class="stack" data-client-samples><div class="row between"><p class="small muted" style="max-width:720px">Samples given to ${esc(c.name)}: boards, catalogues, swatches, billed or free.</p>${isBothView() ? '' : `<button class="btn primary" data-act="rg-add" data-kind="sample" data-client="${c.id}">+ Sample for ${esc(c.name)}</button>`}</div>
       ${spendCard(c)}${rs.length ? regTable('sample', rs) : empty('No sample given yet', `Samples given to ${esc(c.name)} appear here, and the sales after them are counted on their own.`)}</div>`; },
-  displays: c => { const rs = REGS().filter(r => r.kind === 'display' && r.client_id === c.id), soon = rs.filter(r => r.due_date && dueIn(r.due_date) <= 7);
-    return `<div class="stack" data-client-displays><div class="row between"><p class="small muted" style="max-width:720px">What is on show at ${esc(c.name)}. ${soon.length ? `<b>${soon.length} due for replacement within 7 days or overdue.</b>` : 'Nothing is due for replacement within 7 days.'} The bell reminds ${esc(staffName(c.owner_id))} and their manager.</p>${isBothView() ? '' : `<button class="btn primary" data-act="rg-add" data-kind="display" data-client="${c.id}">+ Display at ${esc(c.name)}</button>`}</div>
-      ${rs.length ? regTable('display', rs) : empty('No display saved yet', `Boards, stands and mock-up floors at ${esc(c.name)} appear here with their photos and replacement dates.`)}</div>`; },
+  sdr: c => sdrDealer(c),   // T4
+  displays: c => { location.replace(`#/client/${c.id}/sdr`); return ''; },   // the old address
+};
+/* ---- T4 (19 Oct): Sample Display Record (SDR), Dealers > SDR. A line is a display row (old rows read through sdrLine, untouched);
+   inspections and decisions are rows of the same registers list. The three ratios are sdrRatios (schema.js), the Worker's own. */
+const SDR_COND_CLS = { 'Well maintained': ['good', 'circle-check'], 'Needs attention': ['attn', 'alert-triangle'], Damaged: ['dmg', 'alert-octagon'], Missing: ['miss', 'circle-dashed'] };
+const sdrCond = c => { const [k, i] = SDR_COND_CLS[c] || ['none', 'clock']; return `<span class="sdr-cond ${k}" data-cond="${esc(c || 'none')}">${fic(i, '')}${esc(c || 'Not checked yet')}</span>`; };
+const SDR_ST_CLS = { Active: 'ok', Replaced: 'info', 'Written off': 'bad', 'Returned to us': 'plain' };
+const sdrSt = s => `<span class="badge ${SDR_ST_CLS[s] || 'plain'}" data-sdr-status="${esc(s)}">${esc(s)}</span>`;
+const sdrAll = () => { const rs = REGS().filter(inDiv);
+  return { lines: rs.filter(r => r.kind === 'display').map(r => ({ ...sdrLine(r), r })), checks: rs.filter(r => r.kind === 'sdr_check'), decisions: rs.filter(r => r.kind === 'sdr_decision') }; };
+const sdrDays = () => sdrInspectDays(D.lists.rules);
+const sdrSales = () => salesList().map(s => ({ client_id: s.client_id, at: s.at, value: s.value }));
+const isoMinus = n => new Date(Date.parse(today() + 'T00:00:00Z') - n * 864e5).toISOString().slice(0, 10);
+/* T5 gate: the SDR Date filters carry a Last 90 days preset, the default (only here: every other Date filter keeps its list) */
+const SDR_PERIODS = [...PERIODS.slice(0, -1), ['90d', 'Last 90 days'], PERIODS[PERIODS.length - 1]];
+EM.sdrF = EM.sdrF || { period: '90d', from: '', to: '' };   // the Date filter, default Last 90 days
+EM.sdrD = EM.sdrD || {};   // the dealer tab's own Date filter, per dealer
+const sdrBounds = st => { const t = today(), [y, m] = t.split('-').map(Number), fy = m >= 4 ? y : y - 1, end = (Y, M) => new Date(Date.UTC(Y, M, 0)).toISOString().slice(0, 10), ym = (Y, M) => `${Y}-${String(M).padStart(2, '0')}-01`;
+  if (st.period === 'custom') return [st.from || '', st.to || '']; if (st.period === 'today') return [t, t]; if (st.period === '90d') return [isoMinus(90), t];
+  if (st.period === 'month') return [ym(y, m), end(y, m)]; if (st.period === 'last') { const Y = m === 1 ? y - 1 : y, M = m === 1 ? 12 : m - 1; return [ym(Y, M), end(Y, M)]; }
+  if (st.period === 'year') return [`${fy}-04-01`, `${fy + 1}-03-31`]; if (st.period === 'lastyear') return [`${fy - 1}-04-01`, `${fy}-03-31`]; return ['', '']; };
+const sdrPerTxt = st => { const [a, b] = sdrBounds(st); return st.period === '90d' || (st.period === 'custom' && a === isoMinus(90) && b === today()) ? 'last 90 days' : st.period === 'all' ? 'all time' : `${a ? ds(a) : 'the start'} to ${b ? ds(b) : 'today'}`; };
+const sdrPct = x => x == null ? '' : `${Math.round(x * 1000) / 10}%`;
+function sdrRatioCards(R, st, sm) {
+  const P = D.access.prices, per = sdrPerTxt(st), hid = '<small>Money is hidden for your role</small>';
+  const c = (k, icn, label, v, say, how, cls) => `<div class="sdr-ratio${cls ? ' ' + cls : ''}" data-ratio="${k}"><span class="sdr-k">${fic(icn, '')}${label}</span><span class="sdr-v">${v}</span><span class="sdr-say">${say}</span><span class="sdr-how">${fic('info-circle', '')}<span>${how}</span></span></div>`;
+  return `<div class="sdr-ratios${sm ? ' sm' : ''}" data-sdr-ratios>
+    ${c('orders', 'chart-donut-3', 'Orders vs display', !P ? hid : R.per == null ? '<small>Nothing on display now</small>' : '₹' + R.per.toFixed(1), P && R.per != null ? `₹${R.per.toFixed(1)} of orders for every ₹1 on display` : '', P ? `Dealer orders, value before GST, ${per} (${inr0(R.orders)}) ÷ display value at ${sm ? 'this dealer' : 'dealers'} now (${inr0(R.shown)}).` : 'Dealer orders before GST ÷ display value now.')}
+    ${c('good', 'circle-check', 'Well maintained', R.goodShare == null ? '<small>No line checked yet</small>' : `${sdrPct(R.goodShare)} <small>${num(R.good)} of ${num(R.checked)} lines</small>`, R.goodShare == null ? '' : `${num(R.good)} of ${num(R.checked)} lines checked are well maintained`, 'Lines Well maintained ÷ lines checked, from each line\'s latest inspection.', R.goodShare != null && R.goodShare >= 0.8 ? 'is-good' : '')}
+    ${c('lost', 'replace', 'Lost or replaced vs given', !P ? hid : R.lostShare == null ? '<small>Nothing given in these dates</small>' : `${sdrPct(R.lostShare)} <small>${inr0(R.lost + R.replaced)}</small>`, P && R.lostShare != null ? `₹${(R.lostShare * 100).toFixed(2)} lost or replaced for every ₹100 given` : '', P ? `(Cost written off ${inr0(R.lost)} + cost replaced ${inr0(R.replaced)}) ÷ cost of all displays given ${inr0(R.given)}, ${per}.` : '(Cost written off + cost replaced) ÷ cost of all displays given.', R.lostShare ? 'is-bad' : '')}</div>`;
+}
+const sdrShare = (ls, latest) => { const n = k => ls.filter(l => latest[l.id] && latest[l.id].cond === k).length, g = n('Well maintained'), a = n('Needs attention'), d = n('Damaged'), m = n('Missing'), t = g + a + d + m;
+  if (!t) return '<span class="small muted">Not checked yet</span>'; const w = x => (100 * x / t).toFixed(1) + '%';
+  return `<div class="sdr-share"><span class="sdr-bar" aria-hidden="true">${g ? `<i class="good" style="width:${w(g)}"></i>` : ''}${a ? `<i class="attn" style="width:${w(a)}"></i>` : ''}${d ? `<i class="dmg" style="width:${w(d)}"></i>` : ''}${m ? `<i class="miss" style="width:${w(m)}"></i>` : ''}</span><small><b>${g} of ${t}</b> well maintained${t - g ? ' · ' + [a ? a + ' need attention' : '', d ? d + ' damaged' : '', m ? m + ' missing' : ''].filter(Boolean).join(', ') : ''}</small></div>`; };
+const sdrDueTxt = d => !d || !d.next ? '' : `<span class="sdr-due${d.overdue ? ' late' : ''}" data-overdue="${d.overdue || 0}">${ds(d.next)}${d.overdue ? ` · overdue ${d.overdue} day${d.overdue === 1 ? '' : 's'}` : ''}</span>`;
+const canSdrGive = () => canGiveSdr(D.access.id) && !isBothView(), canSdrDecide = () => canDecideSdr(D.access.id) && !isBothView();
+const sdrBtns = cid => `${canSdrGive() ? `${cid ? `<button class="btn" data-act="sdr-inspect" data-client="${cid}">${fic('eye', 'fd-ic')}Inspect</button>` : ''}<button class="btn primary" data-act="sdr-give" data-client="${cid || ''}">+ Give displays</button>` : ''}`;
+EM.VIEWS.sdr = () => {
+  const st = EM.sdrF, A = sdrAll(), [from, to] = sdrBounds(st), sales = sdrSales(), latest = sdrLatest(A.lines, A.checks), due = sdrDue(A.lines, A.checks, sdrDays(), today()), flagged = sdrFlagged(A.lines, latest, A.decisions);
+  const ids = [...new Set(A.lines.map(l => l.client_id))].filter(id => CL()[id]), P = D.access.prices;
+  const dl = ids.map(id => { const c = CL()[id], ls = A.lines.filter(l => l.client_id === id), act = ls.filter(l => l.status === 'Active');
+    return { id, c, ls, act, value: act.reduce((t, l) => t + (l.total || 0), 0), flag: flagged.filter(l => l.client_id === id).length, due: due[id], orders: sales.filter(s => s.client_id === id && (!from || s.at >= from) && (!to || s.at <= to)).reduce((t, s) => t + (Number(s.value) || 0), 0),
+      cats: [...new Set(ls.map(l => l.category).filter(Boolean))], conds: [...new Set(act.map(l => (latest[l.id] || {}).cond || 'Not checked yet'))], dates: ls.map(l => l.given_on) }; });
+  const { html: fbar, rows } = filterBar(st, 'sdr', { label: 'Sample Display Record (SDR)', rows: dl, ph: 'SDR: dealer, city or product', attr: 'data-sdr-filters data-rg-filters',
+    text: d => `${d.c.name} ${d.c.city || ''} ${d.ls.map(l => `${l.item} ${l.ref} ${regWhat(l.r)}`).join(' ')}`, mobiles: d => [d.c.mobile],
+    dd: [['dealer', 'Dealer', 'Every dealer', d => d.id, clientName], ['cat', 'Category', 'Every category', d => d.cats, null, D.lists.categories], ['cond', 'Condition', 'Every condition', d => [...d.conds, ...(d.flag ? ['Needs a decision'] : [])], null, ['Needs a decision', ...SDR_COND, 'Not checked yet']], ...coDD(d => d.c.division)],
+    any: [['product', 'Product', d => d.ls.map(l => l.item || regWhat(l.r)).join(' ')], ['ref', 'Number', d => d.ls.map(l => l.ref).join(' ')]],
+    date: () => 'x', inDate: () => true, periods: SDR_PERIODS, dateWhat: 'The ratios are worked out over these dates' });
+  const sel = new Set(rows.map(d => d.id)), R = sdrRatios({ lines: A.lines.filter(l => sel.has(l.client_id)), checks: A.checks, decisions: A.decisions, sales, from, to });
+  return `<div class="stack" data-sdr>
+    <div class="row between" style="align-items:flex-end;flex-wrap:wrap;gap:12px"><div class="stack-s"><div class="kicker">${EM.div === 'both' ? 'EGO Premium and Big E' : esc(DIVS[EM.div].co)} · displays given to dealers, inspected, decided</div><h1>Sample Display Record (SDR)</h1></div>
+      <div class="row" style="flex-wrap:wrap"><button class="btn" data-act="rg-sample" data-kind="display">Excel sample</button>${canGiveSdr(D.access.id) ? `<label class="btn" style="cursor:pointer" data-list-only>Upload from Excel<input type="file" data-sheet="reg-display" accept=".xlsx" hidden></label>` : ''}${sdrBtns('')}</div></div>
+    ${EM.rgImp && EM.rgImp.kind === 'display' ? regImportPreview() : ''}
+    ${sdrRatioCards(R, st)}${fbar}
+    ${rows.length ? `<div class="card tbl-wrap sdr-tbl" data-sdr-table data-rg-table><table class="tbl"><thead><tr><th>Dealer</th>${P ? '<th class="r">Display value now</th>' : ''}<th class="r">Lines</th><th>Condition share</th><th>Last inspection</th><th>Next due</th>${P ? `<th class="r">Orders, ${esc(sdrPerTxt(st))}</th>` : ''}</tr></thead><tbody>
+      ${rows.sort((a, b) => b.flag - a.flag || (b.due ? b.due.overdue : 0) - (a.due ? a.due.overdue : 0) || a.c.name.localeCompare(b.c.name)).map(d => `<tr class="clickable" data-href="#/client/${d.id}/sdr" tabindex="0"><td><div class="sdr-prod"><b><a href="#/client/${d.id}/sdr">${esc(d.c.name)}</a></b><span>${esc(d.c.city || '')}</span>${d.flag ? `<span style="margin-top:6px"><span class="badge warn" data-flagged="${d.flag}">${d.flag} need${d.flag === 1 ? 's' : ''} a decision</span></span>` : ''}</div></td>${P ? `<td class="r"><b>${inr0(d.value)}</b></td>` : ''}<td class="r">${d.act.length}</td><td>${sdrShare(d.act, latest)}</td><td>${d.due && d.due.last ? ds(d.due.last) : '<span class="small muted">Not yet</span>'}</td><td>${sdrDueTxt(d.due)}</td>${P ? `<td class="r">${inr0(d.orders)}</td>` : ''}</tr>`).join('')}</tbody></table></div>`
+      : empty(dl.length ? 'Nothing for this filter' : 'No display given yet', dl.length ? 'Change or clear the filters above.' : 'Give displays to a dealer: each line is a product with its qty and our cost. Field sales inspect them every ' + sdrDays() + ' days.', dl.length ? '' : sdrBtns(''))}
+    <p class="small muted">Cost figures follow the price switch. Inspection every ${sdrDays()} days, set by the Owner in Lists &amp; stages › Rules and numbers. Anything not Well maintained goes to management for a decision.</p></div>`;
+};
+EM.VIEWS.sdr.title = () => 'Sample Display Record (SDR)';
+EM.VIEWS.sdr.tab = 'displays';   // the screen key every role already holds
+EM.VIEWS.displays = () => { location.replace('#/sdr'); return ''; };   // the old address
+EM.VIEWS.displays.title = () => 'Sample Display Record (SDR)';
+/* the dealer's SDR tab */
+function sdrDealer(c) {
+  const st = EM.sdrD[c.id] = EM.sdrD[c.id] || { period: '90d', from: '', to: '' }, A = sdrAll(), [from, to] = sdrBounds(st), P = D.access.prices;
+  const ls = A.lines.filter(l => l.client_id === c.id), checks = A.checks.filter(x => x.client_id === c.id), decs = A.decisions.filter(x => x.client_id === c.id);
+  const R = sdrRatios({ lines: ls, checks, decisions: decs, sales: sdrSales(), from, to }), latest = R.latest, due = sdrDue(ls, checks, sdrDays(), today())[c.id], flagged = new Set(sdrFlagged(ls, latest, decs).map(l => l.id)), act = ls.filter(l => l.status === 'Active');
+  const photos = l => { const n = regFiles(l.r); return `<button class="btn sm ghost" data-act="rg-files" data-id="${l.id}">Photos (${n})</button>`; };
+  const row = l => { const lt = latest[l.id], fl = flagged.has(l.id);
+    return `<tr data-sdr-line="${l.id}" class="${l.status !== 'Active' ? 'is-ro' : ''}"><td><div class="sdr-prod w"><b>${esc(l.item || regWhat(l.r) || 'Design')}</b><span>${esc(l.category || 'Category not set')} · ${esc(l.ref)}</span>${l.replaces ? `<span class="small muted">Replaces ${esc((REGS().find(x => x.id === l.replaces) || {}).ref || '')}</span>` : ''}</div></td>
+      <td class="r sdr-nw">${num(l.qty)}${P ? ` × ${l.unit_cost == null ? '' : inr0(l.unit_cost)}` : ''}</td>${P ? `<td class="r"><b>${inr0(l.total)}</b></td>` : ''}<td><div class="sdr-prod sdr-nw"><b>${l.given_on ? ds(l.given_on) : ''}</b><span style="white-space:normal">by ${esc(staffName(l.given_by))}</span></div></td>
+      <td>${l.status === 'Active' ? sdrCond(lt && lt.cond) : '<span class="small muted">Closed</span>'}${lt && lt.on ? `<div class="small muted">${ds(lt.on)}</div>` : ''}</td>
+      <td><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">${sdrSt(l.status)}${l.status === 'Written off' && canSdrDecide() ? `<button class="btn sm" data-act="sdr-decide" data-id="${l.id}" data-again="1">Decide again</button>` : ''}${fl ? (canSdrDecide() ? `<button class="btn sm primary" data-act="sdr-decide" data-id="${l.id}">Decide</button>` : `<button class="btn sm" disabled aria-disabled="true" title="Management decides" data-sdr-ro>Management decides</button>`) : ''}<div class="row" style="gap:6px;flex-wrap:wrap">${photos(l)}${isBothView() ? '' : `<button class="btn sm ghost" data-act="rg-edit" data-id="${l.id}">Change</button>${D.access.can_delete ? `<button class="btn sm ghost" data-act="rg-del" data-id="${l.id}">Delete</button>` : ''}`}</div></div></td></tr>`; };
+  /* T5 gate: the shared filter bar (search, Category, Condition, Status, Date filter with Last 90 days + Custom dates); the dates drive the ratios */
+  const condOf = l => l.status === 'Active' ? (latest[l.id] || {}).cond || 'Not checked yet' : 'Closed';
+  const { html: fbar, rows: shown } = filterBar(st, 'sdrd', { label: 'SDR lines', rows: ls, ph: 'SDR line: product, category or number', attr: 'data-sdrd-filters',
+    dd: [['cat', 'Category', 'Every category', l => l.category, null, D.lists.categories], ['cond', 'Condition', 'Every condition', condOf, null, [...SDR_COND, 'Not checked yet', 'Closed']], ['status', 'Status', 'Every status', l => l.status, null, SDR_STATUS]],
+    any: [['product', 'Product', l => l.item || regWhat(l.r)], ['cat', 'Category', l => l.category], ['ref', 'Number', l => l.ref]], date: () => 'x', inDate: () => true, periods: SDR_PERIODS, dateWhat: 'The ratios are worked out over these dates' });   // no top search: that box belongs to the Dealers list; Pick any field searches the lines
+  const log = (items, f) => items.length ? `<ul class="sdr-log">${items.map(f).join('')}</ul>` : '<p class="small muted">None yet.</p>';
+  const lineName = id => { const l = ls.find(x => x.id === id); return l ? l.item || regWhat(l.r) || l.ref : 'A line'; };
+  return `<div class="stack" data-client-sdr>
+    <div class="row between" style="align-items:flex-end;flex-wrap:wrap;gap:12px"><p class="small muted" style="max-width:720px">Sample Display Record (SDR) at ${esc(c.name)}: what we gave, how it is kept, what management decided. Inspected every ${sdrDays()} days.</p><div class="row">${sdrBtns(c.id)}</div></div>
+    <div class="sdr-glance"><div class="sdr-now" data-sdr-now><span class="sdr-k">Display value now</span><span class="sdr-v">${P ? inr0(act.reduce((t, l) => t + (l.total || 0), 0)) : num(act.length) + ' lines'}</span><span class="sdr-sub">${num(act.length)} active line${act.length === 1 ? '' : 's'} · last inspection ${due && due.last ? ds(due.last) : 'not yet'}${due && due.next ? ` · next due ${ds(due.next)}${due.overdue ? ', overdue' : ''}` : ''}</span></div>${sdrRatioCards(R, st, true)}</div>
+    <div data-sdr-dealer-date>${fbar}</div>
+    <div class="sdr-sec"><h2>Lines</h2><span class="small muted">${P ? 'Our cost, follows the price switch' : 'Money is hidden for your role'}</span></div>
+    ${shown.length ? `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Product</th><th class="r">Qty${P ? ' × our cost per unit' : ''}</th>${P ? '<th class="r">Total cost</th>' : ''}<th>Given</th><th>Current condition</th><th>Status</th></tr></thead><tbody>${shown.sort((a, b) => (a.status === 'Active' ? 0 : 1) - (b.status === 'Active' ? 0 : 1) || String(b.given_on).localeCompare(String(a.given_on))).map(row).join('')}</tbody></table></div>` : ls.length ? empty('Nothing for this filter', 'Change or clear the filters above.') : empty('No display given yet', `Displays given to ${esc(c.name)} appear here, line by line.`, sdrBtns(c.id))}
+    <div class="sdr-two"><div class="card" data-sdr-checks><div class="sdr-sec"><h2>Inspections</h2><span class="small muted">every ${sdrDays()} days</span></div>${log(checks.slice().sort((a, b) => String(b.on_date).localeCompare(String(a.on_date))), x => `<li><time>${ds(x.on_date)}</time><div><b>${esc(staffName(x.owner_id))} inspected ${x.extra.lines.length} line${x.extra.lines.length === 1 ? '' : 's'}</b> <span class="small muted">${esc(x.ref)}</span><div class="sdr-tags">${x.extra.lines.map(y => sdrCond(y.cond)).join('')}</div>${x.extra.lines.filter(y => y.remark).map(y => `<p>${esc(lineName(y.line))}: ${esc(y.remark)}</p>`).join('')}<button class="btn sm ghost" data-act="rg-files" data-id="${x.id}">Photos (${regFiles(x)})</button></div></li>`)}</div>
+      <div class="card" data-sdr-decisions><div class="sdr-sec"><h2>Decisions</h2><span class="small muted">management</span></div>${log(decs.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))), x => `<li><time>${ds(x.on_date)}</time><div><b>${esc(x.status)} · ${esc(lineName(x.extra.line))}${P && x.value != null ? ' · ' + inr0(x.value) : ''}</b><p>${esc(staffName(x.owner_id))}: ${esc(x.extra.remark || '')}</p><div class="sdr-next">${fic('arrow-right', '')}Next: ${esc(x.extra.next || '')}</div></div></li>`)}</div></div>
+  </div>`;
+}
+/* Give displays: several lines, one product per line, the total worked out */
+const sdrLineRow = (i, v = {}) => `<div class="sdr-lrow" data-sdr-lrow="${i}"><select class="input" aria-label="Category" name="category"><option value="">Choose</option>${D.lists.categories.map(c => `<option ${v.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+  <select class="input" aria-label="Product" name="product_id"><option value="">Not a design (type it)</option>${((INVD() || { products: [] }).products || []).map(p => `<option value="${p.id}" ${v.product_id === p.id ? 'selected' : ''}>${esc(p.name)}${p.code ? ' · ' + esc(p.code) : ''}</option>`).join('')}</select>
+  <input class="input" aria-label="Product (if not a design)" name="item" placeholder="Product (if not a design)" value="${esc(v.item || '')}"><input class="input r" aria-label="Qty" name="qty" type="number" min="1" step="1" inputmode="numeric" value="${esc(v.qty || 1)}">
+  ${D.access.prices ? `<div class="adorn"><span class="pre">₹</span><input class="input r" aria-label="Our cost per unit" name="unit_cost" type="number" min="0" step="0.01" value="${esc(v.unit_cost ?? '')}"></div><span class="sdr-tot" data-sdr-tot>₹0</span>` : '<span class="small muted">Cost: management fills it</span><span></span>'}<button type="button" class="iconbtn" aria-label="Remove line" data-act="sdr-line-x">${fic('x', '')}</button></div>`;
+const sdrGiveSum = () => { if (!D.access.prices) return; let t = 0, n = 0; document.querySelectorAll('#sdrg [data-sdr-lrow]').forEach(r => { const q = Number(r.querySelector('[name=qty]').value) || 0, u = Number(r.querySelector('[name=unit_cost]').value) || 0; n++; t += q * u; r.querySelector('[data-sdr-tot]').textContent = inr0(q * u); });
+  const s = qs('#sdrg [data-sdr-sum]'); if (s) s.innerHTML = `<span>${n} line${n === 1 ? '' : 's'} · display value given</span><b>${inr0(t)}</b>`; };
+document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#sdrg [data-sdr-lrow]')) sdrGiveSum(); });
+EM.ACTIONS['sdr-give'] = el => {
+  const cid = el.dataset.client || '', dealers = D.clients.filter(c => DEALER_KINDS.includes(c.kind) && inDiv(c)).sort((a, b) => a.name.localeCompare(b.name));
+  EM.modal(`<div class="sdr-give" id="sdrg" data-sdr-give><div class="stack-s"><div class="kicker">Sample Display Record (SDR)</div><h2 style="margin:0">Give displays</h2></div>
+    <div class="sdr-top"><div class="field"><label for="sdrg-c">Dealer</label><select class="input" id="sdrg-c"><option value="">Choose</option>${dealers.map(c => `<option value="${c.id}" ${c.id === cid ? 'selected' : ''}>${esc(c.name)} · ${esc(c.city || '')}</option>`).join('')}</select></div>
+      <div class="field"><label for="sdrg-d">Date given</label><input class="input" type="date" id="sdrg-d" value="${today()}" max="${today()}"></div>
+      <div class="field"><label for="sdrg-b">Given by</label><select class="input" id="sdrg-b">${D.staff.filter(s => s.active).map(s => `<option value="${s.id}" ${s.id === me().id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div></div>
+    <div class="sdr-lines" data-sdr-lines><div class="sdr-lrow head"><span>Category</span><span>Product</span><span></span><span class="r">Qty</span><span class="r">${D.access.prices ? 'Our cost per unit' : ''}</span><span class="r">${D.access.prices ? 'Total cost' : ''}</span><span></span></div>${sdrLineRow(0)}
+      <div><button class="btn sm" data-act="sdr-line-add">${fic('plus', 'fd-ic')}Add line</button></div></div>
+    <p class="small muted">Photos: after Save displays, add them here (many at a time; each opens in the browser, downloads and shares).</p>
+    ${D.access.prices ? '<div class="sdr-sum" data-sdr-sum><span>1 line · display value given</span><b>₹0</b></div>' : ''}
+    ${errBox('sdrg-err')}<div class="row sticky-actions" style="justify-content:flex-end"><button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="sdr-give-save">Save displays</button></div></div>`);
+};
+EM.ACTIONS['sdr-line-add'] = el => { const n = document.querySelectorAll('#sdrg [data-sdr-lrow]').length; el.parentElement.insertAdjacentHTML('beforebegin', sdrLineRow(n)); sdrGiveSum(); };
+EM.ACTIONS['sdr-line-x'] = el => { if (document.querySelectorAll('#sdrg [data-sdr-lrow]').length > 1) el.closest('[data-sdr-lrow]').remove(); sdrGiveSum(); };
+EM.ACTIONS['sdr-give-save'] = async el => {
+  const lines = [...document.querySelectorAll('#sdrg [data-sdr-lrow]')].map(r => Object.fromEntries([...r.querySelectorAll('[name]')].map(i => [i.name, i.value])));
+  const input = { client_id: qs('#sdrg-c').value, on_date: qs('#sdrg-d').value, given_by: qs('#sdrg-b').value, lines };
+  busy(el, true);
+  try { const r = await API('POST', '/api/registers/sdr/give', input); D.registers = REGS(); for (const x of r.lines) upsertLocal(D.registers, x);
+    const first = r.lines[0];
+    EM.modal(`<div class="stack" data-sdr-given><h2>${r.lines.length} display${r.lines.length === 1 ? '' : 's'} given to ${esc(clientName(input.client_id))}</h2><p class="small muted">${r.lines.map(x => esc(x.ref)).join(', ')}. Add photos now: they are kept on ${esc(first.ref)}; each line has its own Photos button too.</p>
+      ${filesBox({ id: 'rg', register: first.id, types: ['Display photo', 'Inspection photo', 'Invoice', 'Other'], docs: [], canAdd: true, title: 'Add photos', note: 'One or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No photos yet' })}
+      <div class="row"><button class="btn" data-act="close-modal">Done</button></div></div>`);
+    EM.rerender(); }
+  catch (x) { busy(el, false); showErr('sdrg-err', x.errors || x.message); }
+};
+/* Inspect (console; the field app does the same inside a visit, T5) */
+EM.ACTIONS['sdr-inspect'] = el => {
+  const c = CL()[el.dataset.client]; if (!c) return; const A = sdrAll(), act = A.lines.filter(l => l.client_id === c.id && l.status === 'Active');
+  if (!act.length) return bubbleNear(el, `No active display at ${c.name} to inspect.`);
+  EM.modal(`<div class="stack" id="sdri" data-sdr-inspect><div class="stack-s"><div class="kicker">Sample Display Record (SDR) · ${esc(c.name)}</div><h2 style="margin:0">Inspect displays</h2></div>
+    <div class="field" style="max-width:220px"><label for="sdri-d">Visit date</label><input class="input" type="date" id="sdri-d" value="${today()}" max="${today()}"></div>
+    ${act.map(l => `<div class="card stack-s" data-sdri-line="${l.id}"><div><b>${esc(l.item || regWhat(l.r) || 'Design')}</b> <span class="small muted">${esc(l.category)} · qty ${num(l.qty)} · given ${ds(l.given_on)}</span></div>
+      <fieldset class="sdr-choices" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:600">Condition</legend><div class="row" style="flex-wrap:wrap;gap:8px">${SDR_COND.map(k => `<label class="row" style="gap:6px"><input type="radio" name="c${l.id}" value="${esc(k)}">${sdrCond(k)}</label>`).join('')}</div></fieldset>
+      <div class="field"><label for="sdri-r-${l.id}">Remarks <span class="small muted">(needed when not Well maintained)</span></label><textarea class="input" rows="2" id="sdri-r-${l.id}"></textarea></div></div>`).join('')}
+    <div class="callout" role="note">${fic('info-circle', '')} Anything not Well maintained goes to management at once for a decision. Photos: add them after saving.</div>
+    ${errBox('sdri-err')}<div class="row sticky-actions" style="justify-content:flex-end"><button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="sdr-inspect-save" data-client="${c.id}">Save inspection</button></div></div>`);
+};
+EM.ACTIONS['sdr-inspect-save'] = async el => {
+  const lines = [...document.querySelectorAll('#sdri [data-sdri-line]')].map(d => ({ line: d.dataset.sdriLine, cond: (d.querySelector('input[type=radio]:checked') || {}).value || '', remark: d.querySelector('textarea').value }));
+  const bad = lines.filter(x => x.cond && x.cond !== 'Well maintained' && !x.remark.trim());
+  document.querySelectorAll('#sdri [data-sdri-line] .field').forEach(f => f.classList.remove('has-err'));
+  if (bad.length) { showErr('sdri-err', 'Write what is wrong, so management can decide (remarks are needed when it is not Well maintained).'); bad.forEach(x => qs(`#sdri-r-${x.line}`).closest('.field').classList.add('has-err')); return; }   // showErr clears marks first
+  busy(el, true);
+  try { const r = await API('POST', '/api/registers/sdr/inspect', { client_id: el.dataset.client, on_date: qs('#sdri-d').value, lines: lines.filter(x => x.cond) }); D.registers = REGS(); upsertLocal(D.registers, r.check);
+    EM.modal(`<div class="stack" data-sdr-inspected><h2>Inspection ${esc(r.check.ref)} saved</h2><p class="small muted">${r.flagged ? `${r.flagged} display${r.flagged === 1 ? '' : 's'} not Well maintained: management has a bell line to decide.` : 'Every display checked is Well maintained.'}</p>
+      ${filesBox({ id: 'rg', register: r.check.id, types: ['Inspection photo', 'Display photo', 'Other'], docs: [], canAdd: true, title: 'Add photos', note: 'One or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No photos yet' })}<div class="row"><button class="btn" data-act="close-modal">Done</button></div></div>`);
+    EM.rerender(); }
+  catch (x) { busy(el, false); showErr('sdri-err', x.errors || x.message); }
+};
+/* Decide (management only) */
+EM.ACTIONS['sdr-decide'] = el => {
+  const A = sdrAll(), l = A.lines.find(x => x.id === el.dataset.id); if (!l) return; const c = CL()[l.client_id] || { name: '' }, lt = sdrLatest(A.lines, A.checks)[l.id] || {}, P = D.access.prices;
+  const v = P ? inr0(l.total) : '', ch = (k, icn, word, val, say) => `<label class="sdr-choice"><input type="radio" name="sdrx" value="${k}" ${k === 'Replace' ? 'checked' : ''}>${fic(icn, '')}<b>${word}</b><span class="sdr-val">${val}</span><span>${say}</span></label>`;
+  EM.modal(`<div class="sdr-decide" role="dialog" aria-labelledby="sdrx-h" id="sdrx" data-sdr-decide><div class="stack-s"><div class="kicker">${esc(c.name)} · management decides</div><h3 id="sdrx-h">${esc(l.item || regWhat(l.r) || 'Design')}</h3></div>
+    <div class="sdr-found"><div class="row between">${sdrCond(lt.cond)}<span class="small muted">${esc(lt.by ? staffName(lt.by) : 'Saved condition')}${lt.on ? ', ' + ds(lt.on) : ''}</span></div><div>${esc(lt.remark || '')}</div><div class="small muted">${esc(l.category)} · qty ${num(l.qty)}${P ? ' · our cost ' + inr0(l.unit_cost) : ''} · given ${ds(l.given_on)}</div></div>
+    <fieldset class="sdr-choices" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:600;margin-bottom:6px">Decision</legend>
+      ${ch('Replace', 'replace', 'Replace', v, 'This line becomes Replaced. A new line: same product, qty and cost, dated today.')}${l.status === 'Written off' ? '' : ch('Mark as loss', 'circle-minus', 'Mark as loss', v, 'Written off. Its cost is counted as lost.')}${ch('Keep as is', 'check', 'Keep as is', P ? '₹0' : '', l.status === 'Written off' ? 'Back to Active: no longer counted as lost. Checked again at the next inspection.' : 'Stays Active. Checked again at the next inspection.')}</fieldset>
+    <div class="field" id="sdrx-f"><label for="sdrx-r">Remark</label><textarea class="input" id="sdrx-r" rows="2"></textarea></div>
+    <div class="sdr-next">${fic('arrow-right', '')}Next: the field person who looks after ${esc(c.name)} acts on it (the History line names them)</div>
+    ${errBox('sdrx-err')}<div class="sdr-acts"><button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="sdr-decide-save" data-id="${l.id}">Save decision</button></div></div>`);
+};
+EM.ACTIONS['sdr-decide-save'] = async el => {
+  const remark = qs('#sdrx-r').value.trim(), decision = (qs('#sdrx input[name=sdrx]:checked') || {}).value;
+  if (!remark) { qs('#sdrx-f').classList.add('has-err'); if (!qs('#sdrx-f .err')) qs('#sdrx-f').insertAdjacentHTML('beforeend', '<span class="err">Write a remark, so the field team knows what to do</span>'); return; }
+  busy(el, true);
+  try { const r = await API('POST', '/api/registers/sdr/decide', { line: el.dataset.id, decision, remark }); D.registers = REGS(); for (const x of [r.decision, r.line, r.new_line].filter(Boolean)) upsertLocal(D.registers, x);
+    EM.closeModal(); EM.toast(`<b>${esc(decision)} saved</b><ul><li>Next: ${esc(r.next)}</li></ul>`); EM.rerender(); }
+  catch (x) { busy(el, false); showErr('sdrx-err', x.message); }
 };
 /* on the project page: its samples */
 function projectSamples(p) { const rs = REGS().filter(r => r.kind === 'sample' && r.project_id === p.id);
@@ -4934,8 +5091,8 @@ function regField(f, v, kind, div) {
 }
 function openRegForm(kind, r, pre = {}) {
   const div = r ? r.division : kind === 'supplier' ? 'wholesale' : EM.div !== 'both' ? EM.div : '', fields = showFields(REG_FIELDS[kind]);
-  const v = r ? { ...r, ...r.extra, recipient: r.project_id ? 'project:' + r.project_id : r.client_id } : { owner_id: (CL()[pre.client] || {}).owner_id || me().id, on_date: today(), qty: 1, billed: 'Free', status: kind === 'sample' ? 'Not due' : kind === 'display' ? 'Good' : '', recipient: pre.project ? 'project:' + pre.project : pre.client || '', client_id: pre.client || '' };
-  EM.modal(`<h2>${r ? `Change ${esc(REG_KINDS[kind].label.toLowerCase())} ${esc(r.ref)}` : esc(REG_TXT[kind].add.replace('+ ', ''))}</h2><p class="muted small">${div ? esc(regCo(div)) : 'The company follows the dealer, architect, person or project you choose.'}${kind === 'sample' ? ' Entered by hand now; filled from Tally once it is connected.' : ''}</p>
+  const v = r ? { ...r, ...r.extra, recipient: r.project_id ? 'project:' + r.project_id : r.client_id } : { owner_id: (CL()[pre.client] || {}).owner_id || me().id, on_date: today(), qty: 1, billed: 'Free', status: kind === 'sample' ? 'Not due' : kind === 'display' ? 'Active' : '', given_by: me().id, qty: 1, recipient: pre.project ? 'project:' + pre.project : pre.client || '', client_id: pre.client || '' };
+  EM.modal(`<h2>${r ? `Change ${esc(lcLabel(REG_KINDS[kind].label))} ${esc(r.ref)}` : esc(REG_TXT[kind].add.replace('+ ', ''))}</h2><p class="muted small">${div ? esc(regCo(div)) : 'The company follows the dealer, architect, person or project you choose.'}${kind === 'sample' ? ' Entered by hand now; filled from Tally once it is connected.' : ''}</p>
     <form id="rgf" class="stack" onsubmit="return false" style="margin-top:12px"><div class="fgrid">${fields.map(f => regField(f, v[f.key], kind, div)).join('')}</div>
     <p class="small muted">${kind === 'display' ? 'Photos' : kind === 'training' ? 'The certificate' : 'Files'}: add them after saving, from the row (many at a time; each opens in the browser, downloads and shares).</p>
     ${errBox('rg-err')}<div class="row sticky-actions"><button class="btn primary" data-act="rg-save" data-kind="${kind}" data-id="${r ? r.id : ''}">${r ? 'Save changes' : 'Save'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
@@ -4951,7 +5108,7 @@ EM.ACTIONS['rg-save'] = async el => {
   catch (x) { busy(el, false); showErr('rg-err', x.errors || x.message); }
 };
 EM.ACTIONS['rg-del'] = async el => {
-  const r = REGS().find(x => x.id === el.dataset.id); if (!r || !confirm(`Delete ${REG_KINDS[r.kind].label.toLowerCase()} ${r.ref}? It stays in the Recycle bin for 30 days.`)) return;
+  const r = REGS().find(x => x.id === el.dataset.id); if (!r || !confirm(`Delete ${lcLabel(REG_KINDS[r.kind].label)} ${r.ref}? It stays in the Recycle bin for 30 days.`)) return;
   try { await API('DELETE', '/api/registers/' + r.id); D.registers = REGS().filter(x => x.id !== r.id); EM.toast(`${esc(REG_KINDS[r.kind].label)} ${esc(r.ref)} deleted, in the Recycle bin for 30 days.`); EM.rerender(); } catch (x) { bubbleNear(el, x.message); }
 };
 EM.ACTIONS['rg-files'] = el => { const r = REGS().find(x => x.id === el.dataset.id); if (!r) return;
@@ -4964,8 +5121,9 @@ const REG_SHEET = {
   sample: [['Company', 'company', true, 'EGO Premium or Big E.'], ['Given to', 'who', true, 'A dealer, architect, person or project, as on the list (the dropdown holds them).'], ['Mobile of who it was given to', 'who_mobile', false, 'Optional: finds the right one when two share a name.'],
     ['Design code', 'design', false, 'A design code or name from Inventory. Or leave empty and fill Sample item.'], ['Sample item', 'item', false, 'Board, catalogue, swatch, if not a design.'], ['Quantity', 'qty', true, 'A whole number, 1 or more.'], ['Value', 'value', false, 'In rupees, before GST.'], ['Billed or free', 'billed', true, 'Billed or Free.'],
     ['Date given', 'on_date', true, 'A date, e.g. 2026-10-17.'], ['Return status', 'status', true, SAMPLE_RETURN.join(', ') + '.'], ['Owner at EGO', 'owner', false, 'A person on the team. Empty: the owner of who it was given to.'], ['Notes', 'notes', false, '']],
-  display: [['Company', 'company', true, 'EGO Premium or Big E.'], ['Dealer', 'who', true, 'As on the Dealers list (the dropdown holds them).'], ['Mobile of the dealer', 'who_mobile', false, 'Optional.'], ['Design code', 'design', false, 'A design code or name. Or fill Product.'], ['Product', 'item', false, 'If not a design.'],
-    ['Display type', 'display_type', true, 'From the list (the Owner edits it in Lists & stages).'], ['Installed on', 'on_date', true, 'A date.'], ['Cost', 'value', false, 'In rupees.'], ['Condition', 'status', true, DISPLAY_CONDITION.join(', ') + '.'], ['Last inspection', 'last_inspection', false, 'A date.'], ['Replacement due', 'due_date', false, 'A date. The bell reminds 7 days before and on the day.'], ['Owner at EGO', 'owner', false, ''], ['Notes', 'notes', false, '']],
+  display: [['Company', 'company', true, 'EGO Premium or Big E.'], ['Dealer', 'who', true, 'As on the Dealers list (the dropdown holds them).'], ['Mobile of the dealer', 'who_mobile', false, 'Optional.'],   // T4: one SDR line per row
+    ['Category', 'category', true, 'From the category list (one per line).'], ['Design code', 'design', false, 'A design code or name from Inventory. Or leave empty and fill Product.'], ['Product', 'item', false, 'If not a design: board, stand, mock-up floor.'],
+    ['Qty', 'qty', true, 'A number, more than 0.'], ['Our cost per unit', 'unit_cost', true, 'In rupees. The total is worked out.'], ['Date given', 'on_date', true, 'A date, e.g. 2026-10-17.'], ['Given by', 'given_by', false, 'A person on the team. Empty: you.'], ['Status', 'status', false, 'Active or Returned to us. Empty: Active.'], ['Notes', 'notes', false, '']],
   training: [['Company', 'company', true, 'EGO Premium or Big E.'], ['Audience', 'audience', true, TRAINING_AUDIENCE.join(', ') + '.'], ['Person', 'person', false, 'The person trained. Person or Firm (or both) is compulsory.'], ['Firm', 'who', false, 'A dealer, architect or company on the list.'], ['Course', 'course', true, 'What the course was called.'],
     ['Course kind', 'course_kind', true, 'From the list; Installer certification makes an installer certified until its expiry.'], ['Product category', 'product', false, 'From the category list.'], ['Date', 'on_date', true, 'A date.'], ['Trainer', 'trainer', false, ''], ['Score', 'score', false, 'Out of 100.'], ['Expiry', 'due_date', false, 'A date.'], ['Owner at EGO', 'owner', false, ''], ['Notes', 'notes', false, '']],
 };
@@ -4977,7 +5135,7 @@ EM.ACTIONS['rg-sample'] = async el => {
     const cs = D.clients.filter(inDiv), names = a => [...new Set(a.map(c => c.name))].sort();
     const L = { company: ['wholesale', 'retail'].filter(canDiv).map(d => DIVS[d].co), owner: D.staff.filter(s => s.active).map(s => s.name), design: ((INVD() || { products: [] }).products || []).map(p => p.code || p.name),
       who: kind === 'sample' ? [...names(cs), ...PJS().filter(inDiv).map(p => p.name)] : kind === 'display' ? names(cs.filter(c => DEALER_KINDS.includes(c.kind))) : names(cs),
-      billed: ['Billed', 'Free'], status: kind === 'sample' ? SAMPLE_RETURN : DISPLAY_CONDITION, display_type: REG_FILT.display[0][3](), audience: TRAINING_AUDIENCE, course_kind: regCourseKinds(), product: D.lists.categories, ...regSheetLists(kind) };
+      billed: ['Billed', 'Free'], status: kind === 'sample' ? SAMPLE_RETURN : ['Active', 'Returned to us'], category: D.lists.categories, given_by: D.staff.filter(s => s.active).map(s => s.name), audience: TRAINING_AUDIENCE, course_kind: regCourseKinds(), product: D.lists.categories, ...regSheetLists(kind) };
     const used = Object.fromEntries(Object.entries(L).filter(([k]) => S.some(([, sk]) => sk === k)));
     Object.entries(used).forEach(([k, vals], i) => { lists.getCell(1, i + 1).value = k; vals.forEach((v, r) => { lists.getCell(r + 2, i + 1).value = v; }); });
     lists.state = 'hidden';
@@ -5166,5 +5324,6 @@ for (const [g, tabs] of Object.entries(NAV_GROUP)) for (const [t] of tabs) {
   Object.assign(w, v); EM.VIEWS[t] = w;
 }
 NAV_HELP.fieldteam = 'Field team: Attendance (who started the day, when, where, the photo, late marks) and Roadmap (each person\'s visits for the day).';
-NAV_HELP.dealers += ' Tabs: Samples, Displays, Training.';
+NAV_HELP.sdr = NAV_HELP.displays;
+NAV_HELP.dealers += ' Tabs: Samples, Sample Display Record (SDR), Training.';
 NAV_HELP.opps += ' Tab: Priority calls.';

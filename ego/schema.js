@@ -202,6 +202,8 @@ const OPP_FIELDS = [
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ];
 /* the name a sale gets when nobody typed one: who · what · when */
+/* T3 19 Oct: categories picked are a list; an old single string (saved before the multi-select) reads as a one-item list, never rewritten */
+const listOf = v => Array.isArray(v) ? v.filter(x => x !== '' && x != null).map(String) : v == null || v === '' ? [] : [String(v)];
 const oppAutoName = (client, what, iso) => [client, what, new Date((iso || new Date().toISOString()).slice(0, 10) + 'T00:00:00Z').toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' })].filter(Boolean).join(' · ');
 /* a client's main address as one block, the first choice for billing */
 const mainAddress = c => { const x = { ...c, ...(c && c.extra) }; return [x.address, x.locality, x.city, x.state, x.pincode].map(v => String(v || '').trim()).filter(Boolean).join(', '); };
@@ -264,7 +266,10 @@ function cleanProject(input, ctx) {
    Entered by hand now; samples are filled from Tally once it is connected (Q5). */
 const REG_KINDS = {
   sample: { label: 'Sample', plural: 'Samples', prefix: 'SM', tab: 'samples' },
-  display: { label: 'Display', plural: 'Displays', prefix: 'DP', tab: 'displays' },
+  /* T4 (19 Oct): a display row IS a Sample Display Record (SDR) line; old rows read as lines untouched (sdrLine) */
+  display: { label: 'SDR line', plural: 'Sample Display Record (SDR)', prefix: 'DP', tab: 'displays' },
+  sdr_check: { label: 'SDR inspection', plural: 'SDR inspections', prefix: 'SI', tab: 'displays' },
+  sdr_decision: { label: 'SDR decision', plural: 'SDR decisions', prefix: 'SX', tab: 'displays' },
   training: { label: 'Training record', plural: 'Training', prefix: 'TR', tab: 'training' },
   /* R6b (17 Oct, plan section C): the Installer and Supplier masters and the EGO Champion record live in the same table */
   installer: { label: 'Installer', plural: 'Installers', prefix: 'IN', tab: 'installers' },
@@ -281,7 +286,12 @@ const OPP_NET_SQL = "COALESCE(NULLIF(CAST(json_extract(extra, '$.subtotal') AS R
 /* EGO Champion points: per won sale they are tagged on (Rules and numbers: champion_points, default 10) */
 const championPoints = rules => Math.max(0, Math.round(Number((rules || {}).champion_points ?? 10)));
 const SAMPLE_RETURN = ['Not due', 'Returned', 'Kept', 'Lost'];
-const DISPLAY_CONDITION = ['Good', 'Worn', 'Damaged'];
+const DISPLAY_CONDITION = ['Good', 'Worn', 'Damaged'];   // R6a, the condition an old display row carries in status
+/* T4 (19 Oct): the Sample Display Record (SDR) */
+const SDR_NAME = 'Sample Display Record (SDR)';
+const SDR_COND = ['Well maintained', 'Needs attention', 'Damaged', 'Missing'];
+const SDR_STATUS = ['Active', 'Replaced', 'Written off', 'Returned to us'];
+const SDR_DECIDE = ['Replace', 'Mark as loss', 'Keep as is'];
 const TRAINING_AUDIENCE = ['Dealer', 'Dealer staff', 'Installer', 'Employee', 'Architect'];
 /* the course kind that makes an installer certified (while unexpired); always offered, whatever the Owner's list says */
 const CERT_COURSE = 'Installer certification';
@@ -299,17 +309,16 @@ const REG_FIELDS = {
     { key: 'owner_id', label: 'Owner at EGO', type: 'owner' },
     { key: 'notes', label: 'Notes', type: 'textarea' },
   ],
-  display: [
+  display: [   // T4: one SDR line (one line is one product, so category and product are single)
     { key: 'client_id', label: 'Dealer', type: 'dealer', req: true },
+    { key: 'category', label: 'Category', type: 'cat', req: true },
     { key: 'product_id', label: 'Design', type: 'design' },
     { key: 'item', label: 'Product (if not a design)', type: 'text' },
-    { key: 'display_type', list: 'display_types', label: 'Display type', type: 'select', opts: ['Board', 'Stand', 'Mock-up floor', 'Other'], req: true },
-    { key: 'on_date', label: 'Installed on', type: 'date', req: true },
-    { key: 'value', label: 'Cost (₹)', type: 'money' },
-    { key: 'status', label: 'Condition', type: 'select', opts: DISPLAY_CONDITION, req: true },
-    { key: 'last_inspection', label: 'Last inspection', type: 'date' },
-    { key: 'due_date', label: 'Replacement due', type: 'date' },
-    { key: 'owner_id', label: 'Owner at EGO', type: 'owner' },
+    { key: 'qty', label: 'Qty', type: 'number', req: true },
+    { key: 'unit_cost', label: 'Our cost per unit (₹)', type: 'money' },
+    { key: 'on_date', label: 'Date given', type: 'date', req: true },
+    { key: 'given_by', label: 'Given by', type: 'owner' },
+    { key: 'status', label: 'Status', type: 'select', opts: ['Active', 'Returned to us'] },
     { key: 'notes', label: 'Notes', type: 'textarea' },
   ],
   training: [
@@ -361,7 +370,7 @@ const REG_FIELDS = {
 /* a register row checked: the fields, then the rule of its kind. Links (recipient, dealer, firm, design) are checked by the Worker */
 function cleanReg(kind, input, ctx) {
   const errors = [], rec = {}, extra = {};
-  if (!REG_FIELDS[kind]) return { rec, extra, errors: ['Which register: Samples, Displays, Training, Installers, Suppliers or EGO Champions'] };
+  if (!REG_FIELDS[kind]) return { rec, extra, errors: ['Which register: Samples, Sample Display Record (SDR), Training, Installers, Suppliers or EGO Champions'] };
   for (const f of REG_FIELDS[kind]) {
     if (f.type === 'recipient') continue;
     const fx = f.key === 'course_kind' ? { ...f, opts: [...new Set([...optsOf(f, ctx && ctx.lists), CERT_COURSE])], list: null } : f;
@@ -375,6 +384,8 @@ function cleanReg(kind, input, ctx) {
   if (kind === 'sample' && !rec.product_id && !rec.item) errors.push('Say what was given: a design, or a sample item (board, catalogue, swatch)');
   if (kind === 'sample' && extra.qty != null && extra.qty < 1) errors.push('Quantity is 1 or more');
   if (kind === 'display' && !rec.product_id && !rec.item) errors.push('Say what is on display: a design, or the product');
+  if (kind === 'display' && extra.qty != null && !(extra.qty > 0)) errors.push('Qty is more than 0');
+  if (kind === 'display' && extra.unit_cost != null && extra.unit_cost < 0) errors.push('Our cost per unit is 0 or more');
   if (kind === 'training' && !extra.person && !rec.client_id) errors.push('Say who was trained: the person, the firm, or both');
   if (kind === 'training' && extra.score != null && extra.score > 100) errors.push('Score is out of 100');
   if (kind === 'supplier' && extra.lead_days != null && (extra.lead_days < 0 || !Number.isInteger(extra.lead_days))) errors.push('Lead time is a whole number of days');
@@ -919,6 +930,7 @@ const DEFAULT_RULES = {
   dormant_days: 60,
   /* R6a: sales in this many days after a sample count against it (sample spend vs sales after it) */
   sample_window_days: 90,
+  sdr_inspect_days: 30,   // T4: every dealer's SDR displays are inspected this often
   /* R6b: EGO Champion points for each won sale they are tagged on */
   champion_points: 10,
   /* R7: normal days per production stage (after the stage before); empty = PROD_DAYS */
@@ -1177,6 +1189,13 @@ const FIELD_TABS = {
 };
 /* R5 (plan point 20): telesales see every dealer, architect and person in their company; their Home and My numbers stay their own */
 const TELE_ROLES = ['ws_tele', 'rt_tele'];
+/* T2 (Bhargav 19 Oct): "Everyone can register complaints. Fulfillment is done only by the management and the telesales team."
+   Assign, move status, resolve, settle and close: management + telesales. Everyone else raises, adds notes and photos, sees status.
+   One rule, used by every complaint route in the Worker and by the screens (live.js, field.js, portal.js). */
+const COMPLAINT_RESOLVERS = ['owner', 'director', 'ws_head', 'rt_head', 'ws_rm', 'rt_project', ...TELE_ROLES];
+const canResolveComplaint = role => COMPLAINT_RESOLVERS.includes(role);
+const CMP_RESOLVE_NO = 'Telesales and management resolve complaints. You can add a note or photos.';
+const CMP_WHO = 'Anyone can raise a complaint. Telesales and management resolve it.';
 /* R5 (plan point 9): who installed the floor a complaint is about */
 const COMPLAINT_INSTALLED_BY = { contractor: 'Our contractor', dealer: "A dealer's team", other: 'Other' };
 /* R5: what a file on an opportunity is; Quotation first (MOU: multiple quotation upload slots) */
@@ -1223,3 +1242,68 @@ function reqStep(o, lists) {
   return { step, label: REQ_STEPS[step - 1] };
 }
 DEFAULT_LISTS.field_req_owner = { wholesale: '', retail: '' };
+
+/* ---------------------------------------------------------------- T4 (19 Oct): Sample Display Record (SDR)
+   Lines are registers rows of kind display; an inspection is kind sdr_check (extra.lines: [{ line, cond, remark }]); a
+   decision is kind sdr_decision (extra.line, extra.check, status = the decision, value = the cost it moves).
+   Management decides: the complaint resolvers without telesales. Field sales give and inspect; telesales see. */
+const SDR_MANAGERS = COMPLAINT_RESOLVERS.filter(r => !TELE_ROLES.includes(r));
+const canDecideSdr = role => SDR_MANAGERS.includes(role);
+const canGiveSdr = role => role === 'ws_field' || canDecideSdr(role);
+const SDR_NO_DECIDE = 'Management decides on SDR displays. You can inspect them and add photos.';
+const SDR_NO_GIVE = 'Field sales and management give and inspect SDR displays. You can see them.';
+/* how often a dealer's displays are inspected (Rules and numbers: sdr_inspect_days, default 30) */
+const sdrInspectDays = rules => Math.max(1, Math.round(Number((rules || {}).sdr_inspect_days) || 30));
+const SDR_OLD_COND = { Good: 'Well maintained', Worn: 'Needs attention', Damaged: 'Damaged' };
+/* a display row read as an SDR line. An old R6a row (status Good / Worn / Damaged) is Active, and its saved condition counts
+   as checked on its last inspection date (else the day it was installed). Nothing is rewritten. */
+function sdrLine(r) {
+  const x = (typeof r.extra === 'string' ? JSON.parse(r.extra || '{}') : r.extra) || {}, old = !SDR_STATUS.includes(r.status);
+  const qty = Number(x.qty) || 1, total = r.value == null ? null : Number(r.value) || 0;
+  return { id: r.id, ref: r.ref, client_id: r.client_id, division: r.division, category: x.category || '', product_id: r.product_id || '', item: r.item || '',
+    qty, unit_cost: x.unit_cost != null ? Number(x.unit_cost) : total == null ? null : total / qty, total, given_on: r.on_date || '', given_by: x.given_by || r.owner_id || '',
+    status: old ? 'Active' : r.status, replaced_by: x.replaced_by || '', replaces: x.replaces || '', old: old ? SDR_OLD_COND[r.status] || '' : '', old_on: old ? x.last_inspection || r.on_date || '' : '' };
+}
+/* each line's latest condition: the newest inspection that checked it, else an old row's own condition */
+function sdrLatest(lines, checks) {
+  const out = {};
+  for (const l of lines) if (l.old) out[l.id] = { cond: l.old, on: l.old_on, check: 'old', by: '', remark: '' };
+  const cs = [...checks].sort((a, b) => String(a.on_date).localeCompare(String(b.on_date)) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
+  for (const c of cs) for (const x of ((c.extra || {}).lines || [])) out[x.line] = { cond: x.cond, on: c.on_date, check: c.id, by: c.owner_id, remark: x.remark || '' };
+  return out;
+}
+/* a line waits for management when it is Active and its latest condition is not Well maintained and nobody has decided on it since */
+const sdrFlagged = (lines, latest, decisions) => lines.filter(l => l.status === 'Active' && latest[l.id] && latest[l.id].cond !== 'Well maintained'
+  && !decisions.some(d => (d.extra || {}).line === l.id && (d.extra || {}).check === latest[l.id].check));
+/* THE three SDR ratios, one function for the Worker and the screens. lines: sdrLine[] (one dealer or many);
+   checks, decisions: register rows; sales: [{ client_id, at: YYYY-MM-DD, value }] before GST; from / to: the Date filter. */
+function sdrRatios({ lines, checks, decisions, sales, from, to }) {
+  const inP = d => !!d && (!from || d >= from) && (!to || d <= to), sum = (a, f) => a.reduce((t, x) => t + (Number(f(x)) || 0), 0);
+  const dealers = new Set(lines.map(l => l.client_id)), active = lines.filter(l => l.status === 'Active'), latest = sdrLatest(lines, checks);
+  const orders = sum(sales.filter(s => dealers.has(s.client_id) && inP(s.at)), s => s.value), shown = sum(active, l => l.total);
+  const checked = active.filter(l => latest[l.id]), good = checked.filter(l => latest[l.id].cond === 'Well maintained');
+  /* T5: each line's LATEST decision only, so a Written off line decided again (Replace, Keep as is) is no longer counted as lost */
+  const byId = Object.fromEntries(lines.map(l => [l.id, l])), last = {};
+  for (const d of [...decisions].sort((a, b) => String(a.on_date).localeCompare(String(b.on_date)) || String(a.created_at || '').localeCompare(String(b.created_at || '')))) if (byId[(d.extra || {}).line]) last[d.extra.line] = d;
+  const dec = Object.values(last).filter(d => inP(d.on_date));
+  const lost = sum(dec.filter(d => d.status === 'Mark as loss'), d => byId[d.extra.line].total), replaced = sum(dec.filter(d => d.status === 'Replace'), d => byId[d.extra.line].total);
+  const given = sum(lines.filter(l => inP(l.given_on)), l => l.total);
+  return { orders, shown, per: shown ? orders / shown : null, checked: checked.length, good: good.length, goodShare: checked.length ? good.length / checked.length : null,
+    lost, replaced, given, lostShare: given ? (lost + replaced) / given : null, latest };
+}
+/* T5: THE day a won Big E opportunity counts as a sale (SDR ratio (i), Analysis, Targets on the screens): the last time it
+   reached its won stage in the stage history, else closed_at, else updated_at, as an IST day. hist: opp_history rows. */
+const wonDay = (o, hist) => { const h = (hist || []).filter(x => x.opp_id === o.id && x.to_stage === o.stage).sort((a, b) => String(a.at).localeCompare(String(b.at))).pop(); return istDay((h && h.at) || o.closed_at || o.updated_at); };
+/* when each dealer's displays are next inspected: the last inspection (or, never inspected, the oldest active line's date
+   given) plus the cadence. Overdue = that date is before today. Only dealers with an active line. */
+function sdrDue(lines, checks, days, today) {
+  const out = {}, add = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+  for (const l of lines.filter(x => x.status === 'Active' && x.given_on)) {
+    const o = out[l.client_id] = out[l.client_id] || { client_id: l.client_id, last: '', first: l.given_on };
+    if (l.given_on < o.first) o.first = l.given_on;
+    if (l.old_on && l.old_on > o.last && l.old_on !== l.given_on) o.last = l.old_on;
+  }
+  for (const c of checks) if (out[c.client_id] && c.on_date > out[c.client_id].last) out[c.client_id].last = c.on_date;
+  for (const o of Object.values(out)) { o.next = add(o.last || o.first, days); o.overdue = o.next < today ? Math.round((Date.parse(today) - Date.parse(o.next)) / 864e5) : 0; }
+  return out;
+}
