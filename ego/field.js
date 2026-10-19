@@ -676,7 +676,7 @@
       window.addEventListener('hashchange', () => { S.sheet = ''; if (S.sdr && route() !== 'sdr') S.sdr = null; render(); window.scrollTo(0, 0); });
       /* typing in + Requirement is kept as it is typed, without drawing the screen again (the search redraws only its list) */
       document.addEventListener('input', e => { const d = e.target.dataset || {}; if (!S.sdr) return;
-        if (d.sdrRem) { S.sdr.rem[d.sdrRem] = e.target.value; return; }
+        if (d.sdrRem) { S.sdr.rem[d.sdrRem] = e.target.value; if (e.target.value.trim() && S.sdr.err[d.sdrRem]) { delete S.sdr.err[d.sdrRem]; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.fd-err'); if (x) x.remove(); } } return; }
         if (d.sg && S.sdr.give && e.target.tagName === 'INPUT') { const G = S.sdr.give, l = G.lines[+d.i]; l[d.sg] = e.target.value;
           const t = qs(`[data-gtot="${d.i}"]`); if (t) t.textContent = 'Total ' + inr((Number(l.qty) || 0) * (Number(l.unit_cost) || 0));
           const sm = qs('[data-gsum] b'); if (sm) sm.textContent = inr(G.lines.reduce((a, x) => a + (Number(x.qty) || 0) * (Number(x.unit_cost) || 0), 0)); } });
