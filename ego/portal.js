@@ -217,6 +217,7 @@
   function start(boot) {
     B = boot;
     document.body.classList.remove('gated'); document.body.classList.add('pt-on');
+    if (window.VOICE) VOICE.toast = m => toast(esc(m));   /* B1: voice typing speaks through this app's own toast */
     qs('#gate').innerHTML = '';
     if (!root) {
       root = document.createElement('div'); root.id = 'portal'; root.className = 'pt';

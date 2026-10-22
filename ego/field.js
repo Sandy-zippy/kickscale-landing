@@ -304,7 +304,10 @@
           ${flag ? `<div class="fd-field${e[l.id] ? ' has-err' : ''}"><label for="sdrr-${l.id}">Remarks <span class="fd-meta">(needed)</span></label><textarea class="fd-input" id="sdrr-${l.id}" data-sdr-rem="${l.id}" placeholder="What is wrong with it?" maxlength="1000">${esc(X.rem[l.id] || '')}</textarea>${e[l.id] ? `<span class="fd-err">${esc(e[l.id])}</span>` : ''}</div>` : ''}
           <div class="fd-photos">${(X.photos[l.id] || []).map((f, i) => `<div class="fd-thumb"><img src="${urls[i]}" alt="Photo ${i + 1} of ${esc(l.item || 'this display')}"><button type="button" aria-label="Remove photo ${i + 1}" data-fa="sdr-photo-x" data-line="${l.id}" data-i="${i}">${ic('x')}</button></div>`).join('')}<label class="fd-photo-add">${ic('camera')}Photo<input type="file" accept="image/*" capture="environment" multiple data-sdr-file="${l.id}"></label></div></div>`; };
       const give = SDRX().give ? `<button type="button" class="fd-btn block" data-fa="sdr-give">${ic('square-plus')}Give displays</button>` : '';
-      return head + `<main class="fd-view">${sum}
+      /* B3 (R30): the photos already on record for this dealer (Shop, Display, Inspection photos and files on its lines), to compare with what is there now */
+      const PH = (SDRX().photos || {})[cid] || [];
+      const stored = PH.length ? `<div class="fd-field" data-sdr-stored><span class="fd-label">Photos on record (${PH.length})</span><div class="fd-photos">${PH.map(p => `<figure class="fd-sph" data-sdr-photo="${p.id}"><a class="fd-thumb" href="${esc(p.url)}" target="_blank" rel="noopener" aria-label="View ${esc(p.type)}, ${dShort(p.on)}"><img src="${esc(p.url)}" alt="${esc(p.type)}" loading="lazy"></a><figcaption>${esc(p.type.replace(' photo', ''))} · ${dShort(p.on)}</figcaption><span class="fd-sph-acts"><a href="${esc(p.url)}&dl=1" aria-label="Download ${esc(p.type)}">Download</a><button type="button" data-fa="sdr-pshare" data-id="${p.id}" aria-label="Share ${esc(p.type)}">${ic('share-2')}Share</button></span></figure>`).join('')}</div><span class="fd-help">Tap a photo to view it. Photos added below are kept on this dealer too.</span></div>` : '';
+      return head + `<main class="fd-view">${sum}${stored}
         ${o.act.length ? o.act.filter(l => !String(l.id).startsWith('wait_')).map(insp).join('') + `<div class="fd-note">${ic('info-circle')}<span>Anything not Well maintained goes to management at once for a decision.</span></div>${give}
           <span class="fd-err" role="alert">${esc(e.all || '')}</span>
           <div class="fd-savebar"><button type="button" class="fd-btn primary lg block" data-fa="sdr-save"${X.busy ? ' aria-busy="true" disabled' : ''}>Save inspection</button></div>`
@@ -546,7 +549,7 @@
       <div class="fd-choices" role="radiogroup">${outs.map(o => `<label class="fd-choice"><input type="radio" name="fd-out" value="${esc(o)}" ${v.outcome === o ? 'checked' : ''}>${ic(OUT_IC[o] || 'circle-check')}${esc(o)}</label>`).join('')}</div>
       <div class="fd-field" data-if="Order taken" hidden><label for="fd-boxes">Boxes ordered</label><div class="fd-adorn"><input class="fd-input" id="fd-boxes" inputmode="numeric"><span class="fd-suf">boxes</span></div></div>
       <div class="fd-field" data-if="Follow-up set" hidden><label for="fd-fu">Follow-up on</label><input class="fd-input" id="fd-fu" type="date"></div>
-      <div class="fd-field"><label for="fd-note">Note</label><input class="fd-input" id="fd-note" placeholder="Optional" maxlength="1000" value="${esc(v.note || '')}"></div>
+      <div class="fd-field"><label for="fd-note">Note</label><textarea class="fd-input" id="fd-note" rows="2" placeholder="Optional" maxlength="1000">${esc(v.note || '')}</textarea></div>
       <div class="fd-photos"><label class="fd-photo-add">${ic('camera')}<span data-photo-n>Photo</span><input type="file" accept="image/*" capture="environment" id="fd-vphoto"></label></div>
       <span class="fd-err" id="fd-sheet-err" role="alert"></span>
       <div class="fd-btns"><button type="button" class="fd-btn lg" data-fa="req-from" data-id="${v.id}">${ic('plus')}Requirement</button><button type="button" class="fd-btn primary lg" data-fa="outcome" data-id="${v.id}">Save</button></div></form></div>`;
@@ -622,6 +625,7 @@
     'sdr-gline-add': () => { S.sdr.give.lines.push(newGline()); render(); },
     'sdr-gline-x': el => { S.sdr.give.lines.splice(+el.dataset.i, 1); S.sdr.give.err = {}; render(); },
     'sdr-gphoto-x': el => { const G = S.sdr.give, i = +el.dataset.i; URL.revokeObjectURL(G.urls[i]); G.photos.splice(i, 1); G.urls.splice(i, 1); render(); },
+    'sdr-pshare': async el => { const p = Object.values(SDRX().photos || {}).flat().find(x => x.id === el.dataset.id); if (!p) return; try { if (navigator.share) await navigator.share({ title: p.type, url: p.url }); else window.open('https://wa.me/?text=' + encodeURIComponent(`${p.type}: ${p.url}`), '_blank'); } catch (e) {} },
     'sdr-photo-x': el => { const X = S.sdr, k = el.dataset.line, i = +el.dataset.i; URL.revokeObjectURL(X.urls[k][i]); X.photos[k].splice(i, 1); X.urls[k].splice(i, 1); render(); },
     board: () => { const b = qs('#fd-board'); if (b) b.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
     undo: async el => { const n = +el.dataset.n; if (!Q.items.some(x => x.n === n)) { toast('<b>Already sent.</b> It cannot be taken back here.'); return; } await qDel(n); await qLoad(); setField(S.base); render(); toast('<b>Taken back.</b> Nothing was sent.'); },
@@ -643,6 +647,7 @@
   function start(boot) {
     B = boot;
     document.body.classList.remove('gated'); document.body.classList.add('fd-on');
+    if (window.VOICE) VOICE.toast = m => toast(esc(m));   /* B1: voice typing speaks through this app's own toast */
     qs('#gate').innerHTML = '';
     try { const t = localStorage.getItem('ego-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
     /* Add to home screen: the manifest, icon and app-capable tags are static in index.html (T3, 19 Oct), so iOS reads them before any script */

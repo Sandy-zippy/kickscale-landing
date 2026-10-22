@@ -153,3 +153,14 @@ body.pt-on #shell { display: none; }
 .fd-thumb .fd-fname { display: none; }
 .fd-thumb.is-file { display: grid; align-content: end; padding: 8px; border: 1px solid var(--fd-line, rgba(127,127,127,.3)); background: var(--fd-card); }
 .fd-thumb.is-file .fd-fname { display: block; font-size: 12px; font-weight: 600; line-height: 1.3; color: var(--fd-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+
+/* B1 22 Oct: a text box hidden until it is needed (a new address) hides its voice typing mic with it */
+.vt-wrap:has(> textarea[hidden]) { display: none; }
+
+/* B3: photos on record in the field app's Displays (SDR) */
+.fd-sph { margin: 0; display: grid; gap: 4px; width: 104px; }
+.fd-sph .fd-thumb { width: 104px; height: 88px; }
+.fd-sph figcaption { font-size: 12px; line-height: 1.3; color: var(--fd-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fd-sph-acts { display: grid; gap: 4px; }
+.fd-sph-acts a, .fd-sph-acts button { min-height: 40px; display: flex; gap: 6px; align-items: center; justify-content: center; font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; border: 1px solid var(--fd-line, rgba(127,127,127,.3)); border-radius: 12px; background: var(--fd-card); color: inherit; cursor: pointer; }
+.fd-sph-acts .fd-ic { width: 16px; height: 16px; }

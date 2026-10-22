@@ -183,6 +183,11 @@ function splitMobile(v) {
 /* a unit shown beside the box replaces the "(₹)" or "(sq ft)" in the label, so it is said once */
 const unitOf = f => f.type === 'money' ? 'money' : UNITS[f.key] || '';
 const formLabel = f => unitOf(f) ? f.label.replace(/\s*\((₹|sq ft|days|kg|years|boxes)[^)]*\)\s*$/, '') : f.label;
+/* B2 22 Oct: THE date box for the registry forms. A saved value that is not a YYYY-MM-DD date (typed before the field became
+   a date) leaves the calendar empty, shows under it as "Typed before: ...", and is kept (data-was) until somebody picks a date. */
+const isDay = v => /^\d{4}-\d{2}-\d{2}/.test(String(v || ''));
+const dateIn = (f, v, p) => { const old = v && !isDay(v) ? String(v) : ''; return `<input class="input" type="date" id="${p}-${f.key}" name="${f.key}" value="${old ? '' : esc(String(v || '').slice(0, 10))}"${old ? ` data-was="${esc(old)}"` : ''}>${old ? `<span class="dt-was"><b>Typed before:</b> ${esc(old)}</span>` : ''}`; };
+const dayFull = v => isDay(v) ? new Date(String(v).slice(0, 10) + 'T12:00:00+05:30').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : esc(v);
 const G = {
   wrap: (f, p, inner, wide) => `<div class="field${wide ? ' span2' : ''}" data-field="${f.key}"><label for="${p}-${f.key}">${esc(formLabel(f))}${f.req ? ' *' : ''}</label>${inner}</div>`,
   /* ₹ … /- around money, the unit after an area, a size or a count */
@@ -202,7 +207,7 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'textarea': return G.wrap(f, p, `<textarea class="input" rows="2" id="${p}-${f.key}" name="${f.key}">${esc(v)}</textarea>`, true);
     case 'email': return G.wrap(f, p, `<input class="input" type="email" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`);
     case 'number': case 'money': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="${f.type === 'money' ? '0.01' : '1'}" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
-    case 'date': return G.wrap(f, p, `<input class="input" type="date" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}" placeholder="DD/MM/YYYY">`);
+    case 'date': return G.wrap(f, p, dateIn(f, v, p));
     case 'yesno': return G.select(f, v === true ? 'Yes' : v === false ? 'No' : v, p, [['Yes', 'Yes'], ['No', 'No']]);
     case 'select': return G.select(f, v, p, optsOf(f, D.lists).map(o => [o, optLabel(f, o)]), !f.req);
     case 'city': return G.select(f, v, p, D.lists.cities.map(c => [c.city, `${c.city} · ${c.region}`]));
@@ -246,7 +251,7 @@ function readForm(root, fields) {
     if (['multi', 'cats', 'cities'].includes(f.type)) o[f.key] = els.filter(el => el.checked).map(el => el.value);
     else if (f.type === 'addresses') o[f.key] = els.map(el => el.value.trim()).filter(Boolean);
     else if (els.some(el => el.type === 'radio')) o[f.key] = (els.find(el => el.checked) || { value: '' }).value;
-    else { o[f.key] = els.length ? String(els[0].value) : ''; if (f.type === 'mobile') o[f.key + '_dial'] = (mine(f.key + '_dial')[0] || { value: '+91' }).value || '+91'; }
+    else { o[f.key] = els.length ? String(els[0].value || els[0].dataset.was || '') : ''; if (f.type === 'mobile') o[f.key + '_dial'] = (mine(f.key + '_dial')[0] || { value: '+91' }).value || '+91'; }
   }
   return o;
 }
@@ -328,7 +333,7 @@ function showVal(f, v) {
     case 'yesno': return v ? 'Yes' : 'No';
     case 'multi': case 'cats': case 'cities': return listOf(v).map(x => `<span class="chip">${esc(x)}</span>`).join('');
     case 'money': return money(v);
-    case 'date': return ds(v);
+    case 'date': return !isDay(v) ? esc(v) : f.full ? dayFull(v) : ds(v);
     case 'select': return esc(optLabel(f, v));
     case 'email': return `<a href="mailto:${esc(v)}">${esc(v)}</a>`;
     default: return esc(v);
@@ -777,11 +782,19 @@ Object.defineProperty(EM.VIEWS.client, 'tab', { get() { const c = CL()[(location
 EM.VIEWS.client.title = a => (CL()[a.split('/')[0]] || { name: 'Client' }).name;
 EM.VIEWS.client.after = arg => { const [id, tab] = arg.split('/'); if (tab === 'history') loadHistory(id); };
 
+/* B3 (R31): the dealer's displays at a glance, read from the SDR rows */
+function sdrOverviewLine(c) {
+  const A = sdrAll(), ls = A.lines.filter(l => l.client_id === c.id), act = ls.filter(l => l.status === 'Active');
+  if (!ls.length) return '';
+  const checks = A.checks.filter(x => x.client_id === c.id), decs = A.decisions.filter(x => x.client_id === c.id), last = checks.slice().sort((a, b) => String(b.on_date).localeCompare(String(a.on_date)))[0];
+  const due = sdrDue(ls, checks, sdrDays(), today())[c.id], pend = sdrFlagged(ls, sdrLatest(ls, checks), decs).length;
+  return `<section class="card stack-s" data-sdr-overview><h3>Displays</h3><p><b>${num(act.length)} display line${act.length === 1 ? '' : 's'} given</b> · last inspected ${last ? `${ds(last.on_date)} by ${esc(staffName(last.owner_id))}` : 'not yet'}${due && due.next ? ` · next due ${ds(due.next)}${due.overdue ? ', overdue' : ''}` : ''}${pend ? ` · ${num(pend)} waiting for a decision` : ''}</p><a class="btn sm" href="#/client/${c.id}/sdr">Open SDR</a></section>`;
+}
 function clientOverview(c) {
   const v = { ...c, ...c.extra }, fields = showFields(fieldsFor(c.kind)).filter(f => f.key !== 'kind');
   const sections = [...new Set(fields.map(f => f.section))];
   const kids = D.clients.filter(x => x.parent_id === c.id || x.firm_id === c.id || x.architect_id === c.id);
-  return `<div class="grid g2">${DEALER_KINDS.includes(c.kind) ? `<section class="card stack-s" data-served><h3>Who serves them</h3>${kv([['Served by', servedBy(c)], ...(c.kind === 'distributor' ? [['Sub-dealers they serve', String(kids.filter(x => x.kind === 'sub_dealer').length)], ['Assigned area', showVal({ type: 'cities' }, v.areas_covered)]] : [])])}</section>` : ''}
+  return `<div class="grid g2">${DEALER_KINDS.includes(c.kind) ? sdrOverviewLine(c) : ''}${DEALER_KINDS.includes(c.kind) ? `<section class="card stack-s" data-served><h3>Who serves them</h3>${kv([['Served by', servedBy(c)], ...(c.kind === 'distributor' ? [['Sub-dealers they serve', String(kids.filter(x => x.kind === 'sub_dealer').length)], ['Assigned area', showVal({ type: 'cities' }, v.areas_covered)]] : [])])}</section>` : ''}
     ${sections.map(s => `<section class="card stack-s"><h3>${esc(s)}</h3>${kv(fields.filter(f => f.section === s).map(f => [esc(labelFor(f, c.kind)), showVal(f, v[f.key])]))}</section>`).join('')}
     ${['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group) ? businessCard(c) : ''}
     ${KINDS[c.kind].group === 'dealer' ? `<section class="card stack-s"><h3>Sales, outstanding and orders</h3><span class="badge warn">Not connected yet</span><p class="small muted">These come from Tally invoices once Tally is connected. Nothing is shown until then, so no figure here is ever typed or estimated.</p></section>` : ''}
@@ -1124,7 +1137,7 @@ document.addEventListener('change', e => {
 EM.ACTIONS['opp-add'] = el => openOppForm(null, el.dataset.client || el.dataset.pipeline ? { owner_id: me().id, client_id: el.dataset.client, pipeline: el.dataset.pipeline, project_id: el.dataset.project || '', dealer_id: el.dataset.dealer || '' } : null);
 EM.ACTIONS['opp-edit'] = el => openOppForm(D.opportunities.find(x => x.id === el.dataset.id));
 async function saveOpp(input, el, errId) {
-  const { errors } = cleanOpp(input, ctxLocal());
+  const { errors } = cleanOpp(input, { ...ctxLocal(), was: ((D.opportunities.find(x => x.id === input.id) || {}).extra) || {} });   // B2: an old typed Delivery date kept as it was
   if (errors.length) { showErr(errId, errors); return null; }
   busy(el, true);
   try {
@@ -1987,7 +2000,8 @@ EM.ACTIONS['cmp-add'] = el => {
 const cmpInstallFields = p => `${p === 'cp' ? instPick('cp-iid', '', EM.div !== 'both' ? EM.div : '') : ''}<div class="field" data-field="batch"><label for="${p}-batch">Batch or lot number</label><input class="input" id="${p}-batch" maxlength="60" placeholder="As printed on the box"></div>
     <div class="field" data-field="installed_by"><label for="${p}-inst">Installed by</label><select class="input" id="${p}-inst" data-keep-order><option value="">Not known</option>${Object.entries(COMPLAINT_INSTALLED_BY).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></div>
     <div class="field" data-field="installer_name"><label for="${p}-iname">Installer's name (compulsory for Other)</label><input class="input" id="${p}-iname" maxlength="120"></div>`;
-const cmpInstallText = c => [c.batch ? `Batch or lot ${esc(c.batch)}` : '', c.installed_by ? `Installed by ${esc(COMPLAINT_INSTALLED_BY[c.installed_by] || c.installed_by)}${c.installer_name ? ` (${esc(c.installer_name)})` : ''}` : ''].filter(Boolean).join(' · ');
+const cmpInstName = c => (c.installer_id && instRec(c.installer_id) || {}).item || c.installer_name || '';   // B3 (R05): the installer's name as it is now; the typed copy only for a name not in the list
+const cmpInstallText = c => [c.batch ? `Batch or lot ${esc(c.batch)}` : '', c.installed_by ? `Installed by ${esc(COMPLAINT_INSTALLED_BY[c.installed_by] || c.installed_by)}${cmpInstName(c) ? ` (${esc(cmpInstName(c))})` : ''}` : ''].filter(Boolean).join(' · ');
 EM.ACTIONS['cmp-save'] = async el => {
   const files = [...(qs('#cp-photos') || { files: [] }).files];
   if (files.length > 10) return showErr('cp-err', 'Up to 10 photos at a time.');
@@ -2993,7 +3007,7 @@ const FIELD_HELP = {
   pipeline: 'Which board the opportunity is on: wholesale, retail lead or retail project.', title: 'A short name for this sale.', stage: 'Where the sale stands. The stages are edited in Lists & stages.',
   value: 'The value in rupees. For a wholesale sale it is worked out from its designs, boxes and rate.', products: 'The product categories in this sale.', area_sqft: 'The area in sq ft.',
   application: 'The room or use.', budget: 'The budget band.', contact_id: 'The person at the company who brought this sale.', expected_close: 'When you expect it to close.', lost_reason: 'Why it was lost, from the list. Compulsory at Lost.', lost_detail: 'Exactly what happened, in your words: which design, how many boxes, what the client chose instead. Compulsory at Lost.',
-  billing_address: 'The address the invoice goes to.', delivery_address: 'Where the boxes are delivered, if not the billing address.', payment_terms: 'e.g. 50% advance, balance before dispatch.', delivery_terms: 'e.g. ex-warehouse Bhiwandi, or delivered to site.', delivery_time: 'When the client needs it.', terms: 'The terms and conditions printed on the quotation.',
+  billing_address: 'The address the invoice goes to.', delivery_address: 'Where the boxes are delivered, if not the billing address.', payment_terms: 'e.g. 50% advance, balance before dispatch.', delivery_terms: 'e.g. ex-warehouse Bhiwandi, or delivered to site.', delivery_time: 'The date the client needs it by.', terms: 'The terms and conditions printed on the quotation.',
   category: 'The kind of floor: LVT, SPC, Laminate... Categories are added with + Category or in Lists & stages.', sqft_per_box: 'The area one box covers, in sq ft. Fill this or square metres; the other is worked out. Stock in sq ft is worked out from it.',
   sqm_per_box: 'The area one box covers, in square metres. Fill this or sq ft.', pcs_per_box: 'How many planks or tiles are in one box.', low_stock: 'Warn below this many boxes: the bell gives a heads-up when stock drops under it.',
   collection_id: 'The collection this design belongs to; it takes the collection\'s box size and specifications.', code: 'The design code, if it has one. A code can be used only once.',
@@ -3196,6 +3210,7 @@ function timelineFor(clientId, oppId) {
     push(a.at, 'talk', `${ACT_ICON[a.kind] || a.kind}${a.direction === 'in' ? ' in' : a.direction === 'out' ? ' out' : ''}${a.opp_id && !oppId ? ' · ' + oppName(a.opp_id) : ''}`, a.summary, a.via_key ? `via API key ${a.via_key}` : staffName(a.by_staff), { source: a.source, kind: a.kind });
   for (const h of D.history.filter(h => oppIds.has(h.opp_id))) push(h.at, 'stage', `${h.from_stage ? 'Moved to' : 'Opened at'} ${h.to_stage}${oppId ? '' : ' · ' + oppName(h.opp_id)}`, `${h.from_stage ? 'from ' + h.from_stage : ''}${h.note ? (h.from_stage ? ' · ' : '') + h.note : ''}`, staffName(h.by_staff));
   for (const f of FUS().filter(f => f.client_id === clientId && f.status !== 'open' && (!oppId || f.opp_id === oppId))) push(f.done_at, 'followup', `Follow-up done: ${f.action}${f.source ? ' (' + f.source + ')' : ''}${f.opp_id && !oppId ? ' · ' + oppName(f.opp_id) : ''}`, f.outcome + (f.stop_reason ? ` · No further follow-up: ${f.stop_reason}` : ''), staffName(f.done_by));
+  if (!oppId) for (const v of (D.visits || []).filter(v => v.client_id === clientId)) push(v.checkin_at || v.updated_at || v.day + 'T12:00:00+05:30', 'talk', v.status === 'done' ? `Visit: ${v.outcome || 'done'}` : v.status === 'in' ? 'Visit: checked in' : v.status === 'missed' ? 'Visit missed' : `Visit planned for ${ds(v.day)}`, v.note || '', staffName(v.staff_id), { visit: v.id });   // B3 (R18): field visits to this dealer
   for (const d of D.documents.filter(d => d.client_id === clientId && (!oppId || d.opp_id === oppId))) push(d.created_at, 'file', `File added: ${d.name}`, d.followup_id ? `${d.type} · with a follow-up` : d.type, uploaderName(d), { doc: d.id });
   for (const a of (O.approvals || []).filter(a => a.client_id === clientId && (!oppId || a.record_id === oppId))) {
     push(a.created_at, 'approval', `Approval asked: ${a.kind}`, a.reason, staffName(a.requested_by));
@@ -4965,15 +4980,27 @@ EM.VIEWS.sdr.tab = 'displays';   // the screen key every role already holds
 EM.VIEWS.displays = () => { location.replace('#/sdr'); return ''; };   // the old address
 EM.VIEWS.displays.title = () => 'Sample Display Record (SDR)';
 /* the dealer's SDR tab */
+/* B3 (R29, R30): one reader for a dealer's display photos (the Worker's sdrPhotos reads the same): Shop, Display and Inspection
+   photos on the dealer, and any file on its SDR lines or inspections. Stored once in Documents, read here, never copied. */
+const SDR_PHOTO_KINDS = ['Shop photo', 'Display photo', 'Inspection photo'];
+function dealerPhotos(cid) {
+  const regs = new Set(REGS().filter(r => r.client_id === cid && (r.kind === 'display' || r.kind === 'sdr_check')).map(r => r.id));
+  return D.documents.filter(d => (d.client_id === cid && SDR_PHOTO_KINDS.includes(d.type)) || regs.has(d.register_id));
+}
+const sdrPhotoStrip = cid => { const ph = dealerPhotos(cid);
+  return `<section class="card stack-s" data-sdr-photos><div class="sdr-sec"><h2>Photos (${ph.length})</h2><span class="small muted">Shop, display and inspection photos, also on Documents</span></div>${filesBox({ id: 'sdrph', types: SDR_PHOTO_KINDS, docs: ph, canAdd: false, emptyTitle: 'No photos yet', emptyText: 'A Shop photo or Display photo added under Documents, or a photo taken at an inspection, shows here.' })}</section>`; };
+/* B3 (R31): the latest decision on each line, Keep as is included */
+const sdrLastDecisions = decs => { const out = {}; for (const x of decs.slice().sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))) out[(x.extra || {}).line] = x; return out; };
 function sdrDealer(c) {
   const st = EM.sdrD[c.id] = EM.sdrD[c.id] || { period: '90d', from: '', to: '' }, A = sdrAll(), [from, to] = sdrBounds(st), P = D.access.prices;
   const ls = A.lines.filter(l => l.client_id === c.id), checks = A.checks.filter(x => x.client_id === c.id), decs = A.decisions.filter(x => x.client_id === c.id);
   const R = sdrRatios({ lines: ls, checks, decisions: decs, sales: sdrSales(), from, to }), latest = R.latest, due = sdrDue(ls, checks, sdrDays(), today())[c.id], flagged = new Set(sdrFlagged(ls, latest, decs).map(l => l.id)), act = ls.filter(l => l.status === 'Active');
   const photos = l => { const n = regFiles(l.r); return `<button class="btn sm ghost" data-act="rg-files" data-id="${l.id}">Photos (${n})</button>`; };
-  const row = l => { const lt = latest[l.id], fl = flagged.has(l.id);
+  const lastDec = sdrLastDecisions(decs);
+  const row = l => { const lt = latest[l.id], fl = flagged.has(l.id), dc = lastDec[l.id];
     return `<tr data-sdr-line="${l.id}" class="${l.status !== 'Active' ? 'is-ro' : ''}"><td><div class="sdr-prod w"><b>${esc(l.item || regWhat(l.r) || 'Design')}</b><span>${esc(l.category || 'Category not set')} · ${esc(l.ref)}</span>${l.replaces ? `<span class="small muted">Replaces ${esc((REGS().find(x => x.id === l.replaces) || {}).ref || '')}</span>` : ''}</div></td>
       <td class="r sdr-nw">${num(l.qty)}${P ? ` × ${l.unit_cost == null ? '' : inr0(l.unit_cost)}` : ''}</td>${P ? `<td class="r"><b>${inr0(l.total)}</b></td>` : ''}<td><div class="sdr-prod sdr-nw"><b>${l.given_on ? ds(l.given_on) : ''}</b><span style="white-space:normal">by ${esc(staffName(l.given_by))}</span></div></td>
-      <td>${l.status === 'Active' ? sdrCond(lt && lt.cond) : '<span class="small muted">Closed</span>'}${lt && lt.on ? `<div class="small muted">${ds(lt.on)}</div>` : ''}</td>
+      <td>${l.status === 'Active' ? sdrCond(lt && lt.cond) : '<span class="small muted">Closed</span>'}${lt && lt.on ? `<div class="small muted" data-sdr-insp>${ds(lt.on)}${lt.by ? ` · by ${esc(staffName(lt.by))}` : ''}</div>` : ''}${dc ? `<div class="small" data-sdr-dec><b>${esc(dc.status)}</b> <span class="muted">${ds(dc.on_date)} · ${esc(staffName(dc.owner_id))}</span></div>` : ''}</td>
       <td><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">${sdrSt(l.status)}${l.status === 'Written off' && canSdrDecide() ? `<button class="btn sm" data-act="sdr-decide" data-id="${l.id}" data-again="1">Decide again</button>` : ''}${fl ? (canSdrDecide() ? `<button class="btn sm primary" data-act="sdr-decide" data-id="${l.id}">Decide</button>` : `<button class="btn sm" disabled aria-disabled="true" title="Management decides" data-sdr-ro>Management decides</button>`) : ''}<div class="row" style="gap:6px;flex-wrap:wrap">${photos(l)}${isBothView() ? '' : `<button class="btn sm ghost" data-act="rg-edit" data-id="${l.id}">Change</button>${D.access.can_delete ? `<button class="btn sm ghost" data-act="rg-del" data-id="${l.id}">Delete</button>` : ''}`}</div></div></td></tr>`; };
   /* T5 gate: the shared filter bar (search, Category, Condition, Status, Date filter with Last 90 days + Custom dates); the dates drive the ratios */
   const condOf = l => l.status === 'Active' ? (latest[l.id] || {}).cond || 'Not checked yet' : 'Closed';
@@ -4988,6 +5015,7 @@ function sdrDealer(c) {
     <div data-sdr-dealer-date>${fbar}</div>
     <div class="sdr-sec"><h2>Lines</h2><span class="small muted">${P ? 'Our cost, follows the price switch' : 'Money is hidden for your role'}</span></div>
     ${shown.length ? `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>Product</th><th class="r">Qty${P ? ' × our cost per unit' : ''}</th>${P ? '<th class="r">Total cost</th>' : ''}<th>Given</th><th>Current condition</th><th>Status</th></tr></thead><tbody>${shown.sort((a, b) => (a.status === 'Active' ? 0 : 1) - (b.status === 'Active' ? 0 : 1) || String(b.given_on).localeCompare(String(a.given_on))).map(row).join('')}</tbody></table></div>` : ls.length ? empty('Nothing for this filter', 'Change or clear the filters above.') : empty('No display given yet', `Displays given to ${esc(c.name)} appear here, line by line.`, sdrBtns(c.id))}
+    ${sdrPhotoStrip(c.id)}
     <div class="sdr-two"><div class="card" data-sdr-checks><div class="sdr-sec"><h2>Inspections</h2><span class="small muted">every ${sdrDays()} days</span></div>${log(checks.slice().sort((a, b) => String(b.on_date).localeCompare(String(a.on_date))), x => `<li><time>${ds(x.on_date)}</time><div><b>${esc(staffName(x.owner_id))} inspected ${x.extra.lines.length} line${x.extra.lines.length === 1 ? '' : 's'}</b> <span class="small muted">${esc(x.ref)}</span><div class="sdr-tags">${x.extra.lines.map(y => sdrCond(y.cond)).join('')}</div>${x.extra.lines.filter(y => y.remark).map(y => `<p>${esc(lineName(y.line))}: ${esc(y.remark)}</p>`).join('')}<button class="btn sm ghost" data-act="rg-files" data-id="${x.id}">Photos (${regFiles(x)})</button></div></li>`)}</div>
       <div class="card" data-sdr-decisions><div class="sdr-sec"><h2>Decisions</h2><span class="small muted">management</span></div>${log(decs.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))), x => `<li><time>${ds(x.on_date)}</time><div><b>${esc(x.status)} · ${esc(lineName(x.extra.line))}${P && x.value != null ? ' · ' + inr0(x.value) : ''}</b><p>${esc(staffName(x.owner_id))}: ${esc(x.extra.remark || '')}</p><div class="sdr-next">${fic('arrow-right', '')}Next: ${esc(x.extra.next || '')}</div></div></li>`)}</div></div>
   </div>`;
@@ -5032,6 +5060,7 @@ EM.ACTIONS['sdr-inspect'] = el => {
   if (!act.length) return bubbleNear(el, `No active display at ${c.name} to inspect.`);
   EM.modal(`<div class="stack" id="sdri" data-sdr-inspect><div class="stack-s"><div class="kicker">Sample Display Record (SDR) · ${esc(c.name)}</div><h2 style="margin:0">Inspect displays</h2></div>
     <div class="field" style="max-width:220px"><label for="sdri-d">Visit date</label><input class="input" type="date" id="sdri-d" value="${today()}" max="${today()}"></div>
+    ${sdrPhotoStrip(c.id)}
     ${act.map(l => `<div class="card stack-s" data-sdri-line="${l.id}"><div><b>${esc(l.item || regWhat(l.r) || 'Design')}</b> <span class="small muted">${esc(l.category)} · qty ${num(l.qty)} · given ${ds(l.given_on)}</span></div>
       <fieldset class="sdr-choices" style="border:0;padding:0;margin:0"><legend class="small" style="font-weight:600">Condition</legend><div class="row" style="flex-wrap:wrap;gap:8px">${SDR_COND.map(k => `<label class="row" style="gap:6px"><input type="radio" name="c${l.id}" value="${esc(k)}">${sdrCond(k)}</label>`).join('')}</div></fieldset>
       <div class="field"><label for="sdri-r-${l.id}">Remarks <span class="small muted">(needed when not Well maintained)</span></label><textarea class="input" rows="2" id="sdri-r-${l.id}"></textarea></div></div>`).join('')}

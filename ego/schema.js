@@ -197,7 +197,8 @@ const OPP_FIELDS = [
   { key: 'delivery_address', label: 'Delivery address', type: 'address', pipes: ['wholesale'], section: 'Billing, payment and delivery' },
   { key: 'payment_terms', list: 'payment_terms', label: 'Payment terms', type: 'suggest', opts: ['100% advance', '50% advance, balance before dispatch', '30% advance, balance before dispatch', 'Against delivery', 'PDC (post-dated cheque)', '15 days credit', '30 days credit', '45 days credit', '60 days credit'], pipes: ['wholesale'], section: 'Billing, payment and delivery' },
   { key: 'delivery_terms', list: 'delivery_terms', label: 'Delivery terms', type: 'suggest', opts: ['Ex-warehouse Bhiwandi', 'Door delivery, freight extra', 'Door delivery, freight included', 'Transport arranged by the dealer', 'Delivered to site'], pipes: ['wholesale'], section: 'Billing, payment and delivery' },
-  { key: 'delivery_time', label: 'Delivery time', type: 'text', pipes: ['wholesale'], section: 'Billing, payment and delivery' },
+  /* B2 22 Oct: a date picked from a calendar, stored in the same key; an old typed value (not YYYY-MM-DD) is shown as "Typed before" and kept until a date is picked */
+  { key: 'delivery_time', label: 'Delivery date', type: 'date', full: true, pipes: ['wholesale'], section: 'Billing, payment and delivery' },
   { key: 'terms', label: 'Terms and conditions', type: 'textarea', pipes: ['wholesale'], section: 'Billing, payment and delivery' },
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ];
@@ -524,7 +525,11 @@ function cleanOpp(input, ctx) {
   const pipe = PIPELINES[input.pipeline] ? input.pipeline : Object.keys(PIPELINES).find(k => PIPELINES[k].label.toLowerCase() === String(input.pipeline || '').trim().toLowerCase());
   input = { ...input, pipeline: pipe };
   if (!PIPELINES[pipe]) return { rec: null, errors: ['pipeline is not one of: ' + Object.values(PIPELINES).map(p => p.label).join(', ')] };
+  /* B2 22 Oct: a date field that held typed text before it became a date (Delivery date) keeps that text while it comes
+     back unchanged (ctx.was = the saved extra); anything new must be a real date */
+  const was = (ctx && ctx.was) || {};
   for (const f of oppFieldsFor(pipe)) {
+    if (f.type === 'date' && was[f.key] && input[f.key] === was[f.key] && normDate(was[f.key]).error) { rec.extra[f.key] = was[f.key]; continue; }
     const r = cleanValue(f, input[f.key], ctx, input);
     if (r.error) { errors.push(`${f.label} ${r.error}`); continue; }
     const empty = r.value === '' || r.value == null || (Array.isArray(r.value) && !r.value.length);

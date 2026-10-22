@@ -77,7 +77,7 @@
     };
   }
 
-  const FILES = ['schema.js', 'msel.js', 'app.js', 'live.js'];   // msel.js: the one multi-select (19 Oct)
+  const FILES = ['schema.js', 'msel.js', 'voice.js', 'app.js', 'live.js'];   // msel.js: the one multi-select (19 Oct); voice.js: voice typing on every text box (22 Oct)
   async function start() {
     if (!store.get()) return gate();
     let boot;
@@ -90,7 +90,7 @@
     /* R4: the portal and the field app read lines through the one quantity rule in schema.js, so it loads first */
     const load1 = f => new Promise((ok, bad) => { const v = document.querySelector('meta[name="build"]'), s = document.createElement('script'); s.src = f + (v ? '?v=' + v.content : ''); s.onload = ok; s.onerror = () => bad(new Error(f)); document.body.appendChild(s); });
     /* T3 19 Oct: the one multi-select (msel.js) loads with it, for the portal and the field app alike */
-    const schemaFirst = async () => { if (typeof qtyLine !== 'function') await load1('schema.js'); if (!window.MSEL) await load1('msel.js'); };
+    const schemaFirst = async () => { if (typeof qtyLine !== 'function') await load1('schema.js'); if (!window.MSEL) await load1('msel.js'); if (!window.VOICE) await load1('voice.js'); };
     if (boot.portal) {
       if (window.EGOPORTAL) return window.EGOPORTAL.refresh(boot);
       await schemaFirst();
