@@ -148,3 +148,89 @@ export function trackDiscovery(
 
   return eventId
 }
+
+/**
+ * Ad-landing funnel diagnostics (Meta custom events + GA4), for /agentic-cockpit.
+ * Added 22 Oct 2026: 19 ad clicks, 0 form fills, no way to see where people dropped.
+ * Custom events only; the standard funnel events above stay untouched.
+ */
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term'] as const
+const UTM_STORE = 'zs_utm'
+
+/* Read on load and keep for the session, so a hash jump or route change does not lose them. */
+function utms(): Record<string, string> {
+  let saved: Record<string, string> = {}
+  try { saved = JSON.parse(sessionStorage.getItem(UTM_STORE) || '{}') } catch { /* private mode */ }
+  const q = new URLSearchParams(window.location.search)
+  const fresh: Record<string, string> = {}
+  UTM_KEYS.forEach(k => { const v = q.get(k); if (v) fresh[k] = v })
+  if (Object.keys(fresh).length) {
+    saved = fresh
+    try { sessionStorage.setItem(UTM_STORE, JSON.stringify(saved)) } catch { /* private mode */ }
+  }
+  return saved
+}
+
+export function trackFunnel(name: string, params: Record<string, unknown> = {}) {
+  const p = { ...utms(), page_path: window.location.pathname, ...params }
+  window.fbq?.('trackCustom', name, p)
+  trackEvent(name, p)
+}
+
+/* Once per field per page load. Only the field name is sent, never what was typed. */
+const answered = new Set<string>()
+export function trackFieldAnswered(field: string) {
+  if (answered.has(field)) return
+  answered.add(field)
+  trackFunnel('Field_Answered', { field })
+}
+
+/** Mounts CTA_Click, Form_Seen, Scroll_Depth and Time_On_Page. Returns the cleanup. */
+export function startLandingFunnel(formId = 'book') {
+  utms()
+  const off: Array<() => void> = []
+
+  const onClick = (e: MouseEvent) => {
+    const a = (e.target as Element | null)?.closest?.(`a[href="#${formId}"]`)
+    if (!a) return
+    const top = a.getBoundingClientRect().top + window.scrollY
+    const location = a.closest('nav, header') ? 'header'
+      : a.closest('footer') ? 'footer'
+      : a.closest('#price') || top > window.innerHeight * 2 ? 'mid' : 'hero'
+    trackFunnel('CTA_Click', { location, text: (a.textContent || '').trim().slice(0, 60) })
+  }
+  document.addEventListener('click', onClick, true)
+  off.push(() => document.removeEventListener('click', onClick, true))
+
+  /* The form mounts with the page, but poll briefly in case it renders late. */
+  let io: IntersectionObserver | undefined
+  const watchForm = () => {
+    const el = document.getElementById(formId)
+    if (!el) return false
+    io = new IntersectionObserver(entries => {
+      if (entries.some(en => en.isIntersecting)) { trackFunnel('Form_Seen'); io?.disconnect() }
+    }, { threshold: 0.3 })
+    io.observe(el)
+    return true
+  }
+  if (!watchForm()) {
+    const t = window.setInterval(() => { if (watchForm()) window.clearInterval(t) }, 500)
+    off.push(() => window.clearInterval(t))
+  }
+  off.push(() => io?.disconnect())
+
+  const marks = [25, 50, 75, 100]
+  const onScroll = () => {
+    const max = document.documentElement.scrollHeight - window.innerHeight
+    const pct = max > 0 ? ((window.scrollY + 2) / max) * 100 : 100
+    while (marks.length && pct >= marks[0]) trackFunnel('Scroll_Depth', { percent: marks.shift() })
+    if (!marks.length) window.removeEventListener('scroll', onScroll)
+  }
+  window.addEventListener('scroll', onScroll, { passive: true })
+  off.push(() => window.removeEventListener('scroll', onScroll))
+
+  const timers = [15, 45, 90].map(s => window.setTimeout(() => trackFunnel('Time_On_Page', { seconds: s }), s * 1000))
+  off.push(() => timers.forEach(t => window.clearTimeout(t)))
+
+  return () => off.forEach(f => f())
+}

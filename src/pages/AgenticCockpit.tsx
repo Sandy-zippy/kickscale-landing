@@ -31,6 +31,7 @@ import Untangle from '../components/cockpit/Untangle'
 import Bento from '../components/cockpit/Bento'
 import ShineButton from '../components/cockpit/ShineButton'
 import CockpitStyles from '../components/cockpit/CockpitStyles'
+import { startLandingFunnel } from '../lib/tracking'
 import { useCalmMotion, useCanHover, useWide } from '../components/cockpit/useCalmMotion'
 
 /* a small superscript link back to the source — the whole point is that it is clickable */
@@ -65,6 +66,8 @@ export default function AgenticCockpit() {
   useEffect(() => {
     document.title = 'Agentic Cockpit · one system that runs your business | ZippyScale'
   }, [])
+  // where ad visitors drop: CTA clicks, form seen, scroll depth, time on page
+  useEffect(() => startLandingFunnel('book'), [])
 
   return (
     <>

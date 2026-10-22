@@ -25,7 +25,7 @@ import {
 import { COUNTRIES, COUNTRIES_SHOWN, statesOf, byCode, DIAL_CODES } from '../../data/places'
 import { useRates, guessPlace, band, formatCompact } from './Money'
 import { Agent } from './Agent'
-import { trackDiscovery } from '../../lib/tracking'
+import { trackDiscovery, trackFieldAnswered } from '../../lib/tracking'
 import { getUTMParams, getFbcParam, getFbpParam } from '../../lib/analytics'
 import DatePicker, { istKey } from './DatePicker'
 import { LIME } from '../growth/kinetic'
@@ -145,6 +145,7 @@ export default function DiscoveryCall() {
 
   const set = (k: string) => (v: string) => {
     if (!started.current) { started.current = true; trackDiscovery('start') }
+    if (step === 0 && v) trackFieldAnswered(k)
     setA(p => ({ ...p, [k]: v }))
     setWrong(p => p.filter(x => x !== k))
   }
