@@ -5,7 +5,7 @@
   var G = window.GE, V = G.VIEWS, A = G.ACTIONS;
   var esc = function (s) { return ZS.esc(s); };
 
-  var CQ = '', CF = '', TAB = 'wants', PICK = '';
+  var CQ = '', CF = '', CCO = '', CAR = '', TAB = 'wants', PICK = '';
 
   function D() { return G.D(); }
   var PENDING_PICK = null;
@@ -25,13 +25,29 @@
 
   /* ---------------- clients ---------------- */
 
+  /* where a client is: the address the website form and the client form both fill */
+  function addr(c) { var x = c.address; return x && typeof x === 'object' ? x : {}; }
+  function where(c) { var x = addr(c); return [x.state, x.country].filter(Boolean).join(', '); }
+  function az(arr) {
+    return arr.filter(function (v, i) { return v && arr.indexOf(v) === i; })
+      .sort(function (x, y) { return x.localeCompare(y); });
+  }
+
   V.clients = function () {
     var all = mine(D().clients), a = G.acc();
     var inWin = all.filter(function (c) { return G.inRange(c.last_touch); });
+    var countries = az(inWin.map(function (c) { return addr(c).country; }));
+    if (CCO && countries.indexOf(CCO) < 0) CCO = '';
+    var areas = az(inWin.filter(function (c) { return !CCO || addr(c).country === CCO; })
+      .map(function (c) { return addr(c).state; }));
+    if (CAR && areas.indexOf(CAR) < 0) CAR = '';
     var list = inWin.filter(function (c) {
       if (CF && ZS.clientTier(c, D().opportunities)[0] !== CF) return false;
+      if (CCO && addr(c).country !== CCO) return false;
+      if (CAR && addr(c).state !== CAR) return false;
       if (CQ) {
-        var hay = [c.name, c.mobile, c.source, c.stage].join(' ').toLowerCase();
+        var ad = addr(c);
+        var hay = [c.name, c.mobile, c.source, c.stage, ad.country, ad.state, ad.city].join(' ').toLowerCase();
         if (hay.indexOf(CQ) < 0) return false;
       }
       return true;
@@ -48,8 +64,17 @@
     h += G.rangeBar(inWin.length + ' of ' + all.length + ' touched in this window');
 
     h += '<div class="chips" style="margin-bottom:14px">' +
-      '<input id="cq" type="search" placeholder="Search name or number&hellip;" value="' + esc(CQ) + '" ' +
+      '<input id="cq" type="search" placeholder="Search name, number or place&hellip;" value="' + esc(CQ) + '" ' +
       'style="background:var(--coal);border:1px solid var(--line);padding:8px 12px;min-width:200px" autocomplete="off">' +
+      '<select id="cco" aria-label="Country" style="background:var(--coal);border:1px solid var(--line);padding:8px 12px">' +
+        '<option value="">All countries</option>' + countries.map(function (n) {
+          return '<option value="' + esc(n) + '"' + (n === CCO ? ' selected' : '') + '>' + esc(n) + '</option>';
+        }).join('') + '</select>' +
+      '<select id="car" aria-label="' + esc(CCO ? ZS.placeLabel('state', CCO) : 'Area') + '" ' +
+        'style="background:var(--coal);border:1px solid var(--line);padding:8px 12px">' +
+        '<option value="">All areas</option>' + areas.map(function (n) {
+          return '<option value="' + esc(n) + '"' + (n === CAR ? ' selected' : '') + '>' + esc(n) + '</option>';
+        }).join('') + '</select>' +
       '<button class="chip" data-act="clientStage" data-id="" aria-pressed="' + (CF ? 'false' : 'true') + '">All</button>' +
       ['Active', 'Client', 'Returning', 'Key account', 'Prospect'].map(function (t) {
         var n = inWin.filter(function (c) { return ZS.clientTier(c, D().opportunities)[0] === t; }).length;
@@ -59,7 +84,7 @@
       }).join('') + '</div>';
 
     h += '<div class="scroller"><table class="tbl"><thead><tr>' +
-      '<th>Client</th><th>Mobile</th><th>Standing</th><th>Open now</th><th>Bought</th>' +
+      '<th>Client</th><th>Mobile</th><th>Where</th><th>Standing</th><th>Open now</th><th>Bought</th>' +
       '<th>Came from</th><th>Saved</th><th>Owner</th><th>Last touch</th></tr></thead><tbody>' +
       (list.length ? list.map(function (c) {
         var ch = CHANNELS[c.source] || ['—', 'dim'];
@@ -68,6 +93,7 @@
         return '<tr data-act="openClient" data-id="' + esc(c.id) + '">' +
           '<td><b>' + esc(c.name) + '</b></td>' +
           '<td>' + esc(mob(c)) + '</td>' +
+          '<td>' + (where(c) ? esc(where(c)) : '<span style="color:var(--dim)">&ndash;</span>') + '</td>' +
           '<td><span class="pill ' + tier[1] + '">' + tier[0] + '</span></td>' +
           '<td>' + (open.length
             ? open.map(function (o) { return '<span class="pill info">' + esc(o.stage) + '</span>'; }).join(' ')
@@ -77,7 +103,7 @@
           '<td class="num">' + (c.shown || []).length + '</td>' +
           '<td>' + esc(staffName(c.assigned_to)) + '</td>' +
           '<td>' + esc(c.last_touch) + '</td></tr>';
-      }).join('') : '<tr><td colspan="9" class="empty">Nobody matches.</td></tr>') +
+      }).join('') : '<tr><td colspan="10" class="empty">Nobody matches.</td></tr>') +
       '</tbody></table></div>';
     return h;
   };
@@ -1127,6 +1153,8 @@
   A.onChange = function (e) {
     if (prevChange) prevChange(e);
     if (e.target.id === 'cq') { CQ = e.target.value.toLowerCase().trim(); G.render(); }
+    if (e.target.id === 'cco') { CCO = e.target.value; CAR = ''; G.render(); }
+    if (e.target.id === 'car') { CAR = e.target.value; G.render(); }
   };
 
   /* Two fields that answer to another: the campaign box only matters for a paid

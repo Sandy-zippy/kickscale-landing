@@ -4546,7 +4546,7 @@ function outreachTrades(list) {
     primaryContact: primaryContact, contactById: contactById, oppContact: oppContact,
     addContact: addContact, dropContact: dropContact,
     makePrimary: makePrimary, newAddress: newAddress, addressLine: addressLine,
-    placeFields: placeFields, placeList: placeList, niceDate: niceDate, longDate: longDate,
+    placeFields: placeFields, placeList: placeList, placeLabel: placeLabel, niceDate: niceDate, longDate: longDate,
     PLACE_OTHER: PLACE_OTHER,
     PICKLISTS: PICKLISTS, picklist: picklist, addToPicklist: addToPicklist,
     DESIGNATIONS: DESIGNATIONS, designationsFor: designationsFor,
