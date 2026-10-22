@@ -268,6 +268,7 @@
         '<div class="sendrow">' +
           '<button class="btn" type="submit"' + (BUSY ? ' disabled' : '') + '>' +
             (BUSY ? 'Sending…' : 'Send') + '</button>' +
+          (G.micButton ? G.micButton('sendbox') : '') +
           (t.channel === 'whatsapp'
             ? '<button class="btn alt" type="button" data-act="pickTemplate" data-id="' +
               esc(t.id) + '">Template</button>' +
@@ -494,7 +495,7 @@
   }
 
   function scBody() {
-    var tpls = scTemplates(), t = scTpl(), why = scWhy();
+    var tpls = scTemplates(), t = scTpl(), why = SC.tried ? scWhy() : '';
     var h = '<div class="twocol" style="margin:0"><div>';
     if (SC.wa) {
       h += '<div class="f"><label>Who</label><p class="m" style="margin:0"><b>' + esc(SC.name || ('+' + SC.wa)) +
@@ -531,7 +532,7 @@
     h += '</div><div class="waside" id="sc-prev">' + (t ? G.waPhone(t, SC.vals, [], { short: true }) : '') + '</div></div>';
     h += '<p class="err" id="sc-why"' + (why ? '' : ' hidden') + '>' + esc(why) + '</p>' +
       '<div class="sendrow" style="display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">' +
-      '<button class="btn" type="button" id="sc-send" data-act="scSend"' + (why || SC.busy ? ' disabled' : '') + '>' + (SC.busy ? 'Sending…' : 'Send') + '</button>' +
+      '<button class="btn" type="button" id="sc-send" data-act="scSend"' + (SC.busy ? ' disabled' : '') + '>' + (SC.busy ? 'Sending…' : 'Send') + '</button>' +
       '<button class="btn alt" type="button" data-act="scClose">Cancel</button>' +
       '<span class="hint" style="flex:1;min-width:200px">Goes out from +91 99893 98484' +
         (t ? ' as a ' + ({ MARKETING: 'Marketing', UTILITY: 'Utility' }[t.category] || '') + ' message' : '') +
@@ -576,10 +577,11 @@
       if (n && n.focus) { n.focus(); try { if (c0 != null) n.setSelectionRange(c0, c1); } catch (e) {} }
       return;
     }
-    var t = scTpl(), why = scWhy();
+    /* errors wait for a Send attempt, then follow every fix (house rule) */
+    var t = scTpl(), why = SC.tried ? scWhy() : '';
     var p = document.getElementById('sc-prev'); if (p) p.innerHTML = t ? G.waPhone(t, SC.vals, [], { short: true }) : '';
     var w = document.getElementById('sc-why'); if (w) { w.textContent = why; w.hidden = !why; }
-    var s = document.getElementById('sc-send'); if (s) s.disabled = !!why || SC.busy;
+    var s = document.getElementById('sc-send'); if (s) s.disabled = !!SC.busy;
   }
 
   /* opts: {client, opp, thread, tpl: 'name|lang'}. From a conversation the
@@ -626,7 +628,8 @@
     },
     scClose: function () { SC = null; var dm = document.getElementById('modal'); if (dm && dm.open) dm.close(); },
     scSend: function () {
-      if (!SC || SC.busy || scWhy()) return;
+      if (!SC || SC.busy) return;
+      if (scWhy()) { SC.tried = true; scDraw(true); return; }
       var t = scTpl();
       SC.busy = true; scDraw();
       var who = SC.name || (SC.wa ? '+' + SC.wa : SC.dial + ' ' + SC.digits);
@@ -687,6 +690,7 @@
 
   function send(id, payload) {
     if (!window.API || !API.signedIn()) return G.toast('Sign in to the server first.', true);
+    if (payload && payload.text && G.micReset) G.micReset('sendbox');   /* the words are spent */
     BUSY = true; G.render();
     API.sendOnThread(id, payload).then(function () {
       BUSY = false;

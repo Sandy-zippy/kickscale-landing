@@ -871,13 +871,12 @@
         from `e.results` on every event. That array is the browser's, not ours —
         Chrome prunes it and restarts the recogniser on its own after a pause,
         and when it does, everything before the restart disappears from the box
-        mid-sentence. So finalised phrases are copied into a string WE own the
-        moment they arrive, and the box is only ever that string plus whatever is
-        still being said.
+        mid-sentence. So each finalised phrase is written into the box once, the
+        moment it arrives, and the box itself (not a copy of it) is what holds them.
 
      2. STOPPING AND STARTING AGAIN CONTINUES, it does not begin again. Pressing
-        Speak reads what is already in the box and keeps it as the base, so a
-        second and third dictation land after the first rather than wiping it. */
+        Speak never clears the box, so a second and third dictation land after
+        the first rather than wiping it. */
 
   /* ⚠️ THE NODE IS NOT OURS TO KEEP.
 
@@ -920,16 +919,43 @@
       /* a different box: fall through and start listening to that one instead */
     }
 
-    /* whatever is in the box stays in the box */
-    var box0 = document.getElementById(targetId);
-    var base = box0.value ? box0.value.replace(/\s+$/, '') + ' ' : '';
-    var settled = '';              /* finalised phrases, in a string we own */
+    /* THE BOX IS THE SOURCE OF TRUTH (22 Oct). The old version kept its own copy of
+       everything said and wrote `base + settled` back into the box on every event
+       and on Stop, so a word he corrected while still talking snapped back. Now:
+       what is still being said sits in the box as a removable tail only; each
+       FINAL phrase is inserted once, where the tail was (or at the caret, or the
+       end), and nothing already in the box is ever rewritten. */
+    var tail = null;               /* { at, text }: the interim words now showing */
 
-    function paint(interim) {
+    function put(finalText, interim) {
       var box = document.getElementById(targetId);
-      if (!box) return;            /* the screen moved on; keep listening, keep the text */
-      box.value = base + settled + (interim || '');
-      try { box.selectionStart = box.selectionEnd = box.value.length; } catch (e) {}
+      if (!box) return;            /* the screen moved on; keep listening */
+      var v = box.value, at = -1;
+      if (tail) {
+        if (v.substr(tail.at, tail.text.length) === tail.text) {
+          v = v.slice(0, tail.at) + v.slice(tail.at + tail.text.length);
+          at = tail.at;
+        }                          /* he typed into the tail: it is his text now, leave it */
+        tail = null;
+      }
+      if (at < 0) {
+        var focused = document.activeElement === box;
+        at = focused && typeof box.selectionStart === 'number' ? box.selectionStart : v.length;
+        if (at > v.length) at = v.length;
+      }
+      var before = v.slice(0, at), after = v.slice(at);
+      var add = '';
+      if (finalText) add = punctuate(finalText, before);
+      var tl = interim ? interim.trim() : '';
+      if (add || tl) {
+        var lead = before && !/\s$/.test(before) ? ' ' : '';
+        var ins = lead + add + (add && tl ? ' ' : '') + tl;
+        var trail = after && !/^\s/.test(after) ? ' ' : '';
+        box.value = before + ins + trail + after;
+        if (tl) tail = { at: before.length + ins.length - tl.length, text: tl };
+        at = before.length + ins.length;
+      } else box.value = before + after;
+      try { box.selectionStart = box.selectionEnd = at; } catch (e) {}
       /* let anything watching the box react, exactly as if it had been typed */
       try { box.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {}
     }
@@ -948,16 +974,14 @@
     r.wanted = true;
 
     r.onresult = function (e) {
-      var interim = '';
+      if (r.spent) return;          /* sent or saved: a late phrase must not come back */
+      var fin = '', interim = '';
       for (var i = e.resultIndex; i < e.results.length; i++) {
         var t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) {
-          /* banked the moment it arrives — this is the line that stops text
-             vanishing when Chrome prunes its own results array */
-          settled += (settled && !/\s$/.test(settled) ? ' ' : '') + t.trim() + ' ';
-        } else interim += t;
+        if (e.results[i].isFinal) fin += (fin ? ' ' : '') + t.trim();
+        else interim += t;
       }
-      paint(interim);
+      put(fin, interim);
     };
 
     r.onerror = function (e) {
@@ -969,13 +993,15 @@
     };
 
     r.onend = function () {
+      /* a phrase still showing when the session ends would never be finalised by
+         the next session: keep it, as a final, rather than lose words he saw */
+      if (tail && !r.spent) { var t0 = tail.text; put(t0, ''); }
+      tail = null;
       /* Chrome ends the session by itself after a silence. If the person has not
-         tapped stop, pick it straight back up — from where it left off, because
-         `settled` is ours and survives the restart. */
+         tapped stop, pick it straight back up; the box already holds everything. */
       if (r.wanted) {
         try { r.start(); return; } catch (err) { /* fall through and stop */ }
       }
-      paint('');
       done();
     };
 
@@ -991,10 +1017,25 @@
     }
   }
 
+  /* Chrome's Web Speech gives no punctuation. A rules pass on each FINAL phrase,
+     never on the interim tail: a capital where a sentence starts, "?" when it
+     opens with a question word, a full stop otherwise. It changes no words. */
+  var ASKS = /^(what|why|how|when|where|who|which|can|could|is|are|do|does|did|will|shall|should|would)\b/i;
+  function punctuate(text, before) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    var newSentence = !/\S/.test(before || '') || /[.?!]\s*$/.test(before || '');
+    if (newSentence) t = t.charAt(0).toUpperCase() + t.slice(1);
+    t = t.replace(/([.?!]\s+)([a-z])/g, function (w, p, c) { return p + c.toUpperCase(); });
+    if (!/[.?!,;:]$/.test(t)) t += ASKS.test(t) ? '?' : '.';
+    return t;
+  }
+
   /* Somebody sent or saved what they dictated: the words are spent, so start the
      next burst from empty rather than appending to a box that has been cleared. */
   function micReset(targetId) {
     if (!REC || (targetId && HEARING !== targetId)) return;
+    REC.spent = true;
     REC.wanted = false;
     REC.stop();
   }
