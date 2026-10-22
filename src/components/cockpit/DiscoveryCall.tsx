@@ -506,7 +506,7 @@ export default function DiscoveryCall() {
                 <label className="block">
                   <Label f={{
                     key: 'budget', label: 'What have you set aside for this?', kind: 'select', required: true,
-                    hint: `Our builds start at ${formatCompact(730, ccy, rate)} plus a monthly. A band saves us both a meeting.`,
+                    hint: `Our builds start at ${formatCompact(730, ccy, rate)}. A band saves us both a meeting.`,
                   }} />
                   <Select value={a.budget || ''} onChange={set('budget')} options={budgetOptions} invalid={wrong.includes('budget')} label="Budget" />
                 </label>
