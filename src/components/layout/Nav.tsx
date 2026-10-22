@@ -8,6 +8,13 @@ interface NavProps {
   /** Override the CTA href. Defaults to the AI-automation quiz, which is where
    * that funnel lives now that / is the growth page. */
   ctaHref?: string
+  /** Override the CTA wording. The free audit belongs to the AI-automation funnel,
+   * so the cockpit homepage asks for a discovery call instead. */
+  ctaLabel?: string
+  /** What the CTA says on a phone, where it sits between the wordmark and the
+   * hamburger and has maybe 7rem to play with. Defaults to `ctaLabel`, which is
+   * fine for something short like "Free Audit" and not for anything longer. */
+  ctaLabelMobile?: string
   /** Floating detached pill instead of a full-width bar (used on /growth). */
   floating?: boolean
   /**
@@ -16,6 +23,12 @@ interface NavProps {
    * near-opaque white pill reads as a light island over a near-black hero.
    */
   dark?: boolean
+  /**
+   * Homepage-only button styling (2026-10-01): links draw a lime underline, the CTA
+   * shimmers. Links, labels and destinations are identical; every other page omits
+   * this and renders exactly as before.
+   */
+  cockpit?: boolean
 }
 
 /** Per-skin class tokens. Keeping them in one table is what makes it safe to
@@ -51,8 +64,11 @@ const SKIN = {
   },
 } as const
 
-export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz', floating = false, dark = false }: NavProps) {
+export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz', ctaLabel = 'Get Your Free Audit', ctaLabelMobile, floating = false, dark = false, cockpit = false }: NavProps) {
   const c = dark ? SKIN.dark : SKIN.light
+  /* homepage-only extras; empty strings elsewhere, so other pages' markup is unchanged */
+  const lk = cockpit ? 'zs-navlink ' : ''
+  const shine = cockpit ? <span aria-hidden className="zs-shine pointer-events-none absolute inset-0" /> : null
   const [menuOpen, setMenuOpen] = useState(false)
   const [giveawaysOpen, setGiveawaysOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -109,16 +125,26 @@ export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz',
         {/* Logo */}
         <a href="/" className="flex items-center gap-2 shrink-0">
           <img src="/logos/icon-64.png" alt="ZippyScale" className="w-7 h-7" />
-          <span className={`font-['Space_Grotesk'] font-bold text-lg ${c.wordmark}`}>
+          {/* Below ~380px the wordmark and the CTA cannot both fit. The mark is the
+              logo; the word is a nicety. */}
+          <span className={`hidden min-[380px]:inline font-['Space_Grotesk'] font-bold text-lg ${c.wordmark}`}>
             ZippyScale
           </span>
         </a>
 
         {/* Desktop nav links */}
         <div className="hidden md:flex items-center gap-6">
+          {/* The agency is a service under the product now (2026-09-26), so it
+              sits in the nav rather than being the front door. */}
+          <a
+            href="/agency"
+            className={`${lk}text-sm font-medium ${c.link} transition-colors`}
+          >
+            Marketing agency
+          </a>
           <a
             href="/ai-automation"
-            className={`text-sm font-medium ${c.link} transition-colors`}
+            className={`${lk}text-sm font-medium ${c.link} transition-colors`}
           >
             AI Automation
           </a>
@@ -131,7 +157,7 @@ export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz',
           >
             <a
               href="/giveaways"
-              className={`flex items-center gap-1 text-sm font-medium ${c.link} transition-colors`}
+              className={`${lk}flex items-center gap-1 text-sm font-medium ${c.link} transition-colors`}
               aria-haspopup="true"
               aria-expanded={giveawaysOpen}
             >
@@ -177,34 +203,50 @@ export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz',
 
           <a
             href="/case-studies"
-            className={`text-sm font-medium ${c.link} transition-colors`}
+            className={`${lk}text-sm font-medium ${c.link} transition-colors`}
           >
             Case Studies
           </a>
           <a
             href="/client-login/"
-            className={`text-sm font-medium ${c.link} transition-colors`}
+            className={`${lk}text-sm font-medium ${c.link} transition-colors`}
           >
             Client Login
           </a>
           <a
             href={ctaHref}
-            className="inline-flex items-center rounded-lg bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
+            className={cockpit
+              ? 'relative inline-flex items-center overflow-hidden rounded-full bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] shadow-[0_0_28px_-8px_rgba(213,235,75,0.8)] transition-transform hover:scale-[1.04] active:scale-95'
+              : 'inline-flex items-center rounded-lg bg-[#D5EB4B] px-5 py-2 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors'}
           >
-            Get Your Free Audit
+            {shine}
+            {cockpit ? <span className="relative">{ctaLabel}</span> : ctaLabel}
           </a>
         </div>
 
-        {/* Mobile hamburger */}
+        {/* Phone: the CTA lives in the bar, not behind the hamburger. The bar floats
+            over every section, so this is the one thing on screen at all times, and
+            burying the only ask behind a menu wastes it. */}
+        <div className="md:hidden flex items-center gap-1.5">
+          <a
+            href={ctaHref}
+            onClick={() => setMenuOpen(false)}
+            className={`${cockpit ? 'relative overflow-hidden active:scale-95 ' : ''}inline-flex items-center whitespace-nowrap rounded-full bg-[#D5EB4B] px-3.5 py-2 text-[12.5px] font-bold text-[#0c0c10] transition-colors hover:bg-[#E4F57A]`}
+          >
+            {shine}
+            {cockpit ? <span className="relative">{ctaLabelMobile ?? ctaLabel}</span> : (ctaLabelMobile ?? ctaLabel)}
+          </a>
+
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden flex flex-col gap-1.5 p-2"
+          className="flex flex-col gap-1.5 p-2"
           aria-label="Toggle menu"
         >
           <span className={`block w-5 h-0.5 ${c.bar} transition-transform ${menuOpen ? 'rotate-45 translate-y-2' : ''}`} />
           <span className={`block w-5 h-0.5 ${c.bar} transition-opacity ${menuOpen ? 'opacity-0' : ''}`} />
           <span className={`block w-5 h-0.5 ${c.bar} transition-transform ${menuOpen ? '-rotate-45 -translate-y-2' : ''}`} />
         </button>
+        </div>
       </div>
 
       {/* Mobile slide-down sheet */}
@@ -218,7 +260,16 @@ export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz',
             className={`md:hidden overflow-hidden border-t ${c.sheet} ${floating ? "rounded-b-[26px]" : ""}`}
           >
             <div className="max-w-6xl mx-auto px-5 py-4 space-y-3">
-              <a
+                            <a
+                href="/agency"
+                className={cockpit
+                  ? `block w-full text-center rounded-lg border ${c.sheetCard} px-5 py-3 text-sm font-semibold transition-colors`
+                  : `text-lg font-medium ${c.link} transition-colors`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Marketing agency
+              </a>
+<a
                 href="/ai-automation"
                 className={`block w-full text-center rounded-lg border ${c.sheetCard} px-5 py-3 text-sm font-semibold transition-colors`}
                 onClick={() => setMenuOpen(false)}
@@ -286,10 +337,11 @@ export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz',
               </a>
               <a
                 href={ctaHref}
-                className="block w-full text-center rounded-lg bg-[#D5EB4B] px-5 py-3 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors"
+                className={`${cockpit ? 'relative overflow-hidden ' : ''}block w-full text-center rounded-lg bg-[#D5EB4B] px-5 py-3 text-sm font-semibold text-[#0c0c10] hover:bg-[#E4F57A] transition-colors`}
                 onClick={() => setMenuOpen(false)}
               >
-                Get Your Free Audit
+                {shine}
+                {cockpit ? <span className="relative">{ctaLabel}</span> : ctaLabel}
               </a>
             </div>
           </motion.div>

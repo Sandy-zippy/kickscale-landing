@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AgentAmbience } from './components/cockpit/Ambience'
 import { captureUTM } from './lib/analytics'
 import { trackSectionView, trackSectionScroll } from './lib/tracking'
 import ScarcityBanner from './components/layout/ScarcityBanner'
@@ -28,6 +29,7 @@ import DeckLoader from './components/discovery/DeckLoader'
 
 const GrowthOffer = lazy(() => import('./pages/GrowthOffer'))
 const Growth = lazy(() => import('./pages/Growth'))
+const AgenticCockpit = lazy(() => import('./pages/AgenticCockpit'))
 const Giveaways = lazy(() => import('./pages/Giveaways'))
 const CaseStudyIndex = lazy(() => import('./pages/CaseStudyIndex'))
 const CaseStudyRouter = lazy(() => import('./pages/case-studies/CaseStudyRouter'))
@@ -104,20 +106,41 @@ function AutomationHome() {
   )
 }
 
+/* Routes where the drifting agents would be noise rather than atmosphere:
+   /growth-offer is a full-bleed iframe, and /discovery is a working form. */
+const NO_AMBIENCE = ['/growth-offer', '/discovery']
+
+function Ambience() {
+  const { pathname } = useLocation()
+  if (NO_AMBIENCE.some(p => pathname.startsWith(p))) return null
+  /* The homepage has its own agents since 2026-10-01 (Zippy, per-section drift behind
+     the content, and each agent working in its tile). This layer floats ABOVE content,
+     so there it drew faint robots across those tiles. Every other route keeps it. */
+  if (pathname === '/') return null
+  return <AgentAmbience />
+}
+
 export default function App() {
   useEffect(() => { captureUTM() }, [])
 
   return (
     <BrowserRouter>
       <ExportModeProvider>
+        <Ambience />
         <Suspense fallback={<DeckLoader />}>
           <Routes>
-            {/* Growth marketing is the front door as of 2026-07-29; the
-                AI-automation funnel moved to /ai-automation. /growth is kept as
-                a redirect so older links, ads and shared URLs still land. */}
-            <Route path="/" element={<Growth />} />
+            {/* Agentic Cockpit became the front door on 2026-09-26 — it is the
+                product now, and the agency is a service underneath it. The growth
+                marketing page moved to /agency and keeps selling.
+                /growth carries live ad traffic: it MUST point at /agency, not at
+                /, or paid clicks land on the product page instead of the offer
+                they were promised. */}
+            <Route path="/" element={<AgenticCockpit />} />
+            <Route path="/agentic-cockpit" element={<AgenticCockpit />} />
+            <Route path="/agency" element={<Growth />} />
             <Route path="/ai-automation" element={<AutomationHome />} />
-            <Route path="/growth" element={<Navigate to="/" replace />} />
+            <Route path="/growth" element={<Navigate to="/agency" replace />} />
+            <Route path="/marketing" element={<Navigate to="/agency" replace />} />
             <Route path="/growth-offer" element={<GrowthOffer />} />
             <Route path="/giveaways" element={<Giveaways />} />
             <Route path="/case-studies" element={<CaseStudyIndex />} />
