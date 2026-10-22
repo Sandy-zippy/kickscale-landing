@@ -514,11 +514,9 @@
           '<div class="card" style="padding:0;margin-top:6px" id="sc-hits">' + scHits() + '</div></div>';
       }
     }
-    h += '<div class="f" style="margin-top:14px"><label for="sc-tpl">Template</label>' +
-      '<select id="sc-tpl"><option value="">Pick an approved template</option>' + tpls.map(function (x) {
-        return '<option value="' + esc(x.name + '|' + x.language) + '"' + (SC.tpl === x.name + '|' + x.language ? ' selected' : '') + '>' +
-          esc(x.name + ' · ' + ({ MARKETING: 'Marketing', UTILITY: 'Utility' }[x.category] || x.category) + ' · ' + x.language) + '</option>';
-      }).join('') + '</select><span class="hint">Approved only. ' + tpls.length + ' on this WhatsApp account.</span></div>';
+    var tload = !tpls.length && G.waTemplatesLoading && G.waTemplatesLoading();
+    h += '<div class="f" style="margin-top:14px"><label for="sc-tpl-q">Template</label>' + G.tplPicker('sc-tpl', tpls, SC.tpl, tload) +
+      '<span class="hint">' + (tload ? 'Loading templates...' : 'Approved only. ' + tpls.length + ' on this WhatsApp account.') + '</span></div>';
     if (t && nOf(t.body)) {
       h += '<div class="f" style="margin-top:14px"><label>Fill the blanks</label><div class="opts">' +
         SC.vals.map(function (v, i) {
@@ -569,7 +567,15 @@
   function scDraw(full) {
     var body = document.getElementById('m-body');
     if (!body || !SC) return;
-    if (full) { body.innerHTML = scBody(); return; }
+    if (full) {
+      /* a redraw (the template list landing, a pick) keeps the cursor and what is being typed where it was */
+      var a = document.activeElement, fid = a && body.contains && body.contains(a) ? a.id : '', c0 = null, c1 = null;
+      try { c0 = a.selectionStart; c1 = a.selectionEnd; } catch (e) {}
+      body.innerHTML = scBody();
+      var n = fid && document.getElementById(fid);
+      if (n && n.focus) { n.focus(); try { if (c0 != null) n.setSelectionRange(c0, c1); } catch (e) {} }
+      return;
+    }
     var t = scTpl(), why = scWhy();
     var p = document.getElementById('sc-prev'); if (p) p.innerHTML = t ? G.waPhone(t, SC.vals, [], { short: true }) : '';
     var w = document.getElementById('sc-why'); if (w) { w.textContent = why; w.hidden = !why; }
@@ -594,9 +600,14 @@
     if (c && !SC.wa) { var k = contactOf(c); SC.dial = k.dial; SC.digits = k.digits; SC.name = (k.ct && k.ct.name) || c.name; }
     prefill();
     G.modal('Start a chat', 'Outside 24 hours of their last message, only an approved template can start a chat.', scBody());
-    /* the template list may still be on its way; draw again when it lands */
-    if (!scTemplates().length) setTimeout(function () { if (SC) { prefill(); scDraw(true); } }, 1500);
+    /* the cursor starts where the typing starts: who it is for, or the template when that is settled */
+    var first = document.querySelector && document.querySelector('#m-body input[type="search"], #m-body .tplq'); if (first && first.focus) first.focus();
   };
+  /* the template list may still be on its way: the open dialog redraws when it lands */
+  /* Esc or the cross closes the dialog: forget the half-made chat with it */
+  var mdl = document.getElementById('modal');
+  if (mdl && mdl.addEventListener) mdl.addEventListener('close', function () { SC = null; });
+  if (G.onWaTemplates) G.onWaTemplates(function () { if (SC && document.getElementById('sc-tpl')) { prefill(); scDraw(true); } });
 
   Object.assign(A, {
     startChat: function (arg) {
@@ -666,7 +677,10 @@
     if (!SC || !el) return;
     if (el.dataset && el.dataset.scwho) { SC.who = el.value; SC.q = ''; SC.client = null; SC.opp = null; SC.digits = ''; prefill(); scDraw(true); return; }
     if (el.id === 'sc-num-dial') { SC.dial = el.value; scDraw(); return; }
-    if (el.id === 'sc-tpl') { SC.tpl = el.value; prefill(); scDraw(true); }
+    if (el.id === 'sc-tpl') {
+      SC.tpl = el.value; prefill(); scDraw(true);
+      var nx = (document.querySelector && document.querySelector('#m-body [data-scval]')) || document.getElementById('sc-tpl-q'); if (nx && nx.focus) nx.focus();
+    }
   });
 
   var TEMPLATES_WHY = '';

@@ -1167,6 +1167,14 @@ td .sub{display:block;font-size:11px;color:var(--dim)}
 
 .pickrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line)}
 .pickrow:last-child{border-bottom:0}
+.tplpick .tplq{width:100%}
+.tpllist{padding:0;margin-top:6px;max-height:min(260px,34vh);overflow:auto}
+.tplrow{width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);color:inherit;font:inherit;cursor:pointer}
+.tplrow .t>span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tplrow:hover,.tplrow.on{background:var(--char)}
+.tplrow.on{box-shadow:inset 3px 0 0 var(--accent)}
+.tplrow b{color:var(--tx)}
+.tplrow[aria-selected="true"] b{color:var(--accent)}
 .pickrow img{width:60px;height:44px;object-fit:cover;flex:none;background:var(--char)}
 .pickrow .t{min-width:0;flex:1}
 .pickrow b{font-family:var(--d);font-size:13.5px;font-weight:600;display:block}
@@ -1232,6 +1240,12 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 .dclose{margin-left:auto;background:none;border:1px solid var(--line2);width:32px;height:32px;cursor:pointer;flex:none;font-size:17px}
 .dclose:hover{border-color:var(--ember);color:var(--accent)}
 .dbody{padding:20px;max-height:min(76vh,830px);overflow:auto}
+/* ONE scroll box in a dialog (22 Oct 2026): the dialog is a column that never
+   passes the window, its head stays, and only the body scrolls, to its very end.
+   Two nested scroll boxes left Send below reach on a short screen. */
+dialog[open]{display:flex;flex-direction:column;max-height:calc(100dvh - 32px);overflow:hidden}
+dialog>.dhead{flex:none}
+dialog>.dbody{flex:1 1 auto;min-height:0;max-height:none}
 .sec{font-family:var(--d);font-size:10.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:22px 0 11px;padding-bottom:7px;border-bottom:1px solid var(--line)}
 .sec:first-child{margin-top:0}
 .ledger{list-style:none;margin:0;padding:0}
@@ -1486,33 +1500,33 @@ dialog>.dhead p{margin:2px 0 0;font-size:12.5px;color:var(--mut)}
 
 <div id="toast" hidden></div>
 
-<script src="places.js?b=1792633592"></script>
-<script src="vocab.js?b=1792633592"></script>
-<script src="api.js?b=1792633592"></script>
-<script src="core.js?b=1792633592"></script>
-<script src="app.js?b=1792633592"></script>
-<script src="stock.js?b=1792633592"></script>
-<script src="crm.js?b=1792633592"></script>
-<script src="pipeline.js?b=1792633592"></script>
-<script src="autos.js?b=1792633592"></script>
-<script src="processing.js?b=1792633592"></script>
-<script src="whatsapp.js?b=1792633592"></script>
-<script src="campaigns.js?b=1792633592"></script>
-<script src="bin.js?b=1792633592"></script>
-<script src="inbox.js?b=1792633592"></script>
-<script src="chatbot.js?b=1792633592"></script>
-<script src="outreach.js?b=1792633592"></script>
-<script src="diary.js?b=1792633592"></script>
-<script src="handbook.js?b=1792633592"></script>
-<script src="jarvis.js?b=1792633592"></script>
-<script src="jarvis-desk.js?b=1792633592"></script>
-<script src="dates.js?b=1792633592"></script>
+<script src="places.js?b=1792680075"></script>
+<script src="vocab.js?b=1792680075"></script>
+<script src="api.js?b=1792680075"></script>
+<script src="core.js?b=1792680075"></script>
+<script src="app.js?b=1792680075"></script>
+<script src="stock.js?b=1792680075"></script>
+<script src="crm.js?b=1792680075"></script>
+<script src="pipeline.js?b=1792680075"></script>
+<script src="autos.js?b=1792680075"></script>
+<script src="processing.js?b=1792680075"></script>
+<script src="whatsapp.js?b=1792680075"></script>
+<script src="campaigns.js?b=1792680075"></script>
+<script src="bin.js?b=1792680075"></script>
+<script src="inbox.js?b=1792680075"></script>
+<script src="chatbot.js?b=1792680075"></script>
+<script src="outreach.js?b=1792680075"></script>
+<script src="diary.js?b=1792680075"></script>
+<script src="handbook.js?b=1792680075"></script>
+<script src="jarvis.js?b=1792680075"></script>
+<script src="jarvis-desk.js?b=1792680075"></script>
+<script src="dates.js?b=1792680075"></script>
 <!-- The invoice PDF: the drawing library, the embedded font (the rupee sign is
      not in any PDF standard font), and the layout itself. -->
-<script src="vendor/jspdf.js?b=1792633592"></script>
-<script src="vendor/invoice-fonts.js?b=1792633592"></script>
-<script src="invoice.js?b=1792633592"></script>
-<script src="jarvis-view.js?b=1792633592"></script>
+<script src="vendor/jspdf.js?b=1792680075"></script>
+<script src="vendor/invoice-fonts.js?b=1792680075"></script>
+<script src="invoice.js?b=1792680075"></script>
+<script src="jarvis-view.js?b=1792680075"></script>
 <script>window.GE && window.GE.boot();</script>
 </body>
 </html>

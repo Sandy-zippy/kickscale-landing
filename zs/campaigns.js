@@ -662,11 +662,8 @@
 
     /* 2 · the message */
     h += '<div class="fgroup" id="wb2"><h4>2 · The message</h4><div class="fbody" style="grid-template-columns:1fr">' +
-      '<div class="f"><label for="wb-tpl">Approved template</label><select id="wb-tpl"><option value="">Pick an approved template</option>' +
-      tpls.map(function (x) {
-        return '<option value="' + esc(x.name + '|' + x.language) + '"' + (WB.tpl === x.name + '|' + x.language ? ' selected' : '') + '>' +
-          esc(x.name + ' · ' + (CATW[x.category] || x.category) + ' · ' + x.language) + '</option>'; }).join('') +
-      '</select><span class="hint">Pending and rejected templates are not offered. <a href="#/settings/whatsapp" style="color:var(--accent)">Write a new one</a></span></div>';
+      '<div class="f"><label for="wb-tpl-q">Approved template</label>' + G.tplPicker('wb-tpl', tpls, WB.tpl, !tpls.length && G.waTemplatesLoading && G.waTemplatesLoading()) +
+      '<span class="hint">' + (!tpls.length && G.waTemplatesLoading && G.waTemplatesLoading() ? 'Loading templates... ' : '') + 'Pending and rejected templates are not offered. <a href="#/settings/whatsapp" style="color:var(--accent)">Write a new one</a></span></div>';
     if (t && nOf(t.body)) {
       var groups = ZS.waVarGroups();
       h += '<div class="f"><label>Fill each variable</label><div class="opthead"><span>From this field</span><span>If it is empty, use</span></div><div class="opts">' +

@@ -97,15 +97,108 @@
              : 'Meta did not say why. Open it in WhatsApp Manager.';
   }
 
+  /* ⚠️ REDRAW ON LOAD, NEVER ON A TIMER (22 Oct 2026). Start a chat used to draw
+     before the list landed and redraw once after 1.5 s; a slower fetch left
+     "0 on this account" over 50 approved templates for good. Now the load is a
+     promise, and everything showing the list is told when it lands. */
+  var TPL_P = null, TPL_LOADING = false, TPL_SEEN = [];
+  function landed() {
+    TPL_LOADING = false;
+    G.render();
+    TPL_SEEN.forEach(function (fn) { try { fn(TPL); } catch (e) { console.error(e); } });
+  }
   function loadTemplates(force) {
-    if (!window.API || !API.signedIn()) return;
+    if (!window.API || !API.signedIn()) return Promise.resolve(TPL);
     var r = G.range(), key = r.from + '|' + r.to;
-    if (!force && TPL && TPL_KEY === key) return;
-    TPL_KEY = key;
-    API.waTemplates(r.from, r.to).then(function (out) { TPL = out || { templates: [] }; TPL_WHY = ''; G.render(); })
-      .catch(function (e) { TPL = TPL || { templates: [] }; TPL_WHY = (e && e.message) || 'The server did not answer.'; G.render(); });
+    if (!force && TPL_KEY === key && (TPL || TPL_LOADING)) return TPL_P || Promise.resolve(TPL);
+    TPL_KEY = key; TPL_LOADING = true;
+    var p = TPL_P = API.waTemplates(r.from, r.to).then(function (out) {
+      if (p !== TPL_P) return TPL;                       /* a newer load owns the answer */
+      TPL = out || { templates: [] }; TPL_WHY = ''; landed(); return TPL;
+    }).catch(function (e) {
+      if (p !== TPL_P) return TPL;
+      TPL = TPL || { templates: [] }; TPL_WHY = (e && e.message) || 'The server did not answer.'; landed(); return TPL;
+    });
+    return p;
   }
   G.waTemplatesNow = function () { loadTemplates(); return TPL; };
+  /* true until a load has finished: "Loading templates..." rather than a count of 0 */
+  G.waTemplatesLoading = function () { return TPL_LOADING || (!TPL && !!window.API && API.signedIn()); };
+  G.onWaTemplates = function (fn) { TPL_SEEN.push(fn); };
+
+  /* ---------------- the template picker (22 Oct 2026) ----------------
+     ONE searchable list for Start a chat and the Campaigns builder. It sits in
+     the page, never a floating menu, so it cannot run off the screen: its list is
+     capped and scrolls on its own. Type to filter by name AND by the words of the
+     message; up and down move, Enter picks, a click picks. Picking writes the
+     hidden input that carries the id the screen already listens to (sc-tpl,
+     wb-tpl) and fires its change, so each screen keeps its own handler. */
+  function firstLine(x) { return String(x.body || '').split('\n').filter(function (l) { return l.trim(); })[0] || ''; }
+  function tplHits(list, q) {
+    q = String(q || '').toLowerCase().trim();
+    if (!q) return list;
+    return list.filter(function (x) {
+      return (String(x.name).replace(/_/g, ' ') + ' ' + x.name + ' ' + (x.body || '')).toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  var PICK = {};      /* id -> {list, q, at} */
+  function pickRows(id) {
+    var P = PICK[id], hits = tplHits(P.list, P.q), cur = (document.getElementById(id) || {}).value || P.cur;
+    if (P.at >= hits.length) P.at = hits.length - 1;
+    if (!hits.length) return '<p class="m" style="padding:10px 12px;margin:0">' +
+      (P.list.length ? 'No template has those words.' : P.loading ? 'Loading templates...' : 'No approved template yet.') + '</p>';
+    return hits.map(function (x, i) {
+      var k = x.name + '|' + x.language, on = i === P.at;
+      return '<button type="button" class="pickrow tplrow' + (on ? ' on' : '') + '" role="option" id="' + id + '-o' + i + '"' +
+        ' aria-selected="' + (k === cur) + '" data-tplpick="' + esc(id) + '" data-key="' + esc(k) + '">' +
+        '<span class="t"><b>' + esc(x.name) + '</b><span>' + esc(firstLine(x)) + '</span></span>' +
+        '<span class="pill ' + (k === cur ? 'ok' : 'dim') + '">' + (k === cur ? 'Picked' : esc(({ MARKETING: 'Marketing', UTILITY: 'Utility' }[x.category] || x.category) + ' · ' + x.language)) + '</span></button>';
+    }).join('');
+  }
+  /* id: the hidden input's id; list: approved templates; cur: 'name|lang' */
+  G.tplPicker = function (id, list, cur, loading) {
+    var P = PICK[id] = { list: list || [], q: (PICK[id] && PICK[id].q) || '', at: -1, cur: cur || '', loading: !!loading };
+    return '<div class="tplpick">' +
+      '<input type="hidden" id="' + id + '" value="' + esc(cur || '') + '">' +
+      '<input type="text" inputmode="search" id="' + id + '-q" class="tplq" value="' + esc(P.q) + '" autocomplete="off" role="combobox"' +
+      ' aria-expanded="true" aria-controls="' + id + '-list" aria-autocomplete="list"' +
+      ' placeholder="Search by template name or words in the message" aria-label="Search templates">' +
+      '<div class="card tpllist" id="' + id + '-list" role="listbox" aria-label="Approved templates">' + pickRows(id) + '</div></div>';
+  };
+  function pickRedraw(id) {
+    var l = document.getElementById(id + '-list'); if (!l) return;
+    l.innerHTML = pickRows(id);
+    var q = document.getElementById(id + '-q'), on = l.querySelector('.tplrow.on');
+    if (q) q.setAttribute('aria-activedescendant', on ? on.id : '');
+    if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
+  }
+  function pickIt(id, key) {
+    var h = document.getElementById(id); if (!h) return;
+    h.value = key;
+    h.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  document.addEventListener('input', function (e) {
+    var el = e.target; if (!el || !/-q$/.test(el.id || '') || !el.classList.contains('tplq')) return;
+    var id = el.id.slice(0, -2); if (!PICK[id]) return;
+    PICK[id].q = el.value; PICK[id].at = el.value ? 0 : -1; pickRedraw(id);
+  });
+  document.addEventListener('keydown', function (e) {
+    var el = e.target; if (!el || !el.classList || !el.classList.contains('tplq')) return;
+    var id = el.id.slice(0, -2), P = PICK[id]; if (!P) return;
+    var n = tplHits(P.list, P.q).length;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault(); if (!n) return;
+      P.at = e.key === 'ArrowDown' ? Math.min(n - 1, P.at + 1) : Math.max(0, P.at - 1); pickRedraw(id);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      var x = tplHits(P.list, P.q)[P.at < 0 ? 0 : P.at]; if (x) pickIt(id, x.name + '|' + x.language);
+    }
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-tplpick]') : null; if (!b) return;
+    pickIt(b.getAttribute('data-tplpick'), b.getAttribute('data-key'));
+  });
+  G.tplHitsForTest = tplHits;
   G.waEditForTest = function () { return EDIT; };
   G.setTemplatesForTest = function (t) { TPL = t; TPL_KEY = G.range().from + '|' + G.range().to; EDIT = null; };
 

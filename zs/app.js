@@ -558,7 +558,9 @@
      in background tabs to about once a minute anyway, so this asks for roughly
      what it will be given. */
 
-  var PULSE_MS = 10000;     /* visible tab: an arrival shows within ~10 s plus the pull (Bhargav was promised 20 s). Hidden stays HIDDEN_MS. */
+  var PULSE_MS = 10000;     /* visible tab, any other screen: an arrival shows within ~10 s plus the pull. Hidden stays HIDDEN_MS. */
+  var INBOX_MS = 2000;      /* visible tab ON the Inbox: a WhatsApp shows in the open thread in about 2-3 s (22 Oct 2026) */
+  var pulsing = 0;          /* when the ask in flight started: at 2 s a slow pull must not stack a second one; a hung one frees after 20 s */
   var HIDDEN_MS = 60000;     /* a backgrounded tab, and only when it can tell you */
   var pulseTimer = null;
   var lastPulse = null;
@@ -571,7 +573,7 @@
   function pulseStart() {
     if (pulseTimer) return;
     if (!window.API || !API.signedIn()) return;
-    pulseTimer = setInterval(pulseTick, PULSE_MS);
+    pulseTimer = setInterval(pulseTick, INBOX_MS);   /* the tick itself decides 2 s, 10 s or hidden */
     /* ask once now, so a tab brought back to the front is right immediately
        rather than up to twenty seconds stale */
     pulseTick();
@@ -587,8 +589,10 @@
       /* nobody looking and no way to tell them: there is nothing this can do */
       if (!notifyOn()) return;
       if (Date.now() - lastAsk < HIDDEN_MS) return;
-    }
+    } else if (location.hash.indexOf('#/inbox') !== 0 && Date.now() - lastAsk < PULSE_MS - 500) return;
+    if (pulsing && Date.now() - pulsing < 20000) return;
     lastAsk = Date.now();
+    pulsing = lastAsk;
 
     return API.pulse().then(function (p) {
       if (!p) return;
@@ -618,6 +622,9 @@
 
       var before = {};
       (D.threads || []).forEach(function (t) { before[t.id] = String(t.last_at || ''); });
+      /* the open conversation is re-read AT ONCE, beside the book pull rather than
+         after it: the thread answers in a few hundred ms, the whole book takes longer */
+      var again = talked && window.GE && GE.inboxRefresh ? GE.inboxRefresh() : null;
       return flushFirst().then(function () { return API.pull(); }).then(function (remote) {
         lastPulse = p;
         adoptRemote(remote);
@@ -625,14 +632,13 @@
           return t.last_dir === 'in' && String(t.last_at || '') > (before[t.id] || '');
         }) : [];
         if (booked) announce(newClients, newOpps);
-        /* the open conversation re-read in place, keeping the reply being typed */
-        var again = talked && window.GE && GE.inboxRefresh ? GE.inboxRefresh() : null;
         var typing = window.GE && typeof GE.unsaved === 'function' && GE.unsaved();
         if (!booked && !typing) render();
         if (fresh.length) announceMessage(fresh);
         return again;
       });
-    }).catch(function () { /* offline is not an error worth shouting about */ });
+    }).catch(function () { /* offline is not an error worth shouting about */ })
+      .then(function (x) { pulsing = 0; return x; });
   }
 
   /* ---------------- telling you, without stealing the screen ----------------
