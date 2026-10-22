@@ -309,3 +309,36 @@ describe('how long the person waits', () => {
     expect(noSlot).toContain('setErr(')
   })
 })
+
+describe('a booking reports a Lead', () => {
+  /* The campaign optimises for Lead. A booking that fired only Schedule was invisible
+     to it (22 Oct). Exactly one Lead per submission, never two. */
+  const src = readFileSync(resolve(__dirname, 'DiscoveryCall.tsx'), 'utf8')
+  const fn = src.slice(src.indexOf('async function confirm()'), src.indexOf('/* ── confirmed'))
+  const count = (s: string, re: RegExp) => (s.match(re) ?? []).length
+  const noSlot = fn.slice(fn.indexOf('if (!picked) {'), fn.indexOf('try {'))
+  const ok = fn.slice(fn.indexOf('if (j.ok) {'), fn.indexOf("else if (j.error === 'taken')"))
+
+  it('a successful booking fires one Lead and one Schedule', () => {
+    expect(count(ok, /trackDiscovery\('lead'/g)).toBe(1)
+    expect(count(ok, /trackDiscovery\('booked'/g)).toBe(1)
+    expect(ok).toContain('booked: true')
+  })
+
+  it('an enquiry fires one Lead and returns before the booking path', () => {
+    expect(count(noSlot, /trackDiscovery\('lead'/g)).toBe(1)
+    expect(noSlot).toContain('return')
+    expect(count(fn, /trackDiscovery\('lead'/g)).toBe(2)
+  })
+
+  it('lead and booked map to one fbq Lead and one fbq Schedule', async () => {
+    const fbq = vi.fn()
+    ;(window as unknown as { fbq: unknown }).fbq = fbq
+    const { trackDiscovery } = await import('../../lib/tracking')
+    trackDiscovery('lead', { booked: true })
+    trackDiscovery('booked')
+    const names = fbq.mock.calls.map(c => c[1])
+    expect(names.filter(n => n === 'Lead')).toHaveLength(1)
+    expect(names.filter(n => n === 'Schedule')).toHaveLength(1)
+  })
+})

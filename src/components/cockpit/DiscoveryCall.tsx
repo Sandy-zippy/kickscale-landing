@@ -318,9 +318,12 @@ export default function DiscoveryCall() {
     try {
       const j = await send
       if (j.ok) {
-        trackDiscovery('booked', {
-          category: a.category, country: country.name, budget: a.budget, team: a.team,
-        })
+        /* A booking is a lead too. The ads optimise for Lead, so a booking that only
+           fires Schedule is invisible to the campaign (22 Oct: a real booking showed in
+           Meta with no Lead). One Lead per submission: the no-slot path returns above. */
+        const p = { category: a.category, country: country.name, budget: a.budget, team: a.team }
+        trackDiscovery('lead', { ...p, booked: true })
+        trackDiscovery('booked', p)
         setDone({ when: j.when || '', meet: j.meet || '' })
       }
       else if (j.error === 'taken') {
