@@ -64,7 +64,7 @@ export default function HeroForm() {
       setSubmitted(true)
     } catch (err) {
       console.error('Dental form submit error', err)
-      setError('Could not submit. WhatsApp us at +1 777 233 2996.')
+      setError('Could not submit. WhatsApp us at +91 99899 90419.')
     } finally {
       setSubmitting(false)
     }
@@ -82,10 +82,10 @@ export default function HeroForm() {
           We&apos;ll WhatsApp you within 30 min. If urgent:
         </p>
         <a
-          href="https://wa.me/17772332996"
+          href="https://wa.me/919989990419"
           className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#2A2A35] text-[#D5EB4B] font-semibold hover:bg-[#1A1A22] transition-colors"
         >
-          +1 777 233 2996
+          +91 99899 90419
         </a>
       </motion.div>
     )

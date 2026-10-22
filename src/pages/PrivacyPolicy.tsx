@@ -320,10 +320,10 @@ export default function PrivacyPolicy() {
             <p>
               To exercise any of these rights, email{' '}
               <a
-                href="mailto:sandy@zippyscale.com?subject=Data%20Rights%20Request"
+                href="mailto:bhargav@zippyscale.com?subject=Data%20Rights%20Request"
                 className="text-[#B8CF2E] underline hover:text-[#1A1A2E]"
               >
-                sandy@zippyscale.com
+                bhargav@zippyscale.com
               </a>{' '}
               with the subject line &ldquo;Data Rights Request&rdquo; and include your
               full name, registered email, and the specific request. We respond within 7
@@ -347,10 +347,10 @@ export default function PrivacyPolicy() {
               <li>
                 Email{' '}
                 <a
-                  href="mailto:sandy@zippyscale.com?subject=Withdraw%20Consent"
+                  href="mailto:bhargav@zippyscale.com?subject=Withdraw%20Consent"
                   className="text-[#B8CF2E] underline hover:text-[#1A1A2E]"
                 >
-                  sandy@zippyscale.com
+                  bhargav@zippyscale.com
                 </a>{' '}
                 with &ldquo;Withdraw Consent&rdquo; in the subject line to delete your
                 account and all associated data within 30 days, subject to legal
@@ -492,10 +492,10 @@ export default function PrivacyPolicy() {
               <p className="mt-2">
                 <strong>Email:</strong>{' '}
                 <a
-                  href="mailto:sandy@zippyscale.com?subject=Grievance%20%E2%80%93%20Privacy%20Policy"
+                  href="mailto:bhargav@zippyscale.com?subject=Grievance%20%E2%80%93%20Privacy%20Policy"
                   className="text-[#B8CF2E] underline hover:text-[#1A1A2E]"
                 >
-                  sandy@zippyscale.com
+                  bhargav@zippyscale.com
                 </a>
               </p>
               <p className="mt-2">

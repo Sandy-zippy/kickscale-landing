@@ -38,7 +38,7 @@ export default function HeroForm() {
       setSubmitted(true)
     } catch (err) {
       console.error('Hair form submit error', err)
-      setError('Could not submit. WhatsApp us at +1 777 233 2996.')
+      setError('Could not submit. WhatsApp us at +91 99899 90419.')
     } finally {
       setSubmitting(false)
     }
@@ -49,7 +49,7 @@ export default function HeroForm() {
       <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl border-2 border-[#D5EB4B] bg-[#FFFDF7] p-8 text-center shadow-[0_20px_60px_rgba(42,42,53,0.08)]">
         <div className="text-3xl font-bold text-[#2A2A35] mb-3">Locked in.</div>
         <p className="text-[#5A5A66] mb-5 leading-relaxed">We&apos;ll WhatsApp you within 30 min. If urgent:</p>
-        <a href="https://wa.me/17772332996" className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#2A2A35] text-[#D5EB4B] font-semibold hover:bg-[#1A1A22] transition-colors">+1 777 233 2996</a>
+        <a href="https://wa.me/919989990419" className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-[#2A2A35] text-[#D5EB4B] font-semibold hover:bg-[#1A1A22] transition-colors">+91 99899 90419</a>
       </motion.div>
     )
   }

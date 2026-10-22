@@ -7,6 +7,7 @@ import ScarcityBanner from './components/layout/ScarcityBanner'
 import Nav from './components/layout/Nav'
 import Footer from './components/layout/Footer'
 import StickyCTA from './components/layout/StickyCTA'
+import WhatsAppFloat from './components/layout/WhatsAppFloat'
 import Divider from './components/ui/Divider'
 import VisitTracker from './components/ui/VisitTracker'
 import Hero from './components/sections/Hero'
@@ -127,6 +128,7 @@ export default function App() {
     <BrowserRouter>
       <ExportModeProvider>
         <Ambience />
+        <WhatsAppFloat />
         <Suspense fallback={<DeckLoader />}>
           <Routes>
             {/* Agentic Cockpit became the front door on 2026-09-26 — it is the

@@ -337,18 +337,29 @@ export default function DiscoveryCall() {
   /* ── confirmed ─────────────────────────────────────────────────────────── */
   if (done) {
     const booked = !!done.when
+    /* No Mr./Ms.: the form has no title field, and a wrong guess is worse than none. */
+    const first = (a.name || '').trim().split(/\s+/)[0]
+    const told: [string, string | undefined][] = [
+      ['Business', a.company],
+      ['Sector', a.category],
+      ['Team size', a.team],
+      ['Country', country.name],
+      [country.tier, a.state],
+      ['City', a.city],
+    ]
+    const hello = `Hi, I am ${a.name || 'here'}${a.company ? ` from ${a.company}` : ''}. I just filled in the Agentic Cockpit form and wanted to talk sooner.`
     return (
       <div id="book" className="scroll-mt-28 rounded-3xl bg-[#050507] p-6 text-white sm:p-10">
         <div className="flex items-start gap-4">
           <Agent skin="lime" size={46} mood="happy" />
-          <div>
+          <div className="min-w-0 flex-1">
             <h3 className="font-['Space_Grotesk'] text-[1.35rem] font-bold leading-tight sm:text-[1.6rem]">
-              {booked ? `Booked. ${done.when}.` : 'Got it. We will be in touch.'}
+              {booked ? `Booked. ${done.when}.` : first ? `Thank you, ${first}.` : 'Thank you.'}
             </h3>
             <p className="mt-3 max-w-[44ch] text-[15px] leading-relaxed text-white/70">
               {booked
                 ? `The calendar invite is on its way to ${a.email}. It carries a Google Meet link, and it is in Bhargav's calendar too, so neither of you has to remember.`
-                : `Your details are with us. Bhargav will come back to ${a.email} with two or three times that suit, usually the same day.`}
+                : 'Our team will get in touch with you in the next 24 hours.'}
             </p>
             {booked && done.meet && (
               <a href={done.meet} target="_blank" rel="noopener noreferrer"
@@ -357,11 +368,29 @@ export default function DiscoveryCall() {
                 Open the Meet link
               </a>
             )}
-            <p className="mt-6 text-[13.5px] text-white/45">
-              {booked
-                ? 'Something come up? Reply to the invite, or message us on WhatsApp and we will move it.'
-                : 'In a hurry? Message us on WhatsApp and we will pick it up straight away.'}
-            </p>
+
+            <dl className="mt-6 grid max-w-[34rem] grid-cols-1 gap-x-6 gap-y-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 sm:grid-cols-2 sm:p-5">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-white/45 sm:col-span-2">What you told us</p>
+              {told.filter(([, v]) => v && v.trim()).map(([k, v]) => (
+                <div key={k} className="min-w-0">
+                  <dt className="text-[12px] text-white/50">{k}</dt>
+                  <dd className="mt-0.5 break-words text-[14.5px] font-semibold text-white">{v}</dd>
+                </div>
+              ))}
+            </dl>
+
+            {!booked && (
+              <p className="mt-6 max-w-[46ch] text-[15px] leading-relaxed text-white/70">
+                We take on only five clients a month, nothing more. Demand is high right now, so we ask for a little patience.
+              </p>
+            )}
+
+            <a href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(hello)}`}
+               target="_blank" rel="noopener noreferrer"
+               className="mt-6 inline-flex min-h-[44px] items-center gap-2 rounded-full px-5 py-2.5 font-['Space_Grotesk'] text-[14px] font-bold text-[#0A0A0C]"
+               style={{ background: LIME }}>
+              {booked ? 'Need to move it? WhatsApp us' : 'In a hurry? WhatsApp us now'}
+            </a>
           </div>
         </div>
       </div>

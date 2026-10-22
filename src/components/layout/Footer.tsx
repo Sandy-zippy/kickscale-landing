@@ -2,14 +2,18 @@ import { Link } from 'react-router-dom'
 
 export default function Footer() {
   return (
-    <footer className="bg-[#2A2A35] border-t border-[#3E3E48] py-8 px-6">
+    <footer className="bg-[#2A2A35] border-t border-[#3E3E48] pt-8 pb-24 px-6">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-sm">
         {/* Left: copyright + email + city, all inline */}
         <div className="text-[#9CA3AF] text-center md:text-left flex flex-wrap items-center justify-center md:justify-start gap-x-2">
           <span>&copy; 2026 ZippyScale</span>
           <span className="text-[#4B5563]" aria-hidden="true">·</span>
-          <a href="mailto:hello@zippyscale.in" className="hover:text-[#FAFAFA] transition-colors">
-            hello@zippyscale.in
+          <a href="mailto:bhargav@zippyscale.com" className="hover:text-[#FAFAFA] transition-colors">
+            bhargav@zippyscale.com
+          </a>
+          <span className="text-[#4B5563]" aria-hidden="true">·</span>
+          <a href="tel:+919989990419" className="hover:text-[#FAFAFA] transition-colors">
+            +91 99899 90419
           </a>
           <span className="text-[#4B5563]" aria-hidden="true">·</span>
           <span className="text-[#6B7280]">Hyderabad, India</span>
