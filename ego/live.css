@@ -164,3 +164,6 @@ body.pt-on #shell { display: none; }
 .fd-sph-acts { display: grid; gap: 4px; }
 .fd-sph-acts a, .fd-sph-acts button { min-height: 40px; display: flex; gap: 6px; align-items: center; justify-content: center; font: inherit; font-size: 13px; font-weight: 600; text-decoration: none; border: 1px solid var(--fd-line, rgba(127,127,127,.3)); border-radius: 12px; background: var(--fd-card); color: inherit; cursor: pointer; }
 .fd-sph-acts .fd-ic { width: 16px; height: 16px; }
+/* G5 25 Oct round 2: an edited target's note is its own muted line under the row, never squeezing "Target for" */
+[data-tg-table] tr.tg-chg td { padding-top: 0; white-space: normal; }
+[data-tg-table] tr.tg-chg td > div { position: sticky; left: 14px; max-width: calc(100vw - 72px); }

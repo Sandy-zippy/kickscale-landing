@@ -15,6 +15,12 @@ const DIVS = { wholesale: { name: 'Wholesale', co: 'EGO Premium' }, retail: { na
 const me = () => D.user;
 const acc = () => D.access;
 const isOwner = () => D.user.role === 'owner';
+/* G3 25 Oct 2026 (Bhargav): deleting and the Recycle bin are switched off on screen. The code all stays. To bring them back set
+   DELETES_ON to true here AND in server/src/index.js: the "Deletes records" switch, the Recycle bin menu and screen return. */
+const DELETES_ON = false;
+const BIN_TXT = DELETES_ON ? ' It stays in the Recycle bin for 30 days.' : '';
+/* G1/G4 25 Oct round 2: a role's tier by what it can do, never its id. Management sees all; admin-level manages users. */
+const tierOf = r => !r ? 'below' : r.scope === 'all' ? 'mgmt' : r.users ? 'admin' : 'below';
 const holds = () => D.access.scope !== 'none';
 const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.user.division;
 function allowedTab(t) {
@@ -25,7 +31,7 @@ function allowedTab(t) {
   const only = (D.access.tabs || []).length ? D.access.tabs : null;   // the screens ticked for this role in Roles & access
   if (only && !['team', 'lists', 'integrations', 'followups', 'bin', 'targets'].includes(t) && !only.includes(t)) return false;
   if (t === 'targets') return holds();   // everyone sees their own target; it opens from Home and from Analysis
-  if (t === 'bin') return isOwner() || !!D.access.can_delete;   // whoever may delete sees what they deleted; an Owner sees everything
+  if (t === 'bin') return DELETES_ON && (isOwner() || !!D.access.can_delete);   // whoever may delete sees what they deleted; an Owner sees everything
   if (t === 'followups') return holds();   // My follow-ups opens from Home, like Lost sales from Opportunities
   if (t === 'integrations') return isOwner() && !D.access.viewing_as;   // every API key in one place: an Owner only
   if (['clients', 'people', 'opps', 'projects', 'import', 'inventory', 'analysis'].includes(t)) return holds();
@@ -210,7 +216,8 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'date': return G.wrap(f, p, dateIn(f, v, p));
     case 'yesno': return G.select(f, v === true ? 'Yes' : v === false ? 'No' : v, p, [['Yes', 'Yes'], ['No', 'No']]);
     case 'select': return G.select(f, v, p, optsOf(f, D.lists).map(o => [o, optLabel(f, o)]), !f.req);
-    case 'city': return G.select(f, v, p, D.lists.cities.map(c => [c.city, `${c.city} · ${c.region}`]));
+    case 'city': { const h = G.select(f, v, p, D.lists.cities.map(c => [c.city, `${c.city} · ${c.region}`]));   // G6d: a manager adds a town from here
+      return h.slice(0, -6) + (D.access.approve && !D.access.readonly ? `<div class="row" data-city-add style="margin-top:6px"><button type="button" class="btn sm ghost" data-act="city-add" data-sel="${p}-${f.key}">+ Add a town not on the list</button></div>` : '<span class="small muted" data-city-ask>Town not on the list? Ask your manager to add this town.</span>') + '</div>'; }
     case 'owner': {
       const ppl = D.staff.filter(s => s.active && (D.access.scope !== 'own' || s.id === me().id));
       return G.select(f, v, p, ppl.map(s => [s.id, s.name]), !f.req);
@@ -2518,7 +2525,7 @@ const peopleTable = () => table(['Name', 'Username', 'Role', 'Division', 'Region
 /* Roles & access (8 Oct): every switch of every role, for management. Each click saves at once; the
    people in that role get it at their next reload or sign-in. "View as" shows exactly what they see. */
 const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['design500', 'Design 500'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['projects', 'Projects'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel'], ['attendance', 'Attendance'], ['roadmap', 'Roadmap'], ['priority', 'Priority calls'], ['samples', 'Samples'], ['displays', 'Sample Display Record (SDR)'], ['training', 'Training']];
-const ROLE_SWITCHES = [['prices', 'Sees money (rates, values, payments)'], ['readonly', 'View only (changes nothing)'], ['users', 'Manages logins (Team & access)'], ['stock', 'Changes the inventory'], ['can_delete', 'Deletes records'], ['can_lists', 'Edits lists, stages and rules'], ['can_targets', 'Sets targets (founders for anyone, others for their team)']];
+const ROLE_SWITCHES = [['prices', 'Sees money (rates, values, payments)'], ['readonly', 'View only (changes nothing)'], ['users', 'Manages logins (Team & access)'], ['stock', 'Changes the inventory'], ...(DELETES_ON ? [['can_delete', 'Deletes records']] : []), ['can_lists', 'Edits lists, stages and rules'], ['can_targets', 'Sets targets (founders for anyone, others for their team)']];
 EM.roleOpen = EM.roleOpen || '';
 function rolesMatrix() {
   const edit = isOwner(), L = D.lists.rules;
@@ -2576,8 +2583,10 @@ EM.ACTIONS['view-back'] = async () => { const fresh = await API('GET', '/api/boo
 const genPass = () => { const a = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; const b = crypto.getRandomValues(new Uint8Array(12)); return Array.from(b, x => a[x % a.length]).join(''); };
 const STAFF_MOBILE = { key: 'mobile', label: 'Mobile', type: 'mobile' };
 function openStaffForm(s) {
-  const roleLock = !['owner', 'director'].includes(me().role) || !!(s && s.id === me().id);   // F1 25 Oct: management only, never your own
-  const roles = D.roles.filter(r => isOwner() || !['owner', 'director'].includes(r.id) || (roleLock && s && s.role === r.id));
+  /* F1 + G1 25 Oct: management sets or changes a role, never your own; an admin-level person adds people in roles below it only */
+  const myTier = tierOf(acc()), adminAdd = !s && myTier === 'admin';
+  const roleLock = adminAdd ? false : myTier !== 'mgmt' || !!(s && s.id === me().id);
+  const roles = D.roles.filter(r => adminAdd ? tierOf(r) === 'below' : (isOwner() || tierOf(r) !== 'mgmt' || (roleLock && s && s.role === r.id)));
   EM.modal(`<h2>${s ? 'Edit ' + esc(s.name) : 'Add a person'}</h2><form id="sf" class="stack" onsubmit="return false" style="margin-top:14px"><div class="fgrid">
     <div class="field"><label for="sf-name">Full name *</label><input class="input" id="sf-name" name="name" value="${esc(s ? s.name : '')}"></div>
     ${s ? '' : `<div class="field"><label for="sf-login">Username *</label><input class="input" id="sf-login" name="login" autocapitalize="none" placeholder="e.g. priya.sales"></div>
@@ -2590,6 +2599,16 @@ function openStaffForm(s) {
     <p class="small muted span2">Region and Reports to are compulsory for everyone except the Owner, a Director and the CRM Administrator. A person sees their own records; their manager sees theirs too, and so on up the line.</p></div>
     ${errBox('sf-err')}<div class="row"><button class="btn primary" data-act="staff-save" data-id="${s ? s.id : ''}">${s ? 'Save' : 'Add person'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
+EM.ACTIONS['city-add'] = el => { const box = el.parentElement, sel = el.dataset.sel;
+  box.innerHTML = `<input class="input" data-city-new placeholder="Town" aria-label="New town" style="max-width:180px"><select class="input" data-city-reg aria-label="Region of the new town" style="max-width:150px"><option value="">Region</option>${REGIONS.map(x => `<option>${x}</option>`).join('')}</select><button type="button" class="btn sm primary" data-act="city-add-go" data-sel="${esc(sel)}">Add</button><span class="small" data-city-err role="alert"></span>`;
+  box.querySelector('[data-city-new]').focus(); };
+EM.ACTIONS['city-add-go'] = async el => { const box = el.parentElement, sel = document.getElementById(el.dataset.sel), err = box.querySelector('[data-city-err]');
+  busy(el, true);
+  try { const r = await API('POST', '/api/lists/cities/add', { city: box.querySelector('[data-city-new]').value, region: box.querySelector('[data-city-reg]').value });
+    D.lists.cities = r.cities; if (sel && ![...sel.options].some(o => o.value === r.city)) sel.add(new Option(`${r.city} · ${(r.cities.find(c => c.city === r.city) || {}).region || ''}`, r.city));
+    if (sel) { sel.value = r.city; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+    box.innerHTML = `<span class="small muted">${esc(r.city)} ${r.existed ? 'was already on the list' : 'added to the city list'}.</span>`; }
+  catch (x) { busy(el, false); err.textContent = x.message; } };
 EM.ACTIONS['staff-gen'] = () => { qs('#sf-pass').value = genPass(); };
 EM.ACTIONS['staff-add'] = () => openStaffForm(null);
 EM.ACTIONS['staff-edit'] = el => openStaffForm(D.staff.find(s => s.id === el.dataset.id));
@@ -2774,7 +2793,7 @@ EM.VIEWS.notifications.tab = 'home';
 /* a screen that fails in someone's browser is reported to the Internal feed */
 let lastReport = 0;
 /* F4 25 Oct 2026: a report carries the line it broke on, so the next one names its cause */
-window.EGOREPORT = (err, where) => { if (Date.now() - lastReport < 10000) return; lastReport = Date.now(); API('POST', '/api/notifications/error', { message: (String((err && err.message) || err) + ((err && err.stack && String(err.stack).split('\n').slice(1, 3).map(l => l.trim().replace(/https?:\/\/[^/]+\/(ego\/)?/, '').replace(/\?v=\w+/, '')).join(' < ').replace(/^/, ' at ')) || '')).slice(0, 300), where: where || location.hash }).catch(() => {}); };
+window.EGOREPORT = (err, where) => { if (Date.now() - lastReport < 10000) return; lastReport = Date.now(); API('POST', '/api/notifications/error', { message: (String((err && err.message) || err) + ((err && err.stack && String(err.stack).split('\n').slice(1, 3).map(l => l.trim().replace(/^at /, '').replace(/https?:\/\/[^/]+\/(ego\/)?/, '').replace(/\?v=\w+/, '')).join(' < ').replace(/^/, ' at ')) || '')).slice(0, 300), where: where || location.hash }).catch(() => {}); };
 window.addEventListener('error', e => window.EGOREPORT(e.error || e.message));
 window.addEventListener('unhandledrejection', e => window.EGOREPORT(e.reason));
 setTimeout(loadNotifs, 300);
@@ -3366,18 +3385,22 @@ const tgMeasures = t => { const a = tgAchieved(t); return TG_MEASURES().map(([k,
 const bar = p => `<span class="tg-bar" aria-hidden="true"><span style="width:${Math.min(100, p)}%" class="${p >= 100 ? 'ok' : ''}"></span></span>`;
 /* the target table, used by Targets and by Analysis › Targets */
 /* F6 25 Oct 2026: an edited target says what it was first set at, by whom and when (the original is kept on the record) */
-const tgChanged = t => { if (!t.orig_at || !t.updated_at) return '';
+/* G5 + G6e round 2: the note sits on its own muted line under the target's rows, short; an edit made before 0030 with
+   no first figure in History says so rather than showing the changed figure as the original */
+const tgChanged = t => { if (!t.updated_at) return '';
+  const who = `by ${esc(staffName(t.updated_by))} on ${esc(whenIST(t.updated_at))}`;
+  if (!t.orig_at) return `<div class="small muted" data-tg-changed>Changed ${who}. First figure not recorded.</div>`;
   const parts = [['value', 'Value', inr0], ['boxes', 'Boxes', num], ['sqft', 'Sq ft', num], ['new_dealers', 'New dealers', num]].filter(([k]) => t[k] != null && t['orig_' + k] != null && Number(t['orig_' + k]) !== Number(t[k]));
-  return parts.length ? `<div class="small muted" data-tg-changed>Changed from ${parts.map(([k, l, f]) => `${l} ${f(t['orig_' + k])} to ${f(t[k])}`).join(', ')} by ${esc(staffName(t.updated_by))} on ${esc(whenIST(t.updated_at))}. First set by ${esc(staffName(t.orig_by))} on ${esc(whenIST(t.orig_at))}.</div>` : ''; };
+  return parts.length ? `<div class="small muted" data-tg-changed>Changed from ${parts.map(([k, l, f]) => `${l} ${f(t['orig_' + k])} to ${f(t[k])}`).join(', ')} ${who}. First set by ${esc(staffName(t.orig_by))} on ${esc(whenIST(t.orig_at))}.</div>` : ''; };
 function tgTable(list, actions) {
   if (!list.length) return '';
   const rows = list.flatMap(t => { const ms = tgMeasures(t);
-    const first = `<b>${esc(tgName(t))}</b><div class="small muted">${esc(TARGET_LEVELS[t.level])} · ${esc(tgDivName(t.division))}</div>${tgChanged(t)}`;
-    if (!ms.length) return [[first, esc(periodLabel(t.period_type, t.period)), esc(t.category || 'Every category'), '<span class="muted">Value only: your role does not see money</span>', '', '', '', '', '', actions ? actions(t) : '']];
+    const first = `<b>${esc(tgName(t))}</b><div class="small muted">${esc(TARGET_LEVELS[t.level])} · ${esc(tgDivName(t.division))}</div>`, chg = tgChanged(t), note = chg ? [[chg]] : [];
+    if (!ms.length) return [...[[first, esc(periodLabel(t.period_type, t.period)), esc(t.category || 'Every category'), '<span class="muted">Value only: your role does not see money</span>', '', '', '', '', '', actions ? actions(t) : '']], ...note];
     return ms.map((m, i) => [i ? '' : first, i ? '' : esc(periodLabel(t.period_type, t.period)), i ? '' : esc(t.category || 'Every category'), `${esc(m.label)}: <b>${m.fmt(m.goal)}</b>`, m.gotFig, m.fmt(m.rem), `${bar(m.p)} <b>${m.p}%</b>`,
       m.notStarted ? '<span class="muted">Not started</span>' : m.fmt(m.should) + (m.got >= m.should ? ' <span class="badge ok">ahead</span>' : ' <span class="badge warn">behind</span>'),
-      m.ended ? '<span class="muted">Ended</span>' : m.rem ? m.fmt(m.key === 'value' ? Math.ceil(m.perDay) : Math.ceil(m.perDay * 10) / 10) + '<span class="small muted"> a day</span>' : '<span class="badge ok">Reached</span>', i || !actions ? '' : actions(t)]); });
-  return `<div data-tg-table>${table(['Target for', 'Period', 'Category', 'Target', 'Achieved', 'Remaining', '%', 'Should be at today', 'Needed per day', ''], rows)}</div>`;
+      m.ended ? '<span class="muted">Ended</span>' : m.rem ? m.fmt(m.key === 'value' ? Math.ceil(m.perDay) : Math.ceil(m.perDay * 10) / 10) + '<span class="small muted"> a day</span>' : '<span class="badge ok">Reached</span>', i || !actions ? '' : actions(t)]).concat(note); });
+  return `<div data-tg-table>${table(['Target for', 'Period', 'Category', 'Target', 'Achieved', 'Remaining', '%', 'Should be at today', 'Needed per day', ''], rows).replace(/<tr><td class="">(<div class="small muted" data-tg-changed>)/g, '<tr class="tg-chg"><td colspan="10">$1')}</div>`;
 }
 /* ---- Targets: set them, see them */
 EM.tgF = { period: 'month' };
@@ -3732,7 +3755,7 @@ const histRedraw = () => { const b = qs('#hist-body'); if (b) { const a = docume
 DF_STATE.hist = () => EM.histF;
 EM.ACTIONS['hist-open'] = async el => {
   Object.assign(EM.histF, { rows: [], title: el.dataset.title, who: '', kind: '', period: 'all', from: '', to: '', field: '', fq: '', q: '' });
-  EM.modal(`<h2>History: ${esc(el.dataset.title)}</h2><p class="muted small">Who added, changed or deleted what, and when. Deleted things wait in the Recycle bin for 30 days.</p><div id="hist-body" class="stack-s" style="margin-top:10px"><p class="muted">Loading…</p></div><div class="row" style="margin-top:12px"><button class="btn" data-act="close-modal">Close</button></div>`);
+  EM.modal(`<h2>History: ${esc(el.dataset.title)}</h2><p class="muted small">${DELETES_ON ? 'Who added, changed or deleted what, and when. Deleted things wait in the Recycle bin for 30 days.' : 'Who added or changed what, and when.'}</p><div id="hist-body" class="stack-s" style="margin-top:10px"><p class="muted">Loading…</p></div><div class="row" style="margin-top:12px"><button class="btn" data-act="close-modal">Close</button></div>`);
   try { EM.histF.rows = (await API('GET', '/api/audit?' + (el.dataset.record ? 'record=' + encodeURIComponent(el.dataset.record) : 'area=' + encodeURIComponent(el.dataset.area)))).history; histRedraw(); }
   catch (x) { const b = qs('#hist-body'); if (b) b.innerHTML = `<p class="err">${esc(x.message)}</p>`; }
 };
@@ -3747,6 +3770,7 @@ EM.binF = { state: 'in', period: 'all' };
 const BIN_FIELDS = [['label', 'What'], ['belonged', 'Belonged to'], ['who', 'Deleted by']];
 const binLoad = async () => { try { EM.BIN = await API('GET', '/api/bin'); } catch (x) { EM.BIN = { error: x.message }; } EM.rerender(); };
 EM.VIEWS.bin = () => {
+  if (!DELETES_ON) return EM.noAccess('This screen is switched off.');
   if (!allowedTab('bin')) return EM.noAccess('The Recycle bin is for an Owner, and for roles that may delete.');
   if (!EM.BIN) { binLoad(); return '<div class="stack"><h1>Recycle bin</h1><p class="muted">Loading…</p></div>'; }
   if (EM.BIN.error) return `<div class="stack"><h1>Recycle bin</h1><div class="callout warn">${esc(EM.BIN.error)}</div></div>`;
@@ -3865,7 +3889,7 @@ EM.ACTIONS['int-tool-del'] = el => {
 };
 EM.ACTIONS['int-tool-del-go'] = async el => {
   busy(el, true);
-  try { await API('DELETE', '/api/integrations/tools/' + el.dataset.id); EM.closeModal(); EM.toast('Removed, in the Recycle bin for 30 days.'); intLoad(); } catch (x) { busy(el, false); showErr('itd-err', x.message); }
+  try { await API('DELETE', '/api/integrations/tools/' + el.dataset.id); EM.closeModal(); EM.toast('Removed.' + BIN_TXT); intLoad(); } catch (x) { busy(el, false); showErr('itd-err', x.message); }
 };
 EM.VIEWS.account = () => `<div class="stack" style="max-width:560px"><div class="stack-s"><h1>My account</h1><p class="muted">${esc(me().name)} · ${esc(me().login)} · ${esc(acc().name)}</p></div>
   <form id="mf" class="card stack" onsubmit="return false"><h3>Change my password</h3>
@@ -4488,13 +4512,13 @@ async function rmOrder(ids) {
 const rmIds = () => [...document.querySelectorAll('[data-rm-list] [data-rm-visit]')].map(x => x.dataset.rmVisit);
 EM.ACTIONS['rm-move'] = el => { const ids = rmIds(), i = ids.indexOf(el.dataset.id), j = i + Number(el.dataset.dir); if (j < 0 || j >= ids.length) return; [ids[i], ids[j]] = [ids[j], ids[i]]; rmOrder(ids); };
 EM.ACTIONS['rm-del'] = async el => { const v = (EM.FB.data.visits || []).find(x => x.id === el.dataset.id);
-  if (!confirm(`Remove the visit to ${v.name}? It stays in the Recycle bin for 30 days.`)) return;
-  try { await API('DELETE', '/api/field/visits/' + v.id); EM.toast('Visit removed, in the Recycle bin for 30 days.'); rmRead(); } catch (x) { bubbleNear(el, x.message); } };
+  if (!confirm(`Remove the visit to ${v.name}?${BIN_TXT}`)) return;
+  try { await API('DELETE', '/api/field/visits/' + v.id); EM.toast('Visit removed.' + BIN_TXT); rmRead(); } catch (x) { bubbleNear(el, x.message); } };
 EM.ACTIONS['rm-wd'] = el => { const f = EM.rmF, n = Number(el.dataset.n), cur = f.wd.length ? f.wd : [wdOf(f.day)]; f.wd = cur.includes(n) ? cur.filter(x => x !== n) : [...cur, n].sort(); if (!f.wd.length) f.wd = [n]; EM.rerender(); };
 EM.ACTIONS['rm-beat'] = async el => { const f = EM.rmF; busy(el, true);
   try { const r = await API('POST', '/api/field/beats', { staff_id: f.person, day: f.day, weekdays: f.wd.length ? f.wd : [wdOf(f.day)] }); Object.assign(f, { rep: false, wd: [] }); EM.toast(`<b>Weekly beat saved.</b> ${r.days.length} day${r.days.length === 1 ? '' : 's'} ahead now carry this list.`); rmRead(); }
   catch (x) { busy(el, false); bubbleNear(el, x.message); } };
-EM.ACTIONS['rm-beat-stop'] = async el => { if (!confirm('Stop this weekly beat? The days ahead that nobody has checked in go to the Recycle bin for 30 days.')) return;
+EM.ACTIONS['rm-beat-stop'] = async el => { if (!confirm(`Stop this weekly beat? The days ahead that nobody has checked in are removed.${BIN_TXT}`)) return;
   try { const r = await API('DELETE', '/api/field/beats/' + el.dataset.id); EM.toast(`Stopped. ${r.removed} visit${r.removed === 1 ? '' : 's'} ahead removed.`); rmRead(); } catch (x) { bubbleNear(el, x.message); } };
 /* keyboard: Enter or Space on a weekday or a person; drag a visit to reorder (the buttons do the same without a mouse) */
 document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-act="rm-wd"], [data-act="rm-pick"], .fb-face[data-act]')) { e.preventDefault(); e.target.click(); } });
@@ -5287,7 +5311,7 @@ const D5_TABS = (cur, nMem) => subtabs('#/design500', cur, [['list', `Members <s
 /* one page per installer, supplier or EGO Champion */
 function regPage(kind, id) {
   const r = REGS().find(x => x.id === id && x.kind === kind), back = REG_ROUTE[kind];
-  if (!r) return `<div class="stack"><h1>Not found</h1><p class="muted">It may have been deleted (see the Recycle bin) or be outside your view.</p><a class="btn" href="#/${back}">${esc(REG_KINDS[kind].plural)}</a></div>`;
+  if (!r) return `<div class="stack"><h1>Not found</h1><p class="muted">${DELETES_ON ? 'It may have been deleted (see the Recycle bin) or be outside your view.' : 'It may be outside your view.'}</p><a class="btn" href="#/${back}">${esc(REG_KINDS[kind].plural)}</a></div>`;
   const P = D.access.prices, F = showFields(REG_FIELDS[kind]).filter(f => f.key !== 'item');
   const val = f => showVal(f.type === 'firm' ? { ...f, type: 'link' } : f, f.key in r && !['notes'].includes(f.key) && REG_COLS.includes(f.key) ? r[f.key] : r.extra[f.key]);
   let extra = '';
