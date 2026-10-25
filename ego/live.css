@@ -167,3 +167,64 @@ body.pt-on #shell { display: none; }
 /* G5 25 Oct round 2: an edited target's note is its own muted line under the row, never squeezing "Target for" */
 [data-tg-table] tr.tg-chg td { padding-top: 0; white-space: normal; }
 [data-tg-table] tr.tg-chg td > div { position: sticky; left: 14px; max-width: calc(100vw - 72px); }
+
+/* ===== Batch 3 (25 Oct 2026), Picasso kit: U1 boards, U2 record page, U5 won note ===== */
+/* U1 full width (over app/styles.css, which the build copies and never edits): no 1320px cap, a 24px gutter */
+.wrap { max-width: none; margin: 0; }
+/* sticky needs a non-scrolling clip on the content card (overflow:hidden made it a scroll box) */
+#content { overflow: clip; min-width: 0; }   /* clip is not a scroll box, so the grid would size it to its widest content: min-width 0 keeps it in the viewport */
+.stack > .board-box, .stack-s > .board-box { width: 100%; }
+/* U1 boards: whole lanes, never a half-cut lane at the right edge */
+.board-box { container-type: inline-size; min-width: 0; }
+.board { --lanes: 1.25; grid-auto-columns: calc((100% - (var(--lanes) - 1) * 10px) / var(--lanes)); scroll-snap-type: x proximity; }
+.lane { scroll-snap-align: start; min-width: 0; }
+.lane h4 { align-items: flex-start; gap: 8px; }
+.lane h4 > span:first-child { min-width: 0; overflow-wrap: break-word; }
+.mini b { display: block; overflow-wrap: break-word; }
+@container (min-width: 440px)  { .board { --lanes: 2; } }
+@container (min-width: 620px)  { .board { --lanes: 3; } }
+@container (min-width: 840px)  { .board { --lanes: 4; } }
+@container (min-width: 1080px) { .board { --lanes: 5; } }
+@container (min-width: 1400px) { .board { --lanes: 6; } }
+
+/* U2 record page: main column + Activity column */
+.rec-grid { display: grid; grid-template-columns: minmax(0, 1fr) clamp(340px, 32%, 440px); gap: var(--s4); align-items: start; }
+.rec-main { min-width: 0; }
+.rec-aside { position: sticky; top: var(--s4); height: calc(100dvh - 2 * var(--s4)); display: flex; flex-direction: column; min-width: 0; }
+.rec-aside > [data-activity] { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--s3); }
+.rec-aside > [data-activity] > * + * { margin-top: 0; }
+.rec-aside [data-open-fu] { flex: none; max-height: 38%; overflow: auto; }
+.rec-aside [data-act-card] { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.rec-aside [data-act-filters] { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; }
+.rec-aside [data-act-filters] .field { min-width: 0 !important; }
+.rec-aside [data-act-filters] .input { min-height: 34px; padding: 5px 10px; font-size: 12.5px; }
+.rec-aside [data-timeline], .rec-aside [data-act-empty] { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: 4px; }
+.rec-aside [data-act-logs] { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px !important; width: 100%; }
+.rec-aside [data-act-logs] .btn { padding: 5px 6px; }
+@media (max-width: 1100px) {
+  .rec-grid { grid-template-columns: minmax(0, 1fr); }
+  .rec-aside { position: static; height: auto; }
+  .rec-aside [data-open-fu] { max-height: none; }
+  .rec-aside [data-timeline], .rec-aside [data-act-empty] { overflow: visible; }
+}
+/* a dealer / architect / person tab holding a wide table (SDR, Samples, Orders...) keeps the whole width under 1500 px (R6b fit at 1280) */
+@media (max-width: 1499px) {
+  .rec-wide { grid-template-columns: minmax(0, 1fr); }
+  .rec-wide .rec-aside { position: static; height: auto; }
+  .rec-wide .rec-aside [data-open-fu] { max-height: none; }
+  .rec-wide .rec-aside [data-timeline], .rec-wide .rec-aside [data-act-empty] { overflow: visible; }
+}
+@media (max-width: 420px) { .rec-aside [data-act-logs] { grid-template-columns: 1fr 1fr; } .rec-aside [data-act-filters] { grid-template-columns: 1fr; } }
+
+/* U5 won note under the stage strip */
+.won-note { margin: 2px 0 0; }
+.won-note a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+/* the timeline scrolls inside the column: draw its line as a background so the dots are not clipped */
+.rec-aside [data-timeline] { margin-left: 0; border-left: 0; padding-left: 22px; background: linear-gradient(var(--ge-border), var(--ge-border)) 4px 0 / 2px 100% no-repeat; }
+
+
+/* U6 batch 3: the filter bar's record dropdowns use the same type-to-search box (cbEnhance in live.js) */
+.flt-dd .cb { position: relative; display: inline-block; min-width: 0; }
+.flt-dd .cb-q { font-weight: 600; field-sizing: content; width: auto; min-width: 0; max-width: 190px; padding: 0; background-image: none; text-overflow: ellipsis; }
+@media (max-width: 760px) { .flt-dd .cb, .flt-dd .cb-q { width: 100%; max-width: 100%; } }
+.flt-dd .cb-list { min-width: 220px; font-weight: 400; }

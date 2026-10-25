@@ -115,7 +115,7 @@ EM.navHref = k => NAV_GROUP[k] ? (NAV_GROUP[k].find(([t]) => allowedTab(t)) || [
 // One menu order for every login and every company view, set by Bhargav on 18 Oct. A role or view that cannot open
 // an item loses it; the rest keep their places. On the two-column tile menu the items sit in fixed pairs (NAV_PAIRS):
 // when a role lacks one item of a pair its slot stays empty, so no pair ever shifts.
-const NAV_ORDER = ['home', 'people', 'architects', 'dealers', 'opps', 'approvals', 'projects', 'orders', 'orderbook', 'installation', 'fieldteam', 'complaints', 'inventory', 'import', 'design500', 'schemes', 'analysis', 'p200'];
+const NAV_ORDER = ['home', 'people', 'architects', 'dealers', 'opps', 'approvals', 'orders', 'orderbook', 'projects', 'installation', 'fieldteam', 'complaints', 'inventory', 'import', 'design500', 'schemes', 'analysis', 'p200'];
 const NAV_PAIRS = NAV_ORDER.flatMap((k, i) => i % 2 ? [] : [[k, NAV_ORDER[i + 1]]]);
 EM.navTabs = () => ({
   main: NAV_ORDER.map(k => [k, NAV_LABEL[k]])
@@ -164,8 +164,8 @@ const ctxLocal = () => ({ lists: D.lists, staffIds: new Set(D.staff.filter(s => 
 function stageBoard(stages, items, stageOf, card, laneExtra) {
   const all = [...stages];
   for (const x of items) if (stageOf(x) && !all.includes(stageOf(x))) all.push(stageOf(x));
-  return `<div class="board" data-board>${all.map(sname => { const ls = items.filter(x => stageOf(x) === sname);
-    return `<div class="lane" data-stage="${esc(sname)}"><h4><span>${esc(sname)}</span><span class="muted">${ls.length}</span></h4>${laneExtra ? laneExtra(ls) : ''}${ls.map(card).join('') || '<div class="small muted">Nothing here</div>'}</div>`; }).join('')}</div>`;
+  return `<div class="board-box"><div class="board" data-board>${all.map(sname => { const ls = items.filter(x => stageOf(x) === sname);
+    return `<div class="lane" data-stage="${esc(sname)}"><h4><span>${esc(sname)}</span><span class="muted">${ls.length}</span></h4>${laneExtra ? laneExtra(ls) : ''}${ls.map(card).join('') || '<div class="small muted">Nothing here</div>'}</div>`; }).join('')}</div></div>`;
 }
 const empty = (title, body, actions = '') => `<div class="card empty stack-s"><h3>${title}</h3><p class="muted">${body}</p>${actions ? `<div class="row">${actions}</div>` : ''}</div>`;
 const tile = (k, v, sub, href) => `<${href ? `a href="${href}"` : 'div'} class="card stat ${href ? 'tile' : ''}" style="text-decoration:none"><div class="kicker">${k}</div><div class="num">${v}</div>${sub ? `<span class="small muted">${sub}</span>` : ''}</${href ? 'a' : 'div'}>`;
@@ -266,6 +266,10 @@ function readForm(root, fields) {
 /* type to search (11 Oct): any dropdown of 8 or more choices gets a box on top that shortlists as you type,
    A to Z (a list with an order of its own, like stages, keeps it). The <select> stays and holds the value, so
    forms and listeners read it as before. A free-text box with data-suggest offers its list the same way. */
+/* U6 batch 3 (25 Oct): a dropdown that picks a record (client, dealer, architect, person, owner, design, city, region,
+   supplier, warehouse, installer...) gets it whatever its length, and so do the filter bar's long or record dropdowns */
+const CB_REC = /client|dealer|architect|contact|owner|product|design|city|region|supplier|warehouse|installer|staff|parent|firm|partner|champion|person|recipient|member/i;
+const cbWants = el => el.options.length >= CB_MIN || CB_REC.test(`${el.id} ${el.name} ${el.dataset.fk || ''} ${el.getAttribute('aria-label') || ''}`);
 const CB_MIN = 8, cbNorm = t => String(t || '').toLowerCase();
 const cbAZ = (a, b) => a.l.localeCompare(b.l, 'en', { numeric: true, sensitivity: 'base' });
 function cbChoices(el) {
@@ -277,13 +281,13 @@ function cbChoices(el) {
 function cbEnhance(el) {
   if (el.dataset.cb) return;
   const isSel = el.tagName === 'SELECT';
-  if (isSel && (el.multiple || el.classList.contains('dial') || el.options.length < CB_MIN)) return;
+  if (isSel && (el.multiple || el.classList.contains('dial') || !cbWants(el))) return;
   el.dataset.cb = '1';
   const wrap = document.createElement('div'); wrap.className = 'cb';
   const q = isSel ? document.createElement('input') : el, list = document.createElement('div');
   list.className = 'cb-list'; list.hidden = true; list.setAttribute('role', 'listbox');
   if (isSel) {
-    q.className = 'input cb-q'; q.autocomplete = 'off'; q.placeholder = 'Type to search';
+    q.className = el.hasAttribute('data-flt') ? 'cb-q' : 'input cb-q'; q.spellcheck = false; q.autocomplete = 'off'; q.placeholder = 'Type to search';
     if (el.id) { q.id = el.id + '-q'; const lab = document.querySelector(`label[for="${el.id}"]`); if (lab) lab.htmlFor = q.id; }
     q.setAttribute('aria-label', el.getAttribute('aria-label') || (el.closest('.field') && el.closest('.field').querySelector('label, span') || {}).textContent || 'Search');
     q.disabled = el.disabled; el.classList.add('cb-sel'); el.tabIndex = -1;
@@ -323,8 +327,8 @@ function cbEnhance(el) {
   if (isSel) { el.addEventListener('change', sync); el.addEventListener('focus', () => q.focus()); }
   sync();
 }
-const cbScan = root => (root.querySelectorAll ? root : document).querySelectorAll('select.input:not([data-cb]), input[data-suggest]:not([data-cb])').forEach(cbEnhance);
-new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1) { if (n.matches('select.input, input[data-suggest]')) cbEnhance(n); else cbScan(n); } }).observe(document.documentElement, { childList: true, subtree: true });
+const cbScan = root => (root.querySelectorAll ? root : document).querySelectorAll('select.input:not([data-cb]), select[data-flt]:not([data-cb]), input[data-suggest]:not([data-cb])').forEach(cbEnhance);
+new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) if (n.nodeType === 1) { if (n.matches('select.input, select[data-flt], input[data-suggest]')) cbEnhance(n); else cbScan(n); } }).observe(document.documentElement, { childList: true, subtree: true });
 /* a mobile is shown and edited with its code, so the form gives back +<code><number> */
 const withDials = (o, fields) => { for (const f of fields) if (f.type === 'mobile' && o[f.key]) { const r = normMobile(o[f.key], o[f.key + '_dial']); if (r.value) o[f.key] = r.value; } return o; };
 function showVal(f, v) {
@@ -761,24 +765,24 @@ EM.ACTIONS['client-save'] = async el => {
 /* ---------------------------------------------------------------- client 360 */
 const DOC_TYPES = ['GST certificate', 'PAN card', 'Cancelled cheque', 'Agreement', 'Visiting card', 'Shop photo', 'Display photo', 'Quotation', 'Other'];
 EM.VIEWS.client = arg => {
-  const [id, tab = 'overview'] = arg.split('/'), c = CL()[id];
+  const [id, tab0 = 'overview'] = arg.split('/'), c = CL()[id], tab = tab0 === 'activity' ? 'overview' : tab0;
   if (!c) return `<div class="stack"><h1>Not found</h1><p class="muted">It may have been deleted, or it is outside your view.</p><a class="btn" href="#/people">People</a></div>`;
   const cts = D.contacts.filter(k => k.client_id === id), ops = D.opportunities.filter(o => o.client_id === id), docs = D.documents.filter(d => d.client_id === id);
   const org = ['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group);
   const nOrd = buildOrders().filter(x => x.client_id === id).length;
-  const tabs = [['overview', 'Overview'], ['activity', 'Activity'], ['orders', `Orders (${nOrd})`], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
+  const tabs = [['overview', 'Overview'], ['orders', `Orders (${nOrd})`], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
   if (DEALER_KINDS.includes(c.kind)) tabs.splice(6, 0, ...dealerTabs(c));   // batch 4: leads, development plan, portal logins
   if (ARCH_KINDS.includes(c.kind)) tabs.splice(tabs.length - 1, 0, ['plan', 'Plan']);   // R6b (plan point 18): a Design 500 member's plan and interventions
   if (DEALER_KINDS.includes(c.kind) || ARCH_KINDS.includes(c.kind)) tabs.splice(tabs.length - 1, 0, ...regTabs(c));   // R6a: Samples (dealer, architect), Displays (dealer)
-  const body = { overview: clientOverview, activity: c2 => activityPanel({ clientId: c2.id }), orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>', ...(DEALER_KINDS.includes(c.kind) ? DEALER_TAB_BODY : {}), ...(ARCH_KINDS.includes(c.kind) ? { plan: c2 => clientPlan(c2) } : {}), ...REG_TAB_BODY }[tab] || clientOverview;
+  const body = { overview: clientOverview, orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>', ...(DEALER_KINDS.includes(c.kind) ? DEALER_TAB_BODY : {}), ...(ARCH_KINDS.includes(c.kind) ? { plan: c2 => clientPlan(c2) } : {}), ...REG_TAB_BODY }[tab] || clientOverview;
   const home = homeOf(c);
   return `<div class="stack">${crumbs(home, [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
       <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}${DEALER_KINDS.includes(c.kind) ? `<span class="badge ${(c.extra || {}).project_partner === 'Yes' ? 'ok' : (c.extra || {}).project_partner === 'Potential' ? 'info' : 'plain'}" data-pp-badge>Project Partner: ${esc((c.extra || {}).project_partner || 'not filled')}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
       <p class="muted">${esc(fmtMobile(c.mobile))} · ${esc(c.city)}${c.region ? ', ' + esc(c.region) : ''} · owner ${esc(staffName(c.owner_id))}</p></div>
       <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn" data-act="fu-add" data-client="${id}">+ Follow-up</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button></div></div>
-    ${subtabs(`#/client/${id}`, tab, tabs)}
-    ${body(c, cts, ops, docs)}</div>`;
+    ${recGrid(`${subtabs(`#/client/${id}`, tab, tabs)}
+    ${body(c, cts, ops, docs)}`, activityPanel({ clientId: c.id }), tab !== 'overview')}</div>`;   // a table tab (SDR, Samples, Orders...) keeps the full width below 1500 px; Activity then sits under it
 };
 /* who serves a dealer company (onboarding answers): a sub-dealer its distributor, a dealer EGO directly */
 const servedBy = c => c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? `<a href="#/client/${c.parent_id}">${esc(CL()[c.parent_id].name)}</a> <span class="small muted">distributor</span>` : '<span class="badge bad">No distributor chosen</span>')
@@ -1090,14 +1094,13 @@ EM.VIEWS.opp = id => {
       <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}<span class="small muted">${esc(o.ref || '')}</span></div>
       <p class="muted"><a href="#/client/${o.client_id}">${esc(c.name)}</a>${contact ? ` · ${esc(contact.name)} ${esc(fmtMobile(contact.mobile))}` : ''}</p></div>
       <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}${PIPELINES[o.pipeline].dealer && !isClosed(o.pipeline, o.stage, D.lists) ? `<button class="btn ${o.dealer_id ? '' : 'primary'}" data-act="ld-move" data-id="${id}">${o.dealer_id ? 'Move to another dealer' : 'Allocate to a dealer'}</button>` : ''}<button class="btn" data-act="fu-add" data-client="${o.client_id}" data-opp="${id}">+ Follow-up</button><button class="btn" data-act="opp-edit" data-id="${id}">Edit</button></div></div>
-    <section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>
+    ${recGrid(`<section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>${wonNote(o)}
       <div class="row"><select class="input" id="move-stage" data-keep-order aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
     ${(o.extra || {}).portal ? portalRequestNote(o) : ''}${PIPELINES[o.pipeline].lines || PIPELINES[o.pipeline].designs ? oppLinesCard(o) : PIPELINES[o.pipeline].sqft ? rfOppLinesCard(o) : ''}
     ${oppFiles(o)}
     ${(() => { const ord = allOrders().find(x => x.opp_id === o.id); return ord ? orderFiles(ord) : ''; })()}
     <div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, v[f.key])]))}</section>
-      <section class="card stack-s"><h3>Stage history</h3>${hist.length ? `<div class="timeline">${hist.map(h => `<div class="on"><b>${esc(h.to_stage)}</b>${h.from_stage ? ` <span class="small muted">from ${esc(h.from_stage)}</span>` : ''}<div class="small muted">${ds(h.at)} ${tFmt(h.at)} · ${esc(staffName(h.by_staff))}${h.note ? ' · ' + esc(h.note) : ''}</div></div>`).join('')}</div>` : '<p class="muted">No moves yet.</p>'}</section></div>
-    ${activityPanel({ clientId: o.client_id, oppId: id })}</div>`;
+      <section class="card stack-s"><h3>Stage history</h3>${hist.length ? `<div class="timeline">${hist.map(h => `<div class="on"><b>${esc(h.to_stage)}</b>${h.from_stage ? ` <span class="small muted">from ${esc(h.from_stage)}</span>` : ''}<div class="small muted">${ds(h.at)} ${tFmt(h.at)} · ${esc(staffName(h.by_staff))}${h.note ? ' · ' + esc(h.note) : ''}</div></div>`).join('')}</div>` : '<p class="muted">No moves yet.</p>'}</section></div>`, activityPanel({ clientId: o.client_id, oppId: id }))}</div>`;
 };
 EM.VIEWS.opp.tab = 'opps';
 EM.VIEWS.opp.title = id => (D.opportunities.find(x => x.id === id) || { title: 'Opportunity' }).title;
@@ -1459,7 +1462,16 @@ const OS_ = k => opsStages(D.lists, k);
 const prodName = id => { const p = INVD().products.find(x => x.id === id); return p ? `${p.name}${p.code ? ' · ' + p.code : ''}` : 'Design'; };
 const clientName = id => (CL()[id] || { name: 'Outside your view' }).name;
 const inr0 = n => n == null ? '' : '₹' + Math.round(n).toLocaleString('en-IN');
-const stageChips = (stages, cur) => `<div class="row" style="flex-wrap:wrap;gap:4px">${stages.map((s, i) => { const at = stages.indexOf(cur); return `<span class="badge ${i < at ? 'ok' : i === at ? 'info' : 'plain'}">${esc(s)}</span>`; }).join('')}</div>`;
+const stageChips = (stages, cur, links) => `<div class="row" style="flex-wrap:wrap;gap:4px">${stages.map((s, i) => { const at = stages.indexOf(cur), cls = `badge ${i < at ? 'ok' : i === at ? 'info' : 'plain'}`, to = links && links[s];
+  return to && to.length ? `<a class="${cls}" href="#/po/${to[0]}" data-wp-link title="${esc(to.map(poRef).join(', '))}">${esc(s)}</a>${to.slice(1).map(x => `<a class="small" href="#/po/${x}" data-wp-link>${esc(poRef(x))}</a>`).join(' ')}` : `<span class="${cls}">${esc(s)}</span>`; }).join('')}</div>`;
+/* U4 batch 3: production linked both ways. The production orders a sale waits on, and each "On production" figure as links */
+const wpChip = o => { const ids = [...new Set(OPSD().waits.filter(w => w.order_id === o.id).map(w => w.po_id))]; return ids.length ? { [FN('Waiting on production')]: ids } : null; };
+const poCell = ws => { ws = ws.filter(w => !w.done); if (!ws.length) return '';
+  return `<b>${num(ws.reduce((a, w) => a + w.boxes, 0))}</b>${ws.map(w => { const p = OPSD().production.find(x => x.id === w.po_id) || {}; return `<div class="small" data-po-link="${w.po_id}"><a href="#/po/${w.po_id}">${esc(p.ref || 'Production order')}</a> · ${esc(p.stage || '')}${p.eta ? ' · ETA ' + ds(p.eta) : ''}</div>`; }).join('')}`; };
+/* what else this sale led to: its installation sites and complaints, each a link (each of those pages links back) */
+const orderLinks = (o, noSites) => { const sites = noSites ? [] : OPSD().sites.filter(x => (x.extra || {}).order_id === o.id || (o.opp_id && x.opp_id === o.opp_id)), cmps = OPSD().complaints.filter(c => c.order_id === o.id);
+  if (!sites.length && !cmps.length) return '';
+  return `<section class="card stack-s" data-order-links><h3>Linked to this sale</h3>${kv([...(sites.length ? [['Installation', sites.map(x => `<a href="#/site/${x.id}">${esc(x.ref)} · ${esc(x.step)}</a>`).join('<br>')]] : []), ...(cmps.length ? [['Complaints', cmps.map(c => `<a href="#/complaint/${c.id}">${esc(c.ref)} · ${esc(c.status)}</a>`).join('<br>')]] : [])])}</section>`; };
 const pendingFor = (entity, id) => OPSD().approvals.filter(a => a.entity === entity && a.record_id === id && a.status === 'Pending');
 const refreshOps = async () => { const fresh = await API('GET', '/api/bootstrap'); window.EGOLIVE.refresh(fresh); };
 const opsAct = async (el, path, body, okMsg, errId) => {
@@ -1508,7 +1520,7 @@ EM.VIEWS.orders = arg => {
     body = `${fbar}<p class="small muted">The board shows what is live. A delivered order stays in ${esc(lastOf(OS_('fulfilment_stages')))} until the end of the month it was delivered in; every order, old and new, is in <a href="#/orderbook">Orders</a>.</p>${O.orders.length ? '' : `<p class="small muted">Nothing in fulfilment yet. A wholesale opportunity comes here when it reaches ${esc(wonStage('wholesale', D.lists))}.</p>`}${stageBoard(OS_('fulfilment_stages'), liveO, o => o.ful_stage, ordCard)}
       ${liveO.length ? table(['Fulfilment', 'Opportunity', 'Dealer', 'Boxes', ...(D.access.prices ? ['Value'] : []), 'Stage', 'Production orders'], liveO.map(o => ({ href: '#/order/' + o.id,
         cells: [`<b>${esc(o.ref)}</b><div class="small muted">${ds(o.created_at.slice(0, 10))}</div>`, esc((oppOf(o) || { title: '' }).title), esc(clientName(o.client_id)), num(lineSum(o.id).reduce((a, l) => a + l.boxes, 0)), ...(D.access.prices ? [inr0(o.total)] : []),
-          `<span class="badge info">${esc(o.ful_stage)}</span>`, esc([...new Set(waitsOf(w => w.order_id === o.id).map(w => poRef(w.po_id)))].join(', '))] }))) : ''}`;
+          `<span class="badge info">${esc(o.ful_stage)}</span>`, [...new Set(waitsOf(w => w.order_id === o.id).map(w => w.po_id))].map(x => `<a href="#/po/${x}" data-po-link="${x}">${esc(poRef(x))}</a>`).join(', ')] }))) : ''}`;
   } else {
     const nSales = p => new Set(waitsOf(w => w.po_id === p.id).map(w => w.order_id)).size;
     /* R7: days late on every card and row, and a Late filter (only production orders running or finished late) */
@@ -1522,7 +1534,7 @@ EM.VIEWS.orders = arg => {
     body = pf.html
       + stageBoard(OS_('production_stages'), O.production, p => p.stage, p => `<a class="mini" style="display:flex;flex-direction:column;gap:2px;text-decoration:none;color:inherit" href="#/po/${p.id}" data-po-card="${p.id}"><b>${esc(p.ref)}</b><span class="small">${esc(prodName(p.product_id))}</span><span class="small muted">${num(p.boxes)} boxes · for ${nSales(p)} sale${nSales(p) === 1 ? '' : 's'}</span>${lateBadge(lateOf[p.id])}</a>`)
       + (O.production.length ? table(['Production order', 'Design', 'Boxes', 'For sales', 'Stage', 'ETA', 'Days late', 'Warehouse'], O.production.map(p => ({ href: '#/po/' + p.id,
-        cells: [`<b>${esc(p.ref)}</b>${p.container ? `<div class="small muted">${esc(p.container)}</div>` : ''}`, esc(prodName(p.product_id)), num(p.boxes), esc([...new Set(waitsOf(w => w.po_id === p.id).map(w => (O.orders.find(o => o.id === w.order_id) || {}).ref))].join(', ')), `<span class="badge info">${esc(p.stage)}</span>`, p.eta ? ds(p.eta) : '', lateBadge(lateOf[p.id]) || '<span class="muted small">On time</span>', esc((INVD().warehouses.find(w => w.id === p.warehouse_id) || {}).name || '')] })))
+        cells: [`<b>${esc(p.ref)}</b>${p.container ? `<div class="small muted">${esc(p.container)}</div>` : ''}`, esc(prodName(p.product_id)), num(p.boxes), [...new Set(waitsOf(w => w.po_id === p.id).map(w => w.order_id))].map(x => `<a href="#/order/${x}" data-order-link="${x}">${esc((O.orders.find(o => o.id === x) || {}).ref || '')}</a>`).join(', '), `<span class="badge info">${esc(p.stage)}</span>`, p.eta ? ds(p.eta) : '', lateBadge(lateOf[p.id]) || '<span class="muted small">On time</span>', esc((INVD().warehouses.find(w => w.id === p.warehouse_id) || {}).name || '')] })))
         : (EM.poF.tg || {}).late ? '<p class="small muted">No production order is late.</p>'
         : '<p class="small muted">No production orders yet. One is made at Stock check for what a sale cannot take from the warehouses, or placed directly.</p>');
   }
@@ -1619,12 +1631,12 @@ EM.VIEWS.order = id => {
   return `<div class="stack">${crumbs(['Fulfilment', '#/orders'], [o.ref])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'an opportunity'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · order confirmed ${ds(o.created_at.slice(0, 10))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
       ${o.ful_stage !== lastOf(FS) && fulMayMove(o) ? `<button class="btn primary" data-act="ful-next" data-id="${id}">Move fulfilment on</button>` : o.ful_stage !== lastOf(FS) ? `<span class="small muted" data-ful-who>Next step by ${esc(FUL_WHO[fulGroupOf(D.lists, nextFul(o))] || 'the fulfilment team')}</span>` : ''}</div>
-    <section class="card stack-s">${stageChips(FS, o.ful_stage)}${o.credit_hold ? `<div class="callout warn"><b>On credit hold.</b> Waiting for the credit approval before ${esc(FN('Invoiced'))}. <a href="#/approvals">Approvals</a></div>` : ''}</section>
+    ${recGrid(`<section class="card stack-s">${stageChips(FS, o.ful_stage, wpChip(o))}${o.credit_hold ? `<div class="callout warn"><b>On credit hold.</b> Waiting for the credit approval before ${esc(FN('Invoiced'))}. <a href="#/approvals">Approvals</a></div>` : ''}</section>
     ${shortBox(o)}
     <section class="card stack-s" data-stockcheck><div class="row between"><h3>Stock check: each design against the warehouses</h3>${atCheck && D.access.ful.includes('stock') ? `<button class="btn" data-act="alloc-open" data-id="${id}">Block boxes</button>` : ''}</div>
       <p class="small muted">Free = in the warehouse and not blocked for another sale. Missing = ordered − blocked − on a production order; it must be 0 before the sale moves past ${esc(FN('Stock check'))}.</p>
       ${table(['Design', 'Ordered', ...WH.map(w => esc(w.name) + ' <span class="muted">free</span>'), 'Blocked', 'On production', 'Missing'], lines.map(l => { const left = l.boxes - got(l) - waiting(l);
-        return [`<b>${esc(prodName(l.product_id))}</b>`, `<span data-o-boxes>${num(l.boxes)}</span>`, ...WH.map(w => `${num(Math.max(0, freeAt(l.product_id, w.id) + mineAt(l, w)))}${mineAt(l, w) ? ` <span class="badge ok">${mineAt(l, w)} blocked</span>` : ''}`), num(got(l)), waiting(l) ? num(waiting(l)) : '', left > 0 ? `<span class="badge bad">${left}</span>` : '<span class="badge ok">0</span>']; }))}</section>
+        return [`<b>${esc(prodName(l.product_id))}</b>`, `<span data-o-boxes>${num(l.boxes)}</span>`, ...WH.map(w => `${num(Math.max(0, freeAt(l.product_id, w.id) + mineAt(l, w)))}${mineAt(l, w) ? ` <span class="badge ok">${mineAt(l, w)} blocked</span>` : ''}`), num(got(l)), poCell(wl(l)), left > 0 ? `<span class="badge bad">${left}</span>` : '<span class="badge ok">0</span>']; }))}</section>
     ${payCard(o)}
     ${orderFiles(o)}
     <section class="card stack-s" data-sources><h3>Where each design's boxes come from</h3>
@@ -1633,7 +1645,8 @@ EM.VIEWS.order = id => {
         wl(l).length ? wl(l).map(w => `<a href="#/po/${w.po_id}">${esc(poRef(w.po_id))}</a>: ${w.boxes} ${w.done ? '<span class="badge ok">arrived, blocked</span>' : '<span class="badge warn">waiting</span>'}`).join('<br>') : '<span class="muted">None</span>',
         ...(D.access.prices ? [`${inr0(l.rate)} / ${rateUnit(l)}`, `<span data-o-amt>${inr0(l.amount)}</span>`] : [])]))}</section>
     ${piCard(o, lines)}
-    ${orderStory(o)}</div>`;
+    ${orderLinks(o)}
+    ${orderStory(o)}`, activityPanel({ clientId: o.client_id, oppId: o.opp_id }))}</div>`;
 };
 /* R4: the PI view. EGO makes the PI in Tally; this is what it must say, line for line, from the same saved lines */
 const piCard = (o, lines) => `<section class="card stack-s" data-pi><div class="row between"><h3>PI: what it says</h3><button class="btn sm" data-act="pi-print">Print</button></div>
@@ -1689,7 +1702,7 @@ function rfOrderView(o) {
   return `<div class="stack" data-rf-order>${crumbs(['Fulfilment', '#/orders'], [o.ref])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Big E · retail ladder</div><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'a sale'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · won ${ds(dayIST(o.created_at))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
       ${nxt ? (rfMay(o) ? `<button class="btn primary" data-act="rf-next" data-id="${o.id}">Move to ${esc(nxt)}</button>` : `<span class="small muted" data-ful-who>Next step (${esc(nxt)}) by ${esc(RF_WHO[RETAIL_FUL_GROUP[nxt]])} or Management</span>`) : '<span class="badge ok">Closed</span>'}</div>
-    <section class="card stack-s">${stageChips(RETAIL_FUL, o.ful_stage)}${nxt ? `<p class="small muted">Next, <b>${esc(nxt)}</b>: ${esc(RF_WHAT[nxt])}.</p>` : ''}</section>
+    ${recGrid(`<section class="card stack-s">${stageChips(RETAIL_FUL, o.ful_stage)}${nxt ? `<p class="small muted">Next, <b>${esc(nxt)}</b>: ${esc(RF_WHAT[nxt])}.</p>` : ''}</section>
     <section class="card stack-s" data-rf-lines><div class="row between"><h3>Designs, sq ft and boxes</h3>${atBlock ? `<button class="btn" data-act="rf-alloc" data-id="${o.id}">Block boxes</button>` : ''}</div>
       ${rfLineTable(ls, true)}<p class="small">${linesSum(ls)}${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.total)}</b>` : ''}</p>
       <p class="small muted">Blocked uses EGO's stock block: the boxes typed per warehouse are held for this sale and leave the warehouses at Delivered to site.</p></section>
@@ -1700,7 +1713,8 @@ function rfOrderView(o) {
       ${sites.length ? table(['Site', 'Step', 'Installed by', 'Planned start'], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.ref)}</b> ${esc(x.name)}</a>`, `<span class="badge info">${esc(x.step)}</span> <span class="small muted">${SS.indexOf(x.step) + 1}/${SS.length}</span>`, esc(installedByTxt(x)), x.planned_start ? ds(x.planned_start) : '']))
         : `<p class="small muted">The installation site opens by itself when this sale moves to Installation${OPSD().sites.some(x => x.opp_id === o.opp_id) ? '' : ', under the same client and project'}.</p>`}</section>
     ${orderFiles(o)}
-    <section class="stack-s"><h3>History</h3><div id="log-rf"><p class="muted">Loading…</p></div></section></div>`;
+    ${orderLinks(o, true)}
+    <section class="stack-s"><h3>History</h3><div id="log-rf"><p class="muted">Loading…</p></div></section>`, activityPanel({ clientId: o.client_id, oppId: o.opp_id }))}</div>`;
 }
 { const baseAfter = EM.VIEWS.order.after; EM.VIEWS.order.after = id => { if (OPSD().rorders.some(x => x.id === id)) return showLog('fulfilment', id, '#log-rf'); return baseAfter && baseAfter(id); }; }
 const rfPayModal = (o, step) => { const due = Math.max(0, (o.total || 0) - (o.paid || 0)), to = step ? rfNext(o) : '';
@@ -1754,7 +1768,7 @@ function shortBox(o) {
   return `<section class="card stack-s short-box" data-short style="border-color:var(--bad, #c0392b)"><div class="row between"><h3 style="color:var(--bad, #c0392b)">Blocked: short of ${num(total)} box${total === 1 ? '' : 'es'}</h3>
       ${D.access.ful.includes('stock') ? `<button class="btn primary" data-act="prod-all" data-id="${o.id}">Place production order for everything missing</button>` : ''}</div>
     <p class="small">Why it cannot move on: these designs do not have enough free boxes in the warehouses. Block what is free, and put what is missing on a production order (at least ${num(R.moq_boxes)} boxes, rounded up to ${num(R.production_round_boxes)}; an open production order of the same design is joined instead).</p>
-    ${table(['Design', 'Ordered', 'Free in the warehouses', 'Blocked', 'On production', 'Missing'], miss.map(x => [`<b>${esc(prodName(x.l.product_id))}</b>${code(x.l)}`, num(x.l.boxes), num(free(x.l)), num(x.got), x.wait ? num(x.wait) : '', `<span class="badge bad">${num(x.miss)}</span>`]))}</section>`;
+    ${table(['Design', 'Ordered', 'Free in the warehouses', 'Blocked', 'On production', 'Missing'], miss.map(x => [`<b>${esc(prodName(x.l.product_id))}</b>${code(x.l)}`, num(x.l.boxes), num(free(x.l)), num(x.got), poCell(waitsOf(w => w.line_id === x.l.id)), `<span class="badge bad">${num(x.miss)}</span>`]))}</section>`;
 }
 /* the money: total, what came in, what is still due; payments one by one */
 function payCard(o) {
@@ -1941,7 +1955,7 @@ EM.VIEWS.site = id => {
       ${nextS ? `<button class="btn primary" data-act="site-next" data-id="${id}">Move to ${esc(nextS)}</button>` : ''}</div>
     <section class="card stack-s">${stageChips(SS, x.step)}</section>
     <section class="card stack-s" data-site-links><h3>Where it belongs</h3>${kv([['Company', esc(DIVS[x.division] ? DIVS[x.division].co : x.division)], ['Project', siteProject(x) ? `<a href="#/project/${x.project_id}">${esc(siteProject(x).name)}</a>` : NOTSET],
-      ['Order', (() => { const o = allOrders().find(k => k.id === (x.extra || {}).order_id) || allOrders().find(k => x.opp_id && k.opp_id === x.opp_id); return o ? `<a href="#/order/${o.id}">${esc(o.ref)} · ${esc(o.ful_stage)}</a>` : NOTSET; })()], ['Installed by', esc(installedByTxt(x))], ['Installer', (x.extra || {}).installer_id && instRec(x.extra.installer_id) ? `<a href="#/installer/${x.extra.installer_id}" data-site-installer>${esc(instRec(x.extra.installer_id).item)}</a>` : x.crew ? esc(x.crew) + ' <span class="small muted">(typed, not from the Installer master)</span>' : NOTSET], ['Installer certified', siteCert(x)]])}</section>
+      ['Order', (() => { const o = allOrders().find(k => k.id === (x.extra || {}).order_id) || allOrders().find(k => x.opp_id && k.opp_id === x.opp_id); return o ? `<a href="#/order/${o.id}">${esc(o.ref)} · ${esc(o.ful_stage)}</a>` : NOTSET; })()], ['Installed by', esc(installedByTxt(x))], ['Installer', (x.extra || {}).installer_id && instRec(x.extra.installer_id) ? `<a href="#/installer/${x.extra.installer_id}" data-site-installer>${esc(instRec(x.extra.installer_id).item)}</a>` : x.crew ? esc(x.crew) + ' <span class="small muted">(typed, not from the Installer master)</span>' : NOTSET], ['Installer certified', siteCert(x)], ...(OPSD().complaints.some(c => c.site_id === x.id) ? [['Complaints', OPSD().complaints.filter(c => c.site_id === x.id).map(c => `<a href="#/complaint/${c.id}" data-site-cmp>${esc(c.ref)} · ${esc(c.status)}</a>`).join('<br>')]] : [])])}</section>
     <div class="grid g2"><section class="card stack-s"><h3>Crew and dates</h3><div class="fgrid">
         ${installerFields(x.division, (x.extra || {}).installed_by || '', (x.extra || {}).installer_dealer || '')}
         ${instPick('se-iid', (x.extra || {}).installer_id || '', x.division)}
@@ -2019,6 +2033,10 @@ EM.ACTIONS['cmp-save'] = async el => {
     try { const u = await API('POST', '/api/documents', fd, true); D.documents.push(...u.documents); EM.toast(`<b>${esc(r.ref)}</b> logged with ${u.documents.length} photo${u.documents.length === 1 ? '' : 's'}.`); } catch (x) { EM.toast(`<b>${esc(r.ref)}</b> logged; the photos did not upload: ${esc(x.message)} Add them on the complaint.`, 8000); } }
   location.hash = '#/complaint/' + r.id;
 };
+/* U4: a complaint leads to the sale, the site and the design it is about */
+const cmpLinks = c => { const o = c.order_id && allOrders().find(x => x.id === c.order_id), x = c.site_id && OPSD().sites.find(s => s.id === c.site_id), pr = c.product_id && INVD().products.find(p => p.id === c.product_id);
+  const ls = [o && `Sale <a href="#/order/${o.id}">${esc(o.ref)} · ${esc(o.ful_stage)}</a>`, x && `Site <a href="#/site/${x.id}">${esc(x.ref)} · ${esc(x.step)}</a>`, pr && `Design <a href="#/product/${pr.id}">${esc(prodName(pr.id))}</a>`].filter(Boolean);
+  return ls.length ? `<p class="small" data-cmp-links>${ls.join(' · ')}</p>` : ''; };
 EM.VIEWS.complaint = id => {
   const c = OPSD().complaints.find(x => x.id === id);
   if (!c) return `<div class="stack"><h1>Complaint not found</h1><a class="btn" href="#/complaints">Complaints</a></div>`;
@@ -2026,7 +2044,7 @@ EM.VIEWS.complaint = id => {
   return `<div class="stack">${crumbs(['Complaints', '#/complaints'], [c.ref])}
     <div class="stack-s"><h1>${esc(c.ref)} · ${esc(c.type)}</h1><p class="muted"><a href="#/client/${c.client_id}">${esc(clientName(c.client_id))}</a> · ${esc(c.severity)}${c.channel ? ' · by ' + esc(c.channel) : ''} · ${esc(staffName(c.owner_id))} · ${ds(c.created_at.slice(0, 10))}</p></div>
     ${pend.length ? `<div class="callout warn"><b>Waiting for approval.</b> ${pend.map(a => esc(a.reason)).join(' · ')}</div>` : ''}
-    <section class="card stack-s">${stageChips(CS, c.status)}<p>${esc(c.description || '')}</p>${cmpInstallText(c) ? `<p class="small" data-cmp-install>${cmpInstallText(c)}</p>` : ''}<p class="small" data-cmp-cert>Installer: ${cmpCert(c)}</p>${c.resolution ? `<p><b>Resolution:</b> ${esc(c.resolution)}${c.cost != null && D.access.prices ? ` · cost ${inr0(c.cost)}` : ''}</p>` : ''}</section>
+    <section class="card stack-s">${stageChips(CS, c.status)}<p>${esc(c.description || '')}</p>${cmpInstallText(c) ? `<p class="small" data-cmp-install>${cmpInstallText(c)}</p>` : ''}<p class="small" data-cmp-cert>Installer: ${cmpCert(c)}</p>${cmpLinks(c)}${c.resolution ? `<p><b>Resolution:</b> ${esc(c.resolution)}${c.cost != null && D.access.prices ? ` · cost ${inr0(c.cost)}` : ''}</p>` : ''}</section>
     <p class="small" data-cmp-who><b>${esc(CMP_WHO)}</b></p>
     ${!canResolveComplaint(D.access.id) ? `<p class="small muted" data-ro>Telesales handles it; the status here changes as they work on it.</p>` : ''}
     ${!canResolveComplaint(D.access.id) && (!isBothView() || (ownReadonly() && c.created_by === me().id)) ? `<section class="card stack-s" data-cmp-note><h3>Add a note</h3><div class="field"><label for="cn-note">Note (it goes in the History below)</label><input class="input" id="cn-note" maxlength="300"></div>${errBox('cn-err')}<div class="row"><button class="btn primary" data-act="cmp-note" data-id="${id}">Add note</button></div></section>` : ''}
@@ -3247,19 +3265,29 @@ EM.actF = { show: '', period: 'all', from: '', to: '', field: '', fq: '' };
 const ACT_SHOW = [['', 'Everything'], ['talk', 'Calls, visits and messages'], ['followup', 'Follow-ups done'], ['stage', 'Stage moves'], ['file', 'Files'], ['approval', 'Approvals'], ['order', 'Orders and payments']];
 const ACT_FIELDS = [['title', 'What'], ['detail', 'Details'], ['who', 'Who']];
 DF_STATE.act = () => EM.actF;
-function activityPanel({ clientId, oppId }) {
-  const f = EM.actF, fq = f.fq.trim().toLowerCase(), all = timelineFor(clientId, oppId);
+/* U2 batch 3 (25 Oct): THE record page layout. The record on the left, Open follow-ups + Activity in a right-hand
+   column level with the first card (sticky, full height); one column under 1100px. Every record page uses it. */
+const recGrid = (main, aside, wide) => `<div class="rec-grid${wide ? ' rec-wide' : ''}"><div class="rec-main stack">${main}</div><aside class="rec-aside" aria-label="Activity">${aside}</aside></div>`;
+/* U5: only where the move to the won stage itself opens the Orders row on the server (FUL in saveOpp: lines or sqft) */
+const wonNote = o => { const P = PIPELINES[o.pipeline] || {}; if (!(P.lines || P.sqft) || isClosed(o.pipeline, o.stage, D.lists)) return '';
+  const w = wonStage(o.pipeline, D.lists), ob = allowedTab('orderbook') ? '<a href="#/orderbook">Orders</a>' : 'Orders';
+  return `<p class="small muted won-note" data-won-note>${esc(w)}${w.trim().toLowerCase() === 'won' ? '' : ' = won'}: it opens a sale in ${ob} dated today</p>`; };
+function activityPanel({ clientId, oppId, opps }) {
+  const f = EM.actF, fq = f.fq.trim().toLowerCase(), pj = Array.isArray(opps), pjIds = new Set(pj ? opps.map(o => o.id) : []);
+  if (pj) { clientId = opps[0] ? opps[0].client_id : ''; oppId = opps[0] ? opps[0].id : ''; }   // a project logs against its opportunity (asked which when several)
+  const all = pj ? opps.flatMap(o => timelineFor(o.client_id, o.id)).sort((a, b) => b.at.localeCompare(a.at)) : timelineFor(clientId, oppId);
   const rows = all.filter(i => (!f.show || i.group === f.show) && inPeriod(i.at, f.period, f.from, f.to) && (!fq || (f.field ? [i[f.field]] : ACT_FIELDS.map(([k]) => i[k])).some(v => String(v || '').toLowerCase().includes(fq))));
-  const open = FUS().filter(x => x.client_id === clientId && x.status === 'open' && (oppId ? x.opp_id === oppId : true)).sort(fuSort);
+  const open = FUS().filter(x => x.status === 'open' && (pj ? pjIds.has(x.opp_id) : x.client_id === clientId && (oppId ? x.opp_id === oppId : true))).sort(fuSort);
+  if (pj && !opps.length) return `<div class="stack" data-activity><section class="card stack-s" data-act-card><h3>Activity</h3><p class="small muted" data-act-empty>Nothing yet. Add an opportunity to this project; its calls, visits, messages, stage moves and files then show here.</p></section></div>`;
   const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-af="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
-  const logs = ACT_MANUAL.map(k => `<button class="btn sm" data-act="act-log" data-kind="${k}" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}">${k === 'note' ? '+ Note' : 'Log ' + (k === 'whatsapp' ? 'WhatsApp' : k === 'email' ? 'email' : 'a ' + k)}</button>`).join('');
+  const logs = ACT_MANUAL.map(k => `<button class="btn sm" data-act="act-log" data-kind="${k}" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}"${pj && opps.length > 1 ? ` data-opps="${esc(opps.map(o => o.id).join(','))}"` : ''}>${k === 'note' ? '+ Note' : 'Log ' + (k === 'whatsapp' ? 'WhatsApp' : k === 'email' ? 'email' : 'a ' + k)}</button>`).join('');
   return `<div class="stack" data-activity>
     <section class="card stack-s" data-open-fu><div class="row between"><h3>Open follow-ups${open.length ? ` (${open.length})` : ''}</h3><button class="btn sm primary" data-act="fu-add" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}">+ Follow-up</button></div>
-      ${open.length ? fuTable(open, { where: !oppId }) : `<p class="small muted">No follow-up booked${oppId ? ' for this opportunity' : ''}. Add one so it is not forgotten.</p>`}</section>
-    <section class="card stack-s"><div class="row between" style="flex-wrap:wrap"><h3>Activity</h3><div class="row" style="gap:6px;flex-wrap:wrap">${logs}</div></div>
+      ${open.length ? fuTable(open, { where: !oppId || pj }) : `<p class="small muted">No follow-up booked${pj ? ' for this project' : oppId ? ' for this opportunity' : ''}. Add one so it is not forgotten.</p>`}</section>
+    <section class="card stack-s" data-act-card><div class="row between" style="flex-wrap:wrap"><h3>Activity</h3><div class="row" style="gap:6px;flex-wrap:wrap" data-act-logs>${logs}</div></div>
       <div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-act-filters>${sel('show', 'Show', ACT_SHOW)}${dateFilter(f, 'act', 'When')}${sel('field', 'Any field', [['', 'Any field'], ...ACT_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="act-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
       ${rows.length ? `<div class="timeline" data-timeline>${rows.slice(0, 300).map(i => `<div class="on" data-tl="${i.group}"><b>${esc(i.title)}</b>${i.detail ? `<div class="small">${esc(i.detail)}</div>` : ''}<div class="small muted">${esc(whenIST(i.at))}${i.who ? ' · ' + esc(i.who) : ''}${i.source && i.source !== 'manual' ? ' · from ' + esc(i.source) : ''}</div>${i.doc ? `<div class="row" style="gap:6px" data-file-acts><button class="btn sm" data-act="fu-view" data-id="${i.doc}">View</button><button class="btn sm ghost" data-act="fu-dl" data-id="${i.doc}">Download</button><button class="btn sm ghost" data-act="fu-share" data-id="${i.doc}">Share</button></div>` : ''}</div>`).join('')}</div>${rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Use the filters.</p>` : ''}`
-        : `<p class="small muted">${all.length ? 'Nothing for this filter.' : 'Nothing yet. Calls, visits, messages, stage moves, files, approvals and payments for this record all show here.'}</p>`}</section></div>`;
+        : `<p class="small muted" data-act-empty>${all.length ? 'Nothing for this filter.' : 'Nothing yet. Calls, visits, messages, stage moves, files, approvals and payments for this record all show here.'}</p>`}</section></div>`;
 }
 document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.af; if (k) { EM.actF[k] = e.target.value; EM.rerender(); } });
 document.addEventListener('input', e => { if (e.target.id === 'act-fq') { EM.actF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#act-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
@@ -3267,13 +3295,14 @@ EM.ACTIONS['act-log'] = el => {
   const k = el.dataset.kind, c = CL()[el.dataset.client], o = el.dataset.opp && D.opportunities.find(x => x.id === el.dataset.opp), dir = ['call', 'whatsapp', 'email'].includes(k);
   EM.modal(`<h2>${k === 'note' ? 'Add a note' : 'Log ' + esc(ACT_ICON[k].toLowerCase() === 'whatsapp' ? 'a WhatsApp' : 'a ' + ACT_ICON[k].toLowerCase())}</h2><p class="muted small">${esc(c ? c.name : '')}${o ? ' · ' + esc(o.title) : ''}</p>
     <form id="acf" class="stack" onsubmit="return false" style="margin-top:12px" data-kind="${k}" data-client="${esc(el.dataset.client)}" data-opp="${esc(el.dataset.opp || '')}">
+      ${el.dataset.opps ? `<div class="field"><label for="ac-opp">Which opportunity *</label><select class="input" id="ac-opp">${el.dataset.opps.split(',').map(i => D.opportunities.find(x => x.id === i)).filter(Boolean).map(x => `<option value="${x.id}">${esc(x.title)} · ${esc(clientName(x.client_id))}</option>`).join('')}</select></div>` : ''}
       ${dir ? `<div class="field"><label for="ac-dir">Who reached out</label><select class="input" id="ac-dir"><option value="out">We did</option><option value="in">They did</option></select></div>` : ''}
       <div class="field" data-field="summary"><label for="ac-sum">${k === 'note' ? 'Note' : 'What happened'} *</label><textarea class="input" id="ac-sum" rows="3" maxlength="1000" placeholder="${k === 'note' ? 'Anything worth remembering' : 'e.g. Spoke to Ramesh: wants Oak samples, will order after Diwali'}"></textarea></div>
       ${errBox('ac-err')}<div class="row sticky-actions"><button class="btn primary" data-act="act-save">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
   setTimeout(() => { const i = qs('#ac-sum'); if (i) i.focus(); }, 50);
 };
 EM.ACTIONS['act-save'] = async el => {
-  const form = qs('#acf'), b = { client_id: form.dataset.client, opp_id: form.dataset.opp || undefined, kind: form.dataset.kind, direction: qs('#ac-dir') ? qs('#ac-dir').value : '', summary: qs('#ac-sum').value.trim() };
+  const form = qs('#acf'), pick = qs('#ac-opp') && D.opportunities.find(x => x.id === qs('#ac-opp').value), b = { client_id: pick ? pick.client_id : form.dataset.client, opp_id: pick ? pick.id : form.dataset.opp || undefined, kind: form.dataset.kind, direction: qs('#ac-dir') ? qs('#ac-dir').value : '', summary: qs('#ac-sum').value.trim() };
   if (!b.summary) return showErr('ac-err', 'What happened is compulsory');
   busy(el, true);
   try { const r = await API('POST', '/api/activities', b); D.activities = ACTS().concat([r.activity]); EM.closeModal(); EM.toast(`${esc(ACT_ICON[b.kind])} saved to the activity.`); EM.rerender(); }
@@ -4231,7 +4260,7 @@ EM.VIEWS.project = arg => {
       <div class="row"><span class="badge info plain">${esc(p.type)}</span><span class="badge plain">${esc(p.stage)}</span><span class="badge plain">${esc(pjCo(p.division))}</span><span class="small muted">${esc(p.ref || '')}</span></div>
       <p class="muted">${esc(p.city)}${p.address ? ' · ' + esc(p.address) : ''} · owner ${esc(staffName(p.owner_id))}</p></div>
       <div class="row"><button class="btn" data-act="pj-edit" data-id="${p.id}">Edit</button><button class="btn primary" data-act="opp-add" data-pipeline="${pipe}" data-project="${p.id}">+ New opportunity</button></div></div>
-    <div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, p[f.key])]))}${p.notes ? `<p class="small" style="white-space:pre-line">${esc(p.notes)}</p>` : ''}${p.prices_hidden ? '<p class="small muted">Money is hidden for your role.</p>' : ''}</section>
+    ${recGrid(`<div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, p[f.key])]))}${p.notes ? `<p class="small" style="white-space:pre-line">${esc(p.notes)}</p>` : ''}${p.prices_hidden ? '<p class="small muted">Money is hidden for your role.</p>' : ''}</section>
       <section class="card stack-s" data-pj-partner><h3>Project Partner</h3>${partner ? kv([['Dealer', CL()[partner.id] ? `<a href="#/client/${partner.id}">${esc(partner.name)}</a>` : esc(partner.name)], ['Project Partner', esc(partner.project_partner || ((CL()[partner.id] || {}).extra || {}).project_partner || '')], ['Capability', esc(partner.partner_capability || ((CL()[partner.id] || {}).extra || {}).partner_capability || '') || NOTSET], ['City', esc(partner.city || '')]])
         : `<p class="muted small">No Project Partner yet. Only dealers marked Yes or Potential as Project Partner (on the dealer's page) are offered.</p><div class="row"><button class="btn sm" data-act="pj-edit" data-id="${p.id}">Choose the Project Partner</button></div>`}</section></div>
     <section class="card stack-s" data-pj-opps><div class="row between"><h3>Opportunities (${ops.length})</h3><button class="btn sm primary" data-act="opp-add" data-pipeline="${pipe}" data-project="${p.id}">+ New opportunity</button></div>
@@ -4243,7 +4272,7 @@ EM.VIEWS.project = arg => {
       ${sites.length ? table(['Site', 'Step', 'Installed by', 'Address', ''], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.name)}</b></a><div class="small muted">${esc(x.ref || '')}</div>`, esc(x.step), esc(installedByTxt(x)), esc(x.address || ''), isBothView() ? '' : `<button class="btn sm ghost" data-act="pj-site" data-id="${p.id}" data-site="${x.id}" data-unlink="1">Unlink</button>`])) : '<p class="muted small">No installation site linked yet.</p>'}
       ${free.length ? `<div class="row" style="align-items:flex-end"><label class="field" style="min-width:260px"><span class="small muted">Link a site already added</span><select class="input" id="pj-site-pick"><option value="">Choose</option>${free.map(x => `<option value="${x.id}">${esc(x.name)} · ${esc(x.step)}</option>`).join('')}</select></label><button class="btn sm" data-act="pj-site" data-id="${p.id}">Link it</button></div>` : ''}</section>
     ${projectSamples(p)}
-    <section class="stack-s"><h3>Files</h3>${filesBox({ id: 'pj', project: p.id, types: ['Drawing', 'BOQ', 'Quotation', 'Site photo', 'Agreement', 'Other'], docs: D.documents.filter(d => d.project_id === p.id), canAdd: !isBothView(), title: 'Add files to this project', note: 'Drawings, BOQ, quotations, site photos: one or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No files on this project yet' })}</section></div>`;
+    <section class="stack-s"><h3>Files</h3>${filesBox({ id: 'pj', project: p.id, types: ['Drawing', 'BOQ', 'Quotation', 'Site photo', 'Agreement', 'Other'], docs: D.documents.filter(d => d.project_id === p.id), canAdd: !isBothView(), title: 'Add files to this project', note: 'Drawings, BOQ, quotations, site photos: one or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No files on this project yet' })}</section>`, activityPanel({ opps: ops }))}</div>`;
 };
 EM.VIEWS.project.tab = 'projects';
 EM.VIEWS.project.title = id => (PJS().find(x => x.id === String(id).split('/')[0]) || { name: 'Project' }).name;
@@ -5386,3 +5415,4 @@ NAV_HELP.fieldteam = 'Field team: Attendance (who started the day, when, where, 
 NAV_HELP.sdr = NAV_HELP.displays;
 NAV_HELP.dealers += ' Tabs: Samples, Sample Display Record (SDR), Training.';
 NAV_HELP.opps += ' Tab: Priority calls.';
+
