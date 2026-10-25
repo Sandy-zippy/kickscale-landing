@@ -20,7 +20,7 @@ const isOwner = () => D.user.role === 'owner';
 const DELETES_ON = false;
 const BIN_TXT = DELETES_ON ? ' It stays in the Recycle bin for 30 days.' : '';
 /* G1/G4 25 Oct round 2: a role's tier by what it can do, never its id. Management sees all; admin-level manages users. */
-const tierOf = r => !r ? 'below' : r.scope === 'all' ? 'mgmt' : r.users ? 'admin' : 'below';
+const tierOf = r => !r ? 'below' : r.scope === 'all' && r.users ? 'mgmt' : r.users ? 'admin' : 'below';   // R1 batch 4: a view-only scope-all role (EA) is below
 const holds = () => D.access.scope !== 'none';
 const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.user.division;
 function allowedTab(t) {
@@ -139,8 +139,11 @@ EM.topExtras = () => (D.user.division === 'both' ? `<div class="seg divsw" role=
   + '<button class="btn sm ghost" data-act="sign-out">Sign out</button>';
 EM.ACTIONS.div = el => { EM.div = el.dataset.d; EM.rerender(); };
 EM.ACTIONS['sign-out'] = () => window.EGOAPI.signOut();
-EM.noAccess = why => `<div class="stack" style="max-width:640px"><h1>Not in your access</h1><p class="muted">${esc(me().name)} is <b>${esc(acc().name)}</b>. ${esc(why || '')}</p>
+EM.noAccess = why => why === OFF_TXT ? `<div class="stack" style="max-width:640px"><h1>Switched off</h1><p class="muted">${OFF_TXT}</p><a class="btn" href="#/home">Home</a></div>`   // R7 batch 4
+  : `<div class="stack" style="max-width:640px"><h1>Not in your access</h1><p class="muted">${esc(me().name)} is <b>${esc(acc().name)}</b>. ${esc(why || '')}</p>
   <div class="callout">Access is set in <b>Team &amp; access</b> by the Owner.</div><a class="btn" href="#/home">Home</a></div>`;
+const OFF_TXT = 'This screen is switched off.';
+EM.offTab = t => !DELETES_ON && t === 'bin' ? OFF_TXT : '';   // R7 batch 4: the shell says "switched off" before "not part of your role"
 
 /* ---------------------------------------------------------------- small helpers */
 const byIdL = a => Object.fromEntries((a || []).map(x => [x.id, x]));
@@ -2539,7 +2542,7 @@ EM.VIEWS.team.title = () => 'Team & access';
 const divName = d => d === 'both' ? 'Both' : DIVS[d] ? DIVS[d].name : d;
 const peopleTable = () => table(['Name', 'Username', 'Role', 'Division', 'Region', 'Reports to', 'Status', ''], D.staff.slice().sort((a, b) => b.active - a.active || a.name.localeCompare(b.name)).map(s => [`<b>${esc(s.name)}</b><div class="small muted">${esc(fmtMobile(s.mobile))}</div>`, esc(s.login), esc(roleName(s.role)), divName(s.division), esc(s.region || ''), esc(s.reports_to ? staffName(s.reports_to) : ''),
   !s.active ? '<span class="badge plain">Switched off</span>' : s.must_change ? '<span class="badge warn">Temporary password</span>' : '<span class="badge ok">Active</span>',
-  s.active ? `${isOwner() && s.id !== me().id ? `<button class="btn sm" data-act="view-as" data-id="${s.id}">View as</button>` : ''}<button class="btn sm ghost" data-act="staff-edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-act="staff-pass" data-id="${s.id}">New password</button>${s.id !== me().id ? `<button class="btn sm ghost" data-act="staff-off" data-id="${s.id}">Switch off</button>` : ''}` : '']));
+  s.active && !(tierOf(acc()) === 'admin' && s.id !== me().id && tierOf(D.roles.find(r => r.id === s.role)) !== 'below') ? `${isOwner() && s.id !== me().id ? `<button class="btn sm" data-act="view-as" data-id="${s.id}">View as</button>` : ''}<button class="btn sm ghost" data-act="staff-edit" data-id="${s.id}">Edit</button><button class="btn sm ghost" data-act="staff-pass" data-id="${s.id}">New password</button>${s.id !== me().id ? `<button class="btn sm ghost" data-act="staff-off" data-id="${s.id}">Switch off</button>` : ''}` : '']));
 /* Roles & access (8 Oct): every switch of every role, for management. Each click saves at once; the
    people in that role get it at their next reload or sign-in. "View as" shows exactly what they see. */
 const TAB_CHOICES = [['people', 'People'], ['architects', 'Architects'], ['design500', 'Design 500'], ['dealers', 'Dealers'], ['opps', 'Opportunities'], ['projects', 'Projects'], ['schemes', 'Schemes'], ['orders', 'Fulfilment'], ['orderbook', 'Orders'], ['installation', 'Installation'], ['complaints', 'Complaints'], ['approvals', 'Approvals'], ['analysis', 'Analysis'], ['p200', 'Priority 200'], ['inventory', 'Inventory'], ['import', 'Import from Excel'], ['attendance', 'Attendance'], ['roadmap', 'Roadmap'], ['priority', 'Priority calls'], ['samples', 'Samples'], ['displays', 'Sample Display Record (SDR)'], ['training', 'Training']];
@@ -3799,7 +3802,7 @@ EM.binF = { state: 'in', period: 'all' };
 const BIN_FIELDS = [['label', 'What'], ['belonged', 'Belonged to'], ['who', 'Deleted by']];
 const binLoad = async () => { try { EM.BIN = await API('GET', '/api/bin'); } catch (x) { EM.BIN = { error: x.message }; } EM.rerender(); };
 EM.VIEWS.bin = () => {
-  if (!DELETES_ON) return EM.noAccess('This screen is switched off.');
+  if (!DELETES_ON) return EM.noAccess(OFF_TXT);
   if (!allowedTab('bin')) return EM.noAccess('The Recycle bin is for an Owner, and for roles that may delete.');
   if (!EM.BIN) { binLoad(); return '<div class="stack"><h1>Recycle bin</h1><p class="muted">Loading…</p></div>'; }
   if (EM.BIN.error) return `<div class="stack"><h1>Recycle bin</h1><div class="callout warn">${esc(EM.BIN.error)}</div></div>`;
