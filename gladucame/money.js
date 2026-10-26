@@ -78,7 +78,7 @@
       D.leads.forEach(function (l) { if (/^(Proposal sent|Negotiation|Won)$/.test(l.stage)) l.pricing = 'Approved'; });
       var lp = D.leads.filter(function (l) { return /^(Discovery call|Contacted)$/.test(l.stage); })[0];
       var seedA = [
-        lp && { type: 'Pricing', what: 'Pricing for ' + lp.brand + ', ' + rupees(Math.round(lp.value * 1e5)), by: lp.owner, amount: Math.round(lp.value * 1e5), link: lp.id },
+        lp && { type: 'Pricing', what: 'Pricing for ' + lp.brand, by: lp.owner, amount: Math.round(lp.value * 1e5), link: lp.id },
         L('Lower Parel Lofts') && { type: 'Proposal', what: 'Proposal for Lower Parel Lofts', by: 'riya', amount: 750000, link: L('Lower Parel Lofts').id },
         { type: 'Payout', what: 'Northstar Management, Dadar Silk House', by: 'zoya', amount: 60000, link: 'P4', ref: 'PO3' },
         { type: 'Expense', what: 'Sound and lights, store launch', by: 'arjun', amount: 85000, link: 'P3', ref: 'E3' },
@@ -107,6 +107,7 @@
   };
   function recordOf(A, a) { var D = A.D(); return byId(D.projects, a.link) || byId(D.leads, a.link); }
   function recHist(A, a, what, who) { var r = recordOf(A, a); if (r) hist(A, r, what, who); }
+  var label = function (a) { return a.what.indexOf(a.type) === 0 ? a.what : a.type + ', ' + a.what; };   /* one wording for an approval wherever it is quoted */
   function raise(A, o, seed) {
     var D = A.D(), who = o.by || A.ME();
     var a = { id: 'A' + (++D.seqA), type: o.type, what: o.what, by: who, amount: o.amount, max: o.max || 0, status: 'Waiting', link: o.link || '', ref: o.ref || '', line: o.line || '', at: A.now(), history: [] };
@@ -115,7 +116,7 @@
     hist(A, a, 'Raised by ' + A.P[who].name + ', with ' + A.P[a.approver].name, who);
     D.approvals.push(a);
     recHist(A, a, a.type + ' approval raised (' + rupees(a.amount) + '), with ' + A.P[a.approver].name, who);
-    J().mkTask(A, { title: 'Decide: ' + a.type + ', ' + a.what + ', ' + rupees(a.amount), owner: a.approver, checker: a.approver, due: A.TODAY + 'T18:00', link: a.link, agent: true, priority: 'High', kind: 'approval', by: who, quiet: seed, why: 'Approvals: raised by ' + A.P[who].name });
+    J().mkTask(A, { title: 'Decide: ' + label(a) + ', ' + rupees(a.amount), owner: a.approver, checker: a.approver, due: A.TODAY + 'T18:00', link: a.link, agent: true, priority: 'High', kind: 'approval', by: who, quiet: seed, why: 'Approvals: raised by ' + A.P[who].name });
     D.tasks[D.tasks.length - 1].appr = a.id;
     return a;
   }
@@ -142,7 +143,7 @@
     var D = A.D(), a = byId(D.approvals, id); if (!a || a.status !== 'Sent back' || a.by !== A.ME()) return;
     a.status = 'Waiting'; a.decided_by = ''; hist(A, a, 'Resubmitted by ' + A.me().name); recHist(A, a, a.type + ' resubmitted for approval');
     D.tasks.forEach(function (t) { if (t.fix === a.id && A.OPEN[t.status]) { t.status = 'done'; t.done_at = A.now(); } });
-    var t = J().mkTask(A, { title: 'Decide: ' + a.type + ', ' + a.what + ', ' + rupees(a.amount), owner: a.approver, checker: a.approver, due: A.TODAY + 'T18:00', link: a.link, agent: true, priority: 'High', kind: 'approval', why: 'Approvals: resubmitted by ' + A.me().name }); t.appr = a.id;
+    var t = J().mkTask(A, { title: 'Decide: ' + label(a) + ', ' + rupees(a.amount), owner: a.approver, checker: a.approver, due: A.TODAY + 'T18:00', link: a.link, agent: true, priority: 'High', kind: 'approval', why: 'Approvals: resubmitted by ' + A.me().name }); t.appr = a.id;
     if (a.line === 'shortlist') { var p = byId(D.projects, a.link); if (p) p.slState = 'Waiting'; }
     var po = byId(D.payouts, a.ref); if (po) po.stage = 'Documents in';
     A.save(); A.render(); A.toast('Resubmitted. ' + A.first(a.approver) + ' has it on Today\'s tasks.');
@@ -705,5 +706,5 @@
     if (el.hasAttribute('data-hfile')) { var h = byId(A.D().hampers, el.getAttribute('data-hfile')); J().readFiles(A, el, function (fs) { fs.forEach(function (f) { h.proof.files.push(f); }); hist(A, h, 'Proof added: ' + fs.map(function (f) { return f.n; }).join(', ')); A.save(); A.render(); A.toast(fs.length + ' file' + (fs.length === 1 ? '' : 's') + ' added. Mark Posted when it is up.'); }); }
   });
 
-  window.GUC_APPR = { raise: raise, decide: decide, resubmit: resubmit, pricingGate: pricingGate, reasonDialog: reasonDialog, approverFor: approverFor, sweep: sweep };
+  window.GUC_APPR = { label: label, raise: raise, decide: decide, resubmit: resubmit, pricingGate: pricingGate, reasonDialog: reasonDialog, approverFor: approverFor, sweep: sweep };
 })();

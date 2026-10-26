@@ -120,8 +120,8 @@
       card('Campaign health', 'Every project', '<div class="list" data-health>' + camp.map(function (x) { return '<a class="lrow" data-fig href="#/project/' + x[0].id + '" style="--cols:minmax(0,1fr) auto;text-decoration:none;color:inherit"><span class="cell-who"><div><b>' + A.esc(x[0].brand) + '</b><span>' + A.esc(x[0].name + ' . ' + x[0].stage) + '</span></div></span><span class="chip ' + HC[x[1]] + '">' + x[1] + '</span></a>'; }).join('') + '</div>' +
         '<p class="f-help">At risk: a task on it 2 days overdue, or the live date within 7 days with a task late. Late: past the live date.</p>') +
       card('Overdue by person', 'Whole agency', Object.keys(over).length ? '<div class="list" data-overby>' + Object.keys(over).sort(function (a, b) { return over[b] - over[a]; }).map(function (id) { return barRow(A, '#/dash/t/over/' + id, whoCell(A, id), over[id], omx, over[id] + ' overdue', true); }).join('') + '</div>' : none('Nobody is overdue.')) +
-      card('Team leaderboard', 'This week . Founder only', '<div class="list" data-leader>' + lb.slice(0, 8).map(function (x, i) { var q = x[2] >= 5; return barRow(A, '#/dash/t/week/' + x[0], '<span class="cell-who"><span class="lb-rank" style="min-width:18px">' + (q ? i + 1 : '.') + '</span>' + A.avatar(x[0]) + '<b>' + A.esc(A.P[x[0]].name) + '</b></span>', x[1], lmx, x[1] + ' on time' + (q ? '' : ', ' + x[2] + ' due')); }).join('') + '</div>' +
-        '<p class="f-help">Ranked by tasks done on time this week. A person needs 5 tasks due this week to be ranked; the rest show with a dot.</p>') + '</div>';
+      card('Team leaderboard', 'This week . Founder only', '<div class="list" data-leader>' + lb.slice(0, 8).map(function (x, i) { var q = x[2] >= 5; return barRow(A, '#/dash/t/week/' + x[0], '<span class="cell-who"><span class="lb-rank" style="min-width:18px">' + (q ? i + 1 : '') + '</span>' + A.avatar(x[0]) + '<b>' + A.esc(A.P[x[0]].name) + '</b></span>', x[1], lmx, x[1] + ' on time' + (q ? '' : ', ' + x[2] + ' due')); }).join('') + '</div>' +
+        '<p class="f-help">Ranked by tasks done on time this week. A person needs 5 tasks due this week to be ranked; the rest show without a rank.</p>') + '</div>';
   }
 
   function financeDash(A) {
@@ -194,7 +194,7 @@
     var L = ['Good morning team. 9:30 brief, ' + A.dayWord(A.TODAY + 'T00:00').replace('Today', 'today') + '.',
       'Done since yesterday: ' + b.done.length, 'Due today: ' + b.due.length, 'Overdue: ' + b.over.length, 'Waiting for check: ' + b.chk.length, 'Decisions needed: ' + b.dec.length];
     var ov = Object.keys(b.byP); if (ov.length) { L.push(''); L.push('Overdue by person:'); ov.forEach(function (id) { L.push(A.P[id].name + ': ' + b.byP[id]); }); }
-    if (b.dec.length) { L.push(''); L.push('Decisions:'); b.dec.slice(0, 5).forEach(function (a) { L.push(a.type + ', ' + a.what + ', ' + rupees(a.amount) + ' (' + A.P[a.approver].name + ')'); }); }
+    if (b.dec.length) { L.push(''); L.push('Decisions:'); b.dec.slice(0, 5).forEach(function (a) { L.push(GUC_APPR.label(a) + ', ' + rupees(a.amount) + ' (' + A.P[a.approver].name + ')'); }); }
     return L.join('\n');
   }
   S.brief = function (A) {
@@ -206,7 +206,7 @@
       card('Due today', b.due.length, li(b.due, trow, 'Nothing else due today.')) +
       card('Overdue by person', b.over.length, li(Object.keys(b.byP), function (id) { return '<li><a href="#/dash/t/over/' + id + '" style="display:contents;color:inherit">' + A.avatar(id) + '<span>' + A.esc(A.P[id].name) + '</span><span class="chip chip--red">' + b.byP[id] + ' overdue</span></a></li>'; }, 'Nobody is overdue.')) +
       card('Waiting for check', b.chk.length, li(b.chk, function (t) { return '<li data-id="' + t.id + '">' + A.avatar(t.owner) + '<button class="task-title" type="button" data-do="open" style="text-align:left">' + A.esc(t.title) + '</button><span class="chip">Checked by ' + A.esc(A.P[t.checked_by].name) + '</span></li>'; }, 'No checks waiting.')) +
-      card('Decisions needed', b.dec.length, li(b.dec, function (a) { return '<li><a href="#/approvals" style="display:contents;color:inherit">' + A.avatar(a.approver) + '<span>' + A.esc(a.type + ', ' + a.what) + '</span><span class="chip chip--amber">' + rupees(a.amount) + '</span></a></li>'; }, 'No approvals waiting.')) +
+      card('Decisions needed', b.dec.length, li(b.dec, function (a) { return '<li><a href="#/approvals" style="display:contents;color:inherit">' + A.avatar(a.approver) + '<span>' + A.esc(GUC_APPR.label(a)) + '</span><span class="chip chip--amber">' + rupees(a.amount) + '</span></a></li>'; }, 'No approvals waiting.')) +
       (b.blk.length ? card('Blocked', b.blk.length, li(b.blk, function (t) { return '<li data-id="' + t.id + '">' + A.avatar(t.owner) + '<button class="task-title" type="button" data-do="open" style="text-align:left">' + A.esc(t.title) + '</button><span class="chip chip--amber">' + A.esc(t.blocked) + '</span></li>'; }, '')) : '') + '</div>';
   };
 
