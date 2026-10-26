@@ -386,6 +386,11 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
       <span class="btext"><b>Royale Collections</b><span>Corporate gifting &middot; Discovery Portal + Gifting Cockpit</span></span>
       <span class="bgo">&rarr;</span>
     </button>
+    <button class="badge" onclick="goClientLogin('gladucame')">
+      <span class="bicon">GU</span>
+      <span class="btext"><b>Glad U Came</b><span>Mumbai PR &amp; influencer agency &middot; the team cockpit, sample data</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
     <button class="badge" onclick="location.href='https://saasya-men.zippyscale-cockpit-server.workers.dev/'">
       <span class="bicon">SM</span>
       <span class="btext"><b>Saasya Men</b><span>Kolkata menswear &middot; bespoke, the floor and the designers</span></span>
@@ -479,6 +484,26 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     <div class="login-err" id="vaerr"></div>
     <button class="btn-primary" onclick="tryVaarahi()">Enter workspace</button>
     <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+  </div>
+</div>
+
+<!-- GLAD U CAME LOGIN -->
+<div id="gclogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Glad U Came &times; ZippyScale</div>
+    <h1>Team cockpit</h1>
+    <p class="sub">A clickable sample of the Glad U Came cockpit: Today's tasks, leads, brands, influencers, approvals, money and the morning brief. Every person, brand, lead and number inside is sample data created by ZippyScale, not Glad U Came's own records.</p>
+    <div class="field">
+      <label for="gcu">Username</label>
+      <input id="gcu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. maddie" onkeydown="if(event.key==='Enter')tryGlad()">
+    </div>
+    <div class="field">
+      <label for="gcp">Password</label>
+      <input id="gcp" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryGlad()">
+    </div>
+    <div class="login-err" id="gcerr"></div>
+    <button class="btn-primary" onclick="tryGlad()">Enter workspace</button>
   </div>
 </div>
 
@@ -1964,7 +1989,7 @@ async function downloadPDF(){
 function hideGates(){document.querySelectorAll('.gatewrap').forEach(el=>el.classList.add('hidden'));}
 function goPortal(){hideGates();document.getElementById('portal').classList.remove('hidden');}
 function goDirectory(){hideGates();document.getElementById('directory').classList.remove('hidden');}
-const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'], saasya:['salogin','saerr','sau'] };
+const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'], saasya:['salogin','saerr','sau'], gladucame:['gclogin','gcerr','gcu'] };
 /* Royale has two products behind one password, so the gate opens a chooser rather
    than guessing which one they wanted. */
 function showRoyalePick(){
@@ -2024,6 +2049,17 @@ function trySaasya(){
   document.getElementById('saerr').textContent='Wrong username or password.';
 }
 
+/* Glad U Came: the Founder login on the card (SHA-256 only, as the demo itself checks it). The demo's own
+   sign-in takes the other four role logins after Sign out. */
+const GLAD = { user:"maddie", h:"cabb48429de34b5dc83531079dbc4f57171652c9fafd4c25243a3c6d397da7e7" };
+async function tryGlad(){
+  const u=document.getElementById('gcu').value.trim().toLowerCase();
+  const p=document.getElementById('gcp').value;
+  let hex='';
+  try{ const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)); hex=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }catch(e){}
+  if(u===GLAD.user && hex===GLAD.h){ try{ sessionStorage.setItem('guc.me','maddie'); }catch(e){} location.href='../gladucame/#/today'; return; }
+  document.getElementById('gcerr').textContent='Wrong username or password.';
+}
 const ROYALE = { user:"royale", pass:"Royale@26" };
 function tryRoyale(){
   const u=document.getElementById('rcu').value.trim().toLowerCase();

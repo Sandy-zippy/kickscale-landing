@@ -1,0 +1,147 @@
+/* GLAD U CAME COCKPIT · design tokens · Picasso, ZippyScale · 26 Oct 2026
+   Variables only. Two themes: light (default) and dark, set with data-theme on <html>.
+   Tokens are scoped to [data-theme] as well as :root, so any element carrying
+   data-theme="dark" re-skins its own subtree (used by kit.html and the approval sheet).
+   Brand (locked by Bhargav, 26 Oct): mint #B3E1D2, theme mint #96F7D6, teal #57CEB5,
+   charcoal #2E2E2E, white. Mint is the ACCENT, never a wall. */
+
+@font-face { font-family: "Inter"; src: url("fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: "Montserrat"; src: url("fonts/Montserrat-latin-700-900.woff2") format("woff2");
+  font-weight: 700 900; font-style: normal; font-display: swap; }
+
+:root {
+  /* ---- brand, raw (never use these for small text; use the *-ink tokens) ---- */
+  --brand-mint: #B3E1D2;
+  --brand-mint-bright: #96F7D6;
+  --brand-teal: #57CEB5;
+  --brand-charcoal: #2E2E2E;
+  --brand-white: #FFFFFF;
+
+  /* ---- channel colours (badge fills only, always with a visible word) ---- */
+  --ch-whatsapp: #1FAF5A;
+  --ch-instagram: #D62976;
+  --ch-gmail: #D93025;
+  --ch-web: #2E2E2E;
+  --ch-meta: #0866FF;
+
+  /* ---- type ---- */
+  --font: "Inter", "Proxima Nova", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-head: "Montserrat", "Inter", system-ui, sans-serif;
+  --fs-11: 11px;   /* labels, meta, chips. The floor. */
+  --fs-12: 12px;   /* secondary lines */
+  --fs-13: 13px;   /* body, rows, inputs (mouse) */
+  --fs-14: 14px;   /* card titles in Inter */
+  --fs-16: 16px;   /* page title (Montserrat Black caps), inputs on touch */
+  --fs-22: 22px;   /* tile figures */
+  --fs-30: 30px;   /* hero figure (morning brief, streak) */
+  --w-regular: 400; --w-medium: 500; --w-semi: 600; --w-bold: 700; --w-black: 900;
+  --lh: 1.5; --lh-tight: 1.2;
+  --track-caps: .04em;     /* Montserrat caps */
+  --track-label: .06em;    /* 11px caps labels */
+  --num: "tnum" 1, "cv11" 1;
+
+  /* ---- space (4pt) ---- */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+
+  /* ---- size ---- */
+  --ctl: 32px;        /* buttons, inputs, nav rows with a mouse */
+  --ctl-sm: 26px;     /* row actions */
+  --row: 44px;        /* list row */
+  --ico: 16px; --ico-sm: 14px; --ico-lg: 20px;
+  --side: 224px;      /* sidebar */
+  --thread: 340px;    /* team thread pane */
+
+  /* ---- radius: soft, a little playful, never bubbly ---- */
+  --r-xs: 4px; --r-sm: 8px; --r: 12px; --r-lg: 16px; --r-pill: 999px;
+
+  /* ---- motion ---- */
+  --e-out: cubic-bezier(.22, 1, .36, 1);       /* entrances */
+  --e-spring: cubic-bezier(.34, 1.56, .64, 1); /* playful pop: ticks, streak, badges */
+  --e-std: cubic-bezier(.4, 0, .2, 1);
+  --t-micro: .16s; --t-ui: .28s; --t-in: .6s;
+  --stagger: 40ms;
+
+  /* ---- z ---- */
+  --z-sticky: 10; --z-pop: 40; --z-dialog: 100; --z-toast: 200; --z-notice: 300;
+}
+
+/* ================= LIGHT (default) ================= */
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --bg: #F4F7F6;            /* app ground: white with a breath of mint */
+  --surface: #FFFFFF;        /* cards, list, dialogs */
+  --surface-2: #F8FAF9;      /* inset areas, inputs, thread pane */
+  --raised: #FFFFFF;         /* dialog, popover, toast */
+  --ink: #2E2E2E;            /* their charcoal */
+  --ink-2: #555A58;          /* secondary, 7.0:1 on white */
+  --ink-3: #626765;          /* meta, 5.7:1 on white, 4.9:1 on mint tint */
+  --line: #E1E7E4;
+  --line-2: #CBD4D0;
+
+  --accent: #96F7D6;         /* the ONE fill for the next action (with --on-accent text) */
+  --accent-hover: #7FEFC8;
+  --on-accent: #1E2B27;      /* 12.9:1 on --accent */
+  --accent-tint: #E4F5EF;    /* selected row / nav: mint #B3E1D2 at ~35% */
+  --accent-soft: #B3E1D2;    /* brand mint: chips, avatars, highlights */
+  --accent-ink: #1C7560;     /* every mint/teal WORD and icon on light, 5.4:1 on white */
+  --accent-line: #57CEB5;    /* teal: progress, rings, charts, focus */
+  --ring: #1C7560;
+
+  --primary: #2E2E2E;        /* solid secondary button: charcoal with white text */
+  --on-primary: #FFFFFF;
+
+  --red: #C2302C;  --red-tint: #FDECEB; --on-red: #FFFFFF;   /* overdue: 5.6:1 on white */
+  --amber: #9A5B00; --amber-tint: #FFF3DC; /* Blocked, Snoozed: 5.6:1 */
+  --green: #1C7560; --green-tint: #E4F5EF; /* Done = our teal ink */
+  --blue: #1F5FD1; --blue-tint: #E8F0FE;   /* info, links */
+
+  --shadow-1: 0 1px 2px rgba(30,43,39,.06), 0 1px 1px rgba(30,43,39,.04);
+  --shadow-2: 0 8px 24px rgba(30,43,39,.10), 0 2px 6px rgba(30,43,39,.06);
+  --shadow-3: 0 24px 60px rgba(30,43,39,.18), 0 6px 16px rgba(30,43,39,.08);
+  --scrim: rgba(30,36,34,.48);
+  --bar-bg: #E6ECE9;         /* empty part of progress bars */
+  --gold: #EDC04F; --silver: #C9D1D9; --bronze: #E3A06E; /* leaderboard medals, charcoal rank number on top */
+}
+
+/* ================= DARK ================= */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #1F2021;
+  --surface: #2A2B2B;        /* near their charcoal #2E2E2E */
+  --surface-2: #252626;
+  --raised: #333434;
+  --ink: #F3F6F5;
+  --ink-2: #C3CAC7;
+  --ink-3: #B2B9B6;          /* 7.0:1 on --surface, 4.9:1 on mint tint */
+  --line: rgba(255,255,255,.09);
+  --line-2: rgba(255,255,255,.16);
+
+  --accent: #96F7D6;
+  --accent-hover: #B3FBE2;
+  --on-accent: #1E2B27;
+  --accent-tint: rgba(150,247,214,.12);
+  --accent-soft: rgba(179,225,210,.22);
+  --accent-ink: #96F7D6;     /* 11:1 on --surface */
+  --accent-line: #57CEB5;
+  --ring: #96F7D6;
+
+  --primary: #F3F6F5;
+  --on-primary: #1F2021;
+
+  --red: #FF8A80;  --red-tint: rgba(255,138,128,.14); --on-red: #1F2021;
+  --amber: #FFC164; --amber-tint: rgba(255,193,100,.14);
+  --green: #96F7D6; --green-tint: rgba(150,247,214,.12);
+  --blue: #8AB4FF; --blue-tint: rgba(138,180,255,.14);
+
+  --shadow-1: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-2: 0 10px 28px rgba(0,0,0,.45);
+  --shadow-3: 0 28px 70px rgba(0,0,0,.6);
+  --scrim: rgba(0,0,0,.6);
+  --bar-bg: rgba(255,255,255,.08);
+  --gold: #F2C14E; --silver: #C9D1D9; --bronze: #E0915A;
+}
+
+@media (pointer: coarse) {
+  :root { --ctl: 44px; --ctl-sm: 44px; --row: 52px; }
+}

@@ -1,0 +1,124 @@
+/* Glad U Came demo . sample data, hand-written so the demo tells the same story every time.
+   Every name, brand and figure here is illustrative, created by ZippyScale. Dates are days from today. */
+window.GUC_SEED = {
+  people: [
+    // id, name, role, department, reports_to, on leave today, streak, targets [label, done, of, period]
+    ['maddie',  'Maddie',          'Founder',         "Founder's office",   null,     false, 21, [['Leads won', 4, 6, 'October target'], ['Tasks on time', 92, 100, '% this month']]],
+    ['riya',    'Riya Mehta',      'Department head', 'BD',                 'maddie', false, 9,  [['Leads won', 3, 5, 'October target'], ['Discovery calls', 11, 15, 'This month']]],
+    ['kabir',   'Kabir Shah',      'Department head', 'Influencer',         'maddie', false, 14, [['Reels live', 18, 25, 'October target'], ['Campaigns on time', 3, 4, 'This month']]],
+    ['ananya',  'Ananya Iyer',     'Department head', 'PR',                 'maddie', false, 6,  [['Coverage', 22, 30, 'October target'], ['Pitches sent', 40, 60, 'This month']]],
+    ['zoya',    'Zoya Khan',       'Department head', 'Celebrity & gifting','maddie', false, 11, [['Hampers posted', 14, 20, 'October target'], ['Proof of post', 12, 14, 'This month']]],
+    ['arjun',   'Arjun Malhotra',  'Department head', 'Events',             'maddie', false, 4,  [['Events delivered', 2, 3, 'October target'], ['Vendors confirmed', 9, 12, 'This month']]],
+    ['neha',    'Neha Kapoor',     'Department head', 'Content',            'maddie', false, 8,  [['Pieces approved', 26, 40, 'October target'], ['First drafts on time', 15, 18, 'This month']]],
+    ['farhan',  'Farhan Sheikh',   'Finance',         'Finance',            'maddie', false, 17, [['Invoices raised', 9, 12, 'October target'], ['Payouts cleared', 21, 26, 'This month']]],
+    ['ishaan',  'Ishaan Desai',    'Team member',     'BD',                 'riya',   false, 3,  [['Leads contacted', 34, 40, 'October target'], ['Proposals sent', 5, 8, 'This month']]],
+    ['tanvi',   'Tanvi Joshi',     'Team member',     'Influencer',         'kabir',  false, 12, [['Reels live', 7, 10, 'October target'], ['Influencers shortlisted', 18, 25, 'This week']]],
+    ['rohan',   'Rohan Pillai',    'Team member',     'Influencer',         'kabir',  true,  5,  [['Reels live', 6, 10, 'October target'], ['Live links checked', 14, 20, 'This month']]],
+    ['meera',   'Meera Nair',      'Team member',     'PR',                 'ananya', false, 10, [['Coverage', 9, 12, 'October target'], ['Pitches sent', 22, 30, 'This month']]],
+    ['siddharth','Siddharth Rao',  'Team member',     'Events',             'arjun',  false, 2,  [['Vendors confirmed', 5, 8, 'October target'], ['Site visits', 3, 4, 'This month']]],
+    ['aisha',   'Aisha Patel',     'Intern',          'Influencer',         'kabir',  false, 7,  [['Influencer profiles checked', 31, 40, 'October target'], ['Tasks on time', 88, 100, '% this month']]],
+    ['dev',     'Dev Kulkarni',    'Intern',          'PR',                 'ananya', false, 1,  [['Media list rows', 120, 200, 'October target'], ['Tasks on time', 80, 100, '% this month']]]
+  ],
+  // brand, contact, channel, stage, owner, value in lakh
+  leads: [
+    ['Kora Skincare','Meera Sethi','whatsapp','Proposal sent','kabir',8.0], ['Saffron Lane Jewels','Rhea Kapadia','instagram','New','riya',2.4],
+    ['Urban Paws Mumbai','Nisha Pillai','web','New','ishaan',1.1], ['Kalaghoda Arts Fest','Kunal Bhatia','gmail','Contacted','ananya',3.8],
+    ['Monsoon Activewear','Varun Khanna','meta','Discovery call','riya',5.0], ['Tide & Thyme Cafe','Sana Mirza','whatsapp','Negotiation','riya',4.2],
+    ['Bombay Brew Co.','Aditya Rao','web','Won','ananya',3.0], ['Coastal Linen Co.','Pooja Shetty','gmail','Lost / Nurture','ishaan',1.5],
+    ['Juhu Juice Bar','Karan Bedi','instagram','New','ishaan',0.8], ['Peddar Road Patisserie','Anjali Doshi','whatsapp','Contacted','ishaan',1.6],
+    ['Worli Wellness Studio','Simran Gill','meta','Discovery call','riya',2.2], ['Malabar Hill Florist','Tara Menon','web','Proposal sent','zoya',1.9],
+    ['Versova Surf Club','Neil Fernandes','instagram','Contacted','kabir',2.7], ['Powai Founders Meetup','Rahul Verma','gmail','Discovery call','arjun',6.5],
+    ['Andheri Fitness Lab','Ritika Sood','meta','New','ishaan',1.2], ['Bandra Book Cafe','Zara Ali','whatsapp','Won','neha',1.4],
+    ['Chembur Chai Co.','Vikram Nair','web','Contacted','ishaan',0.9], ['Lower Parel Lofts','Megha Jain','gmail','Proposal sent','riya',7.5],
+    ['Marine Drive Motors','Arnav Kulkarni','meta','Negotiation','riya',9.0], ['Thane Organics','Leena Joshi','web','New','ishaan',1.0],
+    ['Goregaon Game Arena','Yash Thakur','instagram','Discovery call','kabir',3.3], ['Khar Kitchen Studio','Divya Rao','whatsapp','Contacted','neha',1.8],
+    ['Fort Heritage Hotel','Rustom Irani','gmail','Proposal sent','zoya',6.0], ['Matunga Filter Coffee','Ganesh Iyer','web','Lost / Nurture','ishaan',0.6],
+    ['Mahim Mithai House','Farah Qureshi','whatsapp','New','riya',1.3], ['Sion Sneaker Co.','Kabir Batra','instagram','Negotiation','kabir',4.8],
+    ['Navi Mumbai Nest Homes','Sunil Patil','meta','Contacted','riya',5.5], ['Colaba Craft Kombucha','Ira Shah','instagram','Discovery call','kabir',2.0],
+    ['Dadar Silk House','Vandana Mhatre','web','Won','zoya',2.6], ['Byculla Bakehouse','Nikhil Sawant','gmail','New','ishaan',0.7]
+  ],
+  // id, brand, name, template, department, team, live in days, fee in lakh, stage
+  projects: [
+    ['P1','Kora Skincare','Diwali influencer campaign','Influencer campaign','Influencer',['kabir','tanvi','rohan','aisha'],10,8.0,'Outreach'],
+    ['P2','Bombay Brew Co.','PR retainer, October','PR retainer','PR',['ananya','meera','dev'],5,3.0,'Pitching'],
+    ['P3','Monsoon Activewear','Store launch event','Event','Events',['arjun','siddharth'],7,5.0,'Venue and vendors'],
+    ['P4','Dadar Silk House','Festive celebrity gifting','Celebrity gifting','Celebrity & gifting',['zoya'],4,2.6,'Dispatching'],
+    ['P5','Bandra Book Cafe','Reels and posts, November','Content','Content',['neha'],12,1.4,'Drafts'],
+    ['P6','Kalaghoda Arts Fest','Press preview','PR project','PR',['ananya','meera','dev'],15,3.8,'Media list']
+  ],
+  /* owner, title, due [days, 'HH:MM'], priority, link ('P1' or 'L:Brand'), status, extra
+     status: todo . blocked . check (Waiting for check) . done (done today) */
+  tasks: [
+    ['maddie','Review the October retainer invoices with Farhan',[0,'12:00'],'High','P2','todo'],
+    ['maddie','Call Marine Drive Motors on the revised fee',[0,'16:00'],'Urgent','L:Marine Drive Motors','todo'],
+    ['maddie','Sign off the Diwali campaign shortlist',[1,'11:00'],'High','P1','todo'],
+    ['maddie','Plan the November team targets',[3,'18:00'],'Normal','','todo'],
+    ['riya','Send the proposal to Lower Parel Lofts',[-1,'18:00'],'High','L:Lower Parel Lofts','todo'],
+    ['riya','Discovery call with Monsoon Activewear',[0,'15:30'],'High','L:Monsoon Activewear','todo'],
+    ['riya','Negotiate the Tide & Thyme fee',[0,'17:00'],'Normal','L:Tide & Thyme Cafe','blocked',{blocked:'Waiting on brand'}],
+    ['riya','Check Ishaan\'s call notes for the week',[2,'12:00'],'Normal','','todo'],
+    ['kabir','Approve the Kora reel scripts',[0,'13:00'],'High','P1','todo'],
+    ['kabir','Fee call with @mumbaimasala.diaries',[0,'17:30'],'Normal','P1','todo'],
+    ['kabir','Follow up Sion Sneaker Co. on the proposal',[-2,'18:00'],'High','L:Sion Sneaker Co.','todo'],
+    ['kabir','Brief the team on Goregaon Game Arena',[2,'11:00'],'Normal','L:Goregaon Game Arena','todo'],
+    ['ananya','Pitch the Bombay Brew story to Mid-Day food desk',[0,'14:00'],'High','P2','todo'],
+    ['ananya','Approve the Kalaghoda press note',[1,'12:00'],'Normal','P6','todo'],
+    ['ananya','Monthly coverage report for Bombay Brew Co.',[-1,'17:00'],'High','P2','todo'],
+    ['zoya','Confirm the hamper list with Dadar Silk House',[0,'12:30'],'High','P4','todo'],
+    ['zoya','Chase proof of post from two celebrities',[-1,'19:00'],'Normal','P4','blocked',{blocked:'Waiting on an influencer'}],
+    ['zoya','Proposal for Fort Heritage Hotel gifting',[1,'16:00'],'Normal','L:Fort Heritage Hotel','todo'],
+    ['arjun','Lock the venue for Monsoon Activewear',[0,'11:00'],'Urgent','P3','todo'],
+    ['arjun','Send the run of show to the brand',[1,'18:00'],'High','P3','todo'],
+    ['arjun','Discovery call with Powai Founders Meetup',[2,'15:00'],'Normal','L:Powai Founders Meetup','todo'],
+    ['neha','First drafts of 6 reels for Bandra Book Cafe',[0,'18:00'],'High','P5','todo'],
+    ['neha','Content calendar for Khar Kitchen Studio pitch',[1,'13:00'],'Normal','L:Khar Kitchen Studio','todo'],
+    ['neha','Edit the Kora behind-the-scenes reel',[-1,'20:00'],'Normal','P1','todo'],
+    ['farhan','Raise the Bombay Brew October invoice',[0,'12:00'],'High','P2','todo'],
+    ['farhan','Clear 4 influencer payouts for Kora',[1,'17:00'],'High','P1','todo'],
+    ['farhan','Chase Kalaghoda Arts Fest, 64 days unpaid',[-2,'12:00'],'Urgent','P6','todo'],
+    ['farhan','GST working for October',[3,'18:00'],'Normal','','todo'],
+    ['ishaan','Reply to Juhu Juice Bar on Instagram',[0,'11:30'],'High','L:Juhu Juice Bar','todo'],
+    ['ishaan','Call Peddar Road Patisserie',[0,'16:30'],'Normal','L:Peddar Road Patisserie','todo'],
+    ['ishaan','Send credentials deck to Thane Organics',[-1,'18:00'],'Normal','L:Thane Organics','todo'],
+    ['ishaan','Book discovery call with Chembur Chai Co.',[1,'12:00'],'Normal','L:Chembur Chai Co.','todo'],
+    ['ishaan','Update the lead sheet after calls',[0,'10:00'],'Low','','done'],
+    ['tanvi','Send the influencer shortlist to Kora Skincare',[-1,'18:00'],'High','P1','todo',{checklist:['14 names with ER','2 Pune food pages','Rates from the rate card']}],
+    ['tanvi','Chase the live link from @bandra.bites',[-2,'12:00'],'Normal','P1','todo'],
+    ['tanvi','Outreach DMs to 6 beauty influencers',[0,'15:00'],'High','P1','todo'],
+    ['tanvi','Collect content drafts for the Diwali reels',[0,'18:00'],'Normal','P1','blocked',{blocked:'Waiting on an influencer'}],
+    ['tanvi','Shortlist pet influencers for Urban Paws pitch',[2,'12:00'],'Normal','L:Urban Paws Mumbai','todo'],
+    ['tanvi','Brief @thanekitchen on the Kora script',[0,'10:30'],'Normal','P1','check'],
+    ['rohan','Check live links for the Kora teaser posts',[1,'12:00'],'Normal','P1','todo'],
+    ['rohan','Influencer invoices and PAN for payouts',[2,'17:00'],'Normal','P1','todo'],
+    ['meera','Follow up Mid-Day and HT City on Bombay Brew',[0,'12:00'],'High','P2','todo'],
+    ['meera','Draft the Kalaghoda press note',[-1,'18:00'],'High','P6','check'],
+    ['meera','Update the journalist list for food beats',[1,'16:00'],'Normal','P2','todo'],
+    ['siddharth','Get 3 quotes for the sound vendor',[0,'13:00'],'High','P3','todo'],
+    ['siddharth','Site visit with the decor team',[-1,'16:00'],'Normal','P3','todo'],
+    ['siddharth','Guest list draft for the launch',[2,'18:00'],'Normal','P3','todo'],
+    ['aisha','Check follower numbers for 20 food influencers',[0,'17:00'],'Normal','P1','todo',{team:'Influencer',pick:'Picked: lightest load in Influencer, 2 open tasks'}],
+    ['aisha','Screenshot the Kora teaser posts for the report',[-1,'18:00'],'Low','P1','todo'],
+    ['aisha','Fill the rate card sheet from DMs',[1,'15:00'],'Normal','','todo'],
+    ['dev','Clip this week\'s coverage for Bombay Brew',[0,'16:00'],'Normal','P2','todo'],
+    ['dev','Add 30 lifestyle journalists to the media list',[1,'18:00'],'Normal','P6','todo'],
+    ['dev','Print the press kits for the preview',[-1,'15:00'],'Low','P6','blocked',{blocked:'Need information'}]
+  ],
+  /* Inbox: channel, name, handle (mobile, @handle or email), business they named, linked lead brand ('' = not a lead yet),
+     assigned to, read?, messages [from ('them', 'us:<id>', 'note:<id>'), text, minutes ago] */
+  inbox: [
+    ['whatsapp','Pooja Rane','+91 98765 43210','Leaf & Loaf Bakery','', '', false, [['them','Hi, this is Pooja from Leaf & Loaf Bakery. We open in Bandra next month and want food influencers for the launch. Budget around 2 lakh.',4]]],
+    ['whatsapp','Meera Sethi','+91 98200 10000','Kora Skincare','Kora Skincare','kabir', true, [['them','Loved shortlist v2. Can we see 3 more beauty names before Friday?',2],['us:kabir','Yes, Tanvi is on it. You will have them by Thursday.',1],['note:kabir','@Tanvi please add 3 beauty names, Juhu or Bandra.',1]]],
+    ['instagram','@saffronlane.jewels','@saffronlanejewels','Saffron Lane Jewels','', '', false, [['them','Hi! Looking for a PR agency for our Bandra store launch in December. Can we talk?',18]]],
+    ['gmail','Kunal Bhatia','kunal@kalaghodaartsfest.in','Kalaghoda Arts Fest','Kalaghoda Arts Fest','ananya', true, [['them','Re: Media list for the press preview. Please add the art critics from Mid-Day and Mumbai Mirror.',60]]],
+    ['web','Nisha Pillai','+91 98202 10622','Urban Paws Mumbai','Urban Paws Mumbai','ishaan', true, [['them','Website form: Budget 1 to 2 lakh, influencer campaign for a pet cafe in Khar.',180]]],
+    ['meta','Varun Khanna','+91 98204 11244','Monsoon Activewear','Monsoon Activewear','riya', true, [['them','Meta lead ad form: Interested in Influencer campaign. City Mumbai. Store launch in November.',1500]]],
+    ['whatsapp','Sana Mirza','+91 98205 11555','Tide & Thyme Cafe','Tide & Thyme Cafe','riya', true, [['them','Sharing the revised budget by evening.',1560]]],
+    ['instagram','@bandra.bites','@bandra.bites','','', 'tanvi', true, [['them','Posted! Link in bio, sharing the live link now.',2900]]],
+    ['gmail','Rohit Kamat','rohit@worlibrewlab.in','Worli Brew Lab','', '', false, [['them','We are a craft brewery in Worli. Looking for PR and a press preview in January. What would a retainer cost?',95]]]
+  ],
+  /* team threads on leads: brand, [[who, text, minutes ago], ...] */
+  leadThreads: [
+    ['Kora Skincare', [['maddie','@Kabir can we add two Pune food pages? They asked about Pune on the call.',300],['kabir','Yes. Shortlist v2 is with them, decision by Friday.',280]]],
+    ['Marine Drive Motors', [['riya','They want the fee under 8L. @Maddie your call.',200],['maddie','Hold at 9L, offer one extra reel.',150]]]
+  ]
+};
