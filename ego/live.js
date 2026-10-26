@@ -24,6 +24,7 @@ const tierOf = r => !r ? 'below' : r.scope === 'all' && r.users ? 'mgmt' : r.use
 const holds = () => D.access.scope !== 'none';
 const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.user.division;
 function allowedTab(t) {
+  if (t === 'leadlist') t = 'opps';   // Leads L3: the Leads menu shows wherever Opportunities is allowed (the server: leadsOk)
   if (t === 'sdr') t = 'displays';   // T4: Sample Display Record (SDR) keeps the screen key 'displays'
   if (['home', 'account', 'soon'].includes(t)) return true;
   if (t === 'attendance' || t === 'roadmap' || t === 'priority') return holds() && canFieldTab(D.access, t);   // R5: Priority calls for telesales, Owners, managers   // R2a: managers, Owners, telesales (FIELD_TABS)
@@ -103,7 +104,7 @@ EM.render = (...a) => {
   if (D.access.viewing_as && !qs('#view [data-viewing-as]')) qs('#view').insertAdjacentHTML('afterbegin', `<div class="callout warn" data-viewing-as role="note"><b>Viewing as ${esc(D.access.viewing_as.name)} · ${esc(D.access.name)}.</b> This is exactly their menu, dashboard and records. Nothing can be changed from here. <button class="btn sm primary" data-act="view-back">Back to me</button></div>`);
   if (both && !D.access.viewing_as && !qs('#view [data-both-note]')) qs('#view').insertAdjacentHTML('afterbegin', D.access.readonly ? `<div class="callout" data-both-note role="note"><b>${esc(D.access.name)}: view only.</b> You see everything your role covers; nothing can be added or changed from this login.</div>` : '<div class="callout" data-both-note role="note"><b>Both: EGO Premium and Big E together, to look at.</b> Nothing can be added or changed here. Switch to <b>Wholesale · EGO</b> or <b>Retail · Big E</b> at the top to make changes.</div>');
 };
-const NAV_LABEL = { home: 'Home', dealers: 'Dealers', architects: 'Architects', design500: 'Design 500', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap', priority: 'Priority calls', samples: 'Samples', displays: 'Sample Display Record (SDR)', sdr: 'Sample Display Record (SDR)', training: 'Training' };
+const NAV_LABEL = { leadlist: 'Leads', home: 'Home', dealers: 'Dealers', architects: 'Architects', design500: 'Design 500', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap', priority: 'Priority calls', samples: 'Samples', displays: 'Sample Display Record (SDR)', sdr: 'Sample Display Record (SDR)', training: 'Training' };
 /* R8 (Bhargav 18 Oct): Samples, Displays and Training are tabs of Dealers, Attendance and Roadmap one item "Field team",
    Priority calls a tab of Opportunities (and the telesales Home top card). Each keeps its own route and its own access. */
 NAV_LABEL.fieldteam = 'Field team';
@@ -115,8 +116,10 @@ EM.navHref = k => NAV_GROUP[k] ? (NAV_GROUP[k].find(([t]) => allowedTab(t)) || [
 // One menu order for every login and every company view, set by Bhargav on 18 Oct. A role or view that cannot open
 // an item loses it; the rest keep their places. On the two-column tile menu the items sit in fixed pairs (NAV_PAIRS):
 // when a role lacks one item of a pair its slot stays empty, so no pair ever shifts.
-const NAV_ORDER = ['home', 'people', 'architects', 'dealers', 'opps', 'approvals', 'orders', 'orderbook', 'projects', 'installation', 'fieldteam', 'complaints', 'inventory', 'import', 'design500', 'schemes', 'analysis', 'p200'];
-const NAV_PAIRS = NAV_ORDER.flatMap((k, i) => i % 2 ? [] : [[k, NAV_ORDER[i + 1]]]);
+const NAV_ORDER = ['home', 'people', 'architects', 'dealers', 'leadlist', 'opps', 'approvals', 'orders', 'orderbook', 'projects', 'installation', 'fieldteam', 'complaints', 'inventory', 'import', 'design500', 'schemes', 'analysis', 'p200'];
+/* Leads L3 (26 Oct, A2): Leads pairs with Opportunities, so Approvals sits alone in its row; every other pair stays */
+const NAV_SOLO = ['approvals'];
+const NAV_PAIRS = NAV_ORDER.reduce((a, k) => { const last = a[a.length - 1]; if (NAV_SOLO.includes(k)) a.push([k, null]); else if (last && last[1] === undefined) last[1] = k; else a.push([k, undefined]); return a; }, []).map(([a, b]) => [a, b || null]);
 EM.navTabs = () => ({
   main: NAV_ORDER.map(k => [k, NAV_LABEL[k]])
     .filter(([k]) => navOk(k) && !(['p200', 'schemes'].includes(k) && EM.div === 'retail')),
@@ -781,7 +784,7 @@ EM.VIEWS.client = arg => {
   const home = homeOf(c);
   return `<div class="stack">${crumbs(home, [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
-      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}${DEALER_KINDS.includes(c.kind) ? `<span class="badge ${(c.extra || {}).project_partner === 'Yes' ? 'ok' : (c.extra || {}).project_partner === 'Potential' ? 'info' : 'plain'}" data-pp-badge>Project Partner: ${esc((c.extra || {}).project_partner || 'not filled')}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span></div>
+      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}${DEALER_KINDS.includes(c.kind) ? `<span class="badge ${(c.extra || {}).project_partner === 'Yes' ? 'ok' : (c.extra || {}).project_partner === 'Potential' ? 'info' : 'plain'}" data-pp-badge>Project Partner: ${esc((c.extra || {}).project_partner || 'not filled')}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span>${[...new Set(D.opportunities.filter(o => o.client_id === c.id && o.lead_id).map(o => o.lead_id))].map(ldFromLink).join('')}</div>
       <p class="muted">${esc(fmtMobile(c.mobile))} · ${esc(c.city)}${c.region ? ', ' + esc(c.region) : ''} · owner ${esc(staffName(c.owner_id))}</p></div>
       <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn" data-act="fu-add" data-client="${id}">+ Follow-up</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button></div></div>
     ${recGrid(`${subtabs(`#/client/${id}`, tab, tabs)}
@@ -912,7 +915,7 @@ function filesBox(o) {   // o: { id, client, order, types, docs, canAdd, tags, t
       ${P ? `<div class="field" data-field="doc_amount"><label for="${b}-amt">Amount (optional)</label>${G.adorn({ type: 'money', key: 'amount' }, `<input class="input" type="number" min="0" step="0.01" id="${b}-amt">`)}</div>` : ''}`
     : `<div class="field" data-field="doc_name"><label for="${b}-name">Name (optional)</label><input class="input" id="${b}-name" placeholder="e.g. GST certificate 2026"></div>`}
       <div class="field span2" data-field="doc_files"><label for="${b}-file">Files: one or many, up to 25 MB each</label><input class="input" id="${b}-file" type="file" multiple accept="${FILE_ACCEPT}"></div></div>
-      ${errBox(b + '-err')}<div class="row"><button class="btn primary" data-act="fu-up" data-box="${o.id}" data-client="${o.client || ''}" data-order="${o.order || ''}" data-followup="${o.followup || ''}" data-plan="${o.plan || ''}" data-project="${o.project || ''}" data-complaint="${o.complaint || ''}" data-register="${o.register || ''}" data-opp="${o.opp || ''}">Upload</button></div></form>` : '';
+      ${errBox(b + '-err')}<div class="row"><button class="btn primary" data-act="fu-up" data-box="${o.id}" data-client="${o.client || ''}" data-order="${o.order || ''}" data-followup="${o.followup || ''}" data-plan="${o.plan || ''}" data-project="${o.project || ''}" data-complaint="${o.complaint || ''}" data-register="${o.register || ''}" data-opp="${o.opp || ''}" data-lead="${o.lead || ''}">Upload</button></div></form>` : '';
   const rows = o.docs.slice().sort((x, y) => String(y.created_at).localeCompare(String(x.created_at)));
   const list = rows.length ? table(['File', 'What it is', ...(tagCols ? ['Number', 'Date', ...(P ? ['Amount'] : [])] : []), ...(o.showOrder ? ['On order'] : []), 'Size', 'Added', ''], rows.map(d => [
     `<b>${esc(d.name)}</b>${d.file_name && d.file_name !== d.name ? `<div class="small muted">${esc(d.file_name)}</div>` : ''}`, esc(d.type), ...(tagCols ? [esc(d.doc_no || ''), d.doc_date ? ds(d.doc_date) : '', ...(P ? [d.amount != null ? inr0(d.amount) : ''] : [])] : []),
@@ -928,7 +931,7 @@ EM.ACTIONS['fu-up'] = async el => {
   const big = files.find(f => f.size > 25 * 1024 * 1024); if (big) return showErr(b + '-err', `${big.name} is over 25 MB.`);
   const fd = new FormData(); files.forEach(f => fd.append('file', f));
   fd.append('type', v('type')); fd.append('name', v('name')); fd.append('doc_no', v('no')); fd.append('doc_date', v('date')); fd.append('amount', v('amt'));
-  if (el.dataset.order) fd.append('order_id', el.dataset.order); else if (el.dataset.followup) fd.append('followup_id', el.dataset.followup); else if (el.dataset.plan) fd.append('plan_id', el.dataset.plan); else if (el.dataset.project) fd.append('project_id', el.dataset.project); else if (el.dataset.complaint) fd.append('complaint_id', el.dataset.complaint); else if (el.dataset.register) fd.append('register_id', el.dataset.register); else if (el.dataset.opp) fd.append('opp_id', el.dataset.opp); else fd.append('client_id', el.dataset.client);
+  if (el.dataset.order) fd.append('order_id', el.dataset.order); else if (el.dataset.followup) fd.append('followup_id', el.dataset.followup); else if (el.dataset.plan) fd.append('plan_id', el.dataset.plan); else if (el.dataset.project) fd.append('project_id', el.dataset.project); else if (el.dataset.complaint) fd.append('complaint_id', el.dataset.complaint); else if (el.dataset.register) fd.append('register_id', el.dataset.register); else if (el.dataset.lead) fd.append('lead_id', el.dataset.lead); else if (el.dataset.opp) fd.append('opp_id', el.dataset.opp); else fd.append('client_id', el.dataset.client);
   busy(el, true);
   try { const r = await API('POST', '/api/documents', fd, true); D.documents.push(...r.documents); EM.toast(`<b>${r.documents.length} file${r.documents.length === 1 ? '' : 's'}</b> uploaded.`);
     const box = el.dataset.followup && el.closest('#overlay [data-files]'); if (box) box.outerHTML = fuFilesBox(el.dataset.followup); else EM.rerender(); }
@@ -995,7 +998,7 @@ EM.ACTIONS['fu-del'] = async el => {
 function fieldReqCard(opps) {
   const rows = opps.filter(o => fromField(o) && !isClosed(o.pipeline, o.stage, D.lists)).sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   return `<section class="card stack-s" data-field-reqs><div class="row between"><h3>From field sales <span class="muted">${num(rows.length)}</span></h3><a class="btn sm" href="#/opps" data-act="opp-field-on">All in Opportunities</a></div>
-    <p class="small muted">Requirements saved at a visit by field sales. Call them, hand a consumer lead to a dealer, or let EGO fulfil it.</p>
+    <p class="small muted">Requirements saved at a visit by field sales. Call them, hand a retail opportunity to a dealer, or let EGO fulfil it.</p>
     ${rows.length ? table(['Requirement', 'Who', 'Raised by', 'Saved', 'Stage'], rows.slice(0, 30).map(o => ({ href: '#/opp/' + o.id, cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(PIPELINES[o.pipeline].label)}${o.extra.area_sqft ? ` · ${num(o.extra.area_sqft)} sq ft` : ''}</div>`, esc(o.c_name || clientName(o.client_id)), esc(staffName(o.extra.raised_by)), esc(ds(dayIST(o.created_at))), `<span class="badge info">${esc(o.stage)}</span>`] })))
       : '<p class="small muted">None waiting. A Requirement saved on a field sales phone shows here at once, and rings your bell.</p>'}</section>`;
 }
@@ -1025,7 +1028,7 @@ EM.VIEWS.opps = arg => {
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
       <div class="row"><a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
     ${fbar}
-    ${PIPELINES[p].dealer ? `<p class="small muted" data-retail-note>Consumer leads: telesales qualify each one, then allocate it to a dealer (the dealers in the person's city are suggested). The dealer accepts it and moves it on in the dealer portal. A lead with no move for ${escDays()} day${escDays() === 1 ? '' : 's'} goes to the dealer's field sales owner in the bell.</p>` : ''}
+    ${PIPELINES[p].dealer ? `<p class="small muted" data-retail-note>Retail opportunities: telesales qualify each one, then allocate it to a dealer (the dealers in the person's city are suggested). The dealer accepts it and moves it on in the dealer portal. A lead with no move for ${escDays()} day${escDays() === 1 ? '' : 's'} goes to the dealer's field sales owner in the bell.</p>` : ''}
     ${subtabs('#/opps', p, ps.map(k => [k, `${PIPELINES[k].plural} <span class="muted">${D.opportunities.filter(o => o.pipeline === k).length}</span>`]))}
     <p class="small muted">The board shows what is live. A won or lost one stays until the end of the month it closed in; every order, old and new, is in <a href="#/orderbook">Orders</a>.</p>
     ${all.length ? '' : D.opportunities.some(o => o.pipeline === p) ? '<p class="muted">Nothing for these filters. Change or clear them above.</p>' : `<p class="small muted">No ${esc(PIPELINES[p].plural.toLowerCase())} yet. Add one from here, or from a dealer, an architect firm or a person. The stages below come from Lists & stages.</p>`}
@@ -1094,7 +1097,7 @@ EM.VIEWS.opp = id => {
   const contact = D.contacts.find(k => k.id === o.contact_id);
   return `<div class="stack">${crumbs(['Opportunities', `#/opps/${o.pipeline}`], [o.title])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.title)}</h1>
-      <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}<span class="small muted">${esc(o.ref || '')}</span></div>
+      <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}<span class="small muted">${esc(o.ref || '')}</span>${o.lead_id ? ldFromLink(o.lead_id) : ''}</div>
       <p class="muted"><a href="#/client/${o.client_id}">${esc(c.name)}</a>${contact ? ` · ${esc(contact.name)} ${esc(fmtMobile(contact.mobile))}` : ''}</p></div>
       <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}${PIPELINES[o.pipeline].dealer && !isClosed(o.pipeline, o.stage, D.lists) ? `<button class="btn ${o.dealer_id ? '' : 'primary'}" data-act="ld-move" data-id="${id}">${o.dealer_id ? 'Move to another dealer' : 'Allocate to a dealer'}</button>` : ''}<button class="btn" data-act="fu-add" data-client="${o.client_id}" data-opp="${id}">+ Follow-up</button><button class="btn" data-act="opp-edit" data-id="${id}">Edit</button></div></div>
     ${recGrid(`<section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>${wonNote(o)}
@@ -2776,6 +2779,7 @@ async function loadNotifs() {
   try { EM.notif = await API('GET', '/api/notifications'); } catch (x) { return; }
   const b = qs('[data-bell-n]'), n = unreadN();
   if (b) { b.textContent = n; b.hidden = !n; }
+  if (EM.leadPulse) EM.leadPulse(EM.notif.pulse || {});   // Leads L3
   refreshPop();
   if (location.hash.startsWith('#/notifications')) EM.rerender();
 }
@@ -2891,9 +2895,11 @@ function filterBar(st, key, cfg) {
   FLT[key] = st; DF_STATE[key] = () => st; st.tg = st.tg || {}; st.period = st.period || 'all';
   const all = cfg.rows, tg = cfg.tg || [], dd = cfg.dd || [], any = cfg.any || [], fq = (st.fq || '').trim().toLowerCase();
   const vals = (d, r) => { const v = d[3](r); return (Array.isArray(v) ? v : [v]).map(x => x == null ? '' : String(x)); };
-  const anyOf = r => (st.field ? any.filter(a => a[0] === st.field) : any).map(a => String(a[2](r) || ''));
+  const anyOf = r => (st.field ? any.filter(a => a[0] === st.field) : any).filter(a => a[3] !== 'range').map(a => String(a[2](r) || ''));
+  /* Leads L3: a picked field marked 'range' (a date such as Expected close) filters by From and To instead of "contains" */
+  const rngA = st.field ? any.find(a => a[0] === st.field && a[3] === 'range') : null, inRng = r => { const v = String(rngA[2](r) || '').slice(0, 10); return (!st.ffrom && !st.fto) || (!!v && (!st.ffrom || v >= st.ffrom) && (!st.fto || v <= st.fto)); };
   const rows = cfg.ext ? all : all.filter(r => tg.every(t => !st.tg[t[0]] || t[2](r)) && dd.every(d => !st[d[0]] || vals(d, r).includes(st[d[0]]))
-    && (!cfg.date || (cfg.inDate ? cfg.inDate(r, st) : inPeriod(cfg.date(r), st.period, st.from, st.to))) && (!fq || anyOf(r).some(v => v.toLowerCase().includes(fq)))
+    && (!cfg.date || (cfg.inDate ? cfg.inDate(r, st) : inPeriod(cfg.date(r), st.period, st.from, st.to))) && (rngA ? inRng(r) : !fq || anyOf(r).some(v => v.toLowerCase().includes(fq)))
     && (!cfg.text || matches(cfg.text(r), cfg.mobiles ? cfg.mobiles(r) : [])));
   const nm = d => d[4] || (v => v);
   const opts = d => { const cnt = {}; for (const r of all) for (const v of new Set(vals(d, r))) if (v) cnt[v] = (cnt[v] || 0) + 1;
@@ -2903,20 +2909,20 @@ function filterBar(st, key, cfg) {
   const o = (v, l, cur) => `<option value="${esc(v)}" ${(cur || '') === v ? 'selected' : ''}>${esc(l)}</option>`, ic = n => fic(n, '');
   const PER = cfg.periods || PERIODS, custom = st.period === 'custom', dateTxt = custom ? `${st.from ? ds(st.from) : 'the start'} to ${st.to ? ds(st.to) : 'today'}` : (PER.find(p => p[0] === st.period) || ['', ''])[1];
   const chips = [...(cfg.text && EM.clientQ ? [['q', 'Search', `"${EM.clientQ}"`]] : []), ...tg.filter(t => st.tg[t[0]]).map(t => ['tg:' + t[0], t[1], 'Yes']),
-    ...dd.filter(d => st[d[0]]).map(d => [d[0], d[1], nm(d)(st[d[0]])]), ...(fq ? [['fq', (any.find(a => a[0] === st.field) || [0, 'Any field'])[1], `contains "${st.fq.trim()}"`]] : []),
+    ...dd.filter(d => st[d[0]]).map(d => [d[0], d[1], nm(d)(st[d[0]])]), ...(rngA ? (st.ffrom || st.fto ? [['fq', rngA[1], `${st.ffrom ? ds(st.ffrom) : 'the start'} to ${st.fto ? ds(st.fto) : 'any date'}`]] : []) : fq ? [['fq', (any.find(a => a[0] === st.field) || [0, 'Any field'])[1], `contains "${st.fq.trim()}"`]] : []),
     ...(cfg.date && st.period !== 'all' ? [['date', 'Date', dateTxt]] : [])];
   const html = `<div class="flt" role="search" aria-label="Filter ${esc(cfg.label)}" data-flt-bar="${key}" ${cfg.attr || ''}><div class="flt-row">
     ${cfg.text ? `<label class="flt-q">${ic('search')}<input type="search" id="cq" value="${esc(EM.clientQ)}" placeholder="${esc(cfg.ph)}" aria-label="Search"></label>` : ''}
     ${tg.map(t => `<label class="flt-tg"><input type="checkbox" data-flt="${key}" data-fk="tg:${t[0]}" ${st.tg[t[0]] ? 'checked' : ''}>${ic('check')}${esc(t[1])}</label>`).join('')}
     ${dd.map((d, i) => `<label class="flt-dd${st[d[0]] ? ' is-set' : ''}${dd.length % 2 && i === dd.length - 1 ? ' wide' : ''}"><span class="flt-k">${esc(d[1])}</span><select data-flt="${key}" data-fk="${d[0]}" aria-label="${esc(d[1])}">${o('', d[2], st[d[0]])}${opts(d).map(([v, l]) => o(v, l, st[d[0]])).join('')}</select></label>`).join('')}
-    ${any.length ? `<span class="flt-any${fq ? ' is-set' : ''}"><select data-flt="${key}" data-fk="field" aria-label="Pick any field">${o('', 'Pick any field', st.field)}${any.map(a => o(a[0], a[1], st.field)).join('')}</select><span class="flt-k">contains</span><input data-flt-q="${key}" value="${esc(st.fq || '')}" aria-label="contains" placeholder="Type to filter"></span>` : ''}
+    ${any.length ? `<span class="flt-any${fq || (rngA && (st.ffrom || st.fto)) ? ' is-set' : ''}"><select data-flt="${key}" data-fk="field" aria-label="Pick any field">${o('', 'Pick any field', st.field)}${any.map(a => o(a[0], a[1], st.field)).join('')}</select>${rngA ? `<span class="flt-dates"><input type="date" data-flt="${key}" data-fk="ffrom" value="${esc(st.ffrom || '')}" aria-label="${esc(rngA[1])} from"><span class="flt-k">to</span><input type="date" data-flt="${key}" data-fk="fto" value="${esc(st.fto || '')}" aria-label="${esc(rngA[1])} to"></span>` : `<span class="flt-k">contains</span><input data-flt-q="${key}" value="${esc(st.fq || '')}" aria-label="contains" placeholder="Type to filter">`}</span>` : ''}
     ${cfg.date ? `<label class="flt-dd flt-date${st.period !== 'all' ? ' is-set' : ''}" title="${esc(cfg.dateWhat || '')}"><span class="flt-k">Date filter</span><select data-df="${key}" data-dfk="period" aria-label="Date filter" data-keep-order>${PER.map(([v, l]) => o(v, l, st.period)).join('')}</select></label>
     ${custom ? `<span class="flt-dates"><input type="date" data-df="${key}" data-dfk="from" value="${esc(st.from || '')}" aria-label="From date"><span class="flt-k">to</span><input type="date" data-df="${key}" data-dfk="to" value="${esc(st.to || '')}" aria-label="To date"></span>` : ''}` : ''}</div>
     ${chips.length ? `<div class="flt-on">${cfg.ext ? '' : `<span class="flt-n"><b>${num(rows.length)}</b> of ${num(all.length)}</span>`}${chips.map(([k, l, v]) => `<button class="flt-chip" data-act="flt-x" data-flt-x="${key}" data-k="${esc(k)}" aria-label="Remove filter ${esc(l)} ${esc(v)}">${esc(l)}: <b>${esc(v)}</b>${ic('x')}</button>`).join('')}<button class="flt-clear" data-act="flt-clear" data-flt-x="${key}">Clear all</button></div>` : ''}</div>`;
   return { html, rows };
 }
 const FLT = {};
-const fltClear = (st, k) => { if (k === 'q') EM.clientQ = ''; else if (k.startsWith('tg:')) st.tg[k.slice(3)] = false; else if (k === 'fq') { st.fq = ''; st.field = ''; } else if (k === 'date') { st.period = 'all'; st.from = ''; st.to = ''; } else st[k] = ''; };
+const fltClear = (st, k) => { if (k === 'q') EM.clientQ = ''; else if (k.startsWith('tg:')) st.tg[k.slice(3)] = false; else if (k === 'fq') { st.fq = ''; st.field = ''; st.ffrom = ''; st.fto = ''; } else if (k === 'date') { st.period = 'all'; st.from = ''; st.to = ''; } else st[k] = ''; };
 EM.ACTIONS['flt-x'] = el => { const st = FLT[el.dataset.fltX]; if (st) fltClear(st, el.dataset.k); EM.rerender(); };
 EM.ACTIONS['flt-clear'] = el => { const st = FLT[el.dataset.fltX]; if (st) { for (const k of Object.keys(st)) if (!['tg', 'period', 'from', 'to'].includes(k)) st[k] = ''; st.tg = {}; fltClear(st, 'date'); EM.clientQ = ''; } EM.rerender(); };
 for (const a of ['flt-x', 'flt-clear']) { NAV_ACTS.add(a); LOOK_ACTS.add(a); }
@@ -3012,7 +3018,7 @@ function bubbleNear(el, msg) {
 const FIELD_HELP = {
   /* R3a */
   partner_capability: 'What this dealer can take on for projects: investment, installation team, areas, past projects.', project_id: 'The project (building or site) this opportunity belongs to.',
-  dealer_id: 'The dealer this consumer lead is allocated to. Picking one moves it to Dealer allocated; the dealer sees it in the dealer portal.',
+  dealer_id: 'The dealer this retail opportunity is allocated to. Picking one moves it to Dealer allocated; the dealer sees it in the dealer portal.',
   partner_id: 'The dealer who supplies and serves this project. Only dealers marked Yes or Potential as Project Partner are offered.',
   doc_type: 'What the file is. On an order: PI, Invoice, Payment proof or Other.', doc_name: 'A name to find it by. Left blank, the file name is used.', doc_files: 'Pick or drop one or many files at once: PDF, photos, Word, Excel. Up to 25 MB each, 10 at a time.',
   doc_no: 'The PI or invoice number as it is in Tally. Optional.', doc_date: 'The date on the PI, invoice or payment. Optional.', doc_amount: 'The amount on it, in rupees. Optional; shown only to roles that see money.',
@@ -3128,7 +3134,8 @@ const dayPlus = n => new Date(Date.now() + 5.5 * 36e5 + n * 864e5).toISOString()
 const fuBucket = f => f.status !== 'open' ? 'done' : f.due_date < today() ? 'overdue' : f.due_date === today() ? 'today' : f.due_date <= dayPlus(7) ? 'week' : 'later';
 const FU_TABS = [['overdue', 'Overdue'], ['today', 'Today'], ['week', 'This week'], ['later', 'Later'], ['done', 'Done']];
 const fuSort = (a, b) => (a.due_date + (a.due_time || '99')).localeCompare(b.due_date + (b.due_time || '99'));
-const fuOf = f => { const c = CL()[f.client_id], o = f.opp_id ? D.opportunities.find(x => x.id === f.opp_id) : null;
+const fuOf = f => { if (f.lead_id) { const l = ldById(f.lead_id); return { c: null, o: null, client: 'Lead ' + (l ? leadName(l) : ''), opp: '', href: '#/leadrec/' + f.lead_id }; }   // Leads L3
+  const c = CL()[f.client_id], o = f.opp_id ? D.opportunities.find(x => x.id === f.opp_id) : null;
   return { c, o, client: c ? c.name : 'Outside your view', opp: o ? o.title : '', href: o ? '#/opp/' + o.id : f.plan_id ? `#/client/${f.client_id}/plan` : '#/client/' + f.client_id }; };
 const fuInDiv = f => { const c = CL()[f.client_id]; return !c || inDiv(c); };
 const fuWhen = f => `${f.status === 'open' && f.due_date < today() ? `<span class="badge bad">${ds(f.due_date)}</span>` : ds(f.due_date)}${f.due_time ? ' ' + esc(f.due_time) : ''}`;
@@ -3179,7 +3186,9 @@ EM.VIEWS.followups = arg => {
 EM.VIEWS.followups.tab = 'home';
 EM.VIEWS.followups.title = () => 'Follow-ups';
 /* what the server sends back after a follow-up write: that client's follow-ups, and the record it moved */
-function fuApply(r) {
+function fuApply(r, leadId) {
+  leadId = leadId || ((r.followups || [])[0] || {}).lead_id;   // Leads L3: a lead's follow-ups replace only that lead's
+  if (leadId) { D.followups = FUS().filter(f => f.lead_id !== leadId).concat(r.followups || []); return; }
   const cid = (r.client && r.client.id) || r.clientId || (r.followups[0] || {}).client_id;
   D.followups = FUS().filter(f => f.client_id !== cid).concat(r.followups || []);
   if (r.client) upsertLocal(D.clients, r.client);
@@ -3188,11 +3197,11 @@ function fuApply(r) {
 const FU_ACTION = { key: 'action', list: 'next_actions', label: 'What', type: 'suggest', req: true, opts: [] };
 const dayChips = id => `<div class="row" style="gap:6px;flex-wrap:wrap">${[[0, 'Today'], [1, 'Tomorrow'], [3, 'In 3 days'], [7, 'Next week']].map(([n, l]) => `<button type="button" class="btn sm ghost" data-day="${n}" data-for="${id}">${l}</button>`).join('')}</div>`;
 document.addEventListener('click', e => { const b = e.target.closest('[data-day]'); if (!b) return; const i = qs('#' + b.dataset.for); if (i) { i.value = dayPlus(Number(b.dataset.day)); i.dispatchEvent(new Event('change', { bubbles: true })); } });
-function fuForm(clientId, oppId, f) {
-  const c = CL()[clientId], o = oppId && D.opportunities.find(x => x.id === oppId), owner = f ? f.owner_id : (o || c || {}).owner_id || me().id;
+function fuForm(clientId, oppId, f, leadId) {
+  const ld = leadId && ldById(leadId), c = ld ? { name: 'Lead ' + leadName(ld), owner_id: ld.owner_id } : CL()[clientId], o = oppId && D.opportunities.find(x => x.id === oppId), owner = f ? f.owner_id : (o || c || {}).owner_id || me().id;
   const ppl = D.staff.filter(s => s.active).sort((a, b) => a.name.localeCompare(b.name));
   EM.modal(`<h2>${f ? 'Change the follow-up' : 'Add a follow-up'}</h2><p class="muted small">${esc(c ? c.name : 'Client')}${o ? ' · ' + esc(o.title) : ''}</p>
-    <form id="fuf" class="stack" onsubmit="return false" style="margin-top:12px" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}" data-id="${f ? f.id : ''}"><div class="fgrid">
+    <form id="fuf" class="stack" onsubmit="return false" style="margin-top:12px" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}" data-lead="${esc(leadId || '')}" data-id="${f ? f.id : ''}"><div class="fgrid">
       ${fieldHtml(FU_ACTION, f ? f.action : '', 'fu')}
       <div class="field" data-field="due_date"><label for="fu-date">When *</label><input class="input" type="date" id="fu-date" value="${esc(f ? f.due_date : '')}">${dayChips('fu-date')}</div>
       <div class="field"><label for="fu-time">Time (if it matters)</label><input class="input" type="time" id="fu-time" value="${esc(f ? f.due_time : '')}"></div>
@@ -3200,14 +3209,14 @@ function fuForm(clientId, oppId, f) {
       <div class="field span2"><label for="fu-note">Note</label><input class="input" id="fu-note" maxlength="500" value="${esc(f ? f.note : '')}" placeholder="e.g. Take the Oak and Walnut samples"></div></div>
       ${errBox('fu-err')}<div class="row sticky-actions"><button class="btn primary" data-act="fu-save">${f ? 'Save' : 'Add follow-up'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
-EM.ACTIONS['fu-add'] = el => fuForm(el.dataset.client, el.dataset.opp);
-EM.ACTIONS['fu-edit'] = el => { const f = FUS().find(x => x.id === el.dataset.id); fuForm(f.client_id, f.opp_id, f); };
+EM.ACTIONS['fu-add'] = el => fuForm(el.dataset.client, el.dataset.opp, null, el.dataset.lead);
+EM.ACTIONS['fu-edit'] = el => { const f = FUS().find(x => x.id === el.dataset.id); fuForm(f.client_id, f.opp_id, f, f.lead_id); };
 EM.ACTIONS['fu-save'] = async el => {
   const form = qs('#fuf'), b = { action: qs('#fu-action').value.trim(), date: qs('#fu-date').value, time: qs('#fu-time').value, owner_id: qs('#fu-owner').value, note: qs('#fu-note').value };
   if (!b.action || !b.date) return showErr('fu-err', [!b.action && 'What is compulsory', !b.date && 'When is compulsory'].filter(Boolean));
-  if (!form.dataset.id) Object.assign(b, { client_id: form.dataset.client, opp_id: form.dataset.opp });
+  if (!form.dataset.id) Object.assign(b, form.dataset.lead ? { lead_id: form.dataset.lead } : { client_id: form.dataset.client, opp_id: form.dataset.opp });
   busy(el, true);
-  try { const r = await API('POST', '/api/follow-ups' + (form.dataset.id ? '/' + form.dataset.id : ''), b); fuApply(r); EM.closeModal(); EM.toast(`Follow-up ${form.dataset.id ? 'saved' : 'added'}: <b>${esc(b.action)}</b> on ${ds(b.date)}${b.owner_id !== me().id ? ' · ' + esc(staffName(b.owner_id)) : ''}`); EM.rerender(); }
+  try { const r = await API('POST', '/api/follow-ups' + (form.dataset.id ? '/' + form.dataset.id : ''), b); fuApply(r, form.dataset.lead); if (form.dataset.lead) ldTouched(form.dataset.lead); EM.closeModal(); EM.toast(`Follow-up ${form.dataset.id ? 'saved' : 'added'}: <b>${esc(b.action)}</b> on ${ds(b.date)}${b.owner_id !== me().id ? ' · ' + esc(staffName(b.owner_id)) : ''}`); EM.rerender(); }
   catch (x) { busy(el, false); showErr('fu-err', x.errors || x.message); }
 };
 /* Done: what happened (one line) and the next follow-up, in one sheet; "No further follow-up" only on a closed record */
@@ -3265,7 +3274,7 @@ function timelineFor(clientId, oppId) {
   return items.sort((a, b) => b.at.localeCompare(a.at));
 }
 EM.actF = { show: '', period: 'all', from: '', to: '', field: '', fq: '' };
-const ACT_SHOW = [['', 'Everything'], ['talk', 'Calls, visits and messages'], ['followup', 'Follow-ups done'], ['stage', 'Stage moves'], ['file', 'Files'], ['approval', 'Approvals'], ['order', 'Orders and payments']];
+const ACT_SHOW = [['', 'All activity'], ['talk', 'Calls, visits and messages'], ['followup', 'Follow-ups done'], ['stage', 'Stage moves'], ['file', 'Files'], ['approval', 'Approvals'], ['order', 'Orders and payments']];
 const ACT_FIELDS = [['title', 'What'], ['detail', 'Details'], ['who', 'Who']];
 DF_STATE.act = () => EM.actF;
 /* U2 batch 3 (25 Oct): THE record page layout. The record on the left, Open follow-ups + Activity in a right-hand
@@ -3275,19 +3284,19 @@ const recGrid = (main, aside, wide) => `<div class="rec-grid${wide ? ' rec-wide'
 const wonNote = o => { const P = PIPELINES[o.pipeline] || {}; if (!(P.lines || P.sqft) || isClosed(o.pipeline, o.stage, D.lists)) return '';
   const w = wonStage(o.pipeline, D.lists), ob = allowedTab('orderbook') ? '<a href="#/orderbook">Orders</a>' : 'Orders';
   return `<p class="small muted won-note" data-won-note>${esc(w)}${w.trim().toLowerCase() === 'won' ? '' : ' = won'}: it opens a sale in ${ob} dated today</p>`; };
-function activityPanel({ clientId, oppId, opps }) {
+function activityPanel({ clientId, oppId, opps, leadId, locked }) {
   const f = EM.actF, fq = f.fq.trim().toLowerCase(), pj = Array.isArray(opps), pjIds = new Set(pj ? opps.map(o => o.id) : []);
   if (pj) { clientId = opps[0] ? opps[0].client_id : ''; oppId = opps[0] ? opps[0].id : ''; }   // a project logs against its opportunity (asked which when several)
-  const all = pj ? opps.flatMap(o => timelineFor(o.client_id, o.id)).sort((a, b) => b.at.localeCompare(a.at)) : timelineFor(clientId, oppId);
+  const all = leadId ? ldTimeline(leadId) : pj ? opps.flatMap(o => timelineFor(o.client_id, o.id)).sort((a, b) => b.at.localeCompare(a.at)) : timelineFor(clientId, oppId);
   const rows = all.filter(i => (!f.show || i.group === f.show) && inPeriod(i.at, f.period, f.from, f.to) && (!fq || (f.field ? [i[f.field]] : ACT_FIELDS.map(([k]) => i[k])).some(v => String(v || '').toLowerCase().includes(fq))));
-  const open = FUS().filter(x => x.status === 'open' && (pj ? pjIds.has(x.opp_id) : x.client_id === clientId && (oppId ? x.opp_id === oppId : true))).sort(fuSort);
+  const open = FUS().filter(x => x.status === 'open' && (leadId ? x.lead_id === leadId : pj ? pjIds.has(x.opp_id) : x.client_id === clientId && (oppId ? x.opp_id === oppId : true))).sort(fuSort);
   if (pj && !opps.length) return `<div class="stack" data-activity><section class="card stack-s" data-act-card><h3>Activity</h3><p class="small muted" data-act-empty>Nothing yet. Add an opportunity to this project; its calls, visits, messages, stage moves and files then show here.</p></section></div>`;
   const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-af="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
-  const logs = ACT_MANUAL.map(k => `<button class="btn sm" data-act="act-log" data-kind="${k}" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}"${pj && opps.length > 1 ? ` data-opps="${esc(opps.map(o => o.id).join(','))}"` : ''}>${k === 'note' ? '+ Note' : 'Log ' + (k === 'whatsapp' ? 'WhatsApp' : k === 'email' ? 'email' : 'a ' + k)}</button>`).join('');
+  const logs = ACT_MANUAL.map(k => `<button class="btn sm" data-act="act-log" data-kind="${k}" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}"${leadId ? ` data-lead="${esc(leadId)}"` : ''}${pj && opps.length > 1 ? ` data-opps="${esc(opps.map(o => o.id).join(','))}"` : ''}>${k === 'note' ? '+ Note' : 'Log ' + (k === 'whatsapp' ? 'WhatsApp' : k === 'email' ? 'email' : 'a ' + k)}</button>`).join('');
   return `<div class="stack" data-activity>
-    <section class="card stack-s" data-open-fu><div class="row between"><h3>Open follow-ups${open.length ? ` (${open.length})` : ''}</h3><button class="btn sm primary" data-act="fu-add" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}">+ Follow-up</button></div>
-      ${open.length ? fuTable(open, { where: !oppId || pj }) : `<p class="small muted">No follow-up booked${pj ? ' for this project' : oppId ? ' for this opportunity' : ''}. Add one so it is not forgotten.</p>`}</section>
-    <section class="card stack-s" data-act-card><div class="row between" style="flex-wrap:wrap"><h3>Activity</h3><div class="row" style="gap:6px;flex-wrap:wrap" data-act-logs>${logs}</div></div>
+    <section class="card stack-s" data-open-fu><div class="row between"><h3>Open follow-ups${open.length ? ` (${open.length})` : ''}</h3>${locked ? '' : `<button class="btn sm primary" data-act="fu-add" data-client="${esc(clientId || '')}" data-opp="${esc(oppId || '')}"${leadId ? ` data-lead="${esc(leadId)}"` : ''}>+ Follow-up</button>`}</div>
+      ${open.length ? fuTable(open, { where: !oppId || pj }) : `<p class="small muted">No follow-up booked${leadId ? ' for this lead' : pj ? ' for this project' : oppId ? ' for this opportunity' : ''}. Add one so it is not forgotten.</p>`}</section>
+    <section class="card stack-s" data-act-card><div class="row between" style="flex-wrap:wrap"><h3>Activity</h3>${locked ? '' : `<div class="row" style="gap:6px;flex-wrap:wrap" data-act-logs>${logs}</div>`}</div>
       <div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-act-filters>${sel('show', 'Show', ACT_SHOW)}${dateFilter(f, 'act', 'When')}${sel('field', 'Any field', [['', 'Any field'], ...ACT_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="act-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
       ${rows.length ? `<div class="timeline" data-timeline>${rows.slice(0, 300).map(i => `<div class="on" data-tl="${i.group}"><b>${esc(i.title)}</b>${i.detail ? `<div class="small">${esc(i.detail)}</div>` : ''}<div class="small muted">${esc(whenIST(i.at))}${i.who ? ' · ' + esc(i.who) : ''}${i.source && i.source !== 'manual' ? ' · from ' + esc(i.source) : ''}</div>${i.doc ? `<div class="row" style="gap:6px" data-file-acts><button class="btn sm" data-act="fu-view" data-id="${i.doc}">View</button><button class="btn sm ghost" data-act="fu-dl" data-id="${i.doc}">Download</button><button class="btn sm ghost" data-act="fu-share" data-id="${i.doc}">Share</button></div>` : ''}</div>`).join('')}</div>${rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Use the filters.</p>` : ''}`
         : `<p class="small muted" data-act-empty>${all.length ? 'Nothing for this filter.' : 'Nothing yet. Calls, visits, messages, stage moves, files, approvals and payments for this record all show here.'}</p>`}</section></div>`;
@@ -3295,9 +3304,9 @@ function activityPanel({ clientId, oppId, opps }) {
 document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.af; if (k) { EM.actF[k] = e.target.value; EM.rerender(); } });
 document.addEventListener('input', e => { if (e.target.id === 'act-fq') { EM.actF.fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs('#act-fq'); if (el) { el.focus(); el.setSelectionRange(pos, pos); } } });
 EM.ACTIONS['act-log'] = el => {
-  const k = el.dataset.kind, c = CL()[el.dataset.client], o = el.dataset.opp && D.opportunities.find(x => x.id === el.dataset.opp), dir = ['call', 'whatsapp', 'email'].includes(k);
+  const k = el.dataset.kind, ld = el.dataset.lead && ldById(el.dataset.lead), c = ld ? { name: 'Lead ' + leadName(ld) } : CL()[el.dataset.client], o = el.dataset.opp && D.opportunities.find(x => x.id === el.dataset.opp), dir = ['call', 'whatsapp', 'email'].includes(k);
   EM.modal(`<h2>${k === 'note' ? 'Add a note' : 'Log ' + esc(ACT_ICON[k].toLowerCase() === 'whatsapp' ? 'a WhatsApp' : 'a ' + ACT_ICON[k].toLowerCase())}</h2><p class="muted small">${esc(c ? c.name : '')}${o ? ' · ' + esc(o.title) : ''}</p>
-    <form id="acf" class="stack" onsubmit="return false" style="margin-top:12px" data-kind="${k}" data-client="${esc(el.dataset.client)}" data-opp="${esc(el.dataset.opp || '')}">
+    <form id="acf" class="stack" onsubmit="return false" style="margin-top:12px" data-kind="${k}" data-client="${esc(el.dataset.client)}" data-opp="${esc(el.dataset.opp || '')}" data-lead="${esc(el.dataset.lead || '')}">
       ${el.dataset.opps ? `<div class="field"><label for="ac-opp">Which opportunity *</label><select class="input" id="ac-opp">${el.dataset.opps.split(',').map(i => D.opportunities.find(x => x.id === i)).filter(Boolean).map(x => `<option value="${x.id}">${esc(x.title)} · ${esc(clientName(x.client_id))}</option>`).join('')}</select></div>` : ''}
       ${dir ? `<div class="field"><label for="ac-dir">Who reached out</label><select class="input" id="ac-dir"><option value="out">We did</option><option value="in">They did</option></select></div>` : ''}
       <div class="field" data-field="summary"><label for="ac-sum">${k === 'note' ? 'Note' : 'What happened'} *</label><textarea class="input" id="ac-sum" rows="3" maxlength="1000" placeholder="${k === 'note' ? 'Anything worth remembering' : 'e.g. Spoke to Ramesh: wants Oak samples, will order after Diwali'}"></textarea></div>
@@ -3305,10 +3314,10 @@ EM.ACTIONS['act-log'] = el => {
   setTimeout(() => { const i = qs('#ac-sum'); if (i) i.focus(); }, 50);
 };
 EM.ACTIONS['act-save'] = async el => {
-  const form = qs('#acf'), pick = qs('#ac-opp') && D.opportunities.find(x => x.id === qs('#ac-opp').value), b = { client_id: pick ? pick.client_id : form.dataset.client, opp_id: pick ? pick.id : form.dataset.opp || undefined, kind: form.dataset.kind, direction: qs('#ac-dir') ? qs('#ac-dir').value : '', summary: qs('#ac-sum').value.trim() };
+  const form = qs('#acf'), pick = qs('#ac-opp') && D.opportunities.find(x => x.id === qs('#ac-opp').value), b = { ...(form.dataset.lead ? { lead_id: form.dataset.lead } : {}), client_id: pick ? pick.client_id : form.dataset.client, opp_id: pick ? pick.id : form.dataset.opp || undefined, kind: form.dataset.kind, direction: qs('#ac-dir') ? qs('#ac-dir').value : '', summary: qs('#ac-sum').value.trim() };
   if (!b.summary) return showErr('ac-err', 'What happened is compulsory');
   busy(el, true);
-  try { const r = await API('POST', '/api/activities', b); D.activities = ACTS().concat([r.activity]); EM.closeModal(); EM.toast(`${esc(ACT_ICON[b.kind])} saved to the activity.`); EM.rerender(); }
+  try { const r = await API('POST', '/api/activities', b); D.activities = ACTS().concat([r.activity]); if (b.lead_id) ldTouched(b.lead_id); EM.closeModal(); EM.toast(`${esc(ACT_ICON[b.kind])} saved to the activity.`); EM.rerender(); }
   catch (x) { busy(el, false); showErr('ac-err', x.errors || x.message); }
 };
 
@@ -3729,7 +3738,7 @@ EM.VIEWS.analysis = arg => {
   const ppl = D.staff.filter(s => s.active && (D.access.scope === 'all' || D.access.scope === 'division' || D.access.scope === 'region' || [me().id, ...under(me().id)].includes(s.id)));
   const heads = ppl.filter(s => D.staff.some(x => x.reports_to === s.id && x.active));
   const regions = [...new Set((D.lists.cities || []).map(c => c.region).filter(Boolean))].sort();
-  const body = { sales: anSales, pipeline: anPipeline, followups: anFollowups, fulfilment: anFulfilment, targets: anTargets, leads: anLeads, delays: anDelays }[tab]();
+  const body = { sales: anSales, pipeline: anPipeline, followups: anFollowups, fulfilment: anFulfilment, targets: anTargets, leads: anLeads, delays: anDelays, lds: () => anLds() }[tab]();
   return `<div class="stack"><div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${esc(scopeLabel())}</div><h1>Analysis</h1>
       <p class="muted" style="max-width:820px">Counted only from what is saved in EGO Master, within what you may see. Click any figure to see the records behind it and how it is worked out.</p></div>
       <button class="btn" data-act="an-csv">Download for Excel</button></div>
@@ -3755,8 +3764,8 @@ EM.ACTIONS['an-csv'] = () => {
    A History button beside every screen's title opens what happened there: added, changed, deleted, by whom
    and when, old to new where the change kept it. On a record page it is that record's own history. */
 const HIST_AREA = { dealers: 'dealers', architects: 'architects', design500: 'design500', people: 'people', clients: 'people', opps: 'opps', lost: 'opps', followups: 'followups', orders: 'orders', orderbook: 'orderbook', installation: 'installation', complaints: 'complaints',
-  approvals: 'approvals', schemes: 'schemes', p200: 'p200', handover: 'opps', projects: 'projects', analysis: 'analysis', targets: 'targets', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin', attendance: 'attendance', roadmap: 'roadmap' };
-const HIST_RECORD = ['client', 'opp', 'order', 'po', 'site', 'scheme', 'product', 'collection', 'project'];
+  approvals: 'approvals', schemes: 'schemes', p200: 'p200', handover: 'opps', projects: 'projects', analysis: 'analysis', targets: 'targets', inventory: 'inventory', stock: 'inventory', import: 'import', lists: 'lists', team: 'team', integrations: 'integrations', bin: 'bin', attendance: 'attendance', roadmap: 'roadmap', leadlist: 'leads' };
+const HIST_RECORD = ['client', 'opp', 'order', 'po', 'site', 'scheme', 'product', 'collection', 'project', 'leadrec'];
 function histButton() {
   const { r, arg } = EM.route(), h1 = qs('#view h1'); if (!h1 || qs('#view [data-hist-open]')) return;
   const rec = HIST_RECORD.includes(r) ? arg.split('/')[0] : '', area = rec ? '' : HIST_AREA[r];
@@ -3864,7 +3873,7 @@ EM.ACTIONS['int-key-add'] = () => {
 EM.ACTIONS['int-key-go'] = async el => {
   busy(el, true);
   try {
-    const r = await API('POST', '/api/integrations/keys', { name: qs('#ik-name').value, staff_id: qs('#ik-who').value, access: qs('#ik-acc').value });
+    const r = await API('POST', '/api/integrations/keys', { name: qs('#ik-name').value, staff_id: qs('#ik-who').value, access: qs('#ik-acc').value, lead_source: qs('#ik-src') ? qs('#ik-src').value : '', lead_company: qs('#ik-co') && qs('#ik-src') && qs('#ik-src').value ? qs('#ik-co').value : '' });
     EM.INT.keys.unshift(r.api_key);
     EM.modal(`<h2>${esc(r.api_key.name)}: your new key</h2><div class="callout warn" role="note"><b>Copy it now.</b> It is shown only this once. If it is lost, revoke it and make a new one.</div>
       <div class="row" style="margin-top:12px"><code data-new-key style="word-break:break-all;flex:1">${esc(r.key)}</code><button class="btn sm" data-act="int-copy" data-v="${esc(r.key)}">Copy</button></div>
@@ -4006,13 +4015,13 @@ const csvDownload = (name, head, lines) => {
 };
 /* ---- on the dealer's page */
 function dealerTabs(c) {
-  if (c.division === 'retail') return [['plan', 'Development plan']];   // R3b: a Big E dealer; EGO's consumer leads and dealer portal are EGO Premium's
-  return [['leads', `Leads (${LEADS().filter(l => l.dealer_id === c.id).length})`], ['plan', 'Development plan'], ...(isOwner() ? [['portal', 'Dealer portal']] : [])];
+  if (c.division === 'retail') return [['plan', 'Development plan']];   // R3b: a Big E dealer; the retail opportunities and dealer portal belong to EGO Premium
+  return [['leads', `Retail opportunities (${LEADS().filter(l => l.dealer_id === c.id).length})`], ['plan', 'Development plan'], ...(isOwner() ? [['portal', 'Dealer portal']] : [])];
 }
 const DEALER_TAB_BODY = {
   leads: c => { const ls = LEADS().filter(l => l.dealer_id === c.id);
-    return `<div class="stack" data-dealer-leads><div class="row between"><p class="small muted" style="max-width:720px">Consumer leads (Retail pipeline) allocated to ${esc(c.name)}. ${ls.filter(leadOpen).length} open, ${ls.filter(leadStale).length} with no update for ${escDays()}+ days, ${ls.filter(l => l.status === wonStage(RETAIL, D.lists)).length} won of ${ls.length}.</p>${allowedTab('opps') ? `<button class="btn primary" data-act="opp-add" data-pipeline="${RETAIL}" data-dealer="${c.id}">+ Consumer lead for ${esc(c.name)}</button>` : ''}</div>
-      ${ls.length ? table(LEAD_HEAD(false), ls.map(l => leadRow(l, false))) : empty('No lead allocated to this dealer yet', 'Consumer leads allocated to this dealer in the Retail pipeline appear here, with where each has got to.')}</div>`; },
+    return `<div class="stack" data-dealer-leads><div class="row between"><p class="small muted" style="max-width:720px">Retail opportunities allocated to ${esc(c.name)}. ${ls.filter(leadOpen).length} open, ${ls.filter(leadStale).length} with no update for ${escDays()}+ days, ${ls.filter(l => l.status === wonStage(RETAIL, D.lists)).length} won of ${ls.length}.</p>${allowedTab('opps') ? `<button class="btn primary" data-act="opp-add" data-pipeline="${RETAIL}" data-dealer="${c.id}">+ Retail opportunity for ${esc(c.name)}</button>` : ''}</div>
+      ${ls.length ? table(LEAD_HEAD(false), ls.map(l => leadRow(l, false))) : empty('No retail opportunity allocated to this dealer yet', 'Retail opportunities allocated to this dealer appear here, with where each has got to.')}</div>`; },
   plan: c => clientPlan(c),
   portal: c => clientPortal(c),
 };
@@ -4214,7 +4223,7 @@ function anLeads() {
   /* ageing: open leads by the days since their last update, right now */
   const open = ls.filter(leadOpen), buckets = [[`Under ${N} days`, 0, N - 1], [`${N} to 7 days`, N, 7], ['8 to 14 days', 8, 14], ['More than 14 days', 15, 1e9]].filter(([, a, b]) => b >= a).map(([l, a, b]) => { const x = open.filter(z => leadAge(z) >= a && leadAge(z) <= b); return [esc(l), lf(x, `Open, last update ${l} ago`, 'Open leads by the days since their last update, right now.')]; });
   return `<div class="grid g4">${tile('Handed', lf(ls, 'All leads handed', 'Every lead handed over.'))}${tile('Won', lf(ls.filter(l => l.status === W), 'Won', `Leads now at ${W}.`), ls.length ? `${pct(ls.filter(l => l.status === W).length, ls.length)}% of handed` : '')}${tile(`No update ${N}+ days`, lf(ls.filter(leadStale), 'No update', `Open leads whose last update is ${N} or more days old.`))}${tile('Open', lf(open, 'Open', 'Leads not won or lost.'))}</div>
-    <p class="small muted">Counted from the consumer leads allocated to dealers (Opportunities › Retail), by the date each was allocated, at the stage each is at now. Click a figure to see the leads.</p>
+    <p class="small muted">Counted from the retail opportunities allocated to dealers (Opportunities › Retail), by the date each was allocated, at the stage each is at now. Click a figure to see the leads.</p>
     ${anSec('Conversion by dealer', HEAD('Dealer'), byDealer, '', 'data-an-leads-dealer')}
     <div class="grid g2">${anSec('By source', HEAD('Source'), bySource)}${anSec('Open leads, by days since the last update', ['Last update', 'Open leads'], buckets)}</div>
     ${anSec('By who handed them over', HEAD('Handed by'), byHander)}`;
@@ -5419,3 +5428,393 @@ NAV_HELP.sdr = NAV_HELP.displays;
 NAV_HELP.dealers += ' Tabs: Samples, Sample Display Record (SDR), Training.';
 NAV_HELP.opps += ' Tab: Priority calls.';
 
+
+/* ================================================================ Leads L3 (26 Oct 2026): the staff screens
+   A lead is someone who may buy later: no pipeline, no order lines. Engine = L1/L2 (/api/leads, convert).
+   Routes #/leadlist (the list) and #/leadrec/<id> (a lead): 'leads' and 'lead' are the demo's own screens and the
+   dealer page's "Leads" tab, so they are left alone. Design: design/leads/SPEC.txt (classes "LD. LEADS" in field.css).
+   Leads are not in /api/bootstrap: the list is read from /api/leads, a lead from /api/leads/<id>, and both are read
+   again when the bell's poll sees pulse.leads move (no page reload). Records are never deleted: no Delete button. */
+EM.LDS = EM.LDS || { rows: null, pulse: '', busy: false, one: {}, fresh: new Set(), err: '' };
+const ldById = id => (EM.LDS.rows || []).find(x => x.id === id) || ((EM.LDS.one[id] || {}).lead) || null;
+const ldOnScreen = () => /^#\/(leadlist|leadrec|opp\/|analysis\/lds)/.test(location.hash);
+async function leadsLoad(fromPulse) {
+  const L = EM.LDS; if (L.busy) return; L.busy = true;
+  try {
+    const r = await API('GET', '/api/leads'), before = L.rows;
+    L.rows = r.leads || []; L.pulse = (r.pulse || {}).leads || ''; L.err = '';
+    if (fromPulse && before) { const had = new Set(before.map(x => x.id)), neu = L.rows.filter(x => !had.has(x.id));
+      neu.forEach(x => L.fresh.add(x.id));
+      if (neu.length && location.hash.startsWith('#/leadlist')) EM.toast(neu.length === 1 ? `<b>New lead</b> from ${esc(neu[0].source || 'Not filled')}: ${esc(leadName(neu[0]))}` : `<b>${neu.length} new leads</b>`); }
+  } catch (x) { L.rows = L.rows || []; L.err = x.message; }
+  L.busy = false;
+  if (ldOnScreen() && !qs('#overlay.on')) { EM.keepScroll = true; EM.rerender(); }
+}
+async function leadOne(id) {
+  const L = EM.LDS; if (L.one[id] && L.one[id].busy) return; L.one[id] = { ...(L.one[id] || {}), busy: true };
+  try { const r = await API('GET', '/api/leads/' + encodeURIComponent(id)); L.one[id] = r;
+    for (const d of r.documents || []) if (!D.documents.some(x => x.id === d.id)) D.documents.push(d);
+    if (L.rows) { const i = L.rows.findIndex(x => x.id === id); if (i >= 0) L.rows[i] = { ...L.rows[i], ...r.lead }; }
+  } catch (x) { L.one[id] = { err: x.message }; }
+  if (location.hash.startsWith('#/leadrec/' + id) && !qs('#overlay.on')) { EM.keepScroll = true; EM.rerender(); }
+}
+/* something on a lead changed here: read it and the list again */
+const ldTouched = id => { if (id) leadOne(id); if (EM.LDS.rows) leadsLoad(); };
+EM.leadPulse = p => { const L = EM.LDS; if (L.rows && p.leads && p.leads !== L.pulse) { leadsLoad(true); const m = location.hash.match(/^#\/leadrec\/([^/]+)/); if (m) leadOne(m[1]); } };
+
+/* the kit pieces (SPEC "KIT PIECES") */
+const ldChip = s => s === 'New' ? '<span class="badge ld-new">New</span>' : s === 'Contacted' ? '<span class="badge info">Contacted</span>'
+  : s === 'Nurturing' ? '<span class="badge info ld-ring">Nurturing</span>' : s === 'Converted' ? '<span class="badge ok ld-lkd"><svg class="ld-lk" aria-hidden="true"><use href="icons.svg#i-lock"/></svg>Converted</span>'
+  : `<span class="badge plain">${esc(s || '')}</span>`;
+const ldScore = s => { const n = { Hot: 3, Warm: 2, Cold: 1 }[s]; return n ? `<span class="ld-score" data-s="${n}"><i></i><i></i><i></i>${esc(s)}</span>` : ''; };
+const ldLink = (href, icon, word, name) => `<a class="ld-link" href="${href}"><svg aria-hidden="true"><use href="icons.svg#i-${icon}"/></svg><span>${esc(word)}</span><b>${esc(name)}</b></a>`;
+const ldFromLink = id => { const l = ldById(id); if (!l && !EM.LDS.rows && !EM.LDS.busy) setTimeout(() => leadsLoad(), 0); return `<span data-from-lead>${ldLink('#/leadrec/' + id, 'seedling', 'Came from lead:', l ? leadName(l) : 'the lead')}</span>`; };
+const ldX = (l, k) => k in l && k !== 'extra' ? l[k] : (l.extra || {})[k];
+const ldCats = l => listOf(ldX(l, 'categories'));
+/* the next follow-up: the open lead follow-ups held here (they come with sign-in), else what the list said */
+const ldNext = l => { const fs = FUS().filter(f => f.lead_id === l.id); return fs.length ? (fs.filter(f => f.status === 'open').map(f => f.due_date).sort()[0] || '') : (l.next_date || ''); };
+const LD_FLD = k => LEAD_FIELDS.find(f => f.key === k);
+const ldOpen = l => !['Converted', 'Not interested'].includes(l.status);
+
+/* ---- 1. the list */
+EM.ldF = EM.ldF || { period: 'all' };
+const LD_ANY = () => [['firm', 'Firm name'], ['contact_name', 'Contact name'], ['mobile', 'Mobile'], ['email', 'Email'], ['company', 'Company'], ['campaign', 'Campaign or ad name'], ['categories', 'Interested categories'],
+  ['region', 'Region'], ['locality', 'Locality'], ['timeline', 'Buying timeline'], ['budget', 'Budget band'], ...(D.access.prices ? [['value', 'Value']] : []), ['expected_close', 'Expected close', 'range']]
+  .map(([k, lb, t]) => [k, lb, l => { const v = ldX(l, k); return Array.isArray(v) ? v.join(', ') : k === 'mobile' ? `${v || ''} ${l.alt_mobile || ''}` : String(v ?? ''); }, t]);
+const ldSort = (a, b) => { const t = today(), r = l => { const n = ldNext(l); return n && n < t ? 0 : n === t ? 1 : 2; };
+  return r(a) - r(b) || String(b.created_at || '').localeCompare(String(a.created_at || '')); };
+EM.VIEWS.leadlist = () => {
+  const L = EM.LDS;
+  if (!L.rows) { leadsLoad(); return '<div class="stack"><h1>Leads</h1><p class="muted">Reading the leads…</p></div>'; }
+  const O = EM.ldOnly, all = L.rows.filter(O ? l => O.ids.includes(l.id) : inDiv), P = D.access.prices, t = today();   // L4: a figure in Analysis > Leads opens exactly its leads
+  const { html: fbar, rows } = filterBar(EM.ldF, 'ld', { label: 'leads', rows: all, ph: 'Lead: name, firm, mobile or city', attr: 'data-ld-filters',
+    text: l => `${l.contact_name} ${l.firm} ${l.mobile} ${l.alt_mobile} ${l.email} ${l.city} ${l.campaign} ${l.ref || ''}`, mobiles: l => [l.mobile, l.alt_mobile],
+    tg: [['mine', 'Only mine', l => l.owner_id === me().id], ['today', 'Follow-up due today', l => ldNext(l) === t], ['late', 'Follow-up overdue', l => { const n = ldNext(l); return !!n && n < t; }]],
+    dd: [['status', 'Status', 'Every status', l => l.status, null, LD_STATUSES], ['score', 'Score', 'Every score', l => l.score, null, ['Hot', 'Warm', 'Cold']], ['type', 'Category', 'Every category', l => l.lead_type === 'Wholesale' ? ['Wholesale', ldCat(l)] : [l.lead_type], null, LD_CAT_F],
+      ['source', 'Source', 'Every source', l => l.source], ['campaign', 'Campaign', 'Every campaign', l => l.campaign || ''], ['owner', 'Owner at EGO', 'Everyone', l => l.owner_id, staffName], ['city', 'City', 'Every city', l => l.city || ''], ['region', 'Region', 'Every region', l => l.region || ''], ['cats', 'Interested categories', 'Every category', l => ldCats(l)], ...coDD(l => l.division)],
+    any: LD_ANY(), date: l => l.created_at, dateWhat: 'When it was added' });
+  const cats = l => { const c = ldCats(l); return c.length ? `<span class="ld-cats">${esc(c.slice(0, 2).join(', '))}${c.length > 2 ? ` +${c.length - 2}` : ''}</span>` : ''; };
+  const nextTd = l => { const n = ldNext(l); return !n ? '' : n < t ? `<span class="err">${ds(n)}</span>` : n === t ? '<b>Today</b>' : ds(n); };
+  const head = ['Lead', 'Category', 'Source', 'Interested', 'Score', 'Status', 'Owner at EGO', 'Next follow-up', 'City', ...(P ? ['Value'] : []), 'Expected close', 'Added'];
+  const body = rows.slice().sort(ldSort).slice(0, 500).map(l => ({ href: '#/leadrec/' + l.id, cells: [
+    `<b>${esc(leadName(l))}</b><div class="small muted">${l.firm ? `<div class="small muted">${esc(l.contact_name)}</div>` : ''}<div class="small muted">${esc(fmtMobile(l.mobile))}</div>${EM.div === 'both' ? segBadge(l.division) : ''}`, `<span data-ld-cat>${esc(ldCat(l))}</span>`,
+    `${esc(l.source || '')}${l.campaign ? `<div class="small muted">${esc(l.campaign)}</div>` : ''}`, cats(l), ldScore(l.score),
+    `${ldChip(l.status)}${l.status === 'Not interested' && ldX(l, 'ni_reason') ? `<div class="small muted">${esc(ldX(l, 'ni_reason'))}</div>` : ''}`,
+    esc(staffName(l.owner_id)), nextTd(l), esc(l.city || '') + ldSecond(l, P), ...(P ? [money(l.value)] : []), ldX(l, 'expected_close') ? ds(ldX(l, 'expected_close')) : '', ds(dayIST(l.created_at))] }));
+  const add = '<button class="btn primary" data-act="ld-add">+ New lead</button>';
+  const xl = `<button class="btn" data-act="ld-sample">Sample Excel</button><label class="btn">Upload Excel<input type="file" accept=".xlsx" data-sheet="leads" hidden></label>`;
+  return `<div class="stack" data-leads>
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Someone who may buy later</div><h1>Leads</h1><p class="muted">${num(rows.length)} of ${num(all.length)} · ${esc(scopeLabel())}</p></div>
+      <div class="row" style="flex-wrap:wrap">${xl}${add}</div></div>
+    ${L.err ? `<div class="callout">${esc(L.err)}</div>` : ''}
+    ${O ? `<div class="callout" data-ld-only>Showing the <b>${num(O.ids.length)}</b> lead${O.ids.length === 1 ? '' : 's'} behind <b>${esc(O.label)}</b> in Analysis > Leads. <button class="btn sm" data-act="ld-only-x">Show every lead</button></div>` : ''}
+    ${EM.ldImp ? ldImportPreview() : ''}
+    ${fbar}
+    ${rows.length ? `<div class="ld-tbl">${table(head, body)}</div>${rows.length > 500 ? `<p class="small muted">Showing 500 of ${num(rows.length)}. Use the filters.</p>` : ''}`
+      : all.length ? empty('Nothing for this filter', 'Change or clear the filters above.')
+      : empty('No leads yet', 'A lead is someone who may buy later. Add one with + New lead, upload an Excel, or let them land here as New from the website and the inbound address.', add)}</div>`;
+};
+EM.VIEWS.leadlist.title = () => 'Leads';
+/* a lead that arrived while the list was open: its row lights up once (2.4 s, off under reduced motion) */
+EM.VIEWS.leadlist.after = () => { const F = EM.LDS.fresh; if (!F.size) return;
+  for (const id of F) { const tr = qs(`#view tr[data-href="#/leadrec/${id}"]`); if (tr) tr.classList.add('is-in'); }
+  setTimeout(() => F.clear(), 2600); };
+
+/* ---- 2. the lead page */
+const ldNiTxt = l => `${esc(ldX(l, 'ni_reason') || '')}${ldX(l, 'ni_detail') ? `. "${esc(ldX(l, 'ni_detail'))}"` : ''}`;
+const ldSentence = l => { const c = ldCats(l), a = ldX(l, 'area_sqft'), tl = ldX(l, 'timeline');
+  return `${esc(leadName(l))} may buy${c.length ? ' ' + esc(c.length > 1 ? c.slice(0, -1).join(', ') + ' and ' + c[c.length - 1] : c[0]) : ''}${a ? `, about ${num(a)} sq ft` : ''}${tl ? `, ${esc(tl === 'Later, not sure' ? 'later' : 'in ' + tl.toLowerCase())}` : ''}.`; };
+EM.VIEWS.leadrec = arg => {
+  const id = String(arg || '').split('/')[0], x = EM.LDS.one[id];
+  if (!x || (x.busy && !x.lead)) { if (!x) leadOne(id); return `<div class="stack">${crumbs(['Leads', '#/leadlist'], ['Lead'])}<p class="muted">Reading the lead…</p></div>`; }
+  if (x.err || !x.lead) return `<div class="stack"><h1>Lead not found</h1><p class="muted">${esc(x.err || 'It is outside your view.')}</p><a class="btn" href="#/leadlist">Leads</a></div>`;
+  const l = x.lead, P = D.access.prices, conv = l.status === 'Converted', both = isBothView(), fld = k => LD_FLD(k), sv = k => showVal(fld(k), ldX(l, k));
+  const isProj = l.lead_type === 'Project', nf = FUS().filter(f => f.lead_id === id && f.status === 'open').sort(fuSort)[0];
+  const opp = l.opp_id && D.opportunities.find(o => o.id === l.opp_id), rec = l.client_id && CL()[l.client_id];
+  const canConv = !conv && !both && allowedTab('opps');
+  const btns = conv || both ? '' : `<div class="row">${canConv ? `<button class="btn${l.status === 'Not interested' ? '' : ' primary'}" data-act="ld-conv" data-id="${id}">Convert to opportunity</button>` : ''}<button class="btn" data-act="fu-add" data-client="" data-opp="" data-lead="${id}">+ Follow-up</button><button class="btn" data-act="ld-edit" data-id="${id}">Edit</button></div>`;
+  const flow = ['New', 'Contacted', 'Nurturing', 'Converted'], at = flow.indexOf(l.status);
+  const statusCard = `<section class="card stack-s" data-ld-status><h3>Status</h3><div class="flow">${flow.map((s, i) => `<span class="${s === l.status ? 'cur' : at >= 0 && i < at ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>${l.status === 'Not interested' ? '<span class="ld-off">Not interested</span>' : ''}
+    ${conv || both ? '' : `<div class="row"><select class="input" id="ld-status" aria-label="Status" data-keep-order style="width:auto">${LD_STATUSES.filter(s => s !== 'Converted').map(s => `<option ${s === l.status ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn" data-act="ld-status" data-id="${id}">Change status</button></div>
+    <div class="stack-s" data-ld-why ${l.status === 'Not interested' ? '' : 'hidden'}><div class="field" data-field="ni_reason"><label for="ld-why">Not interested reason *</label><select class="input" id="ld-why"><option value="">Choose</option>${optsOf(fld('ni_reason'), D.lists).map(o => `<option ${o === ldX(l, 'ni_reason') ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>
+      <div class="field" data-field="ni_detail"><label for="ld-why-d">Details *</label><textarea class="input" id="ld-why-d" rows="2">${esc(ldX(l, 'ni_detail') || '')}</textarea></div></div>${errBox('ld-st-err')}`}</section>`;
+  const who = ['lead_type', 'wholesale_as', 'company', 'firm', 'gst', 'contact_name', 'mobile', 'alt_mobile', 'email', 'city', 'locality'].filter(k => k === 'company' || ldShowFor(fld(k), l.lead_type)).map(k => [esc(k === 'company' ? 'Company' : fld(k).label), k === 'company' ? esc(l.company || '') : sv(k)]).concat([['Region', esc(l.region || '') || NOTSET]]);
+  const interest = ['categories', 'area_sqft', ...(P ? ['value'] : []), 'budget', 'timeline', 'expected_close', 'score', ...(isProj ? ['project_name', 'site_location', 'dealer_id', 'architect_id'] : [])].map(k => [esc(fld(k).label), sv(k)]);
+  const main = `${conv ? `<div class="ld-lockbar" data-ld-lock><svg aria-hidden="true"><use href="icons.svg#i-lock"/></svg><span><b>Converted</b> on ${ds(dayIST(l.updated_at))}. This lead is read-only.</span>${l.opp_id ? ldLink('#/opp/' + l.opp_id, 'arrow-right', 'Opportunity:', opp ? opp.title : (l.opp_ref || 'the opportunity')) : ''}${rec ? ldLink('#/client/' + rec.id, 'arrow-right', kindLabel(rec.kind) + ':', rec.name) : ''}</div>` : ''}
+    ${l.status === 'Not interested' ? `<div class="callout" data-ld-ni><b>Not interested:</b> ${ldNiTxt(l)} <span class="small muted">· ${ds(dayIST(l.updated_at))}</span></div>` : ''}
+    <section class="card stack-s" data-ld-sentence><h3>In a line</h3><p>${ldSentence(l)}</p><p class="small muted">${nf ? `Next follow-up: ${ds(nf.due_date)} · ${esc(nf.action)}` : conv ? 'Its open follow-ups moved to the opportunity.' : 'No follow-up set. Add one with + Follow-up.'}</p></section>
+    ${statusCard}
+    <div class="grid g2"><section class="card stack-s"><h3>Who</h3>${kv(who)}</section><section class="card stack-s"><h3>Interest</h3>${kv(interest)}${l.prices_hidden ? '<p class="small muted">Money is hidden for your role.</p>' : ''}</section></div>
+    <div class="grid g2"><section class="card stack-s"><h3>Where it came from</h3>${kv([['Source', sv('source')], ['Campaign or ad name', sv('campaign')], ['Owner at EGO', sv('owner_id')], ['Added', `${ds(dayIST(l.created_at))} · ${esc(staffName(l.created_by))}`]])}</section>
+      <section class="card stack-s"><h3>Notes</h3>${ldX(l, 'notes') ? `<p style="white-space:pre-line">${esc(ldX(l, 'notes'))}</p>` : '<p class="small muted">No notes yet.</p>'}</section></div>
+    <section class="card stack-s" data-ld-files><h3>Files</h3>${filesBox({ id: 'ld', lead: id, types: ['Visiting card', 'Photo', 'Requirement', 'Quotation', 'Other'], docs: D.documents.filter(d => d.lead_id === id), canAdd: !conv && !both, title: 'Add files to this lead', note: 'A visiting card, site photos, a requirement: one or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No files on this lead yet' })}</section>`;
+  return `<div class="stack">${crumbs(['Leads', '#/leadlist'], [leadName(l)])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(leadName(l))}</h1>
+      <div class="row"><span class="badge info plain" data-ld-cat>${esc(ldCat(l))}</span>${ldChip(l.status)}${ldScore(l.score)}<span class="small muted">${esc(l.ref || '')}</span></div>
+      <p class="muted">${esc(l.contact_name)} ${esc(fmtMobile(l.mobile))}${l.city ? ' · ' + esc(l.city) : ''} · ${esc(staffName(l.owner_id))}</p></div>${btns}</div>
+    ${recGrid(conv ? `<div class="ld-locked stack">${main}</div>` : main, activityPanel({ clientId: '', oppId: '', leadId: id, locked: conv || both }))}</div>`;
+};
+EM.VIEWS.leadrec.tab = 'leadlist';
+EM.VIEWS.leadrec.title = id => { const l = ldById(String(id || '').split('/')[0]); return l ? leadName(l) : 'Lead'; };
+/* the lead's own timeline: calls, notes and messages logged on it, its follow-ups done, its files */
+function ldTimeline(id) {
+  const x = EM.LDS.one[id] || {}, items = [], push = (at, group, title, detail, who, extra = {}) => { if (at) items.push({ at: isoOf(at), group, title, detail: detail || '', who: who || '', ...extra }); };
+  const acts = [...(x.activities || []), ...ACTS().filter(a => a.lead_id === id && !(x.activities || []).some(b => b.id === a.id))];
+  for (const a of acts) push(a.at, 'talk', `${ACT_ICON[a.kind] || a.kind}${a.direction === 'in' ? ' in' : a.direction === 'out' ? ' out' : ''}`, a.summary, a.via_key ? `via API key ${a.via_key}` : staffName(a.by_staff), { source: a.source });
+  for (const f of FUS().filter(f => f.lead_id === id && f.status !== 'open')) push(f.done_at, 'followup', `Follow-up done: ${f.action}${f.source ? ' (' + f.source + ')' : ''}`, f.outcome, staffName(f.done_by));
+  for (const d of D.documents.filter(d => d.lead_id === id)) push(d.created_at, 'file', `File added: ${d.name}`, d.type, uploaderName(d), { doc: d.id });
+  return items.sort((a, b) => b.at.localeCompare(a.at));
+}
+/* status: Not interested asks the reason and the details first (like Lost); Converted is never in the list */
+document.addEventListener('change', e => { if (e.target.id === 'ld-status') { const w = qs('[data-ld-why]'); if (w) w.hidden = e.target.value !== 'Not interested'; } });
+EM.ACTIONS['ld-status'] = async el => {
+  const st = qs('#ld-status').value, ni = st === 'Not interested', b = { id: el.dataset.id, status: st };
+  if (ni) { b.ni_reason = qs('#ld-why').value; b.ni_detail = qs('#ld-why-d').value.trim();
+    const errs = [!b.ni_reason && 'Not interested reason is compulsory.', !b.ni_detail && 'Write the details.'].filter(Boolean);
+    if (errs.length) { showErr('ld-st-err', errs); if (!b.ni_reason) qs('#ld-why').closest('.field').classList.add('has-err'); if (!b.ni_detail) qs('#ld-why-d').closest('.field').classList.add('has-err'); return; } }
+  busy(el, true);
+  try { const r = await API('POST', '/api/leads', b); EM.LDS.one[b.id] = { ...EM.LDS.one[b.id], lead: r.lead }; EM.toast(`<b>Status:</b> ${esc(st)}`); ldTouched(b.id); EM.rerender(); }
+  catch (x) { busy(el, false); showErr('ld-st-err', x.errors || x.message); }
+};
+
+/* ---- the form for a lead (new and edit): every LEAD_FIELDS field, grouped as the cards on the page */
+const LD_GROUPS = [['Who', ['lead_type', 'wholesale_as', 'company', 'firm', 'gst', 'contact_name', 'mobile', 'alt_mobile', 'email', 'city', 'locality']],
+  ['Interest', ['categories', 'area_sqft', 'value', 'budget', 'timeline', 'expected_close', 'score', 'project_name', 'site_location', 'dealer_id', 'architect_id']],
+  ['Status', ['status', 'ni_reason', 'ni_detail']], ['Where it came from', ['source', 'campaign', 'owner_id']], ['Notes', ['notes']]];
+const ldShowFor = (f, type) => !f.types || f.types.includes(type);
+/* B1: the Category as one line: Retail, Wholesale · Dealer, Wholesale · Architect, Project */
+const ldCat = l => [l.lead_type, l.lead_type === 'Wholesale' ? ldX(l, 'wholesale_as') : ''].filter(Boolean).join(', ');
+const LD_CAT_F = ['Retail', 'Wholesale', 'Wholesale, Dealer', 'Wholesale, Architect', 'Project'];   // SPEC-b1: "Wholesale" keeps both kinds
+function ldForm(l) {
+  const v = l ? { ...l.extra, ...l, company: l.company } : { owner_id: me().id, status: 'New', company: EM.div === 'retail' ? 'Big E' : 'EGO Premium', lead_type: '' };
+  const type = v.lead_type, coOk = D.user.division === 'both' && !l;
+  const fhtml = k => { const f = LD_FLD(k); if (!f || (f.type === 'money' && !D.access.prices)) return '';
+    if (k === 'company' && !coOk) return '';
+    let h = k === 'status' ? G.select(f, v.status, 'ldf', LD_STATUSES.filter(s => s !== 'Converted').map(s => [s, s]), false)
+      : k === 'lead_type' || k === 'wholesale_as' ? `<div class="field span2" data-field="${k}"><span class="small muted" id="ld-${k}-l">${esc(f.label)} *</span><div class="seg-kind" role="radiogroup" aria-labelledby="ld-${k}-l">${f.opts.map(o => `<label${k === 'lead_type' && o === 'Wholesale' ? ` data-ld-ws${v.company === 'Big E' ? ' hidden' : ''}` : ''}><input type="radio" name="${k}" value="${esc(o)}" ${v[k] === o ? 'checked' : ''}> ${esc(o)}</label>`).join('')}</div></div>`   /* SPEC-b1: .seg-kind radios; F4 M-2: Big E has no Wholesale */
+      : k === 'categories' ? G.multi(f, v[k], 'ldf', [...(D.lists.categories || []), ...listOf(v[k]).filter(c => !(D.lists.categories || []).includes(c))])   /* F4 M-1: a category the lead holds stays shown after it leaves the list */
+      : fieldHtml(f, v[k], 'ldf');
+    const hide = (f.types && !ldShowFor(f, type)) || (['ni_reason', 'ni_detail'].includes(k) && v.status !== 'Not interested');
+    return h.replace('<div class="field', `<div${f.types ? ` data-ld-types="${esc(f.types.join('|'))}"` : ''}${['ni_reason', 'ni_detail'].includes(k) ? ' data-ld-ni' : ''}${hide ? ' hidden' : ''} class="field`); };
+  EM.modal(`<h2>${l ? 'Edit lead ' + esc(l.ref || '') : 'New lead'}</h2><p class="muted small">${l ? esc(l.company) : 'Someone who may buy later. Add a follow-up on the lead once it is saved.'}</p>
+    <form id="ldf" class="stack" onsubmit="return false" style="margin-top:12px" data-id="${l ? l.id : ''}">${LD_GROUPS.map(([t, ks]) => `<h3>${t}</h3><div class="fgrid">${ks.map(fhtml).join('')}</div>`).join('')}
+      ${errBox('ld-err')}<div class="row sticky-actions"><button class="btn primary" data-act="ld-save">${l ? 'Save changes' : 'Save lead'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
+}
+document.addEventListener('change', e => { const f = e.target.closest && e.target.closest('#ldf'); if (!f) return;
+  if (e.target.name === 'lead_type') f.querySelectorAll('[data-ld-types]').forEach(w => { w.hidden = !w.dataset.ldTypes.split('|').includes(e.target.value); });
+  if (e.target.name === 'status') f.querySelectorAll('[data-ld-ni]').forEach(w => { w.hidden = e.target.value !== 'Not interested'; });
+  if (e.target.name === 'company') { const ws = f.querySelector('[data-ld-ws]'), big = e.target.value === 'Big E'; if (ws) { ws.hidden = big; const r = ws.querySelector('input'); if (big && r.checked) { r.checked = false; f.querySelectorAll('[data-ld-types]').forEach(w => { w.hidden = true; }); } } } });
+EM.ACTIONS['ld-add'] = () => ldForm(null);
+EM.ACTIONS['ld-edit'] = el => { const x = EM.LDS.one[el.dataset.id]; if (x && x.lead) ldForm(x.lead); };
+EM.ACTIONS['ld-save'] = async el => {
+  const form = qs('#ldf'), id = form.dataset.id, fields = LEAD_FIELDS.filter(f => form.querySelector(`[name="${f.key}"]`)), b = readForm(form, fields);
+  for (const k of ['lead_type', 'wholesale_as']) { const c = form.querySelector(`input[name="${k}"]:checked`); b[k] = c ? c.value : ''; }   /* radios: the checked one */
+  for (const f of fields) { const w = form.querySelector(`[name="${f.key}"]`).closest('[hidden]'); if (w) delete b[f.key]; }
+  if (!b.company) b.company = id ? EM.LDS.one[id].lead.company : EM.div === 'retail' || D.user.division === 'retail' ? 'Big E' : 'EGO Premium';
+  if (id) b.id = id;
+  busy(el, true);
+  try { const r = await API('POST', '/api/leads', b); EM.closeModal(); EM.LDS.one[r.lead.id] = { ...(EM.LDS.one[r.lead.id] || {}), lead: r.lead };
+    EM.toast(id ? `<b>Lead saved.</b> ${esc(leadName(r.lead))}` : `<b>Lead saved.</b> With ${esc(staffName(r.lead.owner_id))}.`);
+    ldTouched(r.lead.id); location.hash = '#/leadrec/' + r.lead.id; }
+  catch (x) { busy(el, false);
+    const dupId = x.status === 409 && x.body && x.body.lead_id;
+    showErr('ld-err', dupId ? [] : x.errors || x.message);
+    if (x.status === 409) { const m = form.querySelector('[data-field="mobile"]'); if (m) { m.classList.add('has-err'); m.insertAdjacentHTML('beforeend', `<span class="ferr err" data-ld-dup>${esc(String(x.message).replace(/\.$/, ''))}${dupId ? ` <a href="#/leadrec/${esc(dupId)}" data-act="close-modal">Open it</a>` : ''}</span>`); } } }
+};
+
+/* ---- 3. Convert to opportunity: the preview, the pipeline, only what is missing */
+const ldKindWord = k => k === 'direct' ? 'client' : kindLabel(k).toLowerCase();
+function ldConvHtml(id, pv) {
+  const l = EM.LDS.one[id].lead, c = pv.client, kind = EM.ldCvKind || c.kind, pipes = pv.pipelines, pl = (pipes.find(p => p.key === pv.pipeline) || pipes[0] || {}).label || '';
+  const cats = ldCats(l), auto = oppAutoName(c.name, cats.join(', '), new Date().toISOString());
+  const need = f => `<span class="small muted">The ${f.key === 'project_type' ? 'project' : ldKindWord(kind)} record needs it.</span>`;
+  const ask = pv.missing.map(m => { const f = m.key === 'city' ? LD_FLD('city') : m.key === 'project_type' ? PROJECT_FIELDS.find(x => x.key === 'type') : { key: 'client_type', list: 'client_types', label: 'Client type', type: 'select', opts: [], req: true };
+    return fieldHtml({ ...f, key: m.key, label: m.label, req: true }, '', 'ld-cv').replace(/<\/div>$/, need(m) + '</div>'); }).join('');
+  const seg = !c.existing && pv.kinds.length > 1 ? `<div class="field"><label>Record</label><div class="seg" role="radiogroup" aria-label="Record">${pv.kinds.map(k => `<button type="button" role="radio" aria-checked="${k === kind}" class="${k === kind ? 'on' : ''}" data-act="ld-cv-kind" data-k="${k}">${esc(kindLabel(k))}</button>`).join('')}</div></div>` : '';
+  return `<div class="ld-cv stack-s" data-id="${id}"><h2>Convert to opportunity</h2>
+    <p class="muted small">Everything this lead knows goes onto the opportunity: contact, mobile, categories, area, value, budget band, expected close, owner, source, notes and files. Its open follow-ups move too.</p>
+    ${(pv.opp_types || []).length ? `<div class="field" data-ld-otype><span class="small muted" id="ld-cv-t-l">Open which opportunity? *</span><div class="seg-kind" role="radiogroup" aria-labelledby="ld-cv-t-l">${pv.opp_types.map(t => `<label><input type="radio" name="ld-cv-t" value="${esc(t.key)}" data-act="ld-cv-type" data-t="${esc(t.key)}" ${t.key === pv.opp_type ? 'checked' : ''}> ${esc(t.key)}</label>`).join('')}</div><span class="small muted">${pv.opp_type ? `${pv.opp_type === l.lead_type ? `Picked from the lead's Category (${esc(ldCat(l))}). ` : ''}Goes into ${esc((pv.opp_types.find(t => t.key === pv.opp_type) || {}).label || '')}, ${esc(pv.company)}.` : 'Pick which opportunity to open.'}</span></div>` : ''}
+    <div class="ld-make">${c.existing
+      ? `<div class="ld-mk is-join"><span class="ld-tile"><svg aria-hidden="true"><use href="icons.svg#i-user-check"/></svg></span><span><b>Already ${/^[aeiou]/.test(ldKindWord(c.kind)) ? 'an' : 'a'} ${esc(ldKindWord(c.kind))}: <a href="#/client/${esc(c.id)}">${esc(c.name)}</a>, this lead joins it</b><span class="small muted">${esc(pv.by || 'Same mobile')}</span></span></div>`
+      : `<div class="ld-mk"><span class="ld-tile"><svg aria-hidden="true"><use href="icons.svg#i-square-plus"/></svg></span><span><b>New ${esc(ldKindWord(kind))}: ${esc(c.name)}</b><span class="small muted">${esc(kindLabel(kind))}${l.city ? ' · ' + esc(l.city) : ''} · ${esc(fmtMobile(l.mobile))}</span></span></div>`}
+      <div class="ld-mk"><span class="ld-tile"><svg aria-hidden="true"><use href="icons.svg#i-target-arrow"/></svg></span><span><b>${esc(ldNewOpp(pipes.length > 1 ? (pipes.find(p => p.key === (EM.ldCvPipe || pv.pipeline)) || {}).label || pl : pl))}: ${esc(auto)}</b><span class="small muted">The opportunity name. Change it on the opportunity.</span></span></div></div>
+    ${pipes.length > 1 ? `<div class="field"><label for="ld-cv-p">Pipeline</label><select class="input" id="ld-cv-p" data-keep-order>${pipes.map(p => `<option value="${p.key}" ${p.key === (EM.ldCvPipe || pv.pipeline) ? 'selected' : ''}>${esc(p.label)}</option>`).join('')}</select></div>` : ''}
+    ${seg || ask || pv.gst_ask ? `<div class="grid g2">${seg}${ask}${pv.gst_ask ? `<div class="field" data-field="gst"><label for="ld-cv-gst">GST number</label><input class="input" id="ld-cv-gst" maxlength="15" autocapitalize="characters" placeholder="15 characters" value="${esc(EM.ldCvGst || '')}"><span class="small muted">Optional. If this GST is already ${/^[aeiou]/.test(ldKindWord(kind)) ? 'an' : 'a'} ${esc(ldKindWord(kind))} in ${esc(pv.company)}, the lead joins it.</span></div>` : ''}</div>` : ''}
+    <div id="ld-cv-err" class="small err" role="alert"></div>
+    <div class="row ld-cv-btns" style="justify-content:flex-end"><button class="btn" data-act="close-modal">Cancel</button><button class="btn primary" data-act="ld-convert" data-id="${id}">Convert to opportunity</button></div></div>`;
+}
+EM.ACTIONS['ld-conv'] = async el => {
+  const id = el.dataset.id; busy(el, true);
+  try { const r = await API('GET', `/api/leads/${encodeURIComponent(id)}/convert`); busy(el, false); EM.ldCvKind = ''; EM.ldCvPipe = ''; EM.ldCvGst = ''; EM.ldCv = r.preview; EM.modal(ldConvHtml(id, r.preview)); }
+  catch (x) { busy(el, false); EM.toast(esc(x.message)); }
+};
+/* B1: another opportunity type asks the server for the preview again (the record kinds and what is missing follow it) */
+EM.ACTIONS['ld-cv-type'] = async el => { const box = el.closest('.ld-cv'), id = box.dataset.id; EM.ldCvGst = (qs('#ld-cv-gst') || { value: EM.ldCvGst || '' }).value;
+  try { const r = await API('GET', `/api/leads/${encodeURIComponent(id)}/convert?opp_type=${encodeURIComponent(el.dataset.t)}`); EM.ldCvKind = ''; EM.ldCvPipe = ''; EM.ldCv = r.preview; box.outerHTML = ldConvHtml(id, r.preview); }
+  catch (x) { showErr('ld-cv-err', x.errors || x.message); } };
+EM.ACTIONS['ld-cv-kind'] = el => { EM.ldCvKind = el.dataset.k; EM.ldCvGst = (qs('#ld-cv-gst') || { value: EM.ldCvGst || '' }).value; const box = el.closest('.ld-cv'); const p = qs('#ld-cv-p'); if (p) EM.ldCvPipe = p.value; box.outerHTML = ldConvHtml(box.dataset.id, EM.ldCv); };
+document.addEventListener('change', e => { if (e.target.id === 'ld-cv-p') { EM.ldCvPipe = e.target.value; EM.ldCvGst = (qs('#ld-cv-gst') || { value: EM.ldCvGst || '' }).value; const box = e.target.closest('.ld-cv'); box.outerHTML = ldConvHtml(box.dataset.id, EM.ldCv); } });
+EM.ACTIONS['ld-convert'] = async el => {
+  const id = el.dataset.id, pv = EM.ldCv, v = k => (qs('#ld-cv-' + k) || { value: '' }).value, b = {};
+  if (!pv.client.existing) b.kind = EM.ldCvKind || pv.client.kind;
+  if ((pv.opp_types || []).length && !pv.opp_type) return showErr('ld-cv-err', ['Pick which opportunity to open']);
+  if (pv.opp_type) b.opp_type = pv.opp_type;
+  b.pipeline = qs('#ld-cv-p') ? qs('#ld-cv-p').value : pv.pipeline;
+  for (const m of pv.missing) b[m.key] = v(m.key);
+  if (pv.gst_ask && v('gst').trim()) b.gst = v('gst').trim();
+  const errs = pv.missing.filter(m => !b[m.key]).map(m => `${m.label} is compulsory`);
+  if (errs.length) return showErr('ld-cv-err', errs);
+  el.setAttribute('aria-busy', 'true'); busy(el, true);
+  try { const r = await API('POST', `/api/leads/${encodeURIComponent(id)}/convert`, b);
+    window.EGOLIVE.refresh(await API('GET', '/api/bootstrap')); EM.closeModal(); EM.LDS.one[id] = null; delete EM.LDS.one[id]; leadsLoad();
+    EM.toast(`<b>Lead converted.</b> ${esc((r.opportunity || {}).title || '')}`); location.hash = '#/opp/' + r.opp_id; }
+  catch (x) { el.removeAttribute('aria-busy'); busy(el, false); showErr('ld-cv-err', x.errors || x.message); }
+};
+ICON.leadlist = _i('<path d="M12 10a6 6 0 0 0-6-6H3v2a6 6 0 0 0 6 6h3"/><path d="M12 14a6 6 0 0 1 6-6h3v1a6 6 0 0 1-6 6h-3"/><path d="M12 20V10"/>');   // i-seedling: may buy later
+NAV_HELP.leadlist = 'Leads: someone who may buy later. Convert a lead to an opportunity when they are ready to order.';
+
+
+/* ================================================================ Leads L4 (26 Oct 2026)
+   G1 the list at 1280: Value, Expected close and Added drop to a second line in the City cell below 1500 px (CSS), so every
+   column reads without the page scrolling sideways. G2 the convert line names the pipeline once. G3 the top search finds
+   leads. Then: the Excel sample + upload (also a Meta lead export as it is), Analysis > Leads (key lds), Integrations' lead
+   addresses. The field app's New lead screen is in field.js. */
+const ldSecond = (l, P) => { const x = [ldX(l, 'expected_close') ? `Expected close ${ds(ldX(l, 'expected_close'))}` : '', `Added ${ds(dayIST(l.created_at))}`, P && l.value != null && l.value !== '' ? money(l.value) : ''].filter(Boolean);
+  return `<div class="small muted ld-2nd">${x.map(esc).join('<br>')}</div>`; };
+/* "Wholesale opportunity" already says opportunity: the line names the pipeline once */
+const ldNewOpp = label => `New ${/opportunit/i.test(label) ? label : label + ' opportunity'}`;
+
+/* ---- the Analysis hand-off: a figure opens the Leads list holding exactly its leads */
+EM.ldOnlyK = {}; EM.ldOnly = null;
+EM.ACTIONS['ld-only'] = el => { const o = EM.ldOnlyK[el.dataset.k]; if (!o) return; EM.ldOnly = o; EM.ldF = { period: 'all' }; EM.qByView.leadlist = ''; location.hash = '#/leadlist'; };
+EM.ACTIONS['ld-only-x'] = () => { EM.ldOnly = null; EM.rerender(); };
+window.addEventListener('hashchange', () => { if (EM.ldOnly && !/^#\/(leadlist|leadrec)/.test(location.hash)) EM.ldOnly = null; });
+
+/* ---- Analysis > Leads (tab key lds, right before Dealer leads) */
+AN_TABS.splice(AN_TABS.findIndex(x => x[0] === 'leads'), 0, ['lds', 'Leads']);
+function anLds() {
+  const L = EM.LDS; if (!L.rows) { leadsLoad(); return '<p class="muted">Reading the leads…</p>'; }
+  const co = anCo(), ls = L.rows.filter(l => (co === 'both' || l.division === co) && anIn(dayIST(l.created_at)) && anWhoOk(l.owner_id) && anRegionOk(l.region || ''));
+  const cv = a => a.filter(l => l.status === 'Converted'), days = l => Math.max(0, Math.round((Date.parse(l.updated_at) - Date.parse(l.created_at)) / 864e5));
+  let n = 0; EM.ldOnlyK = {};
+  const go = (text, a, label) => { const k = 'l' + (++n); EM.ldOnlyK[k] = { ids: a.map(l => l.id), label }; return `<button type="button" class="fig" data-act="ld-only" data-k="${k}" title="Open these ${a.length} leads">${text}</button>`; };
+  const avg = a => a.length ? (a.reduce((s, l) => s + days(l), 0) / a.length).toFixed(1) : '';
+  const cols = (a, who) => { const c = cv(a); return [go(num(a.length), a, `Leads: ${who}`), go(num(c.length), c, `Converted: ${who}`), a.length ? go(`${pct(c.length, a.length)}%`, c, `Converted: ${who}`) : '', c.length ? go(avg(c), c, `Converted: ${who}`) : '']; };
+  const HEAD = first => [first, 'Leads', 'Converted', 'Conversion rate', 'Days to convert'];
+  const by = (key, name) => groupBy(ls, key).sort((a, b) => b[1].length - a[1].length).map(([k, a]) => [esc(name(k)), ...cols(a, name(k))]);
+  const ni = groupBy(ls.filter(l => l.status === 'Not interested'), l => ldX(l, 'ni_reason') || 'Not given').sort((a, b) => b[1].length - a[1].length).map(([k, a]) => [esc(k), go(num(a.length), a, `Not interested: ${k}`)]);
+  const c = cv(ls);
+  return `<div class="grid g4" data-an-lds>${tile('Leads', go(num(ls.length), ls, 'Leads'))}${tile('Converted', go(num(c.length), c, 'Converted'))}${tile('Lead to opportunity conversion rate', ls.length ? go(`${pct(c.length, ls.length)}%`, c, 'Converted') : '0%', 'Converted ÷ Leads')}${tile('Average days to convert', c.length ? go(avg(c), c, 'Converted') : '<span class="muted">None yet</span>', 'Converted leads only')}</div>
+    <p class="small muted">Leads added in the dates (by the day each was added), at the status each is at now; days to convert (the average) run from added to converted. Click a figure to see the leads behind it.</p>
+    <div class="grid g2">${anSec('By source', HEAD('Source'), by(l => l.source || 'Not filled', k => k), '', 'data-an-lds-source')}${anSec('By owner at EGO', HEAD('Owner at EGO'), by(l => l.owner_id, staffName))}</div>
+    <div class="grid g2">${anSec('By category', HEAD('Category'), by(l => ldCat(l) || 'Not filled', k => k), '', 'data-an-lds-cat')}${anSec('Not interested reasons', ['Reason', 'Leads'], ni)}</div>`;
+}
+
+/* ---- the Leads Excel: built at download from today's lists, with real dropdowns; the upload checks every row on the server */
+const LD_SHEET = () => [['Company', 'company', true], ['Category', 'lead_type', true], ['Wholesale as', 'wholesale_as'], ['Firm name', 'firm'], ['GST number', 'gst'], ['Contact name', 'contact_name', true], ['Mobile', 'mobile', true], ['Alternate mobile', 'alt_mobile'], ['Email', 'email'],
+  ['City', 'city'], ['Locality', 'locality'], ['Source', 'source', true], ['Campaign or ad name', 'campaign'], ['Interested categories', 'categories'], ['Area (sq ft)', 'area_sqft'], ...(D.access.prices ? [['Value (Rs)', 'value']] : []),
+  ['Budget band', 'budget'], ['Buying timeline', 'timeline'], ['Expected close', 'expected_close'], ['Project name', 'project_name'], ['Site location', 'site_location'], ['Owner at EGO', 'owner', true], ['Score', 'score'], ['Status', 'status'], ['Notes', 'notes']];
+const LD_LISTS = () => ({ company: ['wholesale', 'retail'].filter(canDiv).map(pjCo), lead_type: LEAD_TYPES, wholesale_as: WHOLESALE_AS, source: optsOf(LD_FLD('source'), D.lists), categories: D.lists.categories || [],
+  status: LD_STATUSES.filter(s => !['Converted', 'Not interested'].includes(s)), score: ['Hot', 'Warm', 'Cold'], owner: D.staff.filter(s => s.active).map(s => s.name), city: (D.lists.cities || []).map(c => c.city),
+  budget: optsOf(LD_FLD('budget'), D.lists), timeline: optsOf(LD_FLD('timeline'), D.lists) });
+EM.ACTIONS['ld-sample'] = async el => {
+  busy(el, true);
+  try {
+    await loadJs(EXCELJS_URL, () => window.ExcelJS);
+    const S = LD_SHEET(), L = LD_LISTS(), wb = new window.ExcelJS.Workbook(), fill = wb.addWorksheet('Fill this'), how = wb.addWorksheet('How to fill'), lists = wb.addWorksheet('Lists');
+    Object.entries(L).forEach(([k, vals], i) => { lists.getCell(1, i + 1).value = k; vals.forEach((v, r) => { lists.getCell(r + 2, i + 1).value = v; }); });
+    lists.state = 'hidden';
+    fill.columns = S.map(([h, , req]) => ({ header: h + (req ? ' *' : ''), width: Math.max(16, h.length + 6) }));
+    fill.getRow(1).font = { bold: true }; fill.views = [{ state: 'frozen', ySplit: 1 }];
+    /* F4 L-6: each column's dropdown set ONCE over rows 2 to 501 (cell by cell, ExcelJS wrote overlapping ranges Excel may refuse) */
+    S.forEach(([, k, req], i) => { const letter = fill.getColumn(i + 1).letter, li = Object.keys(L).indexOf(k), rng = `${letter}2:${letter}501`;
+      if (li >= 0 && L[k].length) { const col = lists.getColumn(li + 1).letter; fill.dataValidations.add(rng, { type: 'list', allowBlank: !req, formulae: [`Lists!$${col}$2:$${col}$${L[k].length + 1}`], showErrorMessage: k !== 'categories', errorTitle: 'Pick from the list', error: 'Choose a value from the dropdown.' }); }
+      else if (['area_sqft', 'value'].includes(k)) fill.dataValidations.add(rng, { type: 'decimal', operator: 'greaterThanOrEqual', allowBlank: true, formulae: [0], showErrorMessage: true, error: 'A number, 0 or more.' }); });
+    how.getCell('A1').value = 'EGO Master: leads'; how.getCell('A1').font = { bold: true, size: 14 };
+    how.getCell('A2').value = 'Fill the "Fill this" tab, one lead per row. Columns with * are compulsory. The dropdowns hold today\'s lists and team. Several categories: type them with commas.';
+    how.getCell('A3').value = `Made on ${today()} by ${me().name}. Upload it on the Leads screen: every row is checked first. A row with a mistake is named and nothing from it is saved; a mobile that is already an open lead says "Already a lead". A Meta lead export (full_name, phone_number, email, city, campaign_name, ad_name, created_time) can be uploaded as it is.`;
+    S.forEach(([h, , req], i) => { how.getCell('A' + (5 + i)).value = h; how.getCell('B' + (5 + i)).value = req ? 'Compulsory' : 'Optional'; });
+    how.getColumn(1).width = 26; how.getColumn(2).width = 14;
+    const buf = await wb.xlsx.writeBuffer(), a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })); a.download = `EGO Master leads ${today()}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+    EM.toast('The leads file is downloading, with today\'s lists in its dropdowns.');
+  } catch (x) { bubbleNear(el, x.message); }
+  busy(el, false);
+};
+/* a CSV (Meta exports are often UTF-16 with tabs): quoted fields, commas or tabs */
+const ldCsv = buf => { const b = new Uint8Array(buf), u16 = b[0] === 0xff && b[1] === 0xfe, t = new TextDecoder(u16 ? 'utf-16le' : 'utf-8').decode(buf).replace(/^﻿/, '');
+  const sep = (t.split('\n')[0].match(/\t/g) || []).length > (t.split('\n')[0].match(/,/g) || []).length ? '\t' : ',', out = []; let row = [], f = '', q = false;
+  for (let i = 0; i < t.length; i++) { const ch = t[i];
+    if (q) { if (ch === '"' && t[i + 1] === '"') { f += '"'; i++; } else if (ch === '"') q = false; else f += ch; }
+    else if (ch === '"') q = true; else if (ch === sep) { row.push(f); f = ''; } else if (ch === '\n' || ch === '\r') { if (ch === '\r' && t[i + 1] === '\n') i++; row.push(f); out.push(row); row = []; f = ''; } else f += ch; }
+  if (f || row.length) { row.push(f); out.push(row); } return out.filter(r => r.some(x => String(x).trim())); };
+const LD_META = ['full_name', 'phone_number', 'email', 'city', 'campaign_name', 'ad_name', 'created_time'];
+EM.ldImp = null;
+document.addEventListener('change', async e => {
+  if (!e.target.matches('input[data-sheet="leads"]')) return;
+  const file = e.target.files && e.target.files[0]; e.target.value = ''; if (!file) return;
+  try {
+    let grid;
+    if (/\.csv$|\.tsv$/i.test(file.name)) grid = ldCsv(await file.arrayBuffer());
+    else { await loadJs(EXCELJS_URL, () => window.ExcelJS); const wb = new window.ExcelJS.Workbook(); await wb.xlsx.load(await file.arrayBuffer());
+      const ws = wb.getWorksheet('Fill this') || wb.worksheets[0], txt = v => v == null ? '' : v instanceof Date ? v.toISOString().slice(0, 10) : typeof v === 'object' ? (v.text || v.result || (v.richText ? v.richText.map(x => x.text).join('') : '')) : String(v);
+      grid = []; ws.eachRow({ includeEmpty: true }, (r, n) => { const a = []; for (let i = 1; i <= ws.columnCount; i++) a.push(txt(r.getCell(i).value).trim()); grid[n - 1] = a; }); grid = grid.map(r => r || []); }
+    const heads = (grid[0] || []).map(h => String(h).replace(/\s*\*$/, '').trim()), meta = heads.some(h => ['full_name', 'phone_number'].includes(h.toLowerCase()));
+    const S = LD_SHEET(), rows = [];
+    grid.slice(1).forEach((r, i) => { if (!r.some(v => String(v).trim())) return; const x = { row: i + 2 };
+      if (meta) heads.forEach((h, j) => { const k = h.toLowerCase(); if (LD_META.includes(k)) x[k] = String(r[j] || '').trim(); });
+      else S.forEach(([h, k]) => { const j = heads.indexOf(h) >= 0 ? heads.indexOf(h) : h === 'Category' ? heads.findIndex(x => /^lead type$/i.test(x)) : -1;   /* B1: a sheet made before 26 Oct has the old header for Category */ if (j >= 0 && String(r[j] || '').trim()) x[k] = String(r[j]).trim(); });
+      rows.push(x); });
+    if (!rows.length) throw new Error('No filled rows under the headers.');
+    const company = EM.div === 'retail' || D.user.division === 'retail' ? 'Big E' : 'EGO Premium';
+    const res = await API('POST', '/api/leads/import', { rows, save: false, company });
+    EM.ldImp = { file: file.name, rows, company, meta, res: res.rows }; EM.rerender();
+  } catch (x) { EM.ldImp = { file: file.name, error: x.message, rows: [], res: [] }; EM.rerender(); }
+});
+function ldImportPreview() {
+  const I = EM.ldImp, cnt = s => I.res.filter(r => r.status === s).length;
+  return `<section class="card stack-s" data-ld-import><div class="row between"><h3>Read: ${esc(I.file)}${I.meta ? ' (a Meta lead export)' : ''}</h3><button class="btn sm ghost" data-act="ld-imp-close">Close</button></div>
+    ${I.error ? `<div class="callout warn">${esc(I.error)}</div>` : `<p class="small">${num(cnt('new'))} new · <b>${num(cnt('error'))} with a mistake</b>. ${I.saved ? 'Saved.' : 'Nothing is saved until you press Save. A row with a mistake is never saved.'}${I.meta ? ` Meta rows come in as Category Retail, Source Meta Ads, New, owned by you, in ${esc(I.company)}.` : ''}</p>
+    ${table(['Row', 'Status', 'Lead', 'Mistake'], I.res.map(r => ({ cells: [String(r.row), `<span class="badge ${r.status === 'error' ? 'bad' : 'ok'}">${r.status === 'error' ? 'Mistake' : 'New'}</span>`, esc(r.label), esc(r.error || '')] })))}
+    ${!I.saved && cnt('new') ? `<div class="row"><button class="btn primary" data-act="ld-imp-save">Save the ${num(cnt('new'))} good row${cnt('new') === 1 ? '' : 's'}${cnt('error') ? ' (rows with a mistake are skipped)' : ''}</button></div>` : ''}`}</section>`;
+}
+EM.ACTIONS['ld-imp-close'] = () => { EM.ldImp = null; EM.rerender(); };
+EM.ACTIONS['ld-imp-save'] = async el => {
+  busy(el, true);
+  try { const I = EM.ldImp, r = await API('POST', '/api/leads/import', { rows: I.rows, save: true, company: I.company }); EM.ldImp = { ...I, res: r.rows, saved: true };
+    EM.toast(`<b>${r.rows.filter(x => x.status !== 'error').length} leads saved</b>`); leadsLoad(); }
+  catch (x) { busy(el, false); bubbleNear(el, x.message); }
+};
+
+/* ---- Integrations: where leads come in. Each source has its own inbound address and its own key (made under API keys,
+   shown once, then only its first characters). Manual and Excel work today; Meta and Google wait on EGO's accounts. */
+const LD_INB = [['meta', 'Meta lead ads', "Waiting on EGO's Meta Business Manager"], ['google', 'Google Ads leads', "Waiting on EGO's Google Ads account"], ['website', 'Website form', 'Ready once the website form sends to this address'], ['other', 'Any other tool', 'Ready once the tool sends to this address']];
+const ldInbound = () => { const I = EM.INT, base = window.EGOAPI.base, conn = id => (I.connections || []).find(c => c.id === id);
+  return `<section class="stack-s" data-lead-inbound><h3>Leads coming in</h3><p class="small muted">Every source below lands in <a href="#/leadlist">Leads</a> as New, with its Source set. Typing a lead and the Leads Excel upload work today. Each source sends to its own address with its own key; the key is shown once when it is made.</p>
+    ${table(['Source', 'Status', 'Inbound address', 'Key'], LD_INB.map(([src, name, wait]) => { const k = (I.keys || []).find(x => x.lead_source === src && !x.revoked_at), c = conn(src), live = c && c.status === 'live';
+      return { cells: [`<b>${esc(name)}</b><div class="small muted">Leads land in Leads</div>`, `<span class="badge ${live ? 'ok' : 'warn'}" data-ld-inb="${src}">${live ? 'Live' : esc(wait)}</span>`, `<code class="small" style="word-break:break-all">${esc(base)}/api/leads/inbound/${src}</code>`,
+        k ? `<code>${esc(k.prefix)}…</code><div class="small muted">${esc(k.name)}${k.lead_company ? ' · into ' + esc(k.lead_company) : ''}</div>` : `<button class="btn sm" data-act="ld-key-add" data-src="${src}">Make the key</button>`] }; }))}</section>`; };
+const _intView = EM.VIEWS.integrations;
+EM.VIEWS.integrations = () => { const h = _intView(); return EM.INT && !EM.INT.error ? h.replace('<section class="stack-s"><div class="row between"><h3>EGO Master API keys</h3>', m => ldInbound() + m) : h; };
+EM.VIEWS.integrations.title = _intView.title;
+const _keyAdd = EM.ACTIONS['int-key-add'];
+EM.ACTIONS['ld-key-add'] = el => EM.ACTIONS['int-key-add'](el);   // a lead source's own key (its own action, so + New API key stays a plain key)
+EM.ACTIONS['int-key-add'] = el => { _keyAdd(el); const src = (el && el.dataset.src) || '';
+  qs('#ik-acc').closest('.field').insertAdjacentHTML('afterend', `<div class="field"><label for="ik-src">Brings in leads from</label><select class="input" id="ik-src"><option value="">Nothing: a key for reading and adding records</option>${LD_INB.map(([k, n]) => `<option value="${k}"${k === src ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select><span class="small muted">A lead key does one thing: it brings leads into Leads at that source's address.</span></div><div class="field"><label for="ik-co">Its leads go to</label><select class="input" id="ik-co">${['wholesale', 'retail'].filter(canDiv).map(d => `<option>${esc(pjCo(d))}</option>`).join('')}</select><span class="small muted">The company and the owner (Acts as) are set here, never by what the tool sends.</span></div>`);
+  if (src) { qs('#ik-name').value = (LD_INB.find(x => x[0] === src) || [])[1] + ' leads'; qs('#ik-acc').value = 'write'; } };
+
+/* ---- G3: the top search, in the header on every screen: leads (name, firm, mobile) from the server, and clients held here */
+EM.topSearch = () => allowedTab('opps') ? `<span class="ts" role="search"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-search"/></svg><input type="search" id="ts-q" placeholder="Search leads and clients: name, firm or mobile" aria-label="Search leads and clients" autocomplete="off"><span class="ts-pop" id="ts-pop" hidden></span></span>` : '';
+let tsT = 0, tsN = 0;
+const tsPaint = (leads, q) => { const pop = qs('#ts-pop'); if (!pop) return; const ql = q.toLowerCase(), qd = q.replace(/\D/g, '');
+  const cl = Object.values(CL()).filter(c => `${c.name} ${c.mobile || ''}`.toLowerCase().includes(ql) || (qd.length >= 4 && String(c.mobile || '').includes(qd))).slice(0, 5);
+  const hit = (href, name, sub, tag) => `<a class="ts-hit" href="${href}"><b>${esc(name)}</b><span class="small muted">${esc(tag)} · ${esc(sub)}</span></a>`;
+  pop.innerHTML = leads.length || cl.length ? leads.slice(0, 8).map(l => hit('#/leadrec/' + l.id, leadName(l), [l.firm ? l.contact_name : '', fmtMobile(l.mobile), l.status].filter(Boolean).join(' · '), 'Lead')).join('') + cl.map(c => hit('#/client/' + c.id, c.name, fmtMobile(c.mobile || '') || c.city || '', kindLabel(c.kind))).join('')
+    : `<span class="ts-none small muted">No lead or client matches "${esc(q)}"</span>`;
+  pop.hidden = false; };
+document.addEventListener('input', e => { if (e.target.id !== 'ts-q') return; const q = e.target.value.trim(); clearTimeout(tsT);
+  if (q.length < 2) { const p = qs('#ts-pop'); if (p) p.hidden = true; return; }
+  tsT = setTimeout(async () => { const n = ++tsN; let leads = []; try { leads = (await API('GET', '/api/leads?q=' + encodeURIComponent(q))).leads || []; } catch (x) {} if (n === tsN) tsPaint(leads.filter(inDiv), q); }, 220); });
+document.addEventListener('keydown', e => { if (e.target.id === 'ts-q' && e.key === 'Enter') { const a = qs('#ts-pop .ts-hit'); if (a) location.hash = a.getAttribute('href'); } if (e.target.id === 'ts-q' && e.key === 'Escape') { const p = qs('#ts-pop'); if (p) p.hidden = true; } });
+document.addEventListener('click', e => { if (!e.target.closest('.ts')) { const p = qs('#ts-pop'); if (p) p.hidden = true; } });

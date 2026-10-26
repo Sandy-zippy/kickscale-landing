@@ -231,3 +231,29 @@ body.pt-on #shell { display: none; }
 /* R3 batch 4: "Target for" keeps a readable width (name + level line); the table scrolls inside its frame, never the page */
 [data-tg-table] th:first-child, [data-tg-table] tr:not(.tg-chg) > td:first-child { min-width: 170px; }
 [data-tg-table] th:not(:first-child) { white-space: normal; }   /* long headings (Should be at today) take two lines so the table fits 1280 */
+
+/* Leads L4 (26 Oct). G1: below 1500 px Value, Expected close and Added sit as a second line under City (their own columns
+   show from 1500, field.css), and Owner / City wrap, so every column reads at 1280 without sideways scroll. */
+.ld-2nd { margin-top: 4px; white-space: nowrap; }
+@media (min-width: 1500px) { .ld-2nd { display: none; } }
+@media (max-width: 1499px) and (min-width: 700px) {
+  #view .ld-tbl .tbl th, #view .ld-tbl .tbl td { padding-left: 7px; padding-right: 7px; }   /* F3: 9 columns with Category, words whole */
+  #view .ld-tbl .tbl td:nth-child(6) { white-space: normal; min-width: 90px; }
+  #view .ld-tbl .tbl th:nth-child(6), #view .ld-tbl .tbl th:nth-child(7) { white-space: normal; }
+}
+/* F2 T-06: a long unbroken name, firm or campaign wraps inside its own cell, so no column grows past its share at 1280 */
+#view .ld-tbl .tbl td:nth-child(1) { overflow-wrap: anywhere; }
+@media (min-width: 1500px) { #view .ld-tbl .tbl th, #view .ld-tbl .tbl td { padding-left: 8px; padding-right: 8px; } }   /* F3: 12 columns at 1536, words whole */   /* the Lead cell; Category is column 2 (b1) */
+#view .ld-tbl .tbl td:nth-child(3) { overflow-wrap: break-word; }   /* Source and campaign: whole words; only the Lead cell breaks inside a word (F3) */
+#view .ld-tbl .tbl td:nth-child(1) { min-width: 88px; }
+/* G3: the top search in the header, every screen */
+.ts { position: relative; flex: 1 1 300px; max-width: 440px; display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border: 1px solid var(--ge-border); border-radius: 999px; background: var(--ge-surface); margin-left: 12px; }
+.ts .ic { width: 16px; height: 16px; flex: none; color: var(--ge-text-muted); }
+.ts input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--ge-text); font: inherit; font-size: 14px; outline: none; }
+.ts:focus-within { border-color: var(--ge-text); }
+.ts-pop { position: absolute; top: 44px; left: 0; right: 0; z-index: 40; display: grid; padding: 6px; border: 1px solid var(--ge-border); border-radius: 14px; background: var(--ge-surface); box-shadow: 0 12px 32px rgba(0,0,0,.14); max-height: 60vh; overflow: auto; }
+.ts-pop[hidden] { display: none; }
+.ts-hit { display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; color: var(--ge-text); text-decoration: none; }
+.ts-hit:hover, .ts-hit:focus { background: var(--ge-surface-2); }
+.ts-none { padding: 8px 10px; }
+@media (max-width: 700px) { .ts { margin-left: 0; flex-basis: 100%; order: 9; } }

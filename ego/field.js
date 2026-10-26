@@ -52,7 +52,7 @@
      takes the id before doing the work, so a send repeated after a dropped answer never makes a second record.
      What the entry does is also applied to the screen at once (op), and again over every fresh copy from the server
      until it has been sent. Entries are kept per login. */
-  const Q = { items: [], busy: false, mem: [] };
+  const Q = { items: [], bad: [], busy: false, mem: [] };
   const newKey = () => (crypto.randomUUID ? crypto.randomUUID() : [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join(''));
   let idbP = null;
   const idb = () => idbP || (idbP = new Promise(ok => { try { const r = indexedDB.open('ego-field', 1); r.onupgradeneeded = () => r.result.createObjectStore('q', { keyPath: 'n', autoIncrement: true }); r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); } catch (e) { ok(null); } }));
@@ -60,7 +60,10 @@
   const qAll = async () => { const db = await idb(); if (!db) return Q.mem.slice(); return (await store('readonly', st => st.getAll())) || []; };
   const qAdd = async it => { const db = await idb(); if (!db) { it.n = (Q.mem.length ? Q.mem[Q.mem.length - 1].n : 0) + 1; Q.mem.push(it); return it.n; } return store('readwrite', st => st.add(it)); };
   const qDel = async n => { const db = await idb(); if (!db) { Q.mem = Q.mem.filter(x => x.n !== n); return; } return store('readwrite', st => st.delete(n)); };
-  const qLoad = async () => { Q.items = (await qAll().catch(() => [])).filter(x => x.user === B.user.id).sort((a, b) => a.n - b.n); };
+  const qPut = async it => { const db = await idb(); if (!db) { Q.mem = Q.mem.map(x => x.n === it.n ? it : x); return; } return store('readwrite', st => st.put(it)); };
+  /* F2 T-08: an entry the server refused (refused: its reason) stays on the phone in Q.bad, out of the sending line; a lead
+     shows in Mine with the reason and opens again in its form to fix and send (the old entry goes once the new one is saved) */
+  const qLoad = async () => { const all = (await qAll().catch(() => [])).filter(x => x.user === B.user.id).sort((a, b) => a.n - b.n); Q.items = all.filter(x => !x.refused); Q.bad = all.filter(x => x.refused); };
   /* what a waiting entry does to the screen until it is sent */
   function applyOp(f, op) {
     const v = op.id && (f.visits || []).find(x => x.id === op.id);
@@ -70,13 +73,14 @@
     if (op.type === 'outcome' && v && (v.status === 'in' || v.status === 'done')) Object.assign(v, { status: 'done', outcome: op.outcome, note: op.note || '', extra: { ...(v.extra || {}), boxes: op.boxes, follow_on: op.follow_on }, waiting: true });
     if (op.type === 'ask') { const A = f.asks || (f.asks = { approvals: [], complaints: [] }), k = op.ghost.t === 'approval' ? 'approvals' : 'complaints'; if (!(A[k] || []).some(r => r.key === op.key)) A[k] = [{ ...op.ghost, key: op.key, waiting: true, created_at: op.at }, ...(A[k] || [])]; }
     if (op.type === 'req' && !(f.reqs || []).some(r => r.key === op.key)) f.reqs = [{ ...op.ghost, key: op.key, waiting: true, created_at: op.at }, ...(f.reqs || [])];
+    if (op.type === 'lead' && !(f.leads || []).some(r => r.key === op.key)) f.leads = [{ ...op.ghost, key: op.key, waiting: !op.refused, refused: op.refused || '', qn: op.qn, created_at: op.at }, ...(f.leads || [])];   // L4
     /* T5: an SDR inspection or Give waiting to send shows at once: the dealer leaves "SDR inspection due", the lines show */
     if (op.type === 'sdr' || op.type === 'sdrgive') { const X = f.sdr || (f.sdr = { regs: [], due: [] });
       if (!(X.regs || []).some(r => r.key === op.key)) X.regs = [...(X.regs || []), ...op.ghost.map((g, i) => ({ ...g, id: g.id || `wait_${op.key}_${i}`, key: op.key, waiting: true, created_at: op.at }))];
       if (op.type === 'sdr') X.due = (X.due || []).filter(d => d.client_id !== op.cid); }
   }
   /* a fresh copy of the day from the server, with every waiting entry laid over it */
-  function setField(f) { if (!f) return; S.base = JSON.parse(JSON.stringify(f)); const x = JSON.parse(JSON.stringify(f)); for (const it of Q.items) applyOp(x, it.op); B.field = x; saveBoot(); }
+  function setField(f) { if (!f) return; S.base = JSON.parse(JSON.stringify(f)); const x = JSON.parse(JSON.stringify(f)); for (const it of Q.items) applyOp(x, it.op); for (const it of Q.bad || []) applyOp(x, { ...it.op, refused: it.refused, qn: it.n }); B.field = x; saveBoot(); }
   /* what this phone last had, so the app opens with no signal (boot.js reads it back) */
   const saveBoot = () => { clearTimeout(saveBoot.t); saveBoot.t = setTimeout(() => { try { localStorage.setItem('ego-field-boot', JSON.stringify({ ...B, field: S.base || B.field })); } catch (e) {} }, 300); };
   async function write(path, fd, op, label) {
@@ -100,12 +104,14 @@
       for (const it of Q.items) {
         const fd = new FormData(); for (const [k, v, name] of it.parts) name ? fd.append(k, v, name) : fd.append(k, v);
         try { const r = await API('POST', it.path, fd, true, { 'idempotency-key': it.key }); await qDel(it.n); sent++; if (r.field) S.base = JSON.parse(JSON.stringify(r.field)); }
-        catch (e) { if (e.offline || !e.status || e.status >= 500) break; await qDel(it.n); toast(`<b>Not sent: ${esc(it.label)}.</b> ${esc(e.message)}`); }   // the server said no: sending it again would never work
+        catch (e) { if (e.offline || !e.status || e.status >= 500) break;   // the server said no: sending it again unchanged would never work
+          if (it.op && it.op.type === 'lead') { await qPut({ ...it, refused: e.message || 'Refused' }); toast(`<b>Not sent: ${esc(it.label)}.</b> ${esc(e.message)} It is kept in Mine: fix it and send again.`); }
+          else { await qDel(it.n); toast(`<b>Not sent: ${esc(it.label)}.</b> ${esc(e.message)}`); } }
       }
     } finally {
       Q.busy = false; await qLoad();
       if (sent) { try { const r = await API('GET', '/api/field/me'); S.base = r.field; } catch (e) {} toast(`<b>Sent: ${sent} entr${sent === 1 ? 'y' : 'ies'}</b>`); }
-      setField(S.base || B.field); if (!S.cam && !S.sheet && !['req', 'raise', 'sdr'].includes(route())) render(); else paintBanner();
+      setField(S.base || B.field); if (!S.cam && !S.sheet && !['req', 'lead', 'raise', 'sdr'].includes(route())) render(); else paintBanner();
     }
   }
   const banner = () => { const n = Q.items.length, off = navigator.onLine === false; return !n && !off ? '' : `<div class="fd-offline" role="status">${ic('wifi-off')}<span><b>${off ? 'No signal.' : 'Sending.'}</b> Saved on this phone, will send when signal returns.</span>${n ? `<span class="fd-pill">${n}</span>` : ''}</div>`; };
@@ -115,9 +121,9 @@
   const hello = () => { const h = ist().getUTCHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
   const top = (title, sub, right) => `<header class="fd-top"><div class="fd-hello"><b>${esc(title)}</b><span>${esc(sub)}</span></div>${Q.items.length ? `<span class="fd-sync">${ic('cloud-upload')}${Q.items.length} waiting</span>` : right || `<span class="fd-avatar" aria-label="${esc(B.user.name)}">${esc(initials(B.user.name))}</span>`}</header>`;
   /* the bar is exactly Today . Visits . + Requirement . My numbers . Me; an item shows once its screen works (R2b turns on the two) */
-  const NAV = [['today', 'sun', 'Today', true], ['visits', 'route', 'Visits', true], ['req', 'plus', 'Requirement', true], ['numbers', 'chart-donut-3', 'My numbers', true], ['me', 'user-circle', 'Me', true]];
-  const nav = on => `<nav class="fd-nav" aria-label="Field app">${NAV.filter(n => n[3]).map(([k, i, l]) => { const add = k === 'req', left = vis().filter(v => v.status === 'planned').length;
-    return `<a href="#/${k}" class="${add ? 'fd-add' : ''}${on === k ? ' on' : ''}"${on === k ? ' aria-current="page"' : ''}><span class="fd-ind">${ic(i)}</span>${add ? `<span><span class="fd-sr">+ </span>${l}</span>` : l}${k === 'visits' && left ? `<em class="fd-count">${left}</em>` : ''}</a>`; }).join('')}</nav>`;
+  const NAV = [['today', 'sun', 'Today', true], ['visits', 'route', 'Visits', true], ['new', 'plus', 'New', true], ['numbers', 'chart-donut-3', 'My numbers', true], ['me', 'user-circle', 'Me', true]];   // L4: + New opens the chooser (Requirement or Lead)
+  const nav = on => `<nav class="fd-nav" aria-label="Field app">${NAV.filter(n => n[3]).map(([k, i, l]) => { const add = k === 'new', left = vis().filter(v => v.status === 'planned').length;
+    return `<a href="#/${k}"${add ? ' data-fa="pick"' : ''} class="${add ? 'fd-add' : ''}${on === k ? ' on' : ''}"${on === k ? ' aria-current="page"' : ''}><span class="fd-ind">${ic(i)}</span>${add ? `<span><span class="fd-sr">+ </span>${l}</span>` : l}${k === 'visits' && left ? `<em class="fd-count">${left}</em>` : ''}</a>`; }).join('')}</nav>`;
 
   /* ---- a visit card (Today) and a visit row (Visits) */
   const checkBtn = (v, primary) => !started() ? `<button class="fd-btn" disabled>${ic('map-pin-check')}Check in</button>` : ended() ? '' : `<button class="fd-btn${primary ? ' primary' : ''}" data-fa="checkin" data-id="${v.id}">${ic('map-pin-check')}Check in</button>`;
@@ -164,6 +170,40 @@
     if (v.client_id || v.project_id) { const x = pickables().find(p => p.id === (v.client_id || v.project_id)) || { t: v.project_id ? 'project' : 'client', id: v.client_id || v.project_id, name: v.name, kind: v.project_id ? 'project' : 'direct', sub: v.area || '' }; R.pick = x; R.kind = KIND_DEF[x.kind] || 'consumer'; }
     else { R.who = 'new'; R.name = v.name; R.mobile = (v.mobile || '').replace(/^\+?91/, ''); R.area = v.area || ''; }
     if (B.user.division === 'retail' && R.kind === 'dealer') R.kind = 'consumer';
+  }
+  /* ---- + New lead (L4, design/leads/SPEC.txt section 5): someone who may buy later. Saved through write(), the same
+     offline queue and idempotency key as a Requirement; Company, Owner at EGO (you) and Status New are set by the app. */
+  const LTYPES = ['Retail', 'Wholesale', 'Project'];   // B1 26 Oct: the Category (schema LEAD_TYPES)
+  const newLead = () => ({ type: '', wsas: '', firm: '', name: '', mobile: '', cats: [], timeline: '', score: '', next: '', alt: '', email: '', city: '', locality: '', area: '', value: '', budget: '', close: '', pname: '', site: '', source: 'Field visit', campaign: '', gst: '', note: '', card: null, cardUrl: '', photos: [], urls: [], more: false, err: {} });
+  function leadFromVisit(id) { const v = vis().find(x => x.id === id); if (!v) return; const R = S.lead = newLead(); R.name = v.name || ''; R.mobile = (v.mobile || '').replace(/^\+?91/, ''); R.locality = v.area || ''; }
+  const pickHtml = () => `<div class="fd-scrim" data-fa="pick-x"></div><div class="fd-sheet" role="dialog" aria-label="What are you adding?"><h3>What are you adding?</h3><div class="fd-pickone">
+    <a href="#/req"><span class="fd-tile">${ic('list-check')}</span><span><b>New requirement</b><span>Wants to order now</span></span>${ic('chevron-right')}</a>
+    <a href="#/lead" class="is-soft"><span class="fd-tile">${ic('seedling')}</span><span><b>New lead</b><span>May buy later</span></span>${ic('chevron-right')}</a></div></div>`;
+  async function saveLead() {
+    const R = S.lead, e = {}, mob = R.mobile.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, ''), alt = R.alt.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
+    if (!R.type) e.type = 'Pick the category: Retail, Wholesale or Project.';
+    if (R.type === 'Wholesale' && !R.wsas) e.wsas = 'Pick Dealer or Architect.';
+    if (!R.name.trim()) e.name = 'Write the contact name';
+    if (!/^[6-9]\d{9}$/.test(mob)) e.mobile = 'Mobile needs 10 digits';
+    if (R.type === 'Project' && !R.pname.trim()) e.pname = 'Write the project name';
+    if (R.alt.trim() && !/^[6-9]\d{9}$/.test(alt)) { e.alt = 'Mobile needs 10 digits'; R.more = true; }
+    R.err = e; if (Object.keys(e).length) { render(); const f = qs('.fd-field.has-err'); if (f) f.scrollIntoView({ block: 'center' }); return; }
+    const fd = new FormData(), put = (k, v) => { if (String(v || '').trim()) fd.append(k, String(v).trim()); };
+    put('lead_type', R.type); if (R.type === 'Wholesale') put('wholesale_as', R.wsas); if (R.type !== 'Retail') { put('firm', R.firm); put('gst', R.gst.replace(/\s/g, '').toUpperCase()); } put('contact_name', R.name); put('mobile', mob); put('alt_mobile', alt); put('email', R.email); put('city', R.city); put('locality', R.locality);
+    R.cats.forEach(c => fd.append('categories', c)); put('area_sqft', R.area.replace(/[,\s]/g, '')); put('value', R.value.replace(/[,\s]/g, '')); put('budget', R.budget); put('timeline', R.timeline); put('expected_close', R.close);
+    if (R.type === 'Project') { put('project_name', R.pname); put('site_location', R.site); }
+    put('score', R.score); put('source', R.source || 'Field visit'); put('campaign', R.campaign); put('notes', R.note); put('next_date', R.next);
+    if (R.card) fd.append('card', R.card, R.card.name || 'card.jpg');
+    R.photos.forEach((f, i) => fd.append('photo', f, f.name || `photo-${i + 1}.jpg`));
+    const name = (R.type !== 'Retail' && R.firm.trim()) || R.name.trim();
+    R.busy = true; render();
+    try {
+      const w = await write('/api/field/lead', fd, { type: 'lead', ghost: { name, lead_type: R.type, wholesale_as: R.wsas, status: 'New', score: R.score, categories: R.cats.slice(), next_date: R.next, owner_name: B.user.name } }, `Lead · ${name}`);
+      if (R.fixN) { await qDel(R.fixN); await qLoad(); setField(S.base || B.field); }
+      R.urls.forEach(u => URL.revokeObjectURL(u)); if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); S.lead = null; S.rf = 'all';
+      location.hash = '#/requirements'; render();
+      toast(w.queued ? '<b>Saved on this phone.</b> It will send when signal returns.' : `<b>Lead saved.</b> With ${esc(w.r.owner || B.user.name)}.`, w.queued ? w.n : undefined);
+    } catch (x) { R.busy = false; R.err = x.status === 409 ? { mobile: String(x.message).replace(/\.$/, ''), dup: 1 } : { all: x.message }; render(); const f = qs('.fd-field.has-err'); if (f) f.scrollIntoView({ block: 'center' }); }
   }
   async function saveReq(el) {
     const R = S.req, e = {}, mob = R.mobile.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
@@ -405,11 +445,59 @@
         <span class="fd-err" role="alert">${esc(e.all || '')}</span>
         <div class="fd-savebar"><button type="button" class="fd-btn primary lg block" data-fa="req-save"${R.busy ? ' aria-busy="true" disabled' : ''}>Save Requirement</button></div></form></main>`;
     },
+    lead() {
+      const R = S.lead || (S.lead = newLead()), e = R.err || {}, n = (F().reqs || []).length + (F().leads || []).length, L = B.lists || {};
+      const fe = k => e[k] ? `<span class="fd-err">${esc(e[k])}${k === 'mobile' && e.dup ? ` <a href="#/requirements">Mine</a>` : ''}</span>` : '';
+      /* SPEC-b1: Category and Wholesale as are .fd-seg radios (3 equal columns), the rest stay chips */
+      const segL = (k, val, opts) => `<div class="fd-seg" role="radiogroup">${opts.map(o => `<label><input type="radio" name="fd-l${k}" data-lch="${k}" value="${esc(o)}" ${val === o ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div>`;
+      const chips = (k, val, opts) => `<div class="fd-chips" role="radiogroup">${opts.map(o => `<label class="fd-chip"><input type="radio" name="fd-l${k}" data-lch="${k}" value="${esc(o)}" ${val === o ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div>`;
+      const inp = (k, id, label, x = {}) => `<div class="fd-field${e[k] ? ' has-err' : ''}"><label for="${id}">${label}</label>${x.pre || x.suf ? '<div class="fd-adorn">' : ''}${x.pre ? `<span class="fd-pre">${x.pre}</span>` : ''}<input class="fd-input" id="${id}" data-ld="${k}" value="${esc(R[k])}"${x.type ? ` type="${x.type}"` : ''}${x.im ? ` inputmode="${x.im}"` : ''} maxlength="${x.max || 120}" autocomplete="off">${x.suf ? `<span class="fd-suf">${x.suf}</span>` : ''}${x.pre || x.suf ? '</div>' : ''}${fe(k)}</div>`;
+      const opt = (list, val, first) => `<option value="">${first}</option>${list.map(o => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}`;
+      const proj = R.type === 'Project' ? inp('pname', 'fl-pname', 'Project name') + inp('site', 'fl-site', 'Site location') : '';
+      return top('New lead', 'Someone who may buy later', `<a class="fd-sync" href="#/requirements">${ic('list-check')}Mine ${n}</a>`) + `<main class="fd-view"><form class="fd-form" onsubmit="return false" data-leadform>
+        <div class="fd-field">${R.card ? `<div class="fd-photos"><div class="fd-thumb"><img src="${R.cardUrl}" alt="Visiting card"><button type="button" aria-label="Remove photo" data-fa="lead-card-x">${ic('x')}</button></div></div>` : `<label class="fd-photo-add wide">${ic('id-badge-2')}Photo of the visiting card<input type="file" accept="image/*" capture="environment" data-lead-file="card"></label>`}</div>
+        <div class="fd-field${e.type ? ' has-err' : ''}"><span class="fd-label">Category *</span>${segL('type', R.type, B.user.division === 'retail' ? LTYPES.filter(t => t !== 'Wholesale') : LTYPES)}${fe('type')}</div>
+        ${R.type === 'Wholesale' ? `<div class="fd-field${e.wsas ? ' has-err' : ''}" data-ld-wsas><span class="fd-label">Wholesale as *</span>${segL('wsas', R.wsas, ['Dealer', 'Architect'])}${fe('wsas')}</div>` : ''}
+        ${proj}
+        ${R.type === 'Retail' ? '' : inp('firm', 'fl-firm', 'Firm name')}
+        ${inp('name', 'fl-name', 'Contact name')}
+        ${inp('mobile', 'fl-mob', 'Mobile', { pre: '+91', type: 'tel', im: 'tel', max: 14 })}
+        <div class="fd-field"><label for="fl-cat">Interested categories</label>${MSEL.html({ name: 'fd-lcats', id: 'fl-cat', opts: L.categories || [], sel: R.cats, phone: true })}</div>
+        <div class="fd-field"><span class="fd-label">Buying timeline</span>${chips('timeline', R.timeline, ['This month', '1 to 3 months', '3 to 6 months', 'Later, not sure'])}</div>
+        <div class="fd-field"><span class="fd-label">Score</span>${chips('score', R.score, ['Hot', 'Warm', 'Cold'])}</div>
+        <details class="fd-more"${R.more ? ' open' : ''}><summary>More: follow-up, city, value, notes${ic('chevron-down')}</summary><div class="fd-form">
+          ${inp('next', 'fl-next', 'Next follow-up date', { type: 'date' })}
+          ${R.type && R.type !== 'Retail' ? inp('gst', 'fl-gst', 'GST number', { max: 15 }) : ''}
+          ${inp('alt', 'fl-alt', 'Alternate mobile', { pre: '+91', type: 'tel', im: 'tel', max: 14 })}
+          ${inp('email', 'fl-email', 'Email', { type: 'email', im: 'email' })}
+          <div class="fd-field"><label for="fl-city">City</label><select class="fd-input" id="fl-city" data-lch="city">${opt((L.cities || []).map(c => c.city || c), R.city, 'Choose the city')}</select></div>
+          ${inp('locality', 'fl-loc', 'Locality')}
+          ${inp('area', 'fl-area', 'Area', { im: 'numeric', suf: 'sq ft' })}
+          ${B.access && B.access.prices === false ? '' : inp('value', 'fl-val', 'Value', { im: 'numeric', pre: '₹', suf: '/-' })}
+          <div class="fd-field"><span class="fd-label">Budget band</span>${chips('budget', R.budget, L.budget_bands || ['Under 2 lakh', '2 to 5 lakh', '5 to 10 lakh', 'Above 10 lakh'])}</div>
+          ${inp('close', 'fl-close', 'Expected close', { type: 'date' })}
+          <div class="fd-field"><label for="fl-src">Source</label><select class="fd-input" id="fl-src" data-lch="source">${opt(L.sources || ['Field visit'], R.source, 'Choose the source')}</select></div>
+          ${inp('campaign', 'fl-camp', 'Campaign or ad name')}
+          <div class="fd-field"><label for="fl-note">Notes</label><textarea class="fd-input" id="fl-note" data-ld="note" placeholder="Optional" maxlength="2000">${esc(R.note)}</textarea></div>
+          <div class="fd-field"><span class="fd-label">Files</span><div class="fd-photos">${R.photos.map((f, i) => `<div class="fd-thumb"><img src="${R.urls[i]}" alt="Photo ${i + 1}"><button type="button" aria-label="Remove photo" data-fa="lead-photo-x" data-i="${i}">${ic('x')}</button></div>`).join('')}<label class="fd-photo-add">${ic('camera')}Add<input type="file" accept="image/*" multiple data-lead-file="photos"></label></div></div></div></details>
+        <span class="fd-err" role="alert">${esc(e.all || '')}</span>
+        <div class="fd-savebar"><button type="button" class="fd-btn primary lg block" data-fa="lead-save"${R.busy ? ' aria-busy="true" disabled' : ''}>Save lead</button></div></form></main>`;
+    },
     /* P6 My requirements: what happened to each, newest first */
     requirements() {
-      const R = F().reqs || [], open = r => !r.won && !r.lost, f = S.rf;
-      const cnt = { all: R.length, tele: R.filter(open).length, won: R.filter(r => r.won).length, lost: R.filter(r => r.lost).length };
-      const show = R.filter(r => f === 'tele' ? open(r) : f === 'won' ? r.won : f === 'lost' ? r.lost : true);
+      const R = F().reqs || [], LS = F().leads || [], open = r => !r.won && !r.lost, f = S.rf;
+      const cnt = { all: R.length + LS.length, lead: LS.length, tele: R.filter(open).length, won: R.filter(r => r.won).length, lost: R.filter(r => r.lost).length };
+      const show = f === 'lead' ? [] : R.filter(r => f === 'tele' ? open(r) : f === 'won' ? r.won : f === 'lost' ? r.lost : true);
+      /* L4: a lead row (the same card, a Lead tag, no 4-step track) */
+      const score = s => { const k = { Hot: 3, Warm: 2, Cold: 1 }[s]; return k ? ` · <span class="ld-score" data-s="${k}"><i></i><i></i><i></i>${esc(s)}</span>` : ''; };
+      const lrow = l => { if (l.refused) return `<div class="fd-req is-lead is-refused" data-lead-row data-refused><div class="fd-row between"><span class="fd-name">${esc(l.name)}</span><span class="fd-row" style="gap:6px"><span class="fd-pill bad">${ic('alert-triangle')}Not sent</span><span class="fd-tag">${ic('seedling')}Lead</span></span></div>
+          <div class="fd-last">${ic('circle-x')}<span>${esc(l.refused)}</span></div><div class="fd-acts"><button type="button" class="fd-btn primary" data-fa="lead-fix" data-n="${l.qn}">${ic('pencil')}Fix and send</button></div></div>`;
+        const pill = l.waiting ? `<span class="fd-pill warn">${ic('cloud-upload')}Waiting</span>` : l.status === 'Converted' ? '<span class="fd-pill ok">Converted</span>' : l.status === 'Not interested' ? '<span class="fd-pill">Not interested</span>' : '';
+        const last = l.waiting ? [ic('wifi-off'), 'Saved on this phone, will send when signal returns'] : l.status === 'Converted' ? [ic('arrow-right'), `Opportunity: ${l.opp_title || 'made'}`] : l.status === 'Not interested' ? [ic('circle-x'), `Reason: ${l.ni_reason || 'not given'}.${l.ni_detail ? ' ' + l.ni_detail : ''}`]
+          : [ic('calendar'), `${l.status}, with ${l.owner_name}.${l.next_date ? ' Next follow-up ' + dayShort(l.next_date) : ' No follow-up set'}`];
+        return `<div class="fd-req is-lead" data-lead-row><div class="fd-row between"><span class="fd-name">${esc(l.name)}</span><span class="fd-row" style="gap:6px">${pill}<span class="fd-tag">${ic('seedling')}Lead</span></span></div>
+          <div class="fd-what">${esc([[l.lead_type, l.lead_type === 'Wholesale' ? l.wholesale_as : ''].filter(Boolean).join(', '), (l.categories || []).join(', ')].filter(Boolean).join(' · '))}${score(l.score)}</div><div class="fd-last">${last[0]}<span>${esc(last[1])}</span></div></div>`; };
+      const leadsShown = f === 'all' || f === 'lead' ? LS : [];
       const row = r => { const steps = r.waiting ? 0 : r.won ? 4 : r.step || 0;
         const pill = r.waiting ? `<span class="fd-pill warn">${ic('cloud-upload')}Waiting</span>` : r.won ? `<span class="fd-pill ok">${ic('trophy')}Turned into sale</span>` : r.lost ? '<span class="fd-pill bad">Lost</span>' : `<span class="fd-pill">Step ${steps} of 4</span>`;
         const last = r.waiting ? [ic('wifi-off'), 'Saved on this phone, will send when signal returns']
@@ -419,9 +507,10 @@
         return `<div class="fd-req${r.won ? ' is-won' : r.lost ? ' is-lost' : ''}"><div class="fd-row between"><span class="fd-name">${esc(r.c_name)}</span>${pill}</div>
           <div class="fd-what">${esc([r.category, r.area_sqft != null ? `${Number(r.area_sqft).toLocaleString('en-IN')} sq ft` : '', REQK[r.kind] || ''].filter(Boolean).join(' · '))}</div>
           <div class="fd-track">${[0, 1, 2, 3].map(i => `<i class="${i < steps ? 'done' : ''}"></i>`).join('')}</div><div class="fd-last">${last[0]}<span>${esc(last[1])}</span></div></div>`; };
-      return top('My requirements', `${R.length} saved`, `<a class="fd-sync" href="#/req">${ic('plus')}New</a>`) + `<main class="fd-view">
-        <div class="fd-filter">${[['all', 'All'], ['tele', 'With telesales'], ['won', 'Turned into sale'], ['lost', 'Lost']].map(([k, l]) => `<label class="fd-chip"><input type="radio" name="fd-rf" value="${k}" ${f === k ? 'checked' : ''}>${l} ${cnt[k]}</label>`).join('')}</div>
-        ${show.length ? `<div class="fd-reqs">${show.map(row).join('')}</div>` : `<div class="fd-card"><b>${R.length ? 'None here' : 'No Requirements yet'}</b><div class="fd-meta" style="margin-top:6px">${R.length ? 'Pick another filter above.' : 'Save one with + Requirement at a visit. It goes straight to telesales, and what happens to it shows here.'}</div></div>`}</main>`;
+      const items = [...show.map(r => [r.created_at || '', row(r)]), ...leadsShown.map(l => [l.created_at || '', lrow(l)])].sort((a, b) => String(b[0]).localeCompare(String(a[0]))).map(x => x[1]);
+      return top('Mine', 'Requirements and leads you saved', `<a class="fd-sync" href="#/new" data-fa="pick">${ic('plus')}New</a>`) + `<main class="fd-view">
+        <div class="fd-filter">${[['all', 'All'], ['lead', 'Leads'], ['tele', 'With telesales'], ['won', 'Turned into sale'], ['lost', 'Lost']].map(([k, l]) => `<label class="fd-chip"><input type="radio" name="fd-rf" value="${k}" ${f === k ? 'checked' : ''}>${l} ${cnt[k]}</label>`).join('')}</div>
+        ${items.length ? `<div class="fd-reqs">${items.join('')}</div>` : `<div class="fd-card"><b>${R.length + LS.length ? 'None here' : 'No Requirements yet'}</b><div class="fd-meta" style="margin-top:6px">${R.length + LS.length ? 'Pick another filter above.' : 'Save one with + New at a visit. It goes straight to telesales, and what happens to it shows here.'}</div></div>`}</main>`;
     },
     /* P7 My numbers: at most four above the fold, every one from saved records */
     numbers() {
@@ -598,20 +687,30 @@
   }
 
   /* ---- render */
-  const route = () => { const r = (location.hash || '#/today').split('/')[1] || 'today'; return V[r] && (NAV.some(n => n[0] === r && n[3]) || ['requirements', 'raise', 'requests', 'sdr'].includes(r)) ? r : 'today'; };
+  const route = () => { const r = (location.hash || '#/today').split('/')[1] || 'today'; return V[r] && (NAV.some(n => n[0] === r && n[3]) || ['req', 'lead', 'requirements', 'raise', 'requests', 'sdr'].includes(r)) ? r : 'today'; };
   function render() {
     if (!root) return;
     if (needInstall()) { root.innerHTML = instHtml(); return; }
     if (S.cam && !S.confirm) { if (!qs('.fd-cam') || S.camErr !== (qs('.fd-cam').dataset.err || '')) { root.innerHTML = camHtml(); qs('.fd-cam').dataset.err = S.camErr; const v = qs('.fd-cam video'); if (v && S.stream) v.srcObject = S.stream; } return; }
     if (S.confirm) { root.innerHTML = confirmHtml(); return; }
     const r = route(), keep = qs('.fd-toast [data-fa="undo"]') && qs('.fd-toast');   // a toast with Undo outlives the screen being drawn again
-    root.innerHTML = V[r]().replace('<main class="fd-view">', '<main class="fd-view">' + banner()) + nav(r === 'requirements' ? 'req' : ['raise', 'requests'].includes(r) ? 'me' : r === 'sdr' ? 'visits' : r) + (S.sheet ? sheetHtml() : '');
+    root.innerHTML = V[r]().replace('<main class="fd-view">', '<main class="fd-view">' + banner()) + nav(['req', 'lead', 'requirements'].includes(r) ? 'new' : ['raise', 'requests'].includes(r) ? 'me' : r === 'sdr' ? 'visits' : r) + (S.sheet ? sheetHtml() : '') + (S.pick ? pickHtml() : '');
     if (keep) root.appendChild(keep);
   }
   const A = {
     cam: el => openCam(el.dataset.mode), 'cam-x': () => { closeCam(); render(); }, shoot, retake: () => openCam(S.cam), send: sendDay, nophoto: () => setShot(null),
     checkin, sheet: el => { S.sheet = el.dataset.id; render(); }, 'sheet-x': () => { S.sheet = ''; render(); }, outcome: saveOutcome,
-    'req-from': el => { reqFromVisit(el.dataset.id); S.sheet = ''; location.hash = '#/req'; render(); },
+    'req-from': el => { reqFromVisit(el.dataset.id); leadFromVisit(el.dataset.id); S.sheet = ''; S.pick = true; render(); },
+    pick: () => { S.pick = true; render(); }, 'pick-x': () => { S.pick = false; render(); },
+    'lead-fix': el => { const it = (Q.bad || []).find(x => x.n === +el.dataset.n); if (!it) return; const R = S.lead = newLead(), g = k => (it.parts.find(p => p[0] === k) || [])[1] || '';
+      Object.assign(R, { type: g('lead_type'), wsas: g('wholesale_as'), firm: g('firm'), gst: g('gst'), name: g('contact_name'), mobile: g('mobile'), alt: g('alt_mobile'), email: g('email'), city: g('city'), locality: g('locality'), area: g('area_sqft'), value: g('value'), budget: g('budget'),
+        timeline: g('timeline'), close: g('expected_close'), pname: g('project_name'), site: g('site_location'), score: g('score'), source: g('source') || 'Field visit', campaign: g('campaign'), note: g('notes'), next: g('next_date'),
+        cats: it.parts.filter(p => p[0] === 'categories').map(p => p[1]), fixN: it.n, more: true });
+      const card = it.parts.find(p => p[0] === 'card'); if (card && typeof card[1] !== 'string') { R.card = card[1]; R.cardUrl = URL.createObjectURL(card[1]); }
+      for (const p of it.parts.filter(p => p[0] === 'photo' && typeof p[1] !== 'string')) { R.photos.push(p[1]); R.urls.push(URL.createObjectURL(p[1])); }
+      R.err = { mobile: it.refused }; location.hash = '#/lead'; render(); },
+    'lead-save': saveLead, 'lead-photo-x': el => { const R = S.lead, i = +el.dataset.i; URL.revokeObjectURL(R.urls[i]); R.photos.splice(i, 1); R.urls.splice(i, 1); render(); },
+    'lead-card-x': () => { const R = S.lead; if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); R.card = null; R.cardUrl = ''; render(); },
     'req-pick': el => { const R = S.req, x = pickables().find(p => p.id === el.dataset.id); if (!x) return; R.pick = x; R.kind = KIND_DEF[x.kind] || 'consumer'; if (B.user.division === 'retail' && R.kind === 'dealer') R.kind = 'consumer'; delete R.err.who; render(); },
     'req-photo-x': el => { const R = S.req, i = +el.dataset.i; URL.revokeObjectURL(R.urls[i]); R.photos.splice(i, 1); R.urls.splice(i, 1); render(); },
     'req-card-x': () => { const R = S.req; if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); R.card = null; R.cardUrl = ''; render(); },
@@ -663,6 +762,12 @@
         if (e.target.name === 'fd-kind' && S.req) { S.req.kind = e.target.value; delete S.req.err.kind; }
         if (e.target.name === 'fd-cats' && S.req) { S.req.cats = MSEL.val(e.target.closest('.msel')); { const h = qs('[data-req-boxes]'); if (h) h.innerHTML = reqBoxes(S.req); } if (S.req.cats.length) { delete S.req.err.cat; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.msel-err'); if (x) x.remove(); } } }
         if (e.target.name === 'fd-tl' && S.req) S.req.timeline = e.target.value;
+        if (S.lead && e.target.dataset && e.target.dataset.lch) { S.lead[e.target.dataset.lch] = e.target.value; delete S.lead.err[e.target.dataset.lch]; if (e.target.dataset.lch === 'type' || e.target.dataset.lch === 'wsas') render(); }
+        if (e.target.name === 'fd-lcats' && S.lead) S.lead.cats = MSEL.val(e.target.closest('.msel'));
+        if (S.lead && e.target.dataset && e.target.dataset.leadFile) { const R = S.lead, fs = [...e.target.files];
+          if (e.target.dataset.leadFile === 'card' && fs[0]) { if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); R.card = fs[0]; R.cardUrl = URL.createObjectURL(fs[0]); }
+          if (e.target.dataset.leadFile === 'photos') for (const f of fs.slice(0, 20 - R.photos.length)) { R.photos.push(f); R.urls.push(URL.createObjectURL(f)); }
+          render(); }
         if (e.target.name === 'fd-rf') { S.rf = e.target.value; render(); }
         if (e.target.name === 'fd-af') { S.af = e.target.value; render(); }
         if (e.target.name === 'fd-askk' && S.ask) { S.ask.what = e.target.value; delete S.ask.err.what; render(); }
@@ -678,7 +783,7 @@
         if (e.target.name === 'fd-th') { document.documentElement.dataset.theme = e.target.value; try { localStorage.setItem('ego-theme', e.target.value); } catch (x) {} }
       });
       document.addEventListener('ego-bip', () => { if (needInstall()) render(); });
-      window.addEventListener('hashchange', () => { S.sheet = ''; if (S.sdr && route() !== 'sdr') S.sdr = null; render(); window.scrollTo(0, 0); });
+      window.addEventListener('hashchange', () => { S.sheet = ''; S.pick = location.hash === '#/new'; if (S.pick) history.replaceState(null, '', '#/today'); if (S.sdr && route() !== 'sdr') S.sdr = null; render(); window.scrollTo(0, 0); });
       /* typing in + Requirement is kept as it is typed, without drawing the screen again (the search redraws only its list) */
       document.addEventListener('input', e => { const d = e.target.dataset || {}; if (!S.sdr) return;
         if (d.sdrRem) { S.sdr.rem[d.sdrRem] = e.target.value; if (e.target.value.trim() && S.sdr.err[d.sdrRem]) { delete S.sdr.err[d.sdrRem]; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.fd-err'); if (x) x.remove(); } } return; }
@@ -686,16 +791,17 @@
           const t = qs(`[data-gtot="${d.i}"]`); if (t) t.textContent = 'Total ' + inr((Number(l.qty) || 0) * (Number(l.unit_cost) || 0));
           const sm = qs('[data-gsum] b'); if (sm) sm.textContent = inr(G.lines.reduce((a, x) => a + (Number(x.qty) || 0) * (Number(x.unit_cost) || 0), 0)); } });
       document.addEventListener('input', e => { const a = e.target.dataset && e.target.dataset.ask; if (a && S.ask) { S.ask[a] = e.target.value; if (a === 'q') { const p = qs('[data-ask-picks]'); if (p) p.innerHTML = askPicksHtml(); } return; } });
+      document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.ld; if (k && S.lead) { S.lead[k] = e.target.value; if (S.lead.err[k] && e.target.value.trim()) { delete S.lead.err[k]; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.fd-err'); if (x) x.remove(); } } } });
       document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.req; if (!k || !S.req) return; S.req[k] = e.target.value; if (k === 'sqft') { const h = qs('[data-req-boxes]'); if (h) h.innerHTML = reqBoxes(S.req); } if (k === 'q') { const p = qs('[data-picks]'); if (p) p.innerHTML = picksHtml(); } });
       /* a picked photo that will not draw shows as a file tile with its name, never a broken image */
       document.addEventListener('error', e => { const t = e.target; if (t && t.tagName === 'IMG' && t.closest && t.closest('[data-askform] .fd-thumb')) { t.closest('.fd-thumb').classList.add('is-file'); t.remove(); } }, true);
-      document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('fd-more') && S.req) S.req.more = e.target.open; }, true);
+      document.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('fd-more')) { if (route() === 'lead' && S.lead) S.lead.more = e.target.open; else if (S.req) S.req.more = e.target.open; } }, true);
       /* weak network: send what waits when signal returns, every 30 s, and show the banner when it goes */
       window.addEventListener('online', () => { paintBanner(); flush(); });
       window.addEventListener('offline', () => paintBanner());
       setInterval(flush, 30000);
       /* the Roadmap may change on the desktop while the phone is open: read it again when the app comes back */
-      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !S.cam && !S.sheet && !['req', 'raise', 'sdr'].includes(route())) API('GET', '/api/field/me').then(r => { setField(r.field); render(); }).catch(() => {}); });
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !S.cam && !S.sheet && !['req', 'lead', 'raise', 'sdr'].includes(route())) API('GET', '/api/field/me').then(r => { setField(r.field); render(); }).catch(() => {}); });
       /* the app opens with no signal: a service worker keeps the page files (sw.js) */
       if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
     }

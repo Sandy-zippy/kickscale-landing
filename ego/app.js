@@ -125,7 +125,7 @@ const EM = {
     const atHome = r === 'home' || h === '#/home';
     qs('#top').innerHTML = `<div class="tb">
       ${atHome ? '' : `<button class="btn sm ghost" data-act="back" aria-label="Back to the previous screen">&larr; Back</button><a class="btn sm ghost" href="#/home">Main menu</a>`}
-      <span class="grow"></span>
+      <span class="grow">${EM.topSearch ? EM.topSearch() : ''}</span>
       <span class="pill" title="Live records, saved to EGO Master">● Live</span>
       <button class="iconbtn" data-act="theme" aria-label="Switch light / dark">◐</button></div>`;
     qs('#view').innerHTML = body;

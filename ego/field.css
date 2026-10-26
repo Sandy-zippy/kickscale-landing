@@ -284,6 +284,10 @@ textarea.fd-input { min-height: 96px; resize: vertical; }
 .fd-more > .fd-form { padding: 4px 14px 16px; }
 .fd-savebar { position: sticky; bottom: calc(var(--fd-bar) + 8px + env(safe-area-inset-bottom, 0px)); z-index: 10; padding-top: 8px;
   background: linear-gradient(to top, var(--fd-ground) 70%, transparent); }
+/* F1 (26 Oct): the lead form is long, so Save lead sits at the end of the form and never covers a field; a tap or focus scrolls
+   a field clear of the bottom bar and its + bump */
+[data-leadform] .fd-savebar { position: static; background: none; }
+html:has(> body.fd-on) { scroll-padding-bottom: calc(var(--fd-bar) + 40px + env(safe-area-inset-bottom, 0px)); }
 .fd-err { color: var(--fd-bad); font-size: var(--fd-fs-meta); font-weight: 600; }
 .fd-field.has-err .fd-input, .fd-field.has-err .fd-adorn { border-color: var(--fd-bad); }
 
@@ -789,3 +793,84 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover, input[type="time"]:
 .dt-was { font-size: 12px; color: var(--ge-text-muted); line-height: 1.4; }
 .dt-was b { font-weight: 600; }
 .fd .dt-was { font-size: var(--fd-fs-meta); }
+
+/* =============== LD. LEADS (Picasso, 26 Oct 2026, batch P1) ===============
+   Spec: design/leads/SPEC.txt. Staff app classes .ld-*, phone additions .fd-tag / .fd-pickone.
+   Reads only --ge-* / --fd-* tokens. Status chips reuse .badge; only the new ones are here. */
+
+/* status: New is an ink outline (needs a first call), Nurturing a hollow dot; Contacted = .badge.info,
+   Converted = .badge.ok, Not interested = .badge.plain (muted, never red) */
+.badge.ld-new { color: var(--ge-text); background: transparent; box-shadow: inset 0 0 0 1px var(--ge-text); }
+.badge.ld-ring::before { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
+.badge .ld-lk { width: 12px; height: 12px; stroke-width: 2; margin-left: -2px; }
+.badge.ld-lkd::before { display: none; }
+
+/* score: a 3-bar meter + the word. Neutral ink, so Hot/Warm/Cold never read as error/warning */
+.ld-score { display: inline-flex; align-items: flex-end; gap: 2px; font-size: 11.5px; font-weight: 600; color: var(--ge-text); white-space: nowrap; line-height: 1; }
+.ld-score i { width: 3px; border-radius: 1px; background: var(--ge-border); }
+.ld-score i:nth-of-type(1) { height: 6px; } .ld-score i:nth-of-type(2) { height: 9px; } .ld-score i:nth-of-type(3) { height: 12px; margin-right: 5px; }
+.ld-score[data-s="1"] i:nth-of-type(1), .ld-score[data-s="2"] i:nth-of-type(-n+2), .ld-score[data-s="3"] i { background: var(--ge-text); }
+.ld-score[data-s="1"] { color: var(--ge-text-muted); }
+
+/* list: the last columns (Value, Expected close, Added) show only from 1500 px; Lead / Source / Interested wrap */
+.ld-tbl td { vertical-align: top; }
+.ld-tbl td:nth-child(n+5) { white-space: nowrap; }
+.ld-tbl .ld-cats { white-space: normal; max-width: 180px; }
+@media (max-width: 1499px) { .ld-tbl th:nth-child(n+10), .ld-tbl td:nth-child(n+10) { display: none; } }  /* b1: Category is column 2, so 9 at 1280 */
+.ld-tbl td:nth-child(2) { min-width: 84px; }   /* Category: "Wholesale, Dealer" wraps to 2 lines, never 1 letter wide */
+.ld-tbl tr.is-in > td { animation: ld-in 2.4s var(--fd-ease) 1; }
+@keyframes ld-in { from { background: color-mix(in srgb, var(--ge-text) 9%, transparent); } to { background: transparent; } }
+
+/* the two-way link: "Opportunity: <name>" on a lead, "Came from lead: <name>" on an opportunity */
+.ld-link { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 8px; border-radius: 999px; border: 1px solid var(--ge-border);
+  background: var(--ge-bg); color: var(--ge-text); font-size: 12.5px; text-decoration: none; max-width: 100%; }
+.ld-link svg { width: 15px; height: 15px; stroke-width: 1.75; flex: none; color: var(--ge-text-muted); }
+.ld-link span { color: var(--ge-text-muted); } .ld-link b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ld-link:hover { border-color: var(--ge-text); } .ld-link:focus-visible { outline: 2px solid var(--ge-text); outline-offset: 2px; }
+
+/* Converted = read-only, and it LOOKS locked in both themes: lock bar, dashed hatched cards, lock in each title */
+.ld-lockbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 14px; border-radius: 12px;
+  background: var(--ge-surface-2); border: 1px dashed var(--ge-text-muted); font-size: 13px; }
+.ld-lockbar > span { flex: 1 1 200px; min-width: 0; }
+.ld-lockbar > svg { width: 18px; height: 18px; stroke-width: 1.75; flex: none; }
+.ld-locked .card { border-style: dashed; border-color: var(--ge-text-muted);
+  background: repeating-linear-gradient(-45deg, transparent 0 9px, color-mix(in srgb, var(--ge-text) 4%, transparent) 9px 10px), var(--ge-surface); }
+.ld-locked .card h3 { display: flex; align-items: center; gap: 6px; }
+.ld-locked .card h3::before { content: ''; width: 14px; height: 14px; flex: none; background: var(--ge-text-muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z'/%3E%3Cpath d='M8 11V7a4 4 0 1 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 13a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z'/%3E%3Cpath d='M8 11V7a4 4 0 1 1 8 0v4'/%3E%3C/svg%3E") center / contain no-repeat; }  /* the i-lock shape, inline: a sprite #id does not work as a CSS mask */
+.ld-off { color: var(--ge-text-muted); }
+
+/* Convert dialog: what will be made, one row each */
+.ld-make { display: grid; gap: 8px; }
+.ld-mk { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--ge-surface-2); }
+.ld-mk > span:last-child { display: grid; gap: 2px; min-width: 0; }
+.ld-mk b { font-weight: 600; overflow-wrap: anywhere; }
+.ld-tile { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--ge-accent); color: var(--ge-bg); }
+.ld-tile svg { width: 18px; height: 18px; stroke-width: 1.75; }
+.ld-mk.is-join .ld-tile { background: var(--ge-bg); color: var(--ge-text); box-shadow: inset 0 0 0 1px var(--ge-border); }
+@media (max-width: 640px) {
+  .modal:has(.ld-cv) { padding: 20px 16px calc(16px + env(safe-area-inset-bottom, 0px)); max-height: 92dvh; }
+  .ld-cv .ld-cv-btns { flex-direction: column-reverse; align-items: stretch; }
+  .ld-cv .ld-cv-btns .btn { min-height: 44px; justify-content: center; }
+}
+
+/* PHONE: the + chooser (two big choices in the .fd-sheet) and the Lead tag in Mine */
+.fd-pickone { display: grid; gap: 10px; }
+.fd-pickone a { display: grid; grid-template-columns: 52px 1fr 22px; align-items: center; gap: 14px; min-height: 84px; padding: 14px 16px;
+  border-radius: var(--fd-r); background: var(--fd-card); box-shadow: inset 0 0 0 1px var(--fd-line); color: inherit; text-decoration: none; }
+.fd-pickone a:active { transform: scale(.97); } .fd-pickone a:focus-visible { outline: 2px solid var(--fd-ink); outline-offset: 2px; }
+.fd-pickone .fd-tile { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; background: var(--fd-ink); color: var(--fd-on-ink); }
+.fd-pickone a.is-soft .fd-tile { background: var(--fd-ground); color: var(--fd-text); box-shadow: inset 0 0 0 1px var(--fd-line); }
+.fd-pickone b { display: block; font-size: 18px; font-weight: 700; letter-spacing: -.015em; line-height: 1.25; }
+.fd-pickone a > span:not(.fd-tile) > span { display: block; font-size: var(--fd-fs-meta); color: var(--fd-muted); }
+.fd-pickone > a > .fd-ic { color: var(--fd-muted); }
+.fd-tag { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 9px; border-radius: 999px; font-size: var(--fd-fs-badge); font-weight: 600;
+  background: var(--fd-ground); color: var(--fd-text); box-shadow: inset 0 0 0 1px var(--fd-line); white-space: nowrap; }
+.fd-tag .fd-ic { width: 15px; height: 15px; }
+.fd .ld-score { font-size: var(--fd-fs-badge); }
+.fd-req.is-lead { box-shadow: var(--fd-shadow), inset 3px 0 0 var(--fd-line); }
+@media (prefers-reduced-motion: reduce) { .ld-tbl tr.is-in > td { animation: none; } .fd-pickone a { transition: none; } }
+
+/* b1 (26 Oct): Category and the Convert first question. A compulsory radio group shows its error ring like an input. */
+.field.has-err .seg-kind label { border-color: var(--ge-danger); }
+.fd-field.has-err .fd-seg { box-shadow: inset 0 0 0 1.5px var(--fd-bad); }

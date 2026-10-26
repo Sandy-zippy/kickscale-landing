@@ -27,7 +27,7 @@
     const out = await res.json().catch(() => ({}));
     if (res.status === 401 && path !== '/api/auth/login') { store.set(''); gate('Your session ended. Sign in again.'); throw new Error('Sign in again.'); }
     if (res.status === 403 && out && out.must_change) { changeGate(); throw new Error('Choose a new password first.'); }
-    if (!res.ok) throw Object.assign(new Error(out.error || 'Something went wrong.'), { status: res.status, errors: out.errors });
+    if (!res.ok) throw Object.assign(new Error(out.error || 'Something went wrong.'), { status: res.status, errors: out.errors, body: out });   // Leads L3: a 409 "Already a lead" carries lead_id
     return out;
   }
   window.EGOAPI = { api, base: API, signOut: async () => { try { await api('POST', '/api/auth/logout', {}); } catch (e) {} store.set(''); try { localStorage.removeItem('ego-field-boot'); } catch (e) {} location.hash = ''; location.reload(); }, file: id => API + '/api/documents/' + id };

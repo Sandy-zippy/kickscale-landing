@@ -37,14 +37,14 @@ const PIPELINES = {
   /* 17 Oct (R3a): EGO Premium's Project pipeline (spec section 13) and its Retail pipeline, the consumer lead
      engine (spec section 15) where a lead is qualified and allocated to a dealer. Leads for dealers folded into it. */
   ego_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'wholesale', project: true, designs: true },   // R5: design lines through qtyLine, no fulfilment of its own
-  ego_retail: { label: 'Consumer lead', plural: 'Retail (consumer leads)', division: 'wholesale', dealer: true },
+  ego_retail: { label: 'Retail opportunity', plural: 'Retail opportunities', division: 'wholesale', dealer: true },
 };
 /* which pipelines a client of each group may have */
 const PIPES_FOR = { dealer: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], direct: ['wholesale', 'ego_project', 'ego_retail'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], firm: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'] };
 /* the Project pipeline of each company: a project's opportunities sit in it */
 const PROJECT_PIPE = { wholesale: 'ego_project', retail: 'retail_project' };
 
-const SOURCES = ['Meta Ads', 'Google Ads', 'Website', 'WhatsApp', 'IndiaMART', 'JustDial', 'Runo', 'Sales Diary', 'QR code', 'Walk-in', 'Referral', 'Field visit', 'Field sales', 'Architect', 'Existing relationship', 'Other'];
+const SOURCES = ['Meta Ads', 'Google Ads', 'Website', 'WhatsApp', 'IndiaMART', 'JustDial', 'Runo', 'Sales Diary', 'QR code', 'Walk-in', 'Referral', 'Field visit', 'Field sales', 'Architect', 'Existing relationship', 'Other', 'Exhibition'];   // Exhibition appended 26 Oct (0032), additive
 
 /* Defaults for the lists the Owner can edit in Lists & stages. Stored in
    settings once edited; these only apply to a fresh database. */
@@ -207,6 +207,81 @@ const OPP_FIELDS = [
   { key: 'terms', label: 'Terms and conditions', type: 'textarea', pipes: ['wholesale'], section: 'Billing, payment and delivery' },
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ];
+/* Leads (26 Oct 2026, L1): the step BEFORE an opportunity. ONE registry: the form, the server rules and the Excel share it.
+   col: true = its own column in leads; otherwise it lives in `extra`. types: shown only for those lead types. */
+/* Sales model B1 (26 Oct): the lead's Category (key stays lead_type). Wholesale says "Wholesale as" Dealer or Architect;
+   a Project may link the dealer and the architect on it. Old values read as LEAD_WAS (migration 0034 rewrote saved rows). */
+const LEAD_TYPES = ['Retail', 'Wholesale', 'Project'];
+const WHOLESALE_AS = ['Dealer', 'Architect'];
+const LEAD_WAS = { 'dealer / distributor': ['Wholesale', 'Dealer'], 'dealer': ['Wholesale', 'Dealer'], 'architect / designer': ['Wholesale', 'Architect'], 'architect': ['Wholesale', 'Architect'], 'retail customer': ['Retail'] };
+/* Convert: which opportunity each company opens for each type (Big E has no Wholesale) */
+const LEAD_OPP = { wholesale: { Retail: 'ego_retail', Wholesale: 'wholesale', Project: 'ego_project' }, retail: { Retail: 'retail_lead', Project: 'retail_project' } };
+const LEAD_COMPANIES = { 'EGO Premium': 'wholesale', 'Big E': 'retail' };
+const LD_STATUSES = ['New', 'Contacted', 'Nurturing', 'Converted', 'Not interested'];
+const LEAD_OPEN = ['New', 'Contacted', 'Nurturing'];
+const LEAD_FIELDS = [
+  { key: 'lead_type', label: 'Category', type: 'select', opts: LEAD_TYPES, req: true, col: true },
+  { key: 'wholesale_as', label: 'Wholesale as', type: 'select', opts: WHOLESALE_AS, types: ['Wholesale'] },
+  { key: 'company', label: 'Company', type: 'select', opts: Object.keys(LEAD_COMPANIES), req: true },
+  { key: 'firm', label: 'Firm name', type: 'text', col: true, types: ['Wholesale', 'Project'] },
+  { key: 'gst', label: 'GST number', type: 'gst', types: ['Wholesale', 'Project'] },   // F2 T-03: optional; Convert matches on it
+  { key: 'contact_name', label: 'Contact name', type: 'text', req: true, col: true },
+  { key: 'mobile', label: 'Mobile', type: 'mobile', req: true, col: true },
+  { key: 'alt_mobile', label: 'Alternate mobile', type: 'mobile', col: true },
+  { key: 'email', label: 'Email', type: 'email', col: true },
+  { key: 'city', label: 'City', type: 'city', col: true },
+  { key: 'locality', label: 'Locality', type: 'text' },
+  { key: 'source', list: 'sources', label: 'Source', type: 'select', opts: SOURCES, req: true, col: true },
+  { key: 'campaign', label: 'Campaign or ad name', type: 'text', col: true },
+  { key: 'categories', label: 'Interested categories', type: 'cats' },
+  { key: 'area_sqft', label: 'Area (sq ft)', type: 'number' },
+  { key: 'value', label: 'Value (₹)', type: 'money', col: true },
+  { key: 'budget', list: 'budget_bands', label: 'Budget band', type: 'select', opts: ['Under 2 lakh', '2 to 5 lakh', '5 to 10 lakh', 'Above 10 lakh'] },
+  { key: 'timeline', label: 'Buying timeline', type: 'select', opts: ['This month', '1 to 3 months', '3 to 6 months', 'Later, not sure'] },
+  { key: 'expected_close', label: 'Expected close', type: 'date' },
+  { key: 'project_name', label: 'Project name', type: 'text', types: ['Project'] },
+  { key: 'site_location', label: 'Site location', type: 'text', types: ['Project'] },
+  { key: 'dealer_id', label: 'Dealer', type: 'link', to: ['dealer', 'distributor', 'sub_dealer'], types: ['Project'] },
+  { key: 'architect_id', label: 'Architect', type: 'link', to: ['architect', 'design_firm'], types: ['Project'] },
+  { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true, col: true },
+  { key: 'score', label: 'Score', type: 'select', opts: ['Hot', 'Warm', 'Cold'], col: true },
+  { key: 'status', label: 'Status', type: 'select', opts: LD_STATUSES, req: true, col: true },
+  { key: 'ni_reason', list: 'ni_reasons', label: 'Not interested reason', type: 'select', opts: ['Price', 'Bought elsewhere', 'Not a fit', 'No response', 'Duplicate', 'Other'] },
+  { key: 'ni_detail', label: 'Not interested: the details', type: 'textarea' },
+  { key: 'notes', label: 'Notes', type: 'textarea' },
+];
+const LEAD_COLS = LEAD_FIELDS.filter(f => f.col).map(f => f.key);
+const leadName = l => (l && (l.firm || l.contact_name)) || 'A lead';
+/* a lead as typed (form, Excel row, inbound) -> { rec, errors }; rec.division from Company, region from the city */
+function cleanLead(input, ctx) {
+  const errors = [], rec = { extra: {} };
+  const raw = String(input.lead_type || '').trim().toLowerCase(), was = LEAD_WAS[raw];
+  if (was && was[1] && !input.wholesale_as) input = { ...input, wholesale_as: was[1] };
+  const type = was ? was[0] : LEAD_TYPES.find(t => t.toLowerCase() === raw) || input.lead_type;
+  if (was) input = { ...input, lead_type: type };
+  if (input.wholesale_as) input = { ...input, wholesale_as: WHOLESALE_AS.find(t => t.toLowerCase() === String(input.wholesale_as).trim().toLowerCase()) || input.wholesale_as };
+  for (const f of LEAD_FIELDS) {
+    if (f.types && !f.types.includes(type)) continue;
+    const r = cleanValue(f, input[f.key], ctx, input);
+    if (r.error) { errors.push(`${f.label} ${r.error}`); continue; }
+    const empty = r.value === '' || r.value == null || (Array.isArray(r.value) && !r.value.length);
+    if (f.req && empty) { errors.push(`${f.label} is compulsory`); continue; }
+    if (f.col) rec[f.key] = empty ? (f.type === 'money' ? null : '') : r.value;
+    else if (!empty) rec.extra[f.key] = r.value;
+  }
+  if (type === 'Project' && !rec.extra.project_name) errors.push('Project name is compulsory for a Project lead');
+  if (type === 'Wholesale' && !rec.extra.wholesale_as) errors.push('Wholesale as is compulsory: Dealer or Architect');
+  if (rec.status === 'Not interested') {
+    if (!rec.extra.ni_reason) errors.push('Not interested needs a reason');
+    if (!rec.extra.ni_detail) errors.push('Not interested needs the details');
+  } else { delete rec.extra.ni_reason; delete rec.extra.ni_detail; }
+  rec.division = LEAD_COMPANIES[rec.extra.company] || '';
+  /* F4 M-2: Big E has no Wholesale (LEAD_OPP), so a Big E lead is Retail or Project */
+  if (rec.division && type === 'Wholesale' && !LEAD_OPP[rec.division].Wholesale) errors.push(`${rec.extra.company} has no Wholesale. Pick Retail or Project`);
+  delete rec.extra.company;
+  rec.region = rec.city ? regionOf(ctx && ctx.lists, rec.city) : '';
+  return { rec, errors };
+}
 /* the name a sale gets when nobody typed one: who · what · when */
 /* T3 19 Oct: categories picked are a list; an old single string (saved before the multi-select) reads as a one-item list, never rewritten */
 const listOf = v => Array.isArray(v) ? v.filter(x => x !== '' && x != null).map(String) : v == null || v === '' ? [] : [String(v)];
@@ -870,6 +945,7 @@ const LIST_GROUPS = [
   ['Registers', [['display_types', 'Display types'], ['course_kinds', 'Training course kinds'], ['installer_skills', 'Installer skills'], ['champion_levels', 'EGO Champion levels']]],
   ['Opportunities', [['lost_reasons', 'Lost reasons'], ['budget_bands', 'Budget bands'], ['next_actions', 'Next actions'], ['followup_sources', 'Follow-up sources'], ['payment_terms', 'Payment terms'], ['delivery_terms', 'Delivery terms']]],
   ['Inventory', [['categories', 'Product categories'], ['design_types', 'Design types'], ['ac_ratings', 'AC ratings']]],
+  ['Leads', [['ni_reasons', 'Not interested reasons']]],   // 26 Oct (L1)
 ];
 const LIST_LABEL = Object.fromEntries(LIST_GROUPS.flatMap(([, ls]) => ls));
 const fieldList = f => f.list || (f.type === 'cats' || f.type === 'cat' ? 'categories' : f.type === 'cities' || f.type === 'city' ? 'cities' : f.type === 'lost' ? 'lost_reasons' : null);
@@ -882,11 +958,12 @@ const LIST_USES = (() => {
   add('collections', COLLECTION_FIELDS, f => !!f.col);
   add('products', PRODUCT_FIELDS, f => !!f.col);
   add('projects', PROJECT_FIELDS, () => true);
+  add('leads', LEAD_FIELDS, f => !!f.col);   // 26 Oct (L1): a renamed source or budget band reaches the leads too
   for (const k of Object.keys(REG_FIELDS)) add('registers', REG_FIELDS[k], f => REG_COLS.includes(f.key));
   return out;
 })();
 DEFAULT_LISTS.project_roles = PROJECT_ROLES;
-for (const f of [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS, ...PROJECT_FIELDS, ...Object.values(REG_FIELDS).flat()]) if (f.list && !DEFAULT_LISTS[f.list]) DEFAULT_LISTS[f.list] = f.opts;
+for (const f of [...CLIENT_FIELDS, ...CONTACT_FIELDS, ...OPP_FIELDS, ...LEAD_FIELDS, ...COLLECTION_FIELDS, ...PRODUCT_FIELDS, ...PROJECT_FIELDS, ...Object.values(REG_FIELDS).flat()]) if (f.list && !DEFAULT_LISTS[f.list]) DEFAULT_LISTS[f.list] = f.opts;
 /* where a follow-up came from or how it happened (13 Oct), recorded when it is done; editable in Lists & stages */
 DEFAULT_LISTS.followup_sources = ['Call', 'WhatsApp', 'Visit', 'Email', 'Meeting', 'Meta lead', 'IndiaMART', 'Walk-in', 'Referral', 'Other'];
 LIST_USES.followup_sources = [{ table: 'follow_ups', key: 'source', col: true, multi: false }];
@@ -1098,7 +1175,7 @@ const ACT_KINDS = { call: 'Call', visit: 'Visit', whatsapp: 'WhatsApp', email: '
 const ACT_MANUAL = ['call', 'visit', 'whatsapp', 'email', 'meeting', 'note'];
 const ACT_SOURCES = ['manual', 'meta', 'voice', 'whatsapp', 'gmail', 'indiamart', 'tally', 'runo', 'salesdiary', 'justdial', 'api'];
 const CONNECTIONS = [
-  { id: 'meta', name: 'Meta lead ads', tools: ['Meta lead ads'], source: 'meta', waits: 'Meta Business Manager and Page admin access from EGO' },
+  { id: 'meta', name: 'Meta lead ads', tools: ['Meta lead ads'], source: 'meta', waits: "Waiting on EGO's Meta Business Manager and Page admin access. Leads land in Leads." },
   { id: 'voice', name: 'AI voice agent', tools: ['Bolna', 'VoiceLink'], source: 'voice', waits: 'A +91 calling number, DLT registration, and Meta lead ads connected first' },
   { id: 'whatsapp', name: 'WhatsApp', tools: ['WhatsApp Cloud API'], source: 'whatsapp', waits: 'The WhatsApp number EGO will use, and Meta approval' },
   { id: 'indiamart', name: 'IndiaMART', tools: ['IndiaMART'], source: 'indiamart', waits: 'An IndiaMART plan with the Leads API, and the OTP mobile' },
