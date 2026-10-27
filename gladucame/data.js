@@ -4,6 +4,7 @@ window.GUC_SEED = {
   people: [
     // id, name, role, department, reports_to, on leave today, streak, targets [label, done, of, period]
     ['maddie',  'Maddie',          'Founder',         "Founder's office",   null,     false, 21, [['Leads won', 4, 6, 'October target'], ['Tasks on time', 92, 100, '% this month']]],
+    ['bhargav', 'Bhargav Naidu',   'Founder',         'ZippyScale',         null,     false, 0,  [['Demo walkthroughs', 1, 1, 'ZippyScale login']]],
     ['riya',    'Riya Mehta',      'Department head', 'BD',                 'maddie', false, 9,  [['Leads won', 3, 5, 'October target'], ['Discovery calls', 11, 15, 'This month']]],
     ['kabir',   'Kabir Shah',      'Department head', 'Influencer',         'maddie', false, 14, [['Reels live', 18, 25, 'October target'], ['Campaigns on time', 3, 4, 'This month']]],
     ['ananya',  'Ananya Iyer',     'Department head', 'PR',                 'maddie', false, 6,  [['Coverage', 22, 30, 'October target'], ['Pitches sent', 40, 60, 'This month']]],
