@@ -2049,15 +2049,15 @@ function trySaasya(){
   document.getElementById('saerr').textContent='Wrong username or password.';
 }
 
-/* Glad U Came: the Founder login on the card (SHA-256 only, as the demo itself checks it). The demo's own
-   sign-in takes the other four role logins after Sign out. */
-const GLAD = { user:"maddie", h:"cabb48429de34b5dc83531079dbc4f57171652c9fafd4c25243a3c6d397da7e7" };
+/* Glad U Came: every demo login works on the card. The list is the demo's own gladucame/logins.js
+   (usernames + SHA-256), loaded at the bottom of this page, so the card and the demo never disagree. */
 async function tryGlad(){
   const u=document.getElementById('gcu').value.trim().toLowerCase();
   const p=document.getElementById('gcp').value;
+  const acc=(window.GUC_LOGINS||{})[u];
   let hex='';
   try{ const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)); hex=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }catch(e){}
-  if(u===GLAD.user && hex===GLAD.h){ try{ sessionStorage.setItem('guc.me','maddie'); }catch(e){} location.href='../gladucame/#/today'; return; }
+  if(acc && hex===acc.h){ try{ sessionStorage.setItem('guc.me',acc.id); }catch(e){} location.href='../gladucame/#/today'; return; }
   document.getElementById('gcerr').textContent='Wrong username or password.';
 }
 const ROYALE = { user:"royale", pass:"Royale@26" };
@@ -2101,5 +2101,7 @@ function logout(){ location.reload(); }
 document.getElementById('p').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
 document.getElementById('u').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('p').focus();});
 </script>
+<script src="../gladucame/logins.js"></script>
+<script src="https://zippyscale.in/pw-eye.js" defer></script>
 </body>
 </html>
