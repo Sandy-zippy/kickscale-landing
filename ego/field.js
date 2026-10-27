@@ -12,6 +12,8 @@
   const qs = s => document.querySelector(s);
   const ic = (n, cls) => `<svg class="${cls || 'fd-ic'}" aria-hidden="true"><use href="icons.svg#i-${n}"/></svg>`;
   let B = null, root = null;
+  /* F2 L-1: the server refuses a Both login's lead without the switch; the field app works in wholesale unless the login is Big E */
+  if (typeof window.__egoSw !== 'function') window.__egoSw = () => (B && B.user && B.user.division === 'retail' ? 'retail' : 'wholesale');
   const S = { cam: null, camErr: '', stream: null, shot: null, shotUrl: '', gps: null, confirm: null, sheet: '', busy: false, base: null, req: null, rf: 'all', ask: null, af: 'all' };
   const F = () => B.field || { visits: [], days: [], start: '10:00' };
   const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -174,7 +176,32 @@
   /* ---- + New lead (L4, design/leads/SPEC.txt section 5): someone who may buy later. Saved through write(), the same
      offline queue and idempotency key as a Requirement; Company, Owner at EGO (you) and Status New are set by the app. */
   const LTYPES = ['Retail', 'Wholesale', 'Project'];   // B1 26 Oct: the Category (schema LEAD_TYPES)
-  const newLead = () => ({ type: '', wsas: '', firm: '', name: '', mobile: '', cats: [], timeline: '', score: '', next: '', alt: '', email: '', city: '', locality: '', area: '', value: '', budget: '', close: '', pname: '', site: '', source: 'Field visit', campaign: '', gst: '', note: '', card: null, cardUrl: '', photos: [], urls: [], more: false, err: {} });
+  const newLead = () => ({ type: '', wsas: '', firm: '', name: '', mobile: '', cats: [], timeline: '', score: '', next: '', alt: '', email: '', city: '', locality: '', area: '', value: '', budget: '', close: '', pname: '', site: '', source: 'Field visit', campaign: '', gst: '', note: '', card: null, cardUrl: '', photos: [], urls: [], more: false, err: {},
+    q: '', rows: [], fst: 'short', pick: null, nc: false, role: '', rq: '', fq: '', frows: [], ffirm: null });   // L-fix: Find a person, + New contact
+  /* L-fix 27 Oct (SPEC-lfix 3): Find a person from the server (the person's company and view), the picked row, + New contact */
+  const LKIND = { dealer: 'building-store', distributor: 'building-store', sub_dealer: 'building-store', architect: 'ruler-measure', design_firm: 'ruler-measure' };
+  let lft = 0, lseq = 0;
+  function leadFind(k) { const R = S.lead, t = (k === 'fq' ? R.fq : R.q).trim(), d = t.replace(/\D/g, ''), st = k === 'fq' ? 'ffst' : 'fst', rows = k === 'fq' ? 'frows' : 'rows', paint = () => { const p = qs(k === 'fq' ? '[data-lead-fpicks]' : '[data-lead-picks]'); if (p) p.innerHTML = k === 'fq' ? leadFirmsHtml() : leadPicksHtml(); };
+    clearTimeout(lft); if (t.replace(/[^\p{L}\p{M}]/gu, '').length < 2 && d.length < 3) { R[rows] = []; R[st] = 'short'; return paint(); }
+    if (!navigator.onLine) { R[rows] = []; R[st] = 'off'; return paint(); }
+    R[st] = 'busy'; paint();
+    lft = setTimeout(async () => { const my = ++lseq; try { const r = await API('GET', `/api/leads/people?q=${encodeURIComponent(t)}${k === 'fq' ? '&firms=1' : ''}`); if (my !== lseq || S.lead !== R) return; R[rows] = (k === 'fq' ? r.firms : r.people).slice(0, 6); R[st] = R[rows].length ? 'ok' : 'none'; } catch (x) { if (my !== lseq) return; R[rows] = []; R[st] = 'fail'; } paint(); }, 200); }
+  const subOf = p => [p.role, p.firm || 'Personal', p.mobile ? '+' + String(p.mobile).replace(/^\+/, '').replace(/^91(\d{5})(\d{5})$/, '$1 $2') : ''].filter(Boolean).join(' · ');
+  function leadPicksHtml() { const R = S.lead;
+    if (R.pick) { const p = R.pick; return `<button type="button" class="fd-pick on" data-fa="lead-pick-keep"><span class="fd-tile">${ic(LKIND[p.kind] || 'user-circle')}</span><span><b>${esc(p.name)}</b><span>${esc(p.firm ? 'Linked to ' + p.firm + ' · ' + [p.role, p.mobile].filter(Boolean).join(' · ') : 'Linked · ' + subOf(p))}</span></span></button>
+      <div class="fd-row between"><span class="fd-help">Linked. Fields stay editable.</span><button type="button" class="fd-btn ghost" data-fa="lead-unlink">${ic('x')}Unlink</button></div>`; }
+    const help = { short: 'Type 2 letters of a name or firm, or 3 digits of a mobile.', busy: 'Searching', off: 'No signal. Search works when signal returns. You can still add them with + New contact.', fail: 'Search is not working right now. You can still add them with + New contact.', none: 'No one matches. Add them with + New contact.' }[R.fst] || '';
+    const nrow = R.fst === 'short' ? '' : `<button type="button" class="fd-pick" data-fa="lead-new"><span class="fd-tile">${ic('user-plus')}</span><span><b>+ New contact</b><span>Not found? Add them once</span></span></button>`;
+    return (help ? `<span class="fd-help">${help}</span>` : '') + R.rows.map((p, i) => `<button type="button" class="fd-pick" data-fa="lead-pick" data-i="${i}"><span class="fd-tile">${ic(LKIND[p.kind] || 'user-circle')}</span><span><b>${esc(p.name)}</b><span>${esc(subOf(p))}</span></span></button>`).join('') + nrow; }
+  /* F1 G4: Role is a type-to-search dropdown over the LIVE saved roles list, in its saved order */
+  function leadRolesHtml() { const R = S.lead, all = (B.lists && B.lists.roles) || [], t = R.rq.trim().toLowerCase(), hit = all.filter(r => !t || r.toLowerCase().includes(t));
+    return hit.slice(0, 6).map(r => `<button type="button" class="fd-pick" data-fa="lead-role" data-v="${esc(r)}"><span class="fd-tile">${ic('id-badge-2')}</span><span><b>${esc(r)}</b></span></button>`).join('') + (hit.length > 6 ? `<span class="fd-help">${hit.length - 6} more. Type to narrow.</span>` : hit.length ? '' : '<span class="fd-help">No role matches. Change the words.</span>'); }
+  const clrFilled = R => { for (const k of ['name', 'mobile', 'email', 'city', 'role', 'firm', 'alt', 'locality']) if (String(R[k] || '').trim()) delete R.err[k]; };   // F1 G3: a field filled by a pick or + New contact drops its error
+  function leadFirmsHtml() { const R = S.lead;
+    if (R.ffirm) return `<button type="button" class="fd-pick on" data-fa="lead-ffirm-x"><span class="fd-tile">${ic(LKIND[R.ffirm.kind] || 'building-store')}</span><span><b>${esc(R.ffirm.name)}</b><span>Contact on this firm · tap to change</span></span></button>`;
+    return R.frows.map((f, i) => `<button type="button" class="fd-pick" data-fa="lead-ffirm" data-i="${i}"><span class="fd-tile">${ic(LKIND[f.kind] || 'building-store')}</span><span><b>${esc(f.name)}</b><span>${esc(f.city || '')}</span></span></button>`).join('') + (R.fq.trim() ? '<span class="fd-help">New firm. It is made once, when this lead is converted.</span>' : ''); }
+
+  const leadTyped = R => !!(R.card || R.photos.length || R.pick || R.nc || ['type', 'firm', 'name', 'mobile', 'alt', 'email', 'city', 'locality', 'value', 'note', 'q', 'pname', 'site'].some(k => String(R[k] || '').trim()));
   function leadFromVisit(id) { const v = vis().find(x => x.id === id); if (!v) return; const R = S.lead = newLead(); R.name = v.name || ''; R.mobile = (v.mobile || '').replace(/^\+?91/, ''); R.locality = v.area || ''; }
   const pickHtml = () => `<div class="fd-scrim" data-fa="pick-x"></div><div class="fd-sheet" role="dialog" aria-label="What are you adding?"><h3>What are you adding?</h3><div class="fd-pickone">
     <a href="#/req"><span class="fd-tile">${ic('list-check')}</span><span><b>New requirement</b><span>Wants to order now</span></span>${ic('chevron-right')}</a>
@@ -182,6 +209,8 @@
   async function saveLead() {
     const R = S.lead, e = {}, mob = R.mobile.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, ''), alt = R.alt.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
     if (!R.type) e.type = 'Pick the category: Retail, Wholesale or Project.';
+    if (!R.pick && !R.nc && !R.fixN) e.find = 'Find the person, or add them with + New contact.';
+    if (R.nc && !R.role) e.role = 'Pick the role';
     if (R.type === 'Wholesale' && !R.wsas) e.wsas = 'Pick Dealer or Architect.';
     if (!R.name.trim()) e.name = 'Write the contact name';
     if (!/^[6-9]\d{9}$/.test(mob)) e.mobile = 'Mobile needs 10 digits';
@@ -192,10 +221,13 @@
     put('lead_type', R.type); if (R.type === 'Wholesale') put('wholesale_as', R.wsas); if (R.type !== 'Retail') { put('firm', R.firm); put('gst', R.gst.replace(/\s/g, '').toUpperCase()); } put('contact_name', R.name); put('mobile', mob); put('alt_mobile', alt); put('email', R.email); put('city', R.city); put('locality', R.locality);
     R.cats.forEach(c => fd.append('categories', c)); put('area_sqft', R.area.replace(/[,\s]/g, '')); put('value', R.value.replace(/[,\s]/g, '')); put('budget', R.budget); put('timeline', R.timeline); put('expected_close', R.close);
     if (R.type === 'Project') { put('project_name', R.pname); put('site_location', R.site); }
+    if (R.pick) { put('person_id', R.pick.person_id); put('firm_id', R.pick.firm_id); }
+    if (R.nc) { fd.append('new_contact', '1'); if (R.type !== 'Retail') { if (R.ffirm) put('nc_firm_id', R.ffirm.id); else put('nc_firm_name', R.fq); } }
+    put('role', R.role || (R.pick && R.pick.role) || '');
     put('score', R.score); put('source', R.source || 'Field visit'); put('campaign', R.campaign); put('notes', R.note); put('next_date', R.next);
     if (R.card) fd.append('card', R.card, R.card.name || 'card.jpg');
     R.photos.forEach((f, i) => fd.append('photo', f, f.name || `photo-${i + 1}.jpg`));
-    const name = (R.type !== 'Retail' && R.firm.trim()) || R.name.trim();
+    const name = (R.type !== 'Retail' && ((R.nc && !R.ffirm ? R.fq : R.nc ? R.ffirm.name : R.firm) || '').trim()) || R.name.trim();
     R.busy = true; render();
     try {
       const w = await write('/api/field/lead', fd, { type: 'lead', ghost: { name, lead_type: R.type, wholesale_as: R.wsas, status: 'New', score: R.score, categories: R.cats.slice(), next_date: R.next, owner_name: B.user.name } }, `Lead · ${name}`);
@@ -453,24 +485,28 @@
       const chips = (k, val, opts) => `<div class="fd-chips" role="radiogroup">${opts.map(o => `<label class="fd-chip"><input type="radio" name="fd-l${k}" data-lch="${k}" value="${esc(o)}" ${val === o ? 'checked' : ''}>${esc(o)}</label>`).join('')}</div>`;
       const inp = (k, id, label, x = {}) => `<div class="fd-field${e[k] ? ' has-err' : ''}"><label for="${id}">${label}</label>${x.pre || x.suf ? '<div class="fd-adorn">' : ''}${x.pre ? `<span class="fd-pre">${x.pre}</span>` : ''}<input class="fd-input" id="${id}" data-ld="${k}" value="${esc(R[k])}"${x.type ? ` type="${x.type}"` : ''}${x.im ? ` inputmode="${x.im}"` : ''} maxlength="${x.max || 120}" autocomplete="off">${x.suf ? `<span class="fd-suf">${x.suf}</span>` : ''}${x.pre || x.suf ? '</div>' : ''}${fe(k)}</div>`;
       const opt = (list, val, first) => `<option value="">${first}</option>${list.map(o => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}`;
+      /* F1 G4: the person in Bhargav's order, the same for a picked person and + New contact: Name, Mobile, Email, City, Role, Firm */
+      const roleBox = `<div class="fd-field${e.role ? ' has-err' : ''}" data-lead-role><label for="fl-role">Role${R.nc ? ' *' : ''}</label>${R.role ? `<button type="button" class="fd-pick on" data-fa="lead-role-x"><span class="fd-tile">${ic('id-badge-2')}</span><span><b>${esc(R.role)}</b><span>Tap to change</span></span></button>` : `<div class="fd-search">${ic('search')}<input class="fd-input" id="fl-role" type="search" data-lq="rq" value="${esc(R.rq)}" placeholder="Type to find the role" autocomplete="off"></div><div class="fd-picks" data-lead-rpicks>${leadRolesHtml()}</div>`}${fe('role')}</div>`;
+      const firmBox = R.type === 'Retail' ? '' : R.nc ? `<div class="fd-field"><span class="fd-label">Firm</span>${R.ffirm ? '' : `<div class="fd-search">${ic('search')}<input class="fd-input" type="search" data-lq="fq" value="${esc(R.fq)}" placeholder="Type a firm name" aria-label="Firm" autocomplete="off"></div>`}<div class="fd-picks" data-lead-fpicks>${leadFirmsHtml()}</div></div>` : inp('firm', 'fl-firm', 'Firm name');
+      const person = inp('name', 'fl-name', 'Contact name') + inp('mobile', 'fl-mob', 'Mobile', { pre: '+91', type: 'tel', im: 'tel', max: 14 }) + inp('email', 'fl-email', 'Email', { type: 'email', im: 'email' })
+        + `<div class="fd-field"><label for="fl-city">City</label><select class="fd-input" id="fl-city" data-lch="city">${opt((L.cities || []).map(c => c.city || c), R.city, 'Choose the city')}</select></div>` + roleBox + firmBox;
       const proj = R.type === 'Project' ? inp('pname', 'fl-pname', 'Project name') + inp('site', 'fl-site', 'Site location') : '';
       return top('New lead', 'Someone who may buy later', `<a class="fd-sync" href="#/requirements">${ic('list-check')}Mine ${n}</a>`) + `<main class="fd-view"><form class="fd-form" onsubmit="return false" data-leadform>
+        ${R.earlier ? `<div class="fd-card" data-lead-earlier><p class="fd-help"><b>Started earlier.</b> This is the lead you began before. Carry on, or start a new one.</p><button type="button" class="fd-btn" data-fa="lead-restart">Start again</button></div>` : ''}
         <div class="fd-field">${R.card ? `<div class="fd-photos"><div class="fd-thumb"><img src="${R.cardUrl}" alt="Visiting card"><button type="button" aria-label="Remove photo" data-fa="lead-card-x">${ic('x')}</button></div></div>` : `<label class="fd-photo-add wide">${ic('id-badge-2')}Photo of the visiting card<input type="file" accept="image/*" capture="environment" data-lead-file="card"></label>`}</div>
         <div class="fd-field${e.type ? ' has-err' : ''}"><span class="fd-label">Category *</span>${segL('type', R.type, B.user.division === 'retail' ? LTYPES.filter(t => t !== 'Wholesale') : LTYPES)}${fe('type')}</div>
         ${R.type === 'Wholesale' ? `<div class="fd-field${e.wsas ? ' has-err' : ''}" data-ld-wsas><span class="fd-label">Wholesale as *</span>${segL('wsas', R.wsas, ['Dealer', 'Architect'])}${fe('wsas')}</div>` : ''}
         ${proj}
-        ${R.type === 'Retail' ? '' : inp('firm', 'fl-firm', 'Firm name')}
-        ${inp('name', 'fl-name', 'Contact name')}
-        ${inp('mobile', 'fl-mob', 'Mobile', { pre: '+91', type: 'tel', im: 'tel', max: 14 })}
+        ${R.nc ? `<div class="fd-card fd-form" data-lead-nc><div class="fd-sec">New contact <button type="button" class="fd-btn ghost" data-fa="lead-nc-x">Cancel</button></div>
+          ${person}<span class="fd-help">Saved as the contact, with the lead.</span></div>`
+        : `<div class="fd-field${e.find ? ' has-err' : ''}" data-find><span class="fd-label">Find a person</span>${R.pick ? '' : `<div class="fd-search">${ic('search')}<input class="fd-input" type="search" data-lq="q" value="${esc(R.q)}" placeholder="Type a name, mobile or firm" aria-label="Find a person" autocomplete="off"></div>`}<div class="fd-picks" data-lead-picks>${leadPicksHtml()}</div>${fe('find')}</div>${R.pick || R.fixN ? person : ''}`}
         <div class="fd-field"><label for="fl-cat">Interested categories</label>${MSEL.html({ name: 'fd-lcats', id: 'fl-cat', opts: L.categories || [], sel: R.cats, phone: true })}</div>
         <div class="fd-field"><span class="fd-label">Buying timeline</span>${chips('timeline', R.timeline, ['This month', '1 to 3 months', '3 to 6 months', 'Later, not sure'])}</div>
         <div class="fd-field"><span class="fd-label">Score</span>${chips('score', R.score, ['Hot', 'Warm', 'Cold'])}</div>
-        <details class="fd-more"${R.more ? ' open' : ''}><summary>More: follow-up, city, value, notes${ic('chevron-down')}</summary><div class="fd-form">
+        <details class="fd-more"${R.more ? ' open' : ''}><summary>More: follow-up, value, notes${ic('chevron-down')}</summary><div class="fd-form">
           ${inp('next', 'fl-next', 'Next follow-up date', { type: 'date' })}
           ${R.type && R.type !== 'Retail' ? inp('gst', 'fl-gst', 'GST number', { max: 15 }) : ''}
           ${inp('alt', 'fl-alt', 'Alternate mobile', { pre: '+91', type: 'tel', im: 'tel', max: 14 })}
-          ${inp('email', 'fl-email', 'Email', { type: 'email', im: 'email' })}
-          <div class="fd-field"><label for="fl-city">City</label><select class="fd-input" id="fl-city" data-lch="city">${opt((L.cities || []).map(c => c.city || c), R.city, 'Choose the city')}</select></div>
           ${inp('locality', 'fl-loc', 'Locality')}
           ${inp('area', 'fl-area', 'Area', { im: 'numeric', suf: 'sq ft' })}
           ${B.access && B.access.prices === false ? '' : inp('value', 'fl-val', 'Value', { im: 'numeric', pre: '₹', suf: '/-' })}
@@ -709,7 +745,14 @@
       const card = it.parts.find(p => p[0] === 'card'); if (card && typeof card[1] !== 'string') { R.card = card[1]; R.cardUrl = URL.createObjectURL(card[1]); }
       for (const p of it.parts.filter(p => p[0] === 'photo' && typeof p[1] !== 'string')) { R.photos.push(p[1]); R.urls.push(URL.createObjectURL(p[1])); }
       R.err = { mobile: it.refused }; location.hash = '#/lead'; render(); },
-    'lead-save': saveLead, 'lead-photo-x': el => { const R = S.lead, i = +el.dataset.i; URL.revokeObjectURL(R.urls[i]); R.photos.splice(i, 1); R.urls.splice(i, 1); render(); },
+    'lead-save': saveLead,
+    'lead-restart': () => { const R = S.lead; if (R) { R.urls.forEach(u => URL.revokeObjectURL(u)); if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); } S.lead = newLead(); render(); window.scrollTo(0, 0); },
+    'lead-pick': el => { const R = S.lead, p = R.rows[+el.dataset.i]; if (!p) return; R.pick = p; R.name = p.name || ''; R.mobile = String(p.mobile || '').replace(/^\+91/, ''); R.alt = String(p.alt_mobile || '').replace(/^\+91/, ''); R.email = p.email || ''; R.city = p.city || ''; R.locality = p.locality || ''; R.role = p.role || ''; if (p.firm) R.firm = p.firm; delete R.err.find; clrFilled(R); render(); },
+    'lead-pick-keep': () => {}, 'lead-unlink': () => { S.lead.pick = null; S.lead.fixN = S.lead.fixN || 0; S.lead.unlinked = true; render(); const i = qs('[data-lq="q"]'); if (i) i.focus(); },
+    'lead-new': () => { const R = S.lead, t = R.q.trim(); R.nc = true; R.pick = null; delete R.err.find; if (t) { if (/^[\d\s+]+$/.test(t)) R.mobile = t.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, ''); else R.name = t; } clrFilled(R); render(); },
+    'lead-role': el => { const R = S.lead; R.role = el.dataset.v; R.rq = ''; delete R.err.role; render(); }, 'lead-role-x': () => { S.lead.role = ''; render(); const i = qs('#fl-role'); if (i) i.focus(); },
+    'lead-nc-x': () => { const R = S.lead; R.nc = false; R.role = ''; R.rq = ''; R.ffirm = null; R.fq = ''; render(); },
+    'lead-ffirm': el => { const R = S.lead, f = R.frows[+el.dataset.i]; if (f) { R.ffirm = f; render(); } }, 'lead-ffirm-x': () => { S.lead.ffirm = null; render(); }, 'lead-photo-x': el => { const R = S.lead, i = +el.dataset.i; URL.revokeObjectURL(R.urls[i]); R.photos.splice(i, 1); R.urls.splice(i, 1); render(); },
     'lead-card-x': () => { const R = S.lead; if (R.cardUrl) URL.revokeObjectURL(R.cardUrl); R.card = null; R.cardUrl = ''; render(); },
     'req-pick': el => { const R = S.req, x = pickables().find(p => p.id === el.dataset.id); if (!x) return; R.pick = x; R.kind = KIND_DEF[x.kind] || 'consumer'; if (B.user.division === 'retail' && R.kind === 'dealer') R.kind = 'consumer'; delete R.err.who; render(); },
     'req-photo-x': el => { const R = S.req, i = +el.dataset.i; URL.revokeObjectURL(R.urls[i]); R.photos.splice(i, 1); R.urls.splice(i, 1); render(); },
@@ -783,7 +826,9 @@
         if (e.target.name === 'fd-th') { document.documentElement.dataset.theme = e.target.value; try { localStorage.setItem('ego-theme', e.target.value); } catch (x) {} }
       });
       document.addEventListener('ego-bip', () => { if (needInstall()) render(); });
-      window.addEventListener('hashchange', () => { S.sheet = ''; S.pick = location.hash === '#/new'; if (S.pick) history.replaceState(null, '', '#/today'); if (S.sdr && route() !== 'sdr') S.sdr = null; render(); window.scrollTo(0, 0); });
+      window.addEventListener('hashchange', e => { S.sheet = '';
+        /* F2 L-7: a half-filled lead left behind reopens marked "Started earlier", with Start again */
+        if (S.lead && /#\/lead(\/|$)/.test(new URL(e.oldURL || location.href).hash) && route() !== 'lead' && leadTyped(S.lead)) S.lead.earlier = true; S.pick = location.hash === '#/new'; if (S.pick) history.replaceState(null, '', '#/today'); if (S.sdr && route() !== 'sdr') S.sdr = null; render(); window.scrollTo(0, 0); });
       /* typing in + Requirement is kept as it is typed, without drawing the screen again (the search redraws only its list) */
       document.addEventListener('input', e => { const d = e.target.dataset || {}; if (!S.sdr) return;
         if (d.sdrRem) { S.sdr.rem[d.sdrRem] = e.target.value; if (e.target.value.trim() && S.sdr.err[d.sdrRem]) { delete S.sdr.err[d.sdrRem]; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.fd-err'); if (x) x.remove(); } } return; }
@@ -791,6 +836,7 @@
           const t = qs(`[data-gtot="${d.i}"]`); if (t) t.textContent = 'Total ' + inr((Number(l.qty) || 0) * (Number(l.unit_cost) || 0));
           const sm = qs('[data-gsum] b'); if (sm) sm.textContent = inr(G.lines.reduce((a, x) => a + (Number(x.qty) || 0) * (Number(x.unit_cost) || 0), 0)); } });
       document.addEventListener('input', e => { const a = e.target.dataset && e.target.dataset.ask; if (a && S.ask) { S.ask[a] = e.target.value; if (a === 'q') { const p = qs('[data-ask-picks]'); if (p) p.innerHTML = askPicksHtml(); } return; } });
+      document.addEventListener('input', e => { const lq = e.target.dataset && e.target.dataset.lq; if (lq && S.lead) { S.lead[lq] = e.target.value; if (lq === 'rq') { const p = qs('[data-lead-rpicks]'); if (p) p.innerHTML = leadRolesHtml(); } else leadFind(lq); } });   // L-fix: Find a person and the New contact Firm box
       document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.ld; if (k && S.lead) { S.lead[k] = e.target.value; if (S.lead.err[k] && e.target.value.trim()) { delete S.lead.err[k]; const f = e.target.closest('.fd-field'); if (f) { f.classList.remove('has-err'); const x = f.querySelector('.fd-err'); if (x) x.remove(); } } } });
       document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.req; if (!k || !S.req) return; S.req[k] = e.target.value; if (k === 'sqft') { const h = qs('[data-req-boxes]'); if (h) h.innerHTML = reqBoxes(S.req); } if (k === 'q') { const p = qs('[data-picks]'); if (p) p.innerHTML = picksHtml(); } });
       /* a picked photo that will not draw shows as a file tile with its name, never a broken image */

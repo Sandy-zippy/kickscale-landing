@@ -20,6 +20,8 @@
     const tok = store.get();
     if (tok) headers.authorization = 'Bearer ' + tok;
     if (data && !isForm) headers['content-type'] = 'application/json';
+    /* L-fix 27 Oct: the switch a Both login is in (Wholesale · EGO or Retail · Big E); the server holds a lead's company to it */
+    const sw = typeof window.__egoSw === 'function' ? window.__egoSw() : ''; if (sw) headers['x-ego-switch'] = sw;
     let res;
     try { res = await fetch(API + path, { method, headers, body: data ? (isForm ? data : JSON.stringify(data)) : undefined }); } catch (e) {
       throw Object.assign(new Error('Cannot reach EGO Master. Check the internet connection and try again.'), { offline: true });

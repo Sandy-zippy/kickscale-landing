@@ -874,3 +874,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover, input[type="time"]:
 /* b1 (26 Oct): Category and the Convert first question. A compulsory radio group shows its error ring like an input. */
 .field.has-err .seg-kind label { border-color: var(--ge-danger); }
 .fd-field.has-err .fd-seg { box-shadow: inset 0 0 0 1.5px var(--fd-bad); }
+
+/* lfix (27 Oct): Find a person. The cbEnhance shortlist rows are two lines (existing .small.muted); the last row
+   "Not found? + New contact" stays pinned at the bottom of the list while it scrolls, with a line above it. */
+.cb-list .ld-cb-new { position: sticky; bottom: -4px; margin-top: 4px; border-top: 1px solid var(--ge-border); border-radius: 0 0 8px 8px; background: var(--ge-surface); }
+.cb-list .ld-cb-new.on, .cb-list .ld-cb-new:hover { background: var(--ge-surface-2); }

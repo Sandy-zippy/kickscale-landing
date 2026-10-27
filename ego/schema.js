@@ -32,12 +32,14 @@ const PIPELINES = {
   /* 6 Oct, EGO's own order: the sale ends at Order confirmed; stock is blocked, the PI sent, the money taken and the invoice raised in fulfilment */
   wholesale: { label: 'Wholesale opportunity', plural: 'Wholesale opportunities', division: 'wholesale', won: 'Order confirmed', lines: true },
   /* R3b: a Big E sale carries line items in sq ft (design, sq ft, rate per sq ft, amount); at Won its fulfilment opens */
-  retail_lead: { label: 'Retail lead', plural: 'Retail leads', division: 'retail', sqft: true },
-  retail_project: { label: 'Retail project', plural: 'Retail projects', division: 'retail', project: true, sqft: true },
+  /* Sales model b2 (26 Oct): Big E's two boards read Retail opportunity and Project opportunity (labels only, keys and stages unchanged) */
+  retail_lead: { label: 'Retail opportunity', plural: 'Retail opportunities', division: 'retail', sqft: true },
+  retail_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'retail', project: true, sqft: true },
   /* 17 Oct (R3a): EGO Premium's Project pipeline (spec section 13) and its Retail pipeline, the consumer lead
      engine (spec section 15) where a lead is qualified and allocated to a dealer. Leads for dealers folded into it. */
   ego_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'wholesale', project: true, designs: true },   // R5: design lines through qtyLine, no fulfilment of its own
-  ego_retail: { label: 'Retail opportunity', plural: 'Retail opportunities', division: 'wholesale', dealer: true },
+  /* b2 (26 Oct): New, Qualified, Quotation, Negotiation, Order confirmed, Lost. The dealer steps run only on a list that holds Dealer allocated (batch 3) */
+  ego_retail: { label: 'Retail opportunity', plural: 'Retail opportunities', division: 'wholesale', dealer: true, won: 'Order confirmed' },
 };
 /* which pipelines a client of each group may have */
 const PIPES_FOR = { dealer: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], direct: ['wholesale', 'ego_project', 'ego_retail'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], firm: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'] };
@@ -57,7 +59,7 @@ const DEFAULT_LISTS = {
     retail_lead: ['New', 'Contacted', 'Qualified', 'Appointment', 'Site visit', 'Sample', 'Quote', 'Won', 'Lost'],
     retail_project: ['New project', 'Qualified', 'Sample', 'Specification', 'Approval', 'Quotation', 'Negotiation', 'Won', 'Lost'],
     ego_project: ['New Project', 'Qualified', 'Sample', 'Specification', 'Approval', 'Quotation', 'Negotiation', 'Won', 'Lost'],
-    ego_retail: ['New', 'Qualified', 'Dealer allocated', 'Dealer accepted', 'Site visit', 'Sample', 'Quote', 'Won', 'Lost'],
+    ego_retail: ['New', 'Qualified', 'Quotation', 'Negotiation', 'Order confirmed', 'Lost'],   // b2 26 Oct: no dealer steps (they move to Retail fulfilment, batch 3)
   },
   cities: [
     ['Mumbai', 'West'], ['Navi Mumbai', 'West'], ['Thane', 'West'], ['Pune', 'West'], ['Nashik', 'West'], ['Nagpur', 'West'], ['Ahmedabad', 'West'], ['Surat', 'West'], ['Vadodara', 'West'], ['Goa', 'West'],
@@ -226,6 +228,8 @@ const LEAD_FIELDS = [
   { key: 'firm', label: 'Firm name', type: 'text', col: true, types: ['Wholesale', 'Project'] },
   { key: 'gst', label: 'GST number', type: 'gst', types: ['Wholesale', 'Project'] },   // F2 T-03: optional; Convert matches on it
   { key: 'contact_name', label: 'Contact name', type: 'text', req: true, col: true },
+  /* L-fix 27 Oct: the person's Role, from the same 'roles' list dealer contacts use (Settings > Lists) */
+  { key: 'role', list: 'roles', label: 'Role', type: 'select', opts: DESIGNATIONS },
   { key: 'mobile', label: 'Mobile', type: 'mobile', req: true, col: true },
   { key: 'alt_mobile', label: 'Alternate mobile', type: 'mobile', col: true },
   { key: 'email', label: 'Email', type: 'email', col: true },
@@ -249,6 +253,9 @@ const LEAD_FIELDS = [
   { key: 'ni_reason', list: 'ni_reasons', label: 'Not interested reason', type: 'select', opts: ['Price', 'Bought elsewhere', 'Not a fit', 'No response', 'Duplicate', 'Other'] },
   { key: 'ni_detail', label: 'Not interested: the details', type: 'textarea' },
   { key: 'notes', label: 'Notes', type: 'textarea' },
+  /* L-fix 27 Oct (0038): the person picked in Find a person and their firm record; checked on the server, never typed */
+  { key: 'person_id', label: 'Linked person', type: 'text', col: true, link: true },
+  { key: 'firm_id', label: 'Linked firm', type: 'text', col: true, link: true },
 ];
 const LEAD_COLS = LEAD_FIELDS.filter(f => f.col).map(f => f.key);
 const leadName = l => (l && (l.firm || l.contact_name)) || 'A lead';
@@ -297,6 +304,8 @@ const CHARGE_HINTS = ['Installation', 'Porter / loading', 'Transport', 'Skirting
 /* A stage that drives the processing has a ROLE (its first name) and a current NAME: the
    Owner may unlock and rename it, and the logic follows the role, never the words. */
 const nm = (lists, set, role) => ((lists && lists.names && lists.names[set]) || {})[role] || role;
+/* b2 26 Oct: the Retail opportunity's dealer steps (allocate, accept) run only while its list holds Dealer allocated */
+const dealerSteps = (p, lists) => !!(PIPELINES[p] && PIPELINES[p].dealer) && (((lists && lists.stages) || {})[p] || []).includes(nm(lists, 'stages.' + p, 'Dealer allocated'));
 const wonStage = (p, lists) => nm(lists, 'stages.' + p, (PIPELINES[p] && PIPELINES[p].won) || 'Won');
 const lostStage = (p, lists) => nm(lists, 'stages.' + p, 'Lost');
 const creditStage = (p, lists) => PIPELINES[p] && PIPELINES[p].credit ? nm(lists, 'stages.' + p, PIPELINES[p].credit) : null;
@@ -1142,7 +1151,7 @@ const ROLE_SETS = {
   'stages.wholesale': ['Order confirmed', 'Lost', 'Nurturing'],
   'stages.retail_lead': ['Won', 'Lost'], 'stages.retail_project': ['Won', 'Lost'],
   /* a consumer lead needs a dealer from Dealer allocated on; the dealer accepts it in the portal */
-  'stages.ego_project': ['Won', 'Lost'], 'stages.ego_retail': ['Dealer allocated', 'Dealer accepted', 'Won', 'Lost'],
+  'stages.ego_project': ['Won', 'Lost'], 'stages.ego_retail': ['Order confirmed', 'Lost'],   // b2 26 Oct: the new ladder's won and lost
   ...Object.fromEntries(Object.entries(OPS).map(([k, v]) => ['ops.' + k, v.locked])),
 };
 const roleNames = (lists, set) => (ROLE_SETS[set] || []).map(r => nm(lists, set, r));
@@ -1190,7 +1199,7 @@ const CLIENT_CLOSED = 'Inactive';
 
 /* the Recycle bin (13 Oct): every delete waits here this many days, then the daily run purges it */
 const BIN_DAYS = 30;
-const BIN_KIND = { client: 'Client', contact: 'Contact', opportunity: 'Opportunity', document: 'File', product: 'Design', role: 'Role', scheme: 'Scheme', tool_key: 'Tool key', target: 'Target', lead: 'Lead for a dealer', plan: 'Development plan' };
+const BIN_KIND = { client: 'Client', contact: 'Contact', opportunity: 'Opportunity', document: 'File', product: 'Design', role: 'Role', scheme: 'Scheme', tool_key: 'Tool key', target: 'Target', lead: 'Lead for a dealer', plan: 'Development plan', quotation: 'Quotation' };
 
 /* Targets (13 Oct, batch 3): per person, per team (a manager and everyone under them on Reports to),
    per department or role, and for the company; by month, quarter or financial year (April to March).
@@ -1287,6 +1296,9 @@ const CMP_WHO = 'Anyone can raise a complaint. Telesales and management resolve 
 const COMPLAINT_INSTALLED_BY = { contractor: 'Our contractor', dealer: "A dealer's team", other: 'Other' };
 /* R5: what a file on an opportunity is; Quotation first (MOU: multiple quotation upload slots) */
 const OPP_DOC_TYPES = ['Quotation', 'Drawing', 'BOQ', 'Site photo', 'Other'];
+/* Sales model b2 (26 Oct): a numbered quotation's status; one Accepted at a time, and it is the opportunity Value */
+const QUOTE_STATUSES = ['Sent', 'Revised', 'Accepted', 'Rejected'];
+const BIN_QUOTE = 'quotation';
 /* R5 Priority calls: what a call came to (Owner-editable list) */
 DEFAULT_LISTS.call_outcomes = ['Spoke, interested', 'Spoke, not now', 'Order taken', 'Call back later', 'Not answered', 'Wrong number'];
 LIST_LABEL.call_outcomes = 'Call outcomes';
