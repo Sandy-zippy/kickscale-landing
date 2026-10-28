@@ -1,12 +1,16 @@
 @import "tailwindcss";
 @import "./brand-tokens.css";
 
+/* inter-400/500/700 and space-grotesk-500/700 are byte-identical copies of one
+   file each, so the browser downloaded the same font three (and two) times. Every
+   weight now points at the one URL index.html preloads: fetched once, and each
+   face keeps its own weight descriptor so rendering is exactly as before. */
 @font-face {
   font-family: "Space Grotesk";
   font-style: normal;
   font-weight: 500;
   font-display: block;
-  src: url("/fonts/space-grotesk-500.woff2") format("woff2");
+  src: url("/fonts/space-grotesk-700.woff2") format("woff2");
 }
 @font-face {
   font-family: "Space Grotesk";
@@ -27,14 +31,14 @@
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("/fonts/inter-500.woff2") format("woff2");
+  src: url("/fonts/inter-400.woff2") format("woff2");
 }
 @font-face {
   font-family: "Inter";
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url("/fonts/inter-700.woff2") format("woff2");
+  src: url("/fonts/inter-400.woff2") format("woff2");
 }
 @font-face {
   font-family: "JetBrains Mono";

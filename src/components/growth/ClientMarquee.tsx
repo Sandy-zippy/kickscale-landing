@@ -44,10 +44,10 @@ function Tile({ slug, name, vertical, idx }: { slug: string; name: string; verti
       }}
     >
       <img
-        src={`/logos/clients/${slug}.png`}
+        src={`/logos/clients/${slug}.webp`}
         alt={name}
         /* not lazy: the belt scrolls tiles in from off-screen, so a lazy image
-           pops in as an empty card. All 13 are ~165KB total and every one is
+           pops in as an empty card. All 13 are ~115KB total as 120px-tall WebP and every one is
            guaranteed to be shown, so load them up front. Both copies share the
            same URLs, so each file is still fetched only once. */
         decoding="async"

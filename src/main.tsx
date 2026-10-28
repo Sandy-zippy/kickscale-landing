@@ -1,12 +1,10 @@
 import { checkForNewBuild } from './lib/version-gate'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import clarity from '@microsoft/clarity'
 import App from './App'
 import './styles/globals.css'
 
-// Initialize Microsoft Clarity
-clarity.init('w71wgp44fk')
+// Microsoft Clarity is queued and loaded from index.html, after first interaction or 3 s.
 
 // Initialize dataLayer for GTM
 window.dataLayer = window.dataLayer || []

@@ -225,7 +225,7 @@ export function CurrencyPicker({
         >
           {codes.map(c => (
             <option key={c} value={c} className="text-slate-900">
-              {META[c].flag} {c} — {META[c].name}
+              {META[c].flag} {c} · {META[c].name}
             </option>
           ))}
         </select>

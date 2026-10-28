@@ -18,39 +18,43 @@
     <meta name="twitter:card" content="summary_large_image">
     <link rel="preload" as="font" type="font/woff2" href="/fonts/space-grotesk-700.woff2" crossorigin />
     <link rel="preload" as="font" type="font/woff2" href="/fonts/inter-400.woff2" crossorigin />
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-MB6HQHJL');</script>
-    <!-- End Google Tag Manager -->
-    <!-- Google Analytics 4 (GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-38CLGNL7TJ"></script>
+    <!-- Tracking: GTM (carries the GA4 tag G-38CLGNL7TJ), Meta Pixel, Clarity.
+         The stubs below run now, so every gtag/fbq/clarity call (PageView included)
+         is queued from the first millisecond. Only the script downloads wait until
+         the first interaction (not 'scroll': Lenis and scroll restoration fire it
+         with no visitor), or 3 s after load, whichever comes first; each
+         library replays its own queue when it arrives. GA4 used to be loaded a
+         second time here via gtag/js; GTM's Google tag already loads it. -->
     <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-38CLGNL7TJ');
-    </script>
-    <!-- End GA4 -->
-    <!-- Meta Pixel Code -->
-    <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    dataLayer.push({'gtm.start': new Date().getTime(), event: 'gtm.js'});
+    !function(f){if(f.fbq)return;var n=f.fbq=function(){n.callMethod?
     n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[]}(window);
     fbq('init', '961643772929674');
     fbq('track', 'PageView');
+    window.clarity = window.clarity || function(){(window.clarity.q = window.clarity.q || []).push(arguments)};
+    (function(w,d){
+      var done = 0, ev = ['pointerdown','keydown','touchstart','wheel'];
+      function add(src){var t=d.createElement('script');t.async=true;t.src=src;d.head.appendChild(t)}
+      function load(){
+        if (done) return; done = 1;
+        ev.forEach(function(e){w.removeEventListener(e, load, true)});
+        add('https://www.googletagmanager.com/gtm.js?id=GTM-MB6HQHJL');
+        add('https://connect.facebook.net/en_US/fbevents.js');
+        add('https://www.clarity.ms/tag/w71wgp44fk');
+      }
+      ev.forEach(function(e){w.addEventListener(e, load, {capture:true, passive:true})});
+      if (d.readyState === 'complete') setTimeout(load, 3000);
+      else w.addEventListener('load', function(){ setTimeout(load, 3000) });
+      w.__zsLoadTags = load;
+    })(window, document);
     </script>
     <noscript><img height="1" width="1" style="display:none"
     src="https://www.facebook.com/tr?id=961643772929674&ev=PageView&noscript=1"
     /></noscript>
-    <!-- End Meta Pixel Code -->
+    <!-- End tracking -->
   </head>
   <body>
     <!-- Google Tag Manager (noscript) -->

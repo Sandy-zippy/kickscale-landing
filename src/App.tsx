@@ -1,33 +1,14 @@
-import { lazy, Suspense, useState, useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { AgentAmbience } from './components/cockpit/Ambience'
 import { captureUTM } from './lib/analytics'
-import { trackSectionView, trackSectionScroll } from './lib/tracking'
-import ScarcityBanner from './components/layout/ScarcityBanner'
-import Nav from './components/layout/Nav'
-import Footer from './components/layout/Footer'
-import StickyCTA from './components/layout/StickyCTA'
-import WhatsAppFloat from './components/layout/WhatsAppFloat'
-import Divider from './components/ui/Divider'
-import VisitTracker from './components/ui/VisitTracker'
-import Hero from './components/sections/Hero'
-import AwarenessBlocks from './components/sections/AwarenessBlocks'
-import ProofOfWork from './components/sections/ProofOfWork'
-import PainSection from './components/sections/PainSection'
-import AutomationGrid from './components/sections/AutomationGrid'
-import HowItWorks from './components/sections/HowItWorks'
-import ROICalculator from './components/sections/ROICalculator'
-import WhoIsThisFor from './components/sections/WhoIsThisFor'
-import FAQ from './components/sections/FAQ'
-import InstagramFeed from './components/sections/InstagramFeed'
-import QuizForm from './components/sections/QuizForm'
-import FinalCTA from './components/sections/FinalCTA'
-import MidPageCTA from './components/sections/MidPageCTA'
-import CaseStudiesPreview from './components/sections/CaseStudiesPreview'
-import PrivacyPolicy from './pages/PrivacyPolicy'
 import { ExportModeProvider } from './contexts/ExportModeContext'
 import DeckLoader from './components/discovery/DeckLoader'
+import WhatsAppFloat from './components/layout/WhatsAppFloat'
 
+const AutomationHome = lazy(() => import('./pages/AutomationHome'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+/* decorative only, so it arrives after the page instead of inside the entry bundle */
+const AgentAmbience = lazy(() => import('./components/cockpit/Ambience').then(m => ({ default: m.AgentAmbience })))
 const GrowthOffer = lazy(() => import('./pages/GrowthOffer'))
 const Growth = lazy(() => import('./pages/Growth'))
 const AgenticCockpit = lazy(() => import('./pages/AgenticCockpit'))
@@ -42,72 +23,6 @@ const CosmeticDental = lazy(() => import('./pages/CosmeticDental'))
 const HairTransplant = lazy(() => import('./pages/HairTransplant'))
 const EyeSurgery = lazy(() => import('./pages/EyeSurgery'))
 
-function AutomationHome() {
-  const [isQuizVisible, setIsQuizVisible] = useState(false)
-
-  // This page used to be "/" and inherited the static title from index.html.
-  // That shell now describes the growth homepage, so it sets its own.
-  useEffect(() => {
-    document.title = 'ZippyScale | AI Automations That Run Your Business While You Scale'
-  }, [])
-
-  useEffect(() => {
-    const quizEl = document.getElementById('quiz')
-    if (!quizEl) return
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach(e => setIsQuizVisible(e.isIntersecting)),
-      { threshold: 0.1 }
-    )
-    observer.observe(quizEl)
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    ['pain', 'automation-grid', 'roi', 'how-it-works', 'quiz'].forEach((id) => {
-      trackSectionView(id)
-      trackSectionScroll(id)
-    })
-  }, [])
-
-  return (
-    <>
-      <ScarcityBanner />
-      <Nav />
-      <main>
-        <Hero />
-        <VisitTracker />
-        <AwarenessBlocks />
-        <Divider />
-        <PainSection />
-        <Divider />
-        <QuizForm />
-        <Divider />
-        <ProofOfWork />
-        <Divider />
-        <CaseStudiesPreview />
-        <Divider />
-        <AutomationGrid />
-        <MidPageCTA />
-        <Divider />
-        <ROICalculator />
-        <Divider />
-        <HowItWorks />
-        <MidPageCTA />
-        <Divider />
-        <WhoIsThisFor />
-        <Divider />
-        <InstagramFeed />
-        <Divider />
-        <FAQ />
-        <Divider />
-        <FinalCTA />
-      </main>
-      <Footer />
-      <StickyCTA isQuizVisible={isQuizVisible} />
-    </>
-  )
-}
-
 /* Routes where the drifting agents would be noise rather than atmosphere:
    /growth-offer is a full-bleed iframe, and /discovery is a working form. */
 const NO_AMBIENCE = ['/growth-offer', '/discovery']
@@ -119,7 +34,7 @@ function Ambience() {
      the content, and each agent working in its tile). This layer floats ABOVE content,
      so there it drew faint robots across those tiles. Every other route keeps it. */
   if (pathname === '/') return null
-  return <AgentAmbience />
+  return <Suspense fallback={null}><AgentAmbience /></Suspense>
 }
 
 export default function App() {
