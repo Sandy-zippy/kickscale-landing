@@ -1,3 +1,5 @@
+import { SWIPE, SLIDE } from '../websites/tokens'
+import SwipeHint from '../websites/SwipeHint'
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal'
@@ -104,7 +106,7 @@ function FlipCard({ card, index }: { card: typeof cards[number]; index: number }
   const [flipped, setFlipped] = useState(false)
 
   return (
-    <ScrollReveal delay={index * 0.05} className="h-full">
+    <ScrollReveal delay={index * 0.05} className={`h-full ${SLIDE}`}>
       <button
         type="button"
         onClick={() => setFlipped(!flipped)}
@@ -147,7 +149,7 @@ function FlipCard({ card, index }: { card: typeof cards[number]; index: number }
 
 export default function AutomationGrid() {
   return (
-    <section id="automation-grid" className="bg-[#2A2A35] py-20 px-4">
+    <section id="automation-grid" className="bg-[#2A2A35] py-20 max-sm:py-11 px-4">
       <div className="mx-auto max-w-6xl">
         <ScrollReveal>
           <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#D5EB4B]">
@@ -161,11 +163,12 @@ export default function AutomationGrid() {
           </p>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 gap-5 md:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className={`grid grid-cols-1 gap-5 md:gap-6 sm:grid-cols-2 lg:grid-cols-4 ${SWIPE}`}>
           {cards.map((card, i) => (
             <FlipCard key={card.title} card={card} index={i} />
           ))}
         </div>
+        <SwipeHint dark count={cards.length} />
       </div>
     </section>
   )

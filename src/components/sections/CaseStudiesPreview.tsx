@@ -1,3 +1,5 @@
+import { SWIPE, SLIDE } from '../websites/tokens'
+import SwipeHint from '../websites/SwipeHint'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal'
@@ -17,7 +19,7 @@ const FEATURED: CaseStudySlug[] = [
 
 export default function CaseStudiesPreview() {
   return (
-    <section id="case-studies-preview" className="py-20 lg:py-24 px-4 bg-[#FFFDF7]">
+    <section id="case-studies-preview" className="py-20 max-sm:py-11 lg:py-24 px-4 bg-[#FFFDF7]">
       <div className="max-w-6xl mx-auto">
         <ScrollReveal>
           <div className="text-center mb-12">
@@ -33,13 +35,14 @@ export default function CaseStudiesPreview() {
           </div>
         </ScrollReveal>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+        <div className={`grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10 max-sm:mb-6 ${SWIPE}`}>
           {FEATURED.map((slug, i) => {
             const m = registry[slug]
             if (!m?.title) return null
             return (
               <motion.div
                 key={slug}
+                className={SLIDE}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
@@ -74,6 +77,7 @@ export default function CaseStudiesPreview() {
             )
           })}
         </div>
+        <SwipeHint count={FEATURED.length} />
 
         <ScrollReveal>
           <div className="text-center">

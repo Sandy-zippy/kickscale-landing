@@ -58,7 +58,7 @@ export default function AwarenessBlocks() {
   }
 
   return (
-    <section className="bg-[#FFFDF7] py-16 px-4">
+    <section className="bg-[#FFFDF7] py-16 max-sm:py-11 px-4">
       <div className="max-w-3xl mx-auto text-center">
         <p className="font-mono text-xs uppercase tracking-widest text-[#B8CF2E] mb-4">
           START HERE
@@ -70,7 +70,7 @@ export default function AwarenessBlocks() {
           Pick what sounds like you. We'll take it from there.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-sm:grid-cols-2 max-sm:gap-3 max-w-3xl mx-auto">
           {blocks.map((block, i) => (
             <motion.button
               key={block.utmMatch}
@@ -81,7 +81,7 @@ export default function AwarenessBlocks() {
               whileHover={{ scale: 1.03, borderColor: '#B8CF2E' }}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleClick(block)}
-              className="bg-white border border-[#E5E7EB] rounded-2xl p-6 cursor-pointer hover:shadow-lg transition-shadow text-left"
+              className="bg-white border border-[#E5E7EB] rounded-2xl p-6 max-sm:p-4 cursor-pointer hover:shadow-lg transition-shadow text-left"
             >
               <span className="text-3xl mb-3 block">{block.emoji}</span>
               <span className="text-[#1A1A2E] font-semibold text-base block">{block.label}</span>

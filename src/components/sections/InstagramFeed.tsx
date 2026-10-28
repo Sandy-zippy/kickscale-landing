@@ -100,7 +100,7 @@ function PostCard({
 
 export default function InstagramFeed() {
   return (
-    <section className="bg-[#FFFDF7] py-20 px-4">
+    <section className="bg-[#FFFDF7] py-20 max-sm:py-11 px-4">
       <div className="max-w-6xl mx-auto">
         <ScrollReveal>
           <p className="text-center font-mono text-xs uppercase tracking-widest text-[#B8CF2E] mb-4">

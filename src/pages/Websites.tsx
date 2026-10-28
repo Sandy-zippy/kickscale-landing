@@ -12,7 +12,8 @@ import HeroAgentic from '../components/websites/HeroAgentic'
 import AgenticFlow from '../components/websites/AgenticFlow'
 import SectionReveal from '../components/websites/SectionReveal'
 import PortfolioCard from '../components/websites/PortfolioCard'
-import { LIME, MONO } from '../components/websites/tokens'
+import { LIME, MONO, SWIPE, SLIDE } from '../components/websites/tokens'
+import SwipeHint from '../components/websites/SwipeHint'
 import { useRates, guessPlace, Price, CurrencyPicker } from '../components/cockpit/Money'
 import { useCalmMotion } from '../components/cockpit/useCalmMotion'
 import WebsiteCall from './websites/WebsiteCall'
@@ -30,7 +31,7 @@ const H2 = "font-['Space_Grotesk'] text-[2rem] font-bold uppercase leading-[0.95
 function Section({ id, tone = 'bone', children, className = '' }: { id: string; tone?: 'bone' | 'ink' | 'white' | 'lime'; children: ReactNode; className?: string }) {
   const bg = { bone: 'bg-[#F5F5F0] text-[#111111]', ink: 'bg-[#111111] text-white', white: 'bg-white text-[#111111]', lime: 'bg-[#D9EA66] text-[#111111]' }[tone]
   return (
-    <section id={id} className={`scroll-mt-28 py-16 sm:py-24 ${bg} ${className}`}>
+    <section id={id} className={`scroll-mt-28 py-16 max-sm:py-11 sm:py-24 ${bg} ${className}`}>
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">{children}</div>
     </section>
   )
@@ -92,10 +93,10 @@ export default function Websites() {
           <SectionReveal>
             <h2 className={`${H2} max-w-[22ch]`}>{PROBLEM.title}</h2>
           </SectionReveal>
-          <ul className="mt-10 grid gap-x-10 gap-y-6 md:grid-cols-2">
+          <ul className="mt-10 grid gap-x-10 gap-y-6 max-sm:mt-6 max-sm:gap-y-3.5 md:grid-cols-2">
             {PROBLEM.items.map((p, i) => (
               <li key={p.t}>
-                <SectionReveal className="flex gap-4 border-t border-[#111111]/10 pt-5">
+                <SectionReveal className="flex gap-4 border-t border-[#111111]/10 pt-5 max-sm:pt-3.5">
                   <span className={`${MONO} text-[12px] text-[#111111]/60`}>{String(i + 1).padStart(2, '0')}</span>
                   <p className="text-[16px] leading-relaxed text-slate-700"><strong className="font-semibold text-[#111111]">{p.t}</strong> {p.d}</p>
                 </SectionReveal>
@@ -109,7 +110,7 @@ export default function Websites() {
             <Eyebrow>What makes our websites agentic</Eyebrow>
             <h2 className={`${H2} mt-5 max-w-[20ch]`}>{AGENTIC.title}</h2>
           </SectionReveal>
-          <div className="mt-10"><AgenticFlow blocks={AGENTIC.blocks} /></div>
+          <div className="mt-10 max-sm:mt-6"><AgenticFlow blocks={AGENTIC.blocks} /></div>
         </Section>
 
         <Section id="build" tone="ink">
@@ -117,18 +118,19 @@ export default function Websites() {
             <Eyebrow dark>What we build</Eyebrow>
             <h2 className={`${H2} mt-5 max-w-[20ch]`}>{BUILD.title}</h2>
           </SectionReveal>
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className={`mt-10 grid gap-4 max-sm:mt-6 sm:grid-cols-2 lg:grid-cols-3 ${SWIPE}`}>
             {BUILD.items.map(b => (
-              <SectionReveal key={b.t} className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+              <SectionReveal key={b.t} className={`rounded-2xl border border-white/10 bg-white/[0.04] p-6 ${SLIDE}`}>
                 <h3 className="font-['Space_Grotesk'] text-[1.2rem] font-bold">{b.t}</h3>
                 <p className="mt-2 text-[15px] leading-relaxed text-white/70">{b.d}</p>
               </SectionReveal>
             ))}
           </div>
-          <h3 className="mt-14 font-['Space_Grotesk'] text-[1.2rem] font-bold">{BUILD.sellsTitle}</h3>
-          <dl className="mt-5 grid gap-4 md:grid-cols-3">
+          <SwipeHint dark count={BUILD.items.length} />
+          <h3 className="mt-14 font-['Space_Grotesk'] text-[1.2rem] font-bold max-sm:mt-9">{BUILD.sellsTitle}</h3>
+          <dl className={`mt-5 grid gap-4 md:grid-cols-3 ${SWIPE}`}>
             {BUILD.sells.map(s => (
-              <div key={s.t} className="rounded-2xl p-6" style={{ background: 'rgba(217,234,102,0.08)', border: '1px solid rgba(217,234,102,0.25)' }}>
+              <div key={s.t} className={`rounded-2xl p-6 max-sm:w-[72%] max-sm:shrink-0 max-sm:snap-start max-sm:p-5`} style={{ background: 'rgba(217,234,102,0.08)', border: '1px solid rgba(217,234,102,0.25)' }}>
                 <dt className="font-['Space_Grotesk'] text-[1.6rem] font-bold" style={{ color: LIME }}>{s.t}</dt>
                 <dd className="mt-2 text-[15px] leading-relaxed text-white/75">{s.d}</dd>
               </div>
@@ -143,9 +145,9 @@ export default function Websites() {
             <Eyebrow>How we work</Eyebrow>
             <h2 className={`${H2} mt-5 max-w-[20ch]`}>{HOW.title}</h2>
           </SectionReveal>
-          <ol className="mt-10 grid gap-4 md:grid-cols-5">
+          <ol className={`mt-10 grid gap-4 max-sm:mt-6 md:grid-cols-5 ${SWIPE}`}>
             {HOW.steps.map((s, i) => (
-              <li key={s.t}>
+              <li key={s.t} className={SLIDE}>
                 <SectionReveal className="h-full rounded-2xl border border-[#111111]/10 bg-[#F5F5F0] p-5">
                   <span className="grid h-8 w-8 place-items-center rounded-full bg-[#111111] font-['Space_Grotesk'] text-[13px] font-bold" style={{ color: LIME }}>{i + 1}</span>
                   <h3 className="mt-4 font-['Space_Grotesk'] text-[1.1rem] font-bold">{s.t}</h3>
@@ -154,6 +156,7 @@ export default function Websites() {
               </li>
             ))}
           </ol>
+          <SwipeHint count={HOW.steps.length} />
         </Section>
 
         <Packages onBook={openBooking} />
@@ -165,10 +168,10 @@ export default function Websites() {
 
         <Section id="faq">
           <SectionReveal><h2 className={H2}>{FAQ.title}</h2></SectionReveal>
-          <div className="mt-10 divide-y divide-[#111111]/10 border-y border-[#111111]/10">
+          <div className="mt-10 divide-y divide-[#111111]/10 border-y border-[#111111]/10 max-sm:mt-6">
             {FAQ.items.map(f => (
-              <details key={f.q} className="group py-5">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-['Space_Grotesk'] text-[1.1rem] font-bold [&::-webkit-details-marker]:hidden">
+              <details key={f.q} className="group py-5 max-sm:py-3.5">
+                <summary className="flex max-sm:min-h-[44px] cursor-pointer list-none items-center justify-between gap-4 font-['Space_Grotesk'] text-[1.1rem] font-bold max-sm:text-[1.02rem] [&::-webkit-details-marker]:hidden">
                   {f.q}
                   <span aria-hidden className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#111111] text-white transition-transform group-open:rotate-45">+</span>
                 </summary>
@@ -179,10 +182,10 @@ export default function Websites() {
         </Section>
 
         <Section id="talk" tone="lime">
-          <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12">
+          <div className="grid gap-10 max-sm:gap-5 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12">
             <div className="lg:sticky lg:top-28 lg:self-start">
               <h2 className={H2}>{FORM.title}</h2>
-              <p className="mt-5 max-w-[34ch] text-[16px] leading-relaxed text-[#111111]/80">{FORM.sub}</p>
+              <p className="mt-5 max-w-[34ch] text-[16px] leading-relaxed text-[#111111]/80 max-sm:mt-3">{FORM.sub}</p>
             </div>
             <WebsiteCall openSignal={openSignal} />
           </div>
@@ -206,7 +209,7 @@ export default function Websites() {
 
 function Proof() {
   return (
-    <section id="proof" className="border-b border-[#111111]/10 bg-[#F5F5F0] py-10 text-[#111111]">
+    <section id="proof" className="border-b border-[#111111]/10 bg-[#F5F5F0] py-10 text-[#111111] max-sm:py-8">
       <div className="mx-auto grid max-w-6xl gap-6 px-4 sm:px-6 lg:grid-cols-[1.4fr_1fr] lg:items-center">
         <div>
           <p className="text-[15.5px] font-semibold leading-relaxed">{PROOF.line}</p>
@@ -239,7 +242,7 @@ function Work() {
   const shown = useMemo(() => WORK.filter(w =>
     (market === 'All' || w.market === market) && (kind === 'All' || w.kinds.includes(kind as Kind))), [market, kind])
 
-  const chip = (on: boolean) => `min-h-[40px] rounded-full border px-4 py-1.5 text-[13.5px] font-semibold transition-colors ${on ? 'border-[#111111] bg-[#111111] text-white' : 'border-[#111111]/20 bg-white text-[#111111] hover:border-[#111111]/60'}`
+  const chip = (on: boolean) => `min-h-[40px] rounded-full border px-4 py-1.5 text-[13.5px] font-semibold transition-colors max-sm:min-h-[44px] max-sm:shrink-0 max-sm:text-[15px] ${on ? 'border-[#111111] bg-[#111111] text-white' : 'border-[#111111]/20 bg-white text-[#111111] hover:border-[#111111]/60'}`
 
   return (
     <Section id="work">
@@ -247,20 +250,20 @@ function Work() {
         <Eyebrow>Our work</Eyebrow>
         <h2 className={`${H2} mt-5 max-w-[20ch]`}>{WORK_COPY.title}</h2>
       </SectionReveal>
-      <div className="mt-8 flex flex-col gap-3">
-        <div role="group" aria-label="Filter by how they sell" className="flex flex-wrap gap-2">
+      <div className="mt-8 flex flex-col gap-3 max-sm:mt-5 max-sm:gap-2">
+        <div role="group" aria-label="Filter by how they sell" className="flex flex-wrap gap-2 max-sm:-mx-4 max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:px-4 max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden">
           {WORK_COPY.markets.map(m => <button key={m} type="button" aria-pressed={market === m} onClick={() => setMarket(m)} className={chip(market === m)}>{m}</button>)}
         </div>
-        <div role="group" aria-label="Filter by type" className="flex flex-wrap gap-2">
+        <div role="group" aria-label="Filter by type" className="flex flex-wrap gap-2 max-sm:-mx-4 max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:px-4 max-sm:[scrollbar-width:none] max-sm:[&::-webkit-scrollbar]:hidden">
           {WORK_COPY.kinds.map(k => <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)} className={chip(kind === k)}>{k === 'All' ? 'All' : WORK_COPY.kindLabel[k as Kind]}</button>)}
         </div>
         <p className="text-[13px] text-slate-600" role="status">{shown.length} of {WORK.length} shown</p>
       </div>
       <LayoutGroup>
-        <motion.ul layout={!calm} className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <motion.ul layout={!calm} className={`mt-8 grid gap-5 max-sm:mt-4 sm:grid-cols-2 lg:grid-cols-3 ${SWIPE}`}>
           <AnimatePresence initial={false}>
             {shown.map(w => (
-              <motion.li key={w.slug} layout={!calm}
+              <motion.li key={w.slug} layout={!calm} className={SLIDE}
                 initial={{ opacity: 0, scale: calm ? 1 : 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: calm ? 1 : 0.96 }}
                 transition={{ duration: 0.3 }}>
                 <PortfolioCard
@@ -289,6 +292,7 @@ function Work() {
           </AnimatePresence>
         </motion.ul>
       </LayoutGroup>
+      <SwipeHint count={shown.length} />
     </Section>
   )
 }
@@ -304,11 +308,11 @@ function Packages({ onBook }: { onBook: () => void }) {
         <Eyebrow dark>Packages</Eyebrow>
         <h2 className={`${H2} mt-5 max-w-[20ch]`}>{PACKAGES_COPY.title}</h2>
       </SectionReveal>
-      <div className="mt-8"><CurrencyPicker ccy={ccy} setCcy={setCcy} rates={rates} tone="dark" where={place.where} /></div>
-      <div className="mt-10 grid gap-5 lg:grid-cols-3">
+      <div className="mt-8 max-sm:mt-5"><CurrencyPicker ccy={ccy} setCcy={setCcy} rates={rates} tone="dark" where={place.where} /></div>
+      <div className={`mt-10 grid gap-5 max-sm:mt-6 lg:grid-cols-3 ${SWIPE}`}>
         {PACKAGES.map(p => (
           <SectionReveal key={p.id}
-            className={`relative flex flex-col rounded-3xl p-7 ${p.popular ? 'bg-[#D9EA66] text-[#111111]' : 'border border-white/12 bg-white/[0.04] text-white'}`}>
+            className={`relative flex flex-col rounded-3xl p-7 max-sm:p-5 ${SLIDE} ${p.popular ? 'bg-[#D9EA66] text-[#111111]' : 'border border-white/12 bg-white/[0.04] text-white'}`}>
             {p.popular && <span className={`${MONO} absolute right-5 top-5 rounded-full bg-[#111111] px-3 py-1 text-[10.5px] font-bold uppercase tracking-wider text-white`}>Most popular</span>}
             <h3 className="font-['Space_Grotesk'] text-[1.4rem] font-bold">{p.id}</h3>
             <p className="mt-3 flex items-baseline gap-2">
@@ -332,7 +336,8 @@ function Packages({ onBook }: { onBook: () => void }) {
           </SectionReveal>
         ))}
       </div>
-      <p className="mt-8 text-[14.5px] text-white/70"><strong className="text-white">Add-ons:</strong> {PACKAGES_COPY.addOns.join(' · ')}</p>
+      <SwipeHint dark count={PACKAGES.length} />
+      <p className="mt-8 text-[14.5px] text-white/70 max-sm:mt-5"><strong className="text-white">Add-ons:</strong> {PACKAGES_COPY.addOns.join(' · ')}</p>
       <p className="mt-3 text-[15px] text-white/80">{PACKAGES_COPY.notSure}</p>
     </Section>
   )
@@ -365,9 +370,9 @@ function Compare() {
         </table>
       </div>
       {/* phones: one card per row, nothing to scroll sideways */}
-      <dl className="mt-8 grid gap-3 md:hidden">
+      <dl className={`mt-8 grid gap-3 max-sm:mt-6 md:hidden ${SWIPE}`}>
         {COMPARE.rows.map(r => (
-          <div key={r[0]} className="rounded-2xl border border-[#111111]/10 p-4">
+          <div key={r[0]} className={`rounded-2xl border border-[#111111]/10 p-4 ${SLIDE}`}>
             <dt className="font-['Space_Grotesk'] font-bold">{r[0]}</dt>
             <dd className="mt-3 grid gap-1.5 text-[14px]">
               <span className="flex justify-between gap-3 text-slate-600"><span>{COMPARE.cols[0]}</span><span className="text-right">{r[1]}</span></span>
@@ -377,6 +382,7 @@ function Compare() {
           </div>
         ))}
       </dl>
+      <SwipeHint count={COMPARE.rows.length} />
     </>
   )
 }

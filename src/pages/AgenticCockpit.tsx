@@ -9,6 +9,8 @@
  * not trace to a primary source, no competitor price we could not read on their own
  * page, no claim that anything is deployed or autonomous when it is not.
  */
+import { SWIPE_5, SLIDE } from '../components/websites/tokens'
+import SwipeHint from '../components/websites/SwipeHint'
 import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll } from 'framer-motion'
 import Nav from '../components/layout/Nav'
@@ -68,6 +70,8 @@ export default function AgenticCockpit() {
   }, [])
   // where ad visitors drop: CTA clicks, form seen, scroll depth, time on page
   useEffect(() => startLandingFunnel('book'), [])
+  /* Phones show the first four comparison rows, the rest one tap away. */
+  const [allRows, setAllRows] = useState(false)
 
   return (
     <>
@@ -82,7 +86,7 @@ export default function AgenticCockpit() {
           the answer belongs before the evidence, not after it. Light, because two ink
           bands in a row read as one very long band. */}
       <div data-zippy="fix">
-      <Band tone="bone" className="py-16 sm:py-24">
+      <Band tone="bone" className="py-16 max-sm:py-11 sm:py-24">
         <AgentDrift count={4} tone="bone" />
         <Kicker tone="bone">What we build instead</Kicker>
         <h2 className={`${DISPLAY_SM} mt-4 max-w-[22ch]`}>{WHAT_IT_IS.title}</h2>
@@ -92,7 +96,7 @@ export default function AgenticCockpit() {
 
         {/* the same five sources, now feeding one record */}
         <Reveal delay={0.15}>
-          <div className="mt-10 rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_30px_80px_-50px_rgba(10,10,12,0.45)] sm:p-8">
+          <div className="mt-10 max-sm:mt-7 rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_30px_80px_-50px_rgba(10,10,12,0.45)] sm:p-8">
             <CockpitScene className="w-full" tone="bone" />
             <div className="mt-4 flex items-start gap-3 sm:mt-2">
               <Agent skin="lime" size={34} mood="happy" />
@@ -103,7 +107,7 @@ export default function AgenticCockpit() {
           </div>
         </Reveal>
 
-        <div className="mt-10">
+        <div className="mt-10 max-sm:mt-7">
           <Bento pillars={WHAT_IT_IS.pillars} />
         </div>
       </Band>
@@ -114,10 +118,10 @@ export default function AgenticCockpit() {
           Now the argument sits still on the left while the evidence scrolls past it,
           and the quotes run as one moving line instead of a wall nobody reads. */}
       <div data-zippy="stack">
-      <Band tone="ink" className="py-16 sm:py-24">
+      <Band tone="ink" className="py-16 max-sm:py-11 sm:py-24">
         <AgentDrift count={5} tone="ink" />
 
-        <div className="grid gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:gap-16">
+        <div className="grid gap-10 max-sm:gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:gap-16">
           <div className="lg:sticky lg:top-28 lg:self-start">
             <Kicker>The Frankenstein stack</Kicker>
             <h2 className={`${DISPLAY_SM} mt-4 max-w-[14ch]`}>Nobody chose it. It just grew.</h2>
@@ -136,7 +140,7 @@ export default function AgenticCockpit() {
           </div>
 
           {/* the evidence, as a list of figures rather than a wall of cards */}
-          <ul className="border-t border-white/12">
+          <ul className={`border-t border-white/12 max-sm:border-t-0 ${SWIPE_5}`}>
             {EVIDENCE.map((s2, i) => (
               <motion.li
                 key={s2.figure}
@@ -144,7 +148,7 @@ export default function AgenticCockpit() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-60px' }}
                 transition={{ duration: 0.45, delay: i * 0.05, ease: EASE_OUT }}
-                className="grid gap-x-6 gap-y-1.5 border-b border-white/12 py-5 sm:grid-cols-[minmax(7.5rem,auto)_1fr]"
+                className={`grid content-start gap-x-6 gap-y-1.5 border-b border-white/12 py-5 max-sm:rounded-2xl max-sm:border max-sm:border-white/12 max-sm:bg-white/[0.04] max-sm:p-5 sm:grid-cols-[minmax(7.5rem,auto)_1fr] ${SLIDE}`}
               >
                 <div className="font-['Space_Grotesk'] text-[1.45rem] font-bold leading-[1.05] tracking-tight text-white sm:text-[1.6rem]">
                   {s2.figure}
@@ -165,10 +169,11 @@ export default function AgenticCockpit() {
               </motion.li>
             ))}
           </ul>
+          <SwipeHint dark count={EVIDENCE.length} />
         </div>
 
         {/* what people actually say, as one moving line */}
-        <div className="mt-16 max-w-[52ch]">
+        <div className="mt-16 max-w-[52ch] max-sm:mt-10">
           <Kicker>Not our words</Kicker>
           <h2 className={`${DISPLAY_SM} mt-4`}>This is how owners describe it.</h2>
           <p className="mt-4 text-[15.5px] leading-relaxed text-white/65">
@@ -184,7 +189,7 @@ export default function AgenticCockpit() {
 
       {/* ───────────────────────── the agents ───────────────────────── */}
       <div data-zippy="agents">
-      <Band tone="lime" className="py-16 sm:py-24">
+      <Band tone="lime" className="py-16 max-sm:py-11 sm:py-24">
         <Kicker tone="lime">The agents</Kicker>
         <h2 className={`${DISPLAY_SM} mt-4 max-w-[20ch]`}>{AGENTS_INTRO.title}</h2>
         <p className="mt-5 max-w-[60ch] text-[17px] leading-relaxed text-[rgba(10,10,12,0.72)]">
@@ -192,13 +197,13 @@ export default function AgenticCockpit() {
         </p>
 
         {/* the roster, one stepping forward at a time to say what it does */}
-        <div className="mt-12">
+        <div className="mt-12 max-sm:mt-7">
           <AgentTeam roster={AGENTS_INTRO.roster} />
         </div>
 
-        <div className="mt-10 grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className={`mt-10 grid gap-5 max-sm:mt-7 lg:grid-cols-[1.05fr_0.95fr] ${SWIPE_5}`}>
           <ApproveFlow />
-          <div className="rounded-2xl border border-[rgba(10,10,12,0.2)] p-6 sm:p-7">
+          <div className={`rounded-2xl border border-[rgba(10,10,12,0.2)] p-6 max-sm:p-5 sm:p-7 ${SLIDE}`}>
             <h3 className="font-['Space_Grotesk'] text-[15px] font-bold uppercase tracking-wide text-[#0A0A0C]">
               The rules they run under
             </h3>
@@ -215,12 +220,13 @@ export default function AgenticCockpit() {
             </p>
           </div>
         </div>
+        <SwipeHint />
       </Band>
       </div>
 
       {/* ───────────────────────── honest comparison ───────────────────────── */}
       <div data-zippy="compare">
-      <Band tone="bone" className="py-16 sm:py-24">
+      <Band tone="bone" className="py-16 max-sm:py-11 sm:py-24">
         <Kicker tone="bone">Against what you already run</Kicker>
         <h2 className={`${DISPLAY_SM} mt-4 max-w-[20ch]`}>{COMPARISON.title}</h2>
         <p className="mt-5 max-w-[58ch] text-[17px] leading-relaxed text-slate-600">
@@ -233,7 +239,7 @@ export default function AgenticCockpit() {
             Every row here is built, not on a roadmap.
           </Says>
         </div>
-        <div className="mt-9 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="mt-9 overflow-hidden rounded-2xl border border-slate-200 bg-white max-sm:mt-6">
           {/* column labels first, so a reader knows which tick is ours before the rows */}
           <div className="hidden grid-cols-[1fr_5.5rem_5.5rem] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 sm:grid">
             <span />
@@ -247,7 +253,7 @@ export default function AgenticCockpit() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={{ duration: 0.5, delay: Math.min(i, 6) * 0.04, ease: EASE_OUT }}
-              className="grid grid-cols-[1fr_auto] items-start gap-4 border-b border-slate-100 p-5 transition-colors last:border-b-0 hover:bg-[#FAFAF5] sm:grid-cols-[1fr_5.5rem_5.5rem]"
+              className={`grid grid-cols-[1fr_auto] items-start gap-4 border-b border-slate-100 p-5 transition-colors last:border-b-0 hover:bg-[#FAFAF5] max-sm:gap-3 max-sm:p-4 sm:grid-cols-[1fr_5.5rem_5.5rem] ${i >= 4 && !allRows ? 'max-sm:hidden' : ''}`}
             >
               <div>
                 <p className="text-[15.5px] font-medium text-slate-900">{r.q}</p>
@@ -263,26 +269,32 @@ export default function AgenticCockpit() {
               </div>
             </motion.div>
           ))}
-
         </div>
+        {/* outside the table box, so the last row keeps its last:border-b-0 on desktop */}
+        {!allRows && COMPARISON.rows.length > 4 && (
+          <button type="button" onClick={() => setAllRows(true)}
+            className="mt-3 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border border-slate-300 bg-white text-[15px] font-semibold text-slate-900 sm:hidden">
+            Show all {COMPARISON.rows.length} rows <span aria-hidden>↓</span>
+          </button>
+        )}
       </Band>
       </div>
 
       {/* ───────────────────────── proof ───────────────────────── */}
       <div data-zippy="proof">
-      <Band tone="ink" className="py-16 sm:py-24">
+      <Band tone="ink" className="py-16 max-sm:py-11 sm:py-24">
         <AgentDrift count={5} tone="ink" />
         <Kicker>What is already built</Kicker>
         <h2 className={`${DISPLAY_SM} mt-4 max-w-[20ch]`}>{PROOF.title}</h2>
         <p className="mt-5 max-w-[58ch] text-[17px] leading-relaxed text-white/65">{PROOF.note}</p>
-        <div className="mt-10 grid gap-4 lg:grid-cols-3">
+        <div className={`mt-10 grid gap-4 max-sm:mt-7 lg:grid-cols-3 ${SWIPE_5}`}>
           {PROOF.cases.map((c, i) => (
-            <Reveal key={c.sector} delay={i * 0.08}>
+            <Reveal key={c.sector} delay={i * 0.08} className={SLIDE}>
               <motion.div
                 whileHover={{ y: -6 }}
                 whileTap={{ scale: 0.98 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 22 }}
-                className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-7 transition-colors hover:border-[#D5EB4B]/50 hover:bg-white/[0.05]"
+                className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-7 max-sm:p-5 transition-colors hover:border-[#D5EB4B]/50 hover:bg-white/[0.05]"
               >
                 <p className="font-['JetBrains_Mono'] text-[11px] uppercase tracking-[0.18em] text-white/45">
                   {c.sector}
@@ -303,6 +315,7 @@ export default function AgenticCockpit() {
             </Reveal>
           ))}
         </div>
+        <SwipeHint dark count={PROOF.cases.length} />
       </Band>
       </div>
 
@@ -311,7 +324,7 @@ export default function AgenticCockpit() {
 
       {/* ───────────────────────── objections ───────────────────────── */}
       <div data-zippy="faq">
-      <Band tone="ink" className="py-16 sm:py-24">
+      <Band tone="ink" className="py-16 max-sm:py-11 sm:py-24">
         <AgentDrift count={4} tone="ink" />
         <Kicker>The fair questions</Kicker>
         <h2 className={`${DISPLAY_SM} mt-4 max-w-[20ch]`}>Reasons not to do this.</h2>
@@ -319,10 +332,10 @@ export default function AgenticCockpit() {
           Every one of these has been put to us by someone who went on to buy, and by someone
           who did not. Both were right to ask.
         </p>
-        <div className="mt-9 grid gap-4 lg:grid-cols-2">
+        <div className={`mt-9 grid gap-4 max-sm:mt-7 lg:grid-cols-2 ${SWIPE_5}`}>
           {OBJECTIONS.map((o, i) => (
-            <Reveal key={o.q} delay={i * 0.05}>
-              <div className="h-full rounded-2xl border border-white/10 bg-white/[0.03] p-7 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.05]">
+            <Reveal key={o.q} delay={i * 0.05} className={SLIDE}>
+              <div className="h-full rounded-2xl border border-white/10 bg-white/[0.03] p-7 max-sm:p-5 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.05]">
                 <h3 className="font-['Space_Grotesk'] text-[16px] font-bold leading-snug" style={{ color: LIME }}>
                   “{o.q}”
                 </h3>
@@ -331,15 +344,16 @@ export default function AgenticCockpit() {
             </Reveal>
           ))}
         </div>
+        <SwipeHint dark count={OBJECTIONS.length} />
       </Band>
       </div>
 
       {/* ───────────────────────── CTA ───────────────────────── */}
       <div data-zippy="book">
-      <Band tone="lime" className="py-16 sm:py-24" id="talk">
-        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
+      <Band tone="lime" className="py-16 max-sm:py-11 sm:py-24" id="talk">
+        <div className="grid gap-10 max-sm:gap-5 lg:grid-cols-[0.9fr_1.1fr] lg:gap-12">
           <div className="lg:sticky lg:top-28 lg:self-start">
-            <div className="mb-6 flex items-center gap-2" aria-hidden>
+            <div className="mb-6 max-sm:mb-4 flex items-center gap-2" aria-hidden>
               <Agent skin="ink" size={38} mood="happy" phase={0} />
               <Agent skin="violet" size={38} mood="idle" phase={0.4} />
               <Agent skin="sky" size={38} mood="working" phase={0.8} />
@@ -469,6 +483,8 @@ function Pricing() {
   const [place] = useState(() => guessPlace())
   const [ccy, setCcy] = useState<string>(place.ccy)
   const [term, setTerm] = useState<'monthly' | 'annual'>('monthly')
+  /* Phones: the per-vendor breakdown opens on a tap; the bars above already make the point. */
+  const [vendors, setVendors] = useState(false)
   const rate = rates.table[ccy] ?? 1
 
   /* First-year cost for a ten-person team, so the comparison is like-for-like.
@@ -477,20 +493,20 @@ function Pricing() {
   const worst = Math.max(ourYear, ...PRICING.against.map(a => a.yearTen))
 
   return (
-    <Band tone="bone" className="py-16 sm:py-24" id="price">
+    <Band tone="bone" className="py-16 max-sm:py-11 sm:py-24" id="price">
       <AgentDrift count={4} tone="bone" />
       <Kicker tone="bone">What it costs</Kicker>
       <h2 className={`${DISPLAY_SM} mt-4 max-w-[18ch]`}>
         One build fee. One monthly. No per-seat tax on hiring.
       </h2>
 
-      <div className="mt-8">
+      <div className="mt-8 max-sm:mt-5">
         <CurrencyPicker ccy={ccy} setCcy={setCcy} rates={rates} tone="light" where={place.where} />
       </div>
 
-      <div className="mt-10 grid gap-5 lg:grid-cols-[1.1fr_1fr]">
+      <div className="mt-10 grid gap-5 max-sm:mt-6 lg:grid-cols-[1.1fr_1fr]">
         {/* our price */}
-        <div className="relative overflow-hidden rounded-2xl bg-[#050507] p-7 text-white sm:p-9">
+        <div className="relative overflow-hidden rounded-2xl bg-[#050507] p-7 text-white max-sm:p-5 sm:p-9">
           <div className="absolute inset-0" aria-hidden>
             <AgentDrift count={3} tone="ink" />
           </div>
@@ -571,7 +587,7 @@ function Pricing() {
             ))}
           </div>
 
-          <ul className="relative mt-8 grid gap-2.5 border-t border-white/10 pt-7">
+          <ul className="relative mt-8 grid gap-2.5 border-t border-white/10 pt-7 max-sm:mt-6 max-sm:gap-2 max-sm:pt-5">
             {PRICING.includes.map(x => (
               <li key={x} className="flex gap-3 text-[15px] leading-relaxed text-white/75">
                 <span aria-hidden style={{ color: LIME }}>→</span>
@@ -591,7 +607,7 @@ function Pricing() {
         </div>
 
         {/* the alternatives */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-7 sm:p-8">
+        <div className="rounded-2xl border border-slate-200 bg-white p-7 max-sm:p-5 sm:p-8">
           <h3 className="font-['Space_Grotesk'] text-[16px] font-bold uppercase tracking-wide text-slate-900">
             What the alternatives cost
           </h3>
@@ -628,7 +644,13 @@ function Pricing() {
             Theirs is licence × 10 plus the onboarding or implementation each vendor publishes.
           </p>
 
-          <div className="mt-7 grid gap-5 border-t border-slate-200 pt-6">
+          {!vendors && (
+            <button type="button" onClick={() => setVendors(true)}
+              className="mt-5 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-slate-300 text-[15px] font-semibold text-slate-900 sm:hidden">
+              See each vendor's pricing <span aria-hidden>↓</span>
+            </button>
+          )}
+          <div className={`mt-7 grid gap-5 border-t border-slate-200 pt-6 ${vendors ? '' : 'max-sm:hidden'}`}>
             {PRICING.against.map(a => (
               <div key={a.name} className="border-b border-slate-100 pb-5 last:border-b-0 last:pb-0">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -645,7 +667,7 @@ function Pricing() {
               </div>
             ))}
           </div>
-          <p className="mt-6 border-t border-slate-200 pt-4 text-[12.5px] leading-relaxed text-slate-400">
+          <p className={`mt-6 border-t border-slate-200 pt-4 text-[12.5px] leading-relaxed text-slate-400 ${vendors ? '' : 'max-sm:hidden'}`}>
             {PRICING.honesty}
           </p>
         </div>

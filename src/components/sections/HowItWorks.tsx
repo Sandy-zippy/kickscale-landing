@@ -1,3 +1,5 @@
+import { SWIPE, SLIDE } from '../websites/tokens'
+import SwipeHint from '../websites/SwipeHint'
 import ScrollReveal from '../ui/ScrollReveal'
 
 const stepIcons: React.ReactNode[] = [
@@ -40,7 +42,7 @@ const steps = [
 
 export default function HowItWorks() {
   return (
-    <section id="how-it-works" className="bg-[#FFFDF7] py-20 px-4">
+    <section id="how-it-works" className="bg-[#FFFDF7] py-20 max-sm:py-11 px-4">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#B8CF2E]">
@@ -51,7 +53,7 @@ export default function HowItWorks() {
           </h2>
         </ScrollReveal>
 
-        <div className="relative grid grid-cols-1 gap-5 md:gap-6 md:grid-cols-3">
+        <div className={`relative grid grid-cols-1 gap-5 md:gap-6 md:grid-cols-3 ${SWIPE}`}>
           {/* Connection lines (desktop only) */}
           <div className="pointer-events-none absolute inset-0 hidden md:block" aria-hidden="true">
             <div className="absolute left-[33.33%] top-[3.5rem] h-px w-[calc(33.33%-3rem)] -translate-x-1/2 border-t border-dashed border-[#B8CF2E]/40" style={{ marginLeft: '1.5rem' }} />
@@ -59,8 +61,8 @@ export default function HowItWorks() {
           </div>
 
           {steps.map((step, i) => (
-            <ScrollReveal key={step.num} delay={i * 0.12}>
-              <div className="relative flex flex-col items-center rounded-2xl border border-[#E5E7EB] bg-white p-8 text-center shadow-sm">
+            <ScrollReveal key={step.num} delay={i * 0.12} className={SLIDE}>
+              <div className="relative flex h-full flex-col items-center rounded-2xl border border-[#E5E7EB] bg-white p-8 max-sm:p-6 text-center shadow-sm">
                 <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#D5EB4B] text-xl font-bold text-[#0c0c10]">
                   {step.num}
                 </div>
@@ -77,6 +79,7 @@ export default function HowItWorks() {
             </ScrollReveal>
           ))}
         </div>
+        <SwipeHint count={steps.length} />
       </div>
     </section>
   )

@@ -19,6 +19,7 @@ import { trackDiscovery } from '../../lib/tracking'
 import { getUTMParams, getFbcParam, getFbpParam } from '../../lib/analytics'
 import { journeySummary } from '../../lib/siteBot'
 import { FORM, WHATSAPP } from '../../data/websites'
+import { useFormOnScreen } from '../../lib/useFormOnScreen'
 
 const LIME = '#D9EA66'
 const TRACK = { content_name: 'websites', content_category: 'website' }
@@ -76,17 +77,18 @@ export function buildWebsitePayload(
 
 /* ── small fields ─────────────────────────────────────────────────────────── */
 
-const inputBase = 'mt-2 w-full rounded-xl border bg-white px-4 py-3 text-[15px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 '
+const inputBase = 'mt-2 w-full rounded-xl border bg-white px-4 py-3 text-[15px] max-sm:mt-1 max-sm:min-h-[44px] max-sm:px-3 max-sm:py-2 max-sm:text-[16px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 '
 const ok = 'border-slate-300 hover:border-slate-500 focus:border-slate-900'
 const bad = 'border-[#C2410C]'
 
-function Label({ text, optional, hint }: { text: string; optional?: boolean; hint?: string }) {
+function Label({ text, optional, hint, short, inlineHint }: { text: string; optional?: boolean; hint?: string; short?: string; inlineHint?: boolean }) {
   return (
     <>
-      <span className="text-[14px] font-semibold text-[#111111]">
-        {text}{optional && <span className="ml-2 text-[12px] font-normal text-slate-500">optional</span>}
+      <span className="text-[14px] font-semibold text-[#111111] max-sm:text-[15px]">
+        {short ? <><span className="sm:hidden">{short}</span><span className="max-sm:hidden">{text}</span></> : text}{optional && <span className="ml-2 text-[12px] font-normal text-slate-500">optional</span>}
+        {inlineHint && hint && <span className="ml-2 text-[13px] font-normal text-slate-500 sm:hidden">{hint}</span>}
       </span>
-      {hint && <span className="mt-0.5 block text-[12.5px] leading-snug text-slate-500">{hint}</span>}
+      {hint && <span className={`mt-0.5 block text-[12.5px] leading-snug text-slate-500 ${inlineHint ? 'max-sm:hidden' : 'max-sm:text-[13px]'}`}>{hint}</span>}
     </>
   )
 }
@@ -104,7 +106,7 @@ function Select({ value, onChange, options, invalid, placeholder = 'Choose one',
           ? <option key={o} value={o}>{o}</option>
           : <option key={o.v} value={o.v}>{o.l}</option>)}
       </select>
-      <span aria-hidden className="pointer-events-none absolute right-4 top-1/2 mt-1 -translate-y-1/2 text-[10px] text-slate-500">▼</span>
+      <span aria-hidden className="pointer-events-none absolute right-4 top-1/2 mt-1 -translate-y-1/2 text-[10px] max-sm:mt-0.5 text-slate-500">▼</span>
     </div>
   )
 }
@@ -115,16 +117,16 @@ function Chips({ label, hint, options, value, onChange, multi, invalid }: {
   onChange: (v: string[]) => void; multi?: boolean; invalid?: boolean
 }) {
   return (
-    <fieldset className="md:col-span-2">
-      <legend><Label text={label} hint={hint} /></legend>
-      <div role={multi ? 'group' : 'radiogroup'} aria-label={label} className="mt-2 flex flex-wrap gap-2">
+    <fieldset className="max-sm:col-span-2 md:col-span-2">
+      <legend><Label text={label} hint={hint} inlineHint /></legend>
+      <div role={multi ? 'group' : 'radiogroup'} aria-label={label} className="mt-2 flex flex-wrap gap-2 max-sm:mt-1.5">
         {options.map(o => {
           const on = value.includes(o)
           return (
             <button key={o} type="button"
               {...(multi ? { 'aria-pressed': on } : { role: 'radio', 'aria-checked': on })}
               onClick={() => onChange(multi ? (on ? value.filter(x => x !== o) : [...value, o]) : [o])}
-              className={`min-h-[44px] rounded-full border px-4 py-2 text-[14px] font-semibold transition-colors ${
+              className={`min-h-[44px] rounded-full border px-4 py-2 text-[14px] font-semibold transition-colors max-sm:px-3.5 max-sm:py-1.5 max-sm:text-[15px] ${
                 on ? 'border-[#111111] bg-[#111111] text-white' : invalid ? 'border-[#C2410C] bg-white text-slate-800' : 'border-slate-300 bg-white text-slate-800 hover:border-slate-600'}`}>
               {multi && <span aria-hidden className="mr-1.5">{on ? '✓' : '+'}</span>}{o}
             </button>
@@ -156,6 +158,7 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
   const started = useRef(false)
   const pickedRef = useRef<Slot | null>(null)
   pickedRef.current = picked
+  useFormOnScreen(box)
 
   const guessed = useMemo(() => guessPlace(), [])
   const [countryCode, setCountryCode] = useState(() => COUNTRIES.find(c => c.ccy === guessed.ccy)?.code ?? 'IN')
@@ -309,8 +312,19 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
   const noCalendar = slotsFailed && !slots
 
   return (
-    <div id="book" ref={box} className="scroll-mt-28 rounded-3xl bg-[#111111] p-5 text-white sm:p-8 lg:p-10">
-      <ol className="flex flex-wrap gap-x-5 gap-y-2">
+    <div id="book" ref={box} className="scroll-mt-28 rounded-3xl bg-[#111111] p-5 text-white max-sm:scroll-mt-20 max-sm:rounded-2xl max-sm:p-3.5 sm:p-8 lg:p-10">
+      <div className="sm:hidden" aria-hidden>
+        <p className="flex items-baseline justify-between text-[13px] text-white/60">
+          {wrong.length > 0
+            ? <span className="font-semibold" style={{ color: LIME }}>A few answers are missing</span>
+            : <span className="font-semibold text-white">{FORM.steps[step]}</span>}
+          <span>Step {step + 1} of {FORM.steps.length}</span>
+        </p>
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${((step + 1) / FORM.steps.length) * 100}%`, background: LIME }} />
+        </div>
+      </div>
+      <ol className="flex flex-wrap gap-x-5 gap-y-2 max-sm:sr-only">
         {FORM.steps.map((s, i) => (
           <li key={s} className="flex items-center gap-2" aria-current={i === step ? 'step' : undefined}>
             <span className="grid h-6 w-6 place-items-center rounded-full text-[12px] font-bold"
@@ -326,9 +340,9 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
         <motion.div key={step}
           initial={reduce ? false : { opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }}
           exit={reduce ? undefined : { opacity: 0, x: -24 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-          <div className="mt-7 grid content-start gap-4 rounded-2xl bg-white p-5 text-slate-900 md:min-h-[22rem] md:grid-cols-2 md:gap-5 md:p-7">
+          <div className="mt-7 grid content-start gap-4 rounded-2xl bg-white p-5 text-slate-900 max-sm:mt-3 max-sm:grid-cols-2 max-sm:gap-x-2.5 max-sm:gap-y-3 max-sm:rounded-xl max-sm:p-3.5 md:min-h-[22rem] md:grid-cols-2 md:gap-5 md:p-7">
             {step === 0 && (
-              <div className="md:col-span-2">
+              <div className="max-sm:col-span-2 md:col-span-2">
                 <Label text="Pick a time for your call" hint={`One hour on Google Meet. Times are shown in your time zone (${zoneName()}).`} />
                 {slots === null && !slotsFailed && <p className="mt-4 text-[14px] text-slate-500" role="status">Checking the calendar for free times…</p>}
                 {noCalendar && (
@@ -337,18 +351,18 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
                   </p>
                 )}
                 {slots && (
-                  <div className="mt-3 grid gap-4 md:grid-cols-2">
+                  <div className="mt-3 grid gap-4 max-sm:mt-2 max-sm:gap-3 md:grid-cols-2">
                     <DatePicker available={freeCount} value={day} onChange={d => { setDay(d); setPicked(null); setNote('') }}
                       placeholder="Choose a day" label="Call day" />
                     <div>
                       {day ? (
-                        <div role="radiogroup" aria-label="Call time" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        <div role="radiogroup" aria-label="Call time" className="grid grid-cols-2 gap-2 max-sm:grid-cols-3 sm:grid-cols-3">
                           {times.map(t => {
                             const on = picked?.start === t.start
                             return (
                               <button key={t.start} type="button" role="radio" aria-checked={on}
                                 onClick={() => { begin(); setPicked(t); setNote('') }}
-                                className={`min-h-[44px] rounded-xl border px-3 py-2 text-[14px] font-semibold ${on ? 'border-[#111111] bg-[#111111] text-white' : 'border-slate-300 hover:border-slate-700'}`}>
+                                className={`min-h-[44px] rounded-xl border px-3 py-2 text-[14px] font-semibold max-sm:px-1 max-sm:text-[15px] ${on ? 'border-[#111111] bg-[#111111] text-white' : 'border-slate-300 hover:border-slate-700'}`}>
                                 {localTime(t.start)}
                               </button>
                             )
@@ -376,60 +390,60 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
 
             {step === 2 && (
               <>
-                <label className="block"><Label text="Business name" />
+                <label className="block min-w-0"><Label text="Business name" />
                   <input className={inputBase + (wrong.includes('company') ? bad : ok)} value={a.company || ''} onChange={e => set('company')(e.target.value)} autoComplete="organization" /></label>
-                <label className="block"><Label text="Your current website (if any)" optional />
+                <label className="block min-w-0"><Label text="Your current website (if any)" short="Website" optional />
                   <input className={inputBase + ok} value={a.website || ''} placeholder="yourcompany.com" onChange={e => set('website')(e.target.value)} inputMode="url" /></label>
-                <label className="block"><Label text="Industry" />
+                <label className="block min-w-0 max-sm:col-span-2"><Label text="Industry" />
                   <Select label="Industry" value={a.category || ''} onChange={set('category')} options={CATEGORIES} invalid={wrong.includes('category')} /></label>
-                <label className="block"><Label text="When do you need it?" />
+                <label className="block min-w-0 max-sm:order-1"><Label text="When do you need it?" short="When" />
                   <Select label="When do you need it?" value={a.timeline || ''} onChange={set('timeline')} options={TIMELINES} invalid={wrong.includes('timeline')} /></label>
-                <label className="block"><Label text="Country" />
+                <label className="block min-w-0"><Label text="Country" />
                   <Select label="Country" value={countryCode} placeholder="Choose your country"
                     onChange={c => { setCountryCode(c); setA(p => ({ ...p, state: '', city: '' })); setDial(byCode(c)?.dial ?? '+') }}
                     options={COUNTRIES_SHOWN.map(c => ({ v: c.code, l: c.name }))} /></label>
-                <label className="block"><Label text={country.tier} />
+                <label className="block min-w-0"><Label text={country.tier} />
                   <Select label={country.tier} value={a.state || ''} onChange={v => { set('state')(v); set('city')('') }} options={statesOf(country)}
                     invalid={wrong.includes('state')} placeholder={`Choose your ${country.tier.toLowerCase()}`} /></label>
-                <label className="block md:col-span-2"><Label text="City" />
+                <label className="block min-w-0 md:col-span-2"><Label text="City" />
                   <Select label="City" value={a.city || ''} onChange={set('city')} options={cityList} invalid={wrong.includes('city')}
                     disabled={!a.state} placeholder={a.state ? 'Choose your city' : `Pick a ${country.tier.toLowerCase()} first`} /></label>
-                <label className="block md:col-span-2"><Label text="Anything else we should know?" optional />
-                  <textarea className={`${inputBase}${ok} min-h-[5.5rem] resize-y`} value={a.need || ''} onChange={e => set('need')(e.target.value)} /></label>
+                <label className="block min-w-0 max-sm:order-2 max-sm:col-span-2 md:col-span-2"><Label text="Anything else we should know?" short="Anything else?" optional />
+                  <textarea className={`${inputBase}${ok} min-h-[5.5rem] resize-y max-sm:h-11 max-sm:min-h-[44px]`} value={a.need || ''} onChange={e => set('need')(e.target.value)} /></label>
               </>
             )}
 
             {step === 3 && (
               <>
-                <label className="block"><Label text="Your name" />
+                <label className="block max-sm:col-span-2"><Label text="Your name" />
                   <input className={inputBase + (wrong.includes('name') ? bad : ok)} value={a.name || ''} onChange={e => set('name')(e.target.value)} autoComplete="name" /></label>
-                <label className="block"><Label text="Email" />
+                <label className="block max-sm:col-span-2"><Label text="Email" />
                   <input type="email" className={inputBase + (wrong.includes('email') ? bad : ok)} value={a.email || ''} onChange={e => set('email')(e.target.value)} autoComplete="email" /></label>
-                <label className="block md:col-span-2"><Label text="Mobile with country code" />
-                  <div className="mt-2 flex gap-2">
+                <label className="block max-sm:col-span-2 md:col-span-2"><Label text="Mobile with country code" />
+                  <div className="mt-2 flex gap-2 max-sm:mt-1">
                     <div className="relative w-[5.4rem] shrink-0">
                       <select aria-label="Country dialling code" value={dial} onChange={e => setDial(e.target.value)}
-                        className="w-full appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-3 pr-5 text-[14.5px] text-slate-900 outline-none hover:border-slate-500 focus:border-slate-900">
+                        className="w-full appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-3 pr-5 text-[14.5px] max-sm:py-2.5 max-sm:text-[16px] text-slate-900 outline-none hover:border-slate-500 focus:border-slate-900">
                         {DIAL_CODES.map(d => <option key={d.code} value={d.dial}>{d.dial}</option>)}
                       </select>
                       <span aria-hidden className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-500">▼</span>
                     </div>
                     <input aria-label="Mobile number" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="98765 43210"
-                      className={`min-w-0 flex-1 rounded-xl border bg-white px-4 py-3 text-[15px] outline-none ${wrong.includes('phone') ? bad : ok}`}
+                      className={`min-w-0 flex-1 rounded-xl border bg-white px-4 py-3 text-[15px] outline-none max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] ${wrong.includes('phone') ? bad : ok}`}
                       value={a.phone || ''} onChange={e => set('phone')(e.target.value)} />
                   </div>
                 </label>
-                <p className="text-[13px] leading-relaxed text-slate-500 md:col-span-2">{FORM.consent} <a href="/privacy" className="underline">Privacy policy</a>.</p>
+                <p className="text-[13px] leading-relaxed text-slate-500 max-sm:col-span-2 md:col-span-2">{FORM.consent} <a href="/privacy" className="underline">Privacy policy</a>.</p>
               </>
             )}
           </div>
         </motion.div>
       </AnimatePresence>
 
-      {wrong.length > 0 && <p className="mt-4 text-[13.5px] font-semibold" style={{ color: LIME }} role="alert">A few answers are still missing above.</p>}
+      {wrong.length > 0 && <p className="mt-4 text-[13.5px] max-sm:sr-only font-semibold" style={{ color: LIME }} role="alert">A few answers are still missing above.</p>}
       {err && <p className="mt-4 text-[13.5px] font-semibold" style={{ color: LIME }} role="alert">{err}</p>}
 
-      <div className="mt-7 flex flex-wrap items-center gap-3">
+      <div className="mt-7 flex flex-wrap items-center gap-3 max-sm:mt-3 max-sm:gap-x-2.5 max-sm:gap-y-2">
         {step > 0 && (
           <button type="button" onClick={() => go(step - 1)}
             className="min-h-[44px] rounded-full border border-white/25 px-5 py-3 text-[14px] font-semibold text-white/80 hover:border-white/60 hover:text-white">Back</button>
@@ -446,7 +460,7 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
           </button>
         )}
         {step === 0 && slots && !picked && (
-          <button type="button" onClick={() => { setPicked(null); setStep(1) }} className="text-[13px] text-white/55 underline underline-offset-4 hover:text-white">
+          <button type="button" onClick={() => { setPicked(null); setStep(1) }} className="text-[13px] text-white/55 underline max-sm:min-h-[44px] max-sm:w-full max-sm:text-[14px] underline-offset-4 hover:text-white">
             None of these times work? Continue without one
           </button>
         )}

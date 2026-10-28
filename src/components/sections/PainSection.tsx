@@ -1,3 +1,5 @@
+import { SWIPE, SLIDE } from '../websites/tokens'
+import SwipeHint from '../websites/SwipeHint'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal'
@@ -107,7 +109,7 @@ export default function PainSection() {
     .reduce((sum, p) => sum + p.cost, 0)
 
   return (
-    <section id="pain" className="bg-[#FFFDF7] py-20 px-4">
+    <section id="pain" className="bg-[#FFFDF7] py-20 max-sm:py-11 px-4">
       <div className="max-w-5xl mx-auto">
         <ScrollReveal>
           <div className="text-center mb-12">
@@ -123,11 +125,11 @@ export default function PainSection() {
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 max-sm:mb-0 ${SWIPE}`}>
           {pains.map((pain, i) => {
             const active = selected.has(pain.id)
             return (
-              <ScrollReveal key={pain.id} delay={i * 0.05}>
+              <ScrollReveal key={pain.id} delay={i * 0.05} className={SLIDE}>
                 <button
                   type="button"
                   onClick={() => toggle(pain.id)}
@@ -166,6 +168,7 @@ export default function PainSection() {
             )
           })}
         </div>
+        <SwipeHint count={pains.length} />
 
         {/* Running total */}
         <AnimatePresence>

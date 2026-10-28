@@ -140,7 +140,7 @@ export default function ZippyGuide() {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.6 }}
           transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-          className={`fixed z-40 flex items-end gap-2 ${wide
+          className={`float-aside fixed z-40 flex items-end gap-2 ${wide
             ? 'right-5 flex-row-reverse'
             : 'bottom-[calc(14px+env(safe-area-inset-bottom))] left-3 flex-row'}`}
           style={wide ? { top: calm ? '55vh' : top } : undefined}

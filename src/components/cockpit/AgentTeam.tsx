@@ -39,7 +39,7 @@ export function AgentTeam({ roster }: { roster: Roster }) {
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-[rgba(10,10,12,0.14)] sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-[rgba(10,10,12,0.14)] max-sm:grid-cols-3 sm:grid-cols-3 lg:grid-cols-5">
         {roster.map((a, i) => {
           const on = i === shown
           return (
@@ -109,7 +109,7 @@ export function ApproveFlow() {
   const at = reduce ? STEPS.length - 1 : step
 
   return (
-    <div className="rounded-2xl border border-[rgba(10,10,12,0.2)] p-6 sm:p-7">
+    <div className="rounded-2xl border border-[rgba(10,10,12,0.2)] p-6 max-sm:w-[84%] max-sm:shrink-0 max-sm:snap-start max-sm:p-5 sm:p-7">
       <h3 className="font-['Space_Grotesk'] text-[15px] font-bold uppercase tracking-wide text-[#0A0A0C]">
         They propose. You approve.
       </h3>

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useFormOnScreen } from '../../lib/useFormOnScreen'
 import { motion, AnimatePresence } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal'
 import Toast from '../ui/Toast'
@@ -82,7 +83,7 @@ const slideVariants = {
 
 function ProgressBar({ step }: { step: number }) {
   return (
-    <div className="flex gap-2 mb-8">
+    <div className="flex gap-2 mb-8 max-sm:mb-4">
       {[1, 2, 3, 4].map((s) => (
         <div
           key={s}
@@ -112,8 +113,8 @@ function Step1Tasks({
       <h3 className="text-lg font-semibold text-white mb-1">
         Which tasks eat the most time?
       </h3>
-      <p className="text-sm text-[#9CA3AF] mb-6">Pick all that apply. No wrong answers.</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <p className="text-sm text-[#9CA3AF] mb-6 max-sm:mb-3">Pick all that apply. No wrong answers.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-sm:gap-1">
         {automationOptions.map((opt) => {
           const active = selected.includes(opt)
           return (
@@ -121,7 +122,7 @@ function Step1Tasks({
               key={opt}
               type="button"
               onClick={() => onToggle(opt)}
-              className={`flex items-start gap-3 text-left rounded-xl p-4 border cursor-pointer transition-all duration-200 ${
+              className={`flex items-start gap-3 text-left rounded-xl p-4 border cursor-pointer transition-all duration-200 max-sm:min-h-[44px] max-sm:items-center max-sm:px-3 max-sm:py-2 ${
                 active
                   ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
                   : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
@@ -138,7 +139,7 @@ function Step1Tasks({
                   </svg>
                 )}
               </span>
-              <span className="text-sm text-white">{opt}</span>
+              <span className="text-sm text-white max-sm:text-[15px] max-sm:leading-snug">{opt}</span>
             </button>
           )
         })}
@@ -154,7 +155,7 @@ function Step1Tasks({
             value={othersText}
             onChange={(e) => onOthersChange(e.target.value)}
             placeholder="Describe what you want to automate..."
-            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
           />
         </motion.div>
       )}
@@ -175,7 +176,7 @@ function Step2Team({
       <h3 className="text-lg font-semibold text-white mb-1">
         How big is the team doing this work?
       </h3>
-      <p className="text-sm text-[#9CA3AF] mb-6">Tap one to continue</p>
+      <p className="text-sm text-[#9CA3AF] mb-6 max-sm:mb-3">Tap one to continue</p>
       <div className="flex flex-col gap-3">
         {teamSizeOptions.map((opt) => {
           const active = teamSize === opt.label
@@ -184,7 +185,7 @@ function Step2Team({
               key={opt.label}
               type="button"
               onClick={() => onSelect(opt.label)}
-              className={`flex items-center gap-4 text-left rounded-xl p-5 border cursor-pointer transition-all duration-200 ${
+              className={`flex items-center gap-4 text-left rounded-xl p-5 border cursor-pointer transition-all duration-200 max-sm:px-4 max-sm:py-3 ${
                 active
                   ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
                   : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
@@ -226,13 +227,13 @@ function Step3Business({
       <h3 className="text-lg font-semibold text-white mb-1">
         Tell us about your business
       </h3>
-      <p className="text-sm text-[#9CA3AF] mb-6">Helps us tailor your audit.</p>
+      <p className="text-sm text-[#9CA3AF] mb-6 max-sm:mb-3">Helps us tailor your audit.</p>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-6 max-sm:gap-4">
         {/* Industry — tappable card grid */}
         <div>
-          <label className="block text-sm text-[#9CA3AF] mb-3">What's your industry?</label>
-          <div className="grid grid-cols-2 gap-2">
+          <label className="block text-sm text-[#9CA3AF] mb-3 max-sm:mb-2">What's your industry?</label>
+          <div className="grid grid-cols-2 gap-2 max-sm:flex max-sm:flex-wrap">
             {industryOptions.map((opt) => {
               const active = industry === opt
               return (
@@ -240,7 +241,7 @@ function Step3Business({
                   key={opt}
                   type="button"
                   onClick={() => onIndustryChange(opt)}
-                  className={`text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 ${
+                  className={`text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 max-sm:min-h-[44px] max-sm:rounded-full max-sm:px-3.5 max-sm:py-2 ${
                     active
                       ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
                       : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
@@ -255,8 +256,8 @@ function Step3Business({
 
         {/* Revenue — tappable cards */}
         <div>
-          <label className="block text-sm text-[#9CA3AF] mb-3">Monthly revenue range</label>
-          <div className="flex flex-col gap-2">
+          <label className="block text-sm text-[#9CA3AF] mb-3 max-sm:mb-2">Monthly revenue range</label>
+          <div className="flex flex-col gap-2 max-sm:grid max-sm:grid-cols-2">
             {revenueOptions.map((opt) => {
               const active = revenueRange === opt.label
               return (
@@ -264,14 +265,14 @@ function Step3Business({
                   key={opt.label}
                   type="button"
                   onClick={() => onRevenueChange(opt.label)}
-                  className={`flex items-center justify-between text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 ${
+                  className={`flex items-center justify-between text-left rounded-xl p-3 border cursor-pointer transition-all duration-200 max-sm:min-h-[44px] max-sm:px-3 max-sm:py-2 ${
                     active
                       ? 'border-[#D5EB4B] bg-[rgba(213,235,75,0.05)]'
                       : 'border-[#3E3E48] bg-[#33333F] hover:border-[#3E3E46]'
                   }`}
                 >
                   <span className="text-sm font-medium text-white">{opt.label}</span>
-                  <span className="text-xs text-[#6B7280]">{opt.sub}</span>
+                  <span className="text-xs text-[#6B7280] max-sm:hidden">{opt.sub}</span>
                 </button>
               )
             })}
@@ -313,8 +314,8 @@ function Step4Contact({
       <h3 className="text-lg font-semibold text-white mb-1">
         Almost done. Where should we send your audit?
       </h3>
-      <p className="text-sm text-[#9CA3AF] mb-6">We'll WhatsApp your custom automation roadmap.</p>
-      <div className="flex flex-col gap-4">
+      <p className="text-sm text-[#9CA3AF] mb-6 max-sm:mb-3">We'll WhatsApp your custom automation roadmap.</p>
+      <div className="flex flex-col gap-4 max-sm:gap-2.5">
         <div>
           <label className="block text-sm text-[#9CA3AF] mb-1">Your Name</label>
           <input
@@ -322,7 +323,7 @@ function Step4Contact({
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             placeholder="Full name"
-            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
           />
         </div>
         <div>
@@ -333,7 +334,7 @@ function Step4Contact({
             onChange={(e) => onEmailChange(e.target.value)}
             placeholder="you@company.com"
             required
-            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
           />
         </div>
         <div>
@@ -343,7 +344,7 @@ function Step4Contact({
             value={phone}
             onChange={(e) => onPhoneChange(e.target.value)}
             placeholder="98765 43210"
-            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
           />
         </div>
         <div>
@@ -353,7 +354,7 @@ function Step4Contact({
             value={businessName}
             onChange={(e) => onBusinessNameChange(e.target.value)}
             placeholder="Your company name"
-            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
+            className="w-full bg-[#33333F] border border-[#3E3E48] rounded-lg p-4 max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] text-white text-sm placeholder:text-[#6B7280] focus:border-[#D5EB4B] focus:ring-1 focus:ring-[#D5EB4B] outline-none transition-colors"
           />
         </div>
 
@@ -384,7 +385,7 @@ function Step4Contact({
         <p className="mt-3 text-sm text-[#EF4444]">{formError}</p>
       )}
 
-      <p className="mt-6 text-xs text-[#9CA3AF] text-center">
+      <p className="mt-6 max-sm:mt-3 text-xs text-[#9CA3AF] text-center">
         10 spots this quarter. No payment needed. Free audit.
       </p>
     </div>
@@ -479,6 +480,14 @@ export default function QuizForm() {
 
   // track quiz start (once)
   const quizStarted = useRef(false)
+  /* Phones: each step lands with the card's top in view, so the step fits one screen. */
+  const card = useRef<HTMLDivElement>(null)
+  const firstStep = useRef(true)
+  useFormOnScreen(card)
+  useEffect(() => {
+    if (firstStep.current) { firstStep.current = false; return }
+    if (window.matchMedia('(max-width: 639.98px)').matches) card.current?.scrollIntoView({ block: 'start' })
+  }, [step])
   useEffect(() => {
     if (!quizStarted.current) {
       quizStarted.current = true
@@ -608,8 +617,8 @@ export default function QuizForm() {
 
   /* ── main render ────────────────────────────────── */
   return (
-    <section id="quiz" className="bg-[#2A2A35] py-20 px-4">
-      <div className="max-w-2xl mx-auto text-center mb-12">
+    <section id="quiz" className="bg-[#2A2A35] py-20 max-sm:py-11 px-4">
+      <div className="max-w-2xl mx-auto text-center mb-12 max-sm:mb-6">
         <ScrollReveal>
           <span className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#D5EB4B] inline-block">
             Start Here
@@ -624,7 +633,7 @@ export default function QuizForm() {
       </div>
 
       <ScrollReveal>
-        <div className="max-w-2xl mx-auto bg-[#33333F] border border-[#3E3E48] rounded-2xl p-6 sm:p-8">
+        <div ref={card} className="max-w-2xl mx-auto bg-[#33333F] border border-[#3E3E48] rounded-2xl p-6 max-sm:scroll-mt-32 max-sm:p-4 sm:p-8">
           {done ? (
             <ThankYou waitlistNum={waitlistNum} />
           ) : (
@@ -682,7 +691,7 @@ export default function QuizForm() {
               </AnimatePresence>
 
               {/* Navigation */}
-              <div className="flex items-center justify-between mt-8">
+              <div className="flex items-center justify-between mt-8 max-sm:mt-4">
                 {step > 1 ? (
                   <button
                     type="button"

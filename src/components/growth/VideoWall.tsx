@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
+import { SWIPE_5 } from '../websites/tokens'
+import SwipeHint from '../websites/SwipeHint'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CLIENT_VIDEOS, drivePoster, driveEmbed } from '../../data/videos'
 import type { ClientVideo } from '../../data/videos'
@@ -28,7 +30,7 @@ function Card({ v, onOpen, i }: { v: ClientVideo; onOpen: () => void; i: number 
       viewport={{ once: true, margin: '-60px' }}
       transition={{ duration: 0.45, delay: Math.min(i * 0.07, 0.5) }}
       whileHover={{ y: -4 }}
-      className="group relative block w-full overflow-hidden rounded-[24px] border border-[#E2E2D8] bg-white text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8CF2E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F5F0]"
+      className="group relative block w-full overflow-hidden rounded-[24px] border border-[#E2E2D8] bg-white text-left max-sm:w-[84%] max-sm:shrink-0 max-sm:snap-start focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B8CF2E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F5F0]"
       aria-label={`Play ${v.title} — ${v.who}, ${v.meta}`}
     >
       <div className="relative aspect-video overflow-hidden bg-[#0B0B14]">
@@ -83,7 +85,7 @@ export default function VideoWall() {
 
   return (
     <section id="conversations" className="scroll-mt-28 bg-[#F5F5F0]">
-      <div className="mx-auto max-w-6xl px-5 py-20 sm:py-24">
+      <div className="mx-auto max-w-6xl px-5 py-20 max-sm:py-12 sm:py-24">
         <p className="flex items-center gap-3 font-['JetBrains_Mono'] text-[11px] font-bold uppercase tracking-[0.2em] text-[#6B7280]">
           <span aria-hidden className="inline-block h-px w-8 shrink-0 bg-[#D5EB4B]" />
           Conversations
@@ -95,11 +97,12 @@ export default function VideoWall() {
           Real sessions with the people we work for — unscripted, unedited.
         </p>
 
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={`mt-12 grid gap-6 max-sm:mt-7 sm:grid-cols-2 lg:grid-cols-3 ${SWIPE_5}`}>
           {CLIENT_VIDEOS.map((v, i) => (
             <Card key={v.driveId} v={v} i={i} onOpen={() => setOpen(v)} />
           ))}
         </div>
+        <SwipeHint count={CLIENT_VIDEOS.length} />
       </div>
 
       {/* lightbox — the player only mounts once something is opened */}

@@ -49,13 +49,13 @@ export default function FAQ() {
   }
 
   return (
-    <section className="bg-[#FFFDF7] py-20 px-4">
+    <section className="bg-[#FFFDF7] py-20 max-sm:py-11 px-4">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#B8CF2E]">
             COMMON QUESTIONS
           </p>
-          <h2 className="mx-auto mb-12 max-w-xl text-center text-3xl font-bold text-[#111827] sm:text-4xl">
+          <h2 className="mx-auto mb-12 max-sm:mb-6 max-w-xl text-center text-3xl font-bold text-[#111827] sm:text-4xl">
             Before You Decide
           </h2>
         </ScrollReveal>
@@ -66,7 +66,7 @@ export default function FAQ() {
               <div className="mb-3 overflow-hidden rounded-xl border border-[#E5E7EB] bg-white">
                 <button
                   onClick={() => toggle(i)}
-                  className="flex w-full items-center justify-between p-6 text-left font-semibold text-[#111827]"
+                  className="flex w-full items-center justify-between p-6 max-sm:px-4 max-sm:py-3.5 text-left font-semibold text-[#111827]"
                 >
                   <span>{faq.q}</span>
                   <motion.span
@@ -85,7 +85,7 @@ export default function FAQ() {
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.25, ease: 'easeInOut' }}
                     >
-                      <p className="px-6 pb-6 text-sm leading-relaxed text-[#4B5563]">
+                      <p className="px-6 pb-6 max-sm:px-4 max-sm:pb-4 text-sm leading-relaxed text-[#4B5563]">
                         {faq.a}
                       </p>
                     </motion.div>

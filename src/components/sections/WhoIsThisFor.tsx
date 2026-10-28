@@ -1,3 +1,5 @@
+import { SWIPE, SLIDE } from '../websites/tokens'
+import SwipeHint from '../websites/SwipeHint'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ScrollReveal from '../ui/ScrollReveal'
@@ -62,7 +64,7 @@ export default function WhoIsThisFor() {
   const qualifies = selected.size >= 3
 
   return (
-    <section className="bg-[#FFFDF7] py-20 px-4">
+    <section className="bg-[#FFFDF7] py-20 max-sm:py-11 px-4">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal>
           <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#B8CF2E]">
@@ -76,15 +78,15 @@ export default function WhoIsThisFor() {
           </p>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${SWIPE}`}>
           {cards.map((card, i) => {
             const active = selected.has(card.id)
             return (
-              <ScrollReveal key={card.id} delay={i * 0.1}>
+              <ScrollReveal key={card.id} delay={i * 0.1} className={SLIDE}>
                 <button
                   type="button"
                   onClick={() => toggle(card.id)}
-                  className={`w-full rounded-2xl border-2 p-8 transition-all duration-300 cursor-pointer text-left flex items-start gap-4 ${
+                  className={`w-full h-full rounded-2xl border-2 p-8 max-sm:p-5 transition-all duration-300 cursor-pointer text-left flex items-start gap-4 ${
                     active
                       ? 'border-[#B8CF2E] bg-[rgba(184,207,46,0.08)] -translate-y-1 shadow-lg'
                       : 'border-[#E5E7EB] bg-white hover:-translate-y-0.5 hover:border-[#B8CF2E]/40 hover:shadow-md'
@@ -123,6 +125,7 @@ export default function WhoIsThisFor() {
             )
           })}
         </div>
+        <SwipeHint count={cards.length} />
 
         <AnimatePresence>
           {qualifies && (

@@ -23,6 +23,8 @@ import {
   LIME,
 } from '../components/growth/kinetic'
 import { METRICS, PILLARS, VERTICAL_OPTIONS, SPEND_BANDS } from '../data/growth'
+import { SWIPE_5, SLIDE } from '../components/websites/tokens'
+import SwipeHint from '../components/websites/SwipeHint'
 
 const ENDPOINT =
   'https://script.google.com/macros/s/AKfycbzzacqtwW_Wfk3EB-4WmCQrNFK92yeT2ziRNJvV4Ujy_468HHwCRHiGN0OkxTMLZyKJKQ/exec'
@@ -91,10 +93,10 @@ function GrowthHero() {
 
 function WhoWeAre() {
   return (
-    <Band tone="bone" className="py-20 sm:py-28">
+    <Band tone="bone" className="py-20 max-sm:py-12 sm:py-28">
       <Kicker tone="bone">More than an agency</Kicker>
 
-      <div className="mt-7 grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+      <div className="mt-7 grid gap-10 max-sm:gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
         <Split
           className={`${DISPLAY} text-[#111214]`}
           lines={[
@@ -116,10 +118,10 @@ function WhoWeAre() {
         </Reveal>
       </div>
 
-      <div className="mt-14 grid gap-5 md:grid-cols-3">
+      <div className={`mt-14 grid gap-5 max-sm:mt-8 md:grid-cols-3 ${SWIPE_5}`}>
         {PILLARS.map((p, i) => (
-          <Reveal key={p.num} delay={i * 0.09}>
-            <div className="h-full rounded-[24px] border border-[#E2E2D8] bg-white p-7">
+          <Reveal key={p.num} delay={i * 0.09} className={SLIDE}>
+            <div className="h-full rounded-[24px] border border-[#E2E2D8] bg-white p-7 max-sm:p-5">
               <span className="font-['JetBrains_Mono'] text-xs font-bold tracking-[0.16em] text-[#8CA31B]">
                 {p.num}
               </span>
@@ -154,6 +156,7 @@ function WhoWeAre() {
           </Reveal>
         ))}
       </div>
+      <SwipeHint count={PILLARS.length} />
     </Band>
   )
 }
@@ -162,7 +165,7 @@ function WhoWeAre() {
 
 function ClientsSection() {
   return (
-    <Band tone="bone" className="pb-20 sm:pb-24">
+    <Band tone="bone" className="pb-20 max-sm:pb-12 sm:pb-24">
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
         <div>
           <Kicker tone="bone">Client roster</Kicker>
@@ -172,7 +175,7 @@ function ClientsSection() {
           Across couture, education, membership, media, commercial real estate and technology.
         </p>
       </div>
-      <div className="mt-10">
+      <div className="mt-10 max-sm:mt-6">
         <ClientMarquee />
       </div>
     </Band>
@@ -183,8 +186,8 @@ function ClientsSection() {
 
 function MetricBand() {
   return (
-    <Band tone="lime" className="py-14 sm:py-16">
-      <div className="grid grid-cols-2 gap-y-10 md:grid-cols-5">
+    <Band tone="lime" className="py-14 max-sm:py-10 sm:py-16">
+      <div className="grid grid-cols-2 gap-y-10 max-sm:gap-y-6 md:grid-cols-5">
         {METRICS.map((m, i) => (
           <Reveal
             key={m.label}
@@ -221,7 +224,7 @@ function MetricBand() {
 
 function SegmentsSection() {
   return (
-    <Band tone="ink" className="py-20 sm:py-28">
+    <Band tone="ink" className="py-20 max-sm:py-12 sm:py-28">
       <SignalField count={28} grid={false} />
       <Kicker>Segments</Kicker>
       <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -243,7 +246,7 @@ function SegmentsSection() {
 
 function UnderstandSection() {
   return (
-    <Band tone="ink" className="py-20 sm:py-24">
+    <Band tone="ink" className="py-20 max-sm:py-12 sm:py-24">
       <Kicker>What we understand</Kicker>
       <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <Split
@@ -255,7 +258,7 @@ function UnderstandSection() {
           business below, we have built this before.
         </p>
       </div>
-      <div className="mt-12">
+      <div className="mt-12 max-sm:mt-7">
         <SegmentInsight />
       </div>
     </Band>
@@ -266,7 +269,7 @@ function UnderstandSection() {
 
 function EngineSection() {
   return (
-    <Band tone="ink" className="py-20 sm:py-28">
+    <Band tone="ink" className="py-20 max-sm:py-12 sm:py-28">
       <SignalField count={34} />
       <Kicker>The growth engine</Kicker>
       <div className="mt-7 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -350,10 +353,10 @@ function EnquiryForm() {
   }
 
   const field =
-    'w-full rounded-[14px] border border-white/12 bg-white/[0.04] px-4 py-3.5 text-white placeholder-white/35 backdrop-blur-sm transition focus:border-[#D5EB4B]/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-[#D5EB4B]/25'
+    'w-full max-sm:min-w-0 rounded-[14px] border border-white/12 bg-white/[0.04] px-4 py-3.5 max-sm:px-3.5 max-sm:py-3 max-sm:text-[16px] text-white placeholder-white/35 backdrop-blur-sm transition focus:border-[#D5EB4B]/60 focus:bg-white/[0.07] focus:outline-none focus:ring-2 focus:ring-[#D5EB4B]/25'
 
   return (
-    <Band tone="ink" id="enquire" className="py-20 sm:py-28" inner="max-w-3xl">
+    <Band tone="ink" id="enquire" className="py-20 max-sm:py-12 sm:py-28" inner="max-w-3xl">
       <SignalField count={30} />
 
       <div className="flex flex-wrap items-center justify-between gap-6">
@@ -385,8 +388,8 @@ function EnquiryForm() {
           </p>
         </div>
       ) : (
-        <form onSubmit={submit} className="mt-10 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <form onSubmit={submit} className="mt-10 space-y-4 max-sm:mt-6 max-sm:space-y-3">
+          <div className="grid gap-4 max-sm:grid-cols-2 max-sm:gap-3 sm:grid-cols-2">
             <input name="name" placeholder="Your name" className={field} autoComplete="name" />
             <input
               name="phone"
@@ -396,7 +399,7 @@ function EnquiryForm() {
               autoComplete="tel"
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 max-sm:grid-cols-2 max-sm:gap-3 sm:grid-cols-2">
             <input name="business" placeholder="Business name" className={field} />
             <input
               name="email"
@@ -406,7 +409,7 @@ function EnquiryForm() {
               autoComplete="email"
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 max-sm:gap-3 sm:grid-cols-2">
             <select name="vertical" className={field} defaultValue="">
               <option value="" disabled>
                 Your segment

@@ -78,7 +78,7 @@ function StatCard({
   color: string
 }) {
   return (
-    <div className="bg-[#33333F] border border-[#3E3E48] rounded-2xl p-6 text-center">
+    <div className="bg-[#33333F] border border-[#3E3E48] rounded-2xl p-6 max-sm:p-4 text-center">
       <p className="text-xs font-mono uppercase tracking-wider text-[#6B7280] mb-2">{sublabel}</p>
       <AnimatedCounter
         target={value}
@@ -126,7 +126,7 @@ export default function ROICalculator() {
   }, [pushDataLayer])
 
   return (
-    <section id="roi" className="bg-[#2A2A35] py-20 px-4">
+    <section id="roi" className="bg-[#2A2A35] py-20 max-sm:py-11 px-4">
       <div className="max-w-5xl mx-auto">
         <ScrollReveal>
           <p className="text-center font-mono text-xs uppercase tracking-widest mb-4 text-[#D5EB4B]">
@@ -135,13 +135,13 @@ export default function ROICalculator() {
           <h2 className="text-center text-3xl font-bold text-white sm:text-4xl mb-4">
             Calculate Your Automation Savings
           </h2>
-          <p className="text-center text-sm text-[#9CA3AF] mb-12">
+          <p className="text-center text-sm text-[#9CA3AF] mb-12 max-sm:mb-6">
             Move the sliders. See what you're leaving on the table.
           </p>
         </ScrollReveal>
 
         {/* Calculator grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 max-sm:gap-4 max-sm:mb-8">
           {/* Left: Inputs */}
           <ScrollReveal delay={0.1}>
             <div className="bg-[#33333F] border border-[#3E3E48] rounded-2xl p-6 sm:p-8">
@@ -179,7 +179,7 @@ export default function ROICalculator() {
 
           {/* Right: Results */}
           <ScrollReveal delay={0.2}>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 max-sm:gap-2.5">
               <StatCard
                 value={annualSavings}
                 prefix="₹"
@@ -208,25 +208,25 @@ export default function ROICalculator() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-[#3E3E48] mb-12" />
+        <div className="border-t border-[#3E3E48] mb-12 max-sm:mb-8" />
 
         {/* Comparison table */}
         <ScrollReveal delay={0.15}>
-          <h3 className="text-xl font-bold text-white text-center mb-8">Your Team Today vs. With AI</h3>
+          <h3 className="text-xl font-bold text-white text-center mb-8 max-sm:mb-4">Your Team Today vs. With AI</h3>
           <div className="overflow-x-auto">
             <table className="w-full overflow-hidden rounded-2xl border border-[#3E3E48] bg-[#33333F]">
               <thead>
                 <tr className="bg-[#3E3E48]">
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-[#9CA3AF]">
+                  <th className="px-6 py-4 max-sm:px-3 max-sm:py-3 text-left text-sm font-semibold uppercase tracking-wider text-[#9CA3AF]">
                     Task
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-[#EF4444]">
+                  <th className="px-6 py-4 max-sm:px-3 max-sm:py-3 text-left text-sm font-semibold uppercase tracking-wider text-[#EF4444]">
                     Manual
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-[#D5EB4B]">
+                  <th className="px-6 py-4 max-sm:px-3 max-sm:py-3 text-left text-sm font-semibold uppercase tracking-wider text-[#D5EB4B]">
                     With AI
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-[#22C55E]">
+                  <th className="px-6 py-4 max-sm:px-3 max-sm:py-3 text-left text-sm font-semibold uppercase tracking-wider text-[#22C55E]">
                     Time Saved
                   </th>
                 </tr>
@@ -237,16 +237,16 @@ export default function ROICalculator() {
                     key={row.task}
                     className={i < rows.length - 1 ? 'border-b border-[#3E3E48]' : ''}
                   >
-                    <td className="px-6 py-5 text-sm font-medium text-white">
+                    <td className="px-6 py-5 max-sm:px-3 max-sm:py-3 text-sm font-medium text-white">
                       {row.task}
                     </td>
-                    <td className="px-6 py-5 text-sm text-[#EF4444]/70">
+                    <td className="px-6 py-5 max-sm:px-3 max-sm:py-3 text-sm text-[#EF4444]/70">
                       {row.manual}
                     </td>
-                    <td className="px-6 py-5 text-sm text-[#D5EB4B]/80">
+                    <td className="px-6 py-5 max-sm:px-3 max-sm:py-3 text-sm text-[#D5EB4B]/80">
                       {row.ai}
                     </td>
-                    <td className="px-6 py-5 text-sm font-medium text-[#22C55E]">
+                    <td className="px-6 py-5 max-sm:px-3 max-sm:py-3 text-sm font-medium text-[#22C55E]">
                       {row.saved}
                     </td>
                   </tr>

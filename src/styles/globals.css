@@ -409,3 +409,16 @@ h1, h2, h3, h4 { font-family: 'Space Grotesk', sans-serif; line-height: 1.2; }
      just make it instant rather than animated */
   .zs-flip-inner { transition: none; }
 }
+
+/* Phones: floating launchers step aside while a booking form is on screen (useFormOnScreen). */
+@media (max-width: 767.98px) {
+  html[data-form-onscreen] .float-aside {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(24px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+}
+@media (max-width: 767.98px) and (prefers-reduced-motion: reduce) {
+  html[data-form-onscreen] .float-aside { transform: none; transition: none; }
+}

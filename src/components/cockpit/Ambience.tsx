@@ -25,7 +25,7 @@ export function AgentAmbience({ count = 7 }: { count?: number }) {
   if (reduce) return null
   const skins = ['lime', 'violet', 'sky', 'coral'] as const
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-[5] overflow-hidden">
+    <div aria-hidden className="float-aside pointer-events-none fixed inset-0 z-[5] overflow-hidden">
       {Array.from({ length: count }).map((_, i) => {
         const top = 6 + ((i * 41) % 84)
         const dur = 34 + (i % 4) * 11

@@ -29,6 +29,7 @@ import { trackDiscovery, trackFieldAnswered } from '../../lib/tracking'
 import { getUTMParams, getFbcParam, getFbpParam } from '../../lib/analytics'
 import DatePicker, { istKey } from './DatePicker'
 import { LIME } from '../growth/kinetic'
+import { useFormOnScreen } from '../../lib/useFormOnScreen'
 
 type Answers = Record<string, string>
 type Slot = { start: string; end: string; istDay: string; istTime: string }
@@ -39,18 +40,27 @@ const STEPS = ['Your business', 'What you need', 'Book the call'] as const
 /* ── one field ─────────────────────────────────────────────────────────────── */
 
 const inputBase =
-  'mt-2 w-full rounded-xl border bg-white px-4 py-3 text-[15px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 '
+  'mt-2 w-full rounded-xl border bg-white px-4 py-3 text-[15px] max-sm:mt-1 max-sm:min-h-[44px] max-sm:px-3 max-sm:py-2 max-sm:text-[16px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 '
 const ok = 'border-slate-300 hover:border-slate-500 focus:border-slate-900'
 const bad = 'border-[#C2410C]'
 
+/* Phones: shorter labels and only the hint that changes an answer (budget), so each
+   step fits one screen. Desktop renders the full label and every hint as before. */
+const SHORT: Record<string, string> = {
+  team: 'People who would use it', revenue: 'Yearly turnover', timeline: 'When', budget: 'Budget set aside',
+  day: 'Call day', time: 'Call time', company: 'Company', website: 'Website', instagram: 'Instagram',
+}
+const PHONE_HINT = ['budget']
+
 function Label({ f }: { f: Field }) {
+  const short = SHORT[f.key]
   return (
     <>
-      <span className="text-[14px] font-semibold text-[#0A0A0C]">
-        {f.label}
+      <span className="text-[14px] font-semibold text-[#0A0A0C] max-sm:text-[15px]">
+        {short ? <><span className="sm:hidden">{short}</span><span className="max-sm:hidden">{f.label}</span></> : f.label}
         {!f.required && <span className="ml-2 text-[12px] font-normal text-slate-500">optional</span>}
       </span>
-      {f.hint && <span className="mt-0.5 block text-[12.5px] leading-snug text-slate-500">{f.hint}</span>}
+      {f.hint && <span className={`mt-0.5 block text-[12.5px] leading-snug text-slate-500 ${PHONE_HINT.includes(f.key) ? 'max-sm:text-[13px]' : 'max-sm:hidden'}`}>{f.hint}</span>}
     </>
   )
 }
@@ -80,22 +90,22 @@ function Select({ value, onChange, options, invalid, placeholder = 'Choose one',
           return <option key={v} value={v}>{l}</option>
         })}
       </select>
-      <span aria-hidden className="pointer-events-none absolute right-4 top-1/2 mt-1 -translate-y-1/2 text-[10px] text-slate-500">▼</span>
+      <span aria-hidden className="pointer-events-none absolute right-4 top-1/2 mt-1 -translate-y-1/2 text-[10px] text-slate-500 max-sm:mt-0.5">▼</span>
     </div>
   )
 }
 
-function Ask({ f, value, onChange, invalid, options }: {
-  f: Field; value: string; onChange: (v: string) => void; invalid: boolean; options?: string[]
+function Ask({ f, value, onChange, invalid, options, className = '' }: {
+  f: Field; value: string; onChange: (v: string) => void; invalid: boolean; options?: string[]; className?: string
 }) {
   return (
-    <label className="block">
+    <label className={`block min-w-0 ${className}`}>
       <Label f={f} />
       {f.kind === 'select' ? (
         <Select value={value} onChange={onChange} options={options ?? f.options ?? []} invalid={invalid} label={f.label} />
       ) : f.kind === 'textarea' ? (
         <textarea
-          className={`${inputBase}${invalid ? bad : ok} min-h-[6rem] resize-y leading-relaxed`}
+          className={`${inputBase}${invalid ? bad : ok} min-h-[6rem] resize-y leading-relaxed max-sm:h-16 max-sm:min-h-[4rem]`}
           value={value} placeholder={f.placeholder} onChange={e => onChange(e.target.value)}
         />
       ) : (
@@ -127,6 +137,7 @@ export default function DiscoveryCall() {
   const [companyTouched, setCompanyTouched] = useState(false)
   const [day, setDay] = useState('')
   const top = useRef<HTMLDivElement>(null)
+  useFormOnScreen(top)
   const started = useRef(false)
 
   /* Country comes from their clock, so most people never touch the first dropdown. */
@@ -414,9 +425,20 @@ export default function DiscoveryCall() {
       /* The nav CTA points here rather than at the band, because landing on a heading
          and then having to scroll again to find the form is the whole reason people
          give up on a booking. 7rem clears the floating bar. */
-      className="scroll-mt-28 rounded-3xl bg-[#050507] p-5 text-white sm:p-8 lg:p-10"
+      className="scroll-mt-28 rounded-3xl bg-[#050507] p-5 text-white max-sm:scroll-mt-20 max-sm:rounded-2xl max-sm:p-3.5 sm:p-8 lg:p-10"
     >
-      <ol className="flex flex-wrap gap-x-5 gap-y-2">
+      <div className="sm:hidden" aria-hidden>
+        <p className="flex items-baseline justify-between text-[13px] text-white/60">
+          {wrong.length > 0
+            ? <span className="font-semibold" style={{ color: LIME }}>A few answers are missing</span>
+            : <span className="font-semibold text-white">{STEPS[step]}</span>}
+          <span>Step {step + 1} of {STEPS.length}</span>
+        </p>
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${((step + 1) / STEPS.length) * 100}%`, background: LIME }} />
+        </div>
+      </div>
+      <ol className="flex flex-wrap gap-x-5 gap-y-2 max-sm:sr-only">
         {STEPS.map((s, i) => (
           <li key={s} className="flex items-center gap-2">
             <span
@@ -441,15 +463,15 @@ export default function DiscoveryCall() {
           exit={reduce ? undefined : { opacity: 0, x: -24 }}
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="mt-7 grid content-start gap-4 rounded-2xl bg-white p-5 md:min-h-[25rem] md:grid-cols-2 md:gap-5 md:p-7">
+          <div className="mt-7 grid content-start gap-4 rounded-2xl bg-white p-5 max-sm:mt-3 max-sm:grid-cols-2 max-sm:gap-x-2.5 max-sm:gap-y-3 max-sm:rounded-xl max-sm:p-3.5 md:min-h-[25rem] md:grid-cols-2 md:gap-5 md:p-7">
             {step === 0 && (
               <>
-                <Ask f={ABOUT[0]} value={a.category || ''} onChange={set('category')} invalid={wrong.includes('category')} />
-                <Ask f={ABOUT[1]} value={a.team || ''} onChange={set('team')} invalid={wrong.includes('team')} />
+                <Ask f={ABOUT[0]} value={a.category || ''} onChange={set('category')} invalid={wrong.includes('category')} className="max-sm:col-span-2" />
+                <Ask f={ABOUT[1]} value={a.team || ''} onChange={set('team')} invalid={wrong.includes('team')} className="max-sm:col-span-2" />
 
                 {/* country, then state, then city. Three taps, zero typing, and data
                     we can actually group by afterwards. */}
-                <label className="block">
+                <label className="block min-w-0">
                   <Label f={{ key: 'country', label: 'Country', kind: 'select', required: true }} />
                   <Select
                     value={countryCode}
@@ -460,7 +482,7 @@ export default function DiscoveryCall() {
                   />
                 </label>
 
-                <label className="block">
+                <label className="block min-w-0">
                   <Label f={{ key: 'state', label: country.tier, kind: 'select', required: true }} />
                   <Select
                     value={a.state || ''}
@@ -472,7 +494,7 @@ export default function DiscoveryCall() {
                   />
                 </label>
 
-                <label className="block md:col-span-2">
+                <label className="block min-w-0 md:col-span-2">
                   <Label f={{
                     key: 'city', label: 'City', kind: 'select', required: true,
                     hint: a.state ? undefined : `Pick a ${country.tier.toLowerCase()} first.`,
@@ -488,7 +510,7 @@ export default function DiscoveryCall() {
                   />
                 </label>
 
-                <label className="block md:col-span-2">
+                <label className="block min-w-0 md:col-span-2">
                   <Label f={{
                     key: 'revenue', label: 'Roughly what does the business turn over a year?',
                     kind: 'select', required: false,
@@ -501,13 +523,13 @@ export default function DiscoveryCall() {
 
             {step === 1 && (
               <>
-                <div className="md:col-span-2">
+                <div className="max-sm:col-span-2 md:col-span-2">
                   <Ask f={PROJECT[0]} value={a.need || ''} onChange={set('need')} invalid={wrong.includes('need')} />
                 </div>
                 <Ask f={PROJECT[1]} value={a.website || ''} onChange={set('website')} invalid={false} />
                 <Ask f={PROJECT[2]} value={a.instagram || ''} onChange={set('instagram')} invalid={false} />
 
-                <label className="block">
+                <label className="block min-w-0 max-sm:col-span-2">
                   <Label f={{
                     key: 'budget', label: 'What have you set aside for this?', kind: 'select', required: true,
                     hint: `Our builds start at ${formatCompact(730, ccy, rate)}. A band saves us both a meeting.`,
@@ -515,23 +537,23 @@ export default function DiscoveryCall() {
                   <Select value={a.budget || ''} onChange={set('budget')} options={budgetOptions} invalid={wrong.includes('budget')} label="Budget" />
                 </label>
 
-                <Ask f={PROJECT[3]} value={a.timeline || ''} onChange={set('timeline')} invalid={wrong.includes('timeline')} />
+                <Ask f={PROJECT[3]} value={a.timeline || ''} onChange={set('timeline')} invalid={wrong.includes('timeline')} className="max-sm:col-span-2" />
               </>
             )}
 
             {step === 2 && (
               <>
                 <Ask f={CONTACT[0]} value={a.name || ''} onChange={set('name')} invalid={wrong.includes('name')} />
-                <Ask f={CONTACT[1]} value={a.email || ''} onChange={set('email')} invalid={wrong.includes('email')} />
+                <Ask f={CONTACT[1]} value={a.email || ''} onChange={set('email')} invalid={wrong.includes('email')} className="max-sm:order-1 max-sm:col-span-2" />
 
                 {/* dial code is a dropdown, preset from the country they chose */}
-                <label className="block">
+                <label className="block min-w-0 max-sm:order-1 max-sm:col-span-2">
                   <Label f={{ key: 'phone', label: 'Mobile', kind: 'text', required: true }} />
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex gap-2 max-sm:mt-1">
                     <div className="relative w-[5.1rem] shrink-0">
                       <select
                         aria-label="Country dialling code"
-                        className="w-full appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-3 pr-5 text-[14.5px] text-slate-900 outline-none hover:border-slate-500 focus:border-slate-900"
+                        className="w-full appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-3 pr-5 text-[14.5px] max-sm:py-2.5 max-sm:text-[16px] text-slate-900 outline-none hover:border-slate-500 focus:border-slate-900"
                         value={dial}
                         onChange={e => setDial(e.target.value)}
                       >
@@ -542,14 +564,14 @@ export default function DiscoveryCall() {
                       <span aria-hidden className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-500">▼</span>
                     </div>
                     <input
-                      className={`min-w-0 flex-1 rounded-xl border bg-white px-4 py-3 text-[15px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 ${wrong.includes('phone') ? bad : ok}`}
+                      className={`min-w-0 flex-1 rounded-xl border bg-white px-4 py-3 text-[15px] max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 ${wrong.includes('phone') ? bad : ok}`}
                       value={a.phone || ''} inputMode="tel" placeholder="98765 43210"
                       onChange={e => set('phone')(e.target.value)}
                     />
                   </div>
                 </label>
 
-                <label className="block">
+                <label className="block min-w-0">
                   <Label f={{
                     key: 'company', label: 'Company name', kind: 'text', required: true,
                     hint: a.company && !companyTouched ? 'Taken from your website. Change it if it is wrong.' : undefined,
@@ -566,7 +588,7 @@ export default function DiscoveryCall() {
                     exactly the kind of thing that makes a form feel unstable. */}
                 {canBook && Object.keys(byDate).length > 0 && (
                   <>
-                    <label className="block">
+                    <label className="block min-w-0 max-sm:order-2">
                       <Label f={{
                         key: 'day', label: 'Book a call · day', kind: 'select', required: false,
                         hint: 'One hour on Google Meet. Skip it and we will come back with times.',
@@ -580,7 +602,7 @@ export default function DiscoveryCall() {
                       />
                     </label>
 
-                    <label className="block">
+                    <label className="block min-w-0 max-sm:order-2">
                       <Label f={{
                         key: 'time', label: 'Book a call · time', kind: 'select', required: false,
                         hint: day ? 'Times are IST.' : 'Pick a day first.',
@@ -603,13 +625,13 @@ export default function DiscoveryCall() {
       </AnimatePresence>
 
       {wrong.length > 0 && (
-        <p className="mt-4 text-[13.5px] font-semibold" style={{ color: LIME }}>
+        <p className="mt-4 text-[13.5px] font-semibold max-sm:sr-only" style={{ color: LIME }}>
           A few answers are still missing above.
         </p>
       )}
 
       {step === 2 && !canBook && (
-        <p className="mt-5 flex items-start gap-3 text-[13.5px] leading-relaxed text-white/55">
+        <p className="mt-5 flex items-start gap-3 text-[13.5px] leading-relaxed text-white/55 max-sm:mt-3">
           <Agent skin="sky" size={28} mood="stuck" />
           <span className="max-w-[46ch]">
             The calendar is not answering right now, so booking is off for the moment.
@@ -622,11 +644,14 @@ export default function DiscoveryCall() {
         <p className="mt-4 text-[13.5px] font-semibold" style={{ color: LIME }}>{err}</p>
       )}
 
-      <div className="mt-7 flex flex-wrap items-center gap-3">
+      <div className="mt-7 flex flex-wrap items-center gap-3 max-sm:mt-3 max-sm:gap-x-2.5 max-sm:gap-y-1.5">
         {step > 0 && (
           <button
-            type="button" onClick={() => setStep(s => s - 1)}
-            className="rounded-full border border-white/20 px-5 py-3 text-[14px] font-semibold text-white/70 transition-colors hover:border-white/50 hover:text-white"
+            type="button" onClick={() => {
+              setStep(s => s - 1)
+              if (window.matchMedia('(max-width: 639.98px)').matches) top.current?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+            }}
+            className="rounded-full border border-white/20 px-5 py-3 max-sm:min-h-[44px] text-[14px] font-semibold text-white/70 transition-colors hover:border-white/50 hover:text-white"
           >
             Back
           </button>
@@ -635,7 +660,7 @@ export default function DiscoveryCall() {
         {step < 2 ? (
           <button
             type="button" onClick={() => next(fields)}
-            className="flex-1 rounded-full px-6 py-3 font-['Space_Grotesk'] text-[14.5px] font-bold text-[#0A0A0C] sm:flex-none"
+            className="flex-1 rounded-full px-6 py-3 font-['Space_Grotesk'] text-[14.5px] font-bold text-[#0A0A0C] max-sm:min-h-[44px] sm:flex-none"
             style={{ background: LIME }}
           >
             Continue
@@ -667,7 +692,7 @@ export default function DiscoveryCall() {
           </button>
         )}
 
-        <span className="text-[12.5px] text-white/35">
+        <span className="text-[12.5px] text-white/35 max-sm:w-full max-sm:text-center max-sm:text-white/50">
           {step < 2
             ? 'Takes under a minute.'
             : picked ? 'No obligation on the call.' : 'Booking a time is optional.'}

@@ -198,7 +198,7 @@ export default function SiteBotShell({ open, onToggle, messages, options, onPick
         aria-label={open ? 'Close chat' : `Chat with ${title}`}
         whileTap={{ scale: 0.92 }}
         style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-        className="fixed bottom-[4.75rem] right-4 z-[46] grid h-14 w-14 place-items-center rounded-full border border-white/10 bg-[#111111] shadow-[0_10px_30px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9EA66] focus-visible:ring-offset-2 sm:bottom-[5.25rem] sm:right-6"
+        className="float-aside fixed bottom-[4.75rem] right-4 z-[46] grid h-14 w-14 place-items-center rounded-full border border-white/10 bg-[#111111] shadow-[0_10px_30px_rgba(0,0,0,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D9EA66] focus-visible:ring-offset-2 sm:bottom-[5.25rem] sm:right-6"
       >
         {!open && !calm && (
           <motion.span

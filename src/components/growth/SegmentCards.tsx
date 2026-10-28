@@ -12,6 +12,8 @@
  * <div> with focusable children rather than a <button> — a button cannot
  * legally contain the links on the back.
  */
+import { SWIPE_5 } from '../websites/tokens'
+import SwipeHint from '../websites/SwipeHint'
 import type { ReactElement } from 'react'
 import { motion } from 'framer-motion'
 import { VERTICALS, CLIENTS, SEGMENT_ACCENTS } from '../../data/growth'
@@ -100,7 +102,7 @@ function Card({ index, slug }: { index: number; slug: string }) {
       tabIndex={0}
       role="group"
       aria-label={`${v.name} — focus to reveal details`}
-      className="zs-flip h-[360px] rounded-[24px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D5EB4B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050507]"
+      className="zs-flip h-[360px] rounded-[24px] max-sm:w-[84%] max-sm:shrink-0 max-sm:snap-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D5EB4B] focus-visible:ring-offset-2 focus-visible:ring-offset-[#050507]"
     >
       <div className="zs-flip-inner h-full w-full">
         {/* front */}
@@ -219,10 +221,13 @@ function Card({ index, slug }: { index: number; slug: string }) {
 
 export default function SegmentCards() {
   return (
-    <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <>
+    <div className={`mt-12 grid gap-5 max-sm:mt-7 sm:grid-cols-2 lg:grid-cols-3 ${SWIPE_5}`}>
       {VERTICALS.map((v, i) => (
         <Card key={v.slug} index={i} slug={v.slug} />
       ))}
     </div>
+    <SwipeHint dark count={VERTICALS.length} />
+    </>
   )
 }

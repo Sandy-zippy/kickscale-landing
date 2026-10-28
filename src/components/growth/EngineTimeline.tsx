@@ -70,7 +70,7 @@ function Stage({
         viewport={{ once: true, margin: '-80px' }}
         transition={{ duration: 0.6, ease: EASE_OUT }}
         style={{ opacity: cardOpacity }}
-        className="w-full max-w-[430px] rounded-[24px] border border-white/10 bg-[#0B0B12] p-6 sm:p-7"
+        className="w-full max-w-[430px] rounded-[24px] border border-white/10 bg-[#0B0B12] p-6 max-sm:p-5 sm:p-7"
       >
         <div className="flex items-baseline gap-3">
           <span
@@ -101,7 +101,7 @@ export default function EngineTimeline() {
   const fill = useTransform(scrollYProgress, v => `${(reduced ? 1 : v) * 100}%`)
 
   return (
-    <div ref={wrap} className="relative mt-14">
+    <div ref={wrap} className="relative mt-14 max-sm:mt-8">
       {/* the spine: a dim full-height rail with a lit portion that grows */}
       <div
         aria-hidden
@@ -122,7 +122,7 @@ export default function EngineTimeline() {
         )}
       </motion.div>
 
-      <div className="space-y-10 md:space-y-4">
+      <div className="space-y-10 max-sm:space-y-4 md:space-y-4">
         {ENGINE_STAGES.map((s, i) => (
           <Stage key={s.num} stage={s} index={i} progress={scrollYProgress} />
         ))}

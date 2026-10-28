@@ -43,7 +43,7 @@ function Card({ t, d, i }: { t: string; d: string; i: number }) {
       }}
       onPointerLeave={() => { rx.set(0); ry.set(0) }}
       style={{ rotateX: rx, rotateY: ry, transformPerspective: 900 }}
-      className={`group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 transition-[border-color,box-shadow] duration-300 hover:border-slate-400 hover:shadow-[0_24px_60px_-30px_rgba(10,10,12,0.35)] sm:p-8 ${SPAN[i] ?? 'lg:col-span-2'} ${i === 0 ? 'lg:min-h-[13rem]' : ''}`}
+      className={`group relative overflow-hidden rounded-3xl border border-slate-200 bg-white p-7 transition-[border-color,box-shadow] duration-300 hover:border-slate-400 hover:shadow-[0_24px_60px_-30px_rgba(10,10,12,0.35)] max-sm:p-5 ${SLIDE} sm:p-8 ${SPAN[i] ?? 'lg:col-span-2'} ${i === 0 ? 'lg:min-h-[13rem]' : ''}`}
     >
       <span
         aria-hidden
@@ -63,10 +63,16 @@ function Card({ t, d, i }: { t: string; d: string; i: number }) {
   )
 }
 
+import { SWIPE_5, SLIDE } from '../websites/tokens'
+import SwipeHint from '../websites/SwipeHint'
+
 export default function Bento({ pillars }: { pillars: { t: string; d: string }[] }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+    <>
+    <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-6 ${SWIPE_5}`}>
       {pillars.map((p, i) => <Card key={p.t} t={p.t} d={p.d} i={i} />)}
     </div>
+    <SwipeHint count={pillars.length} />
+    </>
   )
 }

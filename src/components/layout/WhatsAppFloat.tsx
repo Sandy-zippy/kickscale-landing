@@ -17,7 +17,7 @@ export default function WhatsAppFloat() {
       rel="noopener noreferrer"
       aria-label="Get in touch with us on WhatsApp"
       data-tracking="wa_float"
-      className={`fixed right-4 z-[45] inline-flex h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-[#25D366] px-3 text-[14px] font-bold text-[#0A0A0C] shadow-[0_8px_28px_rgba(0,0,0,0.28)] transition-transform hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0C] motion-reduce:transition-none sm:right-6 sm:px-4 ${lift ? 'bottom-[6.5rem] md:bottom-6' : 'bottom-4 sm:bottom-6'}`}
+      className={`float-aside fixed right-4 z-[45] inline-flex h-12 min-w-12 items-center justify-center gap-2 rounded-full bg-[#25D366] px-3 text-[14px] font-bold text-[#0A0A0C] shadow-[0_8px_28px_rgba(0,0,0,0.28)] transition-transform hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A0A0C] motion-reduce:transition-none sm:right-6 sm:px-4 ${lift ? 'bottom-[6.5rem] md:bottom-6' : 'bottom-4 sm:bottom-6'}`}
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
       <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

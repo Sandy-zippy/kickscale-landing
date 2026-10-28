@@ -10,7 +10,8 @@
 import { useRef, type ReactNode } from 'react'
 import { motion, useInView, useScroll, useSpring, type TargetAndTransition, type Transition } from 'framer-motion'
 import { useCalmMotion } from '../cockpit/useCalmMotion'
-import { EASE_OUT, INK, LIME, MONO } from './tokens'
+import { EASE_OUT, INK, LIME, MONO, SWIPE, SLIDE } from './tokens'
+import SwipeHint from './SwipeHint'
 
 type Block = { title: string; body: string }
 type Loop = (kf: TargetAndTransition, times?: number[], extra?: Transition) => { animate?: TargetAndTransition; transition?: Transition }
@@ -28,10 +29,10 @@ export default function AgenticFlow({ blocks }: { blocks: Block[] }) {
 
   return (
     <div ref={ref} className="relative">
-      <div aria-hidden className="mb-8 h-[2px] overflow-hidden rounded-full bg-[#111111]/10">
+      <div aria-hidden className="mb-8 h-[2px] overflow-hidden rounded-full bg-[#111111]/10 max-sm:hidden">
         <motion.div className="h-full origin-left bg-[#111111]" style={{ scaleX: calm ? 1 : draw }} />
       </div>
-      <ol className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+      <ol className={`grid gap-4 md:grid-cols-2 lg:grid-cols-6 ${SWIPE}`}>
         {blocks.map((b, i) => {
           const k = KEYS.findIndex(r => r.test(b.title))
           const kind = k >= 0 ? k : i % 6
@@ -43,7 +44,7 @@ export default function AgenticFlow({ blocks }: { blocks: Block[] }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '0px 0px -10% 0px' }}
               transition={{ duration: 0.8, delay: (i % 2) * 0.08, ease: EASE_OUT }}
-              className={`group flex flex-col overflow-hidden rounded-3xl border border-[#111111]/10 bg-white ${SPAN[i % 6]} ${wide ? 'lg:flex-row' : ''}`}
+              className={`group flex flex-col overflow-hidden rounded-3xl border border-[#111111]/10 bg-white ${SLIDE} ${SPAN[i % 6]} ${wide ? 'lg:flex-row' : ''}`}
             >
               <Panel kind={kind} wide={wide} />
               <div className={`flex flex-1 flex-col p-6 sm:p-7 ${wide ? 'lg:justify-center' : ''}`}>
@@ -55,6 +56,7 @@ export default function AgenticFlow({ blocks }: { blocks: Block[] }) {
           )
         })}
       </ol>
+      <SwipeHint count={blocks.length} />
     </div>
   )
 }
