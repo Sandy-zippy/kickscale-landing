@@ -272,7 +272,15 @@ body.pt-on #shell { display: none; }
 .fd-field > .fd-seg { background: var(--fd-card); box-shadow: inset 0 0 0 1px var(--fd-line); }
 .fd-field > .fd-seg label:has(input:checked) { background: var(--fd-ink); color: var(--fd-on-ink); }
 .fd-field.has-err > .fd-seg { box-shadow: inset 0 0 0 1.5px var(--fd-bad); }
-[data-orderbook-table].org-tbl .tbl td:first-child { min-width: 130px; }   /* F1: the Orders list fits at 1280 with the outline Kind pill and Confirmed on */
+/* M-A (28 Oct): the Orders table never outgrows its box, whatever the names: fixed columns, every cell wraps inside its own width */
+[data-orderbook-table].org-tbl .tbl { table-layout: fixed; width: 100%; }
+[data-orderbook-table].org-tbl .tbl th, [data-orderbook-table].org-tbl .tbl td { min-width: 0; overflow-wrap: break-word; }
+[data-orderbook-table].org-tbl .tbl td .badge { white-space: normal; max-width: 100%; }
+[data-orderbook-table].org-tbl .tbl th:nth-child(1) { width: 21%; }
+[data-orderbook-table].org-tbl .tbl th:nth-child(2) { width: 12%; }
+[data-orderbook-table].org-tbl .tbl th:nth-child(3) { width: 15%; }
+[data-orderbook-table].org-tbl .tbl th:nth-child(4) { width: 11%; }
+[data-orderbook-table].org-tbl .tbl th:last-child { width: 17%; }
 /* F2 T-08: the retail order designs table keeps the Design column readable */
 [data-rf-lines] table th:first-child, [data-rf-lines] table td:first-child { min-width: 140px; white-space: normal; }
 /* F2 T-08: the retail order page (designs with Boxes blocked and Amount) keeps the whole width up to 1700 px; Activity sits below */
@@ -282,3 +290,14 @@ body.pt-on #shell { display: none; }
   .rec-xl .rec-aside [data-open-fu] { max-height: none; }
   .rec-xl .rec-aside [data-timeline], .rec-xl .rec-aside [data-act-empty] { overflow: visible; }
 }
+/* B5-F1 M-03 (28 Oct): a table in a narrow card (the record page's Open follow-ups, Inventory By warehouse) fits it: words wrap, tight padding */
+.fu-side .tbl th, .fu-side .tbl td { white-space: normal; overflow-wrap: break-word; padding-left: 8px; padding-right: 8px; }
+.fu-side .tbl td:last-child { width: 1%; }
+.fu-side .tbl td:last-child .row { flex-direction: column; align-items: stretch; }   /* Done over Change, so the follow-up words get the width */
+/* B5-F1 L-01: a stage pill keeps a round dot, has its own background over a striped row, and wraps as a clean two-line pill */
+.badge::before { flex: none; }
+.tbl td .badge.info { background: color-mix(in srgb, var(--ge-text) 10%, transparent); }
+[data-orderbook-table].org-tbl .tbl td .badge { border-radius: 9px; line-height: 1.25; align-items: flex-start; }
+[data-orderbook-table].org-tbl .tbl td .badge::before { margin-top: 4px; }
+[data-opp-lines-table].org-tbl .tbl th, [data-opp-lines-table].org-tbl .tbl td { padding-left: 8px; padding-right: 8px; }
+[data-opp-lines-table].org-tbl .tbl td:first-child { min-width: 140px; }
