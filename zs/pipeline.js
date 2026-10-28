@@ -172,6 +172,7 @@
                       ' shortlisted, none in play</span>' : '')) +
                 '<span class="oppmeta"><span class="pill ' + tier[1] + '">' + tier[0] + '</span>' +
                 (ZS.atRisk(D().followups, o.id) ? '<span class="pill bad">at risk</span>' : '') +
+                (o.form_partial ? '<span class="pill warn" title="Left the website form halfway">Started, not finished</span>' : '') +
                 '<span>' + esc(staffName(o.assigned_to).split(' ')[0]) + '</span></span>' +
                 '<span class="oppmeta"><span class="pill ' + flag[0] + '">' + esc(flag[1]) + '</span>' +
                 (o.expected ? '<span>buying ' + esc(o.expected) + '</span>' : '') + '</span>' +
@@ -238,7 +239,9 @@
 
     /* Header: who, and the one control that matters — which stage is it in. */
     var h = '<div class="ph"><div><h1>' + esc(c.name) +
-      (o.ref ? ' <span class="refchip">' + esc(o.ref) + '</span>' : '') + ' ' + G.prodChip(o) + '</h1>' +
+      (o.ref ? ' <span class="refchip">' + esc(o.ref) + '</span>' : '') + ' ' + G.prodChip(o) +
+      /* they left the website form halfway; the server clears it when the last step arrives */
+      (o.form_partial ? ' <span class="pill warn">Started, not finished</span>' : '') + '</h1>' +
       (!o.product && G.acc().clients ? '<p class="hint"><button class="minibtn" data-act="editOpp" data-id="' +
         esc(o.id) + '">Set what we are selling</button> No product was chosen for this one.</p>' : '') +
       '<p>' + esc(o.title || 'Enquiry') + ' &middot; ' + esc(ZS.SOURCES[o.source] || o.source) +
