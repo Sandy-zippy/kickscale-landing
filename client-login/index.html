@@ -386,6 +386,11 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
       <span class="btext"><b>Royale Collections</b><span>Corporate gifting &middot; Discovery Portal + Gifting Cockpit</span></span>
       <span class="bgo">&rarr;</span>
     </button>
+    <button class="badge" onclick="goClientLogin('srinova')">
+      <span class="bicon">PS</span>
+      <span class="btext"><b>Project Srinova</b><span>PM AI SM &middot; Levain Bake House &middot; Srenova Aesthetics &middot; growth proposal</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
     <button class="badge" onclick="goClientLogin('gladucame')">
       <span class="bicon">GU</span>
       <span class="btext"><b>Glad U Came</b><span>Mumbai PR &amp; influencer agency &middot; the team cockpit, sample data</span></span>
@@ -418,6 +423,32 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     <div class="login-err" id="ccerr"></div>
     <button class="btn-primary" onclick="tryCarCart()">Enter workspace</button>
     <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+  </div>
+</div>
+
+<!-- PROJECT SRINOVA LOGIN -->
+<div id="srlogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Project Srinova &times; ZippyScale</div>
+    <h1>Project Srinova</h1>
+    <p class="sub">One growth plan for PM AI SM, Levain Bake House and Srenova Aesthetics: each brand's plan, the 6 months and the commercials.</p>
+    <div class="field">
+      <label for="sru">Login ID</label>
+      <input id="sru" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. Srinova" onkeydown="if(event.key==='Enter')trySrinova()">
+    </div>
+    <div class="field">
+      <label for="srp">Password</label>
+      <div style="position:relative">
+        <input id="srp" type="password" data-pw-eye="1" autocomplete="current-password" placeholder="Enter password" style="padding-right:52px" onkeydown="if(event.key==='Enter')trySrinova()">
+        <button type="button" id="sreye" onclick="srEye()" aria-label="Show password" aria-pressed="false" style="position:absolute;right:4px;top:2px;width:44px;height:44px;border:0;background:none;cursor:pointer;display:grid;place-items:center;color:inherit;opacity:.7">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path id="sreyex" d="M3 3l18 18" style="display:none"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="login-err" id="srerr"></div>
+    <button class="btn-primary" onclick="trySrinova()">Open the proposal</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes: credentials live in this page's source, not a real auth service.</p>
   </div>
 </div>
 
@@ -1989,7 +2020,7 @@ async function downloadPDF(){
 function hideGates(){document.querySelectorAll('.gatewrap').forEach(el=>el.classList.add('hidden'));}
 function goPortal(){hideGates();document.getElementById('portal').classList.remove('hidden');}
 function goDirectory(){hideGates();document.getElementById('directory').classList.remove('hidden');}
-const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'], saasya:['salogin','saerr','sau'], gladucame:['gclogin','gcerr','gcu'] };
+const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'], saasya:['salogin','saerr','sau'], gladucame:['gclogin','gcerr','gcu'], srinova:['srlogin','srerr','sru'] };
 /* Royale has two products behind one password, so the gate opens a chooser rather
    than guessing which one they wanted. */
 function showRoyalePick(){
@@ -2100,6 +2131,20 @@ async function loadSaved(){
 function logout(){ location.reload(); }
 document.getElementById('p').addEventListener('keydown',e=>{if(e.key==='Enter')tryLogin();});
 document.getElementById('u').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('p').focus();});
+
+const SRINOVA = { user:"srinova", pass:"Srinova@26" };
+function trySrinova(){
+  const u=document.getElementById('sru').value.trim().toLowerCase();
+  const p=document.getElementById('srp').value;
+  if(u===SRINOVA.user && p===SRINOVA.pass){ try{ sessionStorage.setItem('srinovaIn','1'); }catch(e){} location.href='../srinova/'; return; }
+  document.getElementById('srerr').textContent='Wrong login ID or password.';
+}
+function srEye(){
+  const i=document.getElementById('srp'),b=document.getElementById('sreye'),on=i.type==='password';
+  i.type=on?'text':'password'; b.setAttribute('aria-pressed',on); b.setAttribute('aria-label',on?'Hide password':'Show password');
+  document.getElementById('sreyex').style.display=on?'':'none';
+}
+if(/[?&]ws=srinova/.test(location.search)) goClientLogin('srinova');
 </script>
 <script src="../gladucame/logins.js"></script>
 <script src="https://zippyscale.in/pw-eye.js" defer></script>

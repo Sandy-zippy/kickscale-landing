@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Project Srinova · ZippyScale</title>
+<meta name="description" content="Project Srinova: one growth plan for PM AI SM, Levain Bake House and Srenova Aesthetics. Prepared by Bhargav Naidu, ZippyScale.">
+<link rel="icon" href="../favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>.mk [data-reveal],.mk [data-split],.mk [data-stagger]>*{opacity:0}</style>
+<script>if(!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('mk');setTimeout(function(){if(!window.MotionKit)document.documentElement.classList.remove('mk')},2500)}</script>
+<script>/* gate: only visitors who came through the client login (or have the key in the URL for the PDF render) */
+(function(){var ok=false;try{ok=sessionStorage.getItem('srinovaIn')==='1'}catch(e){}
+if(!ok&&location.search.indexOf('print')<0&&location.hash!=='#open'){location.replace('../client-login/?ws=srinova');}})();</script>
+<style>
+:root{
+  --bg:#000;--bg2:#0B0B0B;--line:rgba(255,255,255,.10);--line2:rgba(255,255,255,.18);
+  --tx:#F4F4F1;--tx2:#B9B9B2;--tx3:#8C8C86;--lime:#D9EA66;--lime-ink:#111;
+  --b1:#D9EA66;--b2:#111;--b3:#F4F4F1;
+  --r:18px;--r2:12px;--gut:16px;--max:1180px;
+  --ease:cubic-bezier(.22,1,.36,1);
+  --fh:'Space Grotesk',system-ui,sans-serif;--fb:'Inter',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:120px;background:var(--bg)}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--bg);color:var(--tx);font:400 16px/1.6 var(--fb);overflow-x:clip;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+h1,h2,h3{font-family:var(--fh);letter-spacing:-.02em;line-height:1.08;margin:0}
+p{margin:0 0 .8em}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gut)}
+@media (min-width:768px){:root{--gut:32px}}
+.skip{position:absolute;left:-999px;top:8px;background:var(--lime);color:#111;padding:8px 12px;border-radius:8px;z-index:99}
+.skip:focus{left:8px}
+:focus-visible{outline:2px solid var(--lime);outline-offset:3px;border-radius:6px}
+
+/* header */
+.hdr{position:fixed;inset:0 0 auto 0;z-index:50;background:rgba(0,0,0,.78);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)}
+.hdr-in{display:flex;align-items:center;gap:16px;height:60px}
+.logo{min-height:44px;display:flex;align-items:center;gap:10px;text-decoration:none;font:700 15px var(--fh);white-space:nowrap}
+.logo .mark{width:28px;height:28px;border-radius:8px;background:var(--lime);color:#111;display:grid;place-items:center;font-size:14px}
+.logo small{color:var(--tx3);font:500 13px var(--fb)}
+.nav{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{white-space:nowrap;text-decoration:none;color:var(--tx2);font:500 14px var(--fb);padding:10px 12px;border-radius:999px;transition:color .2s,background .2s}
+.nav a:hover{color:var(--tx)}
+.nav a.on{color:#111;background:var(--lime)}
+.prog{position:absolute;left:0;bottom:-1px;height:2px;width:100%;background:var(--lime);transform:scaleX(0);transform-origin:0 50%}
+@media (max-width:900px){
+  .hdr-in{height:52px}.logo small{display:none}
+  .nav{position:absolute;left:0;right:0;top:52px;margin:0;padding:6px var(--gut);background:rgba(0,0,0,.92);border-bottom:1px solid var(--line)}
+  .nav a{padding:8px 12px;min-height:36px;font-size:13px}
+  html{scroll-padding-top:112px}
+}
+
+/* hero */
+.hero{min-height:100svh;display:flex;align-items:center;position:relative;padding:140px 0 80px;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:-20% -10% auto -10%;height:120%;background:
+  radial-gradient(40% 50% at 18% 30%,rgba(217,234,102,.16),transparent 70%),
+  radial-gradient(30% 40% at 85% 25%,rgba(201,162,78,.16),transparent 70%),
+  radial-gradient(35% 45% at 60% 85%,rgba(43,86,114,.28),transparent 70%);pointer-events:none}
+.hero .wrap{position:relative;width:100%}
+.kicker{display:inline-flex;align-items:center;gap:8px;color:var(--lime);font:600 13px var(--fb);letter-spacing:.14em;text-transform:uppercase;margin-bottom:22px}
+.kicker::before{content:"";width:28px;height:1px;background:var(--lime)}
+.hero h1{font-size:clamp(52px,11vw,148px);font-weight:700;letter-spacing:-.045em;line-height:.92}
+.hero h1 .l{color:var(--lime)}
+.hero .tagline{font:600 clamp(22px,3.4vw,40px)/1.15 var(--fh);margin:22px 0 18px;letter-spacing:-.02em}
+.hero .for{color:var(--tx2);max-width:640px;font-size:17px}
+.trio{display:flex;flex-wrap:wrap;gap:10px;margin:28px 0 34px}
+.trio a{display:inline-flex;align-items:center;gap:10px;padding:10px 16px 10px 12px;border:1px solid var(--line2);border-radius:999px;text-decoration:none;font:500 14px var(--fb);min-height:44px;transition:border-color .25s,background .25s}
+.trio a:hover{border-color:var(--b1);background:rgba(255,255,255,.04)}
+.trio i{width:12px;height:12px;border-radius:50%;background:linear-gradient(135deg,var(--b1) 50%,var(--b2) 50%);box-shadow:0 0 0 1px rgba(255,255,255,.2)}
+.btn{display:inline-flex;align-items:center;gap:10px;background:var(--lime);color:#111;text-decoration:none;font:600 15px var(--fb);padding:14px 22px;border-radius:999px;min-height:48px;border:0;cursor:pointer}
+.btn:hover{filter:brightness(1.06)}
+.byline{margin-top:40px;color:var(--tx3);font-size:14px}
+
+/* sections */
+.sec{padding:96px 0;border-top:1px solid var(--line)}
+@media (max-width:767px){.sec{padding:64px 0}}
+.eyebrow{display:inline-block;font:600 12px var(--fb);letter-spacing:.16em;text-transform:uppercase;color:var(--lime);margin-bottom:14px}
+.sec h2,.brand h2{font-size:clamp(34px,5.6vw,64px);font-weight:700}
+.lede{color:var(--tx2);font-size:18px;max-width:760px;margin-top:16px}
+
+/* overview */
+.ovs{display:grid;gap:16px;margin-top:40px}
+@media (min-width:900px){.ovs{grid-template-columns:repeat(3,1fr)}}
+.ov{display:flex;flex-direction:column;gap:6px;text-decoration:none;padding:26px;border-radius:var(--r);border:1px solid var(--line);background:linear-gradient(160deg,color-mix(in srgb,var(--b2) 70%,#000) 0%,#060606 70%);position:relative;overflow:hidden;transition:transform .35s var(--ease),border-color .35s}
+.ov::after{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--b1),var(--lime))}
+.ov:hover{transform:translateY(-4px);border-color:var(--b1)}
+.ov-name{font:700 26px/1.1 var(--fh);color:var(--b3)}
+.ov-what{color:var(--tx2);font-size:15px;margin-bottom:12px}
+.ov-lbl{font:600 11px var(--fb);letter-spacing:.14em;text-transform:uppercase;color:var(--b1)}
+.ov-need{font-size:16px;flex:1}
+.ov-score{display:flex;align-items:center;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--tx2)}
+.ov-score b{color:var(--tx)}
+
+/* dots */
+.dots{display:inline-flex;gap:4px;vertical-align:middle}
+.dots i{width:10px;height:10px;border-radius:50%;border:1px solid var(--b1,var(--lime));display:block}
+.dots i.full{background:var(--b1,var(--lime))}
+.dots i.half{background:linear-gradient(90deg,var(--b1,var(--lime)) 50%,transparent 50%)}
+
+/* brand sections */
+.brand{padding:110px 0 96px;border-top:1px solid var(--line);position:relative;background:
+  radial-gradient(60% 40% at 90% 0%,color-mix(in srgb,var(--b2) 55%,transparent),transparent 70%),var(--bg)}
+.brand::before{content:"";position:absolute;left:0;right:0;top:-1px;height:2px;background:linear-gradient(90deg,var(--lime),var(--b1) 40%,var(--b2))}
+.brand .eyebrow{color:var(--b1)}
+.brand h2{color:var(--b3)}
+.owner{color:var(--b1);font:500 15px var(--fb);margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:36px 0 28px}
+.stat{padding:18px;border:1px solid var(--line);border-radius:var(--r2);background:rgba(255,255,255,.02)}
+.stat b{display:block;font:700 clamp(30px,5vw,48px)/1 var(--fh);color:var(--b1);font-variant-numeric:tabular-nums}
+.stat span{display:block;color:var(--tx2);font-size:13px;margin-top:8px;line-height:1.35}
+.grid{display:grid;gap:16px}
+@media (min-width:900px){.grid{grid-template-columns:1fr 1fr}.span2{grid-column:span 2}}
+.panel{padding:26px;border-radius:var(--r);border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01))}
+.panel h3{font-size:21px;font-weight:600;margin-bottom:16px;display:flex;align-items:baseline;gap:12px;color:var(--tx)}
+.panel h3 .k{font:600 12px var(--fb);color:var(--b1);letter-spacing:.1em}
+.panel p{color:var(--tx2)}
+.note{font-size:13px;color:var(--tx3)!important;border-left:2px solid var(--b1);padding-left:12px;margin-top:14px}
+.small{font-size:14px}
+.tag{font:500 12px var(--fb);color:var(--b1);border:1px solid color-mix(in srgb,var(--b1) 50%,transparent);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.swipe{display:none}
+
+/* ladder */
+.ladder{list-style:none;padding:0;margin:20px 0;display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.ladder li{position:relative;padding:14px 12px 16px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);min-height:112px}
+.ladder .n{font:700 13px var(--fh);color:var(--tx3)}
+.ladder .t{display:block;font-size:14px;line-height:1.3;margin-top:6px;color:var(--tx2)}
+.ladder em{position:absolute;left:12px;bottom:-11px;font:700 11px var(--fb);font-style:normal;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:999px}
+.ladder li.done{background:rgba(255,255,255,.06)}
+.ladder li.now{border-color:var(--b1);background:color-mix(in srgb,var(--b1) 14%,transparent)}
+.ladder li.now em{background:var(--b1);color:#111}
+.ladder li.now .t,.ladder li.nx .t{color:var(--tx)}
+.ladder li.nx{border:1px dashed var(--lime)}
+.ladder li.nx em{background:var(--lime);color:#111}
+.nownext{display:grid;gap:12px;margin-top:22px}
+@media (min-width:700px){.nownext{grid-template-columns:1fr 1fr}}
+.nownext>div{padding:14px 16px;border-radius:10px;background:rgba(255,255,255,.03)}
+.lbl{display:inline-block;font:700 11px var(--fb);letter-spacing:.12em;text-transform:uppercase;color:var(--b1);margin-bottom:6px}
+.lbl.lime{color:var(--lime)}
+.nownext p{margin:0;font-size:15px}
+
+/* competitors */
+.comp{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+@media (min-width:900px){.comp{grid-template-columns:1fr 1fr}}
+.comp li{padding:16px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.ch{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between;margin-bottom:6px}
+.comp p{margin:0;font-size:15px}
+
+/* funnel + channels */
+.funnel{list-style:none;padding:0;margin:0 0 20px;display:flex;flex-wrap:wrap;gap:6px}
+.funnel li{font:500 13px var(--fb);padding:7px 12px;border-radius:999px;background:color-mix(in srgb,var(--b2) 75%,#000);border:1px solid color-mix(in srgb,var(--b1) 35%,transparent);color:var(--b3);position:relative}
+.funnel li:not(:last-child)::after{content:"→";margin-left:10px;color:var(--b1)}
+.chans{display:grid;gap:12px}
+@media (min-width:900px){.chans{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+.chan{padding:18px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.35)}
+.chan-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.chan-h svg{width:22px;height:22px;fill:none;stroke:var(--b1);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.chan-h b{font:600 16px var(--fh)}
+.chan p{margin:0;font-size:15px}
+.ref-name{font:700 26px/1.15 var(--fh)!important;color:var(--b3)!important;margin-bottom:12px!important}
+
+/* cockpit score */
+.score{display:flex;gap:18px;align-items:center;margin-bottom:16px}
+.ring-wrap{position:relative;width:120px;height:120px;flex:0 0 120px}
+.ring{width:120px;height:120px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:10}
+.ring-fg{fill:none;stroke-width:10;stroke-linecap:round}
+.ring-num{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.ring-num b{font:700 34px/1 var(--fh);color:var(--tx)}
+.ring-num span{font-size:11px;color:var(--tx3);margin-top:4px}
+.imp{font:600 15px var(--fh)!important;color:var(--tx)!important;margin-bottom:6px!important}
+.score .small{margin-top:8px}
+.ticks{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.ticks li{position:relative;padding-left:26px;font-size:15px;color:var(--tx)}
+.ticks li::before{content:"";position:absolute;left:0;top:6px;width:14px;height:8px;border-left:2px solid var(--lime);border-bottom:2px solid var(--lime);transform:rotate(-45deg)}
+
+/* tables */
+.tbl-wrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:15px}
+.tbl th{font:600 12px var(--fb);letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line2)}
+.tbl td{padding:13px 12px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--tx2)}
+.tbl td:first-child{color:var(--tx)}
+.tbl tfoot td{color:var(--tx);font-weight:600;border-bottom:0;border-top:1px solid var(--line2)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--tx)!important;font-weight:600}
+
+/* timeline */
+.tl{list-style:none;margin:56px 0 0;padding:0;position:relative;display:grid;gap:18px}
+.tl-line{position:absolute;background:rgba(255,255,255,.12);border-radius:2px}
+.tl-fill{position:absolute;inset:0;background:var(--lime);border-radius:2px;transform-origin:0 0}
+.tl li{position:relative;padding:24px 22px 24px;border-radius:var(--r);border:1px solid var(--line);background:#070707}
+.tl li::before{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#000;border:2px solid var(--lime);box-shadow:0 0 0 6px #000}
+.tl .m{display:block;font:600 12px var(--fb);letter-spacing:.14em;text-transform:uppercase;color:var(--lime);margin-bottom:10px}
+.tl b{display:block;font:700 26px/1.1 var(--fh);margin-bottom:10px}
+.tl p{color:var(--tx2);margin:0;font-size:15px}
+.tl li:nth-child(4){border-color:color-mix(in srgb,var(--lime) 50%,transparent)}
+.tl li:nth-child(4) .roas{display:inline-block}
+.roas{display:none;margin-top:12px;font:700 11px var(--fb);letter-spacing:.12em;text-transform:uppercase;background:var(--lime);color:#111;padding:4px 10px;border-radius:999px}
+@media (min-width:900px){
+  .tl{grid-template-columns:repeat(4,1fr);padding-top:34px}
+  .tl-line{left:0;right:0;top:7px;height:3px}
+  .tl li::before{top:-34px;left:22px}
+}
+@media (max-width:899px){
+  .tl{padding-left:34px}
+  .tl-line{left:7px;top:0;bottom:0;width:3px}
+  .tl-fill{transform-origin:50% 0}
+  .tl li::before{left:-34px;top:28px}
+}
+
+/* commercials */
+.steps3{display:grid;gap:10px;margin:28px 0 8px}
+@media (min-width:900px){.steps3{grid-template-columns:repeat(4,1fr)}}
+.steps3 div{padding:14px 16px;border-radius:12px;border:1px solid var(--line);font-size:14px;color:var(--tx2)}
+.steps3 b{display:block;color:var(--tx);font:600 15px var(--fh)}
+.h3{font:600 24px var(--fh);margin:56px 0 16px;display:flex;align-items:center;gap:12px}
+.h3 .k{font:600 12px var(--fb);color:var(--lime);letter-spacing:.12em}
+.rates{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:18px}
+.rate{padding:20px;border-radius:14px;border:1px solid var(--line);background:#070707}
+.rate span{display:block;font-size:13px;color:var(--tx3)}
+.rate b{display:block;font:700 30px/1.1 var(--fh);margin-top:6px;font-variant-numeric:tabular-nums}
+.rate.strike b{color:var(--tx3);text-decoration:line-through;text-decoration-thickness:2px}
+.rate.hi{border-color:var(--lime);background:color-mix(in srgb,var(--lime) 10%,#050505)}
+.rate.hi b{color:var(--lime)}
+.big{border:1px solid var(--line2);border-radius:var(--r);overflow:hidden;background:#060606}
+.big table{width:100%;border-collapse:collapse}
+.big th{font:600 12px var(--fb);letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);text-align:left;padding:16px 18px;background:#0e0e0e;border-bottom:1px solid var(--line2)}
+.big td{padding:18px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--tx2);font-size:15px}
+.big tr td:first-child{border-left:3px solid var(--b1)}
+.bn{font:600 16px var(--fh);color:var(--tx)}
+.big tfoot td{color:var(--tx);font-weight:600;background:#0e0e0e;border-bottom:0;border-left:0!important}
+.big .num{font-size:17px}
+@media (max-width:899px){
+  .big thead{display:none}
+  .big table,.big tbody,.big tfoot,.big tr,.big td{display:block}
+  .big tr{border-bottom:1px solid var(--line2);border-left:3px solid var(--b1,var(--lime));padding:8px 0}
+  .big tfoot tr{border-left-color:var(--lime)}
+  .big tr td:first-child{border-left:0}
+  .big td{border:0;padding:6px 16px;display:grid;grid-template-columns:110px 1fr;gap:10px}
+  .big td::before{content:attr(data-l);font:600 11px var(--fb);letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);padding-top:3px}
+}
+.terms{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+@media (min-width:900px){.terms{grid-template-columns:repeat(3,1fr)}}
+.terms li{padding:18px;border-radius:12px;border:1px solid var(--line);background:#070707;font-size:15px;color:var(--tx2)}
+.terms b{display:block;color:var(--tx);font:600 16px var(--fh);margin-bottom:4px}
+.terms svg{width:22px;height:22px;stroke:var(--lime);fill:none;stroke-width:1.8;margin-bottom:10px}
+
+/* close */
+.next{display:grid;gap:14px;margin-top:36px;counter-reset:n;padding:0}
+@media (min-width:900px){.next{grid-template-columns:repeat(3,1fr)}}
+.next li{list-style:none;counter-increment:n;padding:26px;border-radius:var(--r);border:1px solid var(--line);background:#070707}
+.next li::before{content:counter(n,decimal-leading-zero);display:block;font:700 40px var(--fh);color:var(--lime);margin-bottom:10px}
+.next b{display:block;font:600 20px var(--fh);margin-bottom:6px}
+.next p{color:var(--tx2);margin:0}
+.contact{margin-top:40px;padding:30px;border-radius:var(--r);background:var(--lime);color:#111;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
+.contact h3{font-size:28px}
+.contact p{margin:4px 0 0}
+.contact a.btn{background:#111;color:var(--lime)}
+footer{padding:40px 0 120px;color:var(--tx3);font-size:13px;border-top:1px solid var(--line)}
+
+/* phone: short sections, brand panels in a swipe row */
+@media (max-width:899px){
+  .terms{grid-template-columns:1fr 1fr;gap:8px}.terms li{padding:14px;font-size:13px}.terms b{font-size:14px}
+  .steps3{grid-template-columns:1fr 1fr}
+  .swipe{display:block;font-size:13px;color:var(--b1);margin:0 0 10px}
+  .grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;margin:0 calc(var(--gut) * -1);padding:0 var(--gut) 8px;position:relative;scrollbar-width:none;align-items:stretch}
+  .grid::-webkit-scrollbar{display:none}
+  .grid>.panel{flex:0 0 88%;scroll-snap-align:center;padding:20px}
+  .ladder{grid-template-columns:1fr;gap:6px}
+  .ladder li{min-height:0;display:flex;align-items:center;gap:10px;padding:10px 12px}
+  .ladder .t{margin:0}
+  .ladder em{position:static;margin-left:auto}
+  .stats{gap:8px;margin:24px 0 20px}.stat{padding:12px}
+  .hero{padding-top:130px}
+  .brand{padding:72px 0 56px}
+}
+
+/* bot */
+.bot-btn{position:fixed;right:16px;bottom:16px;z-index:60;display:flex;align-items:center;gap:10px;background:var(--lime);color:#111;border:0;border-radius:999px;padding:12px 18px 12px 14px;font:600 14px var(--fb);cursor:pointer;min-height:48px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.bot-btn svg{width:22px;height:22px;fill:none;stroke:#111;stroke-width:1.8}
+.bot{position:fixed;right:16px;bottom:76px;z-index:61;width:min(400px,calc(100vw - 32px));height:min(560px,calc(100svh - 160px));display:flex;flex-direction:column;background:#0b0b0b;border:1px solid var(--line2);border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden}
+.bot[hidden]{display:none}
+.bot-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.bot-h b{font:600 15px var(--fh)}.bot-h span{display:block;font-size:12px;color:var(--tx3)}
+.bot-x{background:none;border:0;color:var(--tx);width:44px;height:44px;border-radius:10px;cursor:pointer;font-size:22px}
+.bot-log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-line}
+.msg.me{align-self:flex-end;background:var(--lime);color:#111;border-bottom-right-radius:4px}
+.msg.it{align-self:flex-start;background:#171717;border:1px solid var(--line);border-bottom-left-radius:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px}
+.chips button{background:none;border:1px solid var(--line2);color:var(--tx2);border-radius:999px;padding:7px 11px;font:500 12px var(--fb);cursor:pointer;min-height:34px}
+.chips button:hover{border-color:var(--lime);color:var(--tx)}
+.bot form{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+.bot input{flex:1;min-width:0;background:#000;border:1px solid var(--line2);color:var(--tx);border-radius:12px;padding:12px;font:400 16px var(--fb)}
+.bot form button{background:var(--lime);color:#111;border:0;border-radius:12px;padding:0 16px;font:600 14px var(--fb);cursor:pointer;min-height:44px}
+
+/* print / PDF */
+@media print{
+  @page{size:A4;margin:0}
+  html,body{background:#000!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{font-size:12.5px}
+  .hdr,.bot,.bot-btn,.swipe,.skip,.btn-read{display:none!important}
+  .wrap{padding:0 14mm}
+  .hero{min-height:297mm;padding:0;break-after:page}
+  .sec,.brand{padding:12mm 0 10mm;break-before:page}
+  .grid{display:grid!important;grid-template-columns:1fr 1fr;overflow:visible!important;margin:0!important;padding:0!important}
+  .grid>.panel{flex:none;padding:14px}
+  .span2{grid-column:span 2}
+  .panel,.comp li,.chan,.tl li,.rate,.terms li,.next li,.big tr{break-inside:avoid}
+  .ladder{grid-template-columns:repeat(5,1fr)!important}
+  .ladder li{display:block!important;min-height:80px!important}
+  .ladder em{position:absolute!important}
+  .tl{grid-template-columns:repeat(4,1fr)!important;padding:34px 0 0!important}
+  .tl-line{left:0!important;right:0!important;top:7px!important;height:3px!important;width:auto!important;bottom:auto!important}
+  .tl li::before{top:-34px!important;left:22px!important}
+  .ovs{grid-template-columns:repeat(3,1fr)!important}
+  .h3{margin-top:24px}
+  .stat b{font-size:34px}
+  .brand h2,.sec h2{font-size:40px}
+  .hero h1{font-size:110px}
+  footer{padding:10mm 14mm}
+  .mk [data-reveal],.mk [data-split],.mk [data-stagger]>*{opacity:1!important;transform:none!important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to the proposal</a>
+<header class="hdr">
+ <div class="wrap hdr-in">
+  <a class="logo" href="#top" aria-label="Project Srinova, back to top"><span class="mark">Z</span>Project Srinova <small>by ZippyScale</small></a>
+  <nav class="nav" aria-label="Sections">
+   <a href="#overview">Overview</a><a href="#pmaism">PM AI SM</a><a href="#levain">Levain</a><a href="#srenova">Srenova</a><a href="#months">6 months</a><a href="#commercials">Commercials</a><a href="#next">Next steps</a>
+  </nav>
+ </div>
+ <div class="prog" data-progress aria-hidden="true"></div>
+</header>
+
+<main id="main">
+<section class="hero" id="top">
+ <div class="wrap">
+  <span class="kicker" data-reveal="fade">A ZippyScale proposal · 28 October 2026</span>
+  <h1 data-reveal="up">Project <span class="l">Srinova</span></h1>
+  <p class="tagline" data-reveal="up" data-delay=".35">Three brands. One growth plan.</p>
+  <p class="for" data-reveal="up" data-delay=".45">Prepared for Bhushan Jha of PM AI SM, Dr. Avyaktha Kaila of Srenova Aesthetics and the team at Levain Bake House, brought together by Faisal. Performance marketing on Meta, Google and WhatsApp, and an Agentic Cockpit for each brand where it pays.</p>
+  <div class="trio" data-stagger>
+   <a href="#pmaism" style="--b1:#B8860B;--b2:#0F2040"><i></i>PM AI SM</a>
+   <a href="#levain" style="--b1:#BC9C48;--b2:#2B5672"><i></i>Levain Bake House</a>
+   <a href="#srenova" style="--b1:#C9A24E;--b2:#08251B"><i></i>Srenova Aesthetics</a>
+  </div>
+  <a class="btn btn-read" href="#overview" data-reveal="up" data-delay=".6" data-magnetic>Read the plan <span aria-hidden="true">&darr;</span></a>
+  <p class="byline" data-reveal="fade" data-delay=".7">Bhargav Naidu · Co-Founder, ZippyScale · bhargav@zippyscale.com</p>
+ </div>
+</section>
+
+<section class="sec" id="overview">
+ <div class="wrap">
+  <span class="eyebrow">Overview</span>
+  <h2 data-split>Three brands, side by side</h2>
+  <p class="lede" data-reveal="up">Each brand is at a different stage and needs something different first. One thing is the same for all three: nothing gets scaled until it is tracked.</p>
+  <div class="ovs" data-stagger><a class="ov" href="#pmaism" style="--b1:#B8860B;--b2:#0F2040;--b3:#F5F0E6">
+   <span class="ov-name">PM AI SM</span>
+   <span class="ov-what">AI-enhanced Project Manager and Scrum Master career coaching with placement help, a brand of AddIT Solutions.</span>
+   <span class="ov-lbl">Needs most</span>
+   <span class="ov-need">A free-masterclass funnel with tracking in place, and one system for the ten-stage student journey.</span>
+   <span class="ov-score">Agentic Cockpit <span class="dots" aria-hidden="true"><i class="full"></i><i class="full"></i><i class="full"></i><i class="full"></i><i class="half"></i></span> <b>4.5/5</b></span>
+  </a><a class="ov" href="#levain" style="--b1:#BC9C48;--b2:#2B5672;--b3:#F3EAD3">
+   <span class="ov-name">Levain Bake House</span>
+   <span class="ov-what">Dine-in bakery cafe, 11 am to 11 pm: coffee, brownies, cookies, cakes, loaves, croissants and pizzas.</span>
+   <span class="ov-lbl">Needs most</span>
+   <span class="ov-need">Google Maps and reviews for both outlets, local food creators, and a WhatsApp engine that brings customers back.</span>
+   <span class="ov-score">Agentic Cockpit <span class="dots" aria-hidden="true"><i class="full"></i><i class="full"></i><i class="half"></i><i class=""></i><i class=""></i></span> <b>2.5/5</b></span>
+  </a><a class="ov" href="#srenova" style="--b1:#C9A24E;--b2:#08251B;--b3:#FBF8F3">
+   <span class="ov-name">Srenova Aesthetics</span>
+   <span class="ov-what">Advanced Aesthetics and Plastic Surgery Center, Nallagandla: skin, laser, hair loss, hair transplant, cosmetic surgery and weight loss.</span>
+   <span class="ov-lbl">Needs most</span>
+   <span class="ov-need">Source tracking from the very first ad, treatment-wise campaigns, and follow-up that brings patients back for every session.</span>
+   <span class="ov-score">Agentic Cockpit <span class="dots" aria-hidden="true"><i class="full"></i><i class="full"></i><i class="full"></i><i class="full"></i><i class="full"></i></span> <b>5/5</b></span>
+  </a></div>
+ </div>
+</section>
+
+
+<section class="brand" id="pmaism" style="--b1:#B8860B;--b2:#0F2040;--b3:#F5F0E6" aria-labelledby="pmaism-h">
+ <div class="wrap">
+  <div class="brand-head" data-reveal="up">
+   <span class="eyebrow">Brand 1 of 3</span>
+   <h2 id="pmaism-h">PM AI SM</h2>
+   <p class="owner">For Bhushan Jha, Founder</p>
+   <p class="lede">AI-enhanced Project Manager and Scrum Master career coaching with placement help, a brand of AddIT Solutions. Hyderabad and online.</p>
+  </div>
+  <div class="stats" data-stagger><div class="stat"><b data-count="906">906</b><span>Instagram followers</span></div><div class="stat"><b data-count="2">2</b><span>Meta ads ever run</span></div><div class="stat"><b data-count="0">0</b><span>Meta Pixel on the site</span></div></div>
+
+  <p class="swipe">Swipe for the full plan &rarr;</p>
+  <div class="grid" data-stagger="0.06">
+   <article class="panel span2">
+    <h3><span class="k">01</span>Where you are, and the next stage</h3>
+    <p>Leads come in by a WhatsApp button and a form only. No webinar, no booking calendar. A Google Ads tag is on the site but there is no Meta Pixel. Prices are not public.</p>
+    <ol class="ladder"><li class="done"><span class="n">1</span><span class="t">Organic only</span></li><li class="now"><span class="n">2</span><span class="t">First ads, no tracking</span><em>Now</em></li><li class="nx"><span class="n">3</span><span class="t">Tracked growth engine</span><em>Next</em></li><li class=""><span class="n">4</span><span class="t">Scaling on a set ROAS</span></li><li class=""><span class="n">5</span><span class="t">Repeat and referral flywheel</span></li></ol>
+    <div class="nownext">
+     <div><span class="lbl">Now</span><p>First ads, no tracking: two Meta ads so far and no Pixel, so nothing can be measured yet.</p></div>
+     <div><span class="lbl lime">Next</span><p>Tracked growth engine: every masterclass registrant traced to the ad that brought them, by Month 2.</p></div>
+    </div>
+   </article>
+
+   <article class="panel span2">
+    <h3><span class="k">02</span>Emerging competitors and what their ads show</h3>
+    <ul class="comp"><li><div class="ch"><b>Sapana Kejadiwal</b><span class="tag">29 ads, one live for 112 days</span></div><p>&quot;Manual Tester to Scrum Master&quot; hook, a free webinar, then a paid programme of about 10 weeks. The closest model to follow.</p></li><li><div class="ch"><b>HelloSM</b><span class="tag">39 ads</span></div><p>&quot;Master Scrum with Gen AI Tools&quot;. The same pitch as PM AI SM. A direct threat.</p></li><li><div class="ch"><b>Young Urban Project</b><span class="tag">114 ads</span></div><p>A free workshop, then cohorts at ₹26,000 to ₹32,000 plus GST.</p></li><li><div class="ch"><b>Power Agile, Tezzonix</b><span class="tag">1 ad each</span></div><p>Just started. Tezzonix leads on the PSM-I certification angle.</p></li></ul>
+    <p class="note">Observed in the Meta Ad Library on 28 Oct 2026. Spend and results are not public in India; ad count and how long an ad stays live are the only signals.</p>
+   </article>
+
+   <article class="panel span2">
+    <h3><span class="k">03</span>What to do next, channel by channel</h3>
+    <ol class="funnel" aria-label="The journey we will build"><li>Ad</li><li>Free weekly masterclass</li><li>WhatsApp reminders</li><li>1:1 career audit call</li><li>Enrol</li><li>Placement</li><li>Upsell</li><li>Referral</li></ol>
+    <div class="chans"><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c0-4 2-8 4.5-8S12 10 12 12s1.5 5 3.5 5S20 13 20 11s-1-4-3-4-3.5 3-5 5-2.5 5-4.5 5S4 17 4 15z"/></svg><b>Meta</b><span class="tag">Main channel</span></div><p>Install the Pixel and Conversions API first. Lead campaigns for the masterclass with hooks by audience: &quot;Tester to Scrum Master&quot;, &quot;Career gap re-entry&quot;, &quot;Finance to Tech PM&quot;. Retarget site and video viewers; lookalikes of enrolled students.</p></div><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><b>Google</b><span class="tag">High intent</span></div><p>Search on &quot;scrum master course Hyderabad&quot;, &quot;project manager course&quot; and similar. YouTube retargeting of masterclass viewers.</p></div><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.4-4A8 8 0 1 1 8 18.6z"/><path d="M9 10c.5 2 2 3.5 4 4"/></svg><b>WhatsApp and retention</b><span class="tag">Your team runs it</span></div><p>Masterclass reminders, the career audit booking, module nudges and placement updates. WhatsApp campaigns are not part of our fee for PM AI SM; we set the plan, your team or a tool runs it.</p></div></div>
+   </article>
+
+   <article class="panel">
+    <h3><span class="k">04</span>Referral programme</h3>
+    <p class="ref-name">&ldquo;Bring Your Batchmate&rdquo;</p>
+    <p>Placed alumni get ₹3,000 to ₹5,000 or a free module for each friend who enrols; the friend gets ₹2,000 off. Alumni who become managers post openings back to PM AI SM.</p>
+   </article>
+
+   <article class="panel cockpit">
+    <h3><span class="k">05</span>Agentic Cockpit for PM AI SM</h3>
+    <div class="score">
+     <div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg" style="stroke:#B8860B;stroke-dasharray:326.7;stroke-dashoffset:32.7" data-ring="32.7" data-c="326.7"/></svg><div class="ring-num"><b>4.5</b><span>out of 5</span></div></div>
+     <div><p class="imp">Essential</p><span class="dots" aria-hidden="true"><i class="full"></i><i class="full"></i><i class="full"></i><i class="full"></i><i class="half"></i></span><p class="small">Leads from five places land in Excel, each student moves through about ten stages, and one founder does the follow-up.</p></div>
+    </div>
+    <ul class="ticks"><li>One lead inbox from all five sources</li><li>Student journey board: masterclass to offer letter</li><li>Placement tracker: proof for the &quot;700+ placed&quot; claim, and ad material</li><li>Upsell and referral memory: who finished, who was placed</li><li>WhatsApp follow-ups on every stage</li></ul>
+   </article>
+
+   <article class="panel span2">
+    <h3><span class="k">06</span>The right scale: monthly ad budget</h3>
+    <div class="tbl-wrap"><table class="tbl">
+     <thead><tr><th>Channel</th><th>Starter</th><th>Scale</th></tr></thead>
+     <tbody><tr><td>Meta</td><td>₹60,000</td><td>₹1,50,000 to ₹2,50,000</td></tr><tr><td>Google</td><td>₹25,000</td><td>₹60,000 to ₹1,00,000</td></tr><tr><td>WhatsApp messages</td><td>₹5,000</td><td>₹15,000 to ₹25,000</td></tr></tbody>
+     <tfoot><tr><td>Total a month</td><td>₹90,000</td><td>₹2,25,000 to ₹3,75,000</td></tr></tfoot>
+    </table></div>
+    <p class="note">Paid by PM AI SM directly to Meta, Google. Not part of our fee. Start on Starter in Months 1 and 2; move to Scale once ROAS is set in Month 3. Estimate: ₹120 to ₹400 per masterclass registrant (Indian education lead costs run ₹150 to ₹800, vendor sources).</p>
+   </article>
+  </div>
+ </div>
+</section>
+<section class="brand" id="levain" style="--b1:#BC9C48;--b2:#2B5672;--b3:#F3EAD3" aria-labelledby="levain-h">
+ <div class="wrap">
+  <div class="brand-head" data-reveal="up">
+   <span class="eyebrow">Brand 2 of 3</span>
+   <h2 id="levain-h">Levain Bake House</h2>
+   
+   <p class="lede">Dine-in bakery cafe, 11 am to 11 pm: coffee, brownies, cookies, cakes, loaves, croissants and pizzas. Two outlets: Eluru and Nallagandla, Hyderabad.</p>
+  </div>
+  <div class="stats" data-stagger><div class="stat"><b data-count="6533">6,533</b><span>Instagram followers</span></div><div class="stat"><b data-count="2">2</b><span>Outlets</span></div><div class="stat"><b data-count="0">0</b><span>Ads ever run</span></div></div>
+
+  <p class="swipe">Swipe for the full plan &rarr;</p>
+  <div class="grid" data-stagger="0.06">
+   <article class="panel span2">
+    <h3><span class="k">01</span>Where you are, and the next stage</h3>
+    <p>A Wix site with an empty shop, no prices and no WhatsApp link. Zero ads so far. Growth today is word of mouth and Instagram.</p>
+    <ol class="ladder"><li class="now"><span class="n">1</span><span class="t">Organic only</span><em>Now</em></li><li class=""><span class="n">2</span><span class="t">First ads, no tracking</span></li><li class="nx"><span class="n">3</span><span class="t">Tracked growth engine</span><em>Next</em></li><li class=""><span class="n">4</span><span class="t">Scaling on a set ROAS</span></li><li class=""><span class="n">5</span><span class="t">Repeat and referral flywheel</span></li></ol>
+    <div class="nownext">
+     <div><span class="lbl">Now</span><p>Organic only: a loved brand with no ads, no review engine and no customer list.</p></div>
+     <div><span class="lbl lime">Next</span><p>Tracked growth engine: Google profiles and reviews working for both outlets, and every billed customer on a WhatsApp list.</p></div>
+    </div>
+   </article>
+
+   <article class="panel span2">
+    <h3><span class="k">02</span>Emerging competitors and what their ads show</h3>
+    <ul class="comp"><li><div class="ch"><b>Concu (Hyderabad)</b><span class="tag">No ads seen</span></div><p>Grew on signature cakes and word of mouth, now in Bengaluru and Mumbai.</p></li><li><div class="ch"><b>Subko (Mumbai)</b><span class="tag">No ads seen</span></div><p>Bakehouse plus pizza, the closest mix to Levain. Bookings by Instagram DM.</p></li><li><div class="ch"><b>Suchali&#x27;s (Delhi, Bengaluru)</b><span class="tag">Meta ads seen</span></div><p>Pre-order sourdough and seasonal menus, on Blinkit and Zepto. The only one with Meta ads (festive menu, catalogue).</p></li><li><div class="ch"><b>Si Nonna&#x27;s, Naomi (Hyderabad)</b><span class="tag">Direct rivals</span></div><p>Sourdough pizza and cakes near Gachibowli.</p></li></ul>
+    <p class="note">Observed from public ad libraries and the brands&#x27; own pages, 28 Oct 2026. Spend and results are not public. The pattern is clear: good bakehouses barely use Meta. They grow on Google Maps, reviews, creators and repeat customers.</p>
+   </article>
+
+   <article class="panel span2">
+    <h3><span class="k">03</span>What to do next, channel by channel</h3>
+    <ol class="funnel" aria-label="The journey we will build"><li>Google Maps and creators</li><li>Visit</li><li>Number captured at billing</li><li>WhatsApp club</li><li>Birthday and new bakes</li><li>Repeat visit</li><li>Referral stamp</li></ol>
+    <div class="chans"><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><b>Google</b><span class="tag">First channel</span></div><p>Business Profile for both outlets (photos, menu, posts), a review engine that asks every customer on WhatsApp after the bill, and local search plus Performance Max for &quot;bakery near me&quot;, &quot;pizza Nallagandla&quot;, &quot;custom cake Hyderabad&quot;.</p></div><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg><b>Influencers</b><span class="tag">8 to 12 a month</span></div><p>Local food creators. Barter for small ones, ₹3,000 to ₹15,000 for 10k to 100k followers, ₹20,000 to ₹60,000 a reel for bigger ones (estimates). Influencer payments are paid by Levain.</p></div><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.4-4A8 8 0 1 1 8 18.6z"/><path d="M9 10c.5 2 2 3.5 4 4"/></svg><b>WhatsApp and retention</b><span class="tag">The main engine</span></div><p>Capture the phone number at billing. Birthday club (cake offer 7 days before), new-bake drops, weekend pizza nights, festive pre-orders, and a win-back for anyone who has not visited in 30 days.</p></div><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c0-4 2-8 4.5-8S12 10 12 12s1.5 5 3.5 5S20 13 20 11s-1-4-3-4-3.5 3-5 5-2.5 5-4.5 5S4 17 4 15z"/></svg><b>Meta</b><span class="tag">Small</span></div><p>Local reach around each outlet, retargeting, and click-to-WhatsApp for cake orders.</p></div></div>
+   </article>
+
+   <article class="panel">
+    <h3><span class="k">04</span>Referral programme</h3>
+    <p class="ref-name">&ldquo;Pass the Starter&rdquo;</p>
+    <p>Every customer gets a WhatsApp code. Each friend they bring earns a stamp toward a free loaf or cake.</p>
+   </article>
+
+   <article class="panel cockpit">
+    <h3><span class="k">05</span>Agentic Cockpit for Levain</h3>
+    <div class="score">
+     <div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg" style="stroke:#BC9C48;stroke-dasharray:326.7;stroke-dashoffset:163.4" data-ring="163.4" data-c="326.7"/></svg><div class="ring-num"><b>2.5</b><span>out of 5</span></div></div>
+     <div><p class="imp">Next step, after marketing</p><span class="dots" aria-hidden="true"><i class="full"></i><i class="full"></i><i class="half"></i><i class=""></i><i class=""></i></span><p class="small">A WhatsApp tool covers most retention. The custom value is one customer list across both outlets. The score rises to 3.5 if custom cakes or catering become a big share, or a third outlet opens.</p></div>
+    </div>
+    <ul class="ticks"><li>One customer database across both outlets</li><li>Cake and pre-order desk</li><li>Birthday and win-back rules</li><li>Referral stamp tracking</li><li>Full client-retention ecosystem in one place</li></ul>
+   </article>
+
+   <article class="panel span2">
+    <h3><span class="k">06</span>The right scale: monthly ad budget</h3>
+    <div class="tbl-wrap"><table class="tbl">
+     <thead><tr><th>Channel</th><th>Starter</th><th>Scale</th></tr></thead>
+     <tbody><tr><td>Google</td><td>₹15,000</td><td>₹40,000</td></tr><tr><td>Meta</td><td>₹10,000</td><td>₹25,000</td></tr><tr><td>Influencers</td><td>₹20,000</td><td>₹60,000</td></tr><tr><td>WhatsApp messages and tool</td><td>₹5,000</td><td>₹15,000</td></tr></tbody>
+     <tfoot><tr><td>Total a month</td><td>₹50,000</td><td>₹1,40,000</td></tr></tfoot>
+    </table></div>
+    <p class="note">Paid by Levain directly to Meta, Google and creators. Not part of our fee. Start on Starter in Months 1 and 2; move to Scale once ROAS is set in Month 3. A WhatsApp marketing message costs about ₹0.86 plus GST. Tools such as AiSensy, Interakt and WATI run about ₹1,000 to ₹4,000 a month (to confirm on vendor sites).</p>
+   </article>
+  </div>
+ </div>
+</section>
+<section class="brand" id="srenova" style="--b1:#C9A24E;--b2:#08251B;--b3:#FBF8F3" aria-labelledby="srenova-h">
+ <div class="wrap">
+  <div class="brand-head" data-reveal="up">
+   <span class="eyebrow">Brand 3 of 3</span>
+   <h2 id="srenova-h">Srenova Aesthetics</h2>
+   <p class="owner">For Dr. Avyaktha Kaila, MD</p>
+   <p class="lede">Advanced Aesthetics and Plastic Surgery Center, Nallagandla: skin, laser, hair loss, hair transplant, cosmetic surgery and weight loss. Dr. Avyaktha Kaila (MD) and Dr. Nazia Tabassum (M.Ch Plastic Surgery).</p>
+  </div>
+  <div class="stats" data-stagger><div class="stat"><b data-count="361">361</b><span>Instagram followers</span></div><div class="stat"><b data-count="2">2</b><span>First Meta ads, this week</span></div><div class="stat"><b data-count="2">2</b><span>Doctors</span></div></div>
+
+  <p class="swipe">Swipe for the full plan &rarr;</p>
+  <div class="grid" data-stagger="0.06">
+   <article class="panel span2">
+    <h3><span class="k">01</span>Where you are, and the next stage</h3>
+    <p>One clinic above Reliance Trends, Gopanpally Road. No prices public and no Google rating found yet. The first two Meta ads started on 22 and 25 Oct.</p>
+    <ol class="ladder"><li class="done"><span class="n">1</span><span class="t">Organic only</span></li><li class="now"><span class="n">2</span><span class="t">First ads, no tracking</span><em>Now</em></li><li class="nx"><span class="n">3</span><span class="t">Tracked growth engine</span><em>Next</em></li><li class=""><span class="n">4</span><span class="t">Scaling on a set ROAS</span></li><li class=""><span class="n">5</span><span class="t">Repeat and referral flywheel</span></li></ol>
+    <div class="nownext">
+     <div><span class="lbl">Now</span><p>First ads, no tracking: ads started this week with no way to see which ad brought which patient.</p></div>
+     <div><span class="lbl lime">Next</span><p>Tracked growth engine: every consultation traced to its ad or search, and booked on WhatsApp, by Month 2.</p></div>
+    </div>
+   </article>
+
+   <article class="panel span2">
+    <h3><span class="k">02</span>Emerging competitors and what their ads show</h3>
+    <ul class="comp"><li><div class="ch"><b>Dermiq (Kondapur, Jubilee Hills)</b><span class="tag">About 68 live ads, oldest since 17 Apr</span></div><p>Always-on &quot;No.1 Skin and Hair Clinic&quot; plus one ad set per treatment. The most systematic advertiser nearby.</p></li><li><div class="ch"><b>Sikara Clinics (franchise)</b><span class="tag">About 19 ads</span></div><p>Price-led: &quot;Weight Loss Starts at 8999/-&quot;.</p></li><li><div class="ch"><b>ReGlow (Kokapet, 10 min away)</b><span class="tag">Live since 23 Jul</span></div><p>A &quot;Chat with us&quot; ad, consultations from ₹600.</p></li><li><div class="ch"><b>Shlok (Kokapet, opened Feb 2026)</b><span class="tag">Active</span></div><p>&quot;Pigmentation Needs A Doctor, Not Another Cream&quot;.</p></li></ul>
+    <p class="note">Observed in the Meta Ad Library on 28 Oct 2026. Spend and results are not public. None of them visibly promotes packages or referrals. That is Srenova&#x27;s opening.</p>
+   </article>
+
+   <article class="panel span2">
+    <h3><span class="k">03</span>What to do next, channel by channel</h3>
+    <ol class="funnel" aria-label="The journey we will build"><li>Ad or search</li><li>WhatsApp chat or qualified form</li><li>Doctor consultation</li><li>Treatment plan</li><li>Sessions and aftercare</li><li>Package upsell</li><li>Referral</li></ol>
+    <div class="chans"><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 15c0-4 2-8 4.5-8S12 10 12 12s1.5 5 3.5 5S20 13 20 11s-1-4-3-4-3.5 3-5 5-2.5 5-4.5 5S4 17 4 15z"/></svg><b>Meta</b><span class="tag">Main channel</span></div><p>Click-to-WhatsApp for skin and hair treatments, instant forms with qualifying questions for surgery and hair transplant, doctor-led video, retargeting. Health ad rules apply: no before and after in ads, no targeting by condition.</p></div><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg><b>Google</b><span class="tag">High intent</span></div><p>Search by treatment and area (&quot;laser hair removal Nallagandla&quot;, &quot;hair transplant Hyderabad&quot;), the Business Profile, and a review engine after every visit.</p></div><div class="chan"><div class="chan-h"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.4-4A8 8 0 1 1 8 18.6z"/><path d="M9 10c.5 2 2 3.5 4 4"/></svg><b>WhatsApp and retention</b><span class="tag">Your team runs it</span></div><p>Appointment reminders, aftercare, session-due reminders, package upsell and win-back. WhatsApp campaigns are not part of our fee for Srenova; we set the plan, your team or a tool runs it.</p></div></div>
+   </article>
+
+   <article class="panel">
+    <h3><span class="k">04</span>Referral programme</h3>
+    <p class="ref-name">&ldquo;Srenova Circle&rdquo;</p>
+    <p>A code after the second session. The friend gets a free doctor analysis and a first-session credit; the referrer earns maintenance-session credits, not cash. It works across skin and hair, so it cross-sells.</p>
+   </article>
+
+   <article class="panel cockpit">
+    <h3><span class="k">05</span>Agentic Cockpit for Srenova</h3>
+    <div class="score">
+     <div class="ring-wrap"><svg class="ring" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" class="ring-bg"/><circle cx="60" cy="60" r="52" class="ring-fg" style="stroke:#C9A24E;stroke-dasharray:326.7;stroke-dashoffset:0.0" data-ring="0.0" data-c="326.7"/></svg><div class="ring-num"><b>5</b><span>out of 5</span></div></div>
+     <div><p class="imp">Essential</p><span class="dots" aria-hidden="true"><i class="full"></i><i class="full"></i><i class="full"></i><i class="full"></i><i class="full"></i></span><p class="small">Revenue depends on repeat sessions. A wide menu, two doctors, high-ticket surgery with weeks of follow-up, and ads starting now with no source tracking.</p></div>
+    </div>
+    <ul class="ticks"><li>Lead source tracking from the first ad</li><li>Routing to Dr. Avyaktha or Dr. Nazia, with a follow-up date on every lead</li><li>Session-due and aftercare reminders</li><li>Consented before and after photo records</li><li>Package upsell and referral credits as automatic rules</li></ul>
+   </article>
+
+   <article class="panel span2">
+    <h3><span class="k">06</span>The right scale: monthly ad budget</h3>
+    <div class="tbl-wrap"><table class="tbl">
+     <thead><tr><th>Channel</th><th>Starter</th><th>Scale</th></tr></thead>
+     <tbody><tr><td>Meta</td><td>₹40,000 to ₹60,000</td><td>₹1,00,000 to ₹1,50,000</td></tr><tr><td>Google</td><td>₹25,000 to ₹40,000</td><td>₹60,000 to ₹1,00,000</td></tr><tr><td>WhatsApp messages</td><td>₹3,000 to ₹6,000</td><td>₹8,000 to ₹15,000</td></tr></tbody>
+     <tfoot><tr><td>Total a month</td><td>₹68,000 to ₹1,06,000</td><td>₹1,68,000 to ₹2,65,000</td></tr></tfoot>
+    </table></div>
+    <p class="note">Paid by Srenova directly to Meta, Google. Not part of our fee. Start on Starter in Months 1 and 2; move to Scale once ROAS is set in Month 3. Estimate: ₹450 to ₹2,000 per booked consultation (an inference from generic India lead costs of ₹150 to ₹400; to calibrate on Srenova&#x27;s own numbers).</p>
+   </article>
+  </div>
+ </div>
+</section>
+
+<section class="sec" id="months">
+ <div class="wrap">
+  <span class="eyebrow">The 6 months</span>
+  <h2 data-split>Same rhythm for all three brands</h2>
+  <p class="lede" data-reveal="up">Build first, read the qualified leads, then scale on a return we can measure.</p>
+  <ol class="tl" id="tl">
+   <span class="tl-line" aria-hidden="true"><span class="tl-fill" id="tlfill"></span></span>
+   <li data-step><span class="m">Month 1</span><b>Build</b><p>Tracking, ad accounts, campaigns, funnels and the WhatsApp set-up. Nothing is guessed after this month.</p></li><li data-step><span class="m">Month 2</span><b>Qualified leads</b><p>The qualified-lead picture becomes clear: which ads, searches and creators bring people who buy.</p></li><li data-step><span class="m">Month 3</span><b>Scale</b><p>Scale what works. ROAS (return on ad spend) is set from here.</p><span class="roas">ROAS set here</span></li><li data-step><span class="m">Months 4 to 6</span><b>Performance months</b><p>Optimise and grow on the set ROAS, month after month.</p></li>
+  </ol>
+ </div>
+</section>
+
+<section class="sec" id="commercials">
+ <div class="wrap">
+  <span class="eyebrow">Commercials</span>
+  <h2 data-split>What it costs, and what it includes</h2>
+
+  <h3 class="h3"><span class="k">01</span>The 6-month plan</h3>
+  <div class="steps3" data-stagger>
+   <div><b>Month 1 · Build</b>Tracking, accounts, campaigns, funnels, WhatsApp set-up</div>
+   <div><b>Month 2 · Qualified leads</b>The qualified-lead picture becomes clear</div>
+   <div><b>Month 3 · Scale</b>Scale what works; ROAS is set from here</div>
+   <div><b>Months 4 to 6 · Performance</b>Optimise and grow on the set ROAS</div>
+  </div>
+
+  <h3 class="h3"><span class="k">02</span>Monthly fee, performance marketing</h3>
+  <div class="rates" data-stagger>
+   <div class="rate strike"><span>Standard rate, with creatives</span><b>₹1,50,000</b></div>
+   <div class="rate strike"><span>Standard rate, without creatives</span><b>₹1,20,000</b></div>
+   <div class="rate hi"><span>Referral rate, three brands together</span><b>₹60,000 to ₹1,00,000</b></div>
+  </div>
+  <div class="big" data-reveal="up"><table>
+   <thead><tr><th>Brand</th><th>Per month</th><th>Includes</th><th>Not included</th><th>6 months</th></tr></thead>
+   <tbody><tr style="--b1:#B8860B"><td data-l="Brand"><b class="bn">PM AI SM</b></td><td data-l="Per month" class="num">₹1,00,000</td><td data-l="Includes">Meta and Google, strategy to execution: campaign build, lead management, daily monitoring and optimisation, insights and reports.</td><td data-l="Not included">WhatsApp campaigns. Creatives (Faisal). Ad spend, paid by PM AI SM to Meta and Google.</td><td data-l="6 months" class="num">₹6,00,000</td></tr><tr style="--b1:#BC9C48"><td data-l="Brand"><b class="bn">Levain Bake House</b></td><td data-l="Per month" class="num">₹60,000</td><td data-l="Includes">Google Ads. WhatsApp campaign solutions: build, run, train your team and help pick a WhatsApp tool. Influencer management.</td><td data-l="Not included">Creatives (Faisal). Ad spend, paid by Levain. Influencer payments, paid by Levain.</td><td data-l="6 months" class="num">₹3,60,000</td></tr><tr style="--b1:#C9A24E"><td data-l="Brand"><b class="bn">Srenova Aesthetics</b></td><td data-l="Per month" class="num">₹1,00,000</td><td data-l="Includes">Meta and Google, strategy to execution: campaign build, lead management, daily monitoring and optimisation, insights and reports.</td><td data-l="Not included">WhatsApp campaigns. Creatives (Faisal). Ad spend, paid by Srenova to Meta and Google.</td><td data-l="6 months" class="num">₹6,00,000</td></tr></tbody>
+  </table></div>
+
+  <h3 class="h3"><span class="k">03</span>Payment terms</h3>
+  <ul class="terms" data-stagger>
+   <li><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><b>Prepaid, first week</b>The monthly fee is paid in the first week of every month.</li>
+   <li><svg viewBox="0 0 24 24"><path d="M7 4h11M7 8.5h11M7 4c5 0 7 2 7 4.5S12 13 7 13l8 8"/></svg><b>Advance collected</b>An advance is collected before work starts.</li>
+   <li><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 13l2 2 4-4"/></svg><b>MOU signed by both parties</b>Scope, fees and terms in one signed MOU.</li>
+   <li><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg><b>Creatives excluded</b>Faisal handles creatives for all three brands.</li>
+   <li><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg><b>Ad spend paid by the brand</b>Paid directly to Meta and Google, never through us.</li>
+   <li><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg><b>Influencer payments by the brand</b>For Levain, creators are paid by Levain; we manage them.</li>
+  </ul>
+
+  <h3 class="h3"><span class="k">04</span>Agentic Cockpit, one-time</h3>
+  <p class="lede" style="margin-top:0">Built once and handed to your team. Starts at ₹70,000. Paid 60% in advance and 40% after everything is built. Running costs (hosting, WhatsApp API, AI usage) are billed at actuals.</p>
+  <div class="big" data-reveal="up" style="margin-top:20px"><table>
+   <thead><tr><th>Brand</th><th>Importance</th><th>One-time</th><th>60% advance</th><th>40% on completion</th></tr></thead>
+   <tbody><tr style="--b1:#B8860B"><td data-l="Brand"><b class="bn">PM AI SM</b></td><td data-l="Importance"><span class="dots" aria-hidden="true"><i class="full"></i><i class="full"></i><i class="full"></i><i class="full"></i><i class="half"></i></span> 4.5/5</td><td data-l="One-time" class="num">₹1,20,000</td><td data-l="60% advance" class="num">₹72,000</td><td data-l="40% on completion" class="num">₹48,000</td></tr><tr style="--b1:#BC9C48"><td data-l="Brand"><b class="bn">Levain Bake House</b></td><td data-l="Importance"><span class="dots" aria-hidden="true"><i class="full"></i><i class="full"></i><i class="half"></i><i class=""></i><i class=""></i></span> 2.5/5</td><td data-l="One-time" class="num">₹70,000</td><td data-l="60% advance" class="num">₹42,000</td><td data-l="40% on completion" class="num">₹28,000</td></tr><tr style="--b1:#C9A24E"><td data-l="Brand"><b class="bn">Srenova Aesthetics</b></td><td data-l="Importance"><span class="dots" aria-hidden="true"><i class="full"></i><i class="full"></i><i class="full"></i><i class="full"></i><i class="full"></i></span> 5/5</td><td data-l="One-time" class="num">₹1,20,000</td><td data-l="60% advance" class="num">₹72,000</td><td data-l="40% on completion" class="num">₹48,000</td></tr></tbody>
+  </table></div>
+ </div>
+</section>
+
+<section class="sec" id="next">
+ <div class="wrap">
+  <span class="eyebrow">Next steps</span>
+  <h2 data-split>Three steps to start</h2>
+  <ol class="next" data-stagger>
+   <li><b>Sign the MOU</b><p>One MOU per brand, signed by both parties.</p></li>
+   <li><b>Pay the advance</b><p>The first month's fee in advance, plus the 60% cockpit advance if you take the cockpit.</p></li>
+   <li><b>Month 1 kickoff</b><p>Tracking, ad accounts, campaigns, funnels and the WhatsApp set-up.</p></li>
+  </ol>
+  <div class="contact" data-reveal="up">
+   <div><h3>Bhargav Naidu</h3><p>Co-Founder, ZippyScale · bhargav@zippyscale.com</p></div>
+   <a class="btn" href="mailto:bhargav@zippyscale.com?subject=Project%20Srinova">Email Bhargav</a>
+  </div>
+ </div>
+</section>
+</main>
+
+<footer><div class="wrap">Project Srinova · prepared by ZippyScale for PM AI SM, Levain Bake House and Srenova Aesthetics · 28 October 2026. Competitor notes are observations from public ad libraries and the brands' own pages; spend and results are not public. Budget figures and lead costs are estimates to calibrate on each brand's own numbers.</div></footer>
+
+<button class="bot-btn" id="botbtn" aria-expanded="false" aria-controls="bot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Ask about this plan</button>
+<div class="bot" id="bot" role="dialog" aria-label="Questions about this proposal" hidden>
+ <div class="bot-h"><div><b>Project Srinova assistant</b><span>Answers from this proposal only</span></div><button class="bot-x" id="botx" aria-label="Close">&times;</button></div>
+ <div class="bot-log" id="botlog" aria-live="polite"></div>
+ <div class="chips" id="chips"></div>
+ <form id="botf"><label for="botq" class="skip">Your question</label><input id="botq" autocomplete="off" placeholder="Ask about fees, timelines, a brand..."><button type="submit">Ask</button></form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/motion@13.4.6/dist/motion.js"></script>
+<script src="motion-kit.js"></script>
+<script>
+/* nav highlight */
+(function(){
+  var links=[].slice.call(document.querySelectorAll('.nav a'));
+  var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a});
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(a){a.classList.remove('on')});var a=map[e.target.id];if(a){a.classList.add('on');a.scrollIntoView({block:'nearest',inline:'nearest'})}}})},{rootMargin:'-45% 0px -50% 0px'});
+  Object.keys(map).forEach(function(id){var s=document.getElementById(id);if(s)io.observe(s)});
+})();
+/* score rings + timeline (Motion) */
+(function(){
+  var M=window.Motion;if(!M||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  document.querySelectorAll('.ring-fg').forEach(function(c){
+    var end=+c.dataset.ring,len=+c.dataset.c;c.style.strokeDashoffset=len;
+    var stop=M.inView(c,function(){M.animate(c,{strokeDashoffset:[len,end]},{duration:1.4,ease:[.22,1,.36,1]});stop()},{amount:.5});
+  });
+  var tl=document.getElementById('tl'),fill=document.getElementById('tlfill');
+  var wide=matchMedia('(min-width:900px)').matches;
+  M.scroll(M.animate(fill,wide?{scaleX:[0,1]}:{scaleY:[0,1]},{ease:'linear'}),{target:tl,offset:['start 85%','end 60%']});
+  var steps=[].slice.call(tl.querySelectorAll('[data-step]'));
+  steps.forEach(function(li){li.style.opacity=0});
+  var stop=M.inView(tl,function(){M.animate(steps,{opacity:[0,1],y:[28,0]},{duration:.8,ease:[.22,1,.36,1],delay:M.stagger(.15)});stop()},{amount:.2});
+})();
+/* bot: local knowledge base built from this page, no server, no key */
+(function(){
+  var KB=[{"k": "fee fees price cost charge retainer monthly how much rate", "a": "Monthly fees at the referral rate: PM AI SM ₹1,00,000, Srenova ₹1,00,000, Levain ₹60,000. The standard rate is ₹1,50,000 with creatives and ₹1,20,000 without. The referral rate applies because the three brands come together."}, {"k": "standard rate creatives without discount referral", "a": "Standard rate: ₹1,50,000 a month with creatives, ₹1,20,000 without. Because the three brands come together through Faisal, each gets a referral rate: PM AI SM and Srenova ₹1,00,000, Levain ₹60,000."}, {"k": "total six 6 month value contract engagement term", "a": "It is a 6-month engagement. 6-month value: PM AI SM ₹6,00,000, Srenova ₹6,00,000, Levain ₹3,60,000."}, {"k": "payment terms prepaid advance mou pay when first week invoice", "a": "Fees are prepaid in the first week of every month. An advance is collected before work starts and the MOU is signed by both parties. Creatives are not included. Ad spend and influencer payments are paid by the brand directly."}, {"k": "creative creatives design videos faisal reels posts", "a": "Creatives are not included in our fee. Faisal handles creatives for all three brands; we brief him on what each campaign needs."}, {"k": "ad spend budget meta google paid who pays media", "a": "Ad spend is paid by each brand directly to Meta and Google; it is not part of our fee. Recommended starter budgets a month: PM AI SM ₹90,000, Levain ₹50,000, Srenova ₹68,000 to ₹1,06,000. Scale budgets follow once ROAS is set in Month 3."}, {"k": "whatsapp campaigns included not", "a": "WhatsApp campaigns are included only for Levain (build, run, train the team, help pick a WhatsApp tool). For PM AI SM and Srenova, WhatsApp campaigns are not included in the fee; we set the plan and your team or a tool runs it."}, {"k": "cockpit agentic one-time crm system build price", "a": "Agentic Cockpit, one-time, built once and handed to your team: PM AI SM ₹1,20,000 (score 4.5/5), Srenova ₹1,20,000 (5/5), Levain ₹70,000 (2.5/5). Paid 60% in advance and 40% after everything is built. Running costs (hosting, WhatsApp API, AI usage) are billed at actuals."}, {"k": "60/40 60 40 cockpit payment split advance balance", "a": "Cockpit payment is 60/40: 60% advance, 40% after everything is built. PM AI SM and Srenova ₹72,000 then ₹48,000; Levain ₹42,000 then ₹28,000."}, {"k": "running costs hosting api ai usage actuals", "a": "Cockpit running costs (hosting, WhatsApp API, AI usage) are billed at actuals, on top of the one-time build price."}, {"k": "timeline months month plan roas scale build qualified when results", "a": "The 6 months, same for all three: Month 1 Build (tracking, accounts, campaigns, funnels, WhatsApp set-up). Month 2 Qualified leads. Month 3 Scale, and ROAS is set from here. Months 4 to 6 are performance months: optimise and grow on the set ROAS."}, {"k": "roas return on ad spend guarantee results leads", "a": "ROAS (return on ad spend) is set from Month 3, once Months 1 and 2 have shown which ads bring qualified leads. Months 4 to 6 are measured against it. We do not promise a number before the tracking exists."}, {"k": "pm ai sm pm ai sm pmaism plan what do next channel", "a": "PM AI SM: Meta: Install the Pixel and Conversions API first. Lead campaigns for the masterclass with hooks by audience: \"Tester to Scrum Master\", \"Career gap re-entry\", \"Finance to Tech PM\". Retarget site and video viewers; lookalikes of enrolled students. Google: Search on \"scrum master course Hyderabad\", \"project manager course\" and similar. YouTube retargeting of masterclass viewers. WhatsApp and retention: Masterclass reminders, the career audit booking, module nudges and placement updates. WhatsApp campaigns are not part of our fee for PM AI SM; we set the plan, your team or a tool runs it."}, {"k": "pm ai sm pm ai sm pmaism include includes scope what get", "a": "PM AI SM fee ₹1,00,000 a month. Includes: Meta and Google, strategy to execution: campaign build, lead management, daily monitoring and optimisation, insights and reports. Not included: WhatsApp campaigns. Creatives (Faisal). Ad spend, paid by PM AI SM to Meta and Google."}, {"k": "pm ai sm pm ai sm pmaism competitor competitors rivals ads", "a": "PM AI SM competitors: Sapana Kejadiwal (29 ads, one live for 112 days): \"Manual Tester to Scrum Master\" hook, a free webinar, then a paid programme of about 10 weeks. The closest model to follow. HelloSM (39 ads): \"Master Scrum with Gen AI Tools\". The same pitch as PM AI SM. A direct threat. Young Urban Project (114 ads): A free workshop, then cohorts at ₹26,000 to ₹32,000 plus GST. Power Agile, Tezzonix (1 ad each): Just started. Tezzonix leads on the PSM-I certification angle. Observed in the Meta Ad Library on 28 Oct 2026. Spend and results are not public in India; ad count and how long an ad stays live are the only signals."}, {"k": "pm ai sm pm ai sm pmaism referral refer programme", "a": "PM AI SM referral programme, \"Bring Your Batchmate\": Placed alumni get ₹3,000 to ₹5,000 or a free module for each friend who enrols; the friend gets ₹2,000 off. Alumni who become managers post openings back to PM AI SM."}, {"k": "pm ai sm pm ai sm pmaism cockpit score important modules", "a": "PM AI SM Agentic Cockpit score 4.5/5, one-time ₹1,20,000. Leads from five places land in Excel, each student moves through about ten stages, and one founder does the follow-up. Modules: One lead inbox from all five sources; Student journey board: masterclass to offer letter; Placement tracker: proof for the \"700+ placed\" claim, and ad material; Upsell and referral memory: who finished, who was placed; WhatsApp follow-ups on every stage."}, {"k": "pm ai sm pm ai sm pmaism budget scale starter ad spend", "a": "PM AI SM monthly ad budget, paid by the brand: Meta starter ₹60,000, scale ₹1,50,000 to ₹2,50,000; Google starter ₹25,000, scale ₹60,000 to ₹1,00,000; WhatsApp messages starter ₹5,000, scale ₹15,000 to ₹25,000. Total starter ₹90,000, scale ₹2,25,000 to ₹3,75,000."}, {"k": "pm ai sm pm ai sm pmaism stage now next where today", "a": "PM AI SM now: First ads, no tracking: two Meta ads so far and no Pixel, so nothing can be measured yet. Next: Tracked growth engine: every masterclass registrant traced to the ad that brought them, by Month 2."}, {"k": "levain bake house levain levain plan what do next channel", "a": "Levain Bake House: Google: Business Profile for both outlets (photos, menu, posts), a review engine that asks every customer on WhatsApp after the bill, and local search plus Performance Max for \"bakery near me\", \"pizza Nallagandla\", \"custom cake Hyderabad\". Influencers: Local food creators. Barter for small ones, ₹3,000 to ₹15,000 for 10k to 100k followers, ₹20,000 to ₹60,000 a reel for bigger ones (estimates). Influencer payments are paid by Levain. WhatsApp and retention: Capture the phone number at billing. Birthday club (cake offer 7 days before), new-bake drops, weekend pizza nights, festive pre-orders, and a win-back for anyone who has not visited in 30 days. Meta: Local reach around each outlet, retargeting, and click-to-WhatsApp for cake orders."}, {"k": "levain bake house levain levain include includes scope what get", "a": "Levain Bake House fee ₹60,000 a month. Includes: Google Ads. WhatsApp campaign solutions: build, run, train your team and help pick a WhatsApp tool. Influencer management. Not included: Creatives (Faisal). Ad spend, paid by Levain. Influencer payments, paid by Levain."}, {"k": "levain bake house levain levain competitor competitors rivals ads", "a": "Levain Bake House competitors: Concu (Hyderabad) (No ads seen): Grew on signature cakes and word of mouth, now in Bengaluru and Mumbai. Subko (Mumbai) (No ads seen): Bakehouse plus pizza, the closest mix to Levain. Bookings by Instagram DM. Suchali's (Delhi, Bengaluru) (Meta ads seen): Pre-order sourdough and seasonal menus, on Blinkit and Zepto. The only one with Meta ads (festive menu, catalogue). Si Nonna's, Naomi (Hyderabad) (Direct rivals): Sourdough pizza and cakes near Gachibowli. Observed from public ad libraries and the brands' own pages, 28 Oct 2026. Spend and results are not public. The pattern is clear: good bakehouses barely use Meta. They grow on Google Maps, reviews, creators and repeat customers."}, {"k": "levain bake house levain levain referral refer programme", "a": "Levain Bake House referral programme, \"Pass the Starter\": Every customer gets a WhatsApp code. Each friend they bring earns a stamp toward a free loaf or cake."}, {"k": "levain bake house levain levain cockpit score important modules", "a": "Levain Bake House Agentic Cockpit score 2.5/5, one-time ₹70,000. A WhatsApp tool covers most retention. The custom value is one customer list across both outlets. The score rises to 3.5 if custom cakes or catering become a big share, or a third outlet opens. Modules: One customer database across both outlets; Cake and pre-order desk; Birthday and win-back rules; Referral stamp tracking; Full client-retention ecosystem in one place."}, {"k": "levain bake house levain levain budget scale starter ad spend", "a": "Levain Bake House monthly ad budget, paid by the brand: Google starter ₹15,000, scale ₹40,000; Meta starter ₹10,000, scale ₹25,000; Influencers starter ₹20,000, scale ₹60,000; WhatsApp messages and tool starter ₹5,000, scale ₹15,000. Total starter ₹50,000, scale ₹1,40,000."}, {"k": "levain bake house levain levain stage now next where today", "a": "Levain Bake House now: Organic only: a loved brand with no ads, no review engine and no customer list. Next: Tracked growth engine: Google profiles and reviews working for both outlets, and every billed customer on a WhatsApp list."}, {"k": "srenova aesthetics srenova srenova plan what do next channel", "a": "Srenova Aesthetics: Meta: Click-to-WhatsApp for skin and hair treatments, instant forms with qualifying questions for surgery and hair transplant, doctor-led video, retargeting. Health ad rules apply: no before and after in ads, no targeting by condition. Google: Search by treatment and area (\"laser hair removal Nallagandla\", \"hair transplant Hyderabad\"), the Business Profile, and a review engine after every visit. WhatsApp and retention: Appointment reminders, aftercare, session-due reminders, package upsell and win-back. WhatsApp campaigns are not part of our fee for Srenova; we set the plan, your team or a tool runs it."}, {"k": "srenova aesthetics srenova srenova include includes scope what get", "a": "Srenova Aesthetics fee ₹1,00,000 a month. Includes: Meta and Google, strategy to execution: campaign build, lead management, daily monitoring and optimisation, insights and reports. Not included: WhatsApp campaigns. Creatives (Faisal). Ad spend, paid by Srenova to Meta and Google."}, {"k": "srenova aesthetics srenova srenova competitor competitors rivals ads", "a": "Srenova Aesthetics competitors: Dermiq (Kondapur, Jubilee Hills) (About 68 live ads, oldest since 17 Apr): Always-on \"No.1 Skin and Hair Clinic\" plus one ad set per treatment. The most systematic advertiser nearby. Sikara Clinics (franchise) (About 19 ads): Price-led: \"Weight Loss Starts at 8999/-\". ReGlow (Kokapet, 10 min away) (Live since 23 Jul): A \"Chat with us\" ad, consultations from ₹600. Shlok (Kokapet, opened Feb 2026) (Active): \"Pigmentation Needs A Doctor, Not Another Cream\". Observed in the Meta Ad Library on 28 Oct 2026. Spend and results are not public. None of them visibly promotes packages or referrals. That is Srenova's opening."}, {"k": "srenova aesthetics srenova srenova referral refer programme", "a": "Srenova Aesthetics referral programme, \"Srenova Circle\": A code after the second session. The friend gets a free doctor analysis and a first-session credit; the referrer earns maintenance-session credits, not cash. It works across skin and hair, so it cross-sells."}, {"k": "srenova aesthetics srenova srenova cockpit score important modules", "a": "Srenova Aesthetics Agentic Cockpit score 5/5, one-time ₹1,20,000. Revenue depends on repeat sessions. A wide menu, two doctors, high-ticket surgery with weeks of follow-up, and ads starting now with no source tracking. Modules: Lead source tracking from the first ad; Routing to Dr. Avyaktha or Dr. Nazia, with a follow-up date on every lead; Session-due and aftercare reminders; Consented before and after photo records; Package upsell and referral credits as automatic rules."}, {"k": "srenova aesthetics srenova srenova budget scale starter ad spend", "a": "Srenova Aesthetics monthly ad budget, paid by the brand: Meta starter ₹40,000 to ₹60,000, scale ₹1,00,000 to ₹1,50,000; Google starter ₹25,000 to ₹40,000, scale ₹60,000 to ₹1,00,000; WhatsApp messages starter ₹3,000 to ₹6,000, scale ₹8,000 to ₹15,000. Total starter ₹68,000 to ₹1,06,000, scale ₹1,68,000 to ₹2,65,000."}, {"k": "srenova aesthetics srenova srenova stage now next where today", "a": "Srenova Aesthetics now: First ads, no tracking: ads started this week with no way to see which ad brought which patient. Next: Tracked growth engine: every consultation traced to its ad or search, and booked on WhatsApp, by Month 2."}, {"k": "next steps start begin sign kickoff onboarding", "a": "Next steps: 1. Sign the MOU (both parties). 2. Pay the first month in advance (and the 60% cockpit advance if you take the cockpit). 3. Month 1 kickoff: tracking, ad accounts, campaigns and funnels."}, {"k": "contact bhargav email call reach phone", "a": "Bhargav Naidu, Co-Founder, ZippyScale. bhargav@zippyscale.com"}, {"k": "who zippyscale agency you", "a": "ZippyScale runs performance marketing (Meta, Google and WhatsApp) and builds the Agentic Cockpit, a custom system that keeps every lead and customer followed up. This proposal is from Bhargav Naidu, Co-Founder."}, {"k": "influencer influencers creators payment", "a": "For Levain we manage 8 to 12 local food creators a month. Influencer payments are paid by Levain directly; the management is in our ₹60,000 fee."}, {"k": "meta levain small", "a": "For Levain, Meta stays small: local reach around each outlet, retargeting and click-to-WhatsApp for cake orders. The main engines are Google, creators and WhatsApp."}];
+  var FALL="Bhargav will answer this in the meeting.\nBhargav Naidu, Co-Founder, ZippyScale · bhargav@zippyscale.com";
+  var STOP={the:1,a:1,an:1,is:1,are:1,what:1,how:1,for:1,of:1,to:1,in:1,and:1,do:1,does:1,i:1,we:1,you:1,my:1,our:1,it:1,this:1,that:1,with:1,on:1,be:1,will:1,can:1,me:1,us:1,please:1,tell:1,about:1};
+  function words(s){return s.toLowerCase().replace(/[^a-z0-9/ ]+/g,' ').split(/\s+/).filter(function(w){return w&&!STOP[w]})}
+  function brandHit(q){return /pm ?ai|scrum|bhushan|pmaism/.test(q)?'pm ai sm':/levain|bake|bakery|cafe/.test(q)?'levain':/srenova|srinova clinic|clinic|aesthetic|avyaktha|skin|hair/.test(q)?'srenova':''}
+  function answer(q){
+    var w=words(q),b=brandHit(q.toLowerCase()),best=null,bs=0;
+    KB.forEach(function(e){var k=' '+e.k+' ',s=0;w.forEach(function(x){if(x.length>1&&k.indexOf(' '+x)>-1)s+=x.length>3?2:1});
+      if(b){if(k.indexOf(b)>-1)s+=2;else if(/pm ai sm|levain|srenova/.test(k))s-=3}
+      if(s>bs){bs=s;best=e}});
+    return bs>=2?best.a:FALL;
+  }
+  var log=document.getElementById('botlog'),box=document.getElementById('bot'),btn=document.getElementById('botbtn');
+  function say(t,who){var d=document.createElement('div');d.className='msg '+who;d.textContent=t;log.appendChild(d);log.scrollTop=log.scrollHeight}
+  function ask(q){if(!q.trim())return;say(q,'me');setTimeout(function(){say(answer(q),'it')},220)}
+  function open(v){box.hidden=!v;btn.setAttribute('aria-expanded',v);if(v){if(!log.children.length)say("Hello. Ask me anything about this proposal: fees, what is included, the 6 months, each brand's plan or the Agentic Cockpit.",'it');document.getElementById('botq').focus()}else btn.focus()}
+  btn.onclick=function(){open(box.hidden)};document.getElementById('botx').onclick=function(){open(false)};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!box.hidden)open(false)});
+  ["What are the fees?","What is included for Levain?","How do the 6 months work?","Cockpit price and payment","Srenova plan","Who pays for ads?"].forEach(function(c){var b=document.createElement('button');b.type='button';b.textContent=c;b.onclick=function(){ask(c)};document.getElementById('chips').appendChild(b)});
+  document.getElementById('botf').onsubmit=function(e){e.preventDefault();var i=document.getElementById('botq');ask(i.value);i.value=''};
+  window.__srinovaBot=answer;
+})();
+</script>
+</body>
+</html>
