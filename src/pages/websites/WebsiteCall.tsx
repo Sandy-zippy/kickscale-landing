@@ -1,6 +1,11 @@
 /* The /websites booking form: a website variant of cockpit/DiscoveryCall.
  *
- * Calendar FIRST (house rule, 28 Oct 2026): 1-hour slots from the same Apps Script,
+ * Order (Bhargav, 28 Oct 2026 pm): your details, your business, then what you need, then
+ * a time LAST (four short steps, so each fits one phone screen),
+ * with "send without a time" still possible. Every Continue saves the lead in the
+ * background (lib/leadSave.ts): someone who leaves after step one is still a lead.
+ *
+ * Calendar: 1-hour slots from the same Apps Script,
  * shown in the visitor's own time zone, re-fetched when the form comes into view, on
  * tab focus and every 60 s while it is on screen. A slot that vanishes is deselected
  * with a note, and book() re-checks it server side anyway. If the calendar cannot be
@@ -20,6 +25,7 @@ import { getUTMParams, getFbcParam, getFbpParam } from '../../lib/analytics'
 import { journeySummary } from '../../lib/siteBot'
 import { FORM, WHATSAPP } from '../../data/websites'
 import { useFormOnScreen } from '../../lib/useFormOnScreen'
+import { leadId, finishLead, saveStep, afterSaves, type Stage } from '../../lib/leadSave'
 
 const LIME = '#D9EA66'
 const TRACK = { content_name: 'websites', content_category: 'website' }
@@ -46,11 +52,15 @@ export const stillOpen = (picked: Slot | null, fresh: Slot[]) =>
   !picked || fresh.some(s => s.start === picked.start)
 
 export function buildWebsitePayload(
-  a: Answers, o: { needs: string[]; sells: string[]; slot: Slot | null; country: string; dial: string; journey: string },
+  a: Answers, o: { needs: string[]; sells: string[]; slot: Slot | null; country: string; dial: string; journey: string; lead_id: string; stage: Stage },
 ) {
+  const final = o.stage === 'final'
   return {
-    action: o.slot ? 'book' : 'lead',
-    start: o.slot?.start,
+    action: !final ? 'save' : o.slot ? 'book' : 'lead',
+    lead_id: o.lead_id,
+    partial: !final,
+    stage: o.stage,
+    start: final ? o.slot?.start : undefined,
     service: 'website',
     needs: o.needs.join(', '),
     sells: o.sells.join(', '),
@@ -227,21 +237,26 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
 
   function missing(s: number): string[] {
     const out: string[] = []
+    if (s === 0) {
+      if (!String(a.name || '').trim()) out.push('name')
+      if (String(a.phone || '').replace(/\D/g, '').length < 7) out.push('phone')
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email || '')) out.push('email')
+      if (!String(a.company || '').trim()) out.push('company')
+    }
     if (s === 1) {
+      ;['category', 'state', 'city', 'timeline'].forEach(k => { if (!String(a[k] || '').trim()) out.push(k) })
+    }
+    if (s === 2) {
       if (!needs.length) out.push('needs')
       if (!sells.length) out.push('sells')
       if (!a.package) out.push('package')
     }
-    if (s === 2) {
-      ;['company', 'category', 'state', 'city', 'timeline'].forEach(k => { if (!String(a[k] || '').trim()) out.push(k) })
-    }
-    if (s === 3) {
-      if (!String(a.name || '').trim()) out.push('name')
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email || '')) out.push('email')
-      if (String(a.phone || '').replace(/\D/g, '').length < 7) out.push('phone')
-    }
     return out
   }
+
+  const payload = (stage: Stage) => buildWebsitePayload(a, {
+    needs, sells, slot: picked, country: country.name, dial, journey: journeySummary(), lead_id: leadId('website'), stage,
+  })
 
   function go(to: number) {
     if (to > step) {
@@ -249,8 +264,10 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
       setWrong(m)
       if (m.length) return
       begin()
-      if (step === 1) trackDiscovery('step_2', { ...TRACK, needs: needs.join(', ') })
-      if (step === 2) trackDiscovery('step_3', { ...TRACK, category: a.category, country: country.name })
+      /* Save now, in the background. Never awaited: the visitor moves on at once. */
+      saveStep(payload(step < 2 ? 'details' : 'needs'))
+      if (step === 1) trackDiscovery('step_2', { ...TRACK, category: a.category, country: country.name })
+      if (step === 2) trackDiscovery('step_3', { ...TRACK, needs: needs.join(', ') })
     }
     setStep(to)
     setNote('')
@@ -258,12 +275,12 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
   }
 
   async function send() {
-    const m = missing(3); setWrong(m); if (m.length) return
     setBusy(true); setErr('')
-    const payload = buildWebsitePayload(a, { needs, sells, slot: picked, country: country.name, dial, journey: journeySummary() })
-    const req = fetch(BOOKING_ENDPOINT, {
-      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body: JSON.stringify(payload),
-    }).then(r => r.json())
+    const body = JSON.stringify(payload('final'))
+    /* after any save still in flight: one lead_id, one post at a time */
+    const req = afterSaves().then(() => fetch(BOOKING_ENDPOINT, {
+      method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body,
+    })).then(r => r.json())
     const p = { ...TRACK, category: a.category, country: country.name, package: a.package, needs: needs.join(', ') }
 
     /* An enquiry does not wait (the backend takes 4 to 12 s); a booking does, because
@@ -271,7 +288,7 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
     if (!picked) {
       trackDiscovery('lead', p)
       setDone({ when: '' }); setBusy(false)
-      req.then(j => { if (!j?.ok) { setDone(null); setErr(j?.error || 'That did not go through.') } })
+      req.then(j => { if (!j?.ok) { setDone(null); setErr(j?.error || 'That did not go through.') } else finishLead('website') })
         .catch(() => { setDone(null); setErr('That did not go through. Please try again or message us on WhatsApp.') })
       return
     }
@@ -280,9 +297,10 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
       if (j.ok) {
         trackDiscovery('lead', { ...p, booked: true })
         trackDiscovery('booked', p)
+        finishLead('website')
         setDone({ when: `${localDay(picked.start)}, ${localTime(picked.start)}` })
       } else if (j.error === 'taken') {
-        setPicked(null); setStep(0); setNote('That time was taken a moment ago. Here are the times still open.'); load('taken')
+        setPicked(null); setNote('That time was taken a moment ago. Here are the times still open.'); load('taken')
       } else setErr(j.error || 'That did not go through.')
     } catch {
       setErr('That did not go through. Please try again or message us on WhatsApp.')
@@ -342,6 +360,66 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
           exit={reduce ? undefined : { opacity: 0, x: -24 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
           <div className="mt-7 grid content-start gap-4 rounded-2xl bg-white p-5 text-slate-900 max-sm:mt-3 max-sm:grid-cols-2 max-sm:gap-x-2.5 max-sm:gap-y-3 max-sm:rounded-xl max-sm:p-3.5 md:min-h-[22rem] md:grid-cols-2 md:gap-5 md:p-7">
             {step === 0 && (
+              <>
+                <label className="block min-w-0"><Label text="Your name" />
+                  <input className={inputBase + (wrong.includes('name') ? bad : ok)} value={a.name || ''} onChange={e => set('name')(e.target.value)} autoComplete="name" /></label>
+                <label className="block min-w-0"><Label text="Business name" short="Business" />
+                  <input className={inputBase + (wrong.includes('company') ? bad : ok)} value={a.company || ''} onChange={e => set('company')(e.target.value)} autoComplete="organization" /></label>
+                <label className="block min-w-0 max-sm:col-span-2"><Label text="Mobile with country code" />
+                  <div className="mt-2 flex gap-2 max-sm:mt-1">
+                    <div className="relative w-[5.4rem] shrink-0">
+                      <select aria-label="Country dialling code" value={dial} onChange={e => setDial(e.target.value)}
+                        className="w-full appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-3 pr-5 text-[14.5px] max-sm:py-2.5 max-sm:text-[16px] text-slate-900 outline-none hover:border-slate-500 focus:border-slate-900">
+                        {DIAL_CODES.map(d => <option key={d.code} value={d.dial}>{d.dial}</option>)}
+                      </select>
+                      <span aria-hidden className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-500">▼</span>
+                    </div>
+                    <input aria-label="Mobile number" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="98765 43210"
+                      className={`min-w-0 flex-1 rounded-xl border bg-white px-4 py-3 text-[15px] outline-none max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] ${wrong.includes('phone') ? bad : ok}`}
+                      value={a.phone || ''} onChange={e => set('phone')(e.target.value)} />
+                  </div>
+                </label>
+                <label className="block min-w-0 max-sm:col-span-2"><Label text="Email" />
+                  <input type="email" className={inputBase + (wrong.includes('email') ? bad : ok)} value={a.email || ''} onChange={e => set('email')(e.target.value)} autoComplete="email" /></label>
+                <p className="text-[13px] leading-relaxed text-slate-500 max-sm:col-span-2 max-sm:text-[12px] max-sm:leading-snug md:col-span-2">{FORM.consent} <a href="/privacy" className="underline">Privacy policy</a>.</p>
+              </>
+            )}
+
+            {step === 1 && (
+              <>
+                <label className="block min-w-0 max-sm:col-span-2"><Label text="Your current website (if any)" short="Website" optional />
+                  <input className={inputBase + ok} value={a.website || ''} placeholder="yourcompany.com" onChange={e => set('website')(e.target.value)} inputMode="url" /></label>
+                <label className="block min-w-0 max-sm:col-span-2"><Label text="Industry" />
+                  <Select label="Industry" value={a.category || ''} onChange={set('category')} options={CATEGORIES} invalid={wrong.includes('category')} /></label>
+                <label className="block min-w-0"><Label text="Country" />
+                  <Select label="Country" value={countryCode} placeholder="Choose your country"
+                    onChange={c => { setCountryCode(c); setA(p => ({ ...p, state: '', city: '' })); setDial(byCode(c)?.dial ?? '+') }}
+                    options={COUNTRIES_SHOWN.map(c => ({ v: c.code, l: c.name }))} /></label>
+                <label className="block min-w-0"><Label text={country.tier} />
+                  <Select label={country.tier} value={a.state || ''} onChange={v => { set('state')(v); set('city')('') }} options={statesOf(country)}
+                    invalid={wrong.includes('state')} placeholder={`Choose your ${country.tier.toLowerCase()}`} /></label>
+                <label className="block min-w-0"><Label text="City" />
+                  <Select label="City" value={a.city || ''} onChange={set('city')} options={cityList} invalid={wrong.includes('city')}
+                    disabled={!a.state} placeholder={a.state ? 'Choose your city' : `Pick a ${country.tier.toLowerCase()} first`} /></label>
+                <label className="block min-w-0"><Label text="When do you need it?" short="When" />
+                  <Select label="When do you need it?" value={a.timeline || ''} onChange={set('timeline')} options={TIMELINES} invalid={wrong.includes('timeline')} /></label>
+                <label className="block min-w-0 max-sm:col-span-2 md:col-span-2"><Label text="Anything else we should know?" short="Anything else?" optional />
+                  <textarea className={`${inputBase}${ok} min-h-[5.5rem] resize-y max-sm:h-11 max-sm:min-h-[44px]`} value={a.need || ''} onChange={e => set('need')(e.target.value)} /></label>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <Chips multi label="What do you need?" hint="Pick all that apply." options={FORM.needs} value={needs}
+                  onChange={v => { begin(); setNeeds(v); setWrong(w => w.filter(x => x !== 'needs')) }} invalid={wrong.includes('needs')} />
+                <Chips multi label="How do you sell?" hint="Pick all that apply." options={FORM.sells} value={sells}
+                  onChange={v => { setSells(v); setWrong(w => w.filter(x => x !== 'sells')) }} invalid={wrong.includes('sells')} />
+                <Chips label="Package in mind" options={FORM.packages} value={a.package ? [a.package] : []}
+                  onChange={v => set('package')(v[0])} invalid={wrong.includes('package')} />
+              </>
+            )}
+
+            {step === 3 && (
               <div className="max-sm:col-span-2 md:col-span-2">
                 <Label text="Pick a time for your call" hint={`One hour on Google Meet. Times are shown in your time zone (${zoneName()}).`} />
                 {slots === null && !slotsFailed && <p className="mt-4 text-[14px] text-slate-500" role="status">Checking the calendar for free times…</p>}
@@ -377,65 +455,6 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
               </div>
             )}
 
-            {step === 1 && (
-              <>
-                <Chips multi label="What do you need?" hint="Pick all that apply." options={FORM.needs} value={needs}
-                  onChange={v => { begin(); setNeeds(v); setWrong(w => w.filter(x => x !== 'needs')) }} invalid={wrong.includes('needs')} />
-                <Chips multi label="How do you sell?" hint="Pick all that apply." options={FORM.sells} value={sells}
-                  onChange={v => { setSells(v); setWrong(w => w.filter(x => x !== 'sells')) }} invalid={wrong.includes('sells')} />
-                <Chips label="Package in mind" options={FORM.packages} value={a.package ? [a.package] : []}
-                  onChange={v => set('package')(v[0])} invalid={wrong.includes('package')} />
-              </>
-            )}
-
-            {step === 2 && (
-              <>
-                <label className="block min-w-0"><Label text="Business name" />
-                  <input className={inputBase + (wrong.includes('company') ? bad : ok)} value={a.company || ''} onChange={e => set('company')(e.target.value)} autoComplete="organization" /></label>
-                <label className="block min-w-0"><Label text="Your current website (if any)" short="Website" optional />
-                  <input className={inputBase + ok} value={a.website || ''} placeholder="yourcompany.com" onChange={e => set('website')(e.target.value)} inputMode="url" /></label>
-                <label className="block min-w-0 max-sm:col-span-2"><Label text="Industry" />
-                  <Select label="Industry" value={a.category || ''} onChange={set('category')} options={CATEGORIES} invalid={wrong.includes('category')} /></label>
-                <label className="block min-w-0 max-sm:order-1"><Label text="When do you need it?" short="When" />
-                  <Select label="When do you need it?" value={a.timeline || ''} onChange={set('timeline')} options={TIMELINES} invalid={wrong.includes('timeline')} /></label>
-                <label className="block min-w-0"><Label text="Country" />
-                  <Select label="Country" value={countryCode} placeholder="Choose your country"
-                    onChange={c => { setCountryCode(c); setA(p => ({ ...p, state: '', city: '' })); setDial(byCode(c)?.dial ?? '+') }}
-                    options={COUNTRIES_SHOWN.map(c => ({ v: c.code, l: c.name }))} /></label>
-                <label className="block min-w-0"><Label text={country.tier} />
-                  <Select label={country.tier} value={a.state || ''} onChange={v => { set('state')(v); set('city')('') }} options={statesOf(country)}
-                    invalid={wrong.includes('state')} placeholder={`Choose your ${country.tier.toLowerCase()}`} /></label>
-                <label className="block min-w-0 md:col-span-2"><Label text="City" />
-                  <Select label="City" value={a.city || ''} onChange={set('city')} options={cityList} invalid={wrong.includes('city')}
-                    disabled={!a.state} placeholder={a.state ? 'Choose your city' : `Pick a ${country.tier.toLowerCase()} first`} /></label>
-                <label className="block min-w-0 max-sm:order-2 max-sm:col-span-2 md:col-span-2"><Label text="Anything else we should know?" short="Anything else?" optional />
-                  <textarea className={`${inputBase}${ok} min-h-[5.5rem] resize-y max-sm:h-11 max-sm:min-h-[44px]`} value={a.need || ''} onChange={e => set('need')(e.target.value)} /></label>
-              </>
-            )}
-
-            {step === 3 && (
-              <>
-                <label className="block max-sm:col-span-2"><Label text="Your name" />
-                  <input className={inputBase + (wrong.includes('name') ? bad : ok)} value={a.name || ''} onChange={e => set('name')(e.target.value)} autoComplete="name" /></label>
-                <label className="block max-sm:col-span-2"><Label text="Email" />
-                  <input type="email" className={inputBase + (wrong.includes('email') ? bad : ok)} value={a.email || ''} onChange={e => set('email')(e.target.value)} autoComplete="email" /></label>
-                <label className="block max-sm:col-span-2 md:col-span-2"><Label text="Mobile with country code" />
-                  <div className="mt-2 flex gap-2 max-sm:mt-1">
-                    <div className="relative w-[5.4rem] shrink-0">
-                      <select aria-label="Country dialling code" value={dial} onChange={e => setDial(e.target.value)}
-                        className="w-full appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-3 pr-5 text-[14.5px] max-sm:py-2.5 max-sm:text-[16px] text-slate-900 outline-none hover:border-slate-500 focus:border-slate-900">
-                        {DIAL_CODES.map(d => <option key={d.code} value={d.dial}>{d.dial}</option>)}
-                      </select>
-                      <span aria-hidden className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-500">▼</span>
-                    </div>
-                    <input aria-label="Mobile number" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="98765 43210"
-                      className={`min-w-0 flex-1 rounded-xl border bg-white px-4 py-3 text-[15px] outline-none max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] ${wrong.includes('phone') ? bad : ok}`}
-                      value={a.phone || ''} onChange={e => set('phone')(e.target.value)} />
-                  </div>
-                </label>
-                <p className="text-[13px] leading-relaxed text-slate-500 max-sm:col-span-2 md:col-span-2">{FORM.consent} <a href="/privacy" className="underline">Privacy policy</a>.</p>
-              </>
-            )}
           </div>
         </motion.div>
       </AnimatePresence>
@@ -449,19 +468,19 @@ export default function WebsiteCall({ openSignal = 0 }: { openSignal?: number })
             className="min-h-[44px] rounded-full border border-white/25 px-5 py-3 text-[14px] font-semibold text-white/80 hover:border-white/60 hover:text-white">Back</button>
         )}
         {step < 3 ? (
-          <button type="button" onClick={() => go(step + 1)} disabled={step === 0 && !picked && !noCalendar}
+          <button type="button" onClick={() => go(step + 1)}
             className="min-h-[44px] flex-1 rounded-full px-6 py-3 font-['Space_Grotesk'] text-[14.5px] font-bold text-[#111111] disabled:opacity-40 sm:flex-none" style={{ background: LIME }}>
             Continue
           </button>
         ) : (
-          <button type="button" disabled={busy} onClick={send}
-            className="min-h-[44px] w-full rounded-full px-6 py-3 font-['Space_Grotesk'] text-[14.5px] font-bold text-[#111111] disabled:opacity-40 sm:w-auto" style={{ background: LIME }}>
-            {busy ? (picked ? 'Booking…' : 'Sending…') : picked ? FORM.button : 'Send my details'}
+          <button type="button" disabled={busy || (!picked && !noCalendar)} onClick={send}
+            className="min-h-[44px] flex-1 rounded-full px-6 py-3 font-['Space_Grotesk'] text-[14.5px] font-bold text-[#111111] disabled:opacity-40 sm:flex-none" style={{ background: LIME }}>
+            {busy ? (picked ? 'Booking…' : 'Sending…') : picked || !noCalendar ? FORM.button : 'Send my details'}
           </button>
         )}
-        {step === 0 && slots && !picked && (
-          <button type="button" onClick={() => { setPicked(null); setStep(1) }} className="text-[13px] text-white/55 underline max-sm:min-h-[44px] max-sm:w-full max-sm:text-[14px] underline-offset-4 hover:text-white">
-            None of these times work? Continue without one
+        {step === 3 && slots && !picked && (
+          <button type="button" disabled={busy} onClick={send} className="text-[13px] text-white/55 underline max-sm:min-h-[44px] max-sm:w-full max-sm:text-[14px] underline-offset-4 hover:text-white">
+            None of these times work? Send without a time
           </button>
         )}
       </div>

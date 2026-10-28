@@ -11,9 +11,11 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync } from 'node:fs'
+import vm from 'node:vm'
 import { resolve } from 'node:path'
-import { render, screen, fireEvent } from '@testing-library/react'
-import DiscoveryCall from './DiscoveryCall'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import DiscoveryCall, { buildDiscoveryPayload } from './DiscoveryCall'
+import { leadId } from '../../lib/leadSave'
 import { istKey } from './DatePicker'
 import { HOURS, ABOUT, PROJECT, CONTACT, BUDGET_BANDS, companyFrom, CATEGORIES } from '../../data/discovery'
 
@@ -340,5 +342,196 @@ describe('a booking reports a Lead', () => {
     const names = fbq.mock.calls.map(c => c[1])
     expect(names.filter(n => n === 'Lead')).toHaveLength(1)
     expect(names.filter(n => n === 'Schedule')).toHaveLength(1)
+  })
+})
+
+/* ── new order + save at every Continue (28 Oct 2026) ─────────────────────── */
+
+describe('order and saves', () => {
+  const SLOT = { start: '2026-11-02T05:30:00.000Z', end: '2026-11-02T06:30:00.000Z', istDay: 'Mon 2 Nov', istTime: '11:00 AM' }
+  type Call = [string, RequestInit]
+  const posted = (f: ReturnType<typeof vi.fn>) =>
+    (f.mock.calls as unknown as Call[]).filter(c => typeof c[1]?.body === 'string').map(c => JSON.parse(c[1].body as string)).filter(b => b.action !== 'slots')
+  beforeEach(() => { sessionStorage.clear(); Element.prototype.scrollIntoView = vi.fn() })
+
+  it('payload: save at a step, book or lead at the end, one lead_id throughout', () => {
+    const a = { name: 'Ravi', phone: '98765 43210', email: 'r@acme.in', company: 'Acme' }
+    const o = { country: 'India', dial: '+91', slot: SLOT, lead_id: 'L-1' }
+    const d = buildDiscoveryPayload(a, { ...o, stage: 'details' })
+    expect(d).toMatchObject({ action: 'save', lead_id: 'L-1', partial: true, stage: 'details', phone: '+91 98765 43210', name: 'Ravi' })
+    expect(d.start).toBeUndefined()
+    expect(buildDiscoveryPayload(a, { ...o, stage: 'needs' })).toMatchObject({ action: 'save', partial: true, stage: 'needs' })
+    expect(buildDiscoveryPayload(a, { ...o, stage: 'final' })).toMatchObject({ action: 'book', lead_id: 'L-1', partial: false, stage: 'final', start: SLOT.start })
+    expect(buildDiscoveryPayload(a, { ...o, slot: null, stage: 'final' })).toMatchObject({ action: 'lead', partial: false, stage: 'final' })
+  })
+
+  it('details first, then needs, then the time; saves at each Continue; the final send carries the id', async () => {
+    const f = vi.fn(async (_u: string, init?: RequestInit) => {
+      if (typeof init?.body !== 'string') return new Response('{}')
+      const b = JSON.parse(init.body)
+      return new Response(JSON.stringify(b.action === 'slots' ? { ok: true, slots: [SLOT] } : { ok: true }))
+    })
+    vi.stubGlobal('fetch', f)
+    const { container } = render(<DiscoveryCall />)
+    const sel = (label: string, i = 1) => {
+      const el = screen.getByLabelText(label) as HTMLSelectElement
+      fireEvent.change(el, { target: { value: el.options[i].value } })
+    }
+    expect(screen.getByText('Your name')).toBeTruthy()
+    expect(screen.queryByText('What is going wrong today?')).toBeNull()
+    const inputs = container.querySelectorAll('input')
+    fireEvent.change(container.querySelector('input[placeholder="Full name"]')!, { target: { value: 'Ravi Kumar' } })
+    fireEvent.change(container.querySelector('input[placeholder="Company"]')!, { target: { value: 'Acme' } })
+    fireEvent.change(container.querySelector('input[inputmode="tel"]')!, { target: { value: '98765 43210' } })
+    fireEvent.change(container.querySelector('input[placeholder="you@company.com"]')!, { target: { value: 'r@acme.in' } })
+    expect(inputs.length).toBe(4)
+    sel('What kind of business?'); sel('State'); sel('City')
+    fireEvent.click(screen.getByText('Continue'))
+    await waitFor(() => expect(posted(f)).toHaveLength(1))
+    const s1 = posted(f)[0]
+    expect(s1).toMatchObject({ action: 'save', partial: true, stage: 'details', name: 'Ravi Kumar', company: 'Acme', phone: '+91 98765 43210' })
+    expect(s1.lead_id).toMatch(/^[0-9a-f-]{36}$/)
+    expect(s1).toHaveProperty('landed')
+
+    await screen.findByText('What is going wrong today?')
+    fireEvent.change(container.querySelector('textarea')!, { target: { value: 'Leads get lost' } })
+    sel('Budget'); sel('How many people would use it?'); sel('When do you want it running?')
+    fireEvent.click(screen.getByText('Continue'))
+    await waitFor(() => expect(posted(f)).toHaveLength(2))
+    expect(posted(f)[1]).toMatchObject({ action: 'save', stage: 'needs', partial: true, lead_id: s1.lead_id, need: 'Leads get lost', name: 'Ravi Kumar' })
+
+    /* the time is last, and optional */
+    fireEvent.click(await screen.findByText('Send my details'))
+    await waitFor(() => expect(posted(f)).toHaveLength(3))
+    expect(posted(f)[2]).toMatchObject({ action: 'lead', partial: false, stage: 'final', lead_id: s1.lead_id })
+    await waitFor(() => expect(leadId('cockpit')).not.toBe(s1.lead_id))
+  })
+})
+
+/* ── the Apps Script save/upsert, run for real in a fake Google ──────────────── */
+
+/* Runs the real DiscoveryBooking.gs in a vm with an in-memory Sheet, MailApp,
+   LockService, UrlFetchApp (the cockpit) and Calendar. Nothing leaves this process. */
+type Row = unknown[]
+function loadGs(seed: Record<string, Row[]> = {}) {
+  const tabs: Record<string, Row[]> = Object.fromEntries(Object.entries(seed).map(([k, v]) => [k, v.map(r => r.slice())]))
+  const mails: { subject: string }[] = []
+  const cockpit: Record<string, unknown>[] = []
+  const slot = '2026-11-02T05:30:00.000Z'
+  const sheet = (d: Row[]) => ({
+    getLastRow: () => d.length,
+    getLastColumn: () => Math.max(0, ...d.map(r => r.length)),
+    appendRow: (r: Row) => { d.push(r.slice()) },
+    setFrozenRows: () => {},
+    getRange: (r: number, c: number, nr = 1, nc = 1) => ({
+      getValues: () => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => d[r - 1 + i]?.[c - 1 + j] ?? '')),
+      setValues: (v: Row[]) => v.forEach((row, i) => row.forEach((x, j) => { (d[r - 1 + i] ??= [])[c - 1 + j] = x })),
+      setValue: (x: unknown) => { (d[r - 1] ??= [])[c - 1] = x },
+      setFontWeight: () => {},
+    }),
+  })
+  const ctx: Record<string, unknown> = {
+    SpreadsheetApp: { openById: () => ({
+      getSheetByName: (n: string) => (tabs[n] ? sheet(tabs[n]) : null),
+      insertSheet: (n: string) => sheet(tabs[n] = []),
+    }) },
+    MailApp: { sendEmail: (m: { subject: string }) => { mails.push(m) } },
+    LockService: { getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: () => 'test-secret' }) },
+    UrlFetchApp: { fetch: (_u: string, o: { payload: string }) => { cockpit.push(JSON.parse(o.payload)); return { getResponseCode: () => 200, getContentText: () => 'ok' } } },
+    Utilities: { formatDate: () => 'Monday 2 November, 11:00 AM', getUuid: () => 'uuid' },
+    ContentService: { MimeType: { JSON: 'json' }, createTextOutput: (t: string) => ({ setMimeType: () => t }) },
+    Calendar: { Events: { insert: () => ({ hangoutLink: 'https://meet.google.com/x', id: 'ev1' }) } },
+    CalendarApp: { EventColor: { GRAY: 8 }, getDefaultCalendar: () => ({ createEvent: () => ({ setColor: () => {}, getId: () => 'e' }), getEvents: () => [] }) },
+  }
+  vm.createContext(ctx)
+  vm.runInContext(readFileSync(resolve(__dirname, '../../../apps-script/DiscoveryBooking.gs'), 'utf8'), ctx)
+  ctx.freeSlots = () => [{ start: slot }]
+  const doPost = ctx.doPost as (e: unknown) => string
+  return {
+    slot, mails, cockpit,
+    post: (b: Record<string, unknown>) => JSON.parse(doPost({ postData: { contents: JSON.stringify(b) } })),
+    rows: (n: string) => (tabs[n] ?? []).map(r => Array.from(r, x => x ?? '')),
+  }
+}
+
+describe('DiscoveryBooking.gs save + upsert', () => {  const base = { name: 'Ravi Kumar', phone: '+91 98765 43210', company: 'Acme', email: 'r@acme.in', lead_id: 'L-1' }
+
+  it('two saves + a final lead = one row, one email ("STARTED, NOT FINISHED")', () => {
+    const g = loadGs()
+    expect(g.post({ ...base, action: 'save', partial: true, stage: 'details', email: '' }).ok).toBe(true)
+    expect(g.post({ ...base, action: 'save', partial: true, stage: 'needs', need: 'Leads get lost' }).ok).toBe(true)
+    expect(g.post({ ...base, action: 'lead', partial: false, stage: 'final', need: 'Leads get lost' }).ok).toBe(true)
+    const rows = g.rows('Discovery calls')
+    expect(rows).toHaveLength(2)                       // header + one lead
+    expect(rows[0][rows[0].length - 1]).toBe('Lead ID')
+    expect(rows[1][rows[1].length - 1]).toBe('L-1')
+    expect(rows[1][1]).toBe('Finished, not booked')
+    expect(rows[1][14]).toBe('Leads get lost')
+    expect(g.mails).toHaveLength(1)
+    expect(g.mails[0].subject).toContain('STARTED, NOT FINISHED')
+    /* the first save had no email, so it reached the Sheet but not the cockpit */
+    expect(g.cockpit.map(c => [c.lead_id, c.partial, c.stage])).toEqual([['L-1', true, 'needs'], ['L-1', false, 'final']])
+  })
+
+  it('a booking after the saves updates the same row and sends the second email', () => {
+    const g = loadGs()
+    g.post({ ...base, action: 'save', partial: true, stage: 'details' })
+    const r = g.post({ ...base, action: 'book', partial: false, stage: 'final', start: g.slot })
+    expect(r.ok).toBe(true)
+    const rows = g.rows('Discovery calls')
+    expect(rows).toHaveLength(2)
+    expect(rows[1][1]).toMatch(/IST$/)
+    expect(g.mails).toHaveLength(2)
+    expect(g.mails[1].subject).toContain('Discovery call booked')
+  })
+
+  it('a save that arrives after the final never rolls the row back', () => {
+    const g = loadGs()
+    g.post({ ...base, action: 'lead', partial: false, stage: 'final' })
+    g.post({ ...base, action: 'save', partial: true, stage: 'needs' })
+    expect(g.rows('Discovery calls')[1][1]).toBe('Finished, not booked')
+    expect(g.mails).toHaveLength(1)
+  })
+
+  it('website saves upsert the Website enquiries tab; no lead_id keeps the old append', () => {
+    const g = loadGs()
+    g.post({ ...base, service: 'website', action: 'save', partial: true, stage: 'details' })
+    g.post({ ...base, service: 'website', action: 'save', partial: true, stage: 'needs', needs: 'Website' })
+    expect(g.rows('Website enquiries')).toHaveLength(2)
+    expect(g.mails[0].subject).toMatch(/^WEBSITE .*STARTED, NOT FINISHED/)
+    const old = { ...base, lead_id: undefined, action: 'lead' }
+    g.post(old); g.post(old)
+    expect(g.rows('Discovery calls')).toHaveLength(3)   // header + two, as before
+    expect(g.mails).toHaveLength(3)
+  })
+
+  it('a bot save with only name + mobile goes to the Sheet, and to the cockpit once all four are in', () => {
+    const g = loadGs()
+    g.post({ action: 'save', lead_id: 'L-3', partial: true, stage: 'details', service: 'website', name: 'Ravi', phone: '+91 98765 43210' })
+    expect(g.rows('Website enquiries')).toHaveLength(2)
+    expect(g.cockpit).toHaveLength(0)
+    g.post({ ...base, lead_id: 'L-3', action: 'save', partial: true, stage: 'details', service: 'website' })
+    expect(g.cockpit).toHaveLength(1)
+    expect(g.rows('Website enquiries')).toHaveLength(2)
+  })
+
+  it('save needs name and phone, validates email only when given', () => {
+    const g = loadGs()
+    expect(g.post({ action: 'save', lead_id: 'L-2', name: 'Ravi' }).ok).toBe(false)
+    expect(g.post({ action: 'save', lead_id: 'L-2', name: 'Ravi', phone: '+91 1', email: 'bad' }).ok).toBe(false)
+    expect(g.post({ action: 'save', lead_id: 'L-2', name: 'Ravi', phone: '+91 98765 43210' }).ok).toBe(true)
+    expect(g.post({ action: 'save', name: 'Ravi', phone: '+91 98765 43210' }).ok).toBe(false)   // no lead_id
+  })
+
+  it('adds the Lead ID header at the end of an existing tab without reordering it', () => {
+    const g = loadGs({ 'Discovery calls': [['Booked at', 'Call at (IST)', 'Name', 'X'], ['old', 'Not booked', 'Old', 'x']] })
+    g.post({ ...base, action: 'save' })
+    const rows = g.rows('Discovery calls')
+    expect(rows[0].slice(0, 4)).toEqual(['Booked at', 'Call at (IST)', 'Name', 'X'])
+    expect(rows[0][rows[0].length - 1]).toBe('Lead ID')
+    expect(rows[0].length).toBe(21)                  // after the 20 values, never on top of one
+    expect(rows[1]).toEqual(['old', 'Not booked', 'Old', 'x'])
+    expect(rows[2][20]).toBe('L-1')
   })
 })

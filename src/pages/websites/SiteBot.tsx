@@ -1,7 +1,8 @@
 /* Wires the menu in lib/siteBot.ts into Picasso's SiteBotShell. Lazy-loaded by
  * Websites.tsx after the browser is idle, so it costs nothing on LCP or INP. */
 import { useEffect, useRef, useState } from 'react'
-import { step, notePick, journeySummary, botLeadPayload, sendBotLead, validAnswer, type Step } from '../../lib/siteBot'
+import { step, notePick, journeySummary, botLeadPayload, sendBotLead, validAnswer, BOT_NAME, type Step } from '../../lib/siteBot'
+import { leadId, finishLead, saveStep } from '../../lib/leadSave'
 import { trackEvent, trackDiscovery } from '../../lib/tracking'
 import SiteBotShell from '../../components/websites/SiteBotShell'
 
@@ -52,12 +53,15 @@ export function useSiteBot(onAct: (a: Act) => void) {
       return
     }
     contact.current[ask.key] = v.trim()
+    /* name + mobile is a lead already: save it now, in the background */
+    if (ask.key === 'phone') saveStep(botLeadPayload(contact.current, journeySummary(), leadId('website'), 'details'))
     if (ask.next !== 'send') { go(ask.next, v.trim()); return }
     setMsgs(m => [...m, { from: 'you', text: v.trim() }, { from: 'bot', text: 'Sending…' }])
     setCur({ says: [], options: [] })
     try {
-      const j = await sendBotLead(botLeadPayload(contact.current, journeySummary()))
+      const j = await sendBotLead(botLeadPayload(contact.current, journeySummary(), leadId('website')))
       if (!j.ok) throw new Error(j.error)
+      finishLead('website')
       trackEvent('bot_lead', { content_name: 'websites' })
       trackDiscovery('lead', { content_name: 'websites', content_category: 'website', via: 'site-bot' })
       const first = contact.current.name.split(/\s+/)[0]
@@ -84,6 +88,6 @@ export default function SiteBot({ onAct }: { onAct: (a: Act) => void }) {
   const b = useSiteBot(onAct)
   return (
     <SiteBotShell open={b.open} onToggle={b.toggle} messages={b.messages} options={b.options}
-      onPick={b.pick} input={b.input} title="ZippyScale website assistant" status={b.status} />
+      onPick={b.pick} input={b.input} title={BOT_NAME} status={b.status} />
   )
 }

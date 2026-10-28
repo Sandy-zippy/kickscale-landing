@@ -1,11 +1,11 @@
 /**
  * The discovery call booking flow.
  *
- * Three short steps, then a slot, then a confirmed Google Meet in both calendars. It is
+ * Three short steps: your details, what you need, then a time LAST (optional). It is
  * split into steps rather than one long form because twelve fields on one screen reads
- * as work and four reads as a question. The qualifying answers come first and the
- * contact details last: someone who has already told us about their business is far
- * more likely to hand over a phone number than someone asked for it cold.
+ * as work and four reads as a question. Order (Bhargav, 28 Oct 2026): contact details
+ * FIRST, and every Continue saves the lead in the background (lib/leadSave.ts), so
+ * someone who gives a name and mobile and then leaves is still a lead.
  *
  * Three things the form does so the visitor does not have to:
  *   · picks their country from the timezone, which sets the currency and the dial code
@@ -30,12 +30,39 @@ import { getUTMParams, getFbcParam, getFbpParam } from '../../lib/analytics'
 import DatePicker, { istKey } from './DatePicker'
 import { LIME } from '../growth/kinetic'
 import { useFormOnScreen } from '../../lib/useFormOnScreen'
+import { leadId, finishLead, saveStep, afterSaves, type Stage } from '../../lib/leadSave'
 
 type Answers = Record<string, string>
 type Slot = { start: string; end: string; istDay: string; istTime: string }
 
 const WHATSAPP = '919989990419'
-const STEPS = ['Your business', 'What you need', 'Book the call'] as const
+const STEPS = ['Your details', 'What you need', 'Book the call'] as const
+
+/** Everything sent to DiscoveryBooking.gs: a background 'save' at each Continue, then
+ *  the final 'book' or 'lead', all under one lead_id. Pure, so it is tested directly. */
+export function buildDiscoveryPayload(
+  a: Answers, o: { country: string; dial: string; slot: Slot | null; lead_id: string; stage: Stage },
+) {
+  const final = o.stage === 'final'
+  return {
+    action: !final ? 'save' : o.slot ? 'book' : 'lead',
+    lead_id: o.lead_id,
+    partial: !final,
+    stage: o.stage,
+    start: final ? o.slot?.start : undefined,
+    ...a,
+    country: o.country,
+    phone: `${o.dial} ${a.phone || ''}`.trim(),
+    region: [a.city, a.state, o.country].filter(Boolean).join(', '),
+    /* Which ad produced this lead. Without it a test month tells you how many
+       leads came in and nothing about which creative earned them, which is the
+       only question a test month exists to answer. */
+    ...getUTMParams(),
+    fbc: getFbcParam(),
+    fbp: getFbpParam(),
+    landed: typeof document !== 'undefined' ? (document.referrer || 'direct') : 'direct',
+  }
+}
 
 /* ── one field ─────────────────────────────────────────────────────────────── */
 
@@ -47,10 +74,14 @@ const bad = 'border-[#C2410C]'
 /* Phones: shorter labels and only the hint that changes an answer (budget), so each
    step fits one screen. Desktop renders the full label and every hint as before. */
 const SHORT: Record<string, string> = {
-  team: 'People who would use it', revenue: 'Yearly turnover', timeline: 'When', budget: 'Budget set aside',
+  team: 'Team size', revenue: 'Turnover', timeline: 'When', budget: 'Budget',
   day: 'Call day', time: 'Call time', company: 'Company', website: 'Website', instagram: 'Instagram',
+  category: 'Business type',
 }
 const PHONE_HINT = ['budget']
+
+/* the one phone hint, cut to what changes the answer */
+const PHONE_HINT_TEXT: Record<string, (h: string) => string> = { budget: h => h.replace(/\. A band saves us both a meeting\.$/, '.') }
 
 function Label({ f }: { f: Field }) {
   const short = SHORT[f.key]
@@ -60,7 +91,9 @@ function Label({ f }: { f: Field }) {
         {short ? <><span className="sm:hidden">{short}</span><span className="max-sm:hidden">{f.label}</span></> : f.label}
         {!f.required && <span className="ml-2 text-[12px] font-normal text-slate-500">optional</span>}
       </span>
-      {f.hint && <span className={`mt-0.5 block text-[12.5px] leading-snug text-slate-500 ${PHONE_HINT.includes(f.key) ? 'max-sm:text-[13px]' : 'max-sm:hidden'}`}>{f.hint}</span>}
+      {f.hint && (PHONE_HINT_TEXT[f.key]
+        ? <><span className="mt-0.5 block text-[12.5px] leading-snug text-slate-500 max-sm:hidden">{f.hint}</span><span className="mt-0.5 block text-[13px] leading-snug text-slate-500 sm:hidden">{PHONE_HINT_TEXT[f.key](f.hint)}</span></>
+        : <span className={`mt-0.5 block text-[12.5px] leading-snug text-slate-500 ${PHONE_HINT.includes(f.key) ? 'max-sm:text-[13px]' : 'max-sm:hidden'}`}>{f.hint}</span>)}
     </>
   )
 }
@@ -216,24 +249,35 @@ export default function DiscoveryCall() {
     [ccy, rate],
   )
 
-  function missing(fields: Field[]): string[] {
-    const out = fields.filter(f => f.required && !String(a[f.key] || '').trim()).map(f => f.key)
-    if (fields === ABOUT) {
-      if (!a.state) out.push('state')
-      if (!a.city) out.push('city')
-    }
-    if (fields === CONTACT) {
-      if (!String(a.company || '').trim()) out.push('company')
+  /* Step 1 is the contact block plus the business and where it is; step 2 the need,
+     team, money and timing. Same questions as before, in a new order. */
+  function missing(s: number): string[] {
+    const req = (fields: Field[]) => fields.filter(f => f.required && !String(a[f.key] || '').trim()).map(f => f.key)
+    if (s === 0) {
+      const out = req([...CONTACT, ABOUT[0]])
       if (a.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(a.email)) out.push('email')
       if (String(a.phone || '').replace(/\D/g, '').length < 7) out.push('phone')
+      if (!String(a.company || '').trim()) out.push('company')
+      if (!a.state) out.push('state')
+      if (!a.city) out.push('city')
+      return out
     }
-    return out
+    if (s === 1) {
+      const out = req([...PROJECT, ABOUT[1]])
+      if (!a.budget) out.push('budget')
+      return out
+    }
+    return []
   }
 
-  function next(fields: Field[]) {
-    const m = missing(fields)
+  const payload = (stage: Stage) => buildDiscoveryPayload(a, { country: country.name, dial, slot: picked, lead_id: leadId('cockpit'), stage })
+
+  function next() {
+    const m = missing(step)
     setWrong(m)
     if (m.length) return
+    /* Save now, in the background. Never awaited: the visitor moves on at once. */
+    saveStep(payload(step === 0 ? 'details' : 'needs'))
     /* Each step is its own event. The drop-off between them is the only way to tell a
        bad ad from a bad form, and at a small budget that is the difference between
        fixing the right thing and guessing. */
@@ -280,26 +324,13 @@ export default function DiscoveryCall() {
   async function confirm() {
     setBusy(true); setErr('')
 
-    const payload = {
-      action: picked ? 'book' : 'lead',
-      start: picked?.start,
-      ...a,
-      country: country.name,
-      phone: `${dial} ${a.phone || ''}`.trim(),
-      region: [a.city, a.state, country.name].filter(Boolean).join(', '),
-      /* Which ad produced this lead. Without it a test month tells you how many
-         leads came in and nothing about which creative earned them, which is the
-         only question a test month exists to answer. */
-      ...getUTMParams(),
-      fbc: getFbcParam(),
-      fbp: getFbpParam(),
-      landed: document.referrer || 'direct',
-    }
-    const send = fetch(BOOKING_ENDPOINT, {
+    const body = JSON.stringify(payload('final'))
+    /* after any save still in flight: one lead_id, one post at a time */
+    const send = afterSaves().then(() => fetch(BOOKING_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-      body: JSON.stringify(payload),
-    }).then((r) => r.json())
+      body,
+    })).then((r) => r.json())
 
     /* ⚠️ AN ENQUIRY DOES NOT WAIT. Measured: the backend answers in four to
        twelve seconds, because before it replies it reads the calendar, writes a
@@ -321,7 +352,7 @@ export default function DiscoveryCall() {
       setDone({ when: '', meet: '' })
       setBusy(false)
       send
-        .then((j) => { if (!j || !j.ok) { setDone(null); setErr(j?.error || 'That did not go through.') } })
+        .then((j) => { if (!j || !j.ok) { setDone(null); setErr(j?.error || 'That did not go through.') } else finishLead('cockpit') })
         .catch(() => { setDone(null); setErr('offline') })
       return
     }
@@ -335,6 +366,7 @@ export default function DiscoveryCall() {
         const p = { category: a.category, country: country.name, budget: a.budget, team: a.team }
         trackDiscovery('lead', { ...p, booked: true })
         trackDiscovery('booked', p)
+        finishLead('cockpit')
         setDone({ when: j.when || '', meet: j.meet || '' })
       }
       else if (j.error === 'taken') {
@@ -415,7 +447,6 @@ export default function DiscoveryCall() {
   /* ── the form ──────────────────────────────────────────────────────────── */
   const cantBook = !BOOKING_ENDPOINT || slotsFailed || err === 'offline'
   const canBook = !cantBook
-  const fields = [ABOUT, PROJECT, CONTACT][step]
   const cityList = a.state ? (country.states[a.state] ?? []) : []
 
   return (
@@ -466,9 +497,47 @@ export default function DiscoveryCall() {
           <div className="mt-7 grid content-start gap-4 rounded-2xl bg-white p-5 max-sm:mt-3 max-sm:grid-cols-2 max-sm:gap-x-2.5 max-sm:gap-y-3 max-sm:rounded-xl max-sm:p-3.5 md:min-h-[25rem] md:grid-cols-2 md:gap-5 md:p-7">
             {step === 0 && (
               <>
-                <Ask f={ABOUT[0]} value={a.category || ''} onChange={set('category')} invalid={wrong.includes('category')} className="max-sm:col-span-2" />
-                <Ask f={ABOUT[1]} value={a.team || ''} onChange={set('team')} invalid={wrong.includes('team')} className="max-sm:col-span-2" />
+                <Ask f={CONTACT[0]} value={a.name || ''} onChange={set('name')} invalid={wrong.includes('name')} />
+                <label className="block min-w-0">
+                  <Label f={{
+                    key: 'company', label: 'Company name', kind: 'text', required: true,
+                    hint: a.company && !companyTouched ? 'Taken from your website. Change it if it is wrong.' : undefined,
+                  }} />
+                  <input
+                    className={`${inputBase}${wrong.includes('company') ? bad : ok}`}
+                    value={a.company || ''} placeholder="Company"
+                    onChange={e => { setCompanyTouched(true); set('company')(e.target.value) }}
+                  />
+                </label>
 
+                {/* dial code is a dropdown, preset from the country they chose */}
+                <label className="block min-w-0 max-sm:col-span-2">
+                  <Label f={{ key: 'phone', label: 'Mobile', kind: 'text', required: true }} />
+                  <div className="mt-2 flex gap-2 max-sm:mt-1">
+                    <div className="relative w-[5.1rem] shrink-0">
+                      <select
+                        aria-label="Country dialling code"
+                        className="w-full appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-3 pr-5 text-[14.5px] max-sm:py-2.5 max-sm:text-[16px] text-slate-900 outline-none hover:border-slate-500 focus:border-slate-900"
+                        value={dial}
+                        onChange={e => setDial(e.target.value)}
+                      >
+                        {DIAL_CODES.map(d => (
+                          <option key={d.code} value={d.dial}>{d.dial}</option>
+                        ))}
+                      </select>
+                      <span aria-hidden className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-500">▼</span>
+                    </div>
+                    <input
+                      className={`min-w-0 flex-1 rounded-xl border bg-white px-4 py-3 text-[15px] max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 ${wrong.includes('phone') ? bad : ok}`}
+                      value={a.phone || ''} inputMode="tel" placeholder="98765 43210"
+                      onChange={e => set('phone')(e.target.value)}
+                    />
+                  </div>
+                </label>
+
+                <Ask f={CONTACT[1]} value={a.email || ''} onChange={set('email')} invalid={wrong.includes('email')} className="max-sm:col-span-2" />
+
+                <Ask f={ABOUT[0]} value={a.category || ''} onChange={set('category')} invalid={wrong.includes('category')} />
                 {/* country, then state, then city. Three taps, zero typing, and data
                     we can actually group by afterwards. */}
                 <label className="block min-w-0">
@@ -494,7 +563,7 @@ export default function DiscoveryCall() {
                   />
                 </label>
 
-                <label className="block min-w-0 md:col-span-2">
+                <label className="block min-w-0">
                   <Label f={{
                     key: 'city', label: 'City', kind: 'select', required: true,
                     hint: a.state ? undefined : `Pick a ${country.tier.toLowerCase()} first.`,
@@ -510,14 +579,6 @@ export default function DiscoveryCall() {
                   />
                 </label>
 
-                <label className="block min-w-0 md:col-span-2">
-                  <Label f={{
-                    key: 'revenue', label: 'Roughly what does the business turn over a year?',
-                    kind: 'select', required: false,
-                    hint: 'A band is enough. It tells us what is worth building and what is not.',
-                  }} />
-                  <Select value={a.revenue || ''} onChange={set('revenue')} options={revenueOptions} label="Annual turnover" />
-                </label>
               </>
             )}
 
@@ -529,7 +590,17 @@ export default function DiscoveryCall() {
                 <Ask f={PROJECT[1]} value={a.website || ''} onChange={set('website')} invalid={false} />
                 <Ask f={PROJECT[2]} value={a.instagram || ''} onChange={set('instagram')} invalid={false} />
 
-                <label className="block min-w-0 max-sm:col-span-2">
+                <Ask f={ABOUT[1]} value={a.team || ''} onChange={set('team')} invalid={wrong.includes('team')} />
+                <label className="block min-w-0">
+                  <Label f={{
+                    key: 'revenue', label: 'Roughly what does the business turn over a year?',
+                    kind: 'select', required: false,
+                    hint: 'A band is enough. It tells us what is worth building and what is not.',
+                  }} />
+                  <Select value={a.revenue || ''} onChange={set('revenue')} options={revenueOptions} label="Annual turnover" />
+                </label>
+                <Ask f={PROJECT[3]} value={a.timeline || ''} onChange={set('timeline')} invalid={wrong.includes('timeline')} />
+                <label className="block min-w-0">
                   <Label f={{
                     key: 'budget', label: 'What have you set aside for this?', kind: 'select', required: true,
                     hint: `Our builds start at ${formatCompact(730, ccy, rate)}. A band saves us both a meeting.`,
@@ -537,58 +608,19 @@ export default function DiscoveryCall() {
                   <Select value={a.budget || ''} onChange={set('budget')} options={budgetOptions} invalid={wrong.includes('budget')} label="Budget" />
                 </label>
 
-                <Ask f={PROJECT[3]} value={a.timeline || ''} onChange={set('timeline')} invalid={wrong.includes('timeline')} className="max-sm:col-span-2" />
               </>
             )}
 
             {step === 2 && (
               <>
-                <Ask f={CONTACT[0]} value={a.name || ''} onChange={set('name')} invalid={wrong.includes('name')} />
-                <Ask f={CONTACT[1]} value={a.email || ''} onChange={set('email')} invalid={wrong.includes('email')} className="max-sm:order-1 max-sm:col-span-2" />
-
-                {/* dial code is a dropdown, preset from the country they chose */}
-                <label className="block min-w-0 max-sm:order-1 max-sm:col-span-2">
-                  <Label f={{ key: 'phone', label: 'Mobile', kind: 'text', required: true }} />
-                  <div className="mt-2 flex gap-2 max-sm:mt-1">
-                    <div className="relative w-[5.1rem] shrink-0">
-                      <select
-                        aria-label="Country dialling code"
-                        className="w-full appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-3 pr-5 text-[14.5px] max-sm:py-2.5 max-sm:text-[16px] text-slate-900 outline-none hover:border-slate-500 focus:border-slate-900"
-                        value={dial}
-                        onChange={e => setDial(e.target.value)}
-                      >
-                        {DIAL_CODES.map(d => (
-                          <option key={d.code} value={d.dial}>{d.dial}</option>
-                        ))}
-                      </select>
-                      <span aria-hidden className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-slate-500">▼</span>
-                    </div>
-                    <input
-                      className={`min-w-0 flex-1 rounded-xl border bg-white px-4 py-3 text-[15px] max-sm:px-3 max-sm:py-2.5 max-sm:text-[16px] text-slate-900 outline-none transition-colors placeholder:text-slate-400 ${wrong.includes('phone') ? bad : ok}`}
-                      value={a.phone || ''} inputMode="tel" placeholder="98765 43210"
-                      onChange={e => set('phone')(e.target.value)}
-                    />
-                  </div>
-                </label>
-
-                <label className="block min-w-0">
-                  <Label f={{
-                    key: 'company', label: 'Company name', kind: 'text', required: true,
-                    hint: a.company && !companyTouched ? 'Taken from your website. Change it if it is wrong.' : undefined,
-                  }} />
-                  <input
-                    className={`${inputBase}${wrong.includes('company') ? bad : ok}`}
-                    value={a.company || ''} placeholder="Company"
-                    onChange={e => { setCompanyTouched(true); set('company')(e.target.value) }}
-                  />
-                </label>
-
+                {canBook && !slots && <p className="text-[14px] text-slate-500 max-sm:col-span-2 md:col-span-2" role="status">Checking the calendar for free times…</p>}
+                {canBook && slots && Object.keys(byDate).length === 0 && <p className="text-[14px] text-slate-600 max-sm:col-span-2 md:col-span-2" role="status">No free times right now. Send your details and we will come back with times.</p>}
                 {/* The call slot is two more dropdowns, deliberately. A calendar strip
                     changed the width of this card every time the data changed, which is
                     exactly the kind of thing that makes a form feel unstable. */}
                 {canBook && Object.keys(byDate).length > 0 && (
                   <>
-                    <label className="block min-w-0 max-sm:order-2">
+                    <label className="block min-w-0">
                       <Label f={{
                         key: 'day', label: 'Book a call · day', kind: 'select', required: false,
                         hint: 'One hour on Google Meet. Skip it and we will come back with times.',
@@ -602,7 +634,7 @@ export default function DiscoveryCall() {
                       />
                     </label>
 
-                    <label className="block min-w-0 max-sm:order-2">
+                    <label className="block min-w-0">
                       <Label f={{
                         key: 'time', label: 'Book a call · time', kind: 'select', required: false,
                         hint: day ? 'Times are IST.' : 'Pick a day first.',
@@ -659,7 +691,7 @@ export default function DiscoveryCall() {
 
         {step < 2 ? (
           <button
-            type="button" onClick={() => next(fields)}
+            type="button" onClick={next}
             className="flex-1 rounded-full px-6 py-3 font-['Space_Grotesk'] text-[14.5px] font-bold text-[#0A0A0C] max-sm:min-h-[44px] sm:flex-none"
             style={{ background: LIME }}
           >
@@ -669,11 +701,7 @@ export default function DiscoveryCall() {
           <a
             href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(asText())}`}
             target="_blank" rel="noopener noreferrer"
-            onClick={() => {
-              const m = missing(CONTACT)
-              if (m.length) setWrong(m)
-              else trackDiscovery('lead', { via: 'whatsapp', category: a.category })
-            }}
+            onClick={() => trackDiscovery('lead', { via: 'whatsapp', category: a.category })}
             className="rounded-full px-6 py-2.5 font-['Space_Grotesk'] text-[14.5px] font-bold text-[#0A0A0C]"
             style={{ background: LIME }}
           >
@@ -682,7 +710,7 @@ export default function DiscoveryCall() {
         ) : (
           <button
             type="button" disabled={busy}
-            onClick={() => { const m = missing(CONTACT); setWrong(m); if (!m.length) confirm() }}
+            onClick={confirm}
             className="w-full rounded-full px-6 py-3 font-['Space_Grotesk'] text-[14.5px] font-bold text-[#0A0A0C] disabled:opacity-40 sm:w-auto"
             style={{ background: LIME }}
           >
@@ -692,7 +720,7 @@ export default function DiscoveryCall() {
           </button>
         )}
 
-        <span className="text-[12.5px] text-white/35 max-sm:w-full max-sm:text-center max-sm:text-white/50">
+        <span className={`text-[12.5px] text-white/35 max-sm:w-full max-sm:text-center max-sm:text-white/50 ${step < 2 ? 'max-sm:hidden' : ''}`}>
           {step < 2
             ? 'Takes under a minute.'
             : picked ? 'No obligation on the call.' : 'Booking a time is optional.'}

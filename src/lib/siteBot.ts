@@ -13,6 +13,7 @@
 import { BUILD, FAQ, FORM, PACKAGES, PACKAGES_COPY, PROOF, WORK_COPY } from '../data/websites'
 import { BOOKING_ENDPOINT } from '../data/discovery'
 import { getUTMParams, getFbcParam, getFbpParam } from './analytics'
+import { afterSaves, type Stage } from './leadSave'
 
 /* ── journey ──────────────────────────────────────────────────────────────── */
 
@@ -76,7 +77,8 @@ export type Step = {
   ask?: { key: 'name' | 'phone' | 'email'; label: string; type: 'text' | 'tel' | 'email'; next: string }
 }
 
-export const GREETING = 'Hi, I am the ZippyScale website assistant. What brings you here?'
+export const BOT_NAME = 'Zippy'
+export const GREETING = `Hi, I'm ${BOT_NAME}. How may I help you?`
 export const JOURNEY_NOTE = 'I keep a note of what you looked at so the team does not ask you twice.'
 
 const NEXT: Opt[] = [
@@ -168,10 +170,16 @@ export function validAnswer(key: 'name' | 'phone' | 'email', v: string): boolean
   return v.trim().length >= 2
 }
 
-/** The lead the bot sends. Pure, so it can be checked without a network. */
-export function botLeadPayload(c: { name: string; phone: string; email: string }, summary: string) {
+/** The lead the bot sends. Pure, so it can be checked without a network.
+ *  stage 'details' is the background save once name + mobile are in (same lead_id as
+ *  the /websites form, see lib/leadSave.ts); 'final' is the lead after the email. */
+export function botLeadPayload(c: { name: string; phone: string; email: string }, summary: string, lead_id: string, stage: Stage = 'final') {
+  const final = stage === 'final'
   return {
-    action: 'lead' as const,
+    action: final ? 'lead' as const : 'save' as const,
+    lead_id,
+    partial: !final,
+    stage,
     service: 'website',
     name: c.name.trim(),
     phone: c.phone.trim(),
@@ -189,6 +197,7 @@ export function botLeadPayload(c: { name: string; phone: string; email: string }
 }
 
 export async function sendBotLead(payload: ReturnType<typeof botLeadPayload>, f: typeof fetch = fetch) {
+  await afterSaves()   // the name + mobile save goes first: one lead_id, one post at a time
   const r = await f(BOOKING_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=UTF-8' },

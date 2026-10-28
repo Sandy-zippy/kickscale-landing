@@ -201,8 +201,8 @@ export const FAQ = {
 
 export const FORM = {
   title: 'Tell us about the website you need.',
-  sub: 'Pick a time that suits you, then tell us about your website.',
-  steps: ['Book your call', 'What you need', 'About you', 'Contact'],
+  sub: 'Tell us who you are and what you need, then pick a time.',
+  steps: ['Your details', 'Your business', 'What you need', 'Pick a time'],
   needs: ['Website', 'Landing page', 'VSL page or funnel', 'Online store', 'Not sure'],
   sells: ['B2B', 'B2C', 'D2C'],
   packages: ['Starter', 'Growth', 'Pro', 'Not sure'],
