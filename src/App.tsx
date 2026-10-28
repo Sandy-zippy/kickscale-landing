@@ -31,6 +31,7 @@ import DeckLoader from './components/discovery/DeckLoader'
 const GrowthOffer = lazy(() => import('./pages/GrowthOffer'))
 const Growth = lazy(() => import('./pages/Growth'))
 const AgenticCockpit = lazy(() => import('./pages/AgenticCockpit'))
+const Websites = lazy(() => import('./pages/Websites'))
 const Giveaways = lazy(() => import('./pages/Giveaways'))
 const CaseStudyIndex = lazy(() => import('./pages/CaseStudyIndex'))
 const CaseStudyRouter = lazy(() => import('./pages/case-studies/CaseStudyRouter'))
@@ -141,6 +142,7 @@ export default function App() {
             <Route path="/agentic-cockpit" element={<AgenticCockpit />} />
             <Route path="/agency" element={<Growth />} />
             <Route path="/ai-automation" element={<AutomationHome />} />
+            <Route path="/websites" element={<Websites />} />
             <Route path="/growth" element={<Navigate to="/agency" replace />} />
             <Route path="/marketing" element={<Navigate to="/agency" replace />} />
             <Route path="/growth-offer" element={<GrowthOffer />} />

@@ -148,6 +148,12 @@ export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz',
           >
             AI Automation
           </a>
+          <a
+            href="/websites"
+            className={`${lk}text-sm font-medium ${c.link} transition-colors`}
+          >
+            Websites
+          </a>
 
           {/* Giveaways dropdown */}
           <div
@@ -275,6 +281,13 @@ export default function Nav({ noBanner = false, ctaHref = '/ai-automation#quiz',
                 onClick={() => setMenuOpen(false)}
               >
                 AI Automation
+              </a>
+              <a
+                href="/websites"
+                className={`block w-full text-center rounded-lg border ${c.sheetCard} px-5 py-3 text-sm font-semibold transition-colors`}
+                onClick={() => setMenuOpen(false)}
+              >
+                Websites
               </a>
 
               {/* Giveaways accordion */}
