@@ -304,8 +304,11 @@ footer{padding:40px 0 120px;color:var(--tx3);font-size:13px;border-top:1px solid
   body{font-size:12.5px}
   .hdr,.bot,.bot-btn,.swipe,.skip,.btn-read{display:none!important}
   .wrap{padding:0 14mm}
-  .hero{min-height:297mm;padding:0;break-after:page}
-  .sec,.brand{padding:12mm 0 10mm;break-before:page}
+  .hero{min-height:1700px;padding:0;break-after:page}
+  .printbg{display:block!important;position:fixed;inset:0;background:#000;z-index:-1}
+  .wrap{padding:0 40px!important}
+  .sec,.brand{padding:48px 0 40px;break-before:page}
+  #overview,#next{break-before:auto}
   .grid{display:grid!important;grid-template-columns:1fr 1fr;overflow:visible!important;margin:0!important;padding:0!important}
   .grid>.panel{flex:none;padding:14px}
   .span2{grid-column:span 2}
@@ -327,6 +330,7 @@ footer{padding:40px 0 120px;color:var(--tx3);font-size:13px;border-top:1px solid
 </style>
 </head>
 <body>
+<div class="printbg" style="display:none" aria-hidden="true"></div>
 <a class="skip" href="#main">Skip to the proposal</a>
 <header class="hdr">
  <div class="wrap hdr-in">
