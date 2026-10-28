@@ -598,7 +598,9 @@
      and live), and the API key for the agentic bot we give them. Same record as
      the deal, so it carries into delivery after Won without being copied. */
   function webSection(o, c, rec, mine, brief, mayEdit) {
-    var web = mine.filter(function (fd) { return fd.group === 'Website'; });
+    var ORDER = ['web_copy_note', 'web_design_note', 'web_host', 'hosting', 'web_registrar', 'web_domain'];
+    var web = mine.filter(function (fd) { return fd.group === 'Website'; })
+      .sort(function (a, b) { return ORDER.indexOf(a.key) - ORDER.indexOf(b.key); });
     var urls = (o.extra && o.extra.web_urls) || [];
     var docs = ZS.docsOf(o.proc).concat(o.docs || []);
     var h = '<p class="eyebrow" style="margin-top:20px">Website</p><div class="card pad websec">';
