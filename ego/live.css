@@ -102,7 +102,7 @@ body.pt-on #shell { display: none; }
 .pt { max-width: 680px; margin: 0 auto; min-height: 100vh; padding: 0 16px calc(84px + env(safe-area-inset-bottom, 0px)); }
 .pt-top { position: sticky; top: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 0; background: var(--ge-bg); border-bottom: 1px solid var(--ge-border); }
 .pt-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pt-view { padding-top: 16px; }
+.pt-view { padding-top: 16px; padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px)); }   /* B4-F1 item 3: the last card clears the fixed bottom menu */
 .pt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
 .pt-head h1 { font-size: 24px; margin: 0; }
 .pt-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -257,3 +257,28 @@ body.pt-on #shell { display: none; }
 .ts-hit:hover, .ts-hit:focus { background: var(--ge-surface-2); }
 .ts-none { padding: 8px 10px; }
 @media (max-width: 700px) { .ts { margin-left: 0; flex-basis: 100%; order: 9; } }
+
+/* C1 (27 Oct): the Kind pill is an outline, so it shows on both row colours, light and dark */
+.badge.plain.line { background: transparent; border: 1px solid var(--ge-border); color: var(--ge-text); padding: 2px 8px; }
+.ch-list { display: grid; gap: 8px; }
+.ch-row { padding: 10px 12px; border: 1px solid var(--ge-border); border-radius: 10px; }
+.ch-row.done { opacity: .78; }
+.ch-head { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
+.ch-text { margin: 6px 0 4px; white-space: normal; overflow-wrap: anywhere; }
+.ch-acts { display: flex; gap: 6px; flex-wrap: nowrap; flex-shrink: 0; }
+@media (max-width: 720px) { .ch-head { flex-direction: column; align-items: flex-start; } .ch-acts { flex-wrap: wrap; } }
+/* F1 item 8 (27 Oct): a segmented choice sitting on the page ground (lead form Category, Wholesale as) gets its track back:
+   the kit's .fd-seg track is --fd-ground, the same as the page, so the three options read as plain text */
+.fd-field > .fd-seg { background: var(--fd-card); box-shadow: inset 0 0 0 1px var(--fd-line); }
+.fd-field > .fd-seg label:has(input:checked) { background: var(--fd-ink); color: var(--fd-on-ink); }
+.fd-field.has-err > .fd-seg { box-shadow: inset 0 0 0 1.5px var(--fd-bad); }
+[data-orderbook-table].org-tbl .tbl td:first-child { min-width: 130px; }   /* F1: the Orders list fits at 1280 with the outline Kind pill and Confirmed on */
+/* F2 T-08: the retail order designs table keeps the Design column readable */
+[data-rf-lines] table th:first-child, [data-rf-lines] table td:first-child { min-width: 140px; white-space: normal; }
+/* F2 T-08: the retail order page (designs with Boxes blocked and Amount) keeps the whole width up to 1700 px; Activity sits below */
+@media (max-width: 1700px) {
+  .rec-xl { grid-template-columns: minmax(0, 1fr); }
+  .rec-xl .rec-aside { position: static; height: auto; }
+  .rec-xl .rec-aside [data-open-fu] { max-height: none; }
+  .rec-xl .rec-aside [data-timeline], .rec-xl .rec-aside [data-act-empty] { overflow: visible; }
+}

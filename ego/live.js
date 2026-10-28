@@ -155,7 +155,11 @@ EM.offTab = t => !DELETES_ON && t === 'bin' ? OFF_TXT : '';   // R7 batch 4: the
 const byIdL = a => Object.fromEntries((a || []).map(x => [x.id, x]));
 const CL = () => byIdL(D.clients);
 const ST = () => byIdL(D.staff);
-const staffName = id => (ST()[id] || {}).name || 'Not set';
+/* F2 H-2: a portal step is done by a dealer person, not staff: "<name>, <dealer>" */
+const portalOf = id => (D.portal_names || []).find(p => p.id === id);
+const staffName = id => (ST()[id] || {}).name || (p => p ? `${p.name}${p.dealer ? ', ' + p.dealer : ''}` : 'Not set')(portalOf(id));
+/* F2 M-1: the short form on a crowded row: a first name, or for a dealer person the firm; the full "<name>, <dealer>" goes on hover */
+const shortName = id => { const s = ST()[id], p = !s && portalOf(id); return s ? String(s.name || '').trim().split(/\s+/)[0] : p ? p.dealer || p.name : 'Not set'; };
 /* R5 carried (a): who added a file. A file sent from the dealer portal was added by that dealer, so it says the dealer's name */
 const uploaderName = d => ST()[d.uploaded_by] ? staffName(d.uploaded_by) : `${(CL()[d.client_id] || {}).name || 'The dealer'} (dealer portal)`;
 const kindLabel = k => (KINDS[k] || { label: k }).label;
@@ -284,9 +288,9 @@ const cbAZ = (a, b) => a.l.localeCompare(b.l, 'en', { numeric: true, sensitivity
 function cbChoices(el) {
   if (el.dataset.find) return el._rows || [];   // L-fix: rows from the server search
   if (el.tagName !== 'SELECT') return JSON.parse(el.dataset.suggest || '[]').map(v => ({ v, l: v })).sort(cbAZ);
-  const all = [...el.options].map(o => ({ v: o.value, l: o.textContent.trim() + (o.parentElement.tagName === 'OPTGROUP' ? ' · ' + o.parentElement.label : ''), top: o.value === '' || o.value.startsWith('__') }));
-  const top = all.filter(o => o.top), rest = all.filter(o => !o.top);
-  return [...top.filter(o => o.v === ''), ...(el.hasAttribute('data-keep-order') ? rest : rest.sort(cbAZ)), ...top.filter(o => o.v !== '')];
+  const all = [...el.options].map(o => ({ v: o.value, l: o.textContent.trim() + (o.parentElement.tagName === 'OPTGROUP' ? ' · ' + o.parentElement.label : ''), top: o.value === '' || o.value.startsWith('__'), pin: o.hasAttribute('data-pin'), s: o.dataset.sub || '' }));
+  const top = all.filter(o => o.top), pin = all.filter(o => !o.top && o.pin), rest = all.filter(o => !o.top && !o.pin);   // b3: data-pin rows first, in source order
+  return [...top.filter(o => o.v === ''), ...pin, ...(el.hasAttribute('data-keep-order') ? rest : rest.sort(cbAZ)), ...top.filter(o => o.v !== '')];
 }
 function cbEnhance(el) {
   if (el.dataset.cb) return;
@@ -333,10 +337,10 @@ function cbEnhance(el) {
   const draw = text => {
     if (isFind) return findDraw(text);
     const t = cbNorm(text).trim();
-    cur = cbChoices(el).filter(o => !t || (o.v !== '' && cbNorm(o.l).includes(t)));
+    cur = cbChoices(el).filter(o => !t || (o.v !== '' && (cbNorm(o.l).includes(t) || cbNorm(o.s).includes(t))));   // b3: the second line (data-sub) is searched too
     if (t) cur.sort((a, b) => (cbNorm(b.l).startsWith(t) - cbNorm(a.l).startsWith(t)));
     act = Math.max(0, cur.findIndex(o => isSel && o.v === el.value && !t));
-    list.innerHTML = cur.length ? cur.slice(0, 300).map((o, i) => `<div class="cb-opt${i === act ? ' on' : ''}" role="option" data-i="${i}">${esc(o.l)}</div>`).join('') : `<div class="cb-none small muted">${isSel ? 'Nothing matches' : 'Type your own'}</div>`;
+    list.innerHTML = cur.length ? cur.slice(0, 300).map((o, i) => `<div class="cb-opt${i === act ? ' on' : ''}" role="option" data-i="${i}">${o.s ? `<b>${esc(o.l)}</b><div class="small muted">${esc(o.s)}</div>` : esc(o.l)}</div>`).join('') : `<div class="cb-none small muted">${isSel && el.dataset.none ? `${esc(el.dataset.none)} "${esc(text)}". Check the spelling or pick EGO team.` : isSel ? 'Nothing matches' : 'Type your own'}</div>`;
     list.hidden = false; q.setAttribute('aria-expanded', 'true');
     const on = list.querySelector('.on'); if (on) on.scrollIntoView({ block: 'nearest' });
   };
@@ -805,11 +809,12 @@ EM.VIEWS.client = arg => {
   const cts = D.contacts.filter(k => k.client_id === id), ops = D.opportunities.filter(o => o.client_id === id), docs = D.documents.filter(d => d.client_id === id);
   const org = ['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group);
   const nOrd = buildOrders().filter(x => x.client_id === id).length;
-  const tabs = [['overview', 'Overview'], ['orders', `Orders (${nOrd})`], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
-  if (DEALER_KINDS.includes(c.kind)) tabs.splice(6, 0, ...dealerTabs(c));   // batch 4: leads, development plan, portal logins
+  const nSites = (OPSD().sites || []).filter(x => x.client_id === id).length;   // F2 M-2: the client's installation sites
+  const tabs = [['overview', 'Overview'], ['orders', `Orders (${nOrd})`], ['sites', `Sites (${nSites})`], ['contacts', `${org ? 'Team' : 'Contacts'} (${cts.length})`], ['opps', `Opportunities (${ops.length})`], ['docs', `Documents (${docs.length})`], ['history', 'History']];
+  if (DEALER_KINDS.includes(c.kind)) tabs.splice(7, 0, ...dealerTabs(c));   // batch 4: leads, development plan, portal logins
   if (ARCH_KINDS.includes(c.kind)) tabs.splice(tabs.length - 1, 0, ['plan', 'Plan']);   // R6b (plan point 18): a Design 500 member's plan and interventions
   if (DEALER_KINDS.includes(c.kind) || ARCH_KINDS.includes(c.kind)) tabs.splice(tabs.length - 1, 0, ...regTabs(c));   // R6a: Samples (dealer, architect), Displays (dealer)
-  const body = { overview: clientOverview, orders: clientOrders, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>', ...(DEALER_KINDS.includes(c.kind) ? DEALER_TAB_BODY : {}), ...(ARCH_KINDS.includes(c.kind) ? { plan: c2 => clientPlan(c2) } : {}), ...REG_TAB_BODY }[tab] || clientOverview;
+  const body = { overview: clientOverview, orders: clientOrders, sites: clientSites, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>', ...(DEALER_KINDS.includes(c.kind) ? DEALER_TAB_BODY : {}), ...(ARCH_KINDS.includes(c.kind) ? { plan: c2 => clientPlan(c2) } : {}), ...REG_TAB_BODY }[tab] || clientOverview;
   const home = homeOf(c);
   return `<div class="stack">${crumbs(home, [c.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
@@ -1124,16 +1129,18 @@ EM.VIEWS.opp = id => {
   const c = CL()[o.client_id] || { name: 'Client outside your view' }, v = { ...o, ...o.extra };
   const stages = D.lists.stages[o.pipeline] || [], hist = D.history.filter(h => h.opp_id === id);
   const at = stages.indexOf(o.stage);
-  const fields = showFields(oppFieldsFor(o.pipeline)).filter(f => !['pipeline', 'title', 'stage', 'contact_id'].includes(f.key) && (!LOST_KEYS.includes(f.key) || o.stage === lostStage(o.pipeline, D.lists)));
+  /* F1 item 4 (27 Oct): a Retail opportunity is fulfilled through its Retail order (Fulfilled by), so no Allocated dealer row and no site button */
+  const retailOpp = PIPELINES[o.pipeline].okind === 'retail';
+  const fields = showFields(oppFieldsFor(o.pipeline)).filter(f => !['pipeline', 'title', 'stage', 'contact_id', ...(retailOpp ? ['dealer_id'] : [])].includes(f.key) && (!LOST_KEYS.includes(f.key) || o.stage === lostStage(o.pipeline, D.lists)));
   const contact = D.contacts.find(k => k.id === o.contact_id);
   return `<div class="stack">${crumbs(['Opportunities', `#/opps/${o.pipeline}`], [o.title])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.title)}</h1>
       <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}<span class="small muted">${esc(o.ref || '')}</span>${o.lead_id ? ldFromLink(o.lead_id) : ''}</div>
       <p class="muted"><a href="#/client/${o.client_id}">${esc(c.name)}</a>${contact ? ` · ${esc(contact.name)} ${esc(fmtMobile(contact.mobile))}` : ''}</p></div>
-      <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}${dealerSteps(o.pipeline, D.lists) && !isClosed(o.pipeline, o.stage, D.lists) ? `<button class="btn ${o.dealer_id ? '' : 'primary'}" data-act="ld-move" data-id="${id}">${o.dealer_id ? 'Move to another dealer' : 'Allocate to a dealer'}</button>` : ''}<button class="btn" data-act="fu-add" data-client="${o.client_id}" data-opp="${id}">+ Follow-up</button><button class="btn" data-act="opp-edit" data-id="${id}">Edit</button></div></div>
+      <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && retailOpp ? (rOrd => rOrd ? `<a class="btn primary" data-opp-order href="#/order/${rOrd.id}">Retail order ${esc(rOrd.ref)}</a>` : '')(allOrders().find(x => x.opp_id === o.id)) : o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}${dealerSteps(o.pipeline, D.lists) && !isClosed(o.pipeline, o.stage, D.lists) ? `<button class="btn ${o.dealer_id ? '' : 'primary'}" data-act="ld-move" data-id="${id}">${o.dealer_id ? 'Move to another dealer' : 'Allocate to a dealer'}</button>` : ''}<button class="btn" data-act="fu-add" data-client="${o.client_id}" data-opp="${id}">+ Follow-up</button><button class="btn" data-act="opp-edit" data-id="${id}">Edit</button></div></div>
     ${recGrid(`<section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>${wonNote(o)}
       <div class="row"><select class="input" id="move-stage" data-keep-order aria-label="Move to stage" style="width:auto">${stages.map(s => `<option ${s === o.stage ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select><button class="btn primary" data-act="opp-move" data-id="${id}">Move stage</button></div></section>
-    ${(o.extra || {}).portal ? portalRequestNote(o) : ''}${qLinesNote(o, PIPELINES[o.pipeline].lines || PIPELINES[o.pipeline].designs ? oppLinesCard(o) : PIPELINES[o.pipeline].sqft ? rfOppLinesCard(o) : '')}
+    ${(o.extra || {}).portal ? portalRequestNote(o) : ''}${qLinesNote(o, PIPELINES[o.pipeline].lines || PIPELINES[o.pipeline].designs ? oppLinesCard(o) : PIPELINES[o.pipeline].sqft ? rfOppLinesCard(o) : '')}${oppInstallCard(o)}
     ${oppQuotes(o)}
     ${oppFiles(o)}
     ${(() => { const ord = allOrders().find(x => x.opp_id === o.id); return ord ? orderFiles(ord) : ''; })()}
@@ -1211,6 +1218,7 @@ EM.ACTIONS['opp-save'] = async el => {
     { const bad = input.lines.findIndex(l => !l.keep && (!l.product_id || lineCalc(l).error)); if (bad >= 0) return showErr('of-err', `Design line ${bad + 1}: ${input.lines[bad].product_id ? lineCalc(input.lines[bad]).error : 'choose a design'} (or remove the line).`); }
     if (qs('#ochg')) { input.charges = readCharges(); const bad = input.charges.findIndex(c => !c.label || !(c.amount > 0)); if (bad >= 0) return showErr('of-err', `Charge ${bad + 1}: say what it is for and the amount (or remove it).`); }
   }
+  if (needsFulBy(input, D.opportunities.find(x => x.id === input.id))) return askFulBy(input, r2 => { EM.toast(`<b>${esc(r2.opportunity.title)}</b> saved · ${esc(r2.opportunity.stage)}`); location.hash = `#/opp/${r2.opportunity.id}`; EM.rerender(); });
   const r = await saveOpp(input, el, 'of-err');
   if (!r) return;
   EM.closeModal(); EM.toast(`<b>${esc(r.opportunity.title)}</b> ${r.created ? 'added' : 'saved'} · ${esc(r.opportunity.stage)}`);
@@ -1224,6 +1232,7 @@ EM.ACTIONS['opp-move'] = async el => {
     <div class="field" style="margin-top:12px" data-field="lost_reason"><label for="lost-pick">Lost reason *</label><select class="input" id="lost-pick"><option value="">Choose</option>${D.lists.lost_reasons.map(r => `<option>${esc(r)}</option>`).join('')}</select></div>
     <div class="field" style="margin-top:12px" data-field="lost_detail"><label for="lost-detail">The details *</label><textarea class="input" id="lost-detail" rows="3" placeholder="e.g. Needed 300 boxes of Oak in 10 days; we had 120 and the next container is 6 weeks away"></textarea></div>
     ${errBox('lost-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="opp-lost" data-id="${o.id}">Mark as lost</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+  if (needsFulBy({ ...oppInput(o), stage: to }, o)) return askFulBy({ ...oppInput(o), stage: to });
   const r = await saveOpp({ ...oppInput(o), stage: to }, el, 'move-err');
   if (r) { EM.toast(`Moved to <b>${esc(to)}</b>.`); EM.rerender(); } else bubbleNear(qs('[data-act="opp-move"]') || el, EM._lastErr || 'Could not move it.');
 };
@@ -1493,7 +1502,7 @@ const FN = r => nm(D.lists, 'ops.fulfilment_stages', r), PNn = r => nm(D.lists, 
 const OPS_EMPTY = { orders: [], lines: [], allocations: [], production: [], waits: [], sites: [], snags: [], complaints: [], approvals: [] };
 let opsMemo = null;
 const OPSD = () => { const o = D.ops || OPS_EMPTY;
-  if (!opsMemo || opsMemo.src !== o || opsMemo.arr !== o.orders) { const all = o.orders || []; opsMemo = { src: o, arr: o.orders, v: { ...o, orders: all.filter(x => x.division !== 'retail'), rorders: all.filter(x => x.division === 'retail') } }; }
+  if (!opsMemo || opsMemo.src !== o || opsMemo.arr !== o.orders) { const all = o.orders || []; opsMemo = { src: o, arr: o.orders, v: { ...o, orders: all.filter(x => !isRetailOrder(x)), rorders: all.filter(isRetailOrder) } }; }   // b3: every Retail order (both companies) is a rorder
   return opsMemo.v; };
 const allOrders = () => [...OPSD().orders, ...OPSD().rorders];
 const OS_ = k => opsStages(D.lists, k);
@@ -1538,17 +1547,19 @@ const flowStrip = () => { const W = D.lists.stages.wholesale || [], FS = OS_('fu
     <p class="small muted">One production order can serve several sales of the same design. <b>${esc(PNn('Received at warehouse'))}</b> adds the boxes to stock; <b>${esc(PNn('Allocated & closed'))}</b> gives each waiting sale its share, oldest first, and they move on by themselves.</p></section>`; };
 EM.VIEWS.orders = arg => {
   /* R3b: Big E has its own fulfilment, the retail ladder; in Both it is the third tab */
-  const rfHead = `<div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Big E · from Won to Closed</div><h1>Fulfilment</h1></div><div class="row"><a class="btn" href="#/opps/retail_lead">Retail leads</a><a class="btn" href="#/opps/retail_project">Retail projects</a></div></div>`;
+  /* F2 gate: the kicker follows the switch; an opportunity is never called a lead */
+  const rfCo = EM.div === 'retail' ? 'Big E' : EM.div === 'wholesale' ? 'EGO Premium' : 'EGO Premium and Big E', rfP = EM.div === 'retail' ? ['retail_lead', 'retail_project'] : ['ego_retail', 'ego_project'];
+  const rfHead = `<div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker" data-rf-kicker>${rfCo} · from Order confirmed to Closed</div><h1>Fulfilment</h1></div><div class="row"><a class="btn" href="#/opps/${rfP[0]}">Retail opportunities</a><a class="btn" href="#/opps/${rfP[1]}">Project opportunities</a></div></div>`;
   if (EM.div === 'retail') return `<div class="stack">${rfHead}${rfBoard()}</div>`;
-  const TABS = EM.div === 'both' ? [...ORD_TABS, ['bige', 'Big E fulfilment']] : ORD_TABS;
+  const TABS = [...ORD_TABS, ['bige', 'Retail']];   // b3: retail orders of both companies
   const tab = TABS.find(t => t[0] === arg) ? arg : 'fulfilment';
-  if (tab === 'bige') return `<div class="stack">${rfHead}${subtabs('#/orders', tab, TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? OPSD().orders.length : k === 'bige' ? OPSD().rorders.length : OPSD().production.length}</span>`]))}${rfBoard()}</div>`;
+  if (tab === 'bige') return `<div class="stack">${rfHead}${subtabs('#/orders', tab, TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? OPSD().orders.length : k === 'bige' ? OPSD().rorders.filter(o => o.okind !== 'project').length : OPSD().production.length}</span>`]))}${rfBoard()}</div>`;
   let O = OPSD();
   const lineSum = id => O.lines.filter(l => l.order_id === id);
   const head = `<div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">EGO Premium · from the confirmed order to the dealer's door</div><h1>Fulfilment</h1></div>
     <div class="row">${tab === 'production' && canStockUI() ? '<button class="btn" data-act="po-add">+ Production order</button>' : ''}<a class="btn" href="#/suppliers" data-to-suppliers>${fic('building-factory')}Suppliers</a><a class="btn" href="#/opps/wholesale">Wholesale opportunities</a></div></div>
     ${flowStrip()}
-    ${subtabs('#/orders', tab, TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : k === 'bige' ? O.rorders.length : O.production.length}</span>`]))}`;
+    ${subtabs('#/orders', tab, TABS.map(([k, l]) => [k, `${l} <span class="muted">${k === 'fulfilment' ? O.orders.length : k === 'bige' ? O.rorders.filter(o => o.okind !== 'project').length : O.production.length}</span>`]))}`;
   let body;
   if (tab === 'fulfilment') {
     const { html: fbar, rows: liveO } = filterBar(EM.fulF = EM.fulF || {}, 'ful', { label: 'fulfilment', rows: O.orders.filter(o => o.ful_stage !== lastOf(OS_('fulfilment_stages')) || thisMonth(stageAt(o.id, o.ful_stage))), ph: 'Number, opportunity or dealer',
@@ -1780,16 +1791,15 @@ EM.VIEWS.order.title = id => (allOrders().find(x => x.id === id) || { ref: 'Fulf
    Won > Advance received > Stock check > Blocked > Delivered to site > Installation > Balance received > Closed.
    A Big E sale reaching Won opens its fulfilment record (the Worker); its line items are design, sq ft, rate per sq ft, amount
    (boxes come in R4). Blocked uses the same stock block as EGO; Installation creates or links the installation site. */
-const RF_WHAT = { 'Advance received': 'the advance is recorded', 'Stock check': 'the designs are checked against the warehouses', Blocked: 'boxes are blocked for every design',
-  'Delivered to site': 'the blocked boxes leave the warehouses', Installation: 'the installation site opens (or the one already made is linked)', 'Balance received': 'the balance is paid in full', Closed: 'the sale is done' };
-const RF_WHO = { stock: 'the stock team', money: 'Accounts', dispatch: 'Dispatch' };
-const rfNext = o => RETAIL_FUL[RETAIL_FUL.indexOf(o.ful_stage) + 1];
-const rfMay = o => { const n = rfNext(o); return !!n && (D.access.ful || []).includes(RETAIL_FUL_GROUP[n]); };
 const rfLines = o => OPSD().lines.filter(l => l.order_id === o.id);
 const rfBlocked = l => OPSD().allocations.filter(a => a.line_id === l.id).reduce((a, x) => a + x.boxes, 0);
 const rfSites = o => OPSD().sites.filter(x => (x.extra || {}).order_id === o.id || (o.opp_id && x.opp_id === o.opp_id));
 const rfSqft = ls => Math.round(ls.reduce((a, l) => a + Number(l.sqft || 0), 0) * 100) / 100;
 const rfLineTable = (ls, withBlocked) => linesTable(ls, withBlocked ? [['Boxes blocked', l => !l.boxes ? '' : rfBlocked(l) ? `<span class="badge ${rfBlocked(l) >= l.boxes ? 'ok' : 'warn'}">${num(rfBlocked(l))} of ${num(l.boxes)}</span>` : '<span class="badge plain">None yet</span>']] : []);
+/* b4: a won Project links its Installation site and its Project order, one tap each */
+const oppInstallCard = o => { const ord = PIPELINES[o.pipeline].okind === 'project' && allOrders().find(x => x.opp_id === o.id && x.okind === 'project'); if (!ord) return '';
+  const si = OPSD().sites.find(x => (x.extra || {}).order_id === ord.id);
+  return `<section class="card stack-s" data-opp-install><h3>Linked</h3>${kv([...(si ? [['Installation site', `<a href="#/site/${si.id}">${esc(si.ref)} · ${esc(si.step)}</a>`]] : []), ['Project order', `<a href="#/order/${ord.id}">${esc(ord.ref)}</a>`]])}</section>`; };
 /* on a Big E opportunity: its line items, and its fulfilment once Won */
 function rfOppLinesCard(o) {
   const ls = (OPSD().oppLines || []).filter(l => l.opp_id === o.id), ord = OPSD().rorders.find(x => x.opp_id === o.id), ex = o.extra || {};
@@ -1801,55 +1811,251 @@ EM.rfF = { period: 'all' };
 const RF_FIELDS = [['ref', 'Fulfilment number'], ['title', 'Sale'], ['client', 'Client'], ['stage', 'Stage'], ['owner', 'Owner'], ['designs', 'Designs']];
 const rfVal = (o, k) => k === 'title' ? (oppOf(o) || { title: o.notes || '' }).title : k === 'client' ? clientName(o.client_id) : k === 'stage' ? o.ful_stage : k === 'owner' ? staffName(o.owner_id) : k === 'designs' ? rfLines(o).map(l => prodName(l.product_id)).join(' ') : String(o[k] || '');
 function rfBoard() {
-  const all = OPSD().rorders;
-  const { html: fbar, rows } = filterBar(EM.rfF, 'rf', { label: 'Big E fulfilment', rows: all, ph: 'Big E fulfilment: number or client', attr: 'data-rf-filters',
-    text: o => `${o.ref} ${rfVal(o, 'title')} ${rfVal(o, 'client')} ${rfVal(o, 'designs')}`, mobiles: o => [(CL()[o.client_id] || {}).mobile],
-    dd: [['stage', 'Stage', 'Every stage', o => o.ful_stage, null, RETAIL_FUL], ['owner', 'Owner', 'Everyone', o => o.owner_id, staffName], ['city', 'City', 'Every city', o => (CL()[o.client_id] || {}).city || '']],
-    any: RF_FIELDS.map(([k, l]) => [k, l, o => rfVal(o, k)]), date: o => o.created_at, dateWhat: 'When it was won' });
+  const all = OPSD().rorders.filter(o => o.okind !== 'project');   // b4: a Project order moves with its site, on the Installation board
+  const { html: fbar, rows } = filterBar(EM.rfF, 'rf', { label: 'retail orders', rows: all, ph: 'Retail orders: number, client or dealer', attr: 'data-rf-filters',
+    text: o => `${o.ref} ${rfVal(o, 'title')} ${rfVal(o, 'client')} ${rfVal(o, 'designs')} ${isDealerOrder(o) ? rfDealer(o).name : ''}`, mobiles: o => [(CL()[o.client_id] || {}).mobile],
+    dd: [['stage', 'Stage', 'Every stage', o => o.ful_stage, null, [...new Set([...RF_SHOW, ...DEALER_PATH])]], ['owner', 'Owner', 'Everyone', o => o.owner_id, staffName], ['city', 'City', 'Every city', o => (CL()[o.client_id] || {}).city || '']],
+    any: RF_FIELDS.map(([k, l]) => [k, l, o => rfVal(o, k)]), date: o => o.created_at, dateWhat: 'When it was confirmed' });
   const chip = (t, i) => `<span class="badge ${i === 0 ? 'ok' : t === 'Blocked' ? 'warn' : ''}">${esc(t)}</span>`;
-  return `<section class="card stack-s" data-flow data-rf-flow><h3>How a Big E sale moves</h3><div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">${RETAIL_FUL.map(chip).join('<span class="muted">→</span>')}</div>
-      <p class="small muted">At <b>Won</b> on a Big E retail opportunity or project opportunity the sale comes here by itself, with its designs in sq ft. ${RETAIL_FUL.slice(1).map(st => `<b>${esc(st)}</b>: ${esc(RF_WHAT[st])}`).join('. ')}.</p></section>
+  return `<section class="card stack-s" data-flow data-rf-flow><h3>How a retail order moves (EGO team)</h3><div class="row" style="flex-wrap:wrap;gap:6px;align-items:center">${RF_SHOW.map(chip).join('<span class="muted">→</span>')}</div>
+      <p class="small muted">A retail opportunity confirmed as an order comes here as a Retail order, with its designs in sq ft and who fulfils it. ${RETAIL_FUL.slice(1).map(st => `<b>${esc(st)}</b>: ${esc(RF_WHAT[st])}`).join('. ')}. A dealer order runs ${DEALER_PATH.map(esc).join(', ')}.</p></section>
     ${fbar}
-    ${stageBoard(RETAIL_FUL, rows, o => o.ful_stage, o => `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/order/${o.id}" data-rf-card><b>${esc(o.ref)}</b><div class="small">${esc(clientName(o.client_id))}</div><div class="small muted">${linesSum(rfLines(o))}</div>${rfSites(o).length ? `<div class="small">Site ${esc(rfSites(o)[0].ref)}</div>` : ''}</a>`)}
-    ${rows.length ? table(['Fulfilment', 'Sale', 'Client', 'Sq ft', ...(D.access.prices ? ['Value', 'Received'] : []), 'Stage', 'Installation site'], rows.map(o => ({ href: '#/order/' + o.id,
-      cells: [`<b>${esc(o.ref)}</b><div class="small muted">${ds(dayIST(o.created_at))}</div>`, esc(rfVal(o, 'title')), esc(clientName(o.client_id)), num(rfSqft(rfLines(o))), ...(D.access.prices ? [inr0(o.total), inr0(o.paid || 0)] : []), `<span class="badge info">${esc(o.ful_stage)}</span>`, esc(rfSites(o).map(x => x.ref).join(', '))] })))
-      : empty(all.length ? 'Nothing for this filter' : 'No Big E sale in fulfilment yet', all.length ? 'Change or clear the filters above.' : 'A Big E retail opportunity or project opportunity comes here when it reaches Won, with its designs in sq ft and rate per sq ft.')}`;
+    ${(() => { const card = o => `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/order/${o.id}" data-rf-card><b>${esc(o.ref)}</b><div class="small">${esc(clientName(o.client_id))}</div>${isDealerOrder(o) ? `<div class="small muted">${esc(rfDealer(o).name)}</div>` : ''}<div class="small muted">${linesSum(rfLines(o))}</div>${rfSites(o).length ? `<div class="small">Site ${esc(rfSites(o)[0].ref)}</div>` : ''}</a>`, dl = rows.filter(isDealerOrder);
+      /* F1 item 3 (27 Oct): each path on its own steps; a dealer order is never shown on an EGO step */
+      return `<div class="stack-s" data-rf-ego><h3>Fulfilled by the EGO team <span class="muted">${rows.length - dl.length}</span></h3>${stageBoard(RF_SHOW, rows.filter(o => !isDealerOrder(o)), rfCur, card)}</div>`
+        + (all.some(isDealerOrder) ? `<div class="stack-s" data-rf-dealer><h3>Fulfilled by a dealer <span class="muted">${dl.length}</span></h3>${stageBoard(DEALER_PATH, dl, rfCur, card)}</div>` : ''); })()}
+    ${rows.length ? table(['Fulfilment', 'Sale', 'Client', 'Sq ft', ...(D.access.prices ? ['Value', 'Received'] : []), 'Stage'], rows.map(o => ({ href: '#/order/' + o.id,
+      cells: [`<b style="white-space:nowrap" data-rf-ref>${esc(o.ref)}</b><div class="small muted">${ds(dayIST(o.created_at))}</div>`, esc(rfVal(o, 'title')), esc(clientName(o.client_id)), num(rfSqft(rfLines(o))), ...(D.access.prices ? [inr0(o.total), inr0(o.paid || 0)] : []), `<span class="badge info">${esc(rfCur(o))}</span>`] })))
+      : empty(all.length ? 'Nothing for this filter' : 'No retail order in fulfilment yet', all.length ? 'Change or clear the filters above.' : 'A retail opportunity comes here when it is confirmed as an order, with its designs in sq ft and rate per sq ft.')}`;
 }
-/* one Big E sale in fulfilment */
+/* ================================================================ Sales model b3 (27 Oct): the Retail order, both companies
+   Fulfilled by the EGO team: Order confirmed > Advance received > Stock check > Blocked (or Waiting on production) > Delivered >
+   Balance received > Closed. Fulfilled by a dealer: Order confirmed > Confirmed by dealer > Delivered > Closed, tracked only.
+   fulByCard / dealerPathCard / challengesCard take a record and a cfg, so batch 4 installation sites use the same three. */
+const RF_WHAT = { 'Advance received': 'record the advance under Advance and balance', 'Stock check': 'each design against the warehouses', Blocked: 'the boxes are held for this order',
+  'Waiting on production': 'a production order covers what is short; it moves to Blocked by itself when the boxes come in', Delivered: 'the boxes leave the warehouses', 'Balance received': 'the rest is paid', Closed: 'nothing is pending',
+  'Confirmed by dealer': 'the dealer confirms and gives the expected delivery date' };
+const RF_WHO = { stock: 'the stock team', money: 'Accounts', dispatch: 'Dispatch' };
+/* b4: the record a card works on is part of cfg, so the same three cards and their actions serve a Retail order and an Installation site */
+const RO_CFG = { kind: 'order', noun: 'order', endWord: 'Closed', api: 'orders', move: 'ful-next', steps: DEALER_PATH, cur: o => rfCur(o), find: id => allOrders().find(x => x.id === id),
+  dealer: o => isDealerOrder(o), first: () => 'Order confirmed', lock: o => isDealerOrder(o) ? 'Confirmed by dealer' : 'Advance received', logs: () => OPSD().logs || [] };
+const SITE_CFG = { kind: 'site', noun: 'site', endWord: 'Installed', api: 'sites', move: 'next', steps: SITE_DEALER_PATH, cur: x => x.step, find: id => OPSD().sites.find(x => x.id === id),
+  dealer: x => isDealerSite(x), first: x => isDealerSite(x) ? SITE_DEALER_PATH[0] : OS_('site_steps')[0], lock: x => isDealerSite(x) ? 'Confirmed by dealer' : OS_('site_steps')[1], logs: () => OPSD().siteLogs || [] };
+const CFG_OF = el => el && el.dataset.kind === 'site' ? SITE_CFG : RO_CFG;
+const rfCur = o => rfStage(o.ful_stage);
+/* F2 T-15: shown in the order it happens, Waiting on production (only when short) before Blocked; the stored ladder is unchanged */
+const RF_SHOW = ['Order confirmed', 'Advance received', 'Stock check', 'Waiting on production', 'Blocked', 'Delivered', 'Balance received', 'Closed'];
+const rfNext = o => { const L = rfLadder(o), c = rfCur(o), i = L.indexOf(c); if (i < 0 || i === L.length - 1) return '';
+  return isDealerOrder(o) ? L[i + 1] : c === 'Stock check' ? (rfSettle(o) === 'Blocked' ? 'Blocked' : 'Waiting on production') : c === 'Waiting on production' ? 'Blocked' : c === 'Blocked' ? 'Delivered' : L[i + 1]; };
+/* B3-F3: where the boxes stand, as the server's settle() reads it: Blocked when every box is blocked, Waiting on production
+   when the rest is on a production order, '' while something is still short and on no production order */
+const rfSettle = o => { const s = shortLines(o.id); return s.every(x => x.got >= x.l.boxes) ? 'Blocked' : s.every(x => !x.miss) ? 'Waiting on production' : ''; };
+const rfMayAct = o => !!((D.access.ful || []).length || o.owner_id === D.user.id || D.user.role === 'owner' || D.access.dash === 'mgmt');
+const rfMay = o => { const n = rfNext(o); if (!n) return false; return isDealerOrder(o) ? rfMayAct(o) : (D.access.ful || []).includes(RETAIL_FUL_GROUP[n]); };
+const rfDealer = o => isDealerOrder(o) || (o && 'step' in o && isDealerSite(o)) ? (DDIR().find(d => d.id === o.ful_by) || CL()[o.ful_by] || { id: o.ful_by, name: 'A dealer outside your view' }) : null;
+const fulByTxt = o => !isRetailOrder(o) ? 'EGO team' : isDealerOrder(o) ? rfDealer(o).name : 'EGO team';
+const rfChallenges = o => (OPSD().challenges || []).filter(c => c.order_id === o.id);
+const rfOpenCh = o => rfChallenges(o).filter(c => c.status !== 'Resolved').length;
+/* the Fulfilled by field (section 2): EGO team, the dealers in the customer's city pinned, then every other dealer A-Z */
+function fulByField(division, city, cur, opt = {}) {
+  const ds0 = DDIR().filter(d => (d.division || division) === division && !/inactive|closed|blocked/i.test(d.status || '')), open = d => allOrders().filter(o => o.ful_by === d.id && rfCur(o) !== 'Closed').length;
+  const sub = d => [d.city, kindLabel(d.kind), `${open(d)} open retail order${open(d) === 1 ? '' : 's'}`, d.portal_n ? '' : 'No portal login yet'].filter(Boolean).join(' · ');
+  const byName = (a, b) => a.name.localeCompare(b.name), cty = String(city || '').toLowerCase();
+  const pp = opt.partner ? ds0.find(d => d.id === opt.partner) : null;   // b4: the project's Project Partner, pinned first
+  const pin = ds0.filter(d => d !== pp && cty && String(d.city || '').toLowerCase() === cty).sort(byName), rest = ds0.filter(d => d !== pp && !pin.includes(d)).sort(byName);
+  const opt1 = (d, p, sb) => `<option value="${esc(d.id)}" ${p ? 'data-pin' : ''} data-sub="${esc(sb || sub(d))}" data-portal="${d.portal_n ? 1 : 0}" ${cur === d.id ? 'selected' : ''}>${esc(d.name)}</option>`;
+  return `<div class="field" data-ful-by-field><label for="fb-by">Fulfilled by *</label>
+    <select class="input" id="fb-by" data-keep-order data-fk="dealer" data-none="No dealer matches" aria-label="Fulfilled by"><option value="">Choose</option><option value="ego" data-pin data-sub="${esc(opt.egoSub || 'Stock check, block, production, delivery and payments by us')}" ${cur === 'ego' ? 'selected' : ''}>EGO team</option>${pp ? opt1(pp, true, `Project Partner on ${opt.project || 'this project'} · ${[pp.city, kindLabel(pp.kind)].filter(Boolean).join(' · ')}`) : ''}${pin.map(d => opt1(d, true)).join('')}${rest.map(d => opt1(d)).join('')}</select>
+    <span class="small muted">${esc(opt.hint || 'EGO team, or the dealer who sells and delivers it. Dealer orders are tracked here, not stocked.')}</span><span class="err" id="fb-by-err" role="alert"></span><div data-no-portal-box></div></div>`;
+}
+const noPortalNote = d => `<div class="callout warn" data-no-portal><b>${esc(d.name)} has no portal login yet,</b> so they will not see this order. Their EGO owner updates it here, or an Owner gives them a login on the dealer page, Dealer portal tab.</div>`;
+document.addEventListener('change', e => { if (!e.target || e.target.id !== 'fb-by') return; const box = document.querySelector('[data-no-portal-box]'), v = e.target.value, d = DDIR().find(x => x.id === v);
+  if (qs('#fb-by-err')) qs('#fb-by-err').textContent = ''; if (box) box.innerHTML = d && !d.portal_n ? noPortalNote(d) : ''; });
+/* moving a retail opportunity to its won stage asks who fulfils the order (the stage select and the edit form both come here) */
+const needsFulBy = (input, o) => { const P = PIPELINES[input.pipeline] || {}; return P.okind && !['wholesale', 'project'].includes(P.okind) && input.stage === wonStage(input.pipeline, D.lists) && (!o || o.stage !== input.stage) && !allOrders().some(x => x.opp_id === input.id); };
+EM.fbPending = null;
+function askFulBy(input, after) {
+  const c = CL()[input.client_id] || {}, div = PIPELINES[input.pipeline].division;
+  EM.fbPending = { input, after };
+  EM.modal(`<h2>Move to ${esc(input.stage)}</h2><p class="muted small">${esc(input.title || '')} · ${esc(c.name || '')}. The Retail order is made now; say who fulfils it.</p>
+    <div class="fgrid" style="margin-top:12px">${fulByField(div, c.city, '')}<div class="field span2"><label for="fb-note">Note</label><input class="input" id="fb-note" maxlength="300" placeholder="Optional"></div></div>
+    ${errBox('fb-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="fb-confirm">Move to ${esc(input.stage)}</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+}
+EM.ACTIONS['fb-confirm'] = async el => {
+  const p = EM.fbPending, v = qs('#fb-by').value;
+  if (!v) { qs('#fb-by-err').textContent = FUL_BY_ERR; return; }
+  const r = await saveOpp({ ...p.input, ful_by: v, stage_note: qs('#fb-note').value || p.input.stage_note }, el, 'fb-err');
+  if (!r) { if (/fulfils this order/.test(EM._lastErr || '')) qs('#fb-by-err').textContent = FUL_BY_ERR; return; }
+  EM.closeModal(); EM.fbPending = null; if (p.after) p.after(r); else { EM.toast(`Moved to <b>${esc(p.input.stage)}</b>. Retail order made.`); EM.rerender(); }
+};
+/* section 3: who fulfils it, changeable only at Order confirmed */
+const siteFbOpt = x => { const pj = siteProject(x); return { partner: pj && pj.partner_id, project: pj && pj.name, egoSub: 'Material through EGO stock, our installation steps', hint: 'EGO team, or a dealer who supplies and installs it. A dealer site is tracked here, not stocked.' }; };
+function fulByCard(rec, cfg = RO_CFG) {
+  /* b4: a site from a won Project starts with nobody chosen: the field sits inline, never pre-picked, the Project Partner first */
+  if (cfg.kind === 'site' && !rec.ful_by) { const pj = siteProject(rec);
+    return `<section class="card stack-s" data-ful-by data-unset><h3>Fulfilled by</h3><div class="callout warn">Choose who fulfils this site before it moves on: EGO team, or a dealer who supplies and installs it.</div>
+      ${fulByField(rec.division, (pj || {}).city || (CL()[rec.client_id] || {}).city, '', siteFbOpt(rec))}${errBox('fb-err')}
+      <div class="row">${rfMayAct(rec) ? `<button class="btn primary sm" data-act="fb-set" data-kind="site" data-id="${rec.id}">Save</button>` : '<span class="small muted">Its owner, the fulfilment team or Management chooses it.</span>'}</div></section>`; }
+  const d = rfDealer(rec), ex = rec.extra || {}, lock = cfg.lock(rec), may = cfg.cur(rec) === cfg.first(rec) && rfMayAct(rec);
+  const k = d && D.contacts.find(x => x.client_id === d.id);
+  return `<section class="card stack-s" data-ful-by><div class="row between"><h3>Fulfilled by</h3>${may ? `<button class="btn sm" data-act="fb-change" data-kind="${cfg.kind}" data-id="${rec.id}">Change</button>` : `<span class="small muted">Fixed at ${esc(lock)}</span>`}</div>
+    ${kv([['Fulfilled by', d ? `<a href="#/client/${esc(d.id)}">${esc(d.name)}</a> <span class="small muted">${esc([d.city, kindLabel(d.kind || 'dealer')].filter(Boolean).join(' · '))}</span>` : 'EGO team'],
+      ['Set by', `${esc(staffName(ex.ful_set_by || rec.created_by))} · ${whenTxt(ex.ful_set_at || rec.created_at)}`],
+      ...(d ? [['Their contact', k ? `${esc(k.name)}${k.mobile ? ` · <a href="tel:${esc(k.mobile)}">${esc(fmtMobile(k.mobile))}</a>` : ''}` : NOTSET], ['Portal', d.portal_n ? '<span class="badge ok">Sees it in the portal</span>' : '<span class="badge warn">No portal login yet</span>']] : [])])}
+    ${d && !d.portal_n ? noPortalNote(d) : ''}</section>`;
+}
+EM.ACTIONS['fb-change'] = el => { const cfg = CFG_OF(el), o = cfg.find(el.dataset.id), c = CL()[o.client_id] || {};
+  EM.modal(`<h2>Change who fulfils ${esc(o.ref)}</h2><div class="fgrid" style="margin-top:12px">${fulByField(o.division, c.city, o.ful_by || 'ego', cfg.kind === 'site' ? siteFbOpt(o) : {})}
+    <div class="field span2"><label for="fb-why">Reason *</label><input class="input" id="fb-why" maxlength="200" placeholder="e.g. Customer wants it from the Thane showroom"><span class="err" id="fb-why-err" role="alert"></span></div></div>
+    ${errBox('fb-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="fb-save" data-kind="${cfg.kind}" data-id="${o.id}">Save change</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
+EM.ACTIONS['fb-save'] = el => { const v = qs('#fb-by').value, why = qs('#fb-why').value.trim();
+  if (!v) { qs('#fb-by-err').textContent = FUL_BY_ERR; return; }
+  if (!why) { qs('#fb-why-err').textContent = 'Write why it is changing.'; return; }
+  const o = CFG_OF(el).find(el.dataset.id) || {};   // F2 H-1: what this screen read, so a change made meanwhile is refused
+  return opsAct(el, `${CFG_OF(el).api}/${el.dataset.id}/ful-by`, { ful_by: v, reason: why, ful_by_was: o.ful_by || 'ego', paid_was: Number(o.paid || 0) }, '<b>Fulfilled by changed</b>', 'fb-err'); };
+EM.ACTIONS['fb-set'] = el => { const v = qs('#fb-by').value; if (!v) { qs('#fb-by-err').textContent = SITE_FUL_ERR; return; }
+  return opsAct(el, `sites/${el.dataset.id}/ful-by`, { ful_by: v }, '<b>Fulfilled by saved</b>', 'fb-err'); };
+/* section 5: the dealer path, light: each step, when, by whom */
+function dealerPathCard(rec, cfg = RO_CFG) {
+  const d = rfDealer(rec), steps = cfg.steps || DEALER_PATH, logs = cfg.logs().filter(l => l.record_id === rec.id), ex = rec.extra || {}, days = Number(D.lists.rules.lead_escalate_days) || 2;
+  /* b4: stale stops at the LAST step of the path (a site goes on to Closed after Installed); endWord is only the portal's button word */
+  const last = ex.dealer_at || ex.ful_set_at || rec.created_at, stale = cfg.cur(rec) !== lastOf(steps) && last && (Date.now() - Date.parse(last.endsWith('Z') ? last : last.replace(' ', 'T') + 'Z')) > days * 864e5;
+  const by = l => !l ? '' : /in the portal/.test(l.note || '') ? `${esc((l.note || '').replace(/ in the portal.*$/, ''))} <span class="small muted">in the portal</span>` : esc(staffName(l.by_staff));
+  return `<section class="card stack-s" data-dealer-path><div class="row between"><h3>With ${esc(d.name)}</h3><span class="small muted">No stock is used. The dealer updates it in their portal.</span></div>
+    ${stale ? `<div class="callout warn" data-dealer-stale><b>No update from ${esc(d.name)} for ${days} days or more.</b> Call them, or add a challenge below.</div>` : ''}
+    ${stageChips(steps, cfg.cur(rec))}
+    ${table(['Step', 'When', 'By'], steps.map(s => { const l = logs.filter(x => rfStage(x.to_stage) === s).pop();
+      return [esc(s), l ? whenTxt(l.at) + (s === 'Confirmed by dealer' && ex.expected ? `<div class="small muted">Expected delivery ${ds(ex.expected)}</div>` : '') + (s === 'Delivered' && ex.delivered_on ? `<div class="small muted">Delivered on ${ds(ex.delivered_on)}</div>` : '') + (s === 'Installed' && ex.installed_on ? `<div class="small muted">Installed on ${ds(ex.installed_on)}</div>` : '') : '', l ? by(l) : '<span class="muted">Not yet</span>']; }))}</section>`;
+}
+/* section 6: the challenges log */
+function challengesCard(rec, cfg = RO_CFG) {
+  /* C3 (27 Oct): card rows, not a table; open first, then escalated, then resolved, newest first inside each */
+  const RK = { Open: 0, Escalated: 1, Resolved: 2 }, all = rfChallenges(rec).slice().sort((a, b) => (RK[a.status] ?? 0) - (RK[b.status] ?? 0) || b.created_at.localeCompare(a.created_at)), open = all.filter(c => c.status !== 'Resolved').length;
+  const fuOf = c => FUS().find(f => f.id === c.fu_id), add = `<button class="btn sm primary" data-act="ch-add" data-kind="${cfg.kind}" data-id="${rec.id}">+ Add a challenge</button>`;
+  const row = c => { const f = fuOf(c), done = c.status === 'Resolved', esc2 = c.status === 'Escalated', cls = done ? 'done' : esc2 ? 'esc' : 'open';
+    const by = c.by_dealer ? `${c.by_name || 'the dealer'} (dealer)` : (c.by_name || staffName(c.by_staff));
+    const meta = [`Owner at EGO <b>${esc(staffName(c.owner_id))}</b>`, !done && f ? `Next follow-up ${typeof fuWhen === 'function' ? fuWhen(f) : ds(f.due_date)}` : '',
+      c.esc_at ? `Escalated to ${esc(c.esc_to)}, ${ds(dayIST(c.esc_at))}` : '', done ? `Resolved ${ds(dayIST(c.resolved_at))}${c.resolved_note ? ': ' + esc(c.resolved_note) : ''}` : ''].filter(Boolean).join(' · ');
+    return `<article class="ch-row ${cls}" data-ch="${c.id}"><div class="ch-head"><div class="row" style="gap:8px;flex-wrap:wrap"><span class="badge ${done ? 'ok' : esc2 ? 'bad' : 'warn'}">${esc(c.status)}</span><span class="small muted">${ds(c.on_date)} · by ${esc(by)}</span></div>
+      ${done ? '' : `<div class="ch-acts"><button class="btn sm" data-act="ch-resolve" data-kind="${cfg.kind}" data-id="${rec.id}" data-ch="${c.id}">Resolve</button>${esc2 ? '' : `<button class="btn sm ghost" data-act="ch-esc" data-kind="${cfg.kind}" data-id="${rec.id}" data-ch="${c.id}">Escalate</button>`}<button class="btn sm ghost" data-act="ch-edit" data-kind="${cfg.kind}" data-id="${rec.id}" data-ch="${c.id}">Change</button></div>`}</div>
+      <p class="ch-text">${esc(c.text)}</p><div class="small muted">${meta}</div></article>`; };
+  return `<section class="card stack-s" data-challenges><div class="row between"><h3>Challenges <span class="muted">${all.length}</span>${open ? ` <span class="badge warn">${open} open</span>` : ''}</h3>${all.length ? add : ''}</div>
+    ${all.length ? `<div class="ch-list">${all.map(row).join('')}</div>`
+      : empty('No challenges', `Anything that goes wrong on this ${cfg.noun}: a short delivery, a damaged box, a customer complaint. Each one gets an owner at EGO and a follow-up date until it is resolved.`, add)}</section>`;
+}
+const nextWorkDayL = () => { const d = new Date(Date.now() + 5.5 * 36e5 + 864e5); if (d.getUTCDay() === 0) d.setUTCDate(d.getUTCDate() + 1); return d.toISOString().slice(0, 10); };
+const staffOpts = cur => Object.values(ST()).filter(s => s.active !== 0 && s.active !== false).sort((a, b) => a.name.localeCompare(b.name)).map(s => `<option value="${esc(s.id)}" ${s.id === cur ? 'selected' : ''}>${esc(s.name)}</option>`).join('');
+EM.ACTIONS['ch-add'] = el => { const cfg = CFG_OF(el), o = cfg.find(el.dataset.id);
+  EM.modal(`<h2>Add a challenge</h2><p class="muted small">${esc(o.ref)} · ${esc(fulByTxt(o))}</p><div class="fgrid" style="margin-top:12px">
+    <div class="field"><label for="ch-on">Date *</label><input class="input" type="date" id="ch-on" value="${today()}"></div>
+    <div class="field"><label for="ch-owner">Owner at EGO *</label><select class="input" id="ch-owner" aria-label="Owner at EGO"><option value="">Choose</option>${staffOpts(o.owner_id)}</select></div>
+    <div class="field span2"><label for="ch-text">What went wrong *</label><div class="vt-wrap"><textarea class="input" id="ch-text" rows="3" maxlength="1000" placeholder="e.g. Tiles short by 4 boxes"></textarea></div></div>
+    <div class="field"><label for="ch-next">Next follow-up *</label><input class="input" type="date" id="ch-next" value="${nextWorkDayL()}"></div></div>
+    ${errBox('ch-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="ch-save" data-kind="${cfg.kind}" data-id="${o.id}">Save challenge</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
+EM.ACTIONS['ch-save'] = el => { const b = { on: qs('#ch-on').value, owner_id: qs('#ch-owner').value, text: qs('#ch-text').value.trim(), next_date: qs('#ch-next').value };
+  if (!b.text) return showErr('ch-err', 'Write what went wrong.'); if (!b.next_date) return showErr('ch-err', 'Pick the follow-up date.'); if (!b.owner_id) return showErr('ch-err', 'Choose who at EGO owns it.');
+  return opsAct(el, `${CFG_OF(el).api}/${el.dataset.id}/challenge`, b, '<b>Challenge saved</b>', 'ch-err'); };
+EM.ACTIONS['ch-resolve'] = el => EM.modal(`<h2>Resolve this challenge?</h2><div class="field" style="margin-top:12px"><label for="ch-fix">What fixed it *</label><input class="input" id="ch-fix" maxlength="300"></div>${errBox('ch-err')}
+  <div class="row" style="margin-top:14px"><button class="btn primary" data-act="ch-resolve-save" data-kind="${CFG_OF(el).kind}" data-id="${el.dataset.id}" data-ch="${el.dataset.ch}">Resolve</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
+EM.ACTIONS['ch-resolve-save'] = el => { const v = qs('#ch-fix').value.trim(); if (!v) return showErr('ch-err', 'Write what fixed it.'); return opsAct(el, `${CFG_OF(el).api}/${el.dataset.id}/challenge/${el.dataset.ch}/resolve`, { note: v }, '<b>Challenge resolved</b>', 'ch-err'); };
+EM.ACTIONS['ch-esc'] = el => { const c = (OPSD().challenges || []).find(x => x.id === el.dataset.ch), ow = ST()[c.owner_id] || {}, boss = ow.reports_to && ST()[ow.reports_to];
+  EM.modal(`<h2>Escalate this challenge?</h2><p>${boss ? `It goes to <b>${esc(boss.name)}</b> (manager of ${esc(ow.name)}) and management, in the bell.` : 'It goes to management, in the bell.'}</p>
+    <div class="field" style="margin-top:12px"><label for="ch-why">Why now *</label><input class="input" id="ch-why" maxlength="300"></div>${errBox('ch-err')}
+    <div class="row" style="margin-top:14px"><button class="btn primary" data-act="ch-esc-save" data-kind="${CFG_OF(el).kind}" data-id="${el.dataset.id}" data-ch="${el.dataset.ch}">Escalate</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
+EM.ACTIONS['ch-esc-save'] = el => { const v = qs('#ch-why').value.trim(); if (!v) return showErr('ch-err', 'Write why it goes up now.'); return opsAct(el, `${CFG_OF(el).api}/${el.dataset.id}/challenge/${el.dataset.ch}/escalate`, { why: v }, '<b>Challenge escalated</b>', 'ch-err'); };
+EM.ACTIONS['ch-edit'] = el => { const c = (OPSD().challenges || []).find(x => x.id === el.dataset.ch), f = FUS().find(x => x.id === c.fu_id);
+  EM.modal(`<h2>Change this challenge</h2><div class="fgrid" style="margin-top:12px"><div class="field"><label for="che-owner">Owner at EGO</label><select class="input" id="che-owner" aria-label="Owner at EGO">${staffOpts(c.owner_id)}</select></div>
+    <div class="field"><label for="che-next">Next follow-up</label><input class="input" type="date" id="che-next" value="${esc((f || {}).due_date || '')}"></div></div>${errBox('ch-err')}
+    <div class="row" style="margin-top:14px"> <button class="btn primary" data-act="ch-edit-save" data-kind="${CFG_OF(el).kind}" data-id="${el.dataset.id}" data-ch="${c.id}" data-was="${esc((f || {}).due_date || '')}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
+EM.ACTIONS['ch-edit-save'] = el => { const b = { owner_id: qs('#che-owner').value }, n = qs('#che-next').value; if (n && n !== el.dataset.was) b.next_date = n;
+  return opsAct(el, `${CFG_OF(el).api}/${el.dataset.id}/challenge/${el.dataset.ch}/edit`, b, '<b>Challenge changed</b>', 'ch-err'); };
+/* the EGO team ladder's short box: what is short, and the production order for it (the merged engine) */
+function rfShortBox(o) {
+  if (!['Stock check', 'Waiting on production'].includes(rfCur(o))) return '';
+  const miss = shortLines(o.id).filter(x => x.miss > 0 && x.l.boxes > 0), total = miss.reduce((a, x) => a + x.miss, 0), may = (D.access.ful || []).includes('stock');
+  if (!miss.length) return rfCur(o) === 'Waiting on production' ? `<section class="callout" data-short><b>Waiting on production.</b> Nothing else is missing: the order moves to Blocked by itself when the production order arrives and is allocated.</section>` : '';
+  return `<section class="card stack-s short-box" data-short style="border-color:var(--bad, #c0392b)"><div class="row between"><h3 style="color:var(--bad, #c0392b)">Short of ${num(total)} box${total === 1 ? '' : 'es'}</h3>
+      ${may ? `<button class="btn sm primary" data-act="po-raise" data-id="${o.id}">Raise production order</button>` : ''}</div>
+    <p class="small">Block what is free, and raise a production order for what is short; an open production order of the same design is joined instead.</p>
+    ${table(['Design', 'Ordered', 'Blocked', 'On production', 'Short'], miss.map(x => [`<b>${esc(prodName(x.l.product_id))}</b>`, num(x.l.boxes), num(x.got), poCell(waitsOf(w => w.line_id === x.l.id)), `<span class="badge bad">${num(x.miss)}</span>`]))}</section>`;
+}
+EM.ACTIONS['po-raise'] = el => opsAct(el, `orders/${el.dataset.id}/production`, { all: true }, '<b>Production order raised</b>');
+/* one Retail order, either path */
+/* b4: a Project order: no Move of its own (it moves with its site), its site one tap away, the stock columns read-only */
+function projectOrderView(o) {
+  const si = OPSD().sites.find(x => (x.extra || {}).order_id === o.id), opp = oppOf(o), pj = si && siteProject(si), co = (DIVS[o.division] || {}).co || '', ls = rfLines(o), ex = o.extra || {}, dl = si && isDealerSite(si);
+  return `<div class="stack" data-project-order>${crumbs(['Orders', '#/orderbook'], [o.ref])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Project order · ${esc(co)}</div><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'a project'}${pj ? ` · <a href="#/project/${pj.id}">${esc(pj.name)}</a>` : ''} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a>${si ? ` · Site <a href="#/site/${si.id}">${esc(si.ref)}</a>` : ''} · confirmed ${ds(dayIST(o.created_at))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
+      <div class="stack-s" style="align-items:flex-end"><span class="small muted" data-moves-with>Moves with the site. Material confirmed blocks, Material dispatched takes it off stock.</span>${si ? `<a class="btn primary" href="#/site/${si.id}">Open ${esc(si.ref)}</a>` : ''}</div></div>
+    ${recGrid(`${si ? `<section class="card stack-s" data-po-site><h3>Installation site</h3>${kv([['Site', `<a href="#/site/${si.id}">${esc(si.ref)} · ${esc(si.name)}</a>`], ['Step', `<span class="badge info">${esc(si.step)}</span>`],
+        ['Fulfilled by', !si.ful_by ? '<span class="badge warn">Choose on the site</span>' : dl ? esc(rfDealer(si).name) : 'EGO team'], ['Project', pj ? `<a href="#/project/${pj.id}">${esc(pj.name)}</a>` : NOTSET], ['Opportunity', opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : NOTSET]])}</section>` : ''}
+      <section class="card stack-s" data-rf-lines><h3>Designs, sq ft and boxes</h3>${rfLineTable(ls, !dl)}<p class="small">${linesSum(ls)}${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.total)}</b>` : ''}</p>
+        ${dl ? '<p class="small muted">A dealer supplies and installs this site; no EGO stock is used.</p>' : ''}</section>
+      ${si ? siteMaterial(si, o) : ''}
+      ${orderFiles(o)}
+      <section class="stack-s"><h3>History</h3><div id="log-rf"><p class="muted">Loading…</p></div></section>`, activityPanel({ clientId: o.client_id, oppId: o.opp_id }), 'xl')}</div>`;
+}
 function rfOrderView(o) {
-  const ls = rfLines(o), opp = oppOf(o), nxt = rfNext(o), sites = rfSites(o), SS = OS_('site_steps'), ex = o.extra || {}, pays = ex.payments || [], due = Math.max(0, (o.total || 0) - (o.paid || 0));
-  const atBlock = ['Stock check', 'Blocked'].includes(o.ful_stage) && (D.access.ful || []).includes('stock');
-  return `<div class="stack" data-rf-order>${crumbs(['Fulfilment', '#/orders'], [o.ref])}
-    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Big E · retail ladder</div><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'a sale'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · won ${ds(dayIST(o.created_at))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>
-      ${nxt ? (rfMay(o) ? `<button class="btn primary" data-act="rf-next" data-id="${o.id}">Move to ${esc(nxt)}</button>` : `<span class="small muted" data-ful-who>Next step (${esc(nxt)}) by ${esc(RF_WHO[RETAIL_FUL_GROUP[nxt]])} or Management</span>`) : '<span class="badge ok">Closed</span>'}</div>
-    ${recGrid(`<section class="card stack-s">${stageChips(RETAIL_FUL, o.ful_stage)}${nxt ? `<p class="small muted">Next, <b>${esc(nxt)}</b>: ${esc(RF_WHAT[nxt])}.</p>` : ''}</section>
-    <section class="card stack-s" data-rf-lines><div class="row between"><h3>Designs, sq ft and boxes</h3>${atBlock ? `<button class="btn" data-act="rf-alloc" data-id="${o.id}">Block boxes</button>` : ''}</div>
-      ${rfLineTable(ls, true)}<p class="small">${linesSum(ls)}${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.total)}</b>` : ''}</p>
-      <p class="small muted">Blocked uses EGO's stock block: the boxes typed per warehouse are held for this sale and leave the warehouses at Delivered to site.</p></section>
-    ${D.access.prices ? `<section class="card stack-s" data-pay><div class="row between"><h3>Advance and balance</h3>${(D.access.ful || []).includes('money') && due > 0 ? `<button class="btn sm" data-act="rf-pay" data-id="${o.id}">+ Record a payment</button>` : ''}</div>
+  if (o.okind === 'project') return projectOrderView(o);
+  const ls = rfLines(o), opp = oppOf(o), nxt = rfNext(o), dl = isDealerOrder(o), d = rfDealer(o), cur = rfCur(o), ex = o.extra || {}, pays = ex.payments || [], due = Math.max(0, (o.total || 0) - (o.paid || 0));
+  const atBlock = ['Stock check', 'Waiting on production', 'Blocked'].includes(cur) && (D.access.ful || []).includes('stock');
+  const co = (DIVS[o.division] || {}).co || '', kindW = ORDER_KINDS[o.okind || 'retail'] || 'Retail order';
+  /* B3-F3: at Stock check (or Waiting on production) the main button moves only where the boxes allow; while short it points at the short box */
+  const stuck = !dl && ['Stock check', 'Waiting on production'].includes(cur) && rfSettle(o) !== nxt;
+  const stuckTxt = () => { const n = shortLines(o.id).reduce((a, x) => a + x.miss, 0); return n ? `Short of ${num(n)} box${n === 1 ? '' : 'es'}: block what is free and raise a production order for the rest` : 'Moves to Blocked by itself when the production order arrives and is allocated'; };
+  const head = nxt ? (stuck ? `<span class="small muted" data-ful-stuck>${esc(stuckTxt())}</span>` : rfMay(o) ? `<button class="btn primary" data-act="rf-next" data-id="${o.id}">Move to ${esc(nxt)}</button>` : `<span class="small muted" data-ful-who>Next step (${esc(nxt)}) by ${esc(dl ? `${d.name}, its owner` : RF_WHO[RETAIL_FUL_GROUP[nxt]])} or Management</span>`) : '<span class="badge ok">Closed</span>';
+  const ladder = dl ? dealerPathCard(o, { ...RO_CFG, steps: DEALER_PATH }) + challengesCard(o, RO_CFG)
+    : `<section class="card stack-s" data-ful-ladder>${stageChips(RF_SHOW, cur, wpChip(o) ? { 'Waiting on production': Object.values(wpChip(o))[0] } : null)}${nxt ? `<p class="small muted">Next, <b>${esc(nxt)}</b>: ${esc(RF_WHAT[nxt] || '')}.</p>` : ''}</section>${rfShortBox(o)}`;
+  return `<div class="stack" data-rf-order>${crumbs(['Orders', '#/orderbook'], [o.ref])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">${esc(kindW)} · ${esc(co)}</div><h1>${esc(o.ref)}</h1><p class="muted">From ${opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : 'a sale'} · <a href="#/client/${o.client_id}">${esc(clientName(o.client_id))}</a> · order confirmed ${ds(dayIST(o.created_at))}${D.access.prices ? ` · <b>${inr0(o.total)}</b>` : ''}</p></div>${head}</div>
+    ${recGrid(`${fulByCard(o, RO_CFG)}${ladder}
+    <section class="card stack-s" data-rf-lines><div class="row between"><h3>Designs, sq ft and boxes</h3>${!dl && atBlock ? `<button class="btn" data-act="rf-alloc" data-id="${o.id}">Block boxes</button>` : ''}</div>
+      ${rfLineTable(ls, !dl)}<p class="small">${linesSum(ls)}${D.access.prices ? ` · ${moneyLine(ex)} = <b>${inr0(o.total)}</b>` : ''}</p>
+      ${dl ? '' : '<p class="small muted">Blocked uses the EGO stock block: the boxes typed per warehouse are held for this order and leave the warehouses at Delivered.</p>'}</section>
+    ${!dl && D.access.prices ? `<section class="card stack-s" data-pay><div class="row between"><h3>Advance and balance</h3>${(D.access.ful || []).includes('money') && due > 0 ? `<button class="btn sm" data-act="rf-pay" data-id="${o.id}">+ Record a payment</button>` : ''}</div>
       ${kv([['Total', inr0(o.total)], ['Received', inr0(o.paid || 0)], ['Still due', due > 0 ? `<b>${inr0(due)}</b>` : '<span class="badge ok">Paid in full</span>']])}
       ${pays.length ? table(['Received on', 'Amount', 'Note', 'By'], pays.map(p => [ds(p.on), inr0(p.amount), esc(p.note || ''), esc(staffName(p.by))])) : '<p class="small muted">No payment yet. Advance received records the advance; Balance received needs the rest.</p>'}</section>` : ''}
-    <section class="card stack-s" data-rf-site><h3>Installation site</h3>
-      ${sites.length ? table(['Site', 'Step', 'Installed by', 'Planned start'], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.ref)}</b> ${esc(x.name)}</a>`, `<span class="badge info">${esc(x.step)}</span> <span class="small muted">${SS.indexOf(x.step) + 1}/${SS.length}</span>`, esc(installedByTxt(x)), x.planned_start ? ds(x.planned_start) : '']))
-        : `<p class="small muted">The installation site opens by itself when this sale moves to Installation${OPSD().sites.some(x => x.opp_id === o.opp_id) ? '' : ', under the same client and project'}.</p>`}</section>
     ${orderFiles(o)}
     ${orderLinks(o, true)}
-    <section class="stack-s"><h3>History</h3><div id="log-rf"><p class="muted">Loading…</p></div></section>`, activityPanel({ clientId: o.client_id, oppId: o.opp_id }))}</div>`;
+    <section class="stack-s"><h3>History</h3><div id="log-rf"><p class="muted">Loading…</p></div></section>`, activityPanel({ clientId: o.client_id, oppId: o.opp_id }), 'xl')}</div>`;
 }
+/* EGO staff moving a dealer order for the dealer (a phone call is real): the same questions as the portal */
+const dealerStepModal = (o, cfg = RO_CFG) => { const to = cfg.kind === 'site' ? SITE_DEALER_PATH[SITE_DEALER_PATH.indexOf(o.step) + 1] : rfNext(o), d = rfDealer(o);
+  EM.modal(`<h2>${esc(to)}: ${esc(o.ref)}</h2><p class="small muted">Saved as done for ${esc(d.name)}.</p><div class="fgrid" style="margin-top:12px">
+    ${to === 'Confirmed by dealer' ? `<div class="field"><label for="ds-exp">Expected delivery *</label><input class="input" type="date" id="ds-exp" min="${today()}"></div>` : ''}
+    ${to === 'Delivered' ? `<div class="field"><label for="ds-on">Delivered on *</label><input class="input" type="date" id="ds-on" max="${today()}" value="${today()}"></div>` : ''}
+    ${to === 'Installed' ? `<div class="field"><label for="ds-on">Installed on *</label><input class="input" type="date" id="ds-on" max="${today()}" value="${today()}"></div>
+      <div class="field"><label for="ds-ph">Installation photos (optional): one or many, up to 10</label><input class="input" id="ds-ph" type="file" multiple accept="image/*,application/pdf"></div>` : ''}
+    <div class="field span2"><label for="ds-note">Note</label><input class="input" id="ds-note" maxlength="300" placeholder="Optional"></div></div>${errBox('ds-err')}
+    <div class="row" style="margin-top:14px"><button class="btn primary" data-act="ds-save" data-kind="${cfg.kind}" data-id="${o.id}" data-to="${esc(to)}">Move to ${esc(to)}</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
+EM.ACTIONS['ds-save'] = el => { const cfg = CFG_OF(el), o = cfg.find(el.dataset.id), b = { from: o && cfg.cur(o), to: el.dataset.to, note: qs('#ds-note').value };
+  if (qs('#ds-exp')) { b.expected = qs('#ds-exp').value; if (!b.expected) return showErr('ds-err', 'Pick the date you expect to deliver.'); }
+  if (qs('#ds-on')) { b.on = qs('#ds-on').value; if (!b.on && b.to === 'Installed') return showErr('ds-err', 'Pick the date it was installed.'); }
+  /* B4-F1 item 5: the installation photos go up first; if they fail, the step is not taken and the person is told */
+  const ph = qs('#ds-ph') ? [...qs('#ds-ph').files] : [];
+  if (ph.length > 10) return showErr('ds-err', 'Up to 10 photos at a time.');
+  const big = ph.find(f => f.size > 25 * 1024 * 1024); if (big) return showErr('ds-err', `${big.name} is over 25 MB.`);
+  if (ph.length) return (async () => { busy(el, true); const fd = new FormData(); ph.forEach(f => fd.append('file', f));
+    try { const r = await API('POST', `/api/ops/${cfg.api}/${el.dataset.id}/photos`, fd, true); D.documents.push(...r.documents); } catch (x) { busy(el, false); return showErr('ds-err', 'The photos did not upload, so it is not moved yet. ' + x.message); }
+    busy(el, false); return opsAct(el, `${cfg.api}/${el.dataset.id}/${cfg.move}`, b, `<b>Moved to ${esc(b.to)}</b> with ${ph.length} photo${ph.length === 1 ? '' : 's'}`, 'ds-err'); })();
+  return opsAct(el, `${cfg.api}/${el.dataset.id}/${cfg.move}`, b, `<b>Moved to ${esc(b.to)}</b>`, 'ds-err'); };
 { const baseAfter = EM.VIEWS.order.after; EM.VIEWS.order.after = id => { if (OPSD().rorders.some(x => x.id === id)) return showLog('fulfilment', id, '#log-rf'); return baseAfter && baseAfter(id); }; }
 const rfPayModal = (o, step) => { const due = Math.max(0, (o.total || 0) - (o.paid || 0)), to = step ? rfNext(o) : '';
   EM.modal(`<h2>${step ? esc(to) : 'Record a payment'}</h2><p class="muted">${esc(o.ref)} · ${esc(clientName(o.client_id))}. Total ${inr0(o.total)}, received so far ${inr0(o.paid || 0)}, still due ${inr0(due)}.</p>
     <div class="fgrid" style="margin-top:12px"><div class="field"><label for="rfp-a">${to === 'Advance received' ? 'Advance received' : to === 'Balance received' ? 'Balance received' : 'Amount received'}${to === 'Balance received' && !due ? '' : ' *'}</label>${G.adorn({ type: 'money', key: 'pay' }, `<input class="input" type="number" min="0" step="0.01" id="rfp-a" value="${to === 'Advance received' ? '' : due || ''}">`)}</div>
-      <div class="field"><label for="rfp-on">Received on</label><input class="input" type="date" id="rfp-on" value="${today()}"></div><div class="field span2"><label for="rfp-n">Note</label><input class="input" id="rfp-n" placeholder="e.g. 30% advance by UPI"></div></div>
-    ${errBox('rfp-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="rf-pay-save" data-id="${o.id}" data-step="${step ? 1 : ''}">${step ? 'Record and move on' : 'Record payment'}</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
+      <div class="field"><label for="rfp-on">Received on</label><input class="input" type="date" id="rfp-on" value="${today()}" min="${String(o.created_at || '').slice(0, 10)}" max="${today()}"></div><div class="field span2"><label for="rfp-n">Note</label><input class="input" id="rfp-n" placeholder="e.g. 30% advance by UPI"></div></div>
+    ${errBox('rfp-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="rf-pay-save" data-id="${o.id}" data-step="${step ? 1 : ''}" data-key="${step ? '' : crypto.randomUUID()}">${step ? 'Record and move on' : 'Record payment'}</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
 EM.ACTIONS['rf-next'] = el => {
   const o = OPSD().rorders.find(x => x.id === el.dataset.id), to = rfNext(o);
+  if (isDealerOrder(o)) return dealerStepModal(o);
   if (['Advance received', 'Balance received'].includes(to) && D.access.prices && !(to === 'Balance received' && (o.paid || 0) >= (o.total || 0) - 0.5)) return rfPayModal(o, true);
-  return opsAct(el, `orders/${o.id}/ful-next`, {}, `<b>${esc(o.ref)} moved to ${esc(to)}</b>`);
+  return opsAct(el, `orders/${o.id}/ful-next`, { from: rfCur(o), to }, `<b>${esc(o.ref)} moved to ${esc(to)}</b>`);
 };
 EM.ACTIONS['rf-pay'] = el => rfPayModal(OPSD().rorders.find(x => x.id === el.dataset.id), false);
 EM.ACTIONS['rf-pay-save'] = async el => {
-  const body = { amount: Number(qs('#rfp-a').value || 0), on: qs('#rfp-on').value, note: qs('#rfp-n').value };
+  const o = OPSD().rorders.find(x => x.id === el.dataset.id), body = { amount: Number(qs('#rfp-a').value || 0), on: qs('#rfp-on').value, note: qs('#rfp-n').value };
+  if (el.dataset.step && o) Object.assign(body, { from: rfCur(o), to: rfNext(o) });
+  if (!el.dataset.step) body.key = el.dataset.key;   // B3-F3: one key per open form, so a double tap records it once
   if (!el.dataset.step && !(body.amount > 0)) return showErr('rfp-err', 'Type the amount received.');
   await opsAct(el, `orders/${el.dataset.id}/${el.dataset.step ? 'ful-next' : 'pay'}`, body, body.amount ? `<b>${inr0(body.amount)} recorded</b>` : '<b>Moved on</b>', 'rfp-err');
 };
@@ -1903,17 +2109,18 @@ EM.ACTIONS['ful-next'] = el => {
   const o = OPSD().orders.find(x => x.id === el.dataset.id), FS = OS_('fulfilment_stages'), i = FS.indexOf(o.ful_stage);
   /* the step into Payment received asks how much came in */
   if (FS[i + 1] === FN('Payment received') && D.access.prices) return payModal(o, true);
-  return opsAct(el, `orders/${el.dataset.id}/ful-next`, {}, '<b>Fulfilment moved on</b>');
+  return opsAct(el, `orders/${el.dataset.id}/ful-next`, { from: o.ful_stage, to: nextFul(o) }, '<b>Fulfilment moved on</b>');   // F2 M-3
 };
 const payModal = (o, step) => { const due = Math.max(0, (o.total || 0) - (o.paid || 0));
   EM.modal(`<h2>${step ? esc(FN('Payment received')) : 'Record a payment'}</h2><p class="muted">${esc(o.ref)} · ${esc(clientName(o.client_id))}. Total ${inr0(o.total)}, received so far ${inr0(o.paid || 0)}, still due ${inr0(due)}.</p>
     <div class="fgrid" style="margin-top:12px"><div class="field"><label for="pay-a">Amount received (advance or full) *</label>${G.adorn({ type: 'money', key: 'pay' }, `<input class="input" type="number" min="0" step="0.01" id="pay-a" value="${due || ''}">`)}</div>
-      <div class="field"><label for="pay-on">Received on</label><input class="input" type="date" id="pay-on" value="${today()}"></div><div class="field span2"><label for="pay-n">Note</label><input class="input" id="pay-n" placeholder="e.g. 50% advance by NEFT"></div></div>
+      <div class="field"><label for="pay-on">Received on</label><input class="input" type="date" id="pay-on" value="${today()}" min="${String(o.created_at || '').slice(0, 10)}" max="${today()}"></div><div class="field span2"><label for="pay-n">Note</label><input class="input" id="pay-n" placeholder="e.g. 50% advance by NEFT"></div></div>
     ${errBox('pay-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="pay-save" data-id="${o.id}" data-step="${step ? 1 : ''}">${step ? 'Record and move on' : 'Record payment'}</button><button class="btn" data-act="close-modal">Cancel</button></div>`); };
 EM.ACTIONS['pay-add'] = el => payModal(OPSD().orders.find(x => x.id === el.dataset.id), false);
 EM.ACTIONS['pay-save'] = async el => {
   const body = { amount: Number(qs('#pay-a').value || 0), on: qs('#pay-on').value, note: qs('#pay-n').value };
   if (!(body.amount > 0)) return showErr('pay-err', 'Type the amount received.');
+  if (el.dataset.step) { const o = OPSD().orders.find(x => x.id === el.dataset.id); Object.assign(body, { from: o.ful_stage, to: nextFul(o) }); }   // F2 M-3
   const r = await opsAct(el, `orders/${el.dataset.id}/${el.dataset.step ? 'ful-next' : 'pay'}`, body, `<b>${inr0(body.amount)} recorded</b>`, 'pay-err');
   if (r) EM.closeModal();
 };
@@ -2027,23 +2234,35 @@ EM.ACTIONS['po-save'] = async el => { const r = await opsAct(el, 'production', {
 
 /* ---- installation sites, both companies (R3b: EGO Premium too). A site links to a project or an order of its company;
    who installs it (our contractor, or the partner dealer's team) is picked per site (Q9); a later planned start needs a delay reason. */
-EM.inF = { period: 'all' };
-const SITE_FIELDS = [['ref', 'Site number'], ['name', 'Site'], ['client', 'Client'], ['project', 'Project'], ['step', 'Step'], ['crew', 'Installer or crew'], ['by', 'Installed by'], ['address', 'Address']];
+EM.inF = { period: 'all', fb: 'ego' };   // b4: the board opens on EGO team's way of working
+const SITE_FIELDS = [['ref', 'Site number'], ['name', 'Site'], ['client', 'Client'], ['project', 'Project'], ['step', 'Step'], ['crew', 'Installer or crew'], ['by', 'Installed by'], ['address', 'Address']];   // b4: Installed by lives here (it means something on the EGO path only)
 const siteProject = x => x.project_id ? PJS().find(p => p.id === x.project_id) : null;
 const siteVal = (x, k) => k === 'client' ? clientName(x.client_id) : k === 'project' ? (siteProject(x) || {}).name || '' : k === 'by' ? installedByTxt(x) : String(x[k] || '');
 const siteCo = () => EM.div === 'both' ? '' : EM.div;
+const siteFb = x => isDealerSite(x) ? [x.ful_by, 'any'] : ['ego'];   // not chosen yet counts under EGO team, first lane
+const siteOpenIssues = x => isDealerSite(x) ? (OPSD().challenges || []).filter(c => c.order_id === x.id && c.status !== 'Resolved').length : OPSD().snags.filter(n => n.site_id === x.id && n.status === 'Open').length;
 EM.VIEWS.installation = () => {
-  const all = OPSD().sites.filter(inDiv), SS = OS_('site_steps'), co = siteCo();
+  const all = OPSD().sites.filter(inDiv), SS = OS_('site_steps'), co = siteCo(), fbv = EM.inF.fb || '', dealerView = fbv && fbv !== 'ego';
+  const dls = [...new Set(all.filter(isDealerSite).map(x => x.ful_by))].map(id => [id, (DDIR().find(d => d.id === id) || CL()[id] || { name: 'A dealer' }).name]).sort((a, b) => a[1].localeCompare(b[1]));
   const { html: fbar, rows: S } = filterBar(EM.inF, 'inst', { label: 'installation sites', rows: all, ph: 'Installation sites: site or client', attr: 'data-inst-filters',
-    text: x => `${x.ref} ${x.name} ${clientName(x.client_id)} ${siteVal(x, 'project')} ${x.address || ''}`, mobiles: x => [(CL()[x.client_id] || {}).mobile],
-    dd: [['step', 'Step', 'Every step', x => x.step, null, SS], ['by', 'Installed by', 'Anyone', x => (x.extra || {}).installed_by || 'none', null, [...Object.entries(INSTALLED_BY), ['none', 'Not chosen yet']]],
+    text: x => `${x.ref} ${x.name} ${clientName(x.client_id)} ${siteVal(x, 'project')} ${x.address || ''} ${isDealerSite(x) ? rfDealer(x).name : ''}`, mobiles: x => [(CL()[x.client_id] || {}).mobile],
+    dd: [['fb', 'Fulfilled by', 'Everyone', siteFb, v => v === 'ego' ? 'EGO team' : v === 'any' ? 'Any dealer' : (dls.find(d => d[0] === v) || [v, v])[1], [['ego', 'EGO team'], ['any', 'Any dealer'], ...dls]],
+      ['step', 'Step', 'Every step', x => x.step, null, dealerView ? SITE_DEALER_PATH : SS],
       ['project', 'Project', 'Every project', x => x.project_id || '', id => (PJS().find(p => p.id === id) || { name: id }).name], ['client', 'Client', 'Every client', x => x.client_id, clientName], ...coDD(x => x.division)],
-    any: SITE_FIELDS.map(([k, l]) => [k, l, x => siteVal(x, k)]), date: x => x.created_at, dateWhat: 'When the site was added' });
-  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${co ? esc(DIVS[co].co) : 'EGO Premium and Big E'} · from survey to handover</div><h1>Installation</h1><p class="muted">${S.length} of ${all.length}. Each site moves through the installation steps. Some steps check before they let you on: a crew, the readiness checklist, no open snag, the client's sign-off.</p></div><div class="row"><a class="btn" href="#/installers" data-to-installers>${fic('tool')}Installers</a><button class="btn primary" data-act="site-add">+ Site</button></div></div>
+    any: [...SITE_FIELDS.map(([k, l]) => [k, l, x => siteVal(x, k)])], date: x => x.created_at, dateWhat: 'When the site was added' });
+  const card = x => { const o = siteOrder(x), oc = siteOpenIssues(x);
+    return `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/site/${x.id}"><b>${esc(x.ref)}</b><div class="small">${esc(x.name)}</div><div class="small muted">${esc(clientName(x.client_id))}</div>${isDealerSite(x) ? `<div class="small muted">${esc(rfDealer(x).name)}</div>` : ''}${!x.ful_by ? '<span class="badge warn">Choose Fulfilled by</span>' : ''}${isDealerSite(x) && oc ? `<span class="badge warn">${oc} open challenge${oc === 1 ? '' : 's'}</span>` : ''}${o && o.okind === 'project' ? `<div class="small muted">${esc(o.ref)}</div>` : ''}${siteProject(x) ? `<div class="small">Project: ${esc(siteProject(x).name)}</div>` : ''}</a>`; };
+  const fbCell = x => !x.ful_by ? '<span class="badge warn">Choose</span>' : isDealerSite(x) ? (d => `<div style="white-space:normal">${esc(d.name)}<div class="small muted">${esc(['Dealer', d.city].filter(Boolean).join(' · '))}</div></div>`)(rfDealer(x)) : `EGO team<div class="small muted">${esc((x.extra || {}).installed_by ? 'Installed by ' + installedByTxt(x).toLowerCase() : 'Installer not chosen yet')}</div>`;
+  const issues = x => { const k = siteOpenIssues(x); return !k ? '' : isDealerSite(x) ? `<span class="badge warn">${k} challenge${k === 1 ? '' : 's'}</span>` : `${k} snag${k === 1 ? '' : 's'}`; };
+  const L = dealerView ? SITE_DEALER_PATH : SS;
+  return `<div class="stack"><div class="row between"><div class="stack-s"><div class="kicker">${co ? esc(DIVS[co].co) : 'EGO Premium and Big E'} · from survey to handover</div><h1>Installation</h1><p class="muted">${S.length} of ${all.length}. A won Project opens its Installation site here. EGO team sites move through the installation steps, which check before they let you on: a crew, the material, the readiness checklist, no open snag, the client's sign-off. Dealer sites run Order confirmed, Confirmed by dealer, Delivered, Installed, Closed.</p></div><div class="row"><a class="btn" href="#/installers" data-to-installers>${fic('tool')}Installers</a><button class="btn primary" data-act="site-add">+ Site</button></div></div>
     ${fbar}
-    ${stageBoard(SS, S, x => x.step, x => `<a class="mini" style="display:block;text-decoration:none;color:inherit" href="#/site/${x.id}"><b>${esc(x.ref)}</b><div class="small">${esc(x.name)}</div><div class="small muted">${esc(clientName(x.client_id))}</div>${siteProject(x) ? `<div class="small">Project: ${esc(siteProject(x).name)}</div>` : ''}</a>`)}
-    ${S.length ? table(['Site', 'Client', 'Project', 'Area', 'Step', 'Installed by', 'Open snags', 'Planned start'], S.map(x => ({ href: '#/site/' + x.id, cells: [`<b>${esc(x.ref)}</b> ${esc(x.name)}${EM.div === 'both' ? segBadge(x.division) : ''}`, esc(clientName(x.client_id)), esc(siteVal(x, 'project')), x.sqft ? num(x.sqft) + ' sq ft' : '', `<span class="badge info">${esc(x.step)}</span> <span class="small muted">${SS.indexOf(x.step) + 1}/${SS.length}</span>`, esc(installedByTxt(x)), OPSD().snags.filter(n => n.site_id === x.id && n.status === 'Open').length || '', x.planned_start ? ds(x.planned_start) : ''] })))
-      : empty(all.length ? 'Nothing for this filter' : 'No installation sites yet', all.length ? 'Change or clear the filters above.' : 'Add a site for a client: a flat, a floor, a project. A site can sit under a project or an order of this company.', all.length ? '' : '<button class="btn primary" data-act="site-add">+ Site</button>')}</div>`;
+    ${fbv ? stageBoard(L, S, x => x.step, card) : '<p class="small muted" data-inst-noboard>The board shows one way of working at a time. Pick EGO team or a dealer to see it.</p>'}
+    ${S.length ? `<div data-inst-table class="org-tbl">${table(['Site', 'Client and project', 'Fulfilled by', 'Step', 'Area', 'Open issues', 'Planned start'], S.map(x => { const o = siteOrder(x), Lx = isDealerSite(x) ? SITE_DEALER_PATH : SS;
+      return { href: '#/site/' + x.id, cells: [`<div style="white-space:normal;min-width:140px"><b>${esc(x.ref)}</b> ${esc(x.name)}${EM.div === 'both' ? segBadge(x.division) : ''}${o && o.okind === 'project' ? `<div class="small muted">Project order ${esc(o.ref)}</div>` : ''}</div>`,
+        `<div style="white-space:normal;min-width:110px">${esc(clientName(x.client_id))}${siteProject(x) ? `<div class="small muted">${esc(siteProject(x).name)}</div>` : ''}</div>`, fbCell(x),
+        `<span style="white-space:nowrap"><span class="badge info">${esc(x.step)}</span> <span class="small muted">${Lx.indexOf(x.step) + 1}/${Lx.length}</span></span>`, x.sqft ? `<span style="white-space:nowrap">${num(x.sqft)} sq ft</span>` : '', issues(x), x.planned_start ? `<span style="white-space:nowrap">${ds(x.planned_start)}</span>` : ''] }; }))}</div>`
+      : empty(all.length ? 'Nothing for this filter' : 'No installation sites yet', all.length ? 'Change or clear the filters above.' : 'A won Project opens its site here by itself. You can also add a site for a client: a flat, a floor, a project.', all.length ? '' : '<button class="btn primary" data-act="site-add">+ Site</button>')}</div>`;
 };
 EM.VIEWS.installation.title = () => 'Installation';
 const installerFields = (div, by, dealer) => `<div class="field"><label for="sa-by">Installed by</label><select class="input" id="sa-by" data-keep-order><option value="">Not chosen yet</option>${Object.entries(INSTALLED_BY).map(([k, l]) => `<option value="${k}" ${by === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
@@ -2066,17 +2285,48 @@ EM.ACTIONS['site-add'] = el => {
     <div class="row" style="margin-top:12px"><button class="btn primary" data-act="site-save" data-opp="${esc(el.dataset.opp || '')}" data-div="${div}">Add site</button><button class="btn" data-act="close-modal">Cancel</button></div>`);
 };
 EM.ACTIONS['site-save'] = async el => { const r = await opsAct(el, 'sites', { client_id: qs('#sa-client').value, name: qs('#sa-name').value, sqft: qs('#sa-sqft').value, planned_start: qs('#sa-ps').value, address: qs('#sa-ad').value, opp_id: el.dataset.opp, division: el.dataset.div, project_id: qs('#sa-project').value, order_id: qs('#sa-order').value, installed_by: qs('#sa-by').value, installer_dealer: qs('#sa-dealer').value }, null, 'sa-err'); if (r) location.hash = '#/site/' + r.id; };
+/* b4 (28 Oct): the site page has two paths. EGO team: the site steps, the Material card (the Project order's lines, the stock
+   engine's own numbers), crew, readiness, snags. A dealer: the dealer steps, the challenges log, the designs read-only. */
+const siteOrder = x => { const id = (x.extra || {}).order_id; return id ? allOrders().find(k => k.id === id) : allOrders().find(k => x.opp_id && k.opp_id === x.opp_id) || null; };
+const SITE_WHAT = { 'Material confirmed': 'the boxes are blocked for this site; anything short goes to production', 'Material dispatched': 'the boxes leave the warehouse and come off stock',
+  'Installer allocated': 'it needs a crew', 'Site readiness': 'every readiness item must be ready to move on', Snagging: 'no snag may be open to move on', 'Sign-off & handover': "the client's sign-off is recorded first" };
+const siteNext = x => { const L = isDealerSite(x) ? SITE_DEALER_PATH : OS_('site_steps'); return L[L.indexOf(x.step) + 1] || ''; };
+function siteMaterial(x, o) {
+  if (!o || o.okind !== 'project') return '';
+  const WH = INVD().warehouses, ls = rfLines(o), al = l => OPSD().allocations.filter(a => a.line_id === l.id), conf = OS_('site_steps').indexOf(x.step) >= OS_('site_steps').indexOf(SN_('Material confirmed'));
+  const sh = shortLines(o.id), not = '<span class="muted">Not yet</span>';
+  const short = sh.filter(r => r.l.boxes > 0 && r.l.boxes - r.got > 0 && conf);
+  return `<section class="card stack-s" data-site-material><div class="row between"><h3>Material</h3><a class="small" href="#/order/${o.id}">Project order ${esc(o.ref)}</a></div>
+    <p class="small muted">Blocked at Material confirmed, taken off stock at Material dispatched. Same stock as every order.</p>
+    ${short.length ? `<div class="callout warn" data-short><b>${num(short.reduce((a, r) => a + r.l.boxes - r.got, 0))} boxes are short.</b> ${short.map(r => `${esc(prodName(r.l.product_id))}: ${poCell(OPSD().waits.filter(w => w.line_id === r.l.id)) || 'no production order yet'}`).join(' · ')}</div>` : ''}
+    ${table(['Design', 'Sq ft', 'Boxes', 'Free now', 'Blocked', 'Short', 'Dispatched'], ls.map(l => { const got = al(l).filter(a => !a.dispatched).reduce((a, k) => a + k.boxes, 0), sent = al(l).filter(a => a.dispatched).reduce((a, k) => a + k.boxes, 0), miss = l.boxes - got - sent;
+      const wh = [...new Set(al(l).map(a => a.warehouse_id))].map(w => (WH.find(k => k.id === w) || {}).name).filter(Boolean).join(', ');
+      return [`<b>${esc(prodName(l.product_id))}</b>${wh ? `<div class="small muted">from ${esc(wh)}</div>` : ''}`, Number(l.sqft) ? num(l.sqft) : '', num(l.boxes), num(Math.max(0, WH.reduce((a, w) => a + freeAt(l.product_id, w.id), 0))),
+        conf ? num(got) : not, conf ? (miss > 0 ? `<span class="badge warn">${num(miss)}</span>${poCell(OPSD().waits.filter(w => w.line_id === l.id)).replace(/^<b>[^<]*<\/b>/, '')}` : '') : '', sent ? num(sent) : not]; }))}</section>`;
+}
+const SN_ = r => nm(D.lists, 'ops.site_steps', r);
 EM.VIEWS.site = id => {
   const x = OPSD().sites.find(s => s.id === id);
   if (!x) return `<div class="stack"><h1>Site not found</h1><a class="btn" href="#/installation">Installation</a></div>`;
-  const SS = OS_('site_steps'), nextS = SS[SS.indexOf(x.step) + 1], snags = OPSD().snags.filter(n => n.site_id === id), ready = x.extra.ready || {};
-  return `<div class="stack">${crumbs(['Installation', '#/installation'], [x.ref])}
-    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(x.ref)} · ${esc(x.name)}</h1><p class="muted"><a href="#/client/${x.client_id}">${esc(clientName(x.client_id))}</a>${x.sqft ? ' · ' + num(x.sqft) + ' sq ft' : ''}${x.address ? ' · ' + esc(x.address) : ''}${x.actual_start ? ' · started ' + ds(x.actual_start) : ''}${x.actual_end ? ' · completed ' + ds(x.actual_end) : ''}</p></div>
-      ${nextS ? `<button class="btn primary" data-act="site-next" data-id="${id}">Move to ${esc(nextS)}</button>` : ''}</div>
-    <section class="card stack-s">${stageChips(SS, x.step)}</section>
-    <section class="card stack-s" data-site-links><h3>Where it belongs</h3>${kv([['Company', esc(DIVS[x.division] ? DIVS[x.division].co : x.division)], ['Project', siteProject(x) ? `<a href="#/project/${x.project_id}">${esc(siteProject(x).name)}</a>` : NOTSET],
-      ['Order', (() => { const o = allOrders().find(k => k.id === (x.extra || {}).order_id) || allOrders().find(k => x.opp_id && k.opp_id === x.opp_id); return o ? `<a href="#/order/${o.id}">${esc(o.ref)} · ${esc(o.ful_stage)}</a>` : NOTSET; })()], ['Installed by', esc(installedByTxt(x))], ['Installer', (x.extra || {}).installer_id && instRec(x.extra.installer_id) ? `<a href="#/installer/${x.extra.installer_id}" data-site-installer>${esc(instRec(x.extra.installer_id).item)}</a>` : x.crew ? esc(x.crew) + ' <span class="small muted">(typed, not from the Installer master)</span>' : NOTSET], ['Installer certified', siteCert(x)], ...(OPSD().complaints.some(c => c.site_id === x.id) ? [['Complaints', OPSD().complaints.filter(c => c.site_id === x.id).map(c => `<a href="#/complaint/${c.id}" data-site-cmp>${esc(c.ref)} · ${esc(c.status)}</a>`).join('<br>')]] : [])])}</section>
-    <div class="grid g2"><section class="card stack-s"><h3>Crew and dates</h3><div class="fgrid">
+  const SS = OS_('site_steps'), dl = isDealerSite(x), nextS = siteNext(x), snags = OPSD().snags.filter(n => n.site_id === id), ready = x.extra.ready || {}, o = siteOrder(x), opp = x.opp_id ? D.opportunities.find(k => k.id === x.opp_id) : null, pj = siteProject(x);
+  const arch = pj && pj.architect_id ? CL()[pj.architect_id] : null, d = dl ? rfDealer(x) : null, co = (DIVS[x.division] || {}).co || '';
+  /* B4-F1 item 1: EGO path, boxes short at Material confirmed: no Move to Material dispatched; the short line and its production order instead (as retail Stock check) */
+  const shortNow = !dl && o && o.okind === 'project' && nextS === SN_('Material dispatched') ? shortLines(o.id).filter(r => r.l.boxes - r.got > 0) : [];
+  const shortHead = shortNow.length ? `<div class="callout warn" data-site-short-head><b>${num(shortNow.reduce((a, r) => a + r.l.boxes - r.got, 0))} boxes short</b>. Material dispatched opens once every box is in stock. ${shortNow.map(r => `${esc(prodName(r.l.product_id))}: ${poCell(OPSD().waits.filter(w => w.line_id === r.l.id)) || 'no production order yet'}`).join(' · ')}</div>` : '';
+  const head = !x.ful_by && x.step === SS[0] ? '<span class="small muted" data-site-wait>Choose Fulfilled by first</span>' : shortHead ? shortHead : nextS ? `<button class="btn primary" data-act="site-next" data-id="${id}">Move to ${esc(nextS)}</button>` : `<span class="badge ok">${esc(x.step)}</span>`;
+  const links = `<section class="card stack-s" data-site-links><h3>Where it belongs</h3>${kv([['Company', esc(co || x.division)], ['Project', pj ? `<a href="#/project/${x.project_id}">${esc(pj.name)}</a>` : NOTSET],
+      ['Opportunity', opp ? `<a href="#/opp/${opp.id}">${esc(opp.title)}</a>` : NOTSET],
+      [o && o.okind === 'project' ? 'Project order' : 'Order', o ? `<a href="#/order/${o.id}" data-site-order>${esc(o.ref)} · ${esc(o.okind === 'project' ? x.step : o.ful_stage)}</a>` : NOTSET], ['Client', `<a href="#/client/${x.client_id}">${esc(clientName(x.client_id))}</a>`],
+      ['Architect', arch ? `<a href="#/client/${arch.id}">${esc(arch.name)}</a>` : NOTSET],
+      ['Installed by', dl ? `${esc(d.name)}’s team` : esc(installedByTxt(x))], ...(dl ? [] : [['Installer', (x.extra || {}).installer_id && instRec(x.extra.installer_id) ? `<a href="#/installer/${x.extra.installer_id}" data-site-installer>${esc(instRec(x.extra.installer_id).item)}</a>` : x.crew ? esc(x.crew) + ' <span class="small muted">(typed, not from the Installer master)</span>' : NOTSET], ['Installer certified', siteCert(x)]]),
+      ...(OPSD().complaints.some(c => c.site_id === x.id) ? [['Complaints', OPSD().complaints.filter(c => c.site_id === x.id).map(c => `<a href="#/complaint/${c.id}" data-site-cmp>${esc(c.ref)} · ${esc(c.status)}</a>`).join('<br>')]] : [])])}</section>`;
+  const sph = D.documents.filter(k => k.site_id === id);   // B4-F1 item 5: photos taken at Mark installed
+  const photos = dl ? `<section class="card stack-s" data-site-photos><h3>Installation photos <span class="muted">${sph.length}</span></h3>${filesBox({ id: 'sph', client: x.client_id, types: ['Install photo'], docs: sph, canAdd: false, emptyTitle: 'No installation photos yet', emptyText: 'Photos added at Mark installed, here or in the dealer portal, show here to view, download and share.' })}</section>` : '';
+  const body = dl ? `${fulByCard(x, SITE_CFG)}${dealerPathCard(x, SITE_CFG)}${challengesCard(x, SITE_CFG)}${photos}${links}
+      ${o ? `<section class="card stack-s" data-site-lines><h3>Designs, sq ft and boxes</h3>${rfLineTable(rfLines(o), false)}<p class="small">${linesSum(rfLines(o))}</p></section>` : ''}`
+    : `${fulByCard(x, SITE_CFG)}<section class="card stack-s" data-site-ladder>${stageChips(SS, x.step)}${nextS && x.ful_by ? `<p class="small muted">Next, <b>${esc(nextS)}</b>${SITE_WHAT[nextS] ? ': ' + esc(SITE_WHAT[nextS]) : ''}.</p>` : ''}</section>
+      ${siteMaterial(x, o)}${links}
+      <div class="grid g2"><section class="card stack-s"><h3>Crew and dates</h3><div class="fgrid">
         ${installerFields(x.division, (x.extra || {}).installed_by || '', (x.extra || {}).installer_dealer || '')}
         ${instPick('se-iid', (x.extra || {}).installer_id || '', x.division)}
         <div class="field"><label for="se-crew">Installer or crew (typed, for anyone not on the master)</label><input class="input" id="se-crew" value="${esc(x.crew || '')}"></div>
@@ -2090,12 +2340,33 @@ EM.VIEWS.site = id => {
         <div class="row"><button class="btn sm" data-act="site-upd" data-id="${id}">Save the checklist</button></div></section></div>
     <section class="card stack-s"><div class="row between"><h3>Snags</h3><button class="btn sm" data-act="snag-add" data-id="${id}">+ Snag</button></div>
       ${snags.length ? table(['Snag', 'Severity', 'Note', 'Due', 'Status', ''], snags.map(n => [esc(n.category), esc(n.severity), esc(n.note || ''), n.due ? ds(n.due) : '', n.status === 'Open' ? '<span class="badge warn">Open</span>' : `<span class="badge ok">Closed</span> <span class="small muted">${esc(n.closed_note || '')}</span>`, n.status === 'Open' ? `<button class="btn sm ghost" data-act="snag-close" data-id="${n.id}">Close</button>` : ''])) : '<p class="small muted">No snags.</p>'}</section>
+`;
+  return `<div class="stack" data-site-page data-path="${dl ? 'dealer' : 'ego'}">${crumbs(['Installation', '#/installation'], [x.ref])}
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><div class="kicker">Installation site · ${esc(co)}</div><h1>${esc(x.ref)} · ${esc(x.name)}</h1>
+      <p class="muted">${opp ? `From <a href="#/opp/${opp.id}">${esc(opp.title)}</a> · ` : ''}${pj ? `<a href="#/project/${pj.id}">${esc(pj.name)}</a> · ` : ''}<a href="#/client/${x.client_id}">${esc(clientName(x.client_id))}</a>${o && o.okind === 'project' ? ` · Project order <a href="#/order/${o.id}">${esc(o.ref)}</a>` : ''} · opened ${ds(dayIST(x.created_at))}${x.sqft ? ' · ' + num(x.sqft) + ' sq ft' : ''}${x.address ? ' · ' + esc(x.address) : ''}${x.actual_start ? ' · started ' + ds(x.actual_start) : ''}${x.actual_end ? ' · completed ' + ds(x.actual_end) : ''}</p></div>
+      ${head}</div>
+    ${body}
     <section class="stack-s"><h3>History</h3><div id="log-s"><p class="muted">Loading…</p></div></section></div>`;
 };
 EM.VIEWS.site.tab = 'installation';
 EM.VIEWS.site.title = id => (OPSD().sites.find(x => x.id === id) || { name: 'Site' }).name;
 EM.VIEWS.site.after = id => showLog('site', id, '#log-s');
-EM.ACTIONS['site-next'] = el => opsAct(el, `sites/${el.dataset.id}/next`, {}, '<b>Site moved on</b>');
+EM.ACTIONS['site-next'] = el => { const x = OPSD().sites.find(k => k.id === el.dataset.id), to = siteNext(x), o = siteOrder(x), mat = o && o.okind === 'project';
+  if (isDealerSite(x)) return dealerStepModal(x, SITE_CFG);
+  const body = { from: x.step, to };
+  if (mat && to === SN_('Material confirmed')) { const ls = rfLines(o), WH = INVD().warehouses, need = ls.reduce((a, l) => a + l.boxes, 0), free = ls.reduce((a, l) => a + Math.min(l.boxes, Math.max(0, WH.reduce((k, w) => k + freeAt(l.product_id, w.id), 0))), 0);
+    return EM.modal(`<h2>Confirm the material for ${esc(x.ref)}?</h2><p>Blocks <b>${num(free)} boxes</b> of ${ls.map(l => esc(prodName(l.product_id))).join(', ')}.</p>${need > free ? `<p class="callout warn"><b>${num(need - free)} boxes are short.</b> A production order is raised for them; the line moves to Blocked when they arrive.</p>` : ''}
+      <div class="field" style="margin-top:12px"><label for="sm-note">Note</label><input class="input" id="sm-note" maxlength="300" placeholder="Optional"></div>${errBox('sm-err')}
+      <div class="row" style="margin-top:14px"><button class="btn primary" data-act="site-go" data-id="${x.id}" data-to="${esc(to)}">Confirm material</button><button class="btn" data-act="close-modal">Cancel</button></div>`); }
+  if (mat && to === SN_('Material dispatched')) { const sh = shortLines(o.id).filter(r => r.l.boxes - r.got > 0), blocked = OPSD().allocations.filter(a => a.order_id === o.id && !a.dispatched).reduce((a, k) => a + k.boxes, 0);
+    if (sh.length) { const r = sh[0], w = OPSD().waits.find(k => k.line_id === r.l.id && !k.done), p = w && OPSD().production.find(k => k.id === w.po_id);
+      return EM.modal(`<h2>Dispatch the material for ${esc(x.ref)}?</h2><div class="callout warn" data-dispatch-blocked><b>${num(r.l.boxes - r.got)} boxes of ${esc(prodName(r.l.product_id))} are still short</b>${p ? ` (${esc(p.ref)})` : ''}. Dispatch when they arrive.</div><div class="row" style="margin-top:14px"><button class="btn" data-act="close-modal">Close</button></div>`); }
+    return EM.modal(`<h2>Dispatch the material for ${esc(x.ref)}?</h2><p>Takes <b>${num(blocked)} boxes</b> off stock.</p><div class="fgrid" style="margin-top:12px"><div class="field"><label for="sm-on">Dispatched on *</label><input class="input" type="date" id="sm-on" max="${today()}" value="${today()}"></div>
+      <div class="field"><label for="sm-note">Note</label><input class="input" id="sm-note" maxlength="300" placeholder="Optional"></div></div>${errBox('sm-err')}
+      <div class="row" style="margin-top:14px"><button class="btn primary" data-act="site-go" data-id="${x.id}" data-to="${esc(to)}">Dispatch</button><button class="btn" data-act="close-modal">Cancel</button></div>`); }
+  return opsAct(el, `sites/${x.id}/next`, body, `<b>${esc(x.ref)} moved to ${esc(to)}</b>`); };
+EM.ACTIONS['site-go'] = el => { const x = OPSD().sites.find(k => k.id === el.dataset.id);
+  return opsAct(el, `sites/${x.id}/next`, { from: x.step, to: el.dataset.to, note: (qs('#sm-note') || {}).value || '', on: (qs('#sm-on') || {}).value || undefined }, `<b>${esc(x.ref)} moved to ${esc(el.dataset.to)}</b>`, 'sm-err'); };
 EM.ACTIONS['site-upd'] = el => {
   const was = qs('#se-ps').dataset.was, ps = qs('#se-ps').value;
   if (was && ps > was && !qs('#se-dr').value) return bubbleNear(el, `The planned start moves later (${was} to ${ps}): choose the delay reason.`);
@@ -2952,22 +3223,24 @@ function buildOrders() {
   const O = OPSD(), FS = OS_('fulfilment_stages'), out = [];
   for (const o of O.orders) {
     const opp = oppOf(o) || {}, h = D.history.filter(x => x.opp_id === o.opp_id), won = h.filter(x => x.to_stage === wonStage('wholesale', D.lists)).pop(), logs = (O.logs || []).filter(l => l.record_id === o.id);
-    out.push({ id: o.id, kind: 'Wholesale', ref: o.ref, title: opp.title || o.notes || '', client_id: o.client_id, contact_id: opp.contact_id || '', opp_id: o.opp_id, value: o.total,
+    out.push({ id: o.id, kind: 'Wholesale', okind: 'wholesale', ful_by: '', ref: o.ref, title: opp.title || o.notes || '', client_id: o.client_id, contact_id: opp.contact_id || '', opp_id: o.opp_id, value: o.total,
       won_at: (won && won.at) || o.created_at, closed_by: won ? won.by_staff : o.created_by, processed_by: [...new Set(logs.map(l => l.by_staff).filter(Boolean))], owner_id: o.owner_id,
       stage: o.ful_stage, done_at: stageAt(o.id, lastOf(FS)), done: o.ful_stage === lastOf(FS), boxes: O.lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0), href: '#/order/' + o.id });
   }
   /* R3b: a Big E sale in fulfilment is listed from its fulfilment record, where it is on the retail ladder */
   for (const o of OPSD().rorders) {
     const opp = oppOf(o) || {}, won = D.history.filter(x => x.opp_id === o.opp_id && x.to_stage === opp.stage).pop(), logs = (O.logs || []).filter(l => l.record_id === o.id);
-    out.push({ id: o.id, kind: 'Retail', ref: o.ref, title: opp.title || o.notes || '', client_id: o.client_id, contact_id: opp.contact_id || '', opp_id: o.opp_id, value: o.total,
-      won_at: (won && won.at) || o.created_at, closed_by: won ? won.by_staff : o.created_by, processed_by: [...new Set(logs.map(l => l.by_staff).filter(Boolean))], owner_id: o.owner_id,
-      stage: o.ful_stage, done_at: stageAt(o.id, lastOf(RETAIL_FUL)), done: o.ful_stage === lastOf(RETAIL_FUL), boxes: null, href: '#/order/' + o.id });
+    /* b4: a Project order is listed (never hidden), marked Project order; it is where its site is, and its site says who fulfils it */
+    const si = o.okind === 'project' ? O.sites.find(x => (x.extra || {}).order_id === o.id) : null, sl = si ? (O.siteLogs || []).filter(l => l.record_id === si.id) : [], sL = si && (isDealerSite(si) ? SITE_DEALER_PATH : OS_('site_steps'));
+    out.push({ id: o.id, kind: 'Retail', okind: o.okind || 'retail', ful_by: si ? si.ful_by || '' : o.ful_by || 'ego', dealerOrder: si ? isDealerSite(si) : isDealerOrder(o), openCh: si ? (isDealerSite(si) ? siteOpenIssues(si) : 0) : rfOpenCh(o), division: o.division, ref: o.ref, title: opp.title || o.notes || '', client_id: o.client_id, contact_id: opp.contact_id || '', opp_id: o.opp_id, value: o.total,
+      won_at: (won && won.at) || o.created_at, closed_by: won ? won.by_staff : o.created_by, processed_by: [...new Set([...logs, ...sl].map(l => l.by_staff).filter(Boolean))], owner_id: o.owner_id, site: si,
+      stage: si ? si.step : rfCur(o), done_at: si ? (si.step === lastOf(sL) ? (sl.pop() || {}).at || '' : '') : stageAt(o.id, 'Closed'), done: si ? si.step === lastOf(sL) : rfCur(o) === 'Closed', boxes: null, href: '#/order/' + o.id });
   }
   const inRf = new Set(OPSD().rorders.map(o => o.opp_id));
   for (const p of Object.keys(PIPELINES).filter(k => !PIPELINES[k].lines)) for (const opp of D.opportunities.filter(x => x.pipeline === p && x.stage === wonStage(p, D.lists) && !inRf.has(x.id))) {
     const h = D.history.filter(x => x.opp_id === opp.id), won = h.filter(x => x.to_stage === opp.stage).pop(), sites = O.sites.filter(x => x.opp_id === opp.id), SS = OS_('site_steps');
     const last = sites.map(x => x.step).sort((a, b) => SS.indexOf(a) - SS.indexOf(b))[0];
-    out.push({ id: opp.id, kind: 'Retail', ref: opp.ref, title: opp.title, client_id: opp.client_id, contact_id: opp.contact_id || '', opp_id: opp.id, value: opp.value,
+    out.push({ id: opp.id, kind: 'Retail', okind: PIPELINES[p].okind || (PIPELINES[p].project ? 'project' : 'retail'), ful_by: '', ref: opp.ref, title: opp.title, client_id: opp.client_id, contact_id: opp.contact_id || '', opp_id: opp.id, value: opp.value,
       won_at: (won && won.at) || opp.closed_at || opp.updated_at, closed_by: won ? won.by_staff : opp.owner_id, processed_by: [...new Set(sites.map(x => x.owner_id))], owner_id: opp.owner_id,
       stage: sites.length ? last : 'Won, no site yet', done_at: sites.length && sites.every(x => x.actual_end) ? sites.map(x => x.actual_end).sort().pop() : '', done: !!(sites.length && sites.every(x => x.actual_end)), boxes: null, href: '#/opp/' + opp.id });
   }
@@ -3043,22 +3316,39 @@ for (const a of ['flt-x', 'flt-clear']) { NAV_ACTS.add(a); LOOK_ACTS.add(a); }
 document.addEventListener('change', e => { const d = e.target.dataset || {}, st = d.flt && FLT[d.flt]; if (!st) return; if (d.fk.startsWith('tg:')) st.tg[d.fk.slice(3)] = e.target.checked; else st[d.fk] = e.target.value; EM.rerender(); });
 document.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.fltQ; if (!k || !FLT[k]) return; FLT[k].fq = e.target.value; const pos = e.target.selectionStart; EM.rerender(); const el = qs(`[data-flt-q="${k}"]`); if (el) { el.focus(); el.setSelectionRange(pos, pos); } });
 EM.VIEWS.orderbook = () => {
-  const segOf = x => x.kind === 'Wholesale' ? 'wholesale' : 'retail', fromOf = x => { const k = (CL()[x.client_id] || {}).kind; return DEALER_KINDS.includes(k) ? 'dealer' : ARCH_KINDS.includes(k) ? 'architect' : PERSONAL_KINDS.includes(k) ? 'personal' : ''; };
-  const { html: fbar, rows } = filterBar(EM.ob, 'ob', { label: 'orders', rows: buildOrders().filter(x => EM.div === 'both' || segOf(x) === EM.div), ph: 'Order number, sale or company',
-    text: x => `${x.ref} ${x.title} ${clientName(x.client_id)}`, mobiles: x => [(CL()[x.client_id] || {}).mobile],
-    dd: [...coDD(segOf), ['kind', 'From', 'Everyone', fromOf, null, [['dealer', 'Dealers'], ['architect', 'Architects'], ['personal', 'Personal contacts']]], ['state', 'Where it is', 'Live and done', x => x.done ? 'done' : 'live', null, [['live', 'Still live'], ['done', 'Delivered or completed']]],
-      ['stage', 'Stage', 'Every stage', x => x.stage], ['closed', 'Closed by', 'Everyone', x => x.closed_by || '', staffName], ['client', 'Company', 'Every company', x => x.client_id, clientName]],
-    any: [['ref', 'Order number', x => x.ref], ['sale', 'Sale', x => x.title], ['company', 'Company', x => clientName(x.client_id)]], date: x => x.won_at, dateWhat: 'When it was won' });
-  return `<div class="stack"><div class="stack-s"><div class="kicker">Every order, live and old</div><h1>Orders</h1><p class="muted" style="max-width:760px">Every sale that was won, whenever it was: where it is now, when each stage happened and who moved it, who gave it, who closed it and who processed it. The boards show only what is live; this keeps everything.</p></div>
+  /* b3 (27 Oct): every won opportunity's order with its Kind (Wholesale order, Retail order, Project order) and, for retail, Fulfilled by */
+  const segOf = x => x.kind === 'Wholesale' ? 'wholesale' : (x.division || 'retail'), fromOf = x => { const k = (CL()[x.client_id] || {}).kind; return DEALER_KINDS.includes(k) ? 'dealer' : ARCH_KINDS.includes(k) ? 'architect' : PERSONAL_KINDS.includes(k) ? 'personal' : ''; };
+  const all = buildOrders().filter(x => EM.div === 'both' || segOf(x) === EM.div), fbOf = x => x.okind === 'wholesale' || !x.ful_by ? 'ego' : x.ful_by, fbName = v => v === 'ego' ? 'EGO team' : (DDIR().find(d => d.id === v) || CL()[v] || { name: 'A dealer' }).name;
+  const dealersUsed = [...new Set(all.map(fbOf).filter(v => v !== 'ego'))].sort((a, b) => fbName(a).localeCompare(fbName(b)));
+  const { html: fbar, rows } = filterBar(EM.ob, 'ob', { label: 'orders', rows: all, ph: 'Order number, sale, company or dealer',
+    text: x => `${x.ref} ${x.title} ${clientName(x.client_id)} ${fbOf(x) === 'ego' ? '' : fbName(fbOf(x))}`, mobiles: x => [(CL()[x.client_id] || {}).mobile],
+    dd: [...coDD(segOf), ['okind', 'Kind', 'Every kind', x => x.okind, null, Object.entries(ORDER_KINDS)],
+      ['fulby', 'Fulfilled by', 'Everyone', x => fbOf(x) === 'ego' ? 'ego' : 'dealer:' + fbOf(x), null, [['ego', 'EGO team'], ...dealersUsed.map(v => ['dealer:' + v, fbName(v)])]],
+      ['kind', 'From', 'Everyone', fromOf, null, [['dealer', 'Dealers'], ['architect', 'Architects'], ['personal', 'Personal contacts']]], ['state', 'Where it is', 'Live and done', x => x.done ? 'done' : 'live', null, [['live', 'Still live'], ['done', 'Delivered or completed']]],
+      ['stage', 'Stage', 'Every stage', x => x.stage]],
+    any: [['ref', 'Order number', x => x.ref], ['sale', 'Sale', x => x.title], ['company', 'Company', x => clientName(x.client_id)], ['closed', 'Closed by', x => staffName(x.closed_by)], ['fulby', 'Fulfilled by', x => fbName(fbOf(x))]], date: x => x.won_at, dateWhat: 'When it was confirmed' });
+  const fbCell = x => x.okind === 'wholesale' ? '<span class="muted">EGO team</span>' : x.okind === 'project' && !x.ful_by ? '<span class="badge warn" data-fb-choose>Choose on the site</span>' : fbOf(x) === 'ego' ? 'EGO team' : (d => `<div style="white-space:normal;min-width:90px">${esc(d.name)}<div class="small muted">${esc(['Dealer', d.city].filter(Boolean).join(' · '))}</div></div>`)(DDIR().find(d => d.id === fbOf(x)) || CL()[fbOf(x)] || { name: 'A dealer' });
+  return `<div class="stack"><div class="stack-s"><div class="kicker">Every order, live and old</div><h1>Orders</h1><p class="muted" style="max-width:760px">Every confirmed sale, whenever it was: wholesale, retail and project orders, who fulfils each, where it is now, who closed it and who processed it. The boards show only what is live; this keeps everything.</p></div>
     ${fbar}
     <div class="grid g4">${tile('Orders', rows.length)}${tile('Still live', rows.filter(x => !x.done).length)}${tile('Delivered or completed', rows.filter(x => x.done).length)}${D.access.prices ? tile('Value', inr0(rows.reduce((a, x) => a + (Number(x.value) || 0), 0))) : ''}</div>
-    ${rows.length ? table(['Order', 'Won on', 'Given by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Processed by', 'Delivered or completed'], rows.slice(0, 500).map(x => ({ href: x.href,
-      cells: [`<b>${esc(x.ref || '')}</b><div class="small">${esc(x.title)}</div>${segBadge(x.kind === 'Wholesale' ? 'wholesale' : 'retail')}`, whenTxt(x.won_at), givenBy(x), ...(D.access.prices ? [inr0(x.value)] : []),
-        `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>`, esc(staffName(x.closed_by)), esc(x.processed_by.map(staffName).join(', ')) || '<span class="muted">Not started</span>', x.done_at ? whenTxt(x.done_at) : ''] })))
+    ${rows.length ? `<div data-orderbook-table class="org-tbl">${table(['Order', 'Kind', 'Fulfilled by', 'Confirmed on', ...(D.access.prices ? ['Value'] : []), 'Where it is', 'Closed and processed by'], rows.slice(0, 500).map(x => ({ href: x.href,
+      cells: [`<div style="min-width:120px;white-space:normal"><b>${esc(x.ref || '')}</b><div class="small">${esc(x.title)}</div>${x.site ? `<div class="small muted" data-o-site>Site <a href="#/site/${x.site.id}">${esc(x.site.ref)}</a>${siteProject(x.site) ? ' · ' + esc(siteProject(x.site).name) : ''}</div>` : ''}</div>`, `<span class="badge plain line" data-okind="${esc(x.okind)}">${esc(ORDER_KINDS[x.okind] || 'Retail order')}</span>`, fbCell(x), whenTxt(x.won_at), ...(D.access.prices ? [`<span style="white-space:nowrap">${inr0(x.value)}</span>`] : []),
+        `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>${x.done_at ? `<div class="small muted" data-o-done style="white-space:nowrap">${whenTxt(x.done_at)}</div>` : ''}${x.openCh ? `<div><span class="badge warn">${x.openCh} open challenge${x.openCh === 1 ? '' : 's'}</span></div>` : ''}`, closedCell(x)] })))}</div>`
       + (rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : '')
-      : empty('No orders for this filter', 'An order appears here when a sale is won: a wholesale sale at its won stage, a retail sale when won.')}</div>`;
+      : empty(all.length ? 'Nothing for this filter' : 'No orders yet', all.length ? 'Change or clear the filters above.' : 'An order appears here when a sale is won: a wholesale or retail opportunity at its won stage.')}</div>`;
 };
 EM.VIEWS.orderbook.title = () => 'Orders';
+/* C2 (27 Oct): the closer once, then who else processed it; a name never shows twice */
+function closedCell(x) {
+  const by = x.closed_by, pb = x.processed_by || [], others = [...new Set(pb)].filter(id => id !== by);
+  const sub = others.length ? 'Processed by ' + others.map(staffName).join(', ') : pb.includes(by) ? 'Closed and processed' : 'Processing not started';
+  /* F2 T-09: a live order has no closer yet; only who has processed it so far */
+  /* B4-F1 item 2: a short pill and the names on one line, so the column fits 1280 (Delivered moved under Where it is) */
+  /* F2 M-1: first names, wrapping to at most two lines, the full names on hover; never cut with an ellipsis */
+  const one = (ids, lead) => `<div class="small muted" data-pb style="white-space:normal;max-width:124px;line-height:1.3" title="${esc(lead + ids.map(staffName).join(', '))}">${esc(lead + ids.map(shortName).join(', '))}</div>`;
+  if (!x.done) return `<div data-closed style="min-width:124px"><span class="badge plain" style="white-space:nowrap">Not closed yet</span>${[...new Set(pb)].length ? one([...new Set(pb)], 'Processed by ') : ''}</div>`;
+  return `<div data-closed style="min-width:124px"><div style="white-space:normal;max-width:124px" title="${esc(staffName(by))}">${esc(shortName(by))}</div>${others.length ? one(others, 'Processed by ') : `<div class="small muted" data-pb>${esc(sub)}</div>`}</div>`;
+}
 /* one order's whole story: the sale stages and the fulfilment stages, each with date, time and who */
 function orderStory(o) {
   const x = buildOrders().find(y => y.id === o.id) || {}, opp = oppOf(o);
@@ -3072,9 +3362,16 @@ function orderStory(o) {
 EM.co = EM.co || { period: 'all', from: '', to: '' };
 function clientOrders(c) {
   const f = EM.co, rows = buildOrders().filter(x => x.client_id === c.id && inPeriod(x.won_at, f.period, f.from, f.to)), done = rows.filter(x => x.done), fy = rows.filter(x => inPeriod(x.won_at, 'year')), sum = a => a.reduce((t, x) => t + (Number(x.value) || 0), 0);
-  return `<div class="stack-s"><div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${dateFilter(f, 'co', 'When it was won')}</div><div class="grid g4">${tile('Orders', rows.length)}${tile('This financial year', fy.length, D.access.prices && fy.length ? inr0(sum(fy)) : '')}${tile('Delivered or completed', done.length)}${D.access.prices ? tile('All-time value', inr0(sum(rows))) : ''}</div>
-    ${rows.length ? table(['Order', 'Won on', 'Brought by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Delivered or completed'], rows.map(x => ({ href: x.href, cells: [`<b>${esc(x.ref || '')}</b><div class="small">${esc(x.title)}</div>`, whenTxt(x.won_at), esc((D.contacts.find(k => k.id === x.contact_id) || {}).name || ''), ...(D.access.prices ? [inr0(x.value)] : []), `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>`, esc(staffName(x.closed_by)), x.done_at ? whenTxt(x.done_at) : ''] })))
+  return `<div class="stack-s"><div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${dateFilter(f, 'co', 'When it was confirmed')}</div><div class="grid g4">${tile('Orders', rows.length)}${tile('This financial year', fy.length, D.access.prices && fy.length ? inr0(sum(fy)) : '')}${tile('Delivered or completed', done.length)}${D.access.prices ? tile('All-time value', inr0(sum(rows))) : ''}</div>
+    ${rows.length ? table(['Order', 'Confirmed on', 'Brought by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Delivered or completed'], rows.map(x => ({ href: x.href, cells: [`<a href="${x.href}" data-co-ref><b>${esc(x.ref || '')}</b></a><div class="small">${esc(x.title)}</div>`, whenTxt(x.won_at), esc((D.contacts.find(k => k.id === x.contact_id) || {}).name || ''), ...(D.access.prices ? [inr0(x.value)] : []), `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>`, esc(staffName(x.closed_by)), x.done_at ? whenTxt(x.done_at) : ''] })))
       : `<p class="small muted">No orders from ${esc(c.name)} yet. Every won sale shows here, live and old.</p>`}</div>`;
+}
+/* F2 M-2: a client's installation sites, each linked to the site, its project and its Project order */
+function clientSites(c) {
+  const rows = (OPSD().sites || []).filter(x => x.client_id === c.id);
+  return `<div class="stack-s" data-client-sites>${rows.length ? table(['Site', 'Step', 'Fulfilled by', 'Project', 'Project order'], rows.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.ref || '')}</b></a><div class="small">${esc(x.name || '')}</div>`, esc(x.step),
+    !x.ful_by ? '<span class="badge warn">Choose</span>' : isDealerSite(x) ? esc(rfDealer(x).name) : 'EGO team', siteProject(x) ? `<a href="#/project/${x.project_id}">${esc(siteProject(x).name)}</a>` : '', (o => o ? `<a href="#/order/${o.id}">${esc(o.ref)}</a>` : '')(siteOrder(x))]))
+    : `<p class="small muted">No installation site for ${esc(c.name)} yet. A site opens when a project sale is won.</p>`}</div>`;
 }
 /* ---------------------------------------------------------------- mistakes, shown where they are
    A message that names a field ("Mobile has 9 digits") is put in a small bubble just above that
@@ -3394,7 +3691,7 @@ const ACT_FIELDS = [['title', 'What'], ['detail', 'Details'], ['who', 'Who']];
 DF_STATE.act = () => EM.actF;
 /* U2 batch 3 (25 Oct): THE record page layout. The record on the left, Open follow-ups + Activity in a right-hand
    column level with the first card (sticky, full height); one column under 1100px. Every record page uses it. */
-const recGrid = (main, aside, wide) => `<div class="rec-grid${wide ? ' rec-wide' : ''}"><div class="rec-main stack">${main}</div><aside class="rec-aside" aria-label="Activity">${aside}</aside></div>`;
+const recGrid = (main, aside, wide) => `<div class="rec-grid${wide ? ' rec-wide' : ''}${wide === 'xl' ? ' rec-xl' : ''}"><div class="rec-main stack">${main}</div><aside class="rec-aside" aria-label="Activity">${aside}</aside></div>`;
 /* U5: only where the move to the won stage itself opens the Orders row on the server (FUL in saveOpp: lines or sqft) */
 const wonNote = o => { const P = PIPELINES[o.pipeline] || {}; if (!(P.lines || P.sqft) || isClosed(o.pipeline, o.stage, D.lists)) return '';
   const w = wonStage(o.pipeline, D.lists), ob = allowedTab('orderbook') ? '<a href="#/orderbook">Orders</a>' : 'Orders';
@@ -3404,7 +3701,7 @@ function activityPanel({ clientId, oppId, opps, leadId, locked }) {
   if (pj) { clientId = opps[0] ? opps[0].client_id : ''; oppId = opps[0] ? opps[0].id : ''; }   // a project logs against its opportunity (asked which when several)
   const all = leadId ? ldTimeline(leadId) : pj ? opps.flatMap(o => timelineFor(o.client_id, o.id)).sort((a, b) => b.at.localeCompare(a.at)) : timelineFor(clientId, oppId);
   const rows = all.filter(i => (!f.show || i.group === f.show) && inPeriod(i.at, f.period, f.from, f.to) && (!fq || (f.field ? [i[f.field]] : ACT_FIELDS.map(([k]) => i[k])).some(v => String(v || '').toLowerCase().includes(fq))));
-  const open = FUS().filter(x => x.status === 'open' && (leadId ? x.lead_id === leadId : pj ? pjIds.has(x.opp_id) : x.client_id === clientId && (oppId ? x.opp_id === oppId : true))).sort(fuSort);
+  const open = FUS().filter(x => x.status === 'open' && (leadId ? x.lead_id === leadId : pj ? pjIds.has(x.opp_id) : oppId ? x.opp_id === oppId : x.client_id === clientId)).sort(fuSort);   // F2 T-07: a challenge's follow-up is booked on the dealer, against this opportunity
   if (pj && !opps.length) return `<div class="stack" data-activity><section class="card stack-s" data-act-card><h3>Activity</h3><p class="small muted" data-act-empty>Nothing yet. Add an opportunity to this project; its calls, visits, messages, stage moves and files then show here.</p></section></div>`;
   const sel = (k, label, opts) => `<label class="field" style="min-width:150px"><span class="small muted">${label}</span><select class="input" data-af="${k}">${opts.map(([v, l]) => `<option value="${esc(v)}" ${f[k] === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></label>`;
   const logs = ACT_MANUAL.map(k => `<button class="btn sm" data-act="act-log" data-kind="${k}" data-client="${esc(clientId)}" data-opp="${esc(oppId || '')}"${leadId ? ` data-lead="${esc(leadId)}"` : ''}${pj && opps.length > 1 ? ` data-opps="${esc(opps.map(o => o.id).join(','))}"` : ''}>${k === 'note' ? '+ Note' : 'Log ' + (k === 'whatsapp' ? 'WhatsApp' : k === 'email' ? 'email' : 'a ' + k)}</button>`).join('');
@@ -4130,8 +4427,9 @@ const csvDownload = (name, head, lines) => {
 };
 /* ---- on the dealer's page */
 function dealerTabs(c) {
-  if (c.division === 'retail') return [['plan', 'Development plan']];   // R3b: a Big E dealer; the retail opportunities and dealer portal belong to EGO Premium
-  return [['leads', `Retail opportunities (${LEADS().filter(l => l.dealer_id === c.id).length})`], ['plan', 'Development plan'], ...(isOwner() ? [['portal', 'Dealer portal']] : [])];
+  const ro = ['rorders', `Retail orders (${OPSD().rorders.filter(o => o.ful_by === c.id).length})`];   // b3: the retail orders this dealer fulfils
+  if (c.division === 'retail') return [ro, ['plan', 'Development plan']];   // R3b: a Big E dealer; the retail opportunities and dealer portal belong to EGO Premium
+  return [['leads', `Retail opportunities (${LEADS().filter(l => l.dealer_id === c.id).length})`], ro, ['plan', 'Development plan'], ...(isOwner() ? [['portal', 'Dealer portal']] : [])];
 }
 const DEALER_TAB_BODY = {
   leads: c => { const ls = LEADS().filter(l => l.dealer_id === c.id);
@@ -4139,6 +4437,13 @@ const DEALER_TAB_BODY = {
       ${ls.length ? table(LEAD_HEAD(false), ls.map(l => leadRow(l, false))) : empty('No retail opportunity allocated to this dealer yet', 'Retail opportunities allocated to this dealer appear here, with where each has got to.')}</div>`; },
   plan: c => clientPlan(c),
   portal: c => clientPortal(c),
+  rorders: c => { EM.dro = EM.dro || { period: 'all' }; const all = OPSD().rorders.filter(o => o.ful_by === c.id), last = o => (o.extra || {}).dealer_at || o.created_at, days = Number(D.lists.rules.lead_escalate_days) || 2;
+    const age = o => Math.floor((Date.now() - Date.parse(last(o).endsWith('Z') ? last(o) : last(o).replace(' ', 'T') + 'Z')) / 864e5), stale = o => rfCur(o) !== 'Closed' && age(o) >= days;
+    const { html: fbar, rows } = filterBar(EM.dro, 'dro', { label: 'retail orders', rows: all, ph: 'Order or customer', text: o => `${o.ref} ${clientName(o.client_id)}`, dd: [['stage', 'Stage', 'Every stage', o => rfCur(o), null, DEALER_PATH]], date: o => o.created_at, dateWhat: 'When it was handed' });
+    const chs = o => { const a = rfChallenges(o), op = a.filter(x => x.status !== 'Resolved').length; return op ? `<span class="badge warn">${op} open</span>` : a.length ? `<span class="small muted">${a.length} resolved</span>` : ''; };
+    return `<div class="stack" data-dealer-rorders><p class="small muted" style="max-width:720px">Retail orders ${esc(c.name)} fulfils. ${all.filter(o => rfCur(o) !== 'Closed').length} open, ${all.filter(stale).length} with no update for ${days}+ days, ${all.filter(o => rfOpenCh(o)).length} with an open challenge.</p>${fbar}
+      ${rows.length ? table(['Order', 'Customer', ...(D.access.prices ? ['Value'] : []), 'Where it is', 'Handed on', 'Last dealer update', 'Challenges'], rows.map(o => ({ href: '#/order/' + o.id, cells: [`<b>${esc(o.ref)}</b><div class="small">${esc((oppOf(o) || { title: o.notes || '' }).title)}</div>`, `${esc(clientName(o.client_id))}<div class="small muted">${esc((CL()[o.client_id] || {}).city || '')}</div>`, ...(D.access.prices ? [inr0(o.total)] : []), `<span class="badge ${rfCur(o) === 'Closed' ? 'ok' : 'info'}">${esc(rfCur(o))}</span>`, ds(dayIST(o.created_at)), stale(o) ? `<span class="badge warn">${age(o)} days</span>` : whenTxt(last(o)), chs(o)] })))
+        : empty(all.length ? 'Nothing for this filter' : 'No retail order handed to this dealer yet', all.length ? 'Change or clear the filters above.' : 'Retail orders this dealer fulfils appear here, with where each has got to and any challenge.')}</div>`; },
 };
 /* an order request raised in the dealer portal says so on its opportunity */
 const portalRequestNote = o => { const x = o.extra || {}; return `<div class="callout" data-portal-request><b>Raised in the dealer portal</b> by ${esc(x.portal_user || 'the dealer')}: ${esc(x.request || '')}${x.boxes ? ` · ${num(x.boxes)} boxes` : ''}${(x.categories || []).length ? ` · ${esc(x.categories.join(', '))}` : ''}${x.need_by ? ` · needed by ${ds(x.need_by)}` : ''}</div>`; };
@@ -4381,22 +4686,26 @@ EM.VIEWS.project = arg => {
   if (!p) return `<div class="stack"><h1>Project not found</h1><p class="muted">It may have been deleted, or it is outside your view.</p><a class="btn" href="#/projects">Projects</a></div>`;
   const ops = pjOpps(p), pipe = PROJECT_PIPE[p.division], partner = pjPartner(p), sites = pjSites(p), P = D.access.prices;
   const free = (OPSD().sites || []).filter(x => x.division === p.division && !x.project_id);
-  const fields = showFields(PROJECT_FIELDS).filter(f => !['name', 'partner_id', 'notes'].includes(f.key));
+  const fields = showFields(PROJECT_FIELDS).filter(f => !['name', 'partner_id', 'architect_id', 'notes'].includes(f.key)), arch = p.architect_id ? CL()[p.architect_id] : null;
   return `<div class="stack">${crumbs(['Projects', '#/projects'], [p.name])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(p.name)}</h1>
       <div class="row"><span class="badge info plain">${esc(p.type)}</span><span class="badge plain">${esc(p.stage)}</span><span class="badge plain">${esc(pjCo(p.division))}</span><span class="small muted">${esc(p.ref || '')}</span></div>
       <p class="muted">${esc(p.city)}${p.address ? ' · ' + esc(p.address) : ''} · owner ${esc(staffName(p.owner_id))}</p></div>
       <div class="row"><button class="btn" data-act="pj-edit" data-id="${p.id}">Edit</button><button class="btn primary" data-act="opp-add" data-pipeline="${pipe}" data-project="${p.id}">+ New opportunity</button></div></div>
     ${recGrid(`<div class="grid g2"><section class="card stack-s"><h3>Details</h3>${kv(fields.map(f => [esc(f.label), showVal(f, p[f.key])]))}${p.notes ? `<p class="small" style="white-space:pre-line">${esc(p.notes)}</p>` : ''}${p.prices_hidden ? '<p class="small muted">Money is hidden for your role.</p>' : ''}</section>
-      <section class="card stack-s" data-pj-partner><h3>Project Partner</h3>${partner ? kv([['Dealer', CL()[partner.id] ? `<a href="#/client/${partner.id}">${esc(partner.name)}</a>` : esc(partner.name)], ['Project Partner', esc(partner.project_partner || ((CL()[partner.id] || {}).extra || {}).project_partner || '')], ['Capability', esc(partner.partner_capability || ((CL()[partner.id] || {}).extra || {}).partner_capability || '') || NOTSET], ['City', esc(partner.city || '')]])
-        : `<p class="muted small">No Project Partner yet. Only dealers marked Yes or Potential as Project Partner (on the dealer's page) are offered.</p><div class="row"><button class="btn sm" data-act="pj-edit" data-id="${p.id}">Choose the Project Partner</button></div>`}</section></div>
+      <section class="card stack-s" data-pj-partner><div class="row between"><h3>Dealer and architect</h3>${isBothView() ? '' : `<button class="btn sm" data-act="pj-links" data-id="${p.id}">Change</button>`}</div>
+        ${kv([['Project Partner', partner ? `${CL()[partner.id] ? `<a href="#/client/${partner.id}">${esc(partner.name)}</a>` : esc(partner.name)} <span class="small muted">${esc([partner.city, 'Dealer', partner.project_partner || ((CL()[partner.id] || {}).extra || {}).project_partner || ''].filter(Boolean).join(' · '))}</span>` : NOTSET],
+          ['Capability', partner ? esc(partner.partner_capability || ((CL()[partner.id] || {}).extra || {}).partner_capability || '') || NOTSET : NOTSET],
+          ['Architect', arch ? `<a href="#/client/${arch.id}">${esc(arch.name)}</a>${arch.mobile ? ` <span class="small muted">${esc(fmtMobile(arch.mobile))}</span>` : ''}` : NOTSET]])}
+        <p class="small muted">The Project Partner is offered first when a site of this project is handed to a dealer.</p></section></div>
     <section class="card stack-s" data-pj-opps><div class="row between"><h3>Opportunities (${ops.length})</h3><button class="btn sm primary" data-act="opp-add" data-pipeline="${pipe}" data-project="${p.id}">+ New opportunity</button></div>
       <p class="small muted">One per tower, phase or product, in the ${esc(PIPELINES[pipe].label.toLowerCase())} pipeline. "New opportunity" fills in this project.</p>
-      ${ops.length ? table(['Opportunity', 'Client', 'Stage', ...(P ? ['Value'] : []), 'Owner'], ops.map(o => ({ href: `#/opp/${o.id}`, cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(o.ref || '')}</div>`, esc(clientName(o.client_id)), stageBadge(o.stage), ...(P ? [money(o.value)] : []), esc(staffName(o.owner_id))] }))) : '<p class="muted small">No opportunity linked yet.</p>'}</section>
+      ${ops.length ? table(['Opportunity', 'Client', 'Stage', ...(P ? ['Value'] : []), 'Owner'], ops.map(o => ({ href: `#/opp/${o.id}`, cells: [`<a href="#/opp/${o.id}" data-pj-opp><b>${esc(o.title)}</b></a><div class="small muted">${esc(o.ref || '')}</div>`, esc(clientName(o.client_id)), stageBadge(o.stage), ...(P ? [money(o.value)] : []), esc(staffName(o.owner_id))] }))) : '<p class="muted small">No opportunity linked yet.</p>'}</section>
     <section class="card stack-s" data-pj-contacts><div class="row between"><h3>Contacts by role (${(p.contacts || []).length})</h3><button class="btn sm" data-act="pj-edit" data-id="${p.id}">Add or change contacts</button></div>
       ${(p.contacts || []).length ? table(['Role', 'Name', 'Mobile', 'Email'], p.contacts.map(c => [esc(c.role), `<b>${esc(c.name)}</b>`, esc(fmtMobile(c.mobile)), esc(c.email || '')])) : '<p class="muted small">No contact yet: add the owner, purchase manager, project manager, architect and contractor.</p>'}</section>
     <section class="card stack-s" data-pj-sites><div class="row between"><h3>Installation sites (${sites.length})</h3>${isBothView() ? '' : `<button class="btn sm primary" data-act="site-add" data-project="${p.id}">+ New installation site</button>`}</div>
-      ${sites.length ? table(['Site', 'Step', 'Installed by', 'Address', ''], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.name)}</b></a><div class="small muted">${esc(x.ref || '')}</div>`, esc(x.step), esc(installedByTxt(x)), esc(x.address || ''), isBothView() ? '' : `<button class="btn sm ghost" data-act="pj-site" data-id="${p.id}" data-site="${x.id}" data-unlink="1">Unlink</button>`])) : '<p class="muted small">No installation site linked yet.</p>'}
+      ${sites.length ? table(['Site', 'Step', 'Fulfilled by', 'Project order', 'Address', ''], sites.map(x => [`<a href="#/site/${x.id}"><b>${esc(x.name)}</b></a><div class="small muted">${esc(x.ref || '')}</div>`, esc(x.step),
+        !x.ful_by ? '<span class="badge warn">Choose</span>' : isDealerSite(x) ? esc(rfDealer(x).name) : 'EGO team', (o => o && o.okind === 'project' ? `<a href="#/order/${o.id}">${esc(o.ref)}</a>` : '')(siteOrder(x)), esc(x.address || ''), isBothView() ? '' : `<button class="btn sm ghost" data-act="pj-site" data-id="${p.id}" data-site="${x.id}" data-unlink="1">Unlink</button>`])) : '<p class="muted small">No installation site linked yet.</p>'}
       ${free.length ? `<div class="row" style="align-items:flex-end"><label class="field" style="min-width:260px"><span class="small muted">Link a site already added</span><select class="input" id="pj-site-pick"><option value="">Choose</option>${free.map(x => `<option value="${x.id}">${esc(x.name)} · ${esc(x.step)}</option>`).join('')}</select></label><button class="btn sm" data-act="pj-site" data-id="${p.id}">Link it</button></div>` : ''}</section>
     ${projectSamples(p)}
     <section class="stack-s"><h3>Files</h3>${filesBox({ id: 'pj', project: p.id, types: ['Drawing', 'BOQ', 'Quotation', 'Site photo', 'Agreement', 'Other'], docs: D.documents.filter(d => d.project_id === p.id), canAdd: !isBothView(), title: 'Add files to this project', note: 'Drawings, BOQ, quotations, site photos: one or many at a time. Each opens in the browser, downloads and shares.', emptyTitle: 'No files on this project yet' })}</section>`, activityPanel({ opps: ops }))}</div>`;
@@ -4423,6 +4732,17 @@ EM.ACTIONS['pj-add'] = () => openProjectForm(null);
 EM.ACTIONS['pj-edit'] = el => openProjectForm(PJS().find(x => x.id === el.dataset.id));
 EM.ACTIONS['pj-c-add'] = () => { qs('#pj-contacts').insertAdjacentHTML('beforeend', pjContactLine(qs('#pj-contacts').children.length)); };
 EM.ACTIONS['pj-c-del'] = el => el.closest('[data-pj-contact]').remove();
+/* b4: the project's Project Partner dealer and Architect, set with type-to-search (only Yes or Potential partners of this company) */
+EM.ACTIONS['pj-links'] = el => { const p = PJS().find(x => x.id === el.dataset.id), pc = String(p.city || '').toLowerCase();
+  const dl = DDIR().filter(d => d.division === p.division && PARTNER_OK.includes(d.project_partner)).sort((a, b) => (String(b.city || '').toLowerCase() === pc) - (String(a.city || '').toLowerCase() === pc) || a.name.localeCompare(b.name));
+  const ar = D.clients.filter(c => ['architect', 'design_firm'].includes(c.kind) && (c.division === p.division || c.division === 'both')).sort((a, b) => a.name.localeCompare(b.name));
+  EM.modal(`<h2>Dealer and architect on ${esc(p.name)}</h2><div class="fgrid" style="margin-top:12px">
+    <div class="field span2"><label for="pl-d">Project Partner dealer</label><select class="input" id="pl-d" data-keep-order><option value="">No Project Partner</option>${dl.map(d => `<option value="${esc(d.id)}" data-sub="${esc([d.city, 'Dealer', 'Project Partner ' + d.project_partner].filter(Boolean).join(' · '))}" ${p.partner_id === d.id ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></div>
+    <div class="field span2"><label for="pl-a">Architect</label><select class="input" id="pl-a" data-keep-order><option value="">No architect</option>${ar.map(c => `<option value="${esc(c.id)}" data-sub="${esc([kindLabel(c.kind), c.city].filter(Boolean).join(' · '))}" ${p.architect_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select></div></div>
+    ${errBox('pl-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="pj-links-save" data-id="${p.id}">Save</button><button class="btn" data-act="close-modal">Cancel</button></div>`);};
+EM.ACTIONS['pj-links-save'] = async el => { const p = PJS().find(x => x.id === el.dataset.id); busy(el, true);
+  try { const r = await API('POST', '/api/projects/' + p.id, { ...p, partner_id: qs('#pl-d').value, architect_id: qs('#pl-a').value }); D.projects = PJS(); upsertLocal(D.projects, r.project); EM.closeModal(); EM.toast('<b>Dealer and architect saved</b>'); EM.rerender(); }
+  catch (x) { busy(el, false); showErr('pl-err', x.errors || x.message); } };
 EM.ACTIONS['pj-save'] = async el => {
   const form = qs('#pjf'), id = form.dataset.id, v = readForm(form, PROJECT_FIELDS);
   v.contacts = [...form.querySelectorAll('[data-pj-contact]')].map(r => Object.fromEntries([...r.querySelectorAll('[data-k]')].map(x => [x.dataset.k, x.value.trim()])));

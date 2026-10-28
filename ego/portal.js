@@ -53,6 +53,7 @@
   const L = {
     orders: () => { const f = F('orders'); return B.orders.filter(o => (!f.st || o.ful_stage === f.st) && inPeriod(o.created_at, f) && has(f, `${o.ref} ${o.ful_stage} ${B.lines.filter(l => l.order_id === o.id).map(l => l.product).join(' ')}`)); },
     files: () => { const f = F('files'); return B.documents.filter(d => (!f.st || d.type === f.st) && inPeriod(d.doc_date || d.created_at, f) && has(f, `${d.name} ${d.doc_no} ${(B.orders.find(o => o.id === d.order_id) || {}).ref || ''}`)); },
+    fulfil: () => { const f = F('fulfil'), want = f.st || 'Open'; return (B.fulfil || []).filter(o => (want === 'All' || (want === 'Closed') === (o.step === 'Closed')) && (!f.kind || (f.kind === 'site') === (o.kind === 'site')) && inPeriod(o.handed_at, f) && has(f, `${o.ref} ${o.customer} ${o.city} ${o.area} ${o.site || ''} ${o.project || ''} ${o.lines.map(l => l.product).join(' ')}`)); },
     leads: () => { const f = F('leads'); return B.leads.filter(l => (!f.st || l.status === f.st) && inPeriod(l.handed_at, f) && has(f, `${l.ref} ${l.name} ${l.mobile} ${l.city} ${l.area} ${l.notes}`)); },
     schemes: () => { const f = F('schemes'); return B.schemes.filter(sc => (!f.st || schState(sc) === f.st) && inPeriod(sc.start_on, f) && has(f, `${sc.name} ${sc.reward}`)); },
     requests: () => { const f = F('requests'); return [...B.requests.map(r => ({ k: 'Order request', ref: r.ref, title: r.request || r.title, status: r.stage, at: r.created_at })), ...B.complaints.map(c => ({ k: 'Complaint', id: c.id, ref: c.ref, title: `${c.type}: ${c.description || ''}`, status: c.status, at: c.created_at, resolution: c.resolution, install: [c.batch ? `Batch or lot ${c.batch}` : '', c.installed_by ? `Installed by ${(B.lists.installed_by || {})[c.installed_by] || c.installed_by}${c.installer_name ? ` (${c.installer_name})` : ''}` : ''].filter(Boolean).join(' · ') }))]
@@ -60,7 +61,7 @@
     history: () => { const f = F('history'); return (S.hist || []).filter(h => (!f.st || histKind(h) === f.st) && inPeriod(h.at, f) && has(f, h.summary)); },
   };
   const schState = sc => sc.settled || sc.status === 'Settled' ? 'Settled' : today() < sc.start_on ? 'Starting soon' : today() > sc.end_on ? 'Ended' : 'Running';
-  const histKind = h => h.action.startsWith('lead') ? 'Leads' : h.action === 'portal_password_own' ? 'Your account' : 'Requests and complaints';
+  const histKind = h => h.action.startsWith('lead') || h.action === 'portal_ful' ? 'Orders to fulfil' : h.action === 'portal_password_own' ? 'Your account' : 'Requests and complaints';
 
   /* ---- screens */
   const tile = (label, value, sub, href) => `<a class="card pt-tile" href="${href}"><span class="small muted">${esc(label)}</span><b class="num">${value}</b>${sub ? `<span class="small muted">${sub}</span>` : ''}</a>`;
@@ -72,12 +73,29 @@
     ${(l.need || []).length ? `<div class="small">${esc(l.need.join(', '))}${l.sqft ? ` · ${num(l.sqft)} sq ft` : ''}</div>` : ''}${l.notes ? `<div class="small muted">${esc(l.notes)}</div>` : ''}
     <div class="small muted">${esc(l.ref)} · from EGO on ${ds(l.handed_at)} · ${closedL(l) ? (l.status === LOST() && l.lost_reason ? esc(l.lost_reason) : '') : `${ageDays(l.status_at)} day${ageDays(l.status_at) === 1 ? '' : 's'} since the last update`}</div>
     ${closedL(l) ? '' : `<button class="btn sm primary" data-pa="lead" data-id="${l.id}">Update</button>`}</div>`;
+  /* b3 (27 Oct): Orders to fulfil. Retail orders EGO handed to this dealer: confirm, deliver, close, and a challenge when something goes wrong */
+  /* b4 (28 Oct): installation sites EGO hands this dealer sit on the same page, with their own five steps (Installed before Closed) */
+  const DP = o => o && o.kind === 'site' ? B.site_path || ['Order confirmed', 'Confirmed by dealer', 'Delivered', 'Installed', 'Closed'] : B.dealer_path || ['Order confirmed', 'Confirmed by dealer', 'Delivered', 'Closed'], fulOpen = () => (B.fulfil || []).filter(o => o.step !== 'Closed');
+  const fulNext = o => ({ 'Order confirmed': 'Confirm order', 'Confirmed by dealer': 'Mark delivered', Delivered: o.kind === 'site' ? 'Mark installed' : 'Close order', Installed: o.kind === 'site' ? 'Close' : '' })[o.step] || '';
+  const chOk = o => o.step !== 'Closed' || !o.closed_at || Date.now() - msOf(o.closed_at) <= 7 * 864e5;
+  const fulCard = o => { const S2 = DP(o), i = S2.indexOf(o.step), oc = o.challenges.filter(c => c.status !== 'Resolved'), site = o.kind === 'site';
+    return `<div class="card pt-item" data-fulfil="${o.id}" data-kind="${site ? 'site' : 'order'}"><div class="row between"><div><b>${esc(o.ref)}</b><div class="small muted">${site ? 'Installation site' : 'Retail order'}</div></div><span class="badge ${o.step === 'Closed' ? 'ok' : 'info'}">${esc(o.step)}</span></div>
+    <div class="pt-steps" aria-label="Step ${i + 1} of ${S2.length}">${S2.map((s2, j) => `<span class="${j < i ? 'done' : j === i ? 'cur' : ''}" title="${esc(s2)}"></span>`).join('')}</div>
+    ${site ? `<div class="small"><b>${esc(o.project || o.site)}</b>${o.project && o.site !== o.project ? ', ' + esc(o.site) : ''}${o.address ? ' · ' + esc(o.address) : ''}</div>` : ''}
+    <div class="small"><b>${esc(o.customer || '')}</b>${o.mobile ? ` · <a href="tel:${esc(o.mobile)}">${esc(o.mobile)}</a>` : ''}${o.city ? ' · ' + esc(o.city) : ''}${o.area ? ', ' + esc(o.area) : ''}</div>
+    ${o.lines.map(l => `<div class="small" data-p-line><b>${esc(l.product || 'Design')}</b>: ${l.unit && l.unit !== 'sqft' ? `${num(l.qty)} ${l.unit === 'rft' ? 'rft' : 'pieces'}` : `${num(l.sqft || 0)} sq ft · ${num(l.boxes)} boxes`}</div>`).join('')}
+    <div class="small muted">From EGO on ${ds(o.handed_at)}${o.contact ? ` · your contact ${esc(o.contact)}` : ''}${o.expected ? ` · expected ${ds(o.expected)}` : ''}</div>
+    ${oc.length ? `<div class="small"><span class="badge warn">${oc.length} open challenge${oc.length === 1 ? '' : 's'}</span> ${esc(oc[0].text.slice(0, 60))}</div>` : ''}
+    ${site ? siteFiles(o.id) : ''}
+    <div class="row" style="gap:8px">${fulNext(o) ? `<button class="btn sm primary" data-pa="ful-next" data-id="${o.id}">${fulNext(o)}</button>` : ''}${chOk(o) ? `<button class="btn sm ghost" data-pa="ch-add" data-id="${o.id}">+ Challenge</button>` : ''}</div></div>`; };
   const stageLine = o => { const FS = B.lists.fulfilment_stages || [], i = FS.indexOf(o.ful_stage); return `<div class="pt-steps" aria-label="Stage ${i + 1} of ${FS.length}">${FS.map((s, j) => `<span class="${j < i ? 'done' : j === i ? 'cur' : ''}" title="${esc(s)}"></span>`).join('')}</div><div class="small"><b>${esc(o.ful_stage || 'Confirmed')}</b> <span class="muted">· step ${Math.max(1, i + 1)} of ${FS.length}</span></div>`; };
   const fileRow = d => `<div class="pt-file"><div><b>${esc(d.type)}</b> ${esc(d.doc_no || '')}<div class="small muted">${esc(d.name)}${d.doc_date ? ' · ' + ds(d.doc_date) : ''}${d.amount != null ? ' · ' + inr(d.amount) : ''}</div></div>
     <div class="row" style="gap:6px;flex-wrap:nowrap" data-file-acts><button class="btn sm" data-pa="view" data-id="${d.id}">View</button><button class="btn sm ghost" data-pa="dl" data-id="${d.id}">Download</button><button class="btn sm ghost" data-pa="share" data-id="${d.id}">Share</button></div></div>`;
   /* R5: the photos on a complaint, each to view, download and share */
   const cmpFiles = id => { const fs = (B.complaint_files || []).filter(d => d.complaint_id === id); return fs.length ? `<div class="stack-s" data-pc-photos="${id}"><div class="small"><b>${fs.length} photo${fs.length === 1 ? '' : 's'}</b></div>${fs.map(fileRow).join('')}</div>` : ''; };
-  const docOf = id => B.documents.find(x => x.id === id) || (B.complaint_files || []).find(x => x.id === id);
+  const docOf = id => B.documents.find(x => x.id === id) || (B.complaint_files || []).find(x => x.id === id) || (B.site_files || []).find(x => x.id === id);
+  /* B4-F1 item 5: the installation photos on a site, each to View, Download and Share */
+  const siteFiles = id => { const fs = (B.site_files || []).filter(d => d.site_id === id); return fs.length ? `<div class="stack-s" data-site-photos="${id}"><div class="small"><b>${fs.length} installation photo${fs.length === 1 ? '' : 's'}</b></div>${fs.map(fileRow).join('')}</div>` : ''; };
   const orderCard = o => { const ls = B.lines.filter(l => l.order_id === o.id), fs = B.documents.filter(d => d.order_id === o.id);
     return `<div class="card pt-item" data-order="${o.id}"><div class="row between"><b>${esc(o.ref)}</b><span class="small muted">${ds(o.created_at)}</span></div>${stageLine(o)}
       ${ls.map(l => `<div class="small" data-p-line><b>${esc(l.product || 'Design')}</b>${l.code ? ' (' + esc(l.code) + ')' : ''}: <span data-p-boxes="${Number(l.boxes) || 0}">${esc(qtyText(l))}</span> · rate ${inr(l.rate)} / ${rateUnit(l)} · <span data-p-amt="${Number(l.amount) || 0}">${inr(l.amount)}</span> before GST</div>`).join('')}
@@ -94,8 +112,8 @@
     home() {
       const open = B.orders.filter(o => o.ful_stage !== LAST()), owed = B.orders.filter(o => o.invoiced_at && due(o) > 0.5), run = B.schemes.filter(sc => schState(sc) === 'Running'), best = run.slice().sort((a, b) => b.pct - a.pct)[0], c = B.dealer.contact;
       return `<div class="stack"><div class="pt-head"><div><h1>Hello, ${esc(B.user.name.split(' ')[0])}</h1><p class="small muted">${esc(B.dealer.name)} · ${esc(B.dealer.city || '')}</p></div></div>
-        <div class="pt-tiles">${tile('Orders on the way', num(open.length), open.length ? 'tap to see where each is' : 'nothing open', '#/orders')}${tile('To pay', inr(owed.reduce((a, o) => a + due(o), 0)), `${num(owed.length)} invoice${owed.length === 1 ? '' : 's'}`, '#/orders')}${tile('Leads to call', num(openLeads().length), 'from EGO, update each one', '#/leads')}${tile('Scheme progress', best ? best.pct + '%' : num(run.length), best ? esc(best.name) : 'no scheme running', '#/schemes')}</div>
-        ${openLeads().length ? `<section class="stack-s"><h3>Leads waiting for you</h3>${openLeads().slice(0, 3).map(leadCard).join('')}${openLeads().length > 3 ? `<a class="small" href="#/leads">${openLeads().length - 3} more</a>` : ''}</section>` : ''}
+        <div class="pt-tiles">${tile('Orders on the way', num(open.length), open.length ? 'tap to see where each is' : 'nothing open', '#/orders')}${tile('To pay', inr(owed.reduce((a, o) => a + due(o), 0)), `${num(owed.length)} invoice${owed.length === 1 ? '' : 's'}`, '#/orders')}${tile('To fulfil', num(fulOpen().length), 'retail orders from EGO', '#/fulfil')}${tile('Scheme progress', best ? best.pct + '%' : num(run.length), best ? esc(best.name) : 'no scheme running', '#/schemes')}</div>
+        ${fulOpen().length ? `<section class="stack-s"><h3>Orders to fulfil</h3>${fulOpen().slice(0, 3).map(fulCard).join('')}${fulOpen().length > 3 ? `<a class="small" href="#/fulfil">${fulOpen().length - 3} more</a>` : ''}</section>` : ''}
         ${B.plans.map(planCard).join('')}
         <div class="pt-actions"><button class="btn primary" data-pa="request">Raise an order request</button><button class="btn" data-pa="complaint">Raise a complaint</button></div>
         ${c ? `<div class="card stack-s"><h3>Your contact at EGO Premium</h3><p><b>${esc(c.name)}</b>${c.mobile ? ` · <a href="tel:${esc(c.mobile)}">${esc(c.mobile)}</a>` : ''}</p></div>` : ''}</div>`;
@@ -108,7 +126,18 @@
       return `<div class="stack">${head('Your orders', 'Where each order is, what it holds, and what is still to pay.')}${tabs}${filterBar('orders', B.lists.fulfilment_stages, 'Ordered')}
         ${os.length ? os.map(orderCard).join('') : empty(B.orders.length ? 'Nothing for this filter' : 'No orders yet', 'Orders confirmed with EGO Premium appear here, with where each one is.')}</div>`;
     },
-    leads() {
+    fulfil(arg) {
+      const tabs = B.leads.length ? `<nav class="subtabs"><a href="#/fulfil" ${arg !== 'older' ? 'class="on" aria-current="page"' : ''}>Orders to fulfil (${fulOpen().length})</a><a href="#/fulfil/older" ${arg === 'older' ? 'class="on" aria-current="page"' : ''}>Older leads (${B.leads.length})</a></nav>` : '';
+      if (arg === 'older') { const ls = L.leads(); return `<div class="stack">${head('Orders to fulfil', 'Older leads EGO passed you before retail orders. They stay here to read.')}${tabs}${filterBar('leads', B.lists.lead_statuses, 'Given')}
+        ${ls.length ? ls.map(l => leadCard(l).replace(/<button class="btn sm primary" data-pa="lead"[^>]*>Update<\/button>/, '')).join('') : empty('Nothing for this filter', 'Change or clear the filters above.')}</div>`; }
+      const os = L.fulfil();
+      const fk = F('fulfil').kind || '', hasSites = (B.fulfil || []).some(o => o.kind === 'site');
+      const kindSel = hasSites ? `<select class="input" data-pk="kind" aria-label="Kind"><option value="">Everything</option><option value="order" ${fk === 'order' ? 'selected' : ''}>Retail orders</option><option value="site" ${fk === 'site' ? 'selected' : ''}>Installation sites</option></select>` : '';
+      return `<div class="stack">${head('Orders to fulfil', hasSites ? 'Retail orders and installation sites EGO handed to you. Confirm, deliver, install, close, and tell us if anything goes wrong.' : 'Retail orders EGO handed to you. Confirm, deliver, close, and tell us if anything goes wrong.')}${tabs}${filterBar('fulfil', ['Closed', 'All'], 'Handed').replace('>Every status<', '>Open<').replace('<select class="input" data-pk="period"', kindSel + '<select class="input" data-pk="period"')}
+        ${os.length ? os.map(fulCard).join('') : (B.fulfil || []).length ? (fk === 'site' ? empty('No installation sites to fulfil', 'When EGO hands you a project site it shows here. Confirm it, deliver, install and close it from this page.') : empty('Nothing for this filter', 'Change or clear the filters above.')) : empty('No orders to fulfil', 'When EGO hands you a retail order it shows here. Confirm it, deliver it and close it from this page.')}</div>`;
+    },
+    leads() { return V.fulfil(''); },
+    leadsOld() {
       const ls = L.leads();
       return `<div class="stack">${head('Leads from EGO', 'Customers near you who asked EGO about flooring. Call them, then press Update so EGO knows where each has got to.')}${filterBar('leads', B.lists.lead_statuses, 'Given')}
         ${ls.length ? ls.map(leadCard).join('') : empty(B.leads.length ? 'Nothing for this filter' : 'No leads yet', 'When EGO passes you an enquiry, it appears here and in the bell.')}</div>`;
@@ -127,7 +156,7 @@
     history() {
       if (!S.hist) { API('GET', '/api/portal/history').then(r => { S.hist = r.history; render(); }).catch(e => toast(esc(e.message))); return '<p class="muted">Loading the history…</p>'; }
       const hs = L.history();
-      return `<div class="stack"><div class="pt-head"><div><h1>History</h1><p class="small muted">What happened on your leads, requests, complaints and account, and when.</p></div></div>${filterBar('history', ['Leads', 'Requests and complaints', 'Your account'], 'When')}
+      return `<div class="stack"><div class="pt-head"><div><h1>History</h1><p class="small muted">What happened on your leads, requests, complaints and account, and when.</p></div></div>${filterBar('history', ['Orders to fulfil', 'Requests and complaints', 'Your account'], 'When')}
         ${hs.length ? hs.map(h => `<div class="card pt-item"><div class="small muted">${ds(h.at)} ${new Date(msOf(h.at)).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })}</div><div class="small">${esc(h.summary)}</div></div>`).join('') : empty('Nothing yet', 'Updates to your leads, and the requests and complaints you raise, are listed here.')}</div>`;
     },
     bell() {
@@ -135,7 +164,7 @@
       return `<div class="stack"><div class="pt-head"><div><h1>Notifications</h1></div></div>${B.notifications.length ? B.notifications.map(n => `<a class="card pt-item${!B.seen_at || n.created_at > B.seen_at ? ' is-new' : ''}" href="${esc(n.link && n.link.startsWith('#/') ? n.link : '#/home')}"><b>${esc(n.title)}</b><div class="small">${esc(n.body)}</div><div class="small muted">${ds(n.created_at)}</div></a>`).join('') : empty('Nothing yet', 'New leads from EGO and other news for you appear here.')}</div>`;
     },
   };
-  const NAV = [['home', 'Home'], ['orders', 'Orders'], ['leads', 'Leads'], ['schemes', 'Schemes'], ['requests', 'Requests']];
+  const NAV = [['home', 'Home'], ['orders', 'Orders'], ['fulfil', 'To fulfil'], ['schemes', 'Schemes'], ['requests', 'Requests']];
   const route = () => { const [, r = 'home', arg = ''] = (location.hash || '#/home').split('/'); return { r: V[r] ? r : 'home', arg }; };
   function paintTop() {
     qs('#pt-top').innerHTML = `<div class="row" style="gap:8px;min-width:0"><svg viewBox="0 0 557 201" height="22" role="img" aria-label="EGO"><path d="M0 0H194V85H27V117H194V144H0Z M27 29V59H167V29Z M204 0H374V201H204V174H347V144H204Z M231 29V117H347V29Z M386 0H557V144H386Z M411 29V117H530V29Z" fill="#FB0B18" fill-rule="evenodd"/></svg><b class="pt-name">${esc(B.dealer.name)}</b></div>
@@ -145,13 +174,13 @@
     const { r, arg } = route();
     paintTop();
     qs('#pt-view').innerHTML = V[r](arg);
-    qs('#pt-nav').innerHTML = NAV.map(([k, l]) => `<a href="#/${k}" ${k === r ? 'aria-current="page" class="on"' : ''}>${esc(l)}${k === 'leads' && openLeads().length ? ` <span class="badge info">${openLeads().length}</span>` : ''}</a>`).join('');
+    qs('#pt-nav').innerHTML = NAV.map(([k, l]) => `<a href="#/${k}" ${k === r || (k === 'fulfil' && r === 'leads') ? 'aria-current="page" class="on"' : ''}>${esc(l)}${k === 'fulfil' && fulOpen().length ? ` <span class="badge info">${fulOpen().length}</span>` : ''}</a>`).join('');
   }
 
   /* ---- modals */
   function modal(html) { const o = qs('#overlay'); o.innerHTML = `<div class="modal pt-modal" role="dialog" aria-modal="true">${html}</div>`; o.classList.add('on'); }
   const closeModal = () => { const o = qs('#overlay'); o.classList.remove('on'); o.innerHTML = ''; };
-  const err = (id, e) => { const el = qs('#' + id); if (el) el.textContent = (e.errors && e.errors.length ? e.errors.join('. ') : e.message) || 'Something went wrong.'; };
+  const err = (id, e) => { const el = qs('#' + id); if (el) el.textContent = /failed to fetch|networkerror|load failed/i.test(e.message || '') ? 'Not saved. Check your signal and try again. Nothing changed.' : (e.errors && e.errors.length ? e.errors.join('. ') : e.message) || 'Something went wrong.'; };   // b3: a lost signal in plain words
   const sel = (id, label, opts, req) => `<div class="field"><label for="${id}">${esc(label)}${req ? ' *' : ''}</label><select class="input" id="${id}"><option value="">Choose</option>${opts.map(o => `<option>${esc(o)}</option>`).join('')}</select></div>`;
   const sendForm = async (btn, path, fd, ok, errId) => { btn.disabled = true; try { B = await API('POST', path, fd, true); S.hist = null; closeModal(); toast(ok); render(); } catch (e) { btn.disabled = false; err(errId, e); } };
   const send = async (btn, path, body, ok, errId) => { btn.disabled = true; try { B = await API('POST', path, body); S.hist = null; closeModal(); toast(ok); render(); } catch (e) { btn.disabled = false; err(errId, e); } };
@@ -162,11 +191,37 @@
     csv: el => { const k = el.dataset.k;
       if (k === 'orders') csv('EGO my orders', ['Order', 'Ordered on', 'Where it is', 'Total (Rs)', 'Paid (Rs)', 'Due (Rs)', 'Invoiced on'], L.orders().map(o => [o.ref, dayOf(o.created_at), o.ful_stage, o.total, o.paid, due(o), dayOf(o.invoiced_at)]));
       if (k === 'files') csv('EGO my PI and invoices', ['What', 'Number', 'Date', 'Amount (Rs)', 'Order', 'File'], L.files().map(d => [d.type, d.doc_no, d.doc_date, d.amount ?? '', (B.orders.find(o => o.id === d.order_id) || {}).ref || '', d.name]));
+      if (k === 'fulfil') csv('EGO orders to fulfil', ['Order', 'Handed on', 'Customer', 'Mobile', 'City', 'Step', 'Expected', 'Open challenges'], L.fulfil().map(o => [o.ref, dayOf(o.handed_at), o.customer, o.mobile, o.city, o.step, o.expected, o.challenges.filter(c => c.status !== 'Resolved').length]));
       if (k === 'leads') csv('EGO my leads', ['Number', 'Given on', 'Name', 'Mobile', 'City', 'Area', 'Wants', 'Status', 'Lost reason', 'Last update'], L.leads().map(l => [l.ref, dayOf(l.handed_at), l.name, l.mobile, l.city, l.area, (l.need || []).join(', '), l.status, l.lost_reason, dayOf(l.status_at)]));
       if (k === 'schemes') csv('EGO my schemes', ['Scheme', 'From', 'To', 'Target (Rs)', 'Done (Rs)', '%', 'Reward', 'Status'], L.schemes().map(sc => [sc.name, sc.start_on, sc.end_on, sc.target, sc.achieved, sc.pct, sc.reward, schState(sc)]));
       if (k === 'requests') csv('EGO my requests', ['Kind', 'Number', 'What', 'Status', 'Raised on'], L.requests().map(x => [x.k, x.ref, x.title, x.status, dayOf(x.at)]));
       if (k === 'history') csv('EGO my history', ['When', 'What'], L.history().map(h => [h.at, h.summary]));
     },
+    'ful-next': el => { const o = B.fulfil.find(x => x.id === el.dataset.id), to = DP(o)[DP(o).indexOf(o.step) + 1], site = o.kind === 'site';
+      const body = to === 'Confirmed by dealer' ? `<h2>Confirm ${esc(o.ref)}</h2><p class="small muted">You will deliver this to ${esc(o.customer || 'the customer')}. EGO sees it at once.</p><div class="field"><label for="pf-exp">Expected delivery *</label><input class="input" type="date" id="pf-exp" min="${today()}"></div>`
+        : to === 'Delivered' ? `<h2>Delivered ${esc(o.ref)}?</h2><div class="field"><label for="pf-on">Delivered on *</label><input class="input" type="date" id="pf-on" max="${today()}" value="${today()}"></div>`
+        : to === 'Installed' ? `<h2>Installed ${esc(o.ref)}?</h2><div class="field"><label for="pf-on">Installed on *</label><input class="input" type="date" id="pf-on" max="${today()}" value="${today()}"></div>
+          <div class="field"><label for="pf-ph">Installation photos (optional): one or many, up to 10, 25 MB each</label><input class="input" id="pf-ph" type="file" multiple accept="image/*,application/pdf"></div>`
+        : site ? `<h2>Close ${esc(o.ref)}?</h2><p class="small muted">It is installed, the customer has signed off and nothing is pending. You cannot reopen it.</p>`
+        : `<h2>Close ${esc(o.ref)}?</h2><p class="small muted">The customer has everything and nothing is pending. You cannot reopen it.</p>`;
+      modal(`<form class="stack" onsubmit="return false">${body}<div class="field"><label for="pf-note">Note</label><input class="input" id="pf-note" maxlength="300" placeholder="Optional"></div>
+        <div class="small err" id="pf-err" role="alert"></div><div class="row"><button class="btn primary" data-pa="ful-go" data-id="${o.id}" data-to="${esc(to)}">${to === 'Confirmed by dealer' ? 'Confirm' : to === 'Delivered' || to === 'Installed' ? 'Save' : site ? 'Close' : 'Close order'}</button><button class="btn" data-pa="close">Cancel</button></div></form>`); },
+    'ful-go': el => { const o = B.fulfil.find(x => x.id === el.dataset.id), b = { from: o && o.step, to: el.dataset.to, note: qs('#pf-note').value };
+      if (qs('#pf-exp')) { b.expected = qs('#pf-exp').value; if (!b.expected) return err('pf-err', { message: 'Pick the date you expect to deliver.' }); }
+      if (qs('#pf-on')) { b.on = qs('#pf-on').value; if (!b.on) return err('pf-err', { message: b.to === 'Installed' ? 'Pick the date it was installed.' : 'Pick the date it was delivered.' }); }
+      /* B4-F1 item 5: the photos go up first; if they fail the step is not taken and the person is told */
+      const ph = qs('#pf-ph') ? [...qs('#pf-ph').files] : [];
+      if (ph.length > 10) return err('pf-err', { message: 'Up to 10 photos at a time.' });
+      const big = ph.find(f => f.size > 25 * 1024 * 1024); if (big) return err('pf-err', { message: `${big.name} is over 25 MB.` });
+      if (ph.length) return (async () => { el.disabled = true; const fd = new FormData(); ph.forEach(f => fd.append('file', f));
+        try { B = await API('POST', `/api/portal/fulfil/${el.dataset.id}/photos`, fd, true); } catch (e) { el.disabled = false; return err('pf-err', { message: 'The photos did not upload, so it is not marked installed yet. ' + e.message }); }
+        return send(el, '/api/portal/fulfil/' + el.dataset.id, b, `<b>Saved with ${ph.length} photo${ph.length === 1 ? '' : 's'}.</b> EGO can see it.`, 'pf-err'); })();
+      return send(el, '/api/portal/fulfil/' + el.dataset.id, b, '<b>Saved.</b> EGO can see it.', 'pf-err'); },
+    'ch-add': el => { const o = B.fulfil.find(x => x.id === el.dataset.id);
+      modal(`<form class="stack" onsubmit="return false"><h2>Something went wrong on ${esc(o.ref)}</h2><div class="field"><label for="pch-t">What went wrong *</label><textarea class="input" id="pch-t" rows="3" maxlength="1000"></textarea></div>
+        <div class="small err" id="pch-err" role="alert"></div><div class="row"><button class="btn primary" data-pa="ch-go" data-id="${o.id}">Send</button><button class="btn" data-pa="close">Cancel</button></div></form>`); },
+    'ch-go': el => { const t = qs('#pch-t').value.trim(); if (!t) return err('pch-err', { message: 'Write what went wrong.' });
+      return send(el, '/api/portal/fulfil/' + el.dataset.id + '/challenge', { text: t }, '<b>Saved.</b> EGO can see it.', 'pch-err'); },
     lead: el => { const l = B.leads.find(x => x.id === el.dataset.id);
       modal(`<h2>${esc(l.name)}</h2><p class="small muted">${esc(l.ref)} · now ${esc(l.status)}</p><form class="stack" onsubmit="return false">
         <div class="field"><label for="pl-st">Where it has got to *</label><select class="input" id="pl-st">${B.lists.lead_statuses.map(s => `<option ${s === l.status ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></div>

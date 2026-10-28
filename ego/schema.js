@@ -30,16 +30,16 @@ const KIND_BY_LABEL = Object.fromEntries(Object.entries(KINDS).map(([k, v]) => [
 
 const PIPELINES = {
   /* 6 Oct, EGO's own order: the sale ends at Order confirmed; stock is blocked, the PI sent, the money taken and the invoice raised in fulfilment */
-  wholesale: { label: 'Wholesale opportunity', plural: 'Wholesale opportunities', division: 'wholesale', won: 'Order confirmed', lines: true },
+  wholesale: { label: 'Wholesale opportunity', plural: 'Wholesale opportunities', division: 'wholesale', won: 'Order confirmed', lines: true, okind: 'wholesale' },
   /* R3b: a Big E sale carries line items in sq ft (design, sq ft, rate per sq ft, amount); at Won its fulfilment opens */
   /* Sales model b2 (26 Oct): Big E's two boards read Retail opportunity and Project opportunity (labels only, keys and stages unchanged) */
-  retail_lead: { label: 'Retail opportunity', plural: 'Retail opportunities', division: 'retail', sqft: true },
-  retail_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'retail', project: true, sqft: true },
+  retail_lead: { label: 'Retail opportunity', plural: 'Retail opportunities', division: 'retail', sqft: true, okind: 'retail' },
+  retail_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'retail', project: true, sqft: true, okind: 'project' },
   /* 17 Oct (R3a): EGO Premium's Project pipeline (spec section 13) and its Retail pipeline, the consumer lead
      engine (spec section 15) where a lead is qualified and allocated to a dealer. Leads for dealers folded into it. */
-  ego_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'wholesale', project: true, designs: true },   // R5: design lines through qtyLine, no fulfilment of its own
+  ego_project: { label: 'Project opportunity', plural: 'Project opportunities', division: 'wholesale', project: true, designs: true, okind: 'project' },   // R5: design lines through qtyLine; b4: the win opens an Installation site + a Project order
   /* b2 (26 Oct): New, Qualified, Quotation, Negotiation, Order confirmed, Lost. The dealer steps run only on a list that holds Dealer allocated (batch 3) */
-  ego_retail: { label: 'Retail opportunity', plural: 'Retail opportunities', division: 'wholesale', dealer: true, won: 'Order confirmed' },
+  ego_retail: { label: 'Retail opportunity', plural: 'Retail opportunities', division: 'wholesale', dealer: true, won: 'Order confirmed', sqft: true, okind: 'retail' },   // b3: designs in sq ft; Order confirmed makes a Retail order
 };
 /* which pipelines a client of each group may have */
 const PIPES_FOR = { dealer: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], direct: ['wholesale', 'ego_project', 'ego_retail'], retail: ['retail_lead', 'retail_project'], architect: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'], firm: ['wholesale', 'ego_project', 'retail_lead', 'retail_project'] };
@@ -325,6 +325,7 @@ const PROJECT_FIELDS = [
   { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true },
   { key: 'value', label: 'Expected value (₹)', type: 'money' },
   { key: 'partner_id', label: 'Project Partner dealer', type: 'partner' },
+  { key: 'architect_id', label: 'Architect', type: 'link', to: ['architect', 'design_firm'] },   // b4: from Convert (the lead's architect), or set on the project
   { key: 'notes', label: 'Notes', type: 'textarea' },
 ];
 const PROJECT_ROLES = ['Owner', 'Purchase manager', 'Project manager', 'Architect', 'Contractor'];
@@ -1113,9 +1114,28 @@ const fulGroupOf = (lists, stage) => {
 };
 /* ful: the order steps a role has (stock, money, dispatch), switched in Roles & access */
 const canFul = (lists, ful, stage) => { const g = fulGroupOf(lists, stage); return g ? (ful || []).includes(g) : !!(ful || []).length; };
-/* R3b: Big E's fulfilment, the RETAIL ladder (plan point 3), exactly as agreed. Each step has the department that takes it. */
-const RETAIL_FUL = ['Won', 'Advance received', 'Stock check', 'Blocked', 'Delivered to site', 'Installation', 'Balance received', 'Closed'];
-const RETAIL_FUL_GROUP = { 'Advance received': 'money', 'Stock check': 'stock', Blocked: 'stock', 'Delivered to site': 'dispatch', Installation: 'dispatch', 'Balance received': 'money', Closed: 'money' };
+/* Sales model b3 (27 Oct): ONE retail order for both companies (EGO ego_retail, Big E retail_lead). Every retail order is
+   Fulfilled by the EGO team (the full ladder: stock, production, money) or a named dealer (tracked only, never stocked).
+   Installation left the retail ladder (Delivered to site became Delivered; project installation is batch 4). */
+const RETAIL_EGO = ['Order confirmed', 'Advance received', 'Stock check', 'Blocked', 'Waiting on production', 'Delivered', 'Balance received', 'Closed'];
+const RETAIL_FUL = RETAIL_EGO;
+const RETAIL_FUL_GROUP = { 'Advance received': 'money', 'Stock check': 'stock', Blocked: 'stock', 'Waiting on production': 'stock', Delivered: 'dispatch', 'Balance received': 'money', Closed: 'money' };
+const DEALER_PATH = ['Order confirmed', 'Confirmed by dealer', 'Delivered', 'Closed'];
+/* a retail order saved before b3 reads at the step it became (no live order sat at Delivered to site or Installation on 27 Oct) */
+const RETAIL_OLD = { Won: 'Order confirmed', 'Delivered to site': 'Delivered' };
+const rfStage = st => RETAIL_OLD[st] || st;
+/* the kind of order a won opportunity makes, read from its pipeline (okind); batch 4 adds Project orders */
+const ORDER_KINDS = { wholesale: 'Wholesale order', retail: 'Retail order', project: 'Project order' };
+const FUL_EGO = 'ego', FUL_BY_ERR = 'Choose who fulfils this order: EGO team or a dealer.';
+/* b4 (28 Oct): a won Project opportunity (EGO ego_project, Big E retail_project) opens one Installation site and one Project order.
+   The site says who fulfils it: the EGO team (the site steps, material through the stock engine) or a dealer (these steps, no stock) */
+const SITE_DEALER_PATH = ['Order confirmed', 'Confirmed by dealer', 'Delivered', 'Installed', 'Closed'];
+const SITE_FUL_ERR = 'Choose who fulfils this site: EGO team or a dealer.';
+const isDealerSite = x => !!x && !!x.ful_by && x.ful_by !== FUL_EGO;
+/* a retail order (either path): kind retail or project, or, before b3, a Big E order */
+const isRetailOrder = o => !!o && (o.okind ? o.okind !== 'wholesale' : o.division === 'retail');
+const isDealerOrder = o => isRetailOrder(o) && !!o.ful_by && o.ful_by !== FUL_EGO;
+const rfLadder = o => isDealerOrder(o) ? DEALER_PATH : RETAIL_EGO;
 /* R3b, Q9 default: who installs a site, picked per site */
 const INSTALLED_BY = { contractor: 'Our contractor', dealer: "The partner dealer's team" };
 const FUL_LABEL = { stock: 'Block stock and place production', money: 'PI, payment and invoice', dispatch: 'Pack, dispatch and deliver' };
