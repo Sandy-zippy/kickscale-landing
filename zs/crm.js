@@ -5,7 +5,7 @@
   var G = window.GE, V = G.VIEWS, A = G.ACTIONS;
   var esc = function (s) { return ZS.esc(s); };
 
-  var CQ = '', CF = '', CCO = '', CAR = '', TAB = 'wants', PICK = '';
+  var CQ = '', CF = '', CCO = '', CAR = '', TAB = 'wants', PICK = '', OLINE = '';
 
   function D() { return G.D(); }
   var PENDING_PICK = null;
@@ -161,14 +161,16 @@
 
     if (TAB === 'opps') {
       var all = ZS.oppsFor(D().opportunities, c.id)
+        .filter(function (o) { return G.prodMatch(o, OLINE); })
         .sort(function (x, y) { return String(y.created).localeCompare(String(x.created)); });
       h += '<div class="note">One person, many runs at selling to them. Live ones sit on the ' +
         'pipeline; decided ones stay here as history.</div>';
+      h += '<div class="chips" style="margin-bottom:12px">' + G.prodFilter('clientOppLine', OLINE) + '</div>';
       h += all.length
         ? '<div class="card" style="padding:0">' + all.map(function (o) {
             var isLive = ZS.isOpen(o);
             var carW = o.won_line ? byId[o.won_line] : null;
-            return '<div class="pickrow"><div class="t"><b>' + esc(o.title || 'Enquiry') + '</b>' +
+            return '<div class="pickrow"><div class="t"><b>' + esc(o.title || 'Enquiry') + ' ' + G.prodChip(o) + '</b>' +
               '<span>' + esc(o.created) + (o.closed ? ' → ' + esc(o.closed) : ' &middot; open') +
               ' &middot; ' + esc(staffName(o.assigned_to)) +
               (carW ? ' &middot; ' + esc(carW.make + ' ' + carW.model) : '') +
@@ -177,6 +179,7 @@
               esc(o.stage) + '</span>' +
               '<button class="minibtn" data-act="openOpp" data-id="' + esc(o.id) + '">Open</button></div>';
           }).join('') + '</div>'
+        : OLINE ? '<div class="card"><p class="m">None for this product. Pick Everything we sell.</p></div>'
         : '<div class="card"><p class="m">Nothing opened for them yet. ' +
           'Use <b>+ New opportunity</b> above.</p></div>';
     }
@@ -875,6 +878,7 @@
     },
     clientStage: function (s) { CF = s || ''; G.render(); },
     clientTab: function (t) { TAB = t; G.render(); },
+    clientOppLine: function (id) { OLINE = id || ''; G.render(); },
 
     /* ---- editing and removing one logged conversation ---- */
     editComm: function (arg) {

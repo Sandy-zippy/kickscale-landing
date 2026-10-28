@@ -295,6 +295,16 @@
 "press Save these details and the lot goes in at once, or Throw them away and " +
 "none of it does. A field that fails its check stays in the box with the error " +
 "so you can correct it, and the rest still save.\n\n" +
+"A WEBSITE JOB HAS ITS OWN FIELDS. Every opportunity shows a product chip (Agentic " +
+"Cockpit, Agentic Website, AI Automations, Social Media, or No product) and every " +
+"board and list filters by it. An Agentic Website opportunity drops the cockpit " +
+"questions (team size, turnover, demo login, checks, stack, CRM) and gets a Website " +
+"section instead: website copy and HTML or design files (many files each, open, " +
+"download, share), hosting provider and login, domain registrar and domain name, " +
+"our build URLs marked Test or Live, and the Bot API key. The key shows only its " +
+"last four; only the owner or a director can reveal, copy or change it, and it is " +
+"never in the backup sheet, an export or the history. Stages are the same for " +
+"every product, and after Won the same record moves into Delivery with all of it.\n\n" +
 "DELETE SOMETHING. Owner only, and it goes to the Bin for thirty days rather " +
 "than disappearing. See the bin section.\n\n" +
 "MOVE A DEAL. The Stage picker on the engagement, or 'move Vishwa to Pitched'.\n\n" +

@@ -16,7 +16,7 @@
   var CUTS = [];
   var G = window.GE, V = G.VIEWS, A = G.ACTIONS;
   var esc = function (s) { return ZS.esc(s); };
-  var MINE = false;
+  var MINE = false, LINE = '';
 
   function D() { return G.D(); }
   function staffName(id) { var u = ZS.staffById(id); return u ? u.name : 'Unassigned'; }
@@ -26,6 +26,7 @@
     if (!ZS.acc(me, D().access).clients) return false;
     if (ZS.acc(me, D().access).scope !== 'company' && o.assigned_to !== me.id) return false;
     if (MINE && o.assigned_to !== me.id) return false;
+    if (!G.prodMatch(o, LINE)) return false;
     return true;
   }
 
@@ -69,6 +70,7 @@
 
     h += '<div class="chips" style="margin-bottom:16px">' +
       '<button class="chip" data-act="procMine" aria-pressed="' + (MINE ? 'true' : 'false') + '">Only mine</button>' +
+      G.prodFilter('procLine', LINE) +
       '<span style="margin-left:auto;font-size:12px;color:var(--dim)">' + live.length +
       ' build' + (live.length === 1 ? '' : 's') + ' in flight</span></div>';
 
@@ -95,7 +97,7 @@
               var pr = ZS.procProgress(o);
               return '<div class="vcard" data-act="openDrawer" data-id="' + esc(o.id) + '">' +
                 '<b>' + esc(c ? c.name : 'Unknown') + '</b>' +
-                '<span>' + esc(ZS.productName(o.product)) + '</span>' +
+                G.prodChip(o) +
                 '<span class="bar"><i style="width:' + pr.pct + '%"></i></span>' +
                 '<span class="oppmeta"><span class="pill ' + ck[0] + '">' + esc(ck[1]) + '</span></span>' +
                 '<span class="oppmeta"><span>sold ' + esc(o.closed || '—') + '</span>' +
@@ -124,7 +126,7 @@
           var took = ZS.daysLeft(o.proc.done, o.closed);
           return '<tr data-act="openDrawer" data-id="' + esc(o.id) + '">' +
             '<td><b>' + esc(c ? c.name : '—') + '</b></td>' +
-            '<td>' + esc(ZS.productName(o.product)) + '</td>' +
+            '<td>' + G.prodChip(o) + '</td>' +
             '<td>' + esc(o.closed || '—') + '</td><td>' + esc(o.proc.done || '—') + '</td>' +
             '<td class="num">' + (took === null ? '—' : took) + '</td>' +
             '<td>' + esc(staffName(o.assigned_to)) + '</td></tr>';
@@ -146,7 +148,7 @@
 
     var h = '<div class="card" style="margin-bottom:18px;border-color:var(--' + ck[0] + ')">' +
       '<div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">' +
-      '<div style="flex:1;min-width:220px"><h3>Transfer file</h3>' +
+      '<div style="flex:1;min-width:220px"><h3>Transfer file ' + G.prodChip(o) + '</h3>' +
       '<p class="m">' + esc(ZS.PROC_HELP[o.proc.stage] || '') + '</p></div>' +
       '<span class="pill ' + ck[0] + '">' + esc(ck[1]) + '</span>' +
       (may ? '<span class="stagepick"><label for="p-stage">Stage</label>' +
@@ -645,8 +647,17 @@
      document slot: an invoice, a logged communication. */
   G.docFileList = docFileList;
   G.docSection = docSection;
-  function docSection(kind, holderId, docs, may, blurb, blocking) {
-    var types = ZS.docTypes(kind);
+  /* opts.only / opts.except pick which slots this section draws (the Website
+     section draws its two, the main Documents draws the rest); opts.heading
+     replaces "Documents". A file is a stray only if NO slot of the kind knows it. */
+  function docSection(kind, holderId, docs, may, blurb, blocking, opts) {
+    opts = opts || {};
+    var allTypes = ZS.docTypes(kind);
+    var types = allTypes.filter(function (t) {
+      if (opts.only) return opts.only(t);
+      if (opts.except) return !opts.except(t);
+      return true;
+    });
     var groups = [];
     types.forEach(function (t) { if (groups.indexOf(t.group) < 0) groups.push(t.group); });
     var holder = { docs: docs || [] };
@@ -656,9 +667,10 @@
        of its own rather than disappearing, because a file you can see is a file
        you can re-file, and one you cannot see is one you think you lost. */
     var known = {};
-    types.forEach(function (t) { known[t.key] = 1; });
+    allTypes.forEach(function (t) { known[t.key] = 1; });
     var strays = [];
     (docs || []).forEach(function (d) {
+      if (opts.only) return;          /* strays are the main section's to show */
       if (known[d.type]) return;
       if (strays.indexOf(d.type) < 0) strays.push(d.type);
     });
@@ -670,7 +682,7 @@
       }));
     }
 
-    var h = '<h4 class="sec" style="margin-top:18px">Documents</h4>' +
+    var h = '<h4 class="sec" style="margin-top:18px">' + esc(opts.heading || 'Documents') + '</h4>' +
       '<p class="hint" style="margin-bottom:10px">' + esc(blurb) + '</p>';
 
     h += '<div class="docs">' + groups.map(function (g) {
@@ -703,6 +715,7 @@
 
   Object.assign(A, {
     procMine: function () { MINE = !MINE; G.render(); },
+    procLine: function (id) { LINE = id || ''; G.render(); },
     /* ---- raising one ----
 
        ⚠️ THE ARITHMETIC IS SHOWN WHILE IT IS BEING TYPED, because the number that

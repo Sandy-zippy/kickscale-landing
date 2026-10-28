@@ -539,6 +539,9 @@
      nothing about that says "your delete did not reach the server". */
   async function dropClient(id) { return call('DELETE', '/api/clients/' + id); }
   async function dropOpp(id) { return call('DELETE', '/api/opportunities/' + id); }
+  /* the bot's API key: never in the book, fetched one at a time by an admin */
+  async function botKey(id) { return (await call('GET', '/api/opportunities/' + id + '/botkey')).key || ''; }
+  async function setBotKey(id, key) { return call('POST', '/api/opportunities/' + id + '/botkey', { body: { key: key } }); }
 
   /* ---------------- the bin ----------------
 
@@ -683,7 +686,7 @@
     askModel: askModel,
     diary: diary,
     shareDoc: shareDoc, unshareDoc: unshareDoc,
-    dropClient: dropClient, dropOpp: dropOpp,
+    dropClient: dropClient, dropOpp: dropOpp, botKey: botKey, setBotKey: setBotKey,
     binRestore: binRestore, binDrop: binDrop, binEmpty: binEmpty, binList: binList,
     fillSheet: fillSheet,
     thread: thread, assignThread: assignThread,

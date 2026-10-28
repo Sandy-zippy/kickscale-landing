@@ -4175,6 +4175,29 @@
 
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && DRAWER) { DRAWER = null; render(); }
+      /* Enter in a type-to-search box picks, it never submits the form */
+      if (e.key === 'Enter' && e.target && e.target.hasAttribute && e.target.hasAttribute('data-tsq')) e.preventDefault();
+    });
+
+    /* ---- type-to-search on a dropdown (the shared one) ----
+       Typing narrows the select's options and picks the first match, and the
+       select then fires change as if it had been picked, so whatever listens
+       to it (staging, a form) needs to know nothing about this box. */
+    document.addEventListener('input', function (e) {
+      var q = e.target;
+      if (!q || !q.hasAttribute || !q.hasAttribute('data-tsq')) return;
+      var sel = document.getElementById(q.getAttribute('data-tsq'));
+      if (!sel) return;
+      var term = String(q.value || '').toLowerCase().trim(), first = null;
+      Array.prototype.forEach.call(sel.options, function (op) {
+        var hit = !term || !op.value || op.text.toLowerCase().indexOf(term) >= 0;
+        op.hidden = !hit;
+        if (hit && op.value && !first) first = op;
+      });
+      if (term && first && sel.value !== first.value) {
+        sel.value = first.value;
+        sel.dispatchEvent(new Event('change', { bubbles: true }));
+      }
     });
 
     document.addEventListener('submit', function (e) {
@@ -4405,7 +4428,33 @@
     }
   }
 
+  /* the search box that sits in front of a select (see the input listener) */
+  function tsBox(selectId, label) {
+    return '<input type="search" class="tsq" data-tsq="' + ZS.esc(selectId) + '" ' +
+      'placeholder="Type to search" autocomplete="off" aria-label="Search ' + ZS.esc(label || '') + '">';
+  }
+
+  /* ---- what we are selling on this deal, said loudly ----
+     One chip everywhere an opportunity shows, so a website job never reads as a
+     cockpit one. No product is said as such, never guessed. */
+  function prodChip(o) {
+    var id = o && o.product;
+    return '<span class="prodchip p-' + ZS.esc(id || 'none') + '">' + ZS.esc(ZS.productLabel(id)) + '</span>';
+  }
+  /* The product filter, for every list of opportunities. `cur` '' = all,
+     '__none' = no product chosen. */
+  function prodFilter(act, cur) {
+    return '<button class="chip" data-act="' + act + '" data-id="" aria-pressed="' + (cur ? 'false' : 'true') + '">Everything we sell</button>' +
+      ZS.PRODUCTS.map(function (b) {
+        return '<button class="chip" data-act="' + act + '" data-id="' + ZS.esc(b.id) + '" aria-pressed="' +
+          (cur === b.id ? 'true' : 'false') + '">' + ZS.esc(b.name) + '</button>';
+      }).join('') +
+      '<button class="chip" data-act="' + act + '" data-id="__none" aria-pressed="' + (cur === '__none' ? 'true' : 'false') + '">No product</button>';
+  }
+  function prodMatch(o, cur) { return !cur || (cur === '__none' ? !o.product : o.product === cur); }
+
   window.GE = {
+    tsBox: tsBox, prodChip: prodChip, prodFilter: prodFilter, prodMatch: prodMatch,
     boot: boot, render: render, go: go, toast: toast, modal: modal, deny: deny,
     pullNow: pullNow, unsyncedCount: unsyncedCount, unsyncedRecords: function () { return unsynced(); },
     saveLocal: saveLocal,

@@ -45,7 +45,7 @@
     if (!ZS.acc(me, D().access).clients) return false;
     if (ZS.acc(me, D().access).scope !== 'company' && o.assigned_to !== me.id) return false;
     if (MINE && o.assigned_to !== me.id) return false;
-    if (LINE && o.product !== LINE) return false;
+    if (!G.prodMatch(o, LINE)) return false;
     if (FQ && !matchesSearch(o)) return false;
     if (!matchesTab(o)) return false;
     return true;
@@ -127,11 +127,7 @@
       (FQ ? '<button class="chip" data-act="floorClear" aria-pressed="true">Clear &ldquo;' +
             esc(FQ) + '&rdquo;</button>' : '') +
       '<button class="chip" data-act="pipeMine" aria-pressed="' + (MINE ? 'true' : 'false') + '">Only mine</button>' +
-      '<button class="chip" data-act="pipeLine" data-id="" aria-pressed="' + (LINE ? 'false' : 'true') + '">Everything we sell</button>' +
-      ZS.PRODUCTS.map(function (b) {
-        return '<button class="chip" data-act="pipeLine" data-id="' + esc(b.id) + '" aria-pressed="' +
-          (LINE === b.id ? 'true' : 'false') + '">' + esc(b.name) + '</button>';
-      }).join('') +
+      G.prodFilter('pipeLine', LINE) +
       '<span style="margin-left:auto;font-size:12px;color:var(--dim)">' + live.length +
       ' live &middot; ' + ZS.money(live.reduce(function (a, o) { return a + ZS.oppValue(o); }, 0)) +
       ' of budget in play</span></div>';
@@ -166,6 +162,7 @@
               var play = (o.inplay || []).map(function (s2) { return byId[s2]; }).filter(Boolean);
               return '<div class="vcard" data-act="openDrawer" data-id="' + esc(o.id) + '">' +
                 '<b>' + esc(c ? c.name : 'Unknown') + '</b>' +
+                G.prodChip(o) +
                 '<span>' + esc(o.title || 'Enquiry') + '</span>' +
                 (play.length
                   ? '<span class="playline">' + play.map(function (p2) {
@@ -202,7 +199,7 @@
             '<td><b>' + esc(c ? c.name : '—') + '</b></td>' +
             '<td>' + esc(o.title || 'Enquiry') + '</td>' +
             '<td><span class="pill ' + (o.outcome === 'won' ? 'ok' : 'bad') + '">' + esc(o.stage) + '</span></td>' +
-            '<td>' + esc(ZS.productName(o.product)) + '</td>' +
+            '<td>' + G.prodChip(o) + '</td>' +
             '<td class="num">' + (o.won_price ? ZS.money(o.won_price) : '—') + '</td>' +
             '<td>' + esc(staffName(o.assigned_to)) + '</td>' +
             '<td>' + esc(o.closed || '—') + '</td></tr>';
@@ -241,10 +238,11 @@
 
     /* Header: who, and the one control that matters — which stage is it in. */
     var h = '<div class="ph"><div><h1>' + esc(c.name) +
-      (o.ref ? ' <span class="refchip">' + esc(o.ref) + '</span>' : '') + '</h1>' +
+      (o.ref ? ' <span class="refchip">' + esc(o.ref) + '</span>' : '') + ' ' + G.prodChip(o) + '</h1>' +
+      (!o.product && G.acc().clients ? '<p class="hint"><button class="minibtn" data-act="editOpp" data-id="' +
+        esc(o.id) + '">Set what we are selling</button> No product was chosen for this one.</p>' : '') +
       '<p>' + esc(o.title || 'Enquiry') + ' &middot; ' + esc(ZS.SOURCES[o.source] || o.source) +
       ' &middot; ' + esc(staffName(o.assigned_to)) +
-      ' &middot; ' + esc(ZS.lineName(o.product)) +
       /* WHO IT RUNS THROUGH. One person inside the company, named on the
          engagement itself, because "the client" is a company and a company has
          several people who each want to hear about different things. */
@@ -385,7 +383,8 @@
       h += '<div class="card pad" style="margin-top:18px">' +
         G.docSection('deal', o.id, ZS.docsOf(o.proc) .concat(o.docs || []), G.acc().clients,
           'Everything filed against this engagement. A slot takes as many files as it needs.',
-          o.proc ? (ZS.PROC_NEEDS[o.proc.stage] || []) : []) + '</div>';
+          o.proc ? (ZS.PROC_NEEDS[o.proc.stage] || []) : [],
+          { except: function (t) { return t.web; } }) + '</div>';
     }
     if (G.procPanel) h += G.procPanel(o, c, byId[o.won_line], brief);
 
@@ -431,6 +430,8 @@
     var rec = ZS.engagementRecord(o, c, D().invoices);
     var sc = ZS.scoreRecord(rec);
     var mayEdit = G.acc().editStock && live !== false;
+    var mine = ZS.fieldsFor(o);
+    if (rec.set === 'website') h += webSection(o, c, rec, mine, brief, mayEdit);
 
     /* ---- the quick look shows what we HOLD, never sixty empty boxes ----
 
@@ -441,7 +442,7 @@
        score pill stays because "11 of 60" IS the thing that needs an action, and
        it is the one line that says the rest exists. */
     if (brief) {
-      var filled = ZS.FIELDS.filter(function (fd) { return ZS.hasField(rec, fd); });
+      var filled = mine.filter(function (fd) { return fd.group !== 'Website' && ZS.hasField(rec, fd); });
       h += '<p class="eyebrow" style="margin-top:20px">On file' +
         ' <span class="pill ' + (sc.pct >= 80 ? 'ok' : sc.pct >= 50 ? 'warn' : 'bad') + '">' +
         sc.present + ' of ' + sc.total + '</span></p><div class="card pad">' +
@@ -469,7 +470,8 @@
         'Anything still blank is a thing we would have to ask them for at the worst moment.</p>';
 
       ZS.FIELD_GROUPS.forEach(function (g) {
-        var inGroup = ZS.FIELDS.filter(function (fd) { return fd.group === g; });
+        /* the Website group is drawn in its own section above */
+        var inGroup = g === 'Website' ? [] : mine.filter(function (fd) { return fd.group === g; });
         if (!inGroup.length) return;
         var done = inGroup.filter(function (fd) { return ZS.hasField(rec, fd); }).length;
         h += '<h4 class="sec" style="margin-top:16px">' + esc(g) +
@@ -589,6 +591,78 @@
   }
 
 
+  /* ---------------- the Website section (agentic_website only) ----------------
+
+     What a website job runs on, in one place: the copy and design they hand
+     over, where it is hosted, where the domain is, the URLs we build on (test
+     and live), and the API key for the agentic bot we give them. Same record as
+     the deal, so it carries into delivery after Won without being copied. */
+  function webSection(o, c, rec, mine, brief, mayEdit) {
+    var web = mine.filter(function (fd) { return fd.group === 'Website'; });
+    var urls = (o.extra && o.extra.web_urls) || [];
+    var docs = ZS.docsOf(o.proc).concat(o.docs || []);
+    var h = '<p class="eyebrow" style="margin-top:20px">Website</p><div class="card pad websec">';
+
+    /* the URLs first: "where can I see it" is the question this card gets asked */
+    h += '<h4 class="sec" style="margin-top:0">Our build URLs <span class="hint" style="font-weight:400">' +
+      'test and live, for them to check</span></h4>' +
+      (urls.length
+        ? '<ul class="ledger weburls">' + urls.map(function (u) {
+            return '<li><span><span class="pill ' + (u.env === 'Live' ? 'ok' : 'info') + '">' + esc(u.env) + '</span> ' +
+              esc(u.label || '') + '</span><b><a href="' + esc(u.url) + '" target="_blank" rel="noopener">' +
+              esc(String(u.url).replace(/^https?:\/\//, '').slice(0, 60)) + '</a>' +
+              (mayEdit && !brief ? ' <button class="xbtn" data-act="dropWebUrl" data-id="' + esc(o.id + '|' + u.id) +
+                '" aria-label="Remove this URL">&times;</button>' : '') + '</b></li>';
+          }).join('') + '</ul>'
+        : '<p class="m" style="margin:0">No build URL yet.</p>') +
+      (mayEdit && !brief ? '<div class="invadd"><button class="btn alt" data-act="addWebUrl" data-id="' +
+        esc(o.id) + '">+ Add a build URL</button></div>' : '');
+
+    h += botKeyBlock(o);
+
+    if (brief) {
+      var have = web.filter(function (fd) { return ZS.hasField(rec, fd); });
+      if (have.length) h += '<ul class="ledger" style="margin-top:12px">' + have.map(function (fd) {
+        return li(esc(fd.label), String(ZS.fieldValue(rec, fd)));
+      }).join('') + '</ul>';
+      return h + '</div>';
+    }
+
+    /* the two upload slots: many files each, Open / Download / Share on every one */
+    if (G.docSection) {
+      h += G.docSection('deal', o.id, docs, G.acc().clients,
+        'Website copy and the HTML or design files they hand over. A slot takes as many files as it needs.',
+        [], { only: function (t) { return t.web; }, heading: 'What they give us' });
+    }
+    h += '<div class="recgrid" style="margin-top:12px">' + web.map(function (fd) {
+      return recField(o, fd, rec, mayEdit);
+    }).join('') + '</div>';
+    if (mayEdit) h += recBar(o);
+    return h + '</div>';
+  }
+
+  /* The bot's API key is a secret. It never comes down with the book: the server
+     sends only its last four, and the whole key only to the owner or a director,
+     on request, one at a time. */
+  function botKeyBlock(o) {
+    var me = G.me() || {};
+    var admin = me.role === 'owner' || me.role === 'director';
+    var server = !!(window.API && API.signedIn && API.signedIn());
+    var have = !!o.bot_key_last4;
+    return '<h4 class="sec" style="margin-top:16px">Bot API key <span class="hint" style="font-weight:400">' +
+      'for the agentic bot we give them</span></h4>' +
+      '<div class="botkey"><code id="bk-' + esc(o.id) + '">' +
+        (have ? '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull; ' + esc(o.bot_key_last4) : 'Not set') + '</code>' +
+      (admin && server
+        ? (have ? '<button class="minibtn" data-act="botKeyReveal" data-id="' + esc(o.id) + '">Reveal</button>' +
+                  '<button class="minibtn" data-act="botKeyCopy" data-id="' + esc(o.id) + '">Copy</button>' : '') +
+          '<button class="minibtn" data-act="botKeySet" data-id="' + esc(o.id) + '">' + (have ? 'Change' : 'Add the key') + '</button>'
+        : '') + '</div>' +
+      '<p class="hint">' + (!server ? 'Kept on the server only, never in this browser. Sign in to the server to add it.'
+        : admin ? 'Masked until you press Reveal. It is never written to the backup sheet, an export or the history.'
+        : 'Only the owner or a director can see or change this key.') + '</p>';
+  }
+
   /* One row of the registry: what we hold, and a control to change it.
 
      A field the panel can only REPORT on is half a feature — the screen said
@@ -622,7 +696,7 @@
     if (fd.type === 'place') {
       if (fd.key !== 'country') return '';
       var valOf = function (k) {
-        var f2 = ZS.FIELDS.filter(function (x) { return x.key === k; })[0];
+        var f2 = ZS.fieldByKey(k);
         if (pend.hasOwnProperty(k)) return pend[k];
         return f2 && ZS.hasField(rec, f2) ? String(ZS.fieldValue(rec, f2)) : '';
       };
@@ -647,7 +721,8 @@
 
     var control;
     if (fd.type === 'select') {
-      control = '<select id="' + esc(id) + '" ' + name + '>' +
+      control = (fd.search ? G.tsBox(id, fd.label) : '') +
+        '<select id="' + esc(id) + '" ' + name + '>' +
         '<option value="">—</option>' +
         (fd.options || []).map(function (op) {
           return '<option value="' + esc(op) + '"' + (String(v) === String(op) ? ' selected' : '') +
@@ -963,7 +1038,7 @@
       var key = ALIAS.hasOwnProperty(k) ? ALIAS[k] : k;
       if (!key) return;                                  /* belongs on the client form, not here */
       var fd = ZS.fieldByKey(key);
-      if (!fd) return;
+      if (!fd || !ZS.fieldApplies(o, key)) return;
       if (ZS.hasField(ZS.engagementRecord(o, c, D().invoices), fd)) return;   /* never overwrite */
       var r = ZS.setEngagementField(o, c, key, REC_SCAN.fields[k]);
       if (r.error) refused.push(fd.label);
@@ -1144,10 +1219,13 @@
            reference on another. */
         '<div class="f"><label for="eo-product">What we are selling</label>' +
         '<select id="eo-product" name="product">' +
+          (o.product ? '' : '<option value="" selected>No product yet</option>') +
           ZS.PRODUCTS.map(function (p) {
             return '<option value="' + esc(p.id) + '"' + (p.id === o.product ? ' selected' : '') + '>' +
               esc(p.name) + ' · ' + esc(p.code) + '</option>'; }).join('') + '</select>' +
-        '<span class="hint">Prices the work, prefixes the reference and carries the target.</span></div>' +
+        '<span class="hint">Prices the work, prefixes the reference and carries the target. ' +
+        'Switching to or from Agentic Website changes which fields this opportunity shows; ' +
+        'nothing already typed is deleted.</span></div>' +
         '<div class="f"><label for="eo-fee">Opportunity value</label>' +
         '<input id="eo-fee" name="fee" type="number" min="0" value="' + esc(o.fee || '') + '"></div>' +
         '<div class="f wide"><label for="eo-scope">Scope</label>' +
@@ -1362,6 +1440,57 @@
         '<p class="err" id="dl-err"></p>' +
         '<div style="display:flex;gap:10px;margin-top:14px">' +
         '<button class="btn" type="submit">Add it</button>' +
+        '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
+    },
+    addWebUrl: function (id) {
+      var o = oppById(id);
+      if (!o) return;
+      G.modal('Add a build URL', (G.clientById(o.client) || {}).name || '',
+        '<form id="weburlform" data-oid="' + esc(o.id) + '">' +
+        '<div class="f" style="margin-bottom:10px"><label for="wu-l">What it is</label>' +
+        '<input id="wu-l" name="label" autocomplete="off" placeholder="Home page, staging, the bot&hellip;"></div>' +
+        '<div class="f" style="margin-bottom:10px"><label for="wu-u">URL</label>' +
+        '<input id="wu-u" name="url" type="url" required placeholder="https://" autocomplete="off"></div>' +
+        '<div class="f"><label for="wu-e">Test or Live</label>' + G.tsBox('wu-e', 'Test or Live') +
+        '<select id="wu-e" name="env"><option>Test</option><option>Live</option></select></div>' +
+        '<p class="err" id="wu-err"></p>' +
+        '<div style="display:flex;gap:10px;margin-top:14px">' +
+        '<button class="btn" type="submit">Add it</button>' +
+        '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
+    },
+    dropWebUrl: function (arg) {
+      var p = String(arg).split('|'), o = oppById(p[0]);
+      if (!o || !o.extra) return;
+      var gone = (o.extra.web_urls || []).filter(function (x) { return x.id === p[1]; })[0];
+      o.extra.web_urls = (o.extra.web_urls || []).filter(function (x) { return x.id !== p[1]; });
+      o.updated = ZS.today();
+      if (gone) G.log('opp_stage', 'Build URL removed: ' + (gone.label || gone.url), { client: o.client, opp: o.id });
+      G.save(); G.toast('Removed.'); G.render();
+    },
+    botKeyReveal: function (id) {
+      API.botKey(id).then(function (k) {
+        var el = document.getElementById('bk-' + id);
+        if (el) el.textContent = k || 'Not set';
+      }).catch(function (e) { G.toast(e.message || 'The server would not show it.', true); });
+    },
+    botKeyCopy: function (id) {
+      API.botKey(id).then(function (k) {
+        return navigator.clipboard.writeText(k || '');
+      }).then(function () { G.toast('Copied. Paste it where it is needed and nowhere else.'); })
+        .catch(function (e) { G.toast((e && e.message) || 'Could not copy it.', true); });
+    },
+    botKeySet: function (id) {
+      var o = oppById(id);
+      if (!o) return;
+      G.modal('Bot API key', (G.clientById(o.client) || {}).name || '',
+        '<form id="botkeyform" data-oid="' + esc(o.id) + '">' +
+        '<div class="f"><label for="bk-in">The key</label>' +
+        '<input id="bk-in" name="key" type="password" autocomplete="off" spellcheck="false"></div>' +
+        '<p class="hint" style="margin-top:8px">Stored on the server only. Leave it empty and save to remove it. ' +
+        'The history says it changed and never what it is.</p>' +
+        '<p class="err" id="bk-err"></p>' +
+        '<div style="display:flex;gap:10px;margin-top:14px">' +
+        '<button class="btn" type="submit">Save the key</button>' +
         '<button class="btn alt" type="button" data-act="closeModal">Cancel</button></div></form>');
     },
     dropDeliv: function (arg) {
@@ -1731,7 +1860,7 @@
       var t = String(ed.get('title') || '').trim();
       var was = ZS.oppValue(eo);
       eo.title = t || eo.title || ((c ? c.name : 'Engagement') + ' — ' + ZS.productName(ed.get('product')));
-      eo.product = ed.get('product');
+      eo.product = ed.get('product') || eo.product || null;
       eo.fee = ed.get('fee') ? Number(ed.get('fee')) : null;
       eo.scope = String(ed.get('scope') || '').trim();
       eo.source = ed.get('source');
@@ -1883,6 +2012,42 @@
       return;
     }
 
+    if (e.target.id === 'weburlform') {
+      e.preventDefault();
+      var wO = oppById(e.target.dataset.oid);
+      if (!wO) return;
+      var wf = new FormData(e.target);
+      var wurl = String(wf.get('url') || '').trim();
+      if (!/^https?:\/\/\S+$/i.test(wurl)) {
+        document.getElementById('wu-err').textContent = 'That needs a full address, starting https://';
+        return;
+      }
+      wO.extra = wO.extra || {};
+      var wlabel = String(wf.get('label') || '').trim();
+      var wenv = wf.get('env') === 'Live' ? 'Live' : 'Test';
+      wO.extra.web_urls = (wO.extra.web_urls || []).concat([{ id: ZS.uid('wu'), label: wlabel,
+        url: wurl, env: wenv, at: ZS.today() }]);
+      wO.updated = ZS.today();
+      G.log('opp_stage', 'Build URL added (' + wenv + '): ' + (wlabel || wurl), { client: wO.client, opp: wO.id });
+      G.save(); document.getElementById('modal').close();
+      G.toast('Added.'); G.render();
+      return;
+    }
+    if (e.target.id === 'botkeyform') {
+      e.preventDefault();
+      var bO = oppById(e.target.dataset.oid);
+      if (!bO) return;
+      var bkey = String(new FormData(e.target).get('key') || '').trim();
+      API.setBotKey(bO.id, bkey).then(function (r) {
+        bO.bot_key_last4 = (r && r.last4) || null;
+        document.getElementById('modal').close();
+        G.toast(bkey ? 'Key saved.' : 'Key removed.'); G.render();
+      }).catch(function (er) {
+        var el = document.getElementById('bk-err');
+        if (el) el.textContent = er.message || 'The server would not take it.';
+      });
+      return;
+    }
     if (e.target.id === 'dlform') {
       e.preventDefault();
       var dO = oppById(e.target.dataset.oid);

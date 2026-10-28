@@ -1091,6 +1091,11 @@
     { key: 'sample_data',        label: 'Their data',              group: 'Build', when: 'A sheet, an export, a scrape.' },
     { key: 'test_signoff',       label: 'Testing signed off',      group: 'Build' },
     { key: 'handover_note',      label: 'Handover pack',           group: 'Build', when: 'What we gave them, and what they now own.' },
+    /* a website job's two slots, drawn in its Website section (web: true) */
+    { key: 'web_copy',           label: 'Website copy',            group: 'Website', web: true,
+      when: 'The words they want on the site: docs, sheets, anything they send.' },
+    { key: 'web_design',         label: 'HTML / design files',     group: 'Website', web: true,
+      when: 'Their HTML, a theme, Figma exports, images.' },
     { key: 'scan',               label: 'Dropped in',              group: 'Unfiled',
       when: 'Uploaded to be read, not yet filed. Edit one to move it to its slot.' }
   ];
@@ -2075,6 +2080,11 @@
   }
 
     var YESNO = ['Yes', 'No'];
+  /* type-to-search lists for a website job; Other covers the rest */
+  var HOSTS = ['Hostinger', 'GoDaddy', 'Cloudflare', 'AWS', 'Netlify', 'Vercel', 'GitHub Pages',
+               'Bluehost', 'Other'];
+  var REGISTRARS = ['GoDaddy', 'Namecheap', 'Hostinger', 'Cloudflare', 'BigRock',
+                    'Google / Squarespace', 'Other'];
 
   /* The engagement record. The completeness score off this is what makes it
      obvious that EGO has been running for months with no signed MOU and three
@@ -2118,9 +2128,9 @@
        never asked again, so the first call starts from what they said rather
        than from scratch. Every one of these is also editable here, because an
        answer given to a form at 11pm is not always the answer they meant. */
-    { key: 'team',       label: 'How many would use it', group: 'Qualification', type: 'select',
+    { key: 'team', set: 'cockpit',       label: 'How many would use it', group: 'Qualification', type: 'select',
       options: TEAM_BANDS },
-    { key: 'revenue',    label: 'Their turnover',     group: 'Qualification', type: 'text',
+    { key: 'revenue', set: 'cockpit',    label: 'Their turnover',     group: 'Qualification', type: 'text',
       note: 'A band, in their own currency, as the form showed it.' },
     { key: 'budget',     label: 'Budget they named',  group: 'Qualification', type: 'text',
       note: 'What THEY said, not what we quoted. The fee is a separate field.' },
@@ -2149,24 +2159,68 @@
 
     /* The build */
     { key: 'repo',       label: 'Repository',         group: 'The build', type: 'text' },
-    { key: 'demo',       label: 'Live URL',           group: 'The build', type: 'text' },
-    { key: 'deployed',   label: 'Deployed',           group: 'The build', type: 'select', options: YESNO },
-    { key: 'checks',     label: 'Checks passing',     group: 'The build', type: 'number' },
-    { key: 'stack',      label: 'What it is built on', group: 'The build', type: 'text' },
+    { key: 'demo', set: 'cockpit',       label: 'Live URL',           group: 'The build', type: 'text' },
+    { key: 'deployed', set: 'cockpit',   label: 'Deployed',           group: 'The build', type: 'select', options: YESNO },
+    { key: 'checks', set: 'cockpit',     label: 'Checks passing',     group: 'The build', type: 'number' },
+    { key: 'stack', set: 'cockpit',      label: 'What it is built on', group: 'The build', type: 'text' },
 
     /* Credentials — the most dangerous thing in here */
-    { key: 'login',      label: 'Demo login',         group: 'Credentials', type: 'text' },
-    { key: 'pass',       label: 'Demo password',      group: 'Credentials', type: 'text' },
-    { key: 'hosting',    label: 'Hosting access',     group: 'Credentials', type: 'text' },
-    { key: 'domain',     label: 'Domain registrar',   group: 'Credentials', type: 'text' },
-    { key: 'crm',        label: 'Their CRM / GHL',    group: 'Credentials', type: 'text' },
+    { key: 'login', set: 'cockpit',      label: 'Demo login',         group: 'Credentials', type: 'text' },
+    { key: 'pass', set: 'cockpit',       label: 'Demo password',      group: 'Credentials', type: 'text' },
+    { key: 'hosting', per: { website: { label: 'Hosting login / notes', group: 'Website',
+      note: 'Their hosting login, or where to find it. Only roles with credentials see this.' } },    label: 'Hosting access',     group: 'Credentials', type: 'text' },
+    { key: 'domain', set: 'cockpit',     label: 'Domain registrar',   group: 'Credentials', type: 'text' },
+    { key: 'crm', set: 'cockpit',        label: 'Their CRM / GHL',    group: 'Credentials', type: 'text' },
 
     /* What we gave away first */
     { key: 'findings',   label: 'Findings handed over', group: 'Value given', type: 'textarea',
       note: 'The faults we found and gave them free. This is what earns the meeting.' },
     { key: 'pitched',    label: 'Actually pitched',   group: 'Value given', type: 'select', options: YESNO,
-      note: 'Built and never sent is the most expensive state there is.' }
+      note: 'Built and never sent is the most expensive state there is.' },
+
+    /* ---- a WEBSITE job's own fields (set: 'website') ----
+       Bhargav, 28 Oct: a website lead does not need a lot of data points. What
+       the form told us, the copy and design they hand over, where it is hosted,
+       where the domain is held. The build URLs and the bot's API key are lists
+       and secrets, so they sit in the Website section, not in this registry. */
+    { key: 'web_needs',   set: 'website', label: 'What they need',  group: 'What they told us', type: 'textarea' },
+    { key: 'web_sells',   set: 'website', label: 'How they sell',   group: 'What they told us', type: 'text' },
+    { key: 'web_package', set: 'website', label: 'Package in mind', group: 'What they told us', type: 'text' },
+    { key: 'website',     set: 'website', label: 'Their current website', group: 'What they told us', type: 'text' },
+    { key: 'web_copy_note',   set: 'website', label: 'Website copy, notes', group: 'Website', type: 'textarea',
+      note: 'What they gave us and what is still to come. The files go in the slot above.' },
+    { key: 'web_design_note', set: 'website', label: 'HTML / design, notes', group: 'Website', type: 'textarea',
+      note: 'Figma link, theme, the HTML they sent. The files go in the slot above.' },
+    { key: 'web_host',    set: 'website', label: 'Hosting provider', group: 'Website', type: 'select',
+      search: true, options: HOSTS },
+    { key: 'web_registrar', set: 'website', label: 'Domain registrar', group: 'Website', type: 'select',
+      search: true, options: REGISTRARS },
+    { key: 'web_domain',  set: 'website', label: 'Domain name', group: 'Website', type: 'text',
+      note: 'e.g. theirbrand.com' }
   ];
+
+  /* ---- a field set per product ----
+     Each opportunity's DNA is different. A product listed here gets its own set;
+     every other product (and an opportunity with no product yet) keeps the set it
+     always had, so nothing on a cockpit, automation or social media deal moved. */
+  var FIELD_SETS = { agentic_website: 'website' };
+  function fieldSet(opp) {
+    var p = opp && typeof opp === 'object' ? opp.product : opp;
+    return FIELD_SETS[p] || 'cockpit';
+  }
+  /* A field with no `set` is shared. `per` relabels one for a set. */
+  function fieldsFor(oppOrSet) {
+    var s = (oppOrSet === 'website' || oppOrSet === 'cockpit') ? oppOrSet : fieldSet(oppOrSet);
+    return FIELDS.filter(function (f) { return !f.set || f.set === s; }).map(function (f) {
+      return f.per && f.per[s] ? Object.assign({}, f, f.per[s]) : f;
+    });
+  }
+  function fieldApplies(opp, key) {
+    return fieldsFor(opp).some(function (f) { return f.key === key; });
+  }
+  /* One label everywhere a product is named on a deal, and an honest one when
+     none was chosen: the three discovery calls are not guessed onto a product. */
+  function productLabel(id) { var p = productById(id); return p ? p.name : 'No product'; }
 
   var FIELD_GROUPS = FIELDS.reduce(function (a, f) {
     if (a.indexOf(f.group) < 0) a.push(f.group);
@@ -2191,7 +2245,7 @@
     mobile: ['client', 'mobile'], email: ['client', 'email'],
     legal_name: ['client', 'legal_name'], gst: ['client', 'gst'], pan: ['client', 'pan'],
     city: ['client', 'address.city'], address: ['client', 'address.line1'],
-    state: ['client', 'address.state'],
+    state: ['client', 'address.state'], website: ['client', 'website'],
     bank_acc: ['client', 'bank.account'], ifsc: ['client', 'bank.ifsc'],
     bank_name: ['client', 'bank.name'], acct_holder: ['client', 'bank.holder'],
     contact: ['contact', 'name'],
@@ -2283,6 +2337,7 @@
       /* the engagement's own fields stay readable by their own names */
       extra: opp.extra || {},
       proc: opp.proc || null,
+      set: fieldSet(opp), website: c.website || '',
       client: c.name || '', contact: ct ? ct.name : '', sector: c.sector || '',
       city: a.city || '', state: a.state || '', mobile: c.mobile || '', email: c.email || '',
       legal_name: c.legal_name || '', address: addressLine(c.address) || '',
@@ -2323,10 +2378,11 @@
 
   function scoreRecord(c) {
     var present = [], missing = [];
-    FIELDS.forEach(function (f) { (hasField(c, f) ? present : missing).push(f.label); });
-    return { total: FIELDS.length, present: present.length,
+    var fs = fieldsFor((c && c.set) || 'cockpit');
+    fs.forEach(function (f) { (hasField(c, f) ? present : missing).push(f.label); });
+    return { total: fs.length, present: present.length,
              missing: missing, presentList: present,
-             pct: Math.round(100 * present.length / FIELDS.length) };
+             pct: Math.round(100 * present.length / fs.length) };
   }
 
   /* Write one field onto a product and hand back an audit line. Editable fields only. */
@@ -4507,6 +4563,8 @@ function outreachTrades(list) {
     atRisk: atRisk, needsAttention: needsAttention,
 
     FIELDS: FIELDS, FIELD_GROUPS: FIELD_GROUPS, fieldByKey: fieldByKey, fieldValue: fieldValue,
+    FIELD_SETS: FIELD_SETS, fieldSet: fieldSet, fieldsFor: fieldsFor, fieldApplies: fieldApplies,
+    productLabel: productLabel, HOSTS: HOSTS, REGISTRARS: REGISTRARS,
     hasField: hasField, setField: setField, scoreRecord: scoreRecord,
     engagementRecord: engagementRecord, setEngagementField: setEngagementField,
     FIELD_HOME: FIELD_HOME,
