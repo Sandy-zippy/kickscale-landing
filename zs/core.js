@@ -434,7 +434,7 @@
     if (OPP_STAGES.indexOf(stage) < 0) return { error: 'Unknown stage.' };
     if (stage === 'Won') return { error: 'Close it as won from the engagement, so the sale is recorded.' };
     if (NEEDS_PRODUCT.indexOf(stage) >= 0 && !(opp.inplay || []).length) {
-      return { error: 'Put what they are buying in play first — you cannot be ' + stage.toLowerCase() +
+      return { error: 'Put what they are buying in play first. You cannot be ' + stage.toLowerCase() +
                       ' on nothing in particular.' };
     }
     opp.stage = stage;
@@ -2097,7 +2097,10 @@
     /* Identity */
     { key: 'client',     label: 'Client name',        group: 'Identity', type: 'text' },
     { key: 'contact',    label: 'Decision maker',     group: 'Identity', type: 'text' },
-    { key: 'sector',     label: 'Sector',             group: 'Identity', type: 'text' },
+    /* the form asks "What kind of business?" on the cockpit page and "Industry" on
+       /websites, so each set reads in the words its own form used (29 Oct) */
+    { key: 'sector', per: { cockpit: { label: 'Business type' }, website: { label: 'Industry' } },
+      label: 'Sector',             group: 'Identity', type: 'text' },
     /* Country, State and City are one chained trio (placeFields), not three
        text boxes: a typed state is how "Maharastra" got into the record */
     { key: 'country',    label: 'Country',            group: 'Identity', type: 'place' },
@@ -2140,6 +2143,23 @@
       note: 'The creative inside the campaign. Without it a test month cannot say which ad earned the lead.' },
     { key: 'landed',     label: 'Landed from',        group: 'Qualification', type: 'text',
       note: 'The page or site they arrived from.' },
+    /* Bhargav, 29 Oct: every form answer is a field of its own. These three came
+       in on every lead and sat only inside the scope text or nowhere at all. */
+    { key: 'medium',     label: 'Ad medium',          group: 'Qualification', type: 'text',
+      note: 'utm_medium, as the ad sent it (paid_social, cpc...).' },
+    { key: 'source',     label: 'Source',             group: 'Qualification', type: 'info',
+      note: 'Where the lead came from. Shown under The deal.' },
+    { key: 'campaign',   label: 'Campaign',           group: 'Qualification', type: 'text',
+      note: 'The campaign the ad link named (utm_campaign).' },
+    { key: 'call',       label: 'Call booked',        group: 'Qualification', type: 'info',
+      note: 'The discovery call they booked. Change it under Meetings.' },
+
+    /* What the form told us, word for word (29 Oct). The scope text above still
+       carries all of it for the first call; these are the same answers as fields. */
+    { key: 'form_need', per: { website: { label: 'Anything else they told us' } },
+      label: 'What is going wrong', group: 'What they told us', type: 'textarea',
+      note: 'Their own words on the form.' },
+    { key: 'instagram', set: 'cockpit', label: 'Their Instagram', group: 'What they told us', type: 'text' },
 
     /* Terms */
     { key: 'mou',        label: 'MOU state',          group: 'Terms', type: 'select',
@@ -2186,7 +2206,10 @@
     { key: 'web_needs',   set: 'website', label: 'What they need',  group: 'What they told us', type: 'textarea' },
     { key: 'web_sells',   set: 'website', label: 'How they sell',   group: 'What they told us', type: 'text' },
     { key: 'web_package', set: 'website', label: 'Package in mind', group: 'What they told us', type: 'text' },
-    { key: 'website',     set: 'website', label: 'Their current website', group: 'What they told us', type: 'text' },
+    { key: 'website', per: { cockpit: { label: 'Their website' } },
+      label: 'Their current website', group: 'What they told us', type: 'text' },
+    { key: 'journey',     set: 'website', label: 'Visitor journey', group: 'What they told us', type: 'textarea',
+      note: 'What they looked at on the site before they asked.' },
     { key: 'web_copy_note',   set: 'website', label: 'Website copy, notes', group: 'Website', type: 'textarea',
       note: 'What they gave us and what is still to come. The files go in the slot above.' },
     { key: 'web_design_note', set: 'website', label: 'HTML / design, notes', group: 'Website', type: 'textarea',
@@ -2245,6 +2268,7 @@
     mobile: ['client', 'mobile'], email: ['client', 'email'],
     legal_name: ['client', 'legal_name'], gst: ['client', 'gst'], pan: ['client', 'pan'],
     city: ['client', 'address.city'], address: ['client', 'address.line1'],
+    country: ['client', 'address.country'], instagram: ['client', 'instagram'],
     state: ['client', 'address.state'], website: ['client', 'website'],
     bank_acc: ['client', 'bank.account'], ifsc: ['client', 'bank.ifsc'],
     bank_name: ['client', 'bank.name'], acct_holder: ['client', 'bank.holder'],
@@ -2258,6 +2282,7 @@
     deployed: ['opp', 'demo'],
     team: ['opp', 'team'], revenue: ['opp', 'revenue'], budget: ['opp', 'budget'],
     timeline: ['opp', 'timeline'], ad: ['opp', 'ad'], landed: ['opp', 'landed'],
+    campaign: ['opp', 'campaign'],
     /* on the delivery file */
     duration: ['proc', 'duration'], started: ['proc', 'started']
   };
@@ -2276,6 +2301,7 @@
     var f = fieldByKey(key);
     if (!f) return { error: 'Unknown field.' };
     if (f.type === 'derived') return { error: 'That one is worked out from the plan, not typed in.' };
+    if (f.type === 'info') return { error: 'That one is shown here and changed where it lives.' };
 
     var before = fieldValue(engagementRecord(opp, client, []), f);
     var v = value;
@@ -2326,6 +2352,20 @@
     return { field: f, before: before, after: v, where: home[0] };
   }
 
+  /* the next discovery call on the engagement, read back as one line */
+  function bookedCall(opp) {
+    var m = (opp.meetings || []).filter(function (x) { return x.kind === 'Discovery' && !x.done; })[0];
+    if (!m || !m.at) return '';
+    var when = m.at;
+    if (m.time) {
+      /* stored as UTC HH:MM (intake.js); read out in IST like the invite */
+      var d = new Date(m.at + 'T' + m.time + ':00Z');
+      if (!isNaN(d)) when = d.toLocaleString('en-GB', { timeZone: 'Asia/Kolkata', day: 'numeric',
+        month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) + ' IST';
+    }
+    return when + (m.link ? ' · ' + m.link : '');
+  }
+
   function engagementRecord(opp, client, invoices) {
     if (!opp) return {};
     var c = client || {};
@@ -2340,6 +2380,16 @@
       set: fieldSet(opp), website: c.website || '',
       client: c.name || '', contact: ct ? ct.name : '', sector: c.sector || '',
       city: a.city || '', state: a.state || '', mobile: c.mobile || '', email: c.email || '',
+      country: a.country || '', instagram: c.instagram || '',
+      /* ⚠️ these six were in the registry and never in this record, so a lead's
+         team size, turnover, budget and timeline showed blank on its own page */
+      team: opp.team || '', revenue: opp.revenue || '', budget: opp.budget || '',
+      timeline: opp.timeline || '', ad: opp.ad || '', landed: opp.landed || '',
+      source: SOURCES[opp.source] || opp.source || '',
+      /* ponytail: raw value (the utm_campaign a form lead carries); a campaign picked
+         in the console shows its id here, its name under The deal */
+      campaign: opp.campaign || '',
+      call: bookedCall(opp),
       legal_name: c.legal_name || '', address: addressLine(c.address) || '',
       gst: c.gst || '', pan: c.pan || '', bank_acc: b.account || '', ifsc: b.ifsc || '',
       bank_name: b.name || '', acct_holder: b.holder || '',

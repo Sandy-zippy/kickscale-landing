@@ -10,6 +10,7 @@
   var G = window.GE, V = G.VIEWS, A = G.ACTIONS;
   var esc = function (s) { return ZS.esc(s); };
   var MINE = false, LINE = '';
+  var FF = { key: '', val: '' };     // board filter: pick any field, then a value
   var FQ = '';                      // floor search: name or mobile
   var TAB = '';                     // '' | 'blocked' | 'nofollow' | a stage name
   var PICK = [], OQ = '', BRIEF = '';   // the shortlist being built on a new opportunity
@@ -48,7 +49,45 @@
     if (!G.prodMatch(o, LINE)) return false;
     if (FQ && !matchesSearch(o)) return false;
     if (!matchesTab(o)) return false;
+    if (FF.key && FF.val && ffValue(o, FF.key) !== FF.val) return false;
     return true;
+  }
+
+  /* Pick any field (house rule): every field an opportunity carries, across both
+     products, minus the secrets. A value is what the record holds, as text. */
+  function ffFields() {
+    var seen = {};
+    return ZS.fieldsFor('cockpit').concat(ZS.fieldsFor('website')).filter(function (fd) {
+      if (seen[fd.key] || fd.type === 'derived' || fd.group === 'Credentials') return false;
+      return (seen[fd.key] = true);
+    });
+  }
+  function ffValue(o, key) {
+    var fd = ZS.fieldByKey(key);
+    if (!fd) return '';
+    var v = ZS.fieldValue(ZS.engagementRecord(o, G.clientById(o.client), []), fd);
+    return v == null ? '' : String(v);
+  }
+  function ffBar(opps) {
+    var fields = ffFields();
+    var vals = {};
+    if (FF.key) opps.forEach(function (o) { var v = ffValue(o, FF.key); if (v) vals[v] = 1; });
+    var label = function (fd) {
+      var c = fieldsLabel(fd.key, 'cockpit'), w = fieldsLabel(fd.key, 'website');
+      return c && w && c !== w ? c + ' / ' + w : (c || w);
+    };
+    return '<select id="ff-key" aria-label="Pick any field" style="background:var(--coal);border:1px solid var(--line);padding:7px 10px">' +
+      '<option value="">Pick any field</option>' + fields.map(function (fd) {
+        return '<option value="' + esc(fd.key) + '"' + (FF.key === fd.key ? ' selected' : '') + '>' + esc(label(fd)) + '</option>';
+      }).join('') + '</select>' +
+      (FF.key ? '<select id="ff-val" aria-label="Value" style="background:var(--coal);border:1px solid var(--line);padding:7px 10px">' +
+        '<option value="">Any value</option>' + Object.keys(vals).sort().map(function (v) {
+          return '<option value="' + esc(v) + '"' + (FF.val === v ? ' selected' : '') + '>' + esc(v.slice(0, 60)) + '</option>';
+        }).join('') + '</select>' : '');
+  }
+  function fieldsLabel(key, set) {
+    var fd = ZS.fieldsFor(set).filter(function (x) { return x.key === key; })[0];
+    return fd ? fd.label : '';
   }
 
   function matchesTab(o) {
@@ -128,6 +167,7 @@
             esc(FQ) + '&rdquo;</button>' : '') +
       '<button class="chip" data-act="pipeMine" aria-pressed="' + (MINE ? 'true' : 'false') + '">Only mine</button>' +
       G.prodFilter('pipeLine', LINE) +
+      ffBar(opps.filter(ZS.isOpen)) +
       '<span style="margin-left:auto;font-size:12px;color:var(--dim)">' + live.length +
       ' live &middot; ' + ZS.money(live.reduce(function (a, o) { return a + ZS.oppValue(o); }, 0)) +
       ' of budget in play</span></div>';
@@ -406,7 +446,7 @@
       li('Product', ZS.productName(o.product)) +
       li('Opportunity value', G.acc().cost ? ZS.money(ZS.oppValue(o)) : '₹ ••••') +
       li('Source', (ZS.SOURCES[o.source] || o.source || '—') +
-         (o.campaign ? ' · ' + esc((ZS.campaignById(D(), o.campaign) || {}).name || '') : '')) +
+         (o.campaign ? ' · ' + esc((ZS.campaignById(D(), o.campaign) || {}).name || o.campaign) : '')) +
       li('Opened', o.created) +
       li('Last moved', o.updated) +
       /* a date picker is a box to type into, so the drawer reads the date back
@@ -690,6 +730,12 @@
       return '<div class="' + cls + ' derived"><label>' + esc(fd.label) + '</label>' +
         '<span class="recval">' + (has ? '&#10003; yes' : '&mdash;') + '</span>' +
         '<span class="rechint">Worked out from the plan.</span></div>';
+    }
+    /* shown here, changed where it lives (the deal, the ad, Meetings) */
+    if (fd.type === 'info') {
+      return '<div class="' + cls + ' derived"><label>' + esc(fd.label) + '</label>' +
+        '<span class="recval">' + esc(has ? String(v) : '—') + '</span>' +
+        (fd.note ? '<span class="rechint">' + esc(fd.note) + '</span>' : '') + '</div>';
     }
     if (!mayEdit) {
       return '<div class="' + cls + '"><label>' + esc(fd.label) + '</label>' +
@@ -1011,7 +1057,10 @@
       var fd = ZS.fieldByKey(key);
       var label = (r.field && r.field.label) || (fd && fd.label) || key;
       if (r.error) { refused.push(label + ': ' + r.error); keep[key] = PENDING[key]; }
-      else saved.push(label);
+      /* History says what it was and what it became; a credential never goes in it */
+      else saved.push(fd && fd.group === 'Credentials' ? label
+        : label + ' (' + (r.before == null || r.before === '' ? 'blank' : String(r.before).slice(0, 60)) +
+          ' to ' + (r.after == null || r.after === '' ? 'blank' : String(r.after).slice(0, 60)) + ')');
     });
 
     PENDING = keep;
@@ -1799,6 +1848,8 @@
     var st = e.target.closest ? e.target.closest('[data-stage]') : null;
     if (st) { A.setStage(st.dataset.stage + '|' + st.value); return; }
     if (e.target.id === 'f-outcome') { A.folOutcome(); return; }
+    if (e.target.id === 'ff-key') { FF = { key: e.target.value, val: '' }; G.render(); return; }
+    if (e.target.id === 'ff-val') { FF.val = e.target.value; G.render(); return; }
     if (e.target.id === 'fc-again') {
       var w = document.getElementById('fc-nextwrap');
       if (w) w.hidden = !e.target.checked;
@@ -1864,7 +1915,7 @@
          to render a row, one is derived rather than demanded. */
       var t = String(ed.get('title') || '').trim();
       var was = ZS.oppValue(eo);
-      eo.title = t || eo.title || ((c ? c.name : 'Engagement') + ' — ' + ZS.productName(ed.get('product')));
+      eo.title = t || eo.title || ((c ? c.name : 'Engagement') + ': ' + ZS.productName(ed.get('product')));
       eo.product = ed.get('product') || eo.product || null;
       eo.fee = ed.get('fee') ? Number(ed.get('fee')) : null;
       eo.scope = String(ed.get('scope') || '').trim();
@@ -2088,7 +2139,7 @@
       /* A blank name is fine — derive one rather than refusing to open the
          engagement. You often start one knowing only who called. */
       var title = String(d.get('title') || '').trim() ||
-        (c.name + ' — ' + ZS.productName(prod));
+        (c.name + ': ' + ZS.productName(prod));
       /* Read the contact back. A field is only real if BOTH ends know about it,
          and this form has shipped a control the handler ignored before. */
       var ctId = String(d.get('contact') || '');

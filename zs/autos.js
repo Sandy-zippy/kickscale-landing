@@ -291,6 +291,7 @@
       a.on = !a.on;
       G.log('auto_toggle', '"' + a.name + '" switched ' + (a.on ? 'on' : 'off'));
       G.save();
+      toServer(a);
       G.toast(a.name + (a.on ? ' switched on.' : ' switched off.'));
       G.render();
     },
@@ -321,12 +322,21 @@
       }
       G.log('auto_save', '"' + DRAFT.name + '" saved');
       G.save();
+      toServer(DRAFT);
       var name = DRAFT.name;
       DRAFT = null;
       G.toast('Saved “' + name + '”.');
       G.go('#/automations');
     }
   });
+
+  /* the server runs the rules (autorun.js), so the server must hold them */
+  function toServer(a) {
+    if (!window.API || !API.signedIn || !API.signedIn()) return;
+    API.saveAuto(a).catch(function (e) {
+      G.toast('Saved here, but the server did not take it: ' + ((e && e.message) || 'try again') + '.', true);
+    });
+  }
 
   function showTest(a) {
     var r = ZS.testAuto(a, D().clients, D());

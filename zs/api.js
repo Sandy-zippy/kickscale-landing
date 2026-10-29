@@ -612,6 +612,7 @@
      saved without its steps greets somebody and then says nothing */
   async function bots() { return call('GET', '/api/bots'); }
   async function saveBot(b) { return call('POST', '/api/bots', { body: b }); }
+  async function saveAuto(a) { return call('POST', '/api/automations', { body: a }); }
 
   /* ---------------- Mark ----------------
      Finding runs on the server because only the server can fetch somebody else's
@@ -696,7 +697,7 @@
     waDropTemplate: waDropTemplate, waStart: waStart, waRetry: waRetry,
     waCampaigns: waCampaigns, waPlan: waPlan, waCampaignNew: waCampaignNew, waCampaign: waCampaign,
     waCampaignCancel: waCampaignCancel, waCampaignDrop: waCampaignDrop, waTestToMe: waTestToMe,
-    bots: bots, saveBot: saveBot,
+    bots: bots, saveBot: saveBot, saveAuto: saveAuto,
     findProspects: findProspects, saveProspect: saveProspect,
     sendOutreach: sendOutreach, readReplies: readReplies,
     saveDraft: saveDraft, discardDraft: discardDraft, draftToGmail: draftToGmail, markByHand: markByHand,
