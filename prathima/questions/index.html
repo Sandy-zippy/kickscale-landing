@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en-IN"><head><meta charset="utf-8"><script>(function(){var ok=false;try{ok=sessionStorage.getItem('prathimaIn')==='1'}catch(e){}if(!ok){try{sessionStorage.setItem('prathimaNext','questions/')}catch(e){}location.replace('../../client-login/?ws=prathima');}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prathima questionnaire</title><meta name="description" content="Prathima Group website: our questions, answered online. Saves at every step.">
+<meta name="robots" content="noindex"><link rel="icon" href="../photos/pglogo.png">
+<link rel="preload" href="../fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:Geist;src:url(../fonts/Geist-Variable.woff2) format('woff2');font-weight:100 900;font-display:swap}
+@font-face{font-family:'JetBrains Mono';src:url(../fonts/JetBrainsMono-Variable.woff2) format('woff2');font-weight:100 800;font-display:swap}
+/* tokens: Picasso's group palette from zippyscale.in/prathima/ (gen2.py / v2.css) */
+:root{--sans:Geist,ui-sans-serif,system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;
+--bg:#FAF7F0;--bg2:#F1EBDD;--ink:#14213D;--tx:#4A5568;--mu:#6B7280;--line:rgba(20,33,61,.13);--line2:rgba(20,33,61,.2);--glass:rgba(255,255,255,.6);--glow:201,162,39;--acc:#B08A1C;--g1:#D4AE3A;--g2:#B08A1C;--g3:#6E520C;--btn:#14213D;--btnt:#FAF7F0;--icol:#9A7716;--ok:#0F766E;--warn:#9A3412}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--tx);overflow-x:clip}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:3px}
+.top{position:fixed;inset:0 0 auto;z-index:50;height:60px;display:flex;align-items:center;gap:12px;padding:0 max(16px,2.8vw);background:rgba(250,247,240,.94);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid rgba(20,33,61,.12)}
+.tb{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);font-weight:560;letter-spacing:-.02em;font-size:15px;min-width:0}
+.tb img{width:26px;flex:none}
+.tb span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .dl{margin-left:auto;font:500 10.5px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);background:none;border:1px solid var(--line2);border-radius:4px;padding:0 12px;min-height:40px;cursor:pointer;white-space:nowrap}
+.bar{position:fixed;top:60px;left:0;right:0;height:3px;background:var(--line);z-index:50}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--g1),var(--g2),var(--g3));transition:width .4s cubic-bezier(.22,1,.36,1)}
+main{max-width:760px;margin:0 auto;padding:96px 16px 140px}
+.mono{font:500 10.5px/1.5 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mu)}
+.strip{display:flex;justify-content:space-between;gap:12px;margin-bottom:14px}
+.hl{font-weight:473;font-size:clamp(30px,5.4vw,46px);letter-spacing:-.05em;line-height:1.02;color:var(--ink);margin:0 0 12px;text-wrap:balance}
+.gw{background:linear-gradient(100deg,var(--g1),var(--g2) 52%,var(--g3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:16px;line-height:1.55;font-weight:380;margin:0 0 26px;max-width:60ch}
+.q{border-top:1px solid var(--line);padding:20px 0}
+.q>.qh{display:flex;gap:12px;align-items:baseline;margin:0 0 10px}
+.q>.qh b{font:500 11px/1 var(--mono);letter-spacing:.12em;color:var(--icol);flex:none;min-width:2.2em}
+.q>.qh span{color:var(--ink);font-size:16.5px;line-height:1.4;font-weight:470;letter-spacing:-.01em}
+.hint{font-size:14px;line-height:1.5;color:var(--mu);margin:-4px 0 10px}
+.pro{display:inline-block;margin-left:8px;font:500 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--btnt);background:var(--ink);border-radius:3px;padding:4px 6px;vertical-align:2px}
+.box{position:relative}
+textarea,input[type=text],input[type=tel],input[type=email]{width:100%;font-size:16px;line-height:1.5;color:var(--ink);background:#fff;border:1px solid var(--line2);border-radius:4px;padding:10px 12px}
+textarea{min-height:92px;resize:vertical;padding-bottom:46px}
+textarea.sm{min-height:64px}
+.mic{position:absolute;right:8px;bottom:10px;display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 10px;border:1px solid var(--line2);border-radius:4px;background:var(--bg);color:var(--ink);font:500 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.mic svg{width:14px;height:14px}
+.mic[aria-pressed=true]{background:var(--warn);color:#fff;border-color:var(--warn)}
+.mic[aria-pressed=true] svg{animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.mic[aria-pressed=true] svg{animation:none}.bar i{transition:none}}
+.claim:not(.has) .box{display:none}
+.micmsg{font-size:13px;color:var(--warn);margin-top:6px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.opt{position:relative;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid var(--line2);border-radius:4px;background:#fff;color:var(--ink);font-size:15px;cursor:pointer;user-select:none}
+.opt input{width:18px;height:18px;margin:0;accent-color:var(--ink);flex:none}
+.opt:has(input:checked){border-color:var(--ink);background:var(--bg2)}
+.field{display:grid;gap:6px;margin-bottom:12px}
+.field label{font:500 10.5px/1.3 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--mu)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.you{border:1px solid var(--line);border-top-color:var(--line2);background:var(--glass);border-radius:4px;padding:16px 16px 4px;margin-bottom:8px}
+details.biz{border-top:1px solid var(--line)}
+details.biz summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:56px;color:var(--ink);font-size:16px;font-weight:470}
+details.biz summary::-webkit-details-marker{display:none}
+details.biz summary:after{content:'+';font:400 20px/1 var(--mono);color:var(--mu)}
+details.biz[open] summary:after{content:'\2212'}
+details.biz summary .done{margin-left:auto;font:500 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ok)}
+details.biz .in{padding:0 0 18px}
+.foot{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(250,247,240,.96);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid var(--line)}
+.foot .wrap{max-width:760px;margin:0 auto;padding:10px 16px calc(10px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 20px;border-radius:4px;background:var(--btn);color:var(--btnt);font-size:15px;font-weight:500;letter-spacing:-.01em;border:1px solid transparent;cursor:pointer;white-space:nowrap;text-decoration:none}
+.btn.gh{background:transparent;color:var(--ink);border-color:var(--line2)}
+.btn[disabled]{opacity:.4;cursor:default}
+#next{margin-left:auto}
+#status{flex-basis:100%;order:3;font:500 10px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mu);min-height:14px}
+#status.ok{color:var(--ok)}
+.done-box{border:1px solid var(--line2);border-radius:4px;background:#fff;padding:22px;margin-top:10px}
+.done-box .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.review dt{font:500 10.5px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mu);margin-top:14px}
+.review dd{margin:4px 0 0;color:var(--ink);white-space:pre-wrap;font-size:15px;line-height:1.5}
+.review h3{font-size:18px;color:var(--ink);letter-spacing:-.02em;margin:28px 0 0;padding-top:14px;border-top:1px solid var(--line2)}
+#print{display:none}
+@media (max-width:560px){.two{grid-template-columns:1fr}.top .dl{padding:0 10px}.tb span{max-width:46vw}}
+@media print{
+ .top,.bar,.foot,main{display:none!important}
+ #print{display:block;font-family:var(--sans);color:#111;padding:0 8mm}
+ #print h1{font-size:22px;margin:0 0 4px}#print h2{font-size:16px;margin:22px 0 6px;border-bottom:1px solid #999;padding-bottom:4px;break-after:avoid}
+ #print dt{font-weight:600;font-size:12.5px;margin-top:10px;break-after:avoid}#print dd{margin:2px 0 0;font-size:12.5px;white-space:pre-wrap}
+ #print .mono{color:#555}
+}
+</style></head>
+<body>
+<header class="top"><a class="tb" href="../"><img src="../photos/pglogo.png" alt="" width="26" height="23"><span>Prathima's product</span></a><button type="button" class="dl" id="dlTop">Download</button></header>
+<div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+<main id="app" aria-live="polite"></main>
+<div class="foot"><div class="wrap">
+ <button type="button" class="btn gh" id="back">Back</button>
+ <button type="button" class="btn" id="next">Continue</button>
+ <div id="status" role="status"></div>
+</div></div>
+<div id="print"></div>
+<script>
+(function(){
+'use strict';
+var ENDPOINT='https://script.google.com/macros/s/AKfycbyDMiGETFWrOPu8MEJi6I9t9sukX58fEhZ3-n2o_45cLNZo4iNbtZ5dO4_89IkbZpLyvQ/exec';
+var KEY='pq_draft_v1';
+var CLAIM=['Confirm','Correct','Remove'];
+var VERTICALS=['Healthcare','Education','Infra, Industry and Energy','Technology (Netxcell)','Hospitality and Entertainment','Aviation','Living and Real Estate','Foundation'];
+
+/* Every question from proposal/questionnaire-questions.txt (Groups A to I).
+   t: text box (with Speak) | one: pick one + note | many: tick any + note | claim: Confirm/Correct/Remove + note | you: who is answering */
+var G=[
+{k:'A',name:'People and decisions',head:'Who decides, who *answers*.',lede:'Start with the people. A few lines each is enough.',qs:[
+ {id:'you',type:'you'},
+ {id:'A1',h:'Single point of contact',q:'Who is the single point of contact for the whole project?',hint:'Name, role, mobile, email.',type:'t'},
+ {id:'A2',h:'Who approves design and content',q:'Who approves the design and the content?',type:'one',opts:['One person','Each sector head','Both: sector heads first, then one final approver'],note:'Names, if you like'},
+ {id:'A3',h:'Contact for each business',q:'Who is the contact for each of the 17 businesses, for content and facts?',hint:'Business, name, mobile. One line each.',type:'t'},
+ {id:'A4',h:'Who receives enquiries per business',q:'Who receives each business\'s enquiries?',hint:'Names, mobiles and emails per business.',type:'t'},
+ {id:'A5',h:'Where enquiries go',q:'Where should enquiries go?',type:'many',opts:['Email','WhatsApp','Google Sheet','A CRM'],note:'Which CRM, if any?'}]},
+{k:'B',name:'Content',head:'Words, languages and *people*.',lede:'Who writes the website, and what we should show about the group.',qs:[
+ {id:'B1',h:'Who writes the content',q:'Who writes the website content?',type:'one',opts:['ZippyScale, from our inputs and the sector-head calls, approved by us','Our own team','A mix of both'],note:'Anything to add'},
+ {id:'B2',h:'Languages',q:'Which languages?',type:'many',opts:['English','Telugu','Hindi'],note:'Other languages or notes'},
+ {id:'B3',h:'Chairman message and leadership',q:'The Chairman\'s message and photograph, and the leadership team for the About page.',hint:'Paste the message, or tell us who will send it and the photographs.',type:'t'},
+ {id:'B4',h:'Milestones by year',q:'The group\'s milestones, year by year.',type:'t'},
+ {id:'B5',h:'Press and news',q:'Press coverage and news to show.',hint:'Links or headlines are fine.',type:'t'},
+ {id:'B6',h:'Careers',q:'Careers: current openings, and who receives applications.',type:'t'}]},
+{k:'C',name:'What we need from each business',head:'Seventeen businesses, *one* at a time.',lede:'Open a business, answer what you can, and leave the rest. Files can come later through the onboarding form.',qs:[
+ {id:'C01',h:'Prathima Hospitals',type:'biz',hint:'Specialties, doctors with photos and timings, locations, emergency numbers, NABH certificate, insurance panels, health packages, appointment system in use.'},
+ {id:'C02',h:'Prathima Cancer Institute',type:'biz',hint:'Treatments, doctors, equipment, referral process.'},
+ {id:'C03',h:'Prathima Relief',type:'biz',hint:'What it is, who it serves, its goal.'},
+ {id:'C04',h:'PIMS',type:'biz',hint:'Courses and seats, approvals and affiliations, admission process and dates, campus and hostel facilities, NABL certificate.'},
+ {id:'C05',h:'Prathima Education',type:'biz',hint:'Institutions, courses, admission process.'},
+ {id:'C06',h:'Prathima Infrastructure',type:'biz',hint:'Completed and ongoing projects with photos, clients that may be named, certifications, figures that may be published, tender contact.'},
+ {id:'C07',h:'Prathima Industries',type:'biz',hint:'Product catalogue with specifications, capacity, certifications, customers that may be named.'},
+ {id:'C08',h:'Prathima Solar',type:'biz',hint:'What it offers, projects, who it serves.'},
+ {id:'C09',h:'Elgen',type:'biz',hint:'What it is and what it offers.'},
+ {id:'C10',h:'Netxcell and Tapas',type:'biz',hint:'Products, case studies, client logos that may be shown, demo contact.'},
+ {id:'C11',h:'Hotel Prathima Regency',type:'biz',hint:'Room types and starting tariffs, banquet halls and capacities, restaurant and bars, booking system in use.'},
+ {id:'C12',h:'Prathima Multiplex',type:'biz',hint:'Ticketing partner or link, screen details.'},
+ {id:'C13',h:'Hyderabad Airlines',type:'biz',hint:'Aircraft, regions served, permits that may be shown, quote process.'},
+ {id:'C14',h:'Serene Bilvani One',type:'biz',hint:'Project details, plans, amenities, pricing policy, RERA number, visit timings.'},
+ {id:'C15',h:'Columbian assisted living',type:'biz',hint:'What it is, care offered, visit timings.'},
+ {id:'C16',h:'Pristine Estates',type:'biz',hint:'Correct name, projects, RERA numbers.'},
+ {id:'C17',h:'Prathima Foundation',type:'biz',hint:'Programmes, impact numbers, partners, how to volunteer or partner.'}]},
+{k:'D',name:'Claims to confirm',head:'Is this *right* to publish?',lede:'For each line, tick Confirm, Correct or Remove. Add the correct figure in the note.',qs:[
+ {id:'D1',h:'4,000+ people across the group',type:'claim'},
+ {id:'D2',h:'21+ specialties; plan for 1,500 beds',type:'claim'},
+ {id:'D3',h:'NABH accreditation (hospitals); NABL (PIMS labs)',type:'claim'},
+ {id:'D4',h:'Rs 1,083 crore revenue, FY2024 (Prathima Infrastructure): may we show it?',type:'claim'},
+ {id:'D5',h:'Supplies to IOCL, BPCL and HPCL: may we name them?',type:'claim'},
+ {id:'D6',h:'Netxcell: 300 million+ connections, 100+ operators',type:'claim'},
+ {id:'D7',h:'Hotel Prathima Regency: "#1 on TripAdvisor in Karimnagar"',type:'claim'},
+ {id:'D8',h:'Hyderabad Airlines: aircraft and fleet',type:'claim'},
+ {id:'D9',h:'Foundation impact numbers',type:'claim'},
+ {id:'D10',h:'Business: Prathima Relief',type:'claim'},
+ {id:'D11',h:'Business: Prathima Solar',type:'claim'},
+ {id:'D12',h:'Business: Elgen',type:'claim'},
+ {id:'D13',h:'Business: Columbian',type:'claim'},
+ {id:'D14',h:'Business: Pristine Estates (we read "Prestient" on the menu)',type:'claim'},
+ {id:'D15',h:'Business: Tellapur Technocity',type:'claim'}]},
+{k:'E',name:'Photos and videos',head:'What we *shoot*.',lede:'Tick the businesses you want ZippyScale to photograph and film.',qs:[
+ {id:'E1',h:'Verticals for ZippyScale to shoot',q:'Which verticals should ZippyScale shoot?',type:'many',opts:VERTICALS,note:'Notes'},
+ {id:'E2',h:'Existing photos and videos',q:'For the others: do you have recent photos and videos?',hint:'Tell us which, and how you will share them (Drive link, WeTransfer).',type:'t'},
+ {id:'E3',h:'Shoot permissions and dates',q:'Shoot permissions and dates at each location.',hint:'Hospitals, campus, sites, plant, hotel, hangar.',type:'t'}]},
+{k:'F',name:'Brand and domain',head:'Logo, colours, *address*.',lede:'',qs:[
+ {id:'F1',h:'Logos as vector files',q:'The Prathima lotus logo as a vector file, and each business\'s logo.',type:'many',opts:['We have the vector files and will share them','Some are missing','We need help finding them'],note:'Notes'},
+ {id:'F2',h:'Brand guide',q:'Any brand guide (colours, fonts)?',type:'one',opts:['Yes, we will share it','No brand guide'],note:'Notes'},
+ {id:'F3',h:'Who manages prathimagroup.net',q:'Who manages prathimagroup.net?',hint:'Name and contact.',type:'t'},
+ {id:'F4',h:'Short addresses allowed',q:'May we add short addresses like regency.prathimagroup.net?',type:'one',opts:['Yes','No','Need to check'],note:'Notes'}]},
+{k:'G',name:'WhatsApp, Meta, Google, LinkedIn',head:'Accounts, *vertical by vertical*.',lede:'Tick what exists today. The onboarding form collects access later.',qs:[
+ {id:'G1',h:'WhatsApp numbers',q:'WhatsApp: one number for the group, or a separate number for each vertical?',type:'one',opts:['One number for the group','A separate number for each vertical','Not sure yet'],note:'Notes'},
+ {id:'G2',h:'WhatsApp connected to the website',q:'Should WhatsApp be connected to the website (and to the AI assistant on Pro), so chats and enquiries reach the right team?',hint:'The WhatsApp API needs a number that is not used in the WhatsApp phone app.',type:'one',opts:['Yes','No','Let us discuss'],note:'Notes'},
+ {id:'G3',h:'Meta accounts that exist',q:'Meta: which exist today, for each vertical?',type:'many',opts:['Business Manager','Facebook page','Instagram account','Ad account'],note:'Which verticals have which'},
+ {id:'G4',h:'Google accounts that exist',q:'Google: which exist today?',type:'many',opts:['Business Profile for each location','Google Ads account','Analytics','Search Console'],note:'Which verticals and locations'},
+ {id:'G5',h:'LinkedIn',q:'LinkedIn: what do you want?',type:'many',opts:['Company page for the group','A page for each business','LinkedIn ads planned'],note:'Notes'},
+ {id:'G6',h:'Systems to link',q:'Systems to link to the website.',type:'many',opts:['Hospital appointment software','Hotel booking engine','Multiplex ticketing'],note:'Names of the software, and any others'}]},
+{k:'H',name:'The AI assistant',pro:true,head:'The assistant, *if Pro*.',lede:'Only needed if you choose the Pro package. Skip this step otherwise.',qs:[
+ {id:'H1',h:'Businesses the assistant covers',q:'Which businesses should the assistant cover?',type:'one',opts:['All 17 (our default)','Only some'],note:'Which ones, if only some'},
+ {id:'H2',h:'What the assistant must never answer',q:'What must it never answer?',type:'many',opts:['Prices','Medical advice','Admission guarantees','Legal or financial advice'],note:'Anything else'},
+ {id:'H3',h:'Who takes over on WhatsApp',q:'Who takes over on WhatsApp for each business when the assistant hands over?',hint:'Business, name, mobile.',type:'t'}]},
+{k:'I',name:'Legal',head:'Policies and *disclaimers*.',lede:'Last step. Then review and submit.',qs:[
+ {id:'I1',h:'Privacy policy and terms',q:'Privacy policy and terms.',type:'one',opts:['We have them and will share them','Please draft them for our review'],note:'Notes'},
+ {id:'I2',h:'Disclaimers required',q:'Any medical, financial or real estate disclaimers your legal team requires.',type:'t'}]}
+];
+var YOU=[['you_name','Your name','text','name'],['you_role','Your role','text','organization-title'],['you_mobile','Your mobile','tel','tel'],['you_email','Your email','email','email']];
+var REVIEW=G.length; // index of the review step
+
+/* ---------- state ---------- */
+var S=load();
+function load(){var d=null;try{d=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+ if(!d||!d.id){d={id:'pq-'+(crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,10)),step:0,a:{},submitted:false}}
+ return d}
+function keep(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+
+/* ---------- answers to columns (Sheet headers, CSV, print) ---------- */
+function val(q){var a=S.a[q.id];
+ if(q.type==='t'||q.type==='biz')return (a||'').trim();
+ if(!a)return '';var v=(a.v||[]).join('; '),n=(a.n||'').trim();
+ return v&&n?v+' | Note: '+n:(v||(n?'Note: '+n:''))}
+function cols(){var out=[];
+ YOU.forEach(function(y){out.push([y[1],(S.a[y[0]]||'').trim()])});
+ G.forEach(function(g){g.qs.forEach(function(q){if(q.type!=='you')out.push([header(q),val(q)])})});
+ return out}
+function header(q){return q.id+' '+q.h}
+function rowsFor(){var r=[];YOU.forEach(function(y){r.push(['You',y[1],(S.a[y[0]]||'').trim()])});
+ G.forEach(function(g){g.qs.forEach(function(q){if(q.type!=='you')r.push([g.k+' '+g.name,q.id+' '+(q.q||q.h),val(q)])})});return r}
+
+/* ---------- saving: every Continue posts everything so far, one after another ---------- */
+var chain=Promise.resolve(),statusEl=document.getElementById('status');
+function setStatus(t,ok){statusEl.textContent=t;statusEl.className=ok?'ok':''}
+function post(partial){
+ var g=G[Math.min(S.step,G.length-1)];
+ var body={action:'prathima_answers',response_id:S.id,partial:partial,section:S.step+1,section_name:g.k+' '+g.name,cols:cols(),page:location.href};
+ chain=chain.then(function(){
+  return fetch(ENDPOINT,{method:'POST',body:JSON.stringify(body)}) // text/plain: no preflight
+   .then(function(r){return r.json()})
+   .then(function(j){if(j&&j.ok&&j.saved){S.server=new Date().toISOString();keep();return true}return false})
+   .catch(function(){return false});
+ });
+ return chain;
+}
+function saved(ok){var t=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+ setStatus(ok?'Saved to ZippyScale at '+t:'Saved on this device at '+t,ok)}
+
+/* ---------- speech ---------- */
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition,live=null;
+var MIC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>';
+function micFor(ta,box){if(!SR)return;
+ var b=document.createElement('button');b.type='button';b.className='mic';b.setAttribute('aria-pressed','false');
+ b.setAttribute('aria-label','Speak your answer');b.innerHTML=MIC+'<span>Speak</span>';box.appendChild(b);
+ b.onclick=function(){
+  if(live){var was=live.btn;live.rec.stop();if(was===b)return}
+  var rec=new SR(),base=ta.value;rec.lang='en-IN';rec.interimResults=true;rec.continuous=true;
+  live={rec:rec,btn:b};b.setAttribute('aria-pressed','true');b.lastChild.textContent='Stop';
+  rec.onresult=function(e){var s='';for(var i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;
+   ta.value=base+(base&&!/\s$/.test(base)?' ':'')+s.trim();ta.dispatchEvent(new Event('input',{bubbles:true}))};
+  rec.onerror=function(e){var m=box.querySelector('.micmsg')||box.appendChild(Object.assign(document.createElement('div'),{className:'micmsg'}));
+   m.textContent=e.error==='not-allowed'||e.error==='service-not-allowed'?'The microphone is blocked. Allow it in the browser, or type your answer.':'Could not hear that. Try again, or type.'};
+  rec.onend=function(){b.setAttribute('aria-pressed','false');b.lastChild.textContent='Speak';if(live&&live.rec===rec)live=null;ta.focus()};
+  try{rec.start()}catch(e){rec.onend()}
+ }}
+function stopMic(){if(live)live.rec.stop()}
+
+/* ---------- render ---------- */
+var app=document.getElementById('app'),back=document.getElementById('back'),next=document.getElementById('next');
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+function hl(s){return esc(s).replace(/\*(.+?)\*/g,'<span class="gw">$1</span>')}
+function textBox(id,label,small){
+ var box=document.createElement('div');box.className='box';
+ var ta=document.createElement('textarea');ta.id='f-'+id;if(small)ta.className='sm';ta.value=S.a[id]||'';
+ if(label)ta.setAttribute('aria-label',label);
+ ta.placeholder=SR?'Type, or press Speak and talk. Check the words before you continue.':'Type your answer.';
+ ta.oninput=function(){S.a[id]=ta.value;keep()};box.appendChild(ta);micFor(ta,box);return box}
+function choice(q){
+ var wrap=document.createElement('div'),a=S.a[q.id]||(S.a[q.id]={v:[],n:''});
+ if(q.type==='claim'){wrap.className='claim'+(a.v.length||a.n?' has':'')}
+ var opts=q.type==='claim'?CLAIM:q.opts,multi=q.type==='many';
+ var fs=document.createElement('div');fs.className='opts';fs.setAttribute('role',multi?'group':'radiogroup');fs.setAttribute('aria-labelledby','h-'+q.id);
+ opts.forEach(function(o){var l=document.createElement('label');l.className='opt';
+  var i=document.createElement('input');i.type=multi?'checkbox':'radio';i.name='o-'+q.id;i.value=o;i.checked=a.v.indexOf(o)>-1;
+  i.onchange=function(){if(multi){a.v=[].slice.call(fs.querySelectorAll('input:checked')).map(function(x){return x.value})}else a.v=[o];if(q.type==='claim')wrap.classList.add('has');keep()};
+  if(!multi){i.onclick=function(){if(a.v[0]===o&&i.dataset.was==='1'){i.checked=false;a.v=[];keep()}i.dataset.was=i.checked?'1':''};i.dataset.was=i.checked?'1':''}
+  l.appendChild(i);l.appendChild(document.createTextNode(o));fs.appendChild(l)});
+ wrap.appendChild(fs);
+ var nb=textBox(q.id+'__n',(q.note||'Note')+' for '+q.id,true),ta=nb.querySelector('textarea');
+ ta.value=a.n||'';ta.placeholder=(q.type==='claim'?'Correct figure or note':q.note||'Note')+(SR?' (type or Speak)':'');
+ ta.oninput=function(){a.n=ta.value;keep()};wrap.appendChild(nb);return wrap}
+function render(){
+ stopMic();window.scrollTo(0,0);app.innerHTML='';
+ var n=G.length;document.getElementById('barFill').style.width=(Math.min(S.step,n)/n*100)+'%';
+ back.disabled=S.step===0;back.hidden=S.step>REVIEW;next.hidden=S.step>REVIEW;
+ if(S.step>REVIEW)return renderDone();
+ if(S.step===REVIEW)return renderReview();
+ var g=G[S.step];
+ next.textContent=S.step===n-1?'Review answers':'Continue';
+ var h=document.createElement('div');
+ h.innerHTML='<div class="strip mono"><span>Step '+(S.step+1)+' of '+n+'</span><span>Group '+g.k+'</span></div>'+
+  '<h1 class="hl">'+hl(g.head)+'</h1>'+'<p class="mono" style="margin:0 0 8px">'+g.k+' / '+esc(g.name)+(g.pro?' <span class="pro">Pro only</span>':'')+'</p>'+
+  (g.lede?'<p class="lede">'+esc(g.lede)+'</p>':'')+(S.step===0?'<p class="lede" style="margin-top:-12px">Nine short steps. Everything saves when you press Continue, and you can come back on this device and carry on. You can also download your answers at any time.</p>':'');
+ app.appendChild(h);
+ g.qs.forEach(function(q){
+  if(q.type==='you'){var y=document.createElement('div');y.className='you';
+   y.innerHTML='<p class="mono" style="margin:0 0 12px">You, the person filling this in</p><div class="two"></div>';
+   var two=y.querySelector('.two');
+   YOU.forEach(function(f){var d=document.createElement('div');d.className='field';
+    d.innerHTML='<label for="f-'+f[0]+'">'+f[1]+'</label><input type="'+f[2]+'" id="f-'+f[0]+'" autocomplete="'+f[3]+'"'+(f[2]==='tel'?' inputmode="tel"':'')+'>';
+    var i=d.querySelector('input');i.value=S.a[f[0]]||'';i.oninput=function(){S.a[f[0]]=i.value;keep()};two.appendChild(d)});
+   app.appendChild(y);return}
+  if(q.type==='biz'){var d=document.createElement('details');d.className='biz';
+   d.innerHTML='<summary><span id="h-'+q.id+'">'+esc(q.h)+'</span>'+((S.a[q.id]||'').trim()?'<span class="done">Answered</span>':'')+'</summary><div class="in"><p class="hint">'+esc(q.hint)+'</p></div>';
+   d.querySelector('.in').appendChild(textBox(q.id,q.h));app.appendChild(d);return}
+  var s=document.createElement('section');s.className='q';
+  s.innerHTML='<p class="qh"><b>'+q.id+'</b><span id="h-'+q.id+'">'+esc(q.q||q.h)+'</span></p>'+(q.hint?'<p class="hint">'+esc(q.hint)+'</p>':'');
+  if(q.type==='t'){var tb=textBox(q.id);tb.querySelector('textarea').setAttribute('aria-labelledby','h-'+q.id);s.appendChild(tb)}
+  else s.appendChild(choice(q));
+  app.appendChild(s)});
+}
+function renderReview(){
+ next.textContent='Submit answers';
+ var h='<div class="strip mono"><span>Review</span><span>'+S.id.slice(0,11)+'</span></div><h1 class="hl">Check, then <span class="gw">submit</span>.</h1><p class="lede">Press Back to change anything. After you submit you can still come back, change an answer and submit again; it updates the same record.</p><dl class="review">';
+ var last='';rowsFor().forEach(function(r){if(r[0]!==last){h+='<h3>'+esc(r[0])+'</h3>';last=r[0]}h+='<dt>'+esc(r[1])+'</dt><dd>'+(r[2]?esc(r[2]):'<span class="mono">Not answered</span>')+'</dd>'});
+ app.innerHTML=h+'</dl>'}
+function renderDone(){
+ document.getElementById('barFill').style.width='100%';
+ app.innerHTML='<div class="strip mono"><span>Done</span><span>'+S.id.slice(0,11)+'</span></div><h1 class="hl">Thank you. Your answers are <span class="gw">in</span>.</h1>'+
+ '<div class="done-box"><p class="lede" id="doneMsg" style="margin:0">'+(S.serverSubmitted?'ZippyScale has your answers. Bhargav Naidu will come back to you with the next step.':'Your answers are saved on this device. Please press Download my answers and email the file to bhargav@zippyscale.com, so nothing is missed.')+'</p>'+
+ '<div class="btns"><button type="button" class="btn" id="dlCsv">Download my answers (Excel)</button><button type="button" class="btn gh" id="dlPdf">Print or save as PDF</button><button type="button" class="btn gh" id="edit">Change an answer</button></div></div>';
+ document.getElementById('dlCsv').onclick=csv;document.getElementById('dlPdf').onclick=printView;
+ document.getElementById('edit').onclick=function(){S.step=0;keep();render()};
+ setStatus(S.serverSubmitted?'Submitted to ZippyScale':'Saved on this device',S.serverSubmitted)}
+
+/* ---------- navigation ---------- */
+next.onclick=function(){
+ if(S.step<REVIEW){S.step++;keep();render();post(true).then(saved);setStatus('Saving');return}
+ next.disabled=true;setStatus('Submitting');S.submitted=true;keep();
+ post(false).then(function(ok){S.serverSubmitted=ok;S.step=REVIEW+1;keep();next.disabled=false;render()})};
+back.onclick=function(){if(S.step>0){S.step--;keep();render()}};
+
+/* ---------- downloads ---------- */
+function csv(){
+ var q=function(s){return '"'+String(s).replace(/"/g,'""')+'"'};
+ var lines=[['Prathima Group answers','Response ID '+S.id,new Date().toLocaleString('en-IN')].map(q).join(','),['Section','Question','Answer'].map(q).join(',')]
+  .concat(rowsFor().map(function(r){return r.map(function(x){return q(/^[=+\-@]/.test(x)?"'"+x:x)}).join(',')}));
+ var blob=new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);a.download='Prathima Group answers.csv';document.body.appendChild(a);a.click();
+ setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000)}
+function printView(){
+ var h='<h1>Prathima Group: answers for ZippyScale</h1><p class="mono">Response '+esc(S.id)+' / '+new Date().toLocaleString('en-IN')+'</p>',last='';
+ rowsFor().forEach(function(r){if(r[0]!==last){h+=(last?'</dl>':'')+'<h2>'+esc(r[0])+'</h2><dl>';last=r[0]}h+='<dt>'+esc(r[1])+'</dt><dd>'+(r[2]?esc(r[2]):'Not answered')+'</dd>'});
+ document.getElementById('print').innerHTML=h+'</dl>';window.print()}
+document.getElementById('dlTop').onclick=function(){
+ var m=document.getElementById('dlMenu');if(m){m.remove();return}
+ m=document.createElement('div');m.id='dlMenu';m.style.cssText='position:fixed;top:64px;right:16px;z-index:60;background:#fff;border:1px solid var(--line2);border-radius:4px;padding:8px;display:grid;gap:6px;box-shadow:0 10px 30px rgba(20,33,61,.12)';
+ m.innerHTML='<button type="button" class="btn">Download my answers (Excel)</button><button type="button" class="btn gh">Print or save as PDF</button>';
+ m.children[0].onclick=function(){m.remove();csv()};m.children[1].onclick=function(){m.remove();printView()};document.body.appendChild(m)};
+
+render();
+if(S.step>0&&S.step<=REVIEW)setStatus('Welcome back. Your answers are here',true);
+})();
+</script>
+</body></html>
