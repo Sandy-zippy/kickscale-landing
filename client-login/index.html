@@ -386,6 +386,11 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
       <span class="btext"><b>Royale Collections</b><span>Corporate gifting &middot; Discovery Portal + Gifting Cockpit</span></span>
       <span class="bgo">&rarr;</span>
     </button>
+    <button class="badge" onclick="goClientLogin('prathima')">
+      <span class="bicon">PG</span>
+      <span class="btext"><b>Prathima's product</b><span>Prathima Group &middot; group website design &middot; every page and the full scope</span></span>
+      <span class="bgo">&rarr;</span>
+    </button>
     <button class="badge" onclick="goClientLogin('srinova')">
       <span class="bicon">PS</span>
       <span class="btext"><b>Project Srinova</b><span>PM AI SM &middot; Levain Bake House &middot; Srenova Aesthetics &middot; growth proposal</span></span>
@@ -423,6 +428,27 @@ footer.ft{border-top:1px solid var(--line);text-align:center;padding:22px;color:
     <div class="login-err" id="ccerr"></div>
     <button class="btn-primary" onclick="tryCarCart()">Enter workspace</button>
     <p class="login-note">This is a front-end gate for demo/hosting purposes &mdash; credentials live in this page's source, not a real auth service. Swap in server-side auth before this workspace holds anything sensitive.</p>
+  </div>
+</div>
+
+<!-- PRATHIMA GROUP LOGIN -->
+<div id="pglogin" class="gatewrap hidden">
+  <div class="gate-card">
+    <button class="gate-back" onclick="goDirectory()">&larr; Workspaces</button>
+    <div class="gate-eyebrow">Prathima Group &times; ZippyScale</div>
+    <h1>Prathima's product</h1>
+    <p class="sub">The Prathima Group website: the design system, the group home and all eight business sections on desktop and phone, and the full scope, page by page.</p>
+    <div class="field">
+      <label for="pgu">Login ID</label>
+      <input id="pgu" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. prathima" onkeydown="if(event.key==='Enter')tryPrathima()">
+    </div>
+    <div class="field">
+      <label for="pgp">Password</label>
+      <input id="pgp" type="password" autocomplete="current-password" placeholder="Enter password" onkeydown="if(event.key==='Enter')tryPrathima()">
+    </div>
+    <div class="login-err" id="pgerr"></div>
+    <button class="btn-primary" onclick="tryPrathima()">Open Prathima's product</button>
+    <p class="login-note">This is a front-end gate for demo/hosting purposes, not a real auth service.</p>
   </div>
 </div>
 
@@ -2020,7 +2046,7 @@ async function downloadPDF(){
 function hideGates(){document.querySelectorAll('.gatewrap').forEach(el=>el.classList.add('hidden'));}
 function goPortal(){hideGates();document.getElementById('portal').classList.remove('hidden');}
 function goDirectory(){hideGates();document.getElementById('directory').classList.remove('hidden');}
-const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'], saasya:['salogin','saerr','sau'], gladucame:['gclogin','gcerr','gcu'], srinova:['srlogin','srerr','sru'] };
+const GATES = { carcart:['cclogin','ccerr','ccu'], vaarahi:['valogin','vaerr','vau'], royale:['rclogin','rcerr','rcu'], saasya:['salogin','saerr','sau'], gladucame:['gclogin','gcerr','gcu'], srinova:['srlogin','srerr','sru'], prathima:['pglogin','pgerr','pgu'] };
 /* Royale has two products behind one password, so the gate opens a chooser rather
    than guessing which one they wanted. */
 function showRoyalePick(){
@@ -2145,6 +2171,16 @@ function srEye(){
   document.getElementById('sreyex').style.display=on?'':'none';
 }
 if(/[?&]ws=srinova/.test(location.search)) goClientLogin('srinova');
+const PRATHIMA = { user:"prathima", h:"211499190310c112ff552d79cd919342df05bbfc5a4e924df21aae579f13ef47" };
+async function tryPrathima(){
+  const u=document.getElementById('pgu').value.trim().toLowerCase();
+  const p=document.getElementById('pgp').value;
+  let hex='';
+  try{ const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p)); hex=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }catch(e){}
+  if(u===PRATHIMA.user && hex===PRATHIMA.h){ try{ sessionStorage.setItem('prathimaIn','1'); }catch(e){} location.href='../prathima/'; return; }
+  document.getElementById('pgerr').textContent='Wrong login ID or password.';
+}
+if(/[?&]ws=prathima/.test(location.search)) goClientLogin('prathima');
 </script>
 <script src="../gladucame/logins.js"></script>
 <script src="https://zippyscale.in/pw-eye.js" defer></script>
