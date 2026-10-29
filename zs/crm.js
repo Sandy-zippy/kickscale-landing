@@ -130,7 +130,8 @@
       ' &middot; ' + esc(ZS.lineName(c.product)) + '</p></div>' +
       '<div class="right">' +
       (D().access[G.me().role].seeMobile
-        ? '<a class="btn ok" href="https://wa.me/91' + esc(c.mobile) + '" target="_blank" rel="noopener">WhatsApp</a>' +
+        /* our own WhatsApp number, through the inbox: never WhatsApp Web (29 Oct) */
+        ? '<button class="btn ok" data-act="startChat" data-id="client|' + esc(c.id) + '"' + G.waLock() + '>WhatsApp</button>' +
           '<a class="btn alt" href="tel:' + esc(c.mobile) + '">Call</a>' : '') +
       '<button class="btn alt" data-act="assignClient" data-id="' + esc(c.id) + '">Assign</button>' +
       '<a class="btn" href="#/oppnew/' + esc(c.id) + '">+ New opportunity</a>' +
