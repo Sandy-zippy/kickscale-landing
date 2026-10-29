@@ -549,7 +549,7 @@
       '<div class="pickwrap">' +
       '<select id="' + id + '" name="' + name + '">' +
         '<option value="">Not set</option>' +
-        opts.map(function (o) {
+        (value && opts.indexOf(value) < 0 ? opts.concat([value]) : opts).map(function (o) {
           return '<option value="' + esc(o) + '"' + (o === value ? ' selected' : '') + '>' + esc(o) + '</option>';
         }).join('') +
       '</select>' +
@@ -746,7 +746,7 @@
     h += '<div class="fgroup"><h4>Who we deal with <em>&mdash; add the rest on their profile</em></h4><div class="fbody">' +
       '<div class="f"><label for="cl-cname">Name</label><input id="cl-cname" name="contact_name" autocomplete="off" value="' + v(ct && ct.name) + '"></div>' +
       designationField('cl-desig', 'designation', (ct && ct.designation) || '', (ed && ed.sector) || '') +
-      mobileField('cl-mob', 'mobile', (ed && ed.dial) || ZS.DEFAULT_DIAL, (ed && ed.mobile) || '') +
+      mobileField('cl-mob', 'mobile', (ed && (ed.dial || (ct && ct.dial))) || ZS.DEFAULT_DIAL, (ed && (ed.mobile || (ct && ct.mobile))) || '') +
       '<div class="f"><label for="cl-email">Email</label><input id="cl-email" name="email" type="email" autocomplete="off" value="' + v(ed && ed.email) + '"></div>' +
       '</div></div>';
 
@@ -796,7 +796,7 @@
       '<p class="hint wide">Theirs, for refunds and for a record. Ours goes on the invoice.</p>' +
       '</div></div>';
 
-    h += '<p class="err" id="cl-err"></p><button class="btn" type="submit">Add the client</button></form>';
+    h += '<p class="err" id="cl-err"></p><button class="btn" type="submit">' + (ed ? 'Update the client' : 'Add the client') + '</button></form>';
     setTimeout(function () { applyPendingPick(); applyScan(); renderPendingDocs(); }, 0);
     return h;
   };
@@ -1375,7 +1375,9 @@
     if (f.id === 'clientform') {
       e.preventDefault();
       var d = new FormData(f);
-      var r = ZS.upsertClient(D().clients, {
+      var editing = f.getAttribute('data-edit') ? G.clientById(f.getAttribute('data-edit')) : null;
+      var r = (editing ? function (o) { return ZS.updateClient(D().clients, editing, o); }
+                       : function (o) { return ZS.upsertClient(D().clients, o); })({
         name: d.get('name'),
         type: d.get('type') || 'lead',
         sector: d.get('sector') || '',
@@ -1409,8 +1411,10 @@
       G.save();
       G.log(r.created ? 'client_add' : 'client_edit',
         r.created ? r.client.name + ' added as a ' + (ZS.CLIENT_TYPES[r.client.type] || 'lead').toLowerCase()
-                  : 'Added a contact at ' + r.client.name, { client: r.client.id });
-      G.toast(r.created ? r.client.name + ' added.' : 'We already had them — the contact was added.');
+          : editing ? 'Updated ' + r.client.name + ': ' + (r.changed.length ? r.changed.join(', ') : 'nothing changed')
+          : 'Added a contact at ' + r.client.name, { client: r.client.id });
+      G.toast(r.created ? r.client.name + ' added.' : editing ? r.client.name + ' updated.'
+        : 'We already had them, so the contact was added to ' + r.client.name + '.');
       G.go('#/client/' + r.client.id);
       return;
     }

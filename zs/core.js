@@ -3943,6 +3943,43 @@ function outreachTrades(list) {
     return { client: c, created: true };
   }
 
+  /* Edit the profile: what the form shows is what is saved, on THIS record.
+     Never upsertClient for an edit: that merges by name and only ADDS, so on
+     29 Oct an edit added a second contact and never changed the source. */
+  function updateClient(clients, c, o) {
+    if (!validName(o.name)) return { error: 'Enter the company name.' };
+    var clash = findByName(clients, o.name);
+    if (clash && clash !== c) return { error: 'Another client is already called ' + clash.name + '.' };
+    var changed = [];
+    var same = function (a, b) { return JSON.stringify(a == null ? '' : a) === JSON.stringify(b == null ? '' : b); };
+    ['name', 'type', 'sector', 'source', 'campaign', 'assigned_to', 'website', 'instagram', 'gst', 'tax_id']
+      .forEach(function (k) {
+        if (o[k] === undefined) return;
+        var v = typeof o[k] === 'string' ? o[k].trim() : o[k];
+        if (!same(c[k], v)) { c[k] = v; changed.push(k); }
+      });
+    ['address', 'bank'].forEach(function (k) {
+      if (!o[k]) return;
+      var next = Object.assign({}, c[k] || (k === 'address' ? newAddress() : {}), o[k]);
+      if (!same(c[k], next)) { c[k] = next; changed.push(k); }
+    });
+    var ct = primaryContact(c);
+    if (ct) {
+      if (o.mobile && !validPhone(o.dial, o.mobile)) return { error: 'That mobile number does not look right.' };
+      var nx = { name: String(o.contact_name || '').trim() || ct.name, designation: o.designation || '',
+                 dial: o.dial || ct.dial || DEFAULT_DIAL, mobile: String(o.mobile || '').replace(/\D/g, ''),
+                 email: o.email || '' };
+      Object.keys(nx).forEach(function (k) { if (!same(ct[k], nx[k])) { ct[k] = nx[k]; changed.push('contact ' + k); } });
+    } else if (o.contact_name && validName(o.contact_name)) {
+      var r = addContact(c, { name: o.contact_name, designation: o.designation, dial: o.dial,
+                              mobile: o.mobile, email: o.email, primary: true });
+      if (r && r.error) return r;
+      changed.push('contact');
+    }
+    c.last_touch = today();
+    return { client: c, created: false, changed: changed };
+  }
+
   /* One mark per product per client — re-marking replaces, never duplicates.
 
      ⚠️ `client.shown` is created here if it is missing rather than assumed. It
@@ -4659,7 +4696,7 @@ function outreachTrades(list) {
     PICKLISTS: PICKLISTS, picklist: picklist, addToPicklist: addToPicklist,
     DESIGNATIONS: DESIGNATIONS, designationsFor: designationsFor,
     findByName: findByName,
-    validMobile: validMobile, findByMobile: findByMobile, newClient: newClient, upsertClient: upsertClient,
+    validMobile: validMobile, findByMobile: findByMobile, newClient: newClient, upsertClient: upsertClient, updateClient: updateClient,
     addMark: addMark, markOf: markOf, clientValue: clientValue,
     WA_TIERS: WA_TIERS, WA_CATEGORIES: WA_CATEGORIES, WA_STATES: WA_STATES,
     WA_QUALITY: WA_QUALITY, WA_HEALTH: WA_HEALTH, WA_ERRORS: WA_ERRORS,
