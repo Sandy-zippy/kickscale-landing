@@ -26,14 +26,10 @@
 .hist .lrow { padding-left: 0; padding-right: 0; }
 .textarea.input { height: auto; padding: var(--s-2) var(--s-3); resize: vertical; }
 .bcard[data-do] { cursor: pointer; }
-.bottom-bar { display: none; }
 @media (max-width: 900px) {
   .side { display: none; position: fixed; inset: 0 auto 0 0; width: var(--side); z-index: var(--z-pop); box-shadow: var(--shadow-3); }
   .side.is-open { display: flex; }
-  .bottom-bar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky); background: var(--surface); border-top: 1px solid var(--line); padding: 4px; }
-  .bottom-bar > .nav-a { flex-direction: column; height: auto; padding: 6px 2px; gap: 2px; font-size: var(--fs-11); text-align: center; justify-content: center; background: none; border: 0; color: var(--ink-2); }
-  .bottom-bar > .nav-a > .count { display: none; }
-  .main { padding-bottom: 80px; }
+  .main { padding-bottom: calc(88px + env(safe-area-inset-bottom)); } /* P1: room for the tab bar (kit.css) */
   .person-head { grid-template-columns: auto minmax(0, 1fr); }
   .person-head > .counts { grid-column: 1 / -1; justify-content: flex-start; }
 }
@@ -108,3 +104,13 @@ a.cell-who { color: inherit; text-decoration: none; }
 .msg-top > .chip { flex: 0 1 auto; max-width: 100%; overflow-wrap: break-word; }
 /* B5 J1: names and numbers in list tables show in full (wrap, never cut with "..."). */
 .cell-who > div > b, .cell-who > div > span { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: break-word; }
+/* P1: phones get the Leads board as stacked stages (one full-width column each, nothing squeezed or hidden) */
+@media (max-width: 720px) {
+  .board[data-board], .board[data-board].lost-open { grid-template-columns: minmax(0, 1fr); }
+  .board[data-board] .col { min-height: 0; }
+  .col--slim .col-head > .h-sec { writing-mode: horizontal-tb; transform: none; margin: 0; }
+}
+
+/* C4: long chips wrap on a phone (risk reasons, Ask GUC header and suggestions) */
+[data-risk] .chip, [data-ask] .chip { white-space: normal; max-width: 100%; height: auto; text-align: left; }
+[data-ask] .page-head, [data-ask] .chan-list { min-width: 0; flex-wrap: wrap; }

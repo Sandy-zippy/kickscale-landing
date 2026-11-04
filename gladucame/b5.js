@@ -1,6 +1,6 @@
 /* Glad U Came demo . B5: Dashboards (My dashboard, Department head, Founder, Finance), the 9:30 Morning brief,
    Ask GUC (answers from sample rate cards, SOPs and case studies, names the source, asks the owner when it does not know,
-   makes a task by Speak), People (who reports to whom, leave feeds the team pick) and Settings (Dropdown lists, project
+   makes a task by Speak), People (who reports to whom, Away today feeds the team pick) and Settings (Dropdown lists, project
    templates, reminder rules, approval limits). Every figure is worked out from the demo store, never fixed text.
    Loads after money.js and before app.js. */
 (function () {
@@ -10,7 +10,6 @@
   var lakh = function (v) { return '₹' + (Math.round(v * 10) / 10).toFixed(1) + 'L'; };
   var role = function (A) { return A.me().role; };
   var STAGES = ['New', 'Contacted', 'Discovery call', 'Proposal sent', 'Negotiation', 'Won', 'Lost / Nurture'];
-  var WEIGHT = { 'Proposal sent': 0.4, 'Negotiation': 0.7 };
   var tot = function (v) { return Math.round(v.amount * 1.18); };
   var openAmt = function (v) { return /^(Sent|Part paid)$/.test(v.stage) ? tot(v) - (v.received || 0) : 0; };
 
@@ -32,6 +31,7 @@
     Object.keys(D.leave).forEach(function (id) { if (A.P[id]) A.P[id].leave = D.leave[id]; });
     var T = window.GUC_TEMPLATES || {};
     Object.keys(D.settings.tpl).forEach(function (n) { if (T[n]) T[n].splice.apply(T[n], [0, T[n].length].concat(D.settings.tpl[n])); });
+    if (S._c2mig && S._c2mig(D, A)) ch = true;   /* C2 (leads.js): BD settings, lead fields, LinkedIn sample, the clocks; last, so Away today is known */
     return ch;
   };
 
@@ -89,7 +89,7 @@
       tile(A, 'Blocked', 'hand-stop', blk.length, 'Grouped by reason below', '#/dash/t/blocked/' + hid) +
       tile(A, 'Waiting for check', 'eye', chk.length, 'Done by the team, not yet checked', '#/dash/t/check/' + hid) +
       tile(A, 'Approvals waiting', 'square-check', ap.length, 'Waiting on ' + A.first(hid), '#/approvals', ap.length > 0) + '</div>' +
-      '<div class="brief" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">' + card('Team load', 'Open tasks per person', '<div class="list" data-load>' + load.map(function (x) { return barRow(A, '#/dash/t/open/' + x[0], whoCell(A, x[0]) + (A.P[x[0]].leave ? ' <span class="chip chip--amber">On leave</span>' : ''), x[1], mx, x[1]); }).join('') + '</div>') +
+      '<div class="brief" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">' + card('Team load', 'Open tasks per person', '<div class="list" data-load>' + load.map(function (x) { return barRow(A, '#/dash/t/open/' + x[0], whoCell(A, x[0]) + (A.P[x[0]].leave ? ' <span class="chip chip--amber">Away today</span>' : ''), x[1], mx, x[1]); }).join('') + '</div>') +
       card('Overdue by person', '', Object.keys(over).length ? '<div class="list">' + Object.keys(over).map(function (id) { return barRow(A, '#/dash/t/over/' + id, whoCell(A, id), over[id], mx, over[id] + ' overdue', true); }).join('') + '</div>' : none('Nobody in the team is overdue.')) +
       card('Blocked, with reasons', '', blk.length ? '<div class="list">' + blk.map(function (t) { return '<div class="lrow" data-id="' + t.id + '" style="--cols:minmax(0,1fr) auto"><button class="task-title" type="button" data-do="open">' + A.esc(t.title) + '</button><span class="chip chip--amber">' + A.esc(t.blocked || 'No reason') + '</span></div>'; }).join('') + '</div>' : none('Nothing is Blocked.')) +
       card('Risks', 'Projects At risk or Late', risk.length ? '<div class="list">' + risk.map(function (p) { return '<a class="lrow" data-fig href="#/project/' + p.id + '" style="--cols:minmax(0,1fr) auto;text-decoration:none;color:inherit"><b>' + A.esc(p.brand + ' . ' + p.name) + '</b><span class="chip ' + HC[health(A, p)] + '">' + health(A, p) + '</span></a>'; }).join('') + '</div>' : none('Every project is on track.')) + '</div>';
@@ -98,7 +98,7 @@
   function founderDash(A) {
     var D = A.D(), L = D.leads, by = {}; STAGES.forEach(function (s) { by[s] = L.filter(function (l) { return l.stage === s; }); });
     var mx = Math.max.apply(null, STAGES.map(function (s) { return by[s].length; }));
-    var fc = L.reduce(function (s, l) { return s + (WEIGHT[l.stage] || 0) * l.value; }, 0), won = by.Won.reduce(function (s, l) { return s + l.value; }, 0);
+    var pp = window.GUC_BD.pipe(A, L), fc = pp.all, won = by.Won.reduce(function (s, l) { return s + l.value; }, 0);
     var signed = D.projects.reduce(function (s, p) { return s + (p.fee || 0); }, 0), closed = by.Won.length + by['Lost / Nurture'].length;
     var inv = D.invoices || [], recv = inv.reduce(function (s, v) { return s + (v.received || 0); }, 0), owed = inv.reduce(function (s, v) { return s + openAmt(v); }, 0);
     var over = {}; D.tasks.filter(A.isOverdue).forEach(function (t) { over[t.owner] = (over[t.owner] || 0) + 1; }); var omx = Math.max.apply(null, Object.keys(over).map(function (k) { return over[k]; }).concat(1));
@@ -111,7 +111,7 @@
       return [id, ok.length, due.length];
     }).sort(function (a, b) { return b[1] - a[1] || b[2] - a[2]; });
     var lmx = Math.max.apply(null, lb.map(function (x) { return x[1]; }).concat(1));
-    return '<div class="tiles">' + tile(A, 'Forecast', 'trending-up', lakh(fc), 'Proposal sent x 40% + Negotiation x 70% (sample weights)', '#/leads') +
+    return '<div class="tiles">' + tile(A, 'Forecast', 'trending-up', lakh(fc), 'Open leads, value x stage weight (Settings). ' + lakh(pp.month) + ' expected this month', '#/leads/list/pipe') +
       tile(A, 'Signed business', 'briefcase', lakh(signed), D.projects.length + ' projects on the book, ' + lakh(won) + ' Won in Leads', '#/brands') +
       tile(A, 'Collected', 'currency-rupee', rupees(recv), rupees(owed) + ' still to collect', '#/money/age', owed > 0) +
       tile(A, 'Decisions needed', 'square-check', dec.length, 'Approvals waiting on someone', '#/approvals', dec.length > 0) + '</div>' +
@@ -125,21 +125,17 @@
   }
 
   function financeDash(A) {
-    var D = A.D(), inv = D.invoices || [], pay = D.payouts || [];
-    var sent = inv.filter(function (v) { return v.stage !== 'Draft' && v.stage !== 'Checked by Finance'; }), invd = sent.reduce(function (s, v) { return s + tot(v); }, 0);
-    var recv = inv.reduce(function (s, v) { return s + (v.received || 0); }, 0), drafts = inv.filter(function (v) { return v.stage === 'Draft' || v.stage === 'Checked by Finance'; }).length;
+    var D = A.D(), inv = D.invoices || [];
+    var billed = inv.filter(function (v) { return v.stage !== 'Draft' && v.stage !== 'Checked by Finance'; }).reduce(function (s, v) { return s + tot(v); }, 0);
+    var recv = inv.reduce(function (s, v) { return s + (v.received || 0); }, 0), owed = inv.reduce(function (s, v) { return s + openAmt(v); }, 0);
     var B = [['0 to 30 days', 0, 30], ['31 to 60', 31, 60], ['61 to 90', 61, 90], ['above 90', 91, 1e9]], bt = [0, 0, 0, 0];
     inv.forEach(function (v) { var o = openAmt(v); if (!o || !v.issued) return; var n = A.daysBetween(v.issued, A.TODAY); B.forEach(function (b, i) { if (n >= b[1] && n <= b[2]) bt[i] += o; }); });
-    var amx = Math.max.apply(null, bt.concat(1)), due = pay.filter(function (p) { return p.stage === 'Approved'; });
-    var miss = pay.filter(function (p) { return p.stage !== 'Paid' && (!p.docs.inv || !p.docs.pan || (p.ptype === 'Influencer' && !p.docs.live)); });
-    return '<div class="tiles">' + tile(A, 'Invoiced', 'file-invoice', rupees(invd), sent.length + ' invoices sent, with GST', '#/money/inv') +
-      tile(A, 'Received', 'currency-rupee', rupees(recv), rupees(invd - recv) + ' still to collect', '#/money/age') +
-      tile(A, 'Payouts due', 'cash', due.length, rupees(due.reduce(function (s, p) { return s + p.amount; }, 0)) + ' approved, not yet paid', '#/money/pay', due.length > 0) +
-      tile(A, 'Documents missing', 'file-text', miss.length, 'Payouts without invoice, PAN or live link', '#/money/pay', miss.length > 0) + '</div>' +
-      '<div class="brief" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">' + card('Receivables by age', 'Days since sent', '<div class="list" data-ageing>' + B.map(function (b, i) { return barRow(A, '#/money/age', '<span>' + b[0] + '</span>', bt[i], amx, rupees(bt[i]), i > 1); }).join('') + '</div>') +
-      card('Documents missing', 'Before a payout can be paid', miss.length ? '<div class="list">' + miss.map(function (p) { return '<a class="lrow" data-fig href="#/money/pay" style="--cols:minmax(0,1fr) auto;text-decoration:none;color:inherit"><span class="cell-who"><div><b>' + A.esc(p.payee) + '</b><span>' + A.esc(p.no + ' . ' + rupees(p.amount)) + '</span></div></span><span>' +
-        [['Invoice', p.docs.inv], ['PAN', p.docs.pan], ['Live link', p.ptype !== 'Influencer' || p.docs.live]].filter(function (x) { return !x[1]; }).map(function (x) { return '<span class="chip chip--red">' + x[0] + '</span>'; }).join(' ') + '</span></a>'; }).join('') + '</div>' : none('Every payout has its documents.')) +
-      (drafts ? card('Invoices to check', '', '<a class="lrow" data-fig href="#/money/inv" style="--cols:minmax(0,1fr) auto;text-decoration:none;color:inherit"><span>Drafted by the Money agent, waiting for Finance</span><b class="num">' + drafts + '</b></a>') : '') + '</div>';
+    var amx = Math.max.apply(null, bt.concat(1)), wait = (D.approvals || []).filter(function (a) { return a.status === 'Waiting' && a.approver === A.ME(); });
+    return '<div class="tiles">' + tile(A, 'Billed', 'currency-rupee', rupees(billed), 'Asked of brands so far', '#/money/age') +
+      tile(A, 'Received', 'currency-rupee', rupees(recv), 'Paid in by brands', '#/money/age') +
+      tile(A, 'Still to collect', 'cash', rupees(owed), rupees(bt[2] + bt[3]) + ' over 60 days', '#/money/age', bt[2] + bt[3] > 0) +
+      tile(A, 'Approvals waiting', 'square-check', wait.length, 'Money approvals on you', '#/approvals', wait.length > 0) + '</div>' +
+      '<div class="brief" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">' + card('Receivables by age', 'Days since billed', '<div class="list" data-ageing>' + B.map(function (b, i) { return barRow(A, '#/money/age', '<span>' + b[0] + '</span>', bt[i], amx, rupees(bt[i]), i > 1); }).join('') + '</div>') + '</div>';
   }
 
   /* the list behind a figure: #/dash/t/<key>[/<person>] */
@@ -162,18 +158,19 @@
       '<div class="list" style="border-top:1px solid var(--line)">' + (L.length ? L.map(function (t) {
         return '<div class="lrow" data-id="' + t.id + '" style="--cols:minmax(0,1fr) auto auto auto"><button class="task-title" type="button" data-do="open" style="text-align:left">' + A.esc(t.title) + '</button>' + whoCell(A, t.owner) +
           '<span class="faint">' + A.esc(A.dayWord(t.due) + ', ' + A.clock(t.due)) + '</span><span class="chip' + (A.isOverdue(t) ? ' chip--red' : t.status === 'blocked' ? ' chip--amber' : '') + '">' + ({ todo: 'To do', blocked: 'Blocked', check: 'Waiting for check', done: 'Done' }[t.status] || t.status) + '</span></div>';
-      }).join('') : '<div class="card empty"><span class="empty-art">' + A.ico('mood-smile') + '</span><h2 class="h-sec">Nothing here</h2><p>No task matches this figure right now.</p></div>') + '</div>' +
+      }).join('') : '<div class="card empty"><span class="empty-art">' + A.ico('mood-smile') + '</span><h2 class="h-sec">No tasks on this figure</h2><p>Good going: no task is ' + A.esc(DRILL[key].toLowerCase()) + (pid ? ' for ' + A.esc(A.first(pid)) : '') + ' right now. New ones show here as soon as they come in.</p><a class="btn btn--next" href="#/dash">' + A.ico('chevron-left') + 'Back to Dashboards</a></div>') + '</div>' +
       '<div class="list-foot"><span>' + L.length + ' tasks</span></div></section>';
   }
 
   S.dash = function (A) {
     var m = location.hash.match(/^#\/dash\/t\/(\w+)(?:\/(\w+))?/);
     if (m && DRILL[m[1]]) return drill(A, m[1], m[2]);
+    if (S._c3drill) { var cx = S._c3drill(A); if (cx) return cx; }   /* C3: founder dashboard lists #/dash/f/<key> */
     var r = role(A), views = r === 'Founder' ? [['founder', 'Founder'], ['head', 'Department head'], ['finance', 'Finance'], ['my', 'My dashboard']]
       : r === 'Department head' ? [['head', 'Department head'], ['my', 'My dashboard']] : r === 'Finance' ? [['finance', 'Finance'], ['my', 'My dashboard']] : [['my', 'My dashboard']];
     var v = (location.hash.match(/^#\/dash\/(\w+)/) || [])[1]; if (!views.some(function (x) { return x[0] === v; })) v = views[0][0];
     var hid = r === 'Department head' ? A.ME() : (S._dashHead || 'kabir');
-    var body = v === 'founder' ? founderDash(A) : v === 'head' ? headDash(A, hid) : v === 'finance' ? financeDash(A) : myDash(A);
+    var body = v === 'founder' ? (S._fd || founderDash)(A) : v === 'head' ? headDash(A, hid) : v === 'finance' ? (S._finD || financeDash)(A) : myDash(A);
     return '<section data-dash="' + v + '" style="display:flex;flex-direction:column;gap:var(--s-3)"><div class="page-head"><h1 class="h-page">' + (views.length > 1 ? 'Dashboards' : 'My dashboard') + '</h1><span class="chip">Sample data . every figure opens its list</span></div>' +
       (views.length > 1 ? '<div class="tabs" role="tablist">' + views.map(function (x) { return '<a class="tab" role="tab" href="#/dash/' + x[0] + '" aria-selected="' + (x[0] === v) + '">' + x[1] + '</a>'; }).join('') + '</div>' : '') + body + '</section>';
   };
@@ -190,6 +187,7 @@
     var byP = {}; over.forEach(function (t) { byP[t.owner] = (byP[t.owner] || 0) + 1; });
     return { done: done, due: due, over: over, blk: blk, chk: chk, dec: dec, byP: byP, scope: r === 'Founder' ? 'the whole agency' : r === 'Department head' ? 'your team' : 'your own tasks' };
   }
+  S._briefData = briefData; S._waText = waText;
   function waText(A, b) {
     var L = ['Good morning team. 9:30 brief, ' + A.dayWord(A.TODAY + 'T00:00').replace('Today', 'today') + '.',
       'Done since yesterday: ' + b.done.length, 'Due today: ' + b.due.length, 'Overdue: ' + b.over.length, 'Waiting for check: ' + b.chk.length, 'Decisions needed: ' + b.dec.length];
@@ -221,8 +219,8 @@
       a: 'PR retainer: ₹1.5L to ₹3L a month, minimum 3 months, includes a monthly coverage report.' },
     { k: 'SOP', t: 'Celebrity hamper', at: '20 Sep 2026', o: 'zoya', w: 'celebrity hamper gifting send dispatch courier proof post celeb',
       a: 'Zoya approves the list, Finance clears the cost, the hamper goes by courier with a tracking number, and the Gifting agent nudges for proof of post 2 and 5 days after Delivered.' },
-    { k: 'SOP', t: 'Influencer payout', at: '5 Oct 2026', o: 'farhan', w: 'payout pay influencer invoice pan tds payment paid documents',
-      a: 'A payout needs the live link, the influencer\'s invoice and PAN. Farhan approves, then records Paid with the bank reference. TDS is deducted at source.' },
+    { k: 'SOP', t: 'Influencer fees as direct costs', at: '4 Nov 2026', o: 'farhan', w: 'payout pay influencer fee cost direct pan payment paid record',
+      a: 'Once the live link is in, the campaign owner presses Add as direct cost on the line. The fee goes on the project as a direct cost and counts against its profit. Paying the influencer happens outside the cockpit.' },
     { k: 'SOP', t: 'New lead', at: '10 Oct 2026', o: 'riya', w: 'lead new enquiry reply first call discovery owner respond',
       a: 'Reply within 2 working hours, book the discovery call within 3 days, and move the lead to Discovery call once it is on the calendar.' },
     { k: 'SOP', t: 'Press preview', at: '12 Sep 2026', o: 'ananya', w: 'press preview journalist media list invite pitch outlet event',
@@ -245,6 +243,7 @@
     var lq = q.toLowerCase(), own = (OWNERS.filter(function (x) { return x[0].test(lq); })[0] || [0, 'maddie'])[1];
     return { a: 'I don\'t know, asking ' + A.P[own].name + '.', ask: own };
   }
+  S._askKB = answer;   /* C4: Ask GUC on the figures falls back to this handbook */
   S.ask = function (A) {
     var sug = ['What is our rate for a food reel with 200K followers?', 'How do we send a celebrity hamper?', 'Which case study fits a pet brand?', 'What do we charge for a wedding planner?'];
     return '<section class="card" data-ask style="display:flex;flex-direction:column;gap:var(--s-3)"><div class="page-head"><h1 class="h-page">Ask GUC</h1><span class="chip">Answers from sample rate cards, SOPs and case studies</span></div>' +
@@ -270,19 +269,19 @@
       '<div class="cell-who">' + A.avatar('maddie') + '<div><b>Maddie</b><span>Founder</span></div></div>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:var(--s-2)">' + heads.map(function (h) {
         return '<div class="card" style="padding:var(--s-3)"><div class="cell-who">' + A.avatar(h) + '<div><b>' + A.esc(A.P[h].name) + '</b><span>' + A.esc(A.P[h].dept) + ', reports to Maddie</span></div></div>' +
-          A.teamOf(h).map(function (x) { return '<div class="cell-who" style="margin:6px 0 0 18px">' + A.avatar(x) + '<div><b>' + A.esc(A.P[x].name) + '</b><span>' + A.esc(A.P[x].role) + (A.P[x].leave ? ', on leave' : '') + '</span></div></div>'; }).join('') + '</div>';
+          A.teamOf(h).map(function (x) { return '<div class="cell-who" style="margin:6px 0 0 18px">' + A.avatar(x) + '<div><b>' + A.esc(A.P[x].name) + '</b><span>' + A.esc(A.P[x].role) + (A.P[x].leave ? ', away today' : '') + '</span></div></div>'; }).join('') + '</div>';
       }).join('') + '</div></div>';
     var rows = A.ORDER.map(function (id) {
       var p = A.P[id], open = A.D().tasks.filter(function (t) { return t.owner === id && A.OPEN[t.status]; }).length;
       return '<div class="lrow" data-person="' + id + '" data-f-dept="' + A.esc(p.dept) + '" data-f-role="' + A.esc(p.role) + '" style="--cols:minmax(0,1.4fr) minmax(0,1fr) auto auto">' +
         '<div class="cell-who">' + A.avatar(id, true) + '<div><b>' + A.esc(p.name) + '</b><span>' + A.esc(p.role + ', ' + p.dept) + '</span></div></div>' +
         '<span>' + (p.head ? 'Reports to ' + A.esc(A.P[p.head].name) : 'Founder') + '</span><span class="num">' + open + ' open tasks</span>' +
-        (canLeave(id) ? '<button class="btn btn--sm' + (p.leave ? ' btn--next' : '') + '" type="button" data-do="leave" data-v="' + id + '" aria-pressed="' + !!p.leave + '">' + A.ico('calendar-event') + (p.leave ? 'On leave today' : 'Mark on leave') + '</button>'
-          : '<span class="chip' + (p.leave ? ' chip--amber' : '') + '">' + (p.leave ? 'On leave today' : 'In today') + '</span>') + '</div>';
+        (canLeave(id) ? '<button class="btn btn--sm' + (p.leave ? ' btn--next' : '') + '" type="button" data-do="away" data-v="' + id + '" aria-pressed="' + !!p.leave + '">' + A.ico('calendar-event') + (p.leave ? 'Away today' : 'Mark away today') + '</button>'
+          : '<span class="chip' + (p.leave ? ' chip--amber' : '') + '">' + (p.leave ? 'Away today' : 'In today') + '</span>') + '</div>';
     }).join('');
     return '<section style="display:flex;flex-direction:column;gap:var(--s-3)">' + tree +
       '<section class="card card--flush" data-list><div style="padding:var(--s-4) var(--s-4) var(--s-3);display:flex;flex-direction:column;gap:var(--s-3)"><div class="page-head"><h1 class="h-page">People</h1><span class="chip">15 people . Sample data</span></div>' +
-      '<p class="f-help">A person on leave is skipped when a task is given to a team, and their reminders go to their department head for the day.</p>' +
+      '<p class="f-help">A person marked Away today is skipped when a task is given to a team, and their reminders go to their department head for the day.</p>' +
       '<div class="filters"><label class="search"><span class="sr-only">Search people</span>' + A.ico('search') + '<input class="input" data-lq placeholder="Search people"></label>' +
       '<select class="select" data-lf="dept" aria-label="Department"><option value="">Department: all</option>' + ['Founder\'s office', 'BD', 'Influencer', 'PR', 'Celebrity & gifting', 'Events', 'Content', 'Finance'].map(function (x) { return '<option>' + A.esc(x) + '</option>'; }).join('') + '</select>' +
       '<select class="select" data-lf="role" aria-label="Role"><option value="">Role: all</option>' + ['Founder', 'Department head', 'Team member', 'Finance', 'Intern'].map(function (x) { return '<option>' + x + '</option>'; }).join('') + '</select>' +
@@ -294,7 +293,21 @@
   S.settings = function (A) {
     if (role(A) !== 'Founder') return '<div class="card empty"><span class="empty-art">' + A.ico('settings') + '</span><h2 class="h-sec">Settings are with Maddie</h2><p>Dropdown lists, templates, reminder rules and approval limits are edited by the Founder.</p><a class="btn btn--next" href="#/today">Back to Today\'s tasks</a></div>';
     var St = A.D().settings, tab = (location.hash.match(/^#\/settings\/(\w+)/) || [])[1] || 'lists', T = window.GUC_TEMPLATES || {};
-    var tabs = [['lists', 'Dropdown lists'], ['tpl', 'Project templates'], ['remind', 'Reminder rules'], ['limits', 'Approval limits']], html = '';
+    var tabs = [['lists', 'Dropdown lists'], ['tpl', 'Project templates'], ['remind', 'Reminder rules'], ['limits', 'Approval limits'], ['bd', 'Leads and BD'], ['clients', 'Clients and money']], html = '';
+    if (tab === 'clients' && S._c3settings) html = S._c3settings(A);
+    if (tab === 'bd') {
+      var B = St.bd, SV = Object.keys(B.pools), WS = Object.keys(B.weights), num = function (id, lab, v, min, max) { return '<div class="f"><label for="' + id + '">' + lab + '</label><input class="input" id="' + id + '" type="number" min="' + min + '" max="' + max + '" value="' + v + '"></div>'; };
+      html = card('Assignment rule', 'New leads', '<p>Each new lead goes by its service to the people below, turn by turn. Anyone marked Away today on People is skipped. The reason shows on the lead.</p><div class="list" data-pools>' + SV.map(function (sv) {
+          var pool = B.pools[sv], nx = window.GUC_BD.assignFor(A, sv === 'Not known yet' ? '' : sv, false);
+          return '<div class="lrow" data-pool="' + A.esc(sv) + '" style="--cols:minmax(0,1fr) minmax(0,2fr) auto"><div><b>' + A.esc(sv) + '</b><div class="faint" style="font-size:var(--fs-12)">Next in turn: ' + A.esc(A.P[nx.owner].name) + '</div></div><span style="display:flex;flex-wrap:wrap;gap:6px">' +
+            pool.map(function (id, i) { return '<span class="chip">' + A.esc(A.P[id].name) + (A.P[id].leave ? ', away today' : '') + '<button type="button" class="btn btn--icon btn--ghost btn--sm" data-do="pooldel" data-i="' + i + '" aria-label="Take ' + A.esc(A.P[id].name) + ' off ' + A.esc(sv) + '">' + A.ico('x', 'i--sm') + '</button></span>'; }).join('') + '</span>' +
+            '<select class="select" data-pooladd="' + A.esc(sv) + '" aria-label="Add a person to ' + A.esc(sv) + '"><option value="">Add a person</option>' + A.ORDER.filter(function (x) { return pool.indexOf(x) < 0 && A.P[x].role !== 'Intern'; }).map(function (x) { return '<option value="' + x + '">' + A.esc(A.P[x].name) + '</option>'; }).join('') + '</select></div>'; }).join('') + '</div>') +
+        '<div class="card" data-bdnums style="display:flex;flex-direction:column;gap:var(--s-3)"><div class="card-head"><h2 class="h-sec">Silence clock, first response, cold rule</h2></div><p>The silence clock runs from our last message to the brand. A brand reply stops it.</p>' +
+        '<div class="f-row">' + num('bd-h1', 'Remind the owner after (hours)', B.hours[0], 1, 240) + num('bd-h2', 'Then the owner and the BD head (hours)', B.hours[1], 1, 240) + num('bd-h3', 'Then Maddie (hours)', B.hours[2], 1, 480) + '</div>' +
+        '<div class="f-row">' + num('bd-first', 'First-response limit for an enquiry (hours)', B.first, 1, 48) + num('bd-cold', 'Cold: no reply from the brand for (days)', B.cold, 1, 120) + '</div>' +
+        '<div class="card-head"><h2 class="h-sec">Stage weights</h2><span class="label">Pipeline value and expected this month</span></div><div class="f-row">' + WS.map(function (w, i) { return num('bd-w' + i, w + ' (%)', B.weights[w], 0, 100); }).join('') + '</div>' +
+        '<div><button class="btn btn--next" type="button" data-do="bdsave">' + A.ico('check') + 'Save leads and BD rules</button></div><p class="f-help">The clocks and figures read these from now on. Reminders already sent stay sent.</p></div>';
+    }
     if (tab === 'lists') html = Object.keys(St.lists).map(function (n) {
       return '<div class="card" data-dlist="' + A.esc(n) + '" style="display:flex;flex-direction:column;gap:var(--s-2)"><div class="card-head"><h2 class="h-sec">' + A.esc(n) + '</h2><span class="label">' + St.lists[n].length + ' options</span></div><div style="display:flex;flex-wrap:wrap;gap:6px">' +
         St.lists[n].map(function (o, i) { return '<span class="chip">' + A.esc(o) + '<button type="button" class="btn btn--icon btn--ghost btn--sm" data-do="optdel" data-i="' + i + '" aria-label="Remove ' + A.esc(o) + '">' + A.ico('x', 'i--sm') + '</button></span>'; }).join('') +
@@ -308,10 +321,10 @@
     if (tab === 'remind') html = '<div class="card" style="display:flex;flex-direction:column;gap:var(--s-3)"><p>A reminder goes to the task owner first, and to the person in Checked by while a check is waiting.</p>' +
       '<div class="f"><label for="rm-h">Then their department head, after (working hours)</label><input class="input" id="rm-h" type="number" min="1" max="48" value="' + St.remind.head_hours + '"></div>' +
       '<div class="f"><label for="rm-f">Then Maddie, after (working days)</label><input class="input" id="rm-f" type="number" min="1" max="10" value="' + St.remind.founder_days + '"></div>' +
-      '<p class="f-help">On leave: the reminder goes to the department head instead. Reminders send on their own in the build.</p><button class="btn btn--next" type="button" data-do="remsave">' + A.ico('check') + 'Save reminder rules</button></div>';
-    if (tab === 'limits') html = '<div class="card" style="display:flex;flex-direction:column;gap:var(--s-3)" data-limits><p>Up to the limit, the department head approves. Above it, the approval goes to Maddie. Payouts are approved by Finance; pricing and proposals by Maddie.</p>' +
+      '<p class="f-help">Away today: the reminder goes to the department head instead. Reminders send on their own in the build.</p><button class="btn btn--next" type="button" data-do="remsave">' + A.ico('check') + 'Save reminder rules</button></div>';
+    if (tab === 'limits') html = '<div class="card" style="display:flex;flex-direction:column;gap:var(--s-3)" data-limits><p>Up to the limit, the department head approves. Above it, the approval goes to Maddie. Pricing and proposals go to Maddie.</p>' +
       '<div class="f"><label for="lm-fee">Influencer fee, per influencer (₹)</label><input class="input" id="lm-fee" type="number" min="0" step="1000" value="' + St.limits.fee + '"></div>' +
-      '<div class="f"><label for="lm-exp">Expense (₹)</label><input class="input" id="lm-exp" type="number" min="0" step="500" value="' + St.limits.expense + '"></div>' +
+      '<div class="f"><label for="lm-exp">Vendor cost (₹)</label><input class="input" id="lm-exp" type="number" min="0" step="500" value="' + St.limits.expense + '"></div>' +
       '<button class="btn btn--next" type="button" data-do="limsave">' + A.ico('check') + 'Save approval limits</button><p class="f-help">Approvals raised from now on route by these limits. Ones already waiting stay with their approver.</p></div>';
     var hist = (St.history || []).slice(-6).reverse();
     return '<section style="display:flex;flex-direction:column;gap:var(--s-3)" data-settings="' + tab + '"><div class="page-head"><h1 class="h-page">Settings</h1><span class="chip">Maddie edits</span></div>' +
@@ -349,11 +362,11 @@
       setTimeout(function () { var m = d.querySelector('dialog[open] [data-mic]'); if (m) m.click(); }, 60);
       return;
     }
-    if (act === 'leave') {
+    if (act === 'away') {
       var id = a.getAttribute('data-v'), on = !A.P[id].leave; A.P[id].leave = on; D.leave[id] = on;
-      if (A.P[id].head) A.note(A.P[id].head, A.P[id].name + (on ? ' is on leave today. Team tasks skip them.' : ' is back today.'));
+      if (A.P[id].head) A.note(A.P[id].head, A.P[id].name + (on ? ' is away today. Team tasks skip them.' : ' is back today.'));
       A.save(); A.render();
-      A.toast(on ? A.P[id].name + ' is on leave today. New team tasks skip them; their reminders go to ' + (A.P[id].head ? A.P[A.P[id].head].name : 'Maddie') + '.' : A.P[id].name + ' is back in today.');
+      A.toast(on ? A.P[id].name + ' is away today. New team tasks skip them; their reminders go to ' + (A.P[id].head ? A.P[A.P[id].head].name : 'Maddie') + '.' : A.P[id].name + ' is back in today.');
       return;
     }
     var box = a.closest('[data-dlist]');
@@ -386,6 +399,25 @@
       else { var gone = TT.splice(+a.getAttribute('data-i'), 1)[0]; shist(A, tn + ' template: removed "' + gone[0] + '"'); }
       D.settings.tpl[tn] = TT.map(function (x) { return x.slice(); }); A.save(); A.render(); A.toast('Saved. The next ' + tn + ' starts with ' + TT.length + ' tasks.'); return;
     }
+    if (act === 'pooldel') {
+      var pr = a.closest('[data-pool]').getAttribute('data-pool'), pl = D.settings.bd.pools[pr], gone = pl[+a.getAttribute('data-i')];
+      if (pl.length === 1) { A.toast(pr + ' needs at least one person.'); return; }
+      pl.splice(+a.getAttribute('data-i'), 1); D.settings.bd.turn[pr] = 0; shist(A, 'Assignment rule: ' + A.P[gone].name + ' taken off ' + pr);
+      A.save(); A.render(); A.toast(A.P[gone].name + ' no longer gets new ' + pr + ' leads. Leads they own stay with them.'); return;
+    }
+    if (act === 'bdsave') {
+      var g = function (id) { var x = d.getElementById(id); return x.value === '' ? NaN : +x.value; }, B = D.settings.bd, hh = [g('bd-h1'), g('bd-h2'), g('bd-h3')], fr = g('bd-first'), co = g('bd-cold');
+      var ws = Object.keys(B.weights).map(function (w, i) { return g('bd-w' + i); });
+      if (hh.some(function (x) { return !(x >= 1); }) || !(hh[0] < hh[1] && hh[1] < hh[2])) { A.toast('The three silence hours must climb, for example 24, 48, 72.'); return; }
+      if (!(fr >= 1) || !(co >= 1) || ws.some(function (x) { return !(x >= 0 && x <= 100); })) { A.toast('Check the numbers: limits 1 or more, weights 0 to 100.'); return; }
+      var chg = [];
+      if (hh.join() !== B.hours.join()) chg.push('silence clock ' + hh.join(', ') + ' h');
+      if (fr !== B.first) chg.push('first-response limit ' + fr + ' h'); if (co !== B.cold) chg.push('cold after ' + co + ' days');
+      Object.keys(B.weights).forEach(function (w, i) { if (ws[i] !== B.weights[w]) { chg.push(w + ' weight ' + B.weights[w] + '% to ' + ws[i] + '%'); B.weights[w] = ws[i]; } });
+      B.hours = hh; B.first = fr; B.cold = co;
+      if (!chg.length) { A.toast('Nothing changed.'); return; }
+      shist(A, 'Leads and BD: ' + chg.join(', ')); window.GUC_BD.sweep(A); A.save(); A.render(); A.toast('Saved. ' + chg.length + ' change' + (chg.length === 1 ? '' : 's') + ' in History.'); return;
+    }
     if (act === 'remsave') {
       var h = +d.getElementById('rm-h').value, f = +d.getElementById('rm-f').value;
       if (!(h >= 1) || !(f >= 1)) { A.toast('Both numbers must be 1 or more.'); return; }
@@ -395,13 +427,13 @@
     if (act === 'limsave') {
       var fe = +d.getElementById('lm-fee').value, ex = +d.getElementById('lm-exp').value;
       if (!(fe >= 0) || !(ex >= 0) || d.getElementById('lm-fee').value === '' || d.getElementById('lm-exp').value === '') { A.toast('Enter both limits in rupees.'); return; }
-      D.settings.limits = { fee: fe, expense: ex }; shist(A, 'Approval limits: influencer fee ' + rupees(fe) + ', expense ' + rupees(ex));
+      D.settings.limits = { fee: fe, expense: ex }; shist(A, 'Approval limits: influencer fee ' + rupees(fe) + ', vendor cost ' + rupees(ex));
       A.save(); A.render(); A.toast('Approval limits saved. New approvals route by them.'); return;
     }
     if (act === 'resetdemo') {
       var o3 = d.getElementById('dlg-reset'); if (o3) o3.remove();
       d.body.insertAdjacentHTML('beforeend', '<dialog class="dialog" id="dlg-reset" aria-label="Reset sample data"><div class="dialog-head"><h2 class="h-page">Reset sample data</h2>' + A.micBtn() + '<button class="btn btn--icon btn--ghost" type="button" aria-label="Close" data-do="close">' + A.ico('x') + '</button></div>' +
-        '<div class="dialog-body"><p>Put the sample data back as it was when the demo first opened: 30 leads, 6 projects and their tasks. Everything changed in this browser is cleared. Other browsers keep theirs.</p></div>' +
+        '<div class="dialog-body"><p>Put the sample data back as it was when the demo first opened: the sample leads, 6 projects and their tasks. Everything changed in this browser is cleared. Other browsers keep theirs.</p></div>' +
         '<div class="dialog-foot"><button class="btn" type="button" data-do="close">Cancel</button><button class="btn btn--next" type="button" data-do="resetgo">' + A.ico('refresh') + 'Reset sample data</button></div></dialog>');
       d.getElementById('dlg-reset').showModal(); return;
     }
@@ -412,5 +444,11 @@
     if (e.target.getAttribute('data-form') !== 'ask') return;
     e.preventDefault(); e.stopImmediatePropagation(); var A = window.GUC_APP, q = d.getElementById('ask-q'); ask(A, q.value);
   }, true);
-  d.addEventListener('change', function (e) { if (e.target.hasAttribute('data-dashhead')) { S._dashHead = e.target.value; window.GUC_APP.render(); } });
+  d.addEventListener('change', function (e) {
+    if (e.target.hasAttribute('data-dashhead')) { S._dashHead = e.target.value; window.GUC_APP.render(); }
+    if (e.target.hasAttribute('data-pooladd') && e.target.value) {
+      var A = window.GUC_APP, sv = e.target.getAttribute('data-pooladd'), id = e.target.value; A.D().settings.bd.pools[sv].push(id); shist(A, 'Assignment rule: ' + A.P[id].name + ' added to ' + sv);
+      A.save(); A.render(); A.toast(A.P[id].name + ' now takes ' + sv + ' leads in turn.');
+    }
+  });
 })();

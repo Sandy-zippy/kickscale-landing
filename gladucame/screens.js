@@ -58,9 +58,6 @@
     ['Influencer fee', '@mumbaimasala.diaries for Kora Skincare', 'tanvi', 60000, 'Waiting'], ['Payout', '@bandra.bites, Kora teaser reel', 'tanvi', 45000, 'Waiting'],
     ['Expense', 'Venue deposit, Monsoon Activewear launch', 'arjun', 120000, 'Waiting'], ['Payout', 'Photographer, Bandra Book Cafe shoot', 'neha', 18000, 'Approved']];
   var MONEYTYPES = { 'Influencer fee': 1, 'Payout': 1, 'Expense': 1 };
-  var INVOICES = [['GUC-INV-1041', 'Bombay Brew Co.', 300000, 12, 'Sent'], ['GUC-INV-1038', 'Kalaghoda Arts Fest', 380000, 64, 'Overdue'], ['GUC-INV-1036', 'Dadar Silk House', 260000, 35, 'Part paid'],
-    ['GUC-INV-1033', 'Bandra Book Cafe', 140000, 3, 'Sent'], ['GUC-INV-1029', 'Kora Skincare', 400000, 0, 'Draft']];
-
   window.GUC_SCREENS = {
     inbox: function (A) {
       var u = A.me(), rows = INBOX.filter(function (r) { return u.role === 'Founder' || r[5] === u.id || !r[5] || (A.P[r[5]] && A.P[r[5]].head === u.id); });
@@ -117,14 +114,6 @@
         return { f: { type: a[0], st: a[4] }, h: '<div class="cell-who">' + A.avatar(a[2], true) + '<div><b>' + A.esc(a[1]) + '</b><span>' + a[0] + ' . asked by ' + A.esc(A.P[a[2]].name) + '</span></div></div><span class="money num">' + rupees(a[3]) + '</span><span class="chip' + (a[4] === 'Approved' ? ' chip--green' : ' chip--amber') + '">' + a[4] + '</span><span></span>' };
       }), { drops: [['type', 'Type'], ['st', 'Status']], top: r === 'Finance' ? '<p class="f-help">Finance sees money approvals only: influencer fees, payouts and expenses.</p>' : '' });
     },
-    money: function (A) {
-      var head = role(A) === 'Department head';
-      var card = head ? '' : '<article class="card money-card"><div class="card-head"><h2 class="h-sec">To collect</h2><span class="chip chip--red">1 over 60 days</span></div><div class="money-big"><span class="fig fig--xl num">₹14.8L</span></div>' +
-        '<div class="ageing"><div class="age"><div class="bar"><i style="--p:100"></i></div><span>0 to 30 days</span><b>₹8.4L</b></div><div class="age"><div class="bar"><i style="--p:40"></i></div><span>31 to 60</span><b>₹2.6L</b></div><div class="age"><div class="bar bar--red"><i style="--p:45"></i></div><span>61 to 90</span><b>₹3.8L</b></div><div class="age"><div class="bar bar--red"><i style="--p:0"></i></div><span>90+</span><b>₹0</b></div></div></article>';
-      return card + listScreen(A, 'Invoices', 'invoices', INVOICES.map(function (i) {
-        return { f: { st: i[4] }, h: '<div class="cell-who"><span class="av av--lg">' + A.ico('file-invoice', 'i--sm') + '</span><div><b>' + i[1] + '</b><span>' + i[0] + '</span></div></div><span class="money num">' + (head ? masked : rupees(i[2])) + '</span><span class="num">' + (i[3] ? i[3] + ' days' : 'Not sent') + '</span><span class="chip' + (i[4] === 'Overdue' ? ' chip--red' : '') + '">' + i[4] + '</span>' };
-      }), { drops: [['st', 'Status']], top: head ? '<p class="f-help">Department heads see the invoice status of their own brands. Amounts and margin stay with the Founder and Finance.</p>' : '' });
-    },
     dash: function (A) {
       var mine = A.D().tasks.filter(function (t) { return t.owner === A.me().id; });
       var dueToday = mine.filter(function (t) { return A.OPEN[t.status] && t.due.slice(0, 10) === A.TODAY; }).length, over = mine.filter(A.isOverdue).length, blk = mine.filter(function (t) { return t.status === 'blocked'; }).length;
@@ -161,7 +150,7 @@
     people: function (A) {
       return listScreen(A, 'People', 'people', A.ORDER.map(function (id) {
         var p = A.P[id];
-        return { f: { dept: p.dept, role: p.role }, h: who(A, id, p.role + ', ' + p.dept) + '<span>' + (p.head ? 'Reports to ' + A.esc(A.P[p.head].name) : 'Founder') + '</span><span class="num">' + A.D().tasks.filter(function (t) { return t.owner === id && A.OPEN[t.status]; }).length + ' open tasks</span>' + (p.leave ? '<span class="chip chip--amber">On leave today</span>' : '<span class="chip">In today</span>') };
+        return { f: { dept: p.dept, role: p.role }, h: who(A, id, p.role + ', ' + p.dept) + '<span>' + (p.head ? 'Reports to ' + A.esc(A.P[p.head].name) : 'Founder') + '</span><span class="num">' + A.D().tasks.filter(function (t) { return t.owner === id && A.OPEN[t.status]; }).length + ' open tasks</span>' + (p.leave ? '<span class="chip chip--amber">Away today</span>' : '<span class="chip">In today</span>') };
       }), { drops: [['dept', 'Department'], ['role', 'Role']] });
     },
     settings: function (A) {

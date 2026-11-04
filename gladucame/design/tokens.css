@@ -87,6 +87,11 @@
   --accent-ink: #1C7560;     /* every mint/teal WORD and icon on light, 5.4:1 on white */
   --accent-line: #57CEB5;    /* teal: progress, rings, charts, focus */
   --ring: #1C7560;
+  --accent-press: #5FE3B8;   /* P1: mint button held down */
+  --btn-hi: inset 0 1px 0 rgba(255,255,255,.55);              /* P1: top light on mint */
+  --btn-lift: 0 1px 2px rgba(30,43,39,.10), 0 2px 6px rgba(28,117,96,.14);
+  --btn-lift-hover: 0 2px 4px rgba(30,43,39,.10), 0 6px 14px rgba(28,117,96,.20);
+  --btn-off-bg: #EEF2F0; --btn-off-ink: #7C827F; --btn-off-line: #DCE3E0;  /* P1: disabled, still readable */
 
   --primary: #2E2E2E;        /* solid secondary button: charcoal with white text */
   --on-primary: #FFFFFF;
@@ -125,6 +130,11 @@
   --accent-ink: #96F7D6;     /* 11:1 on --surface */
   --accent-line: #57CEB5;
   --ring: #96F7D6;
+  --accent-press: #74E6BF;
+  --btn-hi: inset 0 1px 0 rgba(255,255,255,.35);
+  --btn-lift: 0 1px 2px rgba(0,0,0,.45), 0 2px 8px rgba(150,247,214,.10);
+  --btn-lift-hover: 0 2px 4px rgba(0,0,0,.5), 0 6px 18px rgba(150,247,214,.18);
+  --btn-off-bg: #2E3030; --btn-off-ink: #8B9290; --btn-off-line: #3A3C3C;
 
   --primary: #F3F6F5;
   --on-primary: #1F2021;
@@ -142,6 +152,10 @@
   --gold: #F2C14E; --silver: #C9D1D9; --bronze: #E0915A;
 }
 
+/* P1: phone widths get 40px controls even with a mouse; real touch screens get 44 (below wins) */
+@media (max-width: 640px) {
+  :root { --ctl: 40px; --ctl-sm: 40px; --row: 48px; }
+}
 @media (pointer: coarse) {
   :root { --ctl: 44px; --ctl-sm: 44px; --row: 52px; }
 }

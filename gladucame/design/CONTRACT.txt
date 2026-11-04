@@ -1,0 +1,211 @@
+GLAD U CAME COCKPIT . DESIGN CONTRACT . Picasso, ZippyScale . 26 Oct 2026 (v1)
+For Cockpit (the demo builder). Build every screen from these classes, as they are.
+Do not edit anything in design/; ask Picasso. A change lands in the kit once and reaches every screen.
+Live specimen with every pattern in light and dark: design/kit.html (serve over http; the icon
+sprite does not load from file://). Markup to copy: design/build.py holds every snippet.
+
+=====================================================================
+1. FILES AND LOAD ORDER
+=====================================================================
+design/tokens.css        variables only, both themes, plus @font-face for Inter and Montserrat
+design/kit.css           every component class below
+design/theme.js          window.GUCTheme (get / set / toggle). Load in <head> BEFORE the CSS.
+design/kit.js            window.GUC (toast / done / fillBySpeak / icon) + delegated behaviour
+design/icons.svg         Tabler Icons 3.49.0 outline, MIT (icons-LICENSE.txt). 99 icons, ids "i-<name>"
+design/fonts/            InterVariable.woff2 (OFL), Montserrat-latin-700-900.woff2 (OFL)
+design/build.py          renders kit.html + approval-sheet.html from one set of snippets
+
+<head>:
+  <script src="design/theme.js"></script>
+  <link rel="preload" href="design/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="design/fonts/Montserrat-latin-700-900.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="design/tokens.css">
+  <link rel="stylesheet" href="design/kit.css">
+<body data-sprite="design/icons.svg">   (kit.js builds icons in toasts and menus from this path)
+End of <body>:
+  <script src="design/kit.js"></script>
+No Motion library needed: all motion is CSS (tokens below). Everything is visible without JS.
+
+=====================================================================
+2. HARD RULES
+=====================================================================
+ 1. Colour only through tokens. No hex in web/ CSS. Never test [data-theme] in web/ CSS; if a screen
+    needs a per-theme difference, ask Picasso for a token.
+ 2. MINT IS THE ACCENT, NOT A WALL. One .btn--next per screen region (the one obvious next action).
+    Never a mint page, mint header band or mint card ground. Mint words use --accent-ink, never raw mint.
+ 3. Overdue = red, with a word ("Due yesterday", "Overdue 2 days"). Blocked and Snoozed = amber, with a
+    word. Never colour alone.
+ 4. Every dialog has the Speak button (.mic with data-mic) in .dialog-head. No exceptions.
+ 5. Every list screen has the filter bar (.filters): search, dropdowns, "+ Any field", Date filter with
+    Custom dates. Bulk lists (leads, influencers, journalists) add "Excel sample" + "Upload Excel".
+ 6. Every record page opens with .rec-sentence, ONE .btn--next, and "Step X of Y" (.steps + .steps-txt).
+ 7. Every mutating action answers with GUC.toast(text, undoFn). No confirm(), alert() or prompt().
+ 8. "New version, Reload now" notice (.notice) on every build: compare build stamp, show it, data-reload.
+ 9. Words: the BRIEF's list only (brand, lead, influencer, celebrity, journalist / outlet, hamper,
+    coverage, live link, task, Today's tasks, Blocked, team thread, morning brief, department head,
+    payout, Date filter, Dropdown lists, Speak). Also in toasts, bell text, History lines.
+10. No em dashes anywhere. Dates print "26 Oct", times "3:30 pm". Money in ₹ with Indian grouping
+    (₹8,00,000) or short form (₹8.0L) on tiles and cards.
+11. Scope descendant selectors with ">" (a broad "li > span" once stretched every avatar).
+12. Icons: <svg class="i" aria-hidden="true"><use href="design/icons.svg#i-bell"/></svg>.
+    Icon-only buttons carry aria-label. Navigation items always show the word.
+
+=====================================================================
+3. THEME
+=====================================================================
+Two themes: light (DEFAULT) and dark. Saved per device in localStorage "guc.theme".
+prefers-color-scheme is not read (the demo should open the same for everyone).
+  GUCTheme.set('dark') . GUCTheme.get() . GUCTheme.toggle()
+  Any element with data-theme-toggle flips it (one delegated listener; label child [data-theme-label]).
+  Event 'guc:theme' on window after every change.
+Tokens are also scoped to [data-theme], so <div data-theme="dark"> re-skins only its subtree.
+
+=====================================================================
+4. TOKENS (tokens.css)
+=====================================================================
+Brand raw: --brand-mint #B3E1D2 . --brand-mint-bright #96F7D6 . --brand-teal #57CEB5 .
+           --brand-charcoal #2E2E2E . --brand-white
+Semantic (light / dark):
+  --bg          #F4F7F6 / #1F2021       app ground
+  --surface     #FFFFFF / #2A2B2B       cards, lists, thread
+  --surface-2   #F8FAF9 / #252626       hover, inset, columns
+  --raised      #FFFFFF / #333434       dialog, popover, toast
+  --ink         #2E2E2E / #F3F6F5
+  --ink-2       #555A58 / #C3CAC7       secondary
+  --ink-3       #626765 / #B2B9B6       meta (passes 4.5:1 on mint tint too)
+  --line, --line-2                     hairlines
+  --accent      #96F7D6 both            the next-action fill, text --on-accent #1E2B27
+  --accent-tint, --accent-soft         selected row/nav, chips, avatars
+  --accent-ink  #1C7560 / #96F7D6       every mint WORD or icon
+  --accent-line #57CEB5 both            progress, rings, focus edge
+  --primary / --on-primary             charcoal button (light), white button (dark)
+  --red --amber --green --blue (+ -tint)   status, always with words; --on-red for text on red
+  --gold --silver --bronze             leaderboard medals (charcoal number on top)
+  --ch-whatsapp --ch-instagram --ch-gmail --ch-web --ch-meta   channel badge fills
+Type: --font Inter (body) . --font-head Montserrat (headings, figures)
+  --fs-11 labels (floor) . 12 secondary . 13 body . 14 card title . 16 page title . 22 tile figure . 30 hero figure
+Space: --s-1 4 . s-2 8 . s-3 12 . s-4 16 . s-5 20 . s-6 24 . s-8 32 . s-10 40 . s-12 48
+Size: --ctl 32px (44 on touch) . --ctl-sm 26 (44 on touch) . --row 44 (52 on touch) . --side 224 . --thread 340
+Radius: --r-xs 4 . --r-sm 8 . --r 12 . --r-lg 16 . --r-pill
+Motion: --e-out (entrances) . --e-spring (tick, streak, pop) . --e-std . --t-micro .16s . --t-ui .28s . --t-in .6s
+  prefers-reduced-motion switches every animation and transition off (kit.css end).
+
+BODY FACE: Inter. Proxima Nova has no licensed web source we hold (Adobe Fonts or a paid webfont
+licence only), and gladucame.in itself serves Montserrat only. If GUC holds a Proxima Nova web
+licence, add its @font-face and nothing else changes (it is already second in --font).
+
+=====================================================================
+5. CLASSES BY PATTERN (copy markup from kit.html / build.py)
+=====================================================================
+TYPE        .h-page (Montserrat Black caps 16px) . .h-sec (12px caps) . .h-card . .label (11px caps)
+            .lede (sentence, <b> for the facts) . .fig / .fig--xl (figures) . .num / .money (tabular)
+SHELL       .app > .side (.brand .brand-mark .brand-name, .nav > .nav-a[aria-current="page"] + .count)
+            + .top (.search, .mic "Speak", .btn--solid "New task", .bell, theme toggle) + .main
+            Menu: at most 5 items per role + "More" (.nav-more). Order per BRIEF.
+            <=900px the sidebar hides; Cockpit adds a bottom bar of 4 + More (same .nav-a words).
+CARD        .card . .card--flush (lists inside) . .card-head > .h-sec + actions
+BUTTONS     .btn . .btn--next (THE next action, mint) . .btn--solid (charcoal) . .btn--ghost . .btn--danger
+            .btn--sm . .btn--icon . .is-busy (spinner, set aria-busy) . [disabled] + a line saying why
+SPEAK       <button class="mic" data-mic aria-pressed="false"><span class="mic-dot">{mic icon}</span>
+            <span class="mic-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span data-mic-label>Speak</span></button>   .is-live = listening (red, wave, pulse)
+            Fields to fill: wrap each in .f; when speech fills one, add .is-filled (mint field +
+            "Filled by Speak, check it"). Real build: replace GUC.fillBySpeak with the voice fill
+            from ~/agentic-cockpit/zippyscale/app.js (check_voice.js); keep the classes.
+CHIPS       .chip + --red --amber --green --blue --mint . .count . .count--hot . .av (+ --lg --b --c --d) . .avs
+CHANNEL     <span class="ch" data-ch="whatsapp|instagram|gmail|web|meta"><span class="ch-ico">{brand icon}</span>WhatsApp</span>
+            Words: WhatsApp . Instagram . Gmail . Website form . Meta lead ad.
+            Icons: brand-whatsapp . brand-instagram . brand-gmail . world-www . brand-meta
+FUN         .streak (+ .is-bump on a new Done, kit.js does it) . .target > .ring[style="--p:70"] + .target-txt
+            .bar > i[style="--p:40"] (.bar--red) . .burst (8 <i style="--a:Ndeg">) pops when the day is clear
+TODAY       <section class="card card--flush" data-today>
+              .today-head > .today-sum (.h-page "Today's tasks", .lede, .day-progress with [data-day-bar] [data-day-txt])
+                          + .today-goals (targets + streak)
+              .task-group > .label ("Overdue", "Today", "This week") + .task rows
+            .task = .task-check[data-act="done"] + .task-body (.task-title, .task-meta with chips,
+              .task-due, owner) + .task-acts (Done [data-act="done"] . Blocked [data-act="blocked"] .
+              Snooze [data-act="snooze"]). States: .is-overdue (red edge + red due) . .is-blocked
+              (amber edge + .blocked-note "Blocked: <reason>") . .is-done . .is-leaving.
+            Only the FIRST overdue row's Done is .btn--next; the rest are plain .btn--sm.
+            Blocked opens .reason (input + 3 quick reasons + "Mark Blocked"); a reason is required.
+            Snooze opens a menu: Later today 4:00 pm . Tomorrow 10:00 am . Monday . Pick a date.
+            kit.js wires all of it and keeps the day bar and "X of Y done today" right.
+FILTERS     .filters > .search, .select dropdowns, "+ Any field" .select,
+            .select[data-datef] (Date filter: Today . This week . This month . Last 30 days . Custom dates)
+            + .datef-custom (From / To date inputs, shown only when Custom dates is picked)
+            Active filters as .fchips > .fchip (word + remove button).
+LIST        .list > .lrow (grid; set --cols inline for column widths; aria-selected for the open row;
+            .is-new on a live arrival). .cell-who > .av + div > b + span. .list-foot "3 of 214 influencers".
+            .hide-sm hides a cell under 720px. Never ruled ledger tables.
+BOARD       .board > .col (.col--won, .col--lost) > .col-head (.h-sec + .count) + .col-sum + .bcard
+            .bcard: .bcard-title, .bcard-row (channel + .money, owner + "Next: ..."), .is-dup (amber edge
+            + chip "Mobile already on file" / "Instagram handle already on file"). Won card: "Start the brand".
+            Lost card shows "Reason: ...". Stages: New . Contacted . Discovery call . Proposal sent .
+            Negotiation . Won . Lost / Nurture.
+RECORD      .record > .card.rec-head (.label stage, .h-page name, .rec-sentence, .rec-next (.btn--next +
+            .steps + .steps-txt), .facts > .fact (.label + b), .tabs > .tab[aria-selected])
+            + aside.thread (team thread pane)
+THREAD      .thread-head . .pinned ("Pinned decision") . .msgs > .msg (.av + .msg-top b/time + .msg-text)
+            .msg-acts (hover: "Turn this message into a task", "Pin as decision") . .mention "@Priya"
+            .file (name, size, View / Download / Share) . .voice (.voice-play, .voice-bars > i.on, time)
+            .msg--bot (Thread summariser) . .composer (.composer-box + @, attach, voice note, Send)
+            Channels list (#bd #influencer #pr #events) uses .chan-list of .nav-a.
+DIALOG      <dialog class="dialog"> (or div.dialog role="dialog") > .dialog-head (.h-page + .mic + close)
+            .dialog-body (.speak-strip example sentence, .f fields, .f-row pairs, .f-help)
+            .dialog-foot (.mic-hint "Speak fills the fields. You check, then save." + Cancel + .btn--next)
+            .f > label (<em>*</em> required) + .input / .select / .textarea + .f-help / .f-err.
+            Capture dialogs: 4 fields max, the rest later.
+INBOX       .lrow.inbox-row(.is-unread) > .ch + div (.inbox-top b + brand + chip "Lead" if linked, .msg-snip)
+            + .inbox-side (time, .inbox-acts "Make lead" / "Make task", assignee .av or "Assign").
+            Instagram / Gmail rows in the demo say plainly they connect in the build (four-state rule:
+            working, empty-and-why, blocked-before-action, failed-in-plain-words).
+APPROVAL    .card.approval > .approval-top (.tile-ico, what + who asked, .approval-amt) + .approval-why
+            (why it needs a person) + .approval-acts (Approve .btn--next . "Send back with a comment").
+MONEY       .card.money-card > .card-head + .money-big (.fig--xl + .trend-up/.trend-down) + .ageing > .age x4
+            (0 to 30 . 31 to 60 . 61 to 90 . 90+) + one .btn--next.
+DASHBOARD   .tiles > button.tile (.tile-top .label + .tile-ico, .fig, .tile-sub, .bar). .tile--alert for overdue.
+            Max 4 tiles per view, each opens the list behind it.
+LEADERBOARD .leader > .lb-row (.lb-rank, .av, .lb-who b + .bar, .lb-pts). .is-me for the viewer.
+            Show how points are earned under it (one line).
+BRIEF       .brief-hero (.brief-sum + .brief-nums + "Send on WhatsApp" .btn--next) + .brief grid of cards
+            (.brief-list li) + .wa-preview (the WhatsApp text).
+BELL        .btn.bell (+ .count--hot, .is-ring once on new items, data-pop="<id>") opens .pop.notes
+            (.notes-head, .note(.is-unread) > .av + p + time).
+NOTICE      <div class="notice" role="status">{sparkles}<span>New version of the cockpit is ready.</span>
+            <button class="btn btn--sm btn--next" data-reload>Reload now</button></div>  (fixed, bottom centre)
+TOAST       GUC.toast("Done. Nice one.", undoFn) . container .toasts (aria-live polite) is made on demand.
+EMPTY       .card.empty > .empty-art (icon) + .h-sec + p (praise + what is next) + one .btn--next
+POPOVER     .pop (.menu-i rows) . data-pop="<id>" toggles, Escape and outside click close.
+
+=====================================================================
+6. DEMO DATA RULES
+=====================================================================
+Indian names, Mumbai. Sample team used in the kit: Maddie (Founder), Priya Nair (department head,
+Influencer), Rohan Mehta (BD), Aisha Khan (PR), Tanvi Desai, Kabir Shah (Events). Sample brands are
+invented (Kora Skincare, Bombay Brew Co., Saffron Lane Jewels, Monsoon Activewear, Tide & Thyme Cafe,
+Urban Paws Mumbai, Kalaghoda Arts Fest); a "Sample data" pill shows on screens with it.
+Bhargav Naidu is the only ZippyScale name on client material.
+
+=====================================================================
+7. NOT IN THE KIT (Cockpit owns, or next round)
+=====================================================================
+History panel and Recycle bin rows: use .list/.lrow with .label times; ask if a dedicated look is needed.
+Mobile bottom bar: build from .nav-a in a fixed bar; Picasso reviews from the first screenshot.
+
+=====================================================================
+P1 ADDITIONS (Picasso, 4 Nov 2026) . approval-sheet-p1.html
+=====================================================================
+BUTTONS     same classes, now with every state: hover . pressed (:active) . :focus-visible ring . [disabled]
+            (own grey tokens --btn-off-*, not a fade) . .is-busy or aria-busy="true" (spinner in the button's ink,
+            width kept). New tokens: --accent-press --btn-hi --btn-lift --btn-lift-hover --btn-off-bg/-ink/-line.
+PHONE SIZE  under 640px wide --ctl and --ctl-sm are 40px (44px on touch screens, as before).
+TAB BAR     .bottom-bar styles now live in kit.css (moved out of app.css). Markup unchanged: 4 .nav-a + the
+            More button [data-do="more-sm"]. Active = aria-current="page" (mint pill round the icon).
+            .count on a tab sits on its icon.
+MORE SHEET  proto/ui.js: More opens .more-sheet (popover) with the rest of the menu read from the rendered
+            sidebar (role gating stays app.js's), then theme, Reset sample data, Sign out. It marks More as
+            current when the open screen lives in it. app.js not edited.
+LOADER      proto/ui.js + .guc-loader in kit.css: GUC wordmark as vector paths, about 1.1s, pointer-events none,
+            on first load and after sign-in. Reduced motion: still logo, 0.45s. Skipped in automated browsers
+            (navigator.webdriver) unless localStorage guc.loader = 1 (check_p1.cjs sets it).
+CHECK       node proto/check_p1.cjs --shots  (server on 8873; GUC_BASE to change). Shots in proto/shots/P1/.

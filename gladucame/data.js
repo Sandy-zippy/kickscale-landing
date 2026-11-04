@@ -11,7 +11,7 @@ window.GUC_SEED = {
     ['zoya',    'Zoya Khan',       'Department head', 'Celebrity & gifting','maddie', false, 11, [['Hampers posted', 14, 20, 'October target'], ['Proof of post', 12, 14, 'This month']]],
     ['arjun',   'Arjun Malhotra',  'Department head', 'Events',             'maddie', false, 4,  [['Events delivered', 2, 3, 'October target'], ['Vendors confirmed', 9, 12, 'This month']]],
     ['neha',    'Neha Kapoor',     'Department head', 'Content',            'maddie', false, 8,  [['Pieces approved', 26, 40, 'October target'], ['First drafts on time', 15, 18, 'This month']]],
-    ['farhan',  'Farhan Sheikh',   'Finance',         'Finance',            'maddie', false, 17, [['Invoices raised', 9, 12, 'October target'], ['Payouts cleared', 21, 26, 'This month']]],
+    ['farhan',  'Farhan Sheikh',   'Finance',         'Finance',            'maddie', false, 17, [['Payments collected', 9, 12, 'October target'], ['Money approvals cleared', 21, 26, 'This month']]],
     ['ishaan',  'Ishaan Desai',    'Team member',     'BD',                 'riya',   false, 3,  [['Leads contacted', 34, 40, 'October target'], ['Proposals sent', 5, 8, 'This month']]],
     ['tanvi',   'Tanvi Joshi',     'Team member',     'Influencer',         'kabir',  false, 12, [['Reels live', 7, 10, 'October target'], ['Influencers shortlisted', 18, 25, 'This week']]],
     ['rohan',   'Rohan Pillai',    'Team member',     'Influencer',         'kabir',  true,  5,  [['Reels live', 6, 10, 'October target'], ['Live links checked', 14, 20, 'This month']]],
@@ -50,7 +50,7 @@ window.GUC_SEED = {
   /* owner, title, due [days, 'HH:MM'], priority, link ('P1' or 'L:Brand'), status, extra
      status: todo . blocked . check (Waiting for check) . done (done today) */
   tasks: [
-    ['maddie','Review the October retainer invoices with Farhan',[0,'12:00'],'High','P2','todo'],
+    ['maddie','Review the retainer payments due with Farhan',[0,'12:00'],'High','P2','todo'],
     ['maddie','Call Marine Drive Motors on the revised fee',[0,'16:00'],'Urgent','L:Marine Drive Motors','todo'],
     ['maddie','Sign off the Diwali campaign shortlist',[1,'11:00'],'High','P1','todo'],
     ['maddie','Plan the November team targets',[3,'18:00'],'Normal','','todo'],
@@ -74,8 +74,8 @@ window.GUC_SEED = {
     ['neha','First drafts of 6 reels for Bandra Book Cafe',[0,'18:00'],'High','P5','todo'],
     ['neha','Content calendar for Khar Kitchen Studio pitch',[1,'13:00'],'Normal','L:Khar Kitchen Studio','todo'],
     ['neha','Edit the Kora behind-the-scenes reel',[-1,'20:00'],'Normal','P1','todo'],
-    ['farhan','Raise the Bombay Brew October invoice',[0,'12:00'],'High','P2','todo'],
-    ['farhan','Clear 4 influencer payouts for Kora',[1,'17:00'],'High','P1','todo'],
+    ['farhan','Ask Bombay Brew for the November retainer payment',[0,'12:00'],'High','P2','todo'],
+    ['farhan','Record 4 influencer fees for Kora as direct costs',[1,'17:00'],'High','P1','todo'],
     ['farhan','Chase Kalaghoda Arts Fest, 64 days unpaid',[-2,'12:00'],'Urgent','P6','todo'],
     ['farhan','GST working for October',[3,'18:00'],'Normal','','todo'],
     ['ishaan','Reply to Juhu Juice Bar on Instagram',[0,'11:30'],'High','L:Juhu Juice Bar','todo'],
@@ -90,7 +90,7 @@ window.GUC_SEED = {
     ['tanvi','Shortlist pet influencers for Urban Paws pitch',[2,'12:00'],'Normal','L:Urban Paws Mumbai','todo'],
     ['tanvi','Brief @thanekitchen on the Kora script',[0,'10:30'],'Normal','P1','check'],
     ['rohan','Check live links for the Kora teaser posts',[1,'12:00'],'Normal','P1','todo'],
-    ['rohan','Influencer invoices and PAN for payouts',[2,'17:00'],'Normal','P1','todo'],
+    ['rohan','Influencer fee agreements and PAN on file',[2,'17:00'],'Normal','P1','todo'],
     ['meera','Follow up Mid-Day and HT City on Bombay Brew',[0,'12:00'],'High','P2','todo'],
     ['meera','Draft the Kalaghoda press note',[-1,'18:00'],'High','P6','check'],
     ['meera','Update the journalist list for food beats',[1,'16:00'],'Normal','P2','todo'],
@@ -122,4 +122,42 @@ window.GUC_SEED = {
     ['Kora Skincare', [['maddie','@Kabir can we add two Pune food pages? They asked about Pune on the call.',300],['kabir','Yes. Shortlist v2 is with them, decision by Friday.',280]]],
     ['Marine Drive Motors', [['riya','They want the fee under 8L. @Maddie your call.',200],['maddie','Hold at 9L, offer one extra reel.',150]]]
   ]
+};
+
+/* C2 . Leads and BD. LinkedIn leads come in as LinkedIn notification emails in the agency Gmail (no open LinkedIn
+   messaging API; a direct link needs LinkedIn partner approval). All sample, created by ZippyScale. */
+window.GUC_SEED.c2 = {
+  /* LinkedIn sample: brand, contact, stage, value in lakh, minutes ago, what the notification email carried, kind */
+  linkedin: [
+    ['Nariman Point Capital', 'Aarav Mehra', 'New', 6.0, 200, 'LinkedIn message via Gmail: We are launching a wealth app for young professionals in Mumbai. Need a PR retainer with monthly coverage in business media.', 'message'],
+    ['Lokhandwala Home Decor', 'Kritika Bose', 'New', 2.8, 75, 'LinkedIn Lead Gen Form via Gmail: Service wanted: launch reels with food influencers and home influencers for our new cafe corner. Budget 2 to 3 lakh.', 'form'],
+    ['Santacruz Studio Labs', 'Imran Kazi', 'Contacted', 3.5, 3000, 'LinkedIn message via Gmail: Can you manage our social media, posting and replies on Instagram and LinkedIn every month?', 'message']
+  ],
+  /* one LinkedIn Lead Gen Form enquiry not yet a lead: name, business, minutes ago, text */
+  linkedinOpen: ['Priya Venkat', 'Wadala Wellness Co.', 190, 'LinkedIn Lead Gen Form via Gmail: Looking for celebrity gifting for our Diwali hampers. Please call.'],
+  /* Lead catcher words: service, phrases that point to it (rules over the message words, not a model) */
+  words: [
+    ['Influencer campaign', ['influencer', 'creators', 'creator', 'reels with', 'ugc', 'collab']],
+    ['PR retainer', ['retainer', 'monthly coverage', 'every month pr', 'ongoing pr']],
+    ['PR project', ['press', 'pr agency', 'media coverage', 'journalists', 'press preview', 'pr for']],
+    ['Celebrity gifting', ['celebrity', 'gifting', 'hamper', 'hampers']],
+    ['Event', ['event', 'launch party', 'meetup', 'venue', 'store launch event']],
+    ['Content', ['shoot', 'photography', 'video production', 'content production', 'brand film']],
+    ['Social media management', ['social media', 'manage our instagram', 'posting', 'handle our page']]
+  ],
+  /* per brand: brought in by, hours since our last message, hours since their last message, first response in minutes, what they last asked */
+  leads: {
+    'Kora Skincare': ['riya', 0, 0, 12, 'three more beauty names before Friday'],
+    'Sion Sneaker Co.': ['ishaan', 49, 60, 35, 'the revised fee for 12 reels'],
+    'Lower Parel Lofts': ['riya', 75, 90, 20, 'the proposal for the show flat launch'],
+    'Peddar Road Patisserie': ['ishaan', 27, 40, 95, 'sample rates for 5 food influencers'],
+    'Thane Organics': ['ishaan', 400, 410, 240, 'the credentials deck'],
+    'Coastal Linen Co.': ['ishaan', 700, 720, 60, 'to check in after the festive season'],
+    'Matunga Filter Coffee': ['ishaan', 900, 930, 45, 'to talk again in the new year'],
+    'Versova Surf Club': ['ishaan', 8, 20, 30, ''], 'Malabar Hill Florist': ['riya', 5, 30, 25, ''],
+    'Fort Heritage Hotel': ['riya', 3, 26, 18, 'the gifting proposal'], 'Bombay Brew Co.': ['ishaan', 4, 6, 15, ''],
+    'Dadar Silk House': ['riya', 2, 5, 40, ''], 'Monsoon Activewear': ['riya', 30, 25, 50, 'a store launch in November'],
+    'Tide & Thyme Cafe': ['riya', 30, 26, 20, 'the revised budget'], 'Urban Paws Mumbai': ['ishaan', 6, 3, 70, 'an influencer campaign for a pet cafe']
+  },
+  nurture: { 'Coastal Linen Co.': 0, 'Matunga Filter Coffee': 21 }   /* check-in date, days from today */
 };

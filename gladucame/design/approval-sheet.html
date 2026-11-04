@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="data:,">
+<title>Glad U Came Design</title>
+<script src="theme.js"></script>
+<link rel="stylesheet" href="tokens.css"><link rel="stylesheet" href="kit.css">
+<style>
+body { background: var(--bg); }
+.sh-wrap { max-width: 1320px; margin: 0 auto; padding: var(--s-6) var(--s-5) var(--s-12); display: flex; flex-direction: column; gap: var(--s-10); }
+.sh-hero { border-radius: var(--r-lg); padding: var(--s-8) var(--s-6); background: var(--brand-charcoal); color: var(--brand-mint-bright); border-top: 6px solid var(--brand-mint); display: flex; flex-direction: column; gap: var(--s-2); }
+.sh-hero h1 { font: 900 clamp(28px, 5vw, 52px)/1 var(--font-head); text-transform: uppercase; letter-spacing: .02em; }
+.sh-hero p { color: #E9EFEC; font-size: 14px; max-width: 70ch; font-weight: 500; }
+.sh-hero .meta { color: #B3E1D2; font-size: 12px; font-weight: 600; }
+.sh-sec { display: flex; flex-direction: column; gap: var(--s-3); }
+.sh-num { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font: 900 12px/1 var(--font-head); margin-right: 8px; }
+.sh-sec > p { color: var(--ink-2); max-width: 90ch; }
+.sh-pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.sh-frame { position: relative; background: var(--bg); color: var(--ink); border: 1px solid var(--line-2); border-radius: var(--r-lg); padding: var(--s-3); overflow: hidden; min-width: 0; }
+.sh-frame > .mini { zoom: .62; }
+.sh-frame > .mini--full { zoom: 1; }
+.sh-frame::before { content: attr(data-theme); position: absolute; top: 6px; right: 10px; font: 600 10px/1 var(--font); text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); z-index: 2; }
+.note-box { display: flex; flex-direction: column; gap: 4px; }
+.note-box > label { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.sh-foot { display: flex; gap: var(--s-2); align-items: center; flex-wrap: wrap; padding: var(--s-4); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
+.sw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--s-3); }
+.sw { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-12); }
+.sw-chip { height: 40px; border-radius: var(--r-sm); border: 1px solid var(--line); margin-bottom: 4px; }
+.sw > span:not(.sw-chip), .sw > code { color: var(--ink-3); font-size: 11px; }
+@media (max-width: 900px) { .sh-pair { grid-template-columns: 1fr; } .sh-frame > .mini { zoom: .8; } }
+</style>
+</head>
+<body data-sprite="icons.svg">
+<div class="sh-wrap">
+  <header class="sh-hero"><span class="meta">ZippyScale . for Bhargav Naidu . 26 Oct 2026 . Approval sheet</span><h1>Glad U Came</h1>
+    <p>The look of their Agentic Cockpit: light and a bit playful, built so every person sees one obvious next step. Each section shows light and dark side by side. Write a note under anything you want changed, then press Copy my notes at the end.</p></header>
+  <section class="sh-sec" id="a-palette"><h2 class="h-page"><span class="sh-num">1</span>Palette</h2><p>Their four colours, nothing new. Mint #96F7D6 fills only the one next action per screen; teal draws progress; charcoal carries the words. Red only for overdue, amber only for Blocked, each always with a word.</p><div class="sh-pair"><div class="sh-frame" data-theme="light"><div class="mini mini--full"><div class="sw-grid"><div class="sw"><span class="sw-chip" style="background:var(--accent)"></span><b>Mint #96F7D6</b><span>the ONE next-action fill</span><code>--accent</code></div><div class="sw"><span class="sw-chip" style="background:var(--accent-soft)"></span><b>Mint #B3E1D2</b><span>chips, avatars, highlights</span><code>--accent-soft</code></div><div class="sw"><span class="sw-chip" style="background:var(--accent-line)"></span><b>Teal #57CEB5</b><span>progress, rings, focus</span><code>--accent-line</code></div><div class="sw"><span class="sw-chip" style="background:var(--accent-ink)"></span><b>Mint ink</b><span>every mint word: #1C7560 light / #96F7D6 dark</span><code>--accent-ink</code></div><div class="sw"><span class="sw-chip" style="background:var(--ink)"></span><b>Ink</b><span>charcoal #2E2E2E light</span><code>--ink</code></div><div class="sw"><span class="sw-chip" style="background:var(--surface)"></span><b>Surface</b><span>cards</span><code>--surface</code></div><div class="sw"><span class="sw-chip" style="background:var(--bg)"></span><b>Ground</b><span>app background</span><code>--bg</code></div><div class="sw"><span class="sw-chip" style="background:var(--red)"></span><b>Overdue red</b><span>with a word, never alone</span><code>--red</code></div><div class="sw"><span class="sw-chip" style="background:var(--amber)"></span><b>Blocked amber</b><span>Blocked and Snoozed</span><code>--amber</code></div></div></div></div></div><div class="note-box"><label for="n-a-palette">Your note on palette (leave empty if OK)</label><textarea class="textarea" id="n-a-palette" name="a-palette" placeholder="e.g. streak chip too small, mint too strong in dark"></textarea></div></section><section class="sh-sec" id="a-type"><h2 class="h-page"><span class="sh-num">2</span>Type</h2><p>Montserrat Black capitals for headings, the face their site uses. Body is Inter at 13px: Proxima Nova is sold for the web only through Adobe Fonts or a paid webfont licence, and their own site does not load it either. If they hold a licence, it swaps in with one line.</p><div class="sh-pair"><div class="sh-frame" data-theme="light"><div class="mini mini--full">
+<div style="display:flex;flex-direction:column;gap:var(--s-3)">
+  <div><span class="label">Headings . Montserrat Black, caps</span><div class="h-page" style="font-size:28px">Glad U Came</div><div class="h-page">Today's tasks . page title 16px</div><div class="h-sec" style="margin-top:4px">Team thread . section 12px</div></div>
+  <div><span class="label">Body . Inter 13px (Proxima Nova has no licensed web source we can use)</span><p style="max-width:62ch">Kora Skincare wants a Diwali influencer campaign with 12 food and beauty influencers, live by 5 Nov. Secondary lines run 12px, labels 11px caps.</p></div>
+  <div><span class="label">Figures . Montserrat Black, tabular</span><div class="fig fig--xl num">₹18.4L . 7/10 . 12</div></div>
+</div></div></div></div><div class="note-box"><label for="n-a-type">Your note on type (leave empty if OK)</label><textarea class="textarea" id="n-a-type" name="a-type" placeholder="e.g. streak chip too small, mint too strong in dark"></textarea></div></section><section class="sh-sec" id="a-today"><h2 class="h-page"><span class="sh-num">3</span>Today's tasks</h2><p>Every login opens here. Overdue sits on top in red. One tap for Done, Blocked (asks why, tells the head) or Snooze. Targets and the streak are the fun: adult, not cartoon.</p><div class="sh-pair"><div class="sh-frame" data-theme="light"><div class="mini">
+<section class="card card--flush" data-today>
+  <div class="today-head" style="padding:var(--s-4)">
+    <div class="today-sum">
+      <h1 class="h-page">Today's tasks</h1>
+      <p class="lede">Good morning, Tanvi. <b>5 tasks today, 2 overdue.</b> Start with the red ones.</p>
+      <div class="day-progress"><div class="bar"><i data-day-bar style="--p:20"></i></div><span data-day-txt>1 of 5 done today</span></div>
+    </div>
+    <div class="today-goals">
+      <div class="target"><div class="ring" style="--p:70"><span>7/10</span></div><div class="target-txt"><b>Reels live</b><span>October target</span></div></div>
+      <div class="target"><div class="ring" style="--p:72"><span>18/25</span></div><div class="target-txt"><b>Influencers shortlisted</b><span>This week</span></div></div>
+      <span class="burst"><span class="streak" title="Days in a row with every task closed"><svg class="i" aria-hidden="true"><use href="icons.svg#i-flame"/></svg>12 day streak</span><i style="--a:0deg"></i><i style="--a:45deg"></i><i style="--a:90deg"></i><i style="--a:135deg"></i><i style="--a:180deg"></i><i style="--a:225deg"></i><i style="--a:270deg"></i><i style="--a:315deg"></i></span>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="label">Overdue</div>
+    <div class="task is-overdue">
+      <button class="task-check" type="button" data-act="done" aria-pressed="false" aria-label="Mark Done"><svg class="i" aria-hidden="true"><use href="icons.svg#i-check"/></svg></button>
+      <div class="task-body"><span class="task-title">Send the influencer shortlist to Kora Skincare</span>
+        <div class="task-meta"><span class="chip chip--mint"><svg class="i" aria-hidden="true"><use href="icons.svg#i-briefcase"/></svg>Kora Skincare . Diwali campaign</span><span class="task-due">Due yesterday, 6:00 pm</span><span>From Priya Nair</span></div></div>
+      <div class="task-acts"><button class="btn btn--sm btn--next" type="button" data-act="done"><svg class="i" aria-hidden="true"><use href="icons.svg#i-check"/></svg>Done</button><button class="btn btn--sm" type="button" data-act="blocked"><svg class="i" aria-hidden="true"><use href="icons.svg#i-hand-stop"/></svg>Blocked</button><button class="btn btn--sm btn--ghost" type="button" data-act="snooze"><svg class="i" aria-hidden="true"><use href="icons.svg#i-clock-pause"/></svg>Snooze</button></div>
+    </div>
+    <div class="task is-overdue">
+      <button class="task-check" type="button" data-act="done" aria-pressed="false" aria-label="Mark Done"><svg class="i" aria-hidden="true"><use href="icons.svg#i-check"/></svg></button>
+      <div class="task-body"><span class="task-title">Chase the live link from @bandra.bites</span>
+        <div class="task-meta"><span class="chip"><svg class="i" aria-hidden="true"><use href="icons.svg#i-gift"/></svg>Bombay Brew Co. . hamper</span><span class="task-due">Due 24 Oct</span><span>Bot reminded you twice</span></div></div>
+      <div class="task-acts"><button class="btn btn--sm" type="button" data-act="done"><svg class="i" aria-hidden="true"><use href="icons.svg#i-check"/></svg>Done</button><button class="btn btn--sm" type="button" data-act="blocked"><svg class="i" aria-hidden="true"><use href="icons.svg#i-hand-stop"/></svg>Blocked</button><button class="btn btn--sm btn--ghost" type="button" data-act="snooze"><svg class="i" aria-hidden="true"><use href="icons.svg#i-clock-pause"/></svg>Snooze</button></div>
+    </div>
+  </div>
+  <div class="task-group">
+    <div class="label">Today</div>
+    <div class="task">
+      <button class="task-check" type="button" data-act="done" aria-pressed="false" aria-label="Mark Done"><svg class="i" aria-hidden="true"><use href="icons.svg#i-check"/></svg></button>
+      <div class="task-body"><span class="task-title">Discovery call with Saffron Lane Jewels</span>
+        <div class="task-meta"><span class="chip"><svg class="i" aria-hidden="true"><use href="icons.svg#i-layout-kanban"/></svg>Lead</span><span class="task-due">Today, 3:30 pm</span><span>Rohan Mehta is on it too</span></div></div>
+      <div class="task-acts"><button class="btn btn--sm" type="button" data-act="done"><svg class="i" aria-hidden="true"><use href="icons.svg#i-check"/></svg>Done</button><button class="btn btn--sm" type="button" data-act="blocked"><svg class="i" aria-hidden="true"><use href="icons.svg#i-hand-stop"/></svg>Blocked</button><button class="btn btn--sm btn--ghost" type="button" data-act="snooze"><svg class="i" aria-hidden="true"><use href="icons.svg#i-clock-pause"/></svg>Snooze</button></div>
+    </div>
+    <div class="task is-blocked">
+      <button class="task-check" type="button" data-act="done" aria-pressed="false" aria-label="Mark Done"><svg class="i" aria-hidden="true"><use href="icons.svg#i-check"/></svg></button>
+      <div class="task-body"><span class="task-title">Book the photographer for the Monsoon Activewear launch</span>
+        <div class="task-meta"><span class="chip"><svg class="i" aria-hidden="true"><use href="icons.svg#i-calendar-event"/></svg>Event . 2 Nov</span><span class="task-due">Today</span><span class="blocked-note">Blocked: waiting on brand to confirm venue</span></div></div>
+      <div class="task-acts"><button class="btn btn--sm" type="button" data-act="done"><svg class="i" aria-hidden="true"><use href="icons.svg#i-check"/></svg>Done</button><button class="btn btn--sm btn--ghost" type="button" data-act="snooze"><svg class="i" aria-hidden="true"><use href="icons.svg#i-clock-pause"/></svg>Snooze</button></div>
+    </div>
+    <div class="task is-done">
+      <button class="task-check" type="button" data-act="done" aria-pressed="true" aria-label="Mark not done"><svg class="i" aria-hidden="true"><use href="icons.svg#i-check"/></svg></button>
+      <div class="task-body"><span class="task-title">Approve the reel script for Tide &amp; Thyme Cafe</span>
+        <div class="task-meta"><span class="chip"><svg class="i" aria-hidden="true"><use href="icons.svg#i-user"/></svg>My own</span><span class="task-due">Done 10:12 am</span></div></div>
+      <div class="task-acts"></div>
+    </div>
+  </div>
+</section></div></div></div><div class="note-box"><label for="n-a-today">Your note on today's tasks (leave empty if OK)</label><textarea class="textarea" id="n-a-today" name="a-today" placeholder="e.g. streak chip too small, mint too strong in dark"></textarea></div></section><section class="sh-sec" id="a-dialog"><h2 class="h-page"><span class="sh-num">4</span>Speak on every dialog</h2><p>Press Speak, say the task in a sentence, the fields fill and turn mint so the person can check before saving. Try the button.</p><div class="sh-pair"><div class="sh-frame" data-theme="light"><div class="mini"><div class="dialog" role="dialog" aria-label="New task">
+  <div class="dialog-head"><h2 class="h-page">New task</h2>
+    <button class="mic" type="button" data-mic aria-pressed="false"><span class="mic-dot"><svg class="i" aria-hidden="true"><use href="icons.svg#i-microphone"/></svg></span><span class="mic-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span data-mic-label>Speak</span></button>
+    <button class="btn btn--icon btn--ghost" type="button" aria-label="Close" data-close><svg class="i" aria-hidden="true"><use href="icons.svg#i-x"/></svg></button></div>
+  <div class="dialog-body">
+    <div class="speak-strip"><svg class="i i--i--sm" aria-hidden="true"><use href="icons.svg#i-microphone"/></svg><span>Try: <q>Ask Tanvi to send the Kora shortlist by Wednesday, high priority</q></span></div>
+    <div class="f" data-speak="Send the Kora influencer shortlist"><label>What needs doing <em>*</em></label><input class="input" placeholder="e.g. Send the shortlist to the brand"></div>
+    <div class="f-row">
+      <div class="f" data-speak="Tanvi Desai"><label>Owner <em>*</em></label><select class="select"><option value="">Pick a person</option><option>Tanvi Desai</option><option>Priya Nair</option><option>Rohan Mehta</option></select></div>
+      <div class="f" data-speak="2026-10-28"><label>Deadline <em>*</em></label><input class="input" type="date"></div>
+    </div>
+    <div class="f-row">
+      <div class="f" data-speak="High"><label>Priority</label><select class="select"><option>Normal</option><option>High</option><option>Low</option></select></div>
+      <div class="f" data-speak="Kora Skincare . Diwali campaign"><label>Link to lead or project</label><input class="input" placeholder="Search a lead or project"></div>
+    </div>
+    <p class="f-help">It shows on Tanvi's Today's tasks at once. The bot reminds her, then her department head, then Maddie.</p>
+  </div>
+  <div class="dialog-foot"><span class="mic-hint">Speak fills the fields. You check, then save.</span><button class="btn btn--ghost" type="button" data-close>Cancel</button><button class="btn btn--next" type="button" data-close>Save task</button></div></div></div></div></div><div class="note-box"><label for="n-a-dialog">Your note on speak on every dialog (leave empty if OK)</label><textarea class="textarea" id="n-a-dialog" name="a-dialog" placeholder="e.g. streak chip too small, mint too strong in dark"></textarea></div></section><section class="sh-sec" id="a-record"><h2 class="h-page"><span class="sh-num">5</span>Lead page with team thread</h2><p>One sentence, one next step, Step 4 of 6. The thread replaces the WhatsApp group: mentions, files, voice notes, a pinned decision, a bot summary.</p><div class="sh-pair"><div class="sh-frame" data-theme="light"><div class="mini">
+<section class="record">
+  <div class="card rec-head">
+    <div class="page-head"><span class="label">Lead . Proposal sent</span><span class="spacer" style="flex:1"></span><span class="ch" data-ch="whatsapp"><span class="ch-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-brand-whatsapp"/></svg></span>WhatsApp</span></div>
+    <h1 class="h-page">Kora Skincare</h1>
+    <p class="rec-sentence">Kora Skincare wants a Diwali influencer campaign with 12 food and beauty influencers, live by 5 Nov.</p>
+    <div class="rec-next"><button class="btn btn--next" type="button"><svg class="i" aria-hidden="true"><use href="icons.svg#i-send"/></svg>Follow up on the proposal</button>
+      <div><div class="steps" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="now"></i><i></i><i></i></div><span class="steps-txt">Step 4 of 6: Proposal sent</span></div></div>
+    <div class="facts">
+      <div class="fact"><span class="label">Brand POC</span><b>Priya Nair</b></div>
+      <div class="fact"><span class="label">Budget</span><b class="num">₹8,00,000</b></div>
+      <div class="fact"><span class="label">Contact</span><b>Meera Sethi, +91 98200 41736</b></div>
+      <div class="fact"><span class="label">Proposal sent</span><b>22 Oct</b></div>
+    </div>
+    <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true" type="button">Tasks 4</button><button class="tab" role="tab" aria-selected="false" type="button">Files 3</button><button class="tab" role="tab" aria-selected="false" type="button">History</button></div>
+  </div>
+  <aside class="thread" aria-label="Team thread">
+    <div class="thread-head"><h2 class="h-sec">Team thread</h2><span class="avs"><span class="av">PN</span><span class="av av--b">TD</span><span class="av av--c">MA</span></span></div>
+    <div class="pinned"><svg class="i i--i--sm" aria-hidden="true"><use href="icons.svg#i-pin"/></svg><div><b>Pinned decision</b>: fee cap ₹45,000 per reel, Maddie approved 23 Oct.</div></div>
+    <div class="msgs">
+      <div class="msg"><span class="av av--c">MA</span><div><div class="msg-top"><b>Maddie</b><time>10:02</time></div><p class="msg-text"><span class="mention">@Priya</span> can we add two Pune food pages? They asked about Pune on the call.</p></div>
+        <div class="msg-acts"><button class="btn btn--icon btn--sm btn--ghost" type="button" aria-label="Turn this message into a task"><svg class="i" aria-hidden="true"><use href="icons.svg#i-square-check"/></svg></button><button class="btn btn--icon btn--sm btn--ghost" type="button" aria-label="Pin as decision"><svg class="i" aria-hidden="true"><use href="icons.svg#i-pin"/></svg></button></div></div>
+      <div class="msg"><span class="av">PN</span><div><div class="msg-top"><b>Priya Nair</b><time>10:15</time></div><p class="msg-text">Yes. Shortlist v2 attached.</p>
+        <div class="file"><svg class="i" aria-hidden="true"><use href="icons.svg#i-file-spreadsheet"/></svg><div><b>Kora-shortlist-v2.xlsx</b><span>48 KB</span></div><button class="btn btn--icon btn--sm btn--ghost" type="button" aria-label="View"><svg class="i" aria-hidden="true"><use href="icons.svg#i-eye"/></svg></button><button class="btn btn--icon btn--sm btn--ghost" type="button" aria-label="Download"><svg class="i" aria-hidden="true"><use href="icons.svg#i-download"/></svg></button><button class="btn btn--icon btn--sm btn--ghost" type="button" aria-label="Share"><svg class="i" aria-hidden="true"><use href="icons.svg#i-share"/></svg></button></div></div></div>
+      <div class="msg"><span class="av av--b">TD</span><div><div class="msg-top"><b>Tanvi Desai</b><time>10:31</time></div>
+        <div class="voice"><button class="voice-play" type="button" aria-label="Play voice note"><svg class="i" aria-hidden="true"><use href="icons.svg#i-player-play"/></svg></button><span class="voice-bars" aria-hidden="true"><i class="on" style="height:40%"></i><i class="on" style="height:80%"></i><i class="on" style="height:55%"></i><i style="height:95%"></i><i style="height:60%"></i><i style="height:35%"></i><i style="height:70%"></i><i style="height:50%"></i><i style="height:85%"></i><i style="height:40%"></i></span><time>0:18</time></div></div></div>
+      <div class="msg msg--bot"><span class="av"><svg class="i i--i--sm" aria-hidden="true"><use href="icons.svg#i-sparkles"/></svg></span><div><div class="msg-top"><b>Thread summariser</b><time>11:00</time></div><p class="msg-text faint">Summary: shortlist v2 has 14 names incl. 2 from Pune. Waiting on Kora to pick by 28 Oct.</p></div></div>
+    </div>
+    <div class="composer"><div class="composer-box">Write to the team, type @ to mention</div>
+      <div class="composer-row"><button class="btn btn--icon btn--sm btn--ghost" type="button" aria-label="Mention"><svg class="i" aria-hidden="true"><use href="icons.svg#i-at"/></svg></button><button class="btn btn--icon btn--sm btn--ghost" type="button" aria-label="Attach files"><svg class="i" aria-hidden="true"><use href="icons.svg#i-paperclip"/></svg></button><button class="btn btn--icon btn--sm btn--ghost" type="button" aria-label="Record a voice note"><svg class="i" aria-hidden="true"><use href="icons.svg#i-microphone"/></svg></button><span class="spacer"></span><button class="btn btn--sm btn--solid" type="button"><svg class="i" aria-hidden="true"><use href="icons.svg#i-send"/></svg>Send</button></div></div>
+  </aside>
+</section></div></div></div><div class="note-box"><label for="n-a-record">Your note on lead page with team thread (leave empty if OK)</label><textarea class="textarea" id="n-a-record" name="a-record" placeholder="e.g. streak chip too small, mint too strong in dark"></textarea></div></section><section class="sh-sec" id="a-inbox"><h2 class="h-page"><span class="sh-num">6</span>One inbox</h2><p>Five channels, one list, the channel named on each row. Make lead or Make task in one tap.</p><div class="sh-pair"><div class="sh-frame" data-theme="light"><div class="mini"><section class="card card--flush"><div style="padding:var(--s-4) var(--s-4) var(--s-3)" class="page-head"><h1 class="h-page">Inbox</h1><select class="select" aria-label="Channel"><option>All channels</option></select><select class="select" aria-label="Assigned to"><option>Assigned: anyone</option></select></div><div class="list" style="border-top:1px solid var(--line)"><div class="lrow inbox-row is-unread"><span class="ch" data-ch="whatsapp"><span class="ch-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-brand-whatsapp"/></svg></span>WhatsApp</span><div style="min-width:0"><div class="inbox-top"><b>Meera Sethi</b><span class="faint" style="font-size:var(--fs-12)">Kora Skincare</span><span class="chip chip--mint">Lead</span></div><div class="msg-snip">Can we see 3 more beauty names before Friday?</div></div><div class="inbox-side"><time>2 min</time><span style="display:flex;gap:6px;align-items:center"><span class="av">PN</span></span></div></div><div class="lrow inbox-row is-unread"><span class="ch" data-ch="instagram"><span class="ch-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-brand-instagram"/></svg></span>Instagram</span><div style="min-width:0"><div class="inbox-top"><b>@saffronlane.jewels</b><span class="faint" style="font-size:var(--fs-12)">New</span></div><div class="msg-snip">Hi! Looking for a PR agency for our Bandra store launch</div></div><div class="inbox-side"><time>18 min</time><span style="display:flex;gap:6px;align-items:center"><span class="inbox-acts hide-sm"><button class="btn btn--sm" type="button"><svg class="i" aria-hidden="true"><use href="icons.svg#i-layout-kanban"/></svg>Make lead</button><button class="btn btn--sm btn--ghost" type="button"><svg class="i" aria-hidden="true"><use href="icons.svg#i-square-check"/></svg>Make task</button></span><button class="btn btn--sm" type="button"><svg class="i" aria-hidden="true"><use href="icons.svg#i-user-plus"/></svg>Assign</button></span></div></div><div class="lrow inbox-row"><span class="ch" data-ch="gmail"><span class="ch-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-brand-gmail"/></svg></span>Gmail</span><div style="min-width:0"><div class="inbox-top"><b>Kunal Bhatia</b><span class="faint" style="font-size:var(--fs-12)">Kalaghoda Arts Fest</span><span class="chip chip--mint">Lead</span></div><div class="msg-snip">Re: Media list for the press preview</div></div><div class="inbox-side"><time>1 h</time><span style="display:flex;gap:6px;align-items:center"><span class="av">AK</span></span></div></div><div class="lrow inbox-row"><span class="ch" data-ch="web"><span class="ch-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-world-www"/></svg></span>Website form</span><div style="min-width:0"><div class="inbox-top"><b>Nisha Pillai</b><span class="faint" style="font-size:var(--fs-12)">Urban Paws Mumbai</span></div><div class="msg-snip">Budget ₹1 to 2 lakh, influencer campaign for a pet cafe</div></div><div class="inbox-side"><time>3 h</time><span style="display:flex;gap:6px;align-items:center"><span class="inbox-acts hide-sm"><button class="btn btn--sm" type="button"><svg class="i" aria-hidden="true"><use href="icons.svg#i-layout-kanban"/></svg>Make lead</button><button class="btn btn--sm btn--ghost" type="button"><svg class="i" aria-hidden="true"><use href="icons.svg#i-square-check"/></svg>Make task</button></span><button class="btn btn--sm" type="button"><svg class="i" aria-hidden="true"><use href="icons.svg#i-user-plus"/></svg>Assign</button></span></div></div><div class="lrow inbox-row"><span class="ch" data-ch="meta"><span class="ch-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-brand-meta"/></svg></span>Meta lead ad</span><div style="min-width:0"><div class="inbox-top"><b>Varun Khanna</b><span class="faint" style="font-size:var(--fs-12)">Monsoon Activewear</span><span class="chip chip--mint">Lead</span></div><div class="msg-snip">Interested in: Influencer campaign . Mumbai</div></div><div class="inbox-side"><time>Yesterday</time><span style="display:flex;gap:6px;align-items:center"><span class="av">RM</span></span></div></div></div></section></div></div></div><div class="note-box"><label for="n-a-inbox">Your note on one inbox (leave empty if OK)</label><textarea class="textarea" id="n-a-inbox" name="a-inbox" placeholder="e.g. streak chip too small, mint too strong in dark"></textarea></div></section><section class="sh-sec" id="a-dash"><h2 class="h-page"><span class="sh-num">7</span>Dashboard, leaderboard, morning brief</h2><p>Four numbers per person and a weekly leaderboard for the fun. Maddie gets the 9:30 brief, ready to send on WhatsApp.</p><div class="sh-pair"><div class="sh-frame" data-theme="light"><div class="mini">
+<section style="display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:var(--s-3)" class="dash">
+  <div style="display:flex;flex-direction:column;gap:var(--s-3)">
+    <div class="page-head"><h1 class="h-page">My dashboard</h1><select class="select" aria-label="Date filter"><option>Date filter: This month</option><option>Custom dates</option></select></div>
+    <div class="tiles">
+      <button class="tile" type="button"><span class="tile-top"><span class="label">Leads won</span><span class="tile-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-trophy"/></svg></span></span><span class="fig num">4</span><span class="tile-sub">Target 6 . 2 to go</span><span class="bar"><i style="--p:67"></i></span></button>
+      <button class="tile" type="button"><span class="tile-top"><span class="label">Reels live</span><span class="tile-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-photo"/></svg></span></span><span class="fig num">7</span><span class="tile-sub">Target 10</span><span class="bar"><i style="--p:70"></i></span></button>
+      <button class="tile" type="button"><span class="tile-top"><span class="label">Coverage</span><span class="tile-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-news"/></svg></span></span><span class="fig num">12</span><span class="tile-sub">3 this week</span><span class="bar"><i style="--p:80"></i></span></button>
+      <button class="tile tile--alert" type="button"><span class="tile-top"><span class="label">Overdue</span><span class="tile-ico"><svg class="i" aria-hidden="true"><use href="icons.svg#i-alert-triangle"/></svg></span></span><span class="fig num">2</span><span class="tile-sub">Oldest: 2 days</span></button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2 class="h-sec">Team leaderboard</h2><span class="label">This week</span></div>
+    <div class="leader">
+      <div class="lb-row"><span class="lb-rank">1</span><span class="av">PN</span><div class="lb-who"><b>Priya Nair</b><span class="bar"><i style="--p:100"></i></span></div><span class="lb-pts num">42</span></div>
+      <div class="lb-row is-me"><span class="lb-rank">2</span><span class="av av--b">TD</span><div class="lb-who"><b>Tanvi Desai (you)</b><span class="bar"><i style="--p:86"></i></span></div><span class="lb-pts num">36</span></div>
+      <div class="lb-row"><span class="lb-rank">3</span><span class="av av--d">AK</span><div class="lb-who"><b>Aisha Khan</b><span class="bar"><i style="--p:74"></i></span></div><span class="lb-pts num">31</span></div>
+      <div class="lb-row"><span class="lb-rank">4</span><span class="av av--c">RM</span><div class="lb-who"><b>Rohan Mehta</b><span class="bar"><i style="--p:60"></i></span></div><span class="lb-pts num">25</span></div>
+    </div>
+    <p class="faint" style="font-size:var(--fs-11);margin-top:var(--s-2)">Points: task done on time 1, lead won 5, reel live 2, coverage 2.</p>
+  </div>
+</section><div style="height:var(--s-4)"></div>
+<section style="display:flex;flex-direction:column;gap:var(--s-3)">
+  <div class="brief-hero">
+    <div class="brief-sum"><span class="label">Morning brief . Mon 26 Oct . 9:30 am</span><h1 class="h-page">Good morning, Maddie</h1>
+      <p class="lede">Yesterday the team closed <b>23 tasks</b>. Today <b>31 are due</b>, <b>5 are overdue</b> and <b>2 decisions</b> wait on you.</p></div>
+    <div class="brief-nums"><div><span class="fig fig--xl num">23</span><span class="label">Done yesterday</span></div><div><span class="fig fig--xl num">31</span><span class="label">Due today</span></div><div><span class="fig fig--xl num" style="color:var(--red)">5</span><span class="label">Overdue</span></div></div>
+    <button class="btn btn--next" type="button"><svg class="i" aria-hidden="true"><use href="icons.svg#i-brand-whatsapp"/></svg>Send on WhatsApp</button>
+  </div>
+  <div class="brief">
+    <div class="card"><div class="card-head"><h2 class="h-sec">Overdue by person</h2></div><ul class="brief-list">
+      <li><span class="av av--b">TD</span><span>Tanvi Desai</span><span class="chip chip--red">2</span></li>
+      <li><span class="av av--d">AK</span><span>Aisha Khan</span><span class="chip chip--red">2</span></li>
+      <li><span class="av">KS</span><span>Kabir Shah</span><span class="chip chip--red">1</span></li></ul></div>
+    <div class="card"><div class="card-head"><h2 class="h-sec">Decisions needed</h2></div><ul class="brief-list">
+      <li><svg class="i" aria-hidden="true"><use href="icons.svg#i-coin-rupee"/></svg><span>Influencer fee ₹60,000 for Kora Skincare</span><button class="btn btn--sm" type="button">Open</button></li>
+      <li><svg class="i" aria-hidden="true"><use href="icons.svg#i-file-text"/></svg><span>Proposal for Monsoon Activewear, ₹5L</span><button class="btn btn--sm" type="button">Open</button></li></ul></div>
+    <div class="card"><div class="card-head"><h2 class="h-sec">WhatsApp preview</h2></div>
+      <div class="wa-preview"><b>Glad U Came . Morning brief, 26 Oct</b>
+Done yesterday: 23 . Due today: 31 . Overdue: 5
+Overdue: Tanvi 2, Aisha 2, Kabir 1
+Needs you: Kora fee ₹60K, Monsoon proposal ₹5L
+Open the cockpit for details.</div></div>
+  </div>
+</section></div></div></div><div class="note-box"><label for="n-a-dash">Your note on dashboard, leaderboard, morning brief (leave empty if OK)</label><textarea class="textarea" id="n-a-dash" name="a-dash" placeholder="e.g. streak chip too small, mint too strong in dark"></textarea></div></section>
+  <div class="sh-foot"><b>Done reviewing?</b><span class="muted">Empty boxes count as approved.</span><span style="flex:1"></span><button class="btn btn--next" type="button" id="copyNotes"><svg class="i" aria-hidden="true"><use href="icons.svg#i-copy"/></svg>Copy my notes</button></div>
+</div>
+<dialog class="dialog" id="realdialog" aria-label="New task">
+  <div class="dialog-head"><h2 class="h-page">New task</h2>
+    <button class="mic" type="button" data-mic aria-pressed="false"><span class="mic-dot"><svg class="i" aria-hidden="true"><use href="icons.svg#i-microphone"/></svg></span><span class="mic-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span data-mic-label>Speak</span></button>
+    <button class="btn btn--icon btn--ghost" type="button" aria-label="Close" data-close><svg class="i" aria-hidden="true"><use href="icons.svg#i-x"/></svg></button></div>
+  <div class="dialog-body">
+    <div class="speak-strip"><svg class="i i--i--sm" aria-hidden="true"><use href="icons.svg#i-microphone"/></svg><span>Try: <q>Ask Tanvi to send the Kora shortlist by Wednesday, high priority</q></span></div>
+    <div class="f" data-speak="Send the Kora influencer shortlist"><label>What needs doing <em>*</em></label><input class="input" placeholder="e.g. Send the shortlist to the brand"></div>
+    <div class="f-row">
+      <div class="f" data-speak="Tanvi Desai"><label>Owner <em>*</em></label><select class="select"><option value="">Pick a person</option><option>Tanvi Desai</option><option>Priya Nair</option><option>Rohan Mehta</option></select></div>
+      <div class="f" data-speak="2026-10-28"><label>Deadline <em>*</em></label><input class="input" type="date"></div>
+    </div>
+    <div class="f-row">
+      <div class="f" data-speak="High"><label>Priority</label><select class="select"><option>Normal</option><option>High</option><option>Low</option></select></div>
+      <div class="f" data-speak="Kora Skincare . Diwali campaign"><label>Link to lead or project</label><input class="input" placeholder="Search a lead or project"></div>
+    </div>
+    <p class="f-help">It shows on Tanvi's Today's tasks at once. The bot reminds her, then her department head, then Maddie.</p>
+  </div>
+  <div class="dialog-foot"><span class="mic-hint">Speak fills the fields. You check, then save.</span><button class="btn btn--ghost" type="button" data-close>Cancel</button><button class="btn btn--next" type="button" data-close>Save task</button></div></dialog>
+
+<script>
+document.querySelectorAll('.sh-frame[data-theme="light"]').forEach(function (f) {
+  var c = f.cloneNode(true); c.setAttribute('data-theme', 'dark');
+  c.querySelectorAll('[id]').forEach(function (e) { e.id += '-dk'; }); f.after(c);
+});
+var KEY = 'guc.sheet.notes';
+function load() { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } }
+var saved = load();
+document.querySelectorAll('.note-box textarea').forEach(function (t) {
+  if (saved[t.name]) t.value = saved[t.name];
+  t.addEventListener('input', function () { saved[t.name] = t.value; try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {} });
+});
+document.getElementById('copyNotes').onclick = function () {
+  var out = 'GLAD U CAME . design approval notes . ' + new Date().toDateString() + '\n';
+  document.querySelectorAll('.sh-sec').forEach(function (s) { var t = s.querySelector('textarea'); out += '\n' + s.querySelector('h2').textContent.trim() + ': ' + (t.value.trim() || 'OK') ; });
+  navigator.clipboard.writeText(out).then(function () { GUC.toast('Notes copied. Paste them back to Picasso.'); }, function () { prompt('Copy your notes', out); });
+};
+</script>
+<script src="kit.js"></script>
+</body></html>

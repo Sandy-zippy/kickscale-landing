@@ -1,6 +1,6 @@
 /* Glad U Came demo . B4: Influencers & media (Influencers, Celebrities, Journalists & outlets, record pages, Excel),
    Gifting & dispatch (hampers, proof of post, Gifting agent nudges), Approvals (one queue, five types, limits,
-   reason dialog with Speak), Money (Invoices, Receivables by age, Payouts, Project margin, Money agent drafts).
+   reason dialog with Speak), Money moved to c3.js in C3.
    Loads after projects.js and before app.js. Every approval decision goes through decide() here. */
 (function () {
   'use strict';
@@ -17,7 +17,7 @@
   var BARTER = ['Yes', 'No', 'Depends on the brand'];
   var HLAD = ['Planned', 'Packed', 'Dispatched', 'Delivered', 'Posted'];
   var COURIERS = ['DTDC', 'Blue Dart', 'Delhivery', 'Dunzo', 'By hand'];
-  var MONEYT = { Payout: 1, Expense: 1 };
+  var MONEYT = { 'Vendor cost': 1 };
   var rupees = function (n) { var neg = n < 0, s = String(Math.abs(Math.round(n))), last = s.slice(-3), rest = s.slice(0, -3); return (neg ? '-' : '') + '₹' + (rest ? rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' : '') + last; };
   var kfmt = function (n) { return n >= 1e5 ? (n / 1e5).toFixed(1).replace(/\.0$/, '') + 'L' : Math.round(n / 1000) + 'K'; };
   var tier = function (f) { return f < 1e4 ? 'Nano (under 10k)' : f < 1e5 ? 'Micro (10k to 100k)' : f < 5e5 ? 'Mid (100k to 500k)' : f < 1e6 ? 'Macro (500k to 1M)' : 'Mega (above 1M)'; };
@@ -62,15 +62,6 @@
         .map(function (h, i) { return { id: 'H' + (i + 1), no: 'GUC-H-000' + (i + 1), to: h[0], rec: h[1], brand: h[2], project: pOf(h[2]), contents: h[3], value: h[4], courier: h[5], ref: h[6], stage: h[7], owner: h[8],
           delivered: h[9] == null ? '' : day(A, h[9]), proof: { link: h[10], files: [] }, nudged: {}, history: [{ at: A.addDays(A.TODAY + 'T10:00', -10), who: h[8], what: 'Hamper planned for ' + h[1] }] }; });
       D.seqH = D.hampers.length;
-      /* invoices: amounts before GST in rupees; GST 18% worked out, never typed */
-      D.invoices = [['P2', 300000, -40, 'Paid', 354000], ['P6', 380000, -75, 'Sent', 0], ['P4', 260000, -35, 'Part paid', 150000], ['P5', 140000, -3, 'Sent', 0], ['P3', 250000, -100, 'Part paid', 200000]]
-        .map(function (v, i) { var p = byId(D.projects, v[0]); return { id: 'V' + (i + 1), no: 'GUC/26-27/0' + (31 + i), brand: p.brand, project: p.id, amount: v[1], gst: 18, issued: day(A, v[2]), due_in: 30, stage: v[3], received: v[4], by: 'farhan',
-          history: [{ at: A.addDays(A.TODAY + 'T12:00', v[2]), who: 'farhan', what: 'Invoice sent to ' + p.brand }] }; });
-      D.seqV = D.invoices.length; D.seqNo = 35;
-      D.payouts = [['Influencer', '@bandra.bites', 'P1', 45000, 10, 'Paid'], ['Vendor', 'Lens & Light Studio', 'P5', 18000, 2, 'Approved'], ['Celebrity management', 'Northstar Management', 'P4', 60000, 10, 'Documents in']]
-        .map(function (v, i) { return { id: 'PO' + (i + 1), no: 'GUC-PO-000' + (i + 1), ptype: v[0], payee: v[1], project: v[2], amount: v[3], tds: v[4], stage: v[5], docs: { live: v[0] === 'Influencer', inv: true, pan: true }, bank: v[5] === 'Paid' ? 'UTR 2026SBIN0012' : '',
-          history: [{ at: A.addDays(A.TODAY + 'T12:00', -5), who: 'tanvi', what: 'Payout requested' }] }; });
-      D.seqPO = D.payouts.length;
       D.expenses = [{ id: 'E1', project: 'P3', what: 'Venue deposit, store launch', amount: 120000, status: 'Approved', history: [] }, { id: 'E2', project: 'P5', what: 'Props for the reel shoot', amount: 6500, status: 'Approved', history: [] }];
       D.seqE = 2;
       /* the B1 sample approvals become real records you can decide */
@@ -80,9 +71,8 @@
       var seedA = [
         lp && { type: 'Pricing', what: 'Pricing for ' + lp.brand, by: lp.owner, amount: Math.round(lp.value * 1e5), link: lp.id },
         L('Lower Parel Lofts') && { type: 'Proposal', what: 'Proposal for Lower Parel Lofts', by: 'riya', amount: 750000, link: L('Lower Parel Lofts').id },
-        { type: 'Payout', what: 'Northstar Management, Dadar Silk House', by: 'zoya', amount: 60000, link: 'P4', ref: 'PO3' },
-        { type: 'Expense', what: 'Sound and lights, store launch', by: 'arjun', amount: 85000, link: 'P3', ref: 'E3' },
-        { type: 'Expense', what: 'Courier top-up for hampers', by: 'siddharth', amount: 4500, link: 'P3', ref: 'E4' }].filter(Boolean);
+        { type: 'Vendor cost', what: 'Sound and lights, store launch', by: 'arjun', amount: 85000, link: 'P3', ref: 'E3' },
+        { type: 'Vendor cost', what: 'Courier top-up for hampers', by: 'siddharth', amount: 4500, link: 'P3', ref: 'E4' }].filter(Boolean);
       seedA.forEach(function (o) { raise(A, o, true); });
       D.approvals.forEach(function (a) { a.history = a.history || []; });
     }
@@ -94,15 +84,13 @@
   function deptOf(A, link) { var D = A.D(), p = byId(D.projects, link); if (p) return p.dept; var l = byId(D.leads, link); return l ? A.P[l.owner].dept : 'BD'; }
   function approverFor(A, type, amount, link, max) { LIMIT = (A.D().settings && A.D().settings.limits) || LIMIT0;
     var head = J().headOf(A, deptOf(A, link));
-    if (type === 'Payout') return 'farhan';
     if (type === 'Influencer fee') return (max || amount) <= LIMIT.fee ? head : 'maddie';
-    if (type === 'Expense') return amount <= LIMIT.expense ? head : 'maddie';
+    if (type === 'Vendor cost') return amount <= LIMIT.expense ? head : 'maddie';
     return 'maddie';   /* Pricing, Proposal */
   }
   var limitWord = function (a) {
     if (a.type === 'Influencer fee') return 'Department head up to ₹1,00,000 per influencer, Maddie above (placeholder)';
-    if (a.type === 'Expense') return 'Department head up to ₹10,000, Maddie above (placeholder)';
-    if (a.type === 'Payout') return 'Finance checks the documents and approves (placeholder)';
+    if (a.type === 'Vendor cost') return 'Department head up to ₹10,000, Maddie above (placeholder)';
     return 'Maddie decides every ' + a.type + ' (placeholder)';
   };
   function recordOf(A, a) { var D = A.D(); return byId(D.projects, a.link) || byId(D.leads, a.link); }
@@ -112,7 +100,7 @@
     var D = A.D(), who = o.by || A.ME();
     var a = { id: 'A' + (++D.seqA), type: o.type, what: o.what, by: who, amount: o.amount, max: o.max || 0, status: 'Waiting', link: o.link || '', ref: o.ref || '', line: o.line || '', at: A.now(), history: [] };
     a.approver = approverFor(A, a.type, a.amount, a.link, a.max);
-    if (a.type === 'Expense' && !byId(D.expenses, a.ref)) { a.ref = a.ref || 'E' + (++D.seqE); D.expenses.push({ id: a.ref, project: a.link, what: o.what, amount: o.amount, status: 'Waiting', history: [] }); }
+    if (a.type === 'Vendor cost' && !byId(D.expenses, a.ref)) { a.ref = a.ref || 'E' + (++D.seqE); D.expenses.push({ id: a.ref, project: a.link, what: o.what, amount: o.amount, status: 'Waiting', history: [] }); }
     hist(A, a, 'Raised by ' + A.P[who].name + ', with ' + A.P[a.approver].name, who);
     D.approvals.push(a);
     recHist(A, a, a.type + ' approval raised (' + rupees(a.amount) + '), with ' + A.P[a.approver].name, who);
@@ -145,7 +133,6 @@
     D.tasks.forEach(function (t) { if (t.fix === a.id && A.OPEN[t.status]) { t.status = 'done'; t.done_at = A.now(); } });
     var t = J().mkTask(A, { title: 'Decide: ' + label(a) + ', ' + rupees(a.amount), owner: a.approver, checker: a.approver, due: A.TODAY + 'T18:00', link: a.link, agent: true, priority: 'High', kind: 'approval', why: 'Approvals: resubmitted by ' + A.me().name }); t.appr = a.id;
     if (a.line === 'shortlist') { var p = byId(D.projects, a.link); if (p) p.slState = 'Waiting'; }
-    var po = byId(D.payouts, a.ref); if (po) po.stage = 'Documents in';
     A.save(); A.render(); A.toast('Resubmitted. ' + A.first(a.approver) + ' has it on Today\'s tasks.');
   }
   /* what a decision changes on the record it was for */
@@ -158,16 +145,9 @@
         pj.mkTask(A, { title: 'Outreach to ' + p.lines.length + ' approved influencers for ' + p.brand, owner: p.owner_line, due: A.addDays(A.TODAY + 'T18:00', 1), link: p.id, agent: true, priority: 'High', why: 'Campaign agent: shortlist approved by ' + A.me().name });
       } else p.slState = '';
     }
-    if (a.type === 'Payout') {
-      var po = byId(D.payouts, a.ref);
-      if (po) { po.stage = ok ? 'Approved' : 'Requested'; po.back = ok ? '' : why; hist(A, po, ok ? 'Approved by ' + A.me().name : 'Sent back by ' + A.me().name + ': ' + why); }
-      var x = p && p.lines.filter(function (l) { return l.h === a.line; })[0]; if (x) x.payout = ok ? 'Approved' : 'Sent back';
-      if (ok && po) { var t = pj.mkTask(A, { title: 'Pay ' + po.payee + ' ' + rupees(po.amount - tdsOf(po)) + ' and record the bank reference', owner: 'farhan', checker: 'farhan', due: A.addDays(A.TODAY + 'T17:00', 1), link: a.link, agent: true, quiet: A.ME() === 'farhan', why: 'Payout approved by ' + A.me().name }); t.payout = po.id; }
-    }
-    if (a.type === 'Expense') { var e = byId(D.expenses, a.ref); if (e) { e.status = ok ? 'Approved' : 'Sent back'; hist(A, e, a.status + ' by ' + A.me().name); } }
+    if (a.type === 'Vendor cost') { var e = byId(D.expenses, a.ref); if (e) { e.status = ok ? 'Approved' : 'Sent back'; hist(A, e, a.status + ' by ' + A.me().name); } if (ok && window.GUC_C3) window.GUC_C3.costFromAppr(A, a); }
     if (a.type === 'Pricing') { var l = byId(D.leads, a.link); if (l) { l.pricing = ok ? 'Approved' : 'Sent back'; if (ok) pj.mkTask(A, { title: 'Send the proposal to ' + l.brand + ': pricing approved', owner: l.owner, due: A.addDays(A.TODAY + 'T18:00', 1), link: l.id, agent: true, quiet: true, why: 'Pricing approved by ' + A.me().name }); } }
   }
-  var tdsOf = function (po) { return Math.round(po.amount * po.tds / 100); };
   /* Pricing gate for Proposal sent (R-15): leads.js asks here before moving a lead */
   function pricingGate(A, l) {
     if (l.pricing === 'Approved') return true;
@@ -192,12 +172,6 @@
         D.notes.push({ to: h.owner, text: 'Gifting agent: ' + h.rec + ' has had the hamper ' + n + ' days. Ask for the live link or a screenshot.', at: A.now(), kind: 'internal', unread: true });
       });
     });
-    (D.projects || []).forEach(function (p) {
-      if (!D.invoices || D.invoices.some(function (v) { return v.project === p.id; })) return;
-      D.invoices.push({ id: 'V' + (++D.seqV), no: '', brand: p.brand, project: p.id, amount: Math.round(p.fee * 1e5), gst: 18, issued: '', due_in: 30, stage: 'Draft', received: 0, by: 'agent',
-        history: [{ at: A.now(), who: 'agent', what: 'Money agent drafted this invoice from the Won brand, fee ' + rupees(Math.round(p.fee * 1e5)) + '. A person checks and sends it.' }] });
-      ch = true;
-    });
     return ch;
   }
 
@@ -221,7 +195,7 @@
     CB['dlg-reason'] = function (dl) { var w = dl.querySelector('[name=why]').value.trim(); if (!w) { dl.querySelector('[name=why]').setAttribute('aria-invalid', 'true'); return 'A reason is needed to send it back.'; } cb(w); };
   }
   function askDialog(A, o) {
-    var D = A.D(), types = o.lock ? [o.type] : ['Expense', 'Proposal'];
+    var D = A.D(), types = o.lock ? [o.type] : ['Vendor cost', 'Proposal'];
     var projs = D.projects.filter(function (p) { return role(A) === 'Founder' || p.team.indexOf(A.ME()) >= 0 || J().headOf(A, p.dept) === A.ME(); });
     dialog(A, 'dlg-ask', o.lock ? 'Ask for the Pricing approval' : 'Ask for approval', 'ask',
       (o.lock ? '<p class="lede">Proposal sent waits for the Pricing approval. It goes to <b>' + A.esc(A.P[approverFor(A, 'Pricing', o.amount, o.link)].name) + '</b>.</p>' : '') +
@@ -229,7 +203,7 @@
       '<div class="f"><label for="ak-amt">Amount, ₹ <em>*</em></label><input class="input" id="ak-amt" name="amount" inputmode="numeric" value="' + (o.amount || '') + '"></div></div>' +
       '<div class="f"><label for="ak-what">What it is for <em>*</em></label><input class="input" id="ak-what" name="what" value="' + A.esc(o.what || '') + '"></div>' +
       (o.lock ? '<input type="hidden" name="link" value="' + o.link + '">' : '<div class="f"><label for="ak-p">Project <em>*</em></label><select class="select" id="ak-p" name="link">' + projs.map(function (p) { return '<option value="' + p.id + '">' + A.esc(p.name) + '</option>'; }).join('') + '</select></div>') +
-      '<p class="f-help">Placeholder limits: expense up to ₹10,000 goes to the department head, above that to Maddie.</p>', 'Send to Approvals', 'Expense of 8,500 rupees for courier charges');
+      '<p class="f-help">Placeholder limits: a vendor cost up to ₹10,000 goes to the department head, above that to Maddie.</p>', 'Send to Approvals', 'Vendor cost of 8,500 rupees for courier charges');
     CB['dlg-ask'] = function (dl) {
       var v = function (n) { return dl.querySelector('[name=' + n + ']').value.trim(); }, amt = Number(v('amount').replace(/[^\d.]/g, ''));
       if (!amt) return 'Put the amount in rupees.'; if (!v('what')) return 'Say what it is for.'; if (!v('link')) return 'Pick the project.';
@@ -242,7 +216,7 @@
     var put = function (n, v) { var el = dl.querySelector('[name=' + n + ']'); if (!el || v == null || v === '') return 0; el.value = v; el.closest('.f').classList.add('is-filled'); return 1; };
     var num = (text.replace(/,/g, '').match(/\d+(\.\d+)?/) || [])[0];
     if (kind === 'reason' || kind === 'remind') return put(kind === 'reason' ? 'why' : 'note', text);
-    if (kind === 'ask') { var n = put('amount', num); if (/courier|charge|venue|prop|expense/i.test(text)) n += put('what', text.replace(/^.*?for\s+/i, '').replace(/^\w/, function (c) { return c.toUpperCase(); })); return n; }
+    if (kind === 'ask') { var n = put('amount', num); if (/courier|charge|venue|prop|vendor/i.test(text)) n += put('what', text.replace(/^.*?for\s+/i, '').replace(/^\w/, function (c) { return c.toUpperCase(); })); return n; }
     if (kind === 'paid' || kind === 'recv') { var n2 = put('ref', (text.match(/[A-Z]{2,}\w*\d+|\d{6,}/i) || [])[0]); if (kind === 'recv') n2 += put('amount', num); return n2; }
     if (kind === 'dispatch') { var c = COURIERS.filter(function (x) { return text.toLowerCase().indexOf(x.toLowerCase()) >= 0; })[0]; return put('courier', c) + put('ref', (text.match(/\d[\d ]{3,}\d/) || [])[0]); }
     return prevParse ? prevParse(kind, text, dl, A) : 0;
@@ -308,7 +282,7 @@
     var list = fpass(A, 'appr', rows), waiting = all.filter(function (a) { return canDecide(A, a); }).length;
     var card = function (a) {
       var r = recordOf(A, a), href = r ? (r.id.charAt(0) === 'P' ? '#/project/' : '#/lead/') + r.id : '';
-      return '<article class="card approval" data-appr="' + a.id + '"><div class="approval-top"><span class="tile-ico">' + A.ico({ Pricing: 'coin-rupee', Proposal: 'file-text', 'Influencer fee': 'users', Payout: 'currency-rupee', Expense: 'receipt-rupee' }[a.type] || 'square-check') + '</span>' +
+      return '<article class="card approval" data-appr="' + a.id + '"><div class="approval-top"><span class="tile-ico">' + A.ico({ Pricing: 'coin-rupee', Proposal: 'file-text', 'Influencer fee': 'users', 'Vendor cost': 'receipt-rupee' }[a.type] || 'square-check') + '</span>' +
         '<div><b>' + A.esc(a.what) + '</b><span class="faint">' + a.type + ' . asked by ' + A.esc(A.P[a.by].name) + ', ' + A.dayWord(a.at) + (href ? ' . <a href="' + href + '">' + A.esc(r.brand || r.name) + '</a>' : '') + '</span></div>' +
         '<span class="approval-amt">' + rupees(a.amount) + '</span></div>' +
         '<div class="approval-why">With <b>' + A.esc(A.P[a.approver].name) + '</b>. ' + limitWord(a) + '.' + (a.why ? ' Reason: ' + A.esc(a.why) : '') + '</div>' +
@@ -320,7 +294,7 @@
     return '<section class="card card--flush" data-b4="approvals"><div style="padding:var(--s-4);display:flex;flex-direction:column;gap:var(--s-3)"><div class="page-head"><h1 class="h-page">Approvals</h1>' +
       '<span class="chip chip--amber">' + waiting + ' waiting for you</span><span class="spacer" style="flex:1"></span>' +
       (role(A) !== 'Finance' ? '<button class="btn btn--next btn--sm" type="button" data-do="aask">' + A.ico('plus') + 'Ask for approval</button>' : '') + '</div>' +
-      '<p class="f-help">' + (role(A) === 'Finance' ? 'Finance sees money approvals only: payouts and expenses. ' : '') + 'Placeholder limits, set in Settings: Pricing and Proposal with Maddie; influencer fee up to ₹1,00,000 per influencer and expense up to ₹10,000 with the department head, above that Maddie; payouts with Finance.</p>' +
+      '<p class="f-help">' + (role(A) === 'Finance' ? 'Finance sees money approvals only: vendor costs. ' : '') + 'Placeholder limits, set in Settings: Pricing and Proposal with Maddie; influencer fee up to ₹1,00,000 per influencer and vendor cost up to ₹10,000 with the department head, above that Maddie.</p>' +
       fbar(A, 'appr', rows, [['type', 'Type'], ['st', 'Status'], ['by', 'Asked by']], [['amount', 'Amount'], ['with', 'With'], ['why', 'Reason']], 'approvals') + '</div>' +
       '<div class="appr-list" style="display:grid;gap:var(--s-3);padding:0 var(--s-4) var(--s-4);grid-template-columns:repeat(auto-fill,minmax(360px,1fr))">' + (list.length ? list.map(function (r) { return card(r.o); }).join('') :
         '<div class="card empty"><span class="empty-art">' + A.ico('mood-smile') + '</span><h2 class="h-sec">Nothing waiting</h2><p>All clear. New approvals show here and on Today\'s tasks.</p></div>') + '</div>' + foot(A, list.length, rows.length, 'approvals') + '</section>';
@@ -404,7 +378,7 @@
     var r = role(A), sub = (location.hash.match(/^#\/media\/(\w+)/) || [])[1];
     if (r === 'Intern') return blocked(A, 'users', 'Influencers &amp; media are not on your list', 'Interns see their own tasks.', '#/today', 'Back to Today\'s tasks');
     if (sub === 'celebs' && !canCeleb(A)) return blocked(A, 'crown', 'Celebrities are for the Founder and department heads', 'Ask your department head if a celebrity is needed on your project.', '#/media', 'Back to Influencers');
-    if (sub === 'journos' && !canJour(A)) return blocked(A, 'news', 'Journalists &amp; outlets are not on your list', 'Finance sees influencer payout details only.', '#/media', 'Back to Influencers');
+    if (sub === 'journos' && !canJour(A)) return blocked(A, 'news', 'Journalists &amp; outlets are not on your list', 'Finance sees influencers and their fees only.', '#/media', 'Back to Influencers');
     MTAB = sub === 'celebs' ? 'celebs' : sub === 'journos' ? 'journos' : 'infl';
     var D = A.D(), tabs = [['infl', 'Influencers', D.infl.length, '#/media']].concat(canCeleb(A) ? [['celebs', 'Celebrities', D.celebs.length, '#/media/celebs']] : []).concat(canJour(A) ? [['journos', 'Journalists &amp; outlets', D.journos.length, '#/media/journos']] : []);
     var head = '<div class="page-head"><h1 class="h-page">Influencers &amp; media</h1><span class="spacer" style="flex:1"></span>' +
@@ -439,11 +413,11 @@
   S.infl = function (A) {
     var id = (location.hash.match(/^#\/infl\/(I\d+)/) || [])[1], x = id && byId(A.D().infl, id);
     if (role(A) === 'Intern' || !x) return blocked(A, 'users', 'This influencer is not on your list', 'Influencers show for the Founder, department heads, team members and Finance.', '#/media', 'Back to Influencers');
-    var pw = pastOf(A, x), pays = A.D().payouts.filter(function (p) { return p.payee === x.h; });
+    var pw = pastOf(A, x), fees = window.GUC_C3 ? window.GUC_C3.feesOf(A, x.h) : [];
     return recPage(A, 'infl', x, x.h, A.esc(x.name) + ', ' + x.cat.toLowerCase() + ', ' + A.esc(x.city) + '. ' + kfmt(x.fol) + ' followers at ' + x.er + '% ER, so ' + x.tier.split(' ')[0] + ' tier. Rates checked ' + A.dayWord(x.checked + 'T00:00') + '.',
       [['Reel', rupees(x.rate)], ['Story', rupees(x.story)], ['Post', rupees(x.post)], ['Barter', x.barter], ['PAN on file', x.pan], ['Tier', x.tier]],
       '<h2 class="h-sec">Past work</h2>' + (pw.length ? '<ul class="brief-list">' + pw.map(function (w) { return '<li>' + A.esc(w) + '</li>'; }).join('') + '</ul>' : '<p class="faint">New to us.</p>') +
-      (pays.length ? '<h2 class="h-sec">Payouts</h2><ul class="brief-list">' + pays.map(function (p) { return '<li>' + p.no + ', ' + rupees(p.amount) + ', ' + p.stage + '</li>'; }).join('') + '</ul>' : ''));
+      '<h2 class="h-sec">Fees on campaigns</h2>' + (fees.length ? '<ul class="brief-list" data-fees>' + fees.map(function (c) { return '<li>' + A.esc(c.pname) + ', ' + rupees(c.amount) + ', ' + c.st + '</li>'; }).join('') + '</ul>' : '<p class="faint">No campaign fees yet.</p>'));
   };
   S.celeb = function (A) {
     var id = (location.hash.match(/^#\/celeb\/(C\d+)/) || [])[1], c = id && byId(A.D().celebs, id);
@@ -555,90 +529,11 @@
     UP = null; A.save(); A.render(); A.toast(n + ' saved.');
   }
 
-  /* ---------------- Money ---------------- */
-  var MONT = 'inv';
-  var gstOf = function (v) { return Math.round(v.amount * v.gst / 100); };
-  var totOf = function (v) { return v.amount + gstOf(v); };
-  var dueOn = function (A, v) { return v.issued ? A.addDays(v.issued + 'T00:00', v.due_in).slice(0, 10) : ''; };
-  var openAmt = function (v) { return /^(Sent|Part paid)$/.test(v.stage) ? totOf(v) - v.received : 0; };
-  var BUCKETS = [['0 to 30 days', 0, 30], ['31 to 60', 31, 60], ['61 to 90', 61, 90], ['above 90', 91, 1e9]];
-  var cell = function (n, k) { return '<span class="money num" data-c="' + k + '" style="text-align:right">' + rupees(n) + '</span>'; };
-  function brandsOfHead(A) { var me = A.ME(); return A.D().projects.filter(function (p) { return J().headOf(A, p.dept) === me || p.team.indexOf(me) >= 0; }).map(function (p) { return p.brand; }); }
-  S.money = function (A) {
-    var r = role(A), D = A.D();
-    if (!/^(Founder|Finance|Department head)$/.test(r)) return blocked(A, 'currency-rupee', 'Money is not on your list', 'Money is for Maddie, Finance and, for invoice status, department heads.', '#/today', 'Back to Today\'s tasks');
-    var head = r === 'Department head', sub = (location.hash.match(/^#\/money\/(\w+)/) || [])[1];
-    MONT = head ? 'inv' : (sub || 'inv');
-    var tabs = head ? [['inv', 'Invoices']] : [['inv', 'Invoices'], ['age', 'Receivables by age'], ['pay', 'Payouts'], ['margin', 'Project margin']];
-    var html = '<div class="page-head"><h1 class="h-page">Money</h1><span class="chip">Money agent drafts; a person checks and sends. Nothing here moves money.</span></div>' +
-      '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<a class="tab" role="tab" href="#/money/' + t[0] + '" aria-selected="' + (MONT === t[0]) + '">' + t[1] + '</a>'; }).join('') + '</div>';
-    if (MONT === 'inv') {
-      var mine = head ? brandsOfHead(A) : null, inv = D.invoices.filter(function (v) { return !mine || mine.indexOf(v.brand) >= 0; });
-      var rows = inv.map(function (v) { var du = dueOn(A, v), over = du && du < A.TODAY && openAmt(v) > 0; return { o: v, over: over, f: { st: over ? 'Overdue' : v.stage, brand: v.brand }, text: [v.no, v.brand].join(' '), date: v.issued, any: { amount: v.amount, no: v.no } }; });
-      var list = fpass(A, 'inv', rows), drafts = inv.filter(function (v) { return v.by === 'agent' && v.stage === 'Draft'; }).length;
-      var COLS = head ? 'minmax(0,1.6fr) minmax(0,1fr) auto auto' : 'minmax(210px,1fr) repeat(4,88px) 64px 88px 158px';
-      var sum = function (f) { return list.reduce(function (s, q) { return s + f(q.o); }, 0); };
-      html += (drafts && !head ? '<div class="appr-bar" data-agentdraft>' + A.ico('sparkles') + '<span><b>Money agent</b> drafted ' + drafts + ' invoice' + (drafts === 1 ? '' : 's') + ' from Won brands. Finance checks each one, then sends it.</span></div>' : '') +
-        (head ? '<p class="f-help">Department heads see the invoice status of their own brands. Amounts and margin stay with Maddie and Finance.</p>' : '') +
-        fbar(A, 'inv', rows, [['st', 'Stage'], ['brand', 'Brand']], [['amount', 'Amount before GST'], ['no', 'Invoice number']], 'invoices') +
-        '<div class="list" data-invoices>' + (head ? '' : '<div class="lrow label" style="--cols:' + COLS + '"><span>Invoice</span><span style="text-align:right">Before GST</span><span style="text-align:right">GST 18%</span><span style="text-align:right">Total</span><span style="text-align:right">Received</span><span>Due</span><span>Stage</span><span></span></div>') +
-        list.map(function (q) {
-          var v = q.o, du = dueOn(A, v), st = q.over ? 'Overdue' : v.stage, act = '';
-          if (!head) {
-            if (v.stage === 'Draft') act = '<button class="btn btn--sm btn--next" type="button" data-do="vcheck" data-v="' + v.id + '">' + A.ico('check') + 'Checked by Finance</button>';
-            else if (v.stage === 'Checked by Finance') act = '<button class="btn btn--sm btn--next" type="button" data-do="vsend" data-v="' + v.id + '">' + A.ico('send') + 'Mark sent</button>';
-            else if (openAmt(v) > 0) act = '<button class="btn btn--sm" type="button" data-do="vrecv" data-v="' + v.id + '">Record received</button>' + (q.over ? '<button class="btn btn--sm btn--ghost" type="button" data-do="vremind" data-v="' + v.id + '">Payment reminder</button>' : '');
-          }
-          return '<div class="lrow" data-inv="' + v.id + '" style="--cols:' + COLS + '"><div class="cell-who"><span class="av av--lg">' + A.ico('file-invoice', 'i--sm') + '</span><div><b>' + A.esc(v.brand) + '</b><span>' + (v.no || 'Draft') + ' . ' + A.esc((byId(D.projects, v.project) || {}).name || '') + '</span></div></div>' +
-            (head ? '<span>' + (du ? 'Due ' + A.dayWord(du + 'T00:00') : 'Not sent') + '</span>' : cell(v.amount, 'a') + cell(gstOf(v), 'g') + cell(totOf(v), 't') + cell(v.received, 'r') + '<span>' + (du ? A.dayWord(du + 'T00:00') : 'Not sent') + '</span>') +
-            '<span class="chip' + (q.over ? ' chip--red' : v.stage === 'Paid' ? ' chip--green' : v.stage === 'Draft' ? ' chip--amber' : '') + '">' + st + '</span>' + (head ? '' : '<span style="display:flex;gap:4px;flex-wrap:wrap">' + act + '</span>') + '</div>';
-        }).join('') +
-        (head ? '' : '<div class="lrow" data-invtotal style="--cols:' + COLS + ';font-weight:600"><span>Total, ' + list.length + ' invoices</span>' + cell(sum(function (v) { return v.amount; }), 'a') + cell(sum(gstOf), 'g') + cell(sum(totOf), 't') + cell(sum(function (v) { return v.received; }), 'r') + '<span></span><span></span><span></span></div>') + '</div>' + foot(A, list.length, rows.length, 'invoices');
-    }
-    if (MONT === 'age') {
-      var by = {}; D.invoices.forEach(function (v) { var o = openAmt(v); if (!o) return; var n = A.daysBetween(v.issued, A.TODAY), b = BUCKETS.filter(function (x) { return n >= x[1] && n <= x[2]; })[0]; by[v.brand] = by[v.brand] || [0, 0, 0, 0]; by[v.brand][BUCKETS.indexOf(b)] += o; });
-      var names = Object.keys(by).sort(), tot = [0, 0, 0, 0]; names.forEach(function (b) { by[b].forEach(function (x, i) { tot[i] += x; }); });
-      var all = tot.reduce(function (a, b) { return a + b; }, 0), C = 'minmax(0,1fr) repeat(5,120px)';
-      html += '<article class="card money-card"><div class="card-head"><h2 class="h-sec">To collect</h2>' + (tot[2] + tot[3] ? '<span class="chip chip--red">' + rupees(tot[2] + tot[3]) + ' over 60 days</span>' : '') + '</div><div class="money-big"><span class="fig fig--xl num" data-agetotal>' + rupees(all) + '</span></div>' +
-        '<div class="ageing">' + BUCKETS.map(function (b, i) { return '<div class="age"><div class="bar' + (i > 1 ? ' bar--red' : '') + '"><i style="--p:' + (all ? Math.round(tot[i] / all * 100) : 0) + '"></i></div><span>' + b[0] + '</span><b>' + rupees(tot[i]) + '</b></div>'; }).join('') + '</div></article>' +
-        '<div class="list" data-ageing><div class="lrow label" style="--cols:' + C + '"><span>Brand</span>' + BUCKETS.map(function (b) { return '<span style="text-align:right">' + b[0] + '</span>'; }).join('') + '<span style="text-align:right">Total</span></div>' +
-        names.map(function (b) { return '<div class="lrow" data-agerow="' + A.esc(b) + '" style="--cols:' + C + '"><b>' + A.esc(b) + '</b>' + by[b].map(function (x, i) { return cell(x, 'b' + i); }).join('') + cell(by[b].reduce(function (a, c) { return a + c; }, 0), 't') + '</div>'; }).join('') +
-        '<div class="lrow" data-agesum style="--cols:' + C + ';font-weight:600"><span>Total</span>' + tot.map(function (x, i) { return cell(x, 'b' + i); }).join('') + cell(all, 't') + '</div></div><p class="f-help">Age is days since the invoice was sent. Money still to collect only: total with GST less what is received.</p>';
-    }
-    if (MONT === 'pay') {
-      var prow = D.payouts.map(function (p) { return { o: p, f: { st: p.stage, pt: p.ptype }, text: [p.no, p.payee, (byId(D.projects, p.project) || {}).brand].join(' '), date: '', any: { amount: p.amount, payee: p.payee } }; });
-      var pl = fpass(A, 'pay', prow), PC = 'minmax(200px,1fr) repeat(3,88px) 180px 110px 130px', ps = function (f) { return pl.reduce(function (s, q) { return s + f(q.o); }, 0); };
-      html += fbar(A, 'pay', prow, [['st', 'Stage'], ['pt', 'Paying']], [['amount', 'Amount'], ['payee', 'Payee']], 'payouts') +
-        '<div class="list" data-payouts><div class="lrow label" style="--cols:' + PC + '"><span>Payout</span><span style="text-align:right">Amount</span><span style="text-align:right">TDS</span><span style="text-align:right">To pay</span><span>Documents</span><span>Stage</span><span></span></div>' +
-        pl.map(function (q) { var p = q.o, pr = byId(D.projects, p.project) || {};
-          return '<div class="lrow" data-payout="' + p.id + '" style="--cols:' + PC + '"><div class="cell-who"><span class="av av--lg">' + A.ico('currency-rupee', 'i--sm') + '</span><div><b>' + A.esc(p.payee) + '</b><span>' + p.no + ' . ' + A.esc(p.ptype + ' . ' + (pr.brand || '')) + '</span></div></div>' +
-            cell(p.amount, 'a') + cell(tdsOf(p), 'd') + cell(p.amount - tdsOf(p), 'n') +
-            '<span>' + [['Live link', p.ptype !== 'Influencer' || p.docs.live], ['Invoice', p.docs.inv], ['PAN', p.docs.pan]].filter(function (x) { return x[0] !== 'Live link' || p.ptype === 'Influencer'; }).map(function (x) { return '<span class="chip' + (x[1] ? ' chip--green' : ' chip--red') + '">' + x[0] + '</span>'; }).join(' ') + '</span>' +
-            '<span class="chip' + (p.stage === 'Paid' ? ' chip--green' : p.stage === 'Approved' ? ' chip--blue' : ' chip--amber') + '" data-pst>' + p.stage + (p.back ? ', sent back' : '') + '</span>' +
-            '<span>' + (p.stage === 'Approved' && r === 'Finance' ? '<button class="btn btn--sm btn--next" type="button" data-do="ppaid" data-po="' + p.id + '">Record paid</button>' : p.stage === 'Paid' ? '<span class="faint">' + A.esc(p.bank) + '</span>' : '') + '</span></div>'; }).join('') +
-        '<div class="lrow" data-paytotal style="--cols:' + PC + ';font-weight:600"><span>Total, ' + pl.length + ' payouts</span>' + cell(ps(function (p) { return p.amount; }), 'a') + cell(ps(tdsOf), 'd') + cell(ps(function (p) { return p.amount - tdsOf(p); }), 'n') + '<span></span><span></span><span></span></div></div>' +
-        '<p class="f-help">TDS rates are placeholders until Farhan confirms them. Only Finance records Paid, and only after the payout is Approved.</p>' + foot(A, pl.length, prow.length, 'payouts');
-    }
-    if (MONT === 'margin') {
-      var MC = 'minmax(0,1fr) repeat(5,110px) 48px', T = [0, 0, 0, 0, 0];
-      var mrows = D.projects.map(function (p) {
-        var fee = Math.round(p.fee * 1e5), po = D.payouts.filter(function (x) { return x.project === p.id && /^(Approved|Paid)$/.test(x.stage); }).reduce(function (s, x) { return s + x.amount; }, 0);
-        var hm = D.hampers.filter(function (h) { return h.project === p.id; }).reduce(function (s, h) { return s + h.value; }, 0), ex = D.expenses.filter(function (e) { return e.project === p.id && e.status === 'Approved'; }).reduce(function (s, e) { return s + e.amount; }, 0);
-        var m = [fee, po, hm, ex, fee - po - hm - ex]; m.forEach(function (x, i) { T[i] += x; }); return { p: p, m: m };
-      });
-      html += '<div class="list" data-margin><div class="lrow label" style="--cols:' + MC + '"><span>Project</span>' + ['Fee', 'Payouts', 'Hampers', 'Expenses', 'Margin'].map(function (h) { return '<span style="text-align:right">' + h + '</span>'; }).join('') + '<span>%</span></div>' +
-        mrows.map(function (x) { return '<div class="lrow" data-mrow="' + x.p.id + '" style="--cols:' + MC + '"><a href="#/project/' + x.p.id + '"><b>' + A.esc(x.p.name) + '</b></a>' + x.m.map(function (v, i) { return cell(v, 'm' + i); }).join('') + '<span class="num">' + (x.m[0] ? Math.round(x.m[4] / x.m[0] * 100) : 0) + '%</span></div>'; }).join('') +
-        '<div class="lrow" data-mtotal style="--cols:' + MC + ';font-weight:600"><span>Total</span>' + T.map(function (v, i) { return cell(v, 'm' + i); }).join('') + '<span class="num">' + (T[0] ? Math.round(T[4] / T[0] * 100) : 0) + '%</span></div></div>' +
-        '<p class="f-help">Margin = fee less approved or paid payouts, hamper values and approved expenses. Maddie and Finance only.</p>';
-    }
-    return '<section class="card" data-b4="money" style="display:flex;flex-direction:column;gap:var(--s-3)">' + html + '</section>';
-  };
-
+  /* Money: c3.js (Revenue, payments and profit) */
   /* ---------------- actions ---------------- */
-  function invHist(A, v, w) { hist(A, v, w); }
   var prevAct = S._act;
   S._act = function (act, a, A) {
-    var D = A.D(), ap = byId(D.approvals, a.getAttribute('data-a')), h = byId(D.hampers, a.getAttribute('data-h')), v = byId(D.invoices, a.getAttribute('data-v'));
+    var D = A.D(), ap = byId(D.approvals, a.getAttribute('data-a')), h = byId(D.hampers, a.getAttribute('data-h'));
     if (act === 'aok' && ap) return decide(A, ap.id, true);
     if (act === 'aback' && ap) { if (ap.status !== 'Waiting') return decide(A, ap.id, false, 'x'); return reasonDialog(A, ap, function (w) { decide(A, ap.id, false, w); }); }
     if (act === 'aresub' && ap) return resubmit(A, ap.id);
@@ -667,37 +562,6 @@
     if (act === 'xsample') return xsample(A, a.getAttribute('data-k'));
     if (act === 'xsave' && UP) return xsave(A);
     if (act === 'xcancel') { UP = null; A.render(); return; }
-    if (act === 'vcheck' && v) { v.stage = 'Checked by Finance'; invHist(A, v, 'Checked by ' + A.me().name); A.save(); A.render(); A.toast('Checked. Mark it sent when it goes to ' + v.brand + '.'); return; }
-    if (act === 'vsend' && v) {
-      v.stage = 'Sent'; v.issued = A.TODAY; v.no = v.no || 'GUC/26-27/0' + (++D.seqNo); invHist(A, v, 'Sent to ' + v.brand + ' as ' + v.no + ' by ' + A.me().name);
-      A.save(); A.render(); A.toast(v.no + ' is marked sent. Due in ' + v.due_in + ' days.'); return;
-    }
-    if (act === 'vrecv' && v) {
-      dialog(A, 'dlg-recv', 'Record money received', 'recv', '<p class="lede"><b>' + A.esc(v.no + ', ' + v.brand) + '</b>: ' + rupees(openAmt(v)) + ' still to collect.</p><div class="f-row"><div class="f"><label for="rv-a">Amount received, ₹ <em>*</em></label><input class="input" id="rv-a" name="amount" inputmode="numeric"></div>' +
-        '<div class="f"><label for="rv-r">Bank or UPI ref <em>*</em></label><input class="input" id="rv-r" name="ref"></div></div>', 'Record received', '1,50,000 received, UTR HDFC0098812');
-      CB['dlg-recv'] = function (dl) { var n = Number(dl.querySelector('[name=amount]').value.replace(/[^\d.]/g, '')), ref = dl.querySelector('[name=ref]').value.trim();
-        if (!n || n > openAmt(v)) return 'Put an amount up to ' + rupees(openAmt(v)) + '.'; if (!ref) return 'The bank or UPI ref is needed.';
-        v.received += n; v.stage = openAmt(v) ? 'Part paid' : 'Paid'; invHist(A, v, rupees(n) + ' received, ref ' + ref + ', recorded by ' + A.me().name); A.save(); A.render(); A.toast(rupees(n) + ' recorded. ' + v.no + ' is ' + v.stage + '.'); };
-      return;
-    }
-    if (act === 'vremind' && v) {
-      var du = dueOn(A, v), late = A.daysBetween(du, A.TODAY);
-      dialog(A, 'dlg-remind', 'Payment reminder (sample)', 'remind', '<p class="lede">The Money agent drafted this for <b>' + A.esc(v.brand) + '</b>. It does not send: Finance sends it from the agency Gmail in the build.</p>' +
-        '<div class="f"><label for="rm-n">Reminder</label><textarea class="textarea" id="rm-n" name="note" rows="5">Hello, a gentle reminder that invoice ' + v.no + ' for ' + rupees(openAmt(v)) + ' was due on ' + A.dayWord(du + 'T00:00') + ' (' + late + ' days ago). Could you share the payment date? Thank you, Farhan, Glad U Came.</textarea></div>', 'Keep the draft on the invoice', 'Please add that the bank details are on the invoice');
-      CB['dlg-remind'] = function () { invHist(A, v, 'Payment reminder drafted by the Money agent, kept by ' + A.me().name + ' (not sent)'); A.save(); A.render(); A.toast('Draft kept on the invoice History. Nothing was sent.'); };
-      return;
-    }
-    if (act === 'ppaid') {
-      var po = byId(D.payouts, a.getAttribute('data-po'));
-      if (!po || po.stage !== 'Approved' || role(A) !== 'Finance') return A.toast('Only Finance records Paid, and only after the payout is Approved.');
-      dialog(A, 'dlg-paid', 'Record paid', 'paid', '<p class="lede"><b>' + A.esc(po.payee) + '</b>: pay ' + rupees(po.amount - tdsOf(po)) + ' (' + rupees(po.amount) + ' less TDS ' + rupees(tdsOf(po)) + ') at the bank, then record it here.</p><div class="f"><label for="pd-r">Bank ref <em>*</em></label><input class="input" id="pd-r" name="ref"></div>', 'Record paid', 'Paid by NEFT, ref SBIN0026114');
-      CB['dlg-paid'] = function (dl) { var ref = dl.querySelector('[name=ref]').value.trim(); if (!ref) return 'The bank ref is needed.';
-        po.stage = 'Paid'; po.bank = ref; hist(A, po, 'Paid, ref ' + ref + ', recorded by ' + A.me().name);
-        var p = byId(D.projects, po.project), x = p && p.lines.filter(function (l) { return l.h === po.payee; })[0]; if (x) x.payout = 'Paid'; if (p) hist(A, p, 'Payout ' + po.no + ' to ' + po.payee + ' paid, ref ' + ref);
-        D.tasks.forEach(function (t) { if (t.payout === po.id && A.OPEN[t.status]) { t.status = 'done'; t.done_at = A.now(); t.history.push({ at: A.now(), who: A.ME(), what: 'Done: paid' }); } });
-        A.save(); A.render(); A.toast(po.payee + ' is Paid.'); };
-      return;
-    }
     if (prevAct) prevAct(act, a, A);
   };
   d.addEventListener('change', function (e) {
@@ -706,5 +570,6 @@
     if (el.hasAttribute('data-hfile')) { var h = byId(A.D().hampers, el.getAttribute('data-hfile')); J().readFiles(A, el, function (fs) { fs.forEach(function (f) { h.proof.files.push(f); }); hist(A, h, 'Proof added: ' + fs.map(function (f) { return f.n; }).join(', ')); A.save(); A.render(); A.toast(fs.length + ' file' + (fs.length === 1 ? '' : 's') + ' added. Mark Posted when it is up.'); }); }
   });
 
+  S._mf = { fbar: fbar, fpass: fpass, foot: foot, dialog: dialog, CB: CB, blocked: blocked };   /* C3: c3.js lists use the same filter bar and dialogs */
   window.GUC_APPR = { label: label, raise: raise, decide: decide, resubmit: resubmit, pricingGate: pricingGate, reasonDialog: reasonDialog, approverFor: approverFor, sweep: sweep };
 })();

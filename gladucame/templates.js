@@ -1,4 +1,4 @@
-/* Glad U Came demo . project templates and stage ladders, copied from SPEC.json (templates + ladders L-03, L-05, L-07, L-08).
+/* Glad U Came demo . project templates and stage ladders, copied from SPEC.json (templates + ladders L-03, L-05, L-07, L-08, L-12).
    Owners are roles; Start the brand picks the real person from the team. Regenerate from the spec, never hand-edit. */
 window.GUC_TEMPLATES = {
 "Influencer campaign": [
@@ -53,7 +53,7 @@ window.GUC_TEMPLATES = {
 "live date + 7 days"
 ],
 [
-"Request payouts with invoices",
+"Record influencer fees as direct costs",
 "Influencer team member",
 "live date + 7 days"
 ]
@@ -242,6 +242,48 @@ window.GUC_TEMPLATES = {
 "Content head",
 "end date"
 ]
+],
+"Social media management": [
+[
+"Shortlist 10 brands in the niche that are ahead",
+"Content team member",
+"start + 2 days"
+],
+[
+"Reverse-engineer their viral content",
+"Content team member",
+"start + 4 days"
+],
+[
+"Copies ready",
+"Content team member",
+"start + 6 days"
+],
+[
+"Content plan: shoots and static posts",
+"Content head",
+"start + 8 days"
+],
+[
+"Meet with the client",
+"Brand POC",
+"start + 10 days"
+],
+[
+"Manager approval",
+"Content head",
+"start + 11 days"
+],
+[
+"Shoot and post",
+"Content team member",
+"start + 20 days"
+],
+[
+"Monthly report: followers, reach, engagement",
+"Brand POC",
+"month end"
+]
 ]
 };
-window.GUC_LADDERS = {"Influencer campaign": ["Brief in", "Shortlist", "Brand approval", "Outreach", "Confirmed", "Content due", "Content review", "Live", "Report sent", "Payouts cleared", "Closed"], "PR retainer": ["Brief", "Key messages", "Media list", "Drafts", "Brand approval", "Pitching", "Coverage tracking", "Report"], "PR project": ["Brief", "Key messages", "Media list", "Drafts", "Brand approval", "Pitching", "Coverage tracking", "Report"], "Event": ["Brief", "Plan", "Venue and vendors", "Guest list", "Invites out", "Run of show", "Event day", "Post-event report", "Closed"], "Content": ["Brief", "Concepts", "Drafts", "Internal review", "Brand review", "Revisions", "Final", "Published"], "Celebrity gifting": ["Brief", "Shortlist", "Brand approval", "Hampers packed", "Dispatching", "Proof of post", "Report sent", "Closed"]};
+window.GUC_LADDERS = {"Influencer campaign": ["Brief in", "Shortlist", "Brand approval", "Outreach", "Confirmed", "Content due", "Content review", "Live", "Report sent", "Fees recorded", "Closed"], "PR retainer": ["Brief", "Key messages", "Media list", "Drafts", "Brand approval", "Pitching", "Coverage tracking", "Report"], "PR project": ["Brief", "Key messages", "Media list", "Drafts", "Brand approval", "Pitching", "Coverage tracking", "Report"], "Event": ["Brief", "Plan", "Venue and vendors", "Guest list", "Invites out", "Run of show", "Event day", "Post-event report", "Closed"], "Content": ["Brief", "Concepts", "Drafts", "Internal review", "Brand review", "Revisions", "Final", "Published"], "Celebrity gifting": ["Brief", "Shortlist", "Brand approval", "Hampers packed", "Dispatching", "Proof of post", "Report sent", "Closed"], "Social media management": ["Shortlist 10 brands", "Reverse-engineer viral content", "Copies ready", "Content plan", "Meet with the client", "Manager approval", "Shoot and post", "Monthly report"]};

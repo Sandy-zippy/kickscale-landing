@@ -7,12 +7,14 @@
   var ico = function (n, c) { return GUC.icon(n, c); };
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var toast = function (t, u) { GUC.toast(t, u); };
+  /* G4: at most 3 toasts on screen, the oldest goes (kit toasts included) */
+  new MutationObserver(function () { var b = d.querySelector('.toasts'); while (b && b.children.length > 3) b.removeChild(b.firstElementChild); }).observe(document.body || document.documentElement, { childList: true, subtree: true });
 
   /* ---------------- people ---------------- */
   var P = {}, ORDER = [];
   SEED.people.forEach(function (p, i) {
     P[p[0]] = { id: p[0], name: p[1], role: p[2], dept: p[3], head: p[4], leave: p[5], streak: p[6], targets: p[7], av: 'av' + (i % 4 ? ' av--' + 'bcd'[i % 4 - 1] : '') };
-    ORDER.push(p[0]);
+    if (p[3] !== 'ZippyScale') ORDER.push(p[0]);   /* C2: the bhargav demo login is ZippyScale's, not Glad U Came staff: no strip, owner list or count */
   });
   var first = function (id) { return P[id] ? P[id].name.split(' ')[0] : ''; };
   var initials = function (id) { return P[id].name.split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2).toUpperCase(); };
@@ -74,7 +76,8 @@
     return st;
   }
   /* B2 fields on leads + the inbox. A store saved by the B1 build gets them here without losing a thing. */
-  var TPL = ['Influencer campaign', 'PR retainer', 'PR project', 'Celebrity gifting', 'Event', 'Content'];
+  var TPL = ['Influencer campaign', 'PR retainer', 'PR project', 'Celebrity gifting', 'Event', 'Content', 'Social media management'];
+  var SEEDTPL = TPL.slice(0, 6); // the sample leads keep the six services they were written with
   function migrate(st) {
     st.leads.forEach(function (l, i) {
       if (l.mobile !== undefined) return;
@@ -82,7 +85,7 @@
       l.mobile = '+91 98' + (200 + n) + ' ' + String(10000 + n * 311).slice(0, 5);
       l.insta = l.ch === 'instagram' ? '@' + slug : '';
       l.email = l.ch === 'gmail' ? l.contact.split(' ')[0].toLowerCase() + '@' + slug.slice(0, 14) + '.in' : '';
-      l.interest = TPL[n % TPL.length]; l.created = addDays(TODAY + 'T10:00', -(n % 24) - 1); l.next = addDays(TODAY + 'T00:00', (n % 5) - 1).slice(0, 10);
+      l.interest = SEEDTPL[n % SEEDTPL.length]; l.created = addDays(TODAY + 'T10:00', -(n % 24) - 1); l.next = addDays(TODAY + 'T00:00', (n % 5) - 1).slice(0, 10);
       l.lost = l.stage === 'Lost / Nurture' ? (n % 2 ? 'Budget moved to next quarter' : 'Went with another agency') : '';
       l.dup = null; l.thread = []; l.history = [{ at: l.created, who: 'agent', what: 'Lead catcher: new lead from ' + CHN[l.ch] + ', given to ' + P[l.owner].name }];
     });
@@ -95,7 +98,7 @@
         msgs: c[7].map(function (m) { var k = m[0].split(':'); return { kind: k[0], who: k[1] || '', text: m[1], at: minsAgo(m[2]) }; }), history: [] };
     });
   }
-  var CHN = { whatsapp: 'WhatsApp', instagram: 'Instagram', gmail: 'Gmail', web: 'Website form', meta: 'Meta lead ad' };
+  var CHN = { whatsapp: 'WhatsApp', instagram: 'Instagram', gmail: 'Gmail', web: 'Website form', meta: 'Meta lead ad', linkedin: 'LinkedIn' };
   function minsAgo(m) { var t = new Date(Date.now() - m * 60000); return dayStr(t) + 'T' + pad(t.getHours()) + ':' + pad(t.getMinutes()); }
   function load() {
     try { D = JSON.parse(localStorage.getItem(KEY)); } catch (e) { D = null; }
@@ -160,7 +163,7 @@
     pool.sort(function (a, b) { return openLoad(a) - openLoad(b) || soonDue(a) - soonDue(b) || P[a].name.localeCompare(P[b].name); });
     var who = pool[0];
     var reason = 'Picked: lightest load in ' + dept + ', ' + openLoad(who) + ' open task' + (openLoad(who) === 1 ? '' : 's');
-    if (away.length) reason += '. ' + away.map(function (id) { return P[id].name; }).join(', ') + ' is on leave';
+    if (away.length) reason += '. ' + away.map(function (id) { return P[id].name; }).join(', ') + ' is away today';
     return { who: who, reason: reason };
   }
 
@@ -232,7 +235,7 @@
     ['today', "Today's tasks", 'checklist', 'all'], ['inbox', 'Inbox', 'inbox', 'FHM'], ['leads', 'Leads', 'layout-kanban', 'FHM'],
     ['brands', 'Brands & projects', 'briefcase', 'FHMN'], ['threads', 'Team threads', 'messages', 'all'], ['tasks', 'Tasks', 'list-check', 'all'],
     ['media', 'Influencers & media', 'users', 'FHMN'], ['gifting', 'Gifting & dispatch', 'gift', 'FHMN'], ['approvals', 'Approvals', 'square-check', 'FHMN'],
-    ['money', 'Money', 'currency-rupee', 'FHN'], ['dash', 'Dashboards', 'layout-dashboard', 'all'], ['brief', 'Morning brief', 'sparkles', 'all'],
+    ['money', 'Revenue, payments and profit', 'currency-rupee', 'FHN'], ['health', 'Client health', 'chart-bar', 'FH'], ['dash', 'Dashboards', 'layout-dashboard', 'all'], ['brief', 'Morning brief', 'sparkles', 'all'],
     ['ask', 'Ask GUC', 'message-circle', 'all'], ['people', 'People', 'user', 'all'], ['settings', 'Settings', 'settings', 'F']
   ];
   var RC = { 'Founder': 'F', 'Department head': 'H', 'Team member': 'M', 'Finance': 'N', 'Intern': 'I' };
@@ -258,7 +261,7 @@
     if (acc && window.crypto && crypto.subtle) {
       var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(p));
       var hex = Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
-      if (hex === acc.h) { sessionStorage.setItem('guc.me', acc.id); ME = acc.id; location.hash = '#/today'; render(); return; }
+      if (hex === acc.h) { sessionStorage.setItem('guc.me', acc.id); ME = acc.id; location.hash = P[ME].role === 'Founder' ? '#/dash' : '#/today'; render(); return; }
     }
     var e = d.getElementById('lerr'); if (e) e.textContent = 'Wrong username or password.';
   }
@@ -417,7 +420,7 @@
         var theirs = D.tasks.filter(function (t) { return t.owner === pid; });
         if (!rows.length) return;
         var c = { open: theirs.filter(function (t) { return OPEN[t.status]; }).length, over: theirs.filter(isOverdue).length, chk: theirs.filter(function (t) { return t.status === 'check'; }).length };
-        body += '<div class="task-group person-group" data-person="' + pid + '"><div class="person-head">' + avatar(pid, true) + '<div><b>' + esc(P[pid].name) + '</b><span>' + esc(P[pid].role + ', ' + P[pid].dept) + (P[pid].leave ? ', on leave today' : '') + '</span></div>' +
+        body += '<div class="task-group person-group" data-person="' + pid + '"><div class="person-head">' + avatar(pid, true) + '<div><b>' + esc(P[pid].name) + '</b><span>' + esc(P[pid].role + ', ' + P[pid].dept) + (P[pid].leave ? ', away today' : '') + '</span></div>' +
           '<span class="counts"><span class="chip" data-c="open">' + c.open + ' open</span><span class="chip' + (c.over ? ' chip--red' : '') + '" data-c="overdue">' + c.over + ' overdue</span>' +
           '<span class="chip' + (c.chk ? ' chip--blue' : '') + '" data-c="check">' + c.chk + ' waiting for check</span></span></div>' +
           rows.sort(function (a, b) { return (isOverdue(b) - isOverdue(a)) || (a.due < b.due ? -1 : 1); }).map(function (t) { return taskRow(t, { who: true }); }).join('') + '</div>';
@@ -494,7 +497,7 @@
       '<div class="f"><label for="nt-title">What needs doing <em>*</em></label><input class="input" id="nt-title" name="title" placeholder="e.g. Send the shortlist to the brand"></div>' +
       '<div class="f-row"><div class="f"><label for="nt-owner">Assign to <em>*</em></label><select class="select" id="nt-owner" name="owner"><option value="">Pick a person or a team</option>' +
       (teams.length ? '<optgroup label="A whole team (the Task chaser picks one person)">' + teams.map(function (t) { return '<option value="team:' + esc(t) + '">' + esc(t) + ' team</option>'; }).join('') + '</optgroup>' : '') +
-      '<optgroup label="One person">' + people.map(function (x) { return '<option value="' + x + '">' + esc(P[x].name) + (x === ME ? ' (me)' : '') + (P[x].leave ? ', on leave' : '') + '</option>'; }).join('') + '</optgroup></select></div>' +
+      '<optgroup label="One person">' + people.map(function (x) { return '<option value="' + x + '">' + esc(P[x].name) + (x === ME ? ' (me)' : '') + (P[x].leave ? ', away today' : '') + '</option>'; }).join('') + '</optgroup></select></div>' +
       '<div class="f"><label for="nt-due">Deadline <em>*</em></label><input class="input" id="nt-due" name="due" type="datetime-local"></div></div>' +
       '<div class="f-row"><div class="f"><label for="nt-pri">Priority</label><select class="select" id="nt-pri" name="priority"><option>Normal</option><option>Urgent</option><option>High</option><option>Low</option></select></div>' +
       '<div class="f"><label for="nt-chk">Checked by <em>*</em></label><select class="select" id="nt-chk" name="checked_by"><option value="">The owner\'s department head</option>' +
@@ -625,7 +628,7 @@
 
   /* ---------------- render ---------------- */
   var PARENT = { lead: 'leads', brand: 'brands', project: 'brands', infl: 'media', jour: 'media', celeb: 'media', hamper: 'gifting' };   /* record routes light up their menu item */
-  function route() { var r = (location.hash.match(/^#\/([a-z]+)/) || [])[1] || 'today', m = PARENT[r] || r; return menuFor().some(function (x) { return x[0] === m; }) ? r : 'today'; }
+  function route() { var r = (location.hash.match(/^#\/([a-z]+)/) || [])[1] || (me().role === 'Founder' ? 'dash' : 'today'), m = PARENT[r] || r; return menuFor().some(function (x) { return x[0] === m; }) ? r : 'today'; }
   function render() {
     var root = d.getElementById('root');
     if (!ME || !P[ME]) { root.innerHTML = signIn(); return; }
@@ -691,7 +694,7 @@
       d.querySelectorAll('.pop[data-temp]').forEach(function (p) { p.remove(); });
       var dept = t.team || P[t.owner].dept, ppl = ORDER.filter(function (x) { return P[x].dept === dept && x !== t.owner && P[x].role !== 'Founder'; });
       var pm = d.createElement('div'); pm.className = 'pop'; pm.setAttribute('data-temp', ''); pm.setAttribute('role', 'menu');
-      pm.innerHTML = ppl.map(function (x) { return '<button class="menu-i" role="menuitem" type="button" data-do="reassignto" data-v="' + x + '">' + avatar(x) + esc(P[x].name) + '<span class="faint">' + (P[x].leave ? 'on leave' : openLoad(x) + ' open') + '</span></button>'; }).join('');
+      pm.innerHTML = ppl.map(function (x) { return '<button class="menu-i" role="menuitem" type="button" data-do="reassignto" data-v="' + x + '">' + avatar(x) + esc(P[x].name) + '<span class="faint">' + (P[x].leave ? 'away today' : openLoad(x) + ' open') + '</span></button>'; }).join('');
       pm.style.right = '12px'; pm.style.top = '100%'; row.appendChild(pm); return;
     }
     if (act === 'remind' && t) return remind(t);
@@ -720,7 +723,7 @@
     if (el.hasAttribute('data-tf')) { TF[el.getAttribute('data-tf')] = el.value; render(); }
     if (el.hasAttribute('data-kf')) { KF[el.getAttribute('data-kf')] = el.value; render(); }
     if (el.hasAttribute('data-cl')) { var dl = el.closest('dialog'), t = byId(dl.querySelector('[data-id]').getAttribute('data-id')); t.checklist[+el.getAttribute('data-cl')].done = el.checked; hist(t, (el.checked ? 'Ticked: ' : 'Unticked: ') + t.checklist[+el.getAttribute('data-cl')].t); save(); }
-    if (el.id === 'nt-owner' && el.value.indexOf('team:') === 0) d.getElementById('nt-help').textContent = 'The Task chaser picks one person in the ' + el.value.slice(5) + ' team (lightest load, nobody on leave) and shows why. Their department head can reassign in one tap.';
+    if (el.id === 'nt-owner' && el.value.indexOf('team:') === 0) d.getElementById('nt-help').textContent = 'The Task chaser picks one person in the ' + el.value.slice(5) + ' team (lightest load, nobody away today) and shows why. Their department head can reassign in one tap.';
   });
   d.addEventListener('input', function (e) {
     var el = e.target;

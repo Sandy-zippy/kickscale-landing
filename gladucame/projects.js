@@ -1,13 +1,13 @@
 /* Glad U Came demo . B3: Start the brand (Won -> brand + project from a template, its tasks on people's Today),
    Brands & projects (brand record, project record with stages, tasks, files, History), the Influencer campaign flow
-   (shortlist -> approval -> outreach -> content -> live link -> payout raised), and team threads everywhere
+   (shortlist -> approval -> outreach -> content -> live link -> fee recorded as a direct cost), and team threads everywhere
    (@mention lands on Today, files, voice notes, pins, Turn into task, What did we decide?), channels on Team threads.
    Loads after leads.js and before app.js. */
 (function () {
   'use strict';
   var S = window.GUC_SCREENS, d = document, G = function () { return window.GUC_APP; };
   var TPLS = window.GUC_TEMPLATES, LAD = window.GUC_LADDERS;
-  var DEPT = { 'Influencer campaign': 'Influencer', 'PR retainer': 'PR', 'PR project': 'PR', 'Celebrity gifting': 'Celebrity & gifting', 'Event': 'Events', 'Content': 'Content' };
+  var DEPT = { 'Influencer campaign': 'Influencer', 'PR retainer': 'PR', 'PR project': 'PR', 'Celebrity gifting': 'Celebrity & gifting', 'Event': 'Events', 'Content': 'Content', 'Social media management': 'Content' };
   var CHANS = [['bd', 'BD'], ['influencer', 'Influencer'], ['pr', 'PR'], ['events', 'Events'], ['content', 'Content']];
   var OUT = ['Not sent', 'Sent', 'Replied', 'Rate agreed', 'Confirmed'];
   var INFL = [ // handle, name, category, city, followers, ER %, rate per reel
@@ -62,7 +62,7 @@
       p1.slState = 'Approved';
       p1.lines = [['@bandra.bites', 'Confirmed', 'live'], ['@thanekitchen', 'Confirmed', 'content'], ['@mumbaimasala.diaries', 'Rate agreed', ''], ['@glowwithtara', 'Sent', '']].map(function (r) {
         var i = INFL.filter(function (x) { return x[0] === r[0]; })[0];
-        return { h: r[0], rate: i[6], out: r[1], due: A.addDays(p1.live + 'T00:00', -2).slice(0, 10), content: r[2] === 'content' || r[2] === 'live', live: r[2] === 'live' ? 'https://instagram.com/reel/sample-bandrabites' : '', payout: '' };
+        return { h: r[0], rate: i[6], out: r[1], due: A.addDays(p1.live + 'T00:00', -2).slice(0, 10), content: r[2] === 'content' || r[2] === 'live', live: r[2] === 'live' ? 'https://instagram.com/reel/sample-bandrabites' : '', cost: '' };
       });
       p1.thread = [['kabir', 'Brief is in the Files tab. Live date stays as planned.', 2900], ['tanvi', 'Shortlist v2 sent. Meera liked the food pages, wants 3 more beauty names.', 1500],
         ['maddie', 'Decision: we go with 4 influencers now and add beauty names in week 2. Budget stays at ₹8L.', 1400], ['kabir', '@Tanvi can you get the Thane Kitchen draft by Thursday?', 300]]
@@ -350,13 +350,13 @@
     return T.length ? '<div class="list" data-ptasks>' + T.slice().sort(function (a, b) { return a.due < b.due ? -1 : 1; }).map(function (t) {
       return '<div class="lrow" style="--cols:minmax(0,2fr) minmax(0,1fr) auto" data-ptask="' + t.id + '"><div style="min-width:0"><b>' + A.esc(t.title) + '</b><div class="faint" style="font-size:var(--fs-12)">Checked by ' + A.esc(A.P[t.checked_by].name) + ' . ' + (A.isOverdue(t) ? '<span class="t-red">Overdue, ' + A.low(A.dayWord(t.due)) + '</span>' : A.dayWord(t.due) + ', ' + A.clock(t.due)) + '</div></div>' +
         '<span class="cell-who">' + A.avatar(t.owner) + '<span>' + A.esc(A.P[t.owner].name) + '</span></span><span class="chip' + (t.status === 'done' ? ' chip--green' : t.status === 'blocked' ? ' chip--red' : t.status === 'check' ? ' chip--blue' : '') + '">' + ST[t.status] + '</span></div>'; }).join('') + '</div>'
-      : '<p class="faint">No tasks on this project yet.</p>';
+      : '<div class="card empty"><span class="empty-art">' + A.ico('list-check') + '</span><h2 class="h-sec">No tasks on this project yet</h2><p>Tasks come from the template when the project starts. Add the first one and give it to someone on the team.</p><button class="btn btn--next" type="button" data-do="newtask">' + A.ico('plus') + 'New task</button></div>';
   }
   function filesTab(A, p) {
     return '<div class="files-tab" data-files><div style="display:flex;gap:var(--s-2);align-items:center"><label class="btn btn--sm btn--solid">' + A.ico('upload') + 'Add files<input type="file" multiple hidden data-pfile="' + p.id + '"></label><span class="faint" style="font-size:var(--fs-12)">Many files at once. View opens in the browser; Share gives a link that needs no login in the build.</span></div>' +
       (p.files.length ? '<div class="file-grid">' + p.files.map(function (f) { return fileChip(A, f, p.id); }).join('') + '</div>' : '<p class="faint">No files yet. Add the brief, the shortlist or the report here.</p>') + '</div>';
   }
-  /* ---------------- Influencer campaign: shortlist -> approval -> outreach -> content -> live link -> payout ---------------- */
+  /* ---------------- Influencer campaign: shortlist -> approval -> outreach -> content -> live link -> direct cost ---------------- */
   function inflTab(A, p) {
     var D = A.D(), on = function (h) { return p.lines.some(function (x) { return x.h === h; }); }, html = '';
     var wAp = function (ln) { return A.D().approvals.filter(function (a) { return a.link === p.id && a.line === ln && a.status === 'Waiting'; })[0]; }, mayDo = function (ln) { var a = wAp(ln); return !!a && (a.approver === A.ME() || A.me().role === 'Founder'); }, canApprove = mayDo('shortlist'), total = p.lines.reduce(function (a, x) { return a + x.rate; }, 0);
@@ -383,13 +383,12 @@
         else if (x.out !== 'Confirmed') act = '<label class="sr-only" for="out-' + k + '">Outreach for ' + A.esc(x.h) + '</label><select class="select" id="out-' + k + '" data-out="' + k + '" data-p="' + p.id + '">' + OUT.map(function (o) { return '<option' + (o === x.out ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>';
         else if (!x.content) act = '<span class="label">Content due</span><input class="input" type="date" data-cdue="' + k + '" data-p="' + p.id + '" value="' + x.due + '" aria-label="Content due for ' + A.esc(x.h) + '"><button class="btn btn--sm btn--next" type="button" data-do="lcontent" data-p="' + p.id + '" data-k="' + k + '">' + A.ico('check') + 'Content received</button>';
         else if (!x.live) act = '<input class="input" data-livein="' + k + '" placeholder="Paste the live link" aria-label="Live link for ' + A.esc(x.h) + '"><button class="btn btn--sm btn--next" type="button" data-do="llive" data-p="' + p.id + '" data-k="' + k + '">' + A.ico('link') + 'Add live link</button>';
-        else if (!x.payout) act = '<a class="chip chip--green" href="' + A.esc(x.live) + '" target="_blank" rel="noopener">' + A.ico('link') + 'Live link</a><button class="btn btn--sm btn--next" type="button" data-do="lpay" data-p="' + p.id + '" data-k="' + k + '">' + A.ico('currency-rupee') + 'Raise payout ' + rupees(x.rate) + '</button>';
-        else act = '<a class="chip chip--green" href="' + A.esc(x.live) + '" target="_blank" rel="noopener">' + A.ico('link') + 'Live link</a><span class="chip chip--amber" data-payout>Payout ' + rupees(x.rate) + ': ' + x.payout + '</span>' +
-          (x.payout === 'Waiting for approval' && mayDo(x.h) ? '<button class="btn btn--sm" type="button" data-do="lpayok" data-p="' + p.id + '" data-k="' + k + '">' + A.ico('check') + 'Approve</button>' : '');
-        var st = p.slState !== 'Approved' ? 'Shortlisted' : x.payout ? 'Payout ' + x.payout.toLowerCase() : x.live ? 'Live link in' : x.content ? 'Content received' : x.out === 'Confirmed' ? 'Confirmed, content due ' + A.low(A.dayWord(x.due + 'T00:00')) : 'Outreach: ' + x.out;
+        else if (!x.cost) act = '<a class="chip chip--green" href="' + A.esc(x.live) + '" target="_blank" rel="noopener">' + A.ico('link') + 'Live link</a><button class="btn btn--sm btn--next" type="button" data-do="lcost" data-p="' + p.id + '" data-k="' + k + '">' + A.ico('currency-rupee') + 'Add as direct cost ' + rupees(x.rate) + '</button>';
+        else act = '<a class="chip chip--green" href="' + A.esc(x.live) + '" target="_blank" rel="noopener">' + A.ico('link') + 'Live link</a><span class="chip chip--green" data-cost>Direct cost ' + rupees(x.rate) + '</span>';
+        var st = p.slState !== 'Approved' ? 'Shortlisted' : x.cost ? 'Fee recorded as a direct cost' : x.live ? 'Live link in' : x.content ? 'Content received' : x.out === 'Confirmed' ? 'Confirmed, content due ' + A.low(A.dayWord(x.due + 'T00:00')) : 'Outreach: ' + x.out;
         return '<div class="lrow line-row" style="--cols:minmax(0,1.3fr) minmax(0,2.2fr)" data-line="' + A.esc(x.h) + '"><div style="min-width:0"><b>' + A.esc(x.h) + '</b><div class="faint" style="font-size:var(--fs-12)">' + rupees(x.rate) + ' . <span data-line-st>' + A.esc(st) + '</span></div></div><div class="line-acts">' + act + '</div></div>'; }).join('') + '</div>';
     }
-    return html || '<p class="faint">No influencers yet.</p>';
+    return html || '<div class="card empty"><span class="empty-art">' + A.ico('users') + '</span><h2 class="h-sec">No influencers on this campaign yet</h2><p>Pick names in Influencers and media, then build the shortlist here and send it for approval.</p><a class="btn btn--next" href="#/media">' + A.ico('users') + 'Open Influencers and media</a></div>';
   }
   function stageTo(A, p, s) { var lad = LAD[p.template]; if (lad.indexOf(s) > lad.indexOf(p.stage)) { phist(A, p, 'Stage ' + p.stage + ' to ' + s); p.stage = s; } }
   function lineAct(A, act, p, k) {
@@ -405,22 +404,15 @@
       if (!/^https?:\/\/\S+\.\S+/.test(v)) { inp.setAttribute('aria-invalid', 'true'); inp.placeholder = 'A live link starts with https://'; inp.focus(); A.toast('Paste the live link, starting with https://'); return false; }
       x.live = v; phist(A, p, 'Live link added for ' + x.h + ': ' + v);
       closeTasks(A, p.id, new RegExp('Check the content from ' + x.h.replace(/[.]/g, '\\.')), 'live link in');
-      mkTask(A, { title: 'Raise the payout for ' + x.h + ', ' + rupees(x.rate), owner: owner, due: A.TODAY + 'T18:00', link: p.id, agent: true, why: 'Campaign agent: live link in for ' + x.h });
-      stageTo(A, p, 'Live'); A.toast('Live link saved for ' + x.h + '. ' + A.first(owner) + ' raises the payout next.');
+      mkTask(A, { title: 'Record the fee for ' + x.h + ' as a direct cost, ' + rupees(x.rate), owner: owner, due: A.TODAY + 'T18:00', link: p.id, agent: true, why: 'Campaign agent: live link in for ' + x.h });
+      stageTo(A, p, 'Live'); A.toast('Live link saved for ' + x.h + '. ' + A.first(owner) + ' records the fee as a direct cost next.');
     }
-    if (act === 'lpay') {
-      var inf = (D.infl || []).filter(function (i) { return i.h === x.h; })[0];
-      var po = { id: 'PO' + (++D.seqPO), no: 'GUC-PO-' + ('000' + (D.seqPO)).slice(-4), ptype: 'Influencer', payee: x.h, project: p.id, amount: x.rate, tds: 10, stage: 'Documents in', docs: { live: !!x.live, inv: true, pan: !inf || inf.pan !== 'No' }, bank: '', history: [] };
-      po.history.push({ at: A.now(), who: A.ME(), what: 'Payout requested by ' + A.me().name + '; live link, invoice and PAN on file' }); D.payouts.push(po);
-      x.payout = 'Waiting for approval';
-      var pa = window.GUC_APPR.raise(A, { type: 'Payout', what: x.h + ', ' + p.brand, amount: x.rate, link: p.id, ref: po.id, line: x.h });
-      closeTasks(A, p.id, new RegExp('Raise the payout for ' + x.h.replace(/[.]/g, '\\.')), 'payout raised');
-      A.toast('Payout raised. It is in Approvals with ' + A.first(pa.approver) + '.');
-    }
-    if (act === 'lpayok') {
-      var wa = D.approvals.filter(function (a) { return a.link === p.id && a.type === 'Payout' && a.line === x.h && a.status === 'Waiting'; })[0];
-      if (wa) window.GUC_APPR.decide(A, wa.id, true);
-      return false;
+    if (act === 'lcost') {
+      if (x.cost) return false;
+      x.cost = window.GUC_C3.addCost(A, { kind: 'Influencer fee', who: x.h, project: p.id, amount: x.rate, what: 'Fee for ' + x.h, from: 'line' }).id;
+      phist(A, p, 'Fee for ' + x.h + ' added as a direct cost, ' + rupees(x.rate));
+      closeTasks(A, p.id, new RegExp('Record the fee for ' + x.h.replace(/[.]/g, '\\.')), 'fee recorded');
+      A.toast('Fee for ' + x.h + ' added as a direct cost on ' + p.brand + '.');
     }
     return true;
   }
@@ -448,7 +440,7 @@
         '<div style="min-width:0"><b>' + A.esc(r.t) + '</b><div class="msg-snip faint" style="font-size:var(--fs-12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (last ? A.esc(A.first(last.who) + ': ' + (last.text || 'sent a file')) : A.esc(r.sub)) + '</div></div><span class="faint" style="font-size:var(--fs-11)">' + (last ? A.dayWord(last.at) : '') + '</span></a>'; }).join('');
     return '<section class="record" data-threads><section class="card card--flush"><div style="padding:var(--s-4) var(--s-4) var(--s-3);display:flex;flex-direction:column;gap:var(--s-3)"><div class="page-head"><h1 class="h-page">Team threads</h1><span class="chip">Sample data</span></div>' +
       '<div class="chan-list">' + CHANS.map(function (c) { return '<a class="chip' + (TT.open === '#' + c[0] ? ' chip--mint' : '') + '" href="#/threads/c-' + c[0] + '" data-chan="' + c[0] + '">' + A.ico('hash') + c[0] + '</a>'; }).join('') + '</div>' + F + '</div>' +
-      '<div class="list" style="border-top:1px solid var(--line)">' + (list || '<div class="card empty"><h2 class="h-sec">No threads on this filter</h2><p>Clear a filter to see the rest.</p></div>') + '</div><div class="list-foot"><span>' + rows.length + ' of ' + all.length + ' threads</span></div></section>' +
+      '<div class="list" style="border-top:1px solid var(--line)">' + (list || '<div class="card empty"><span class="empty-art">' + A.ico('messages') + '</span><h2 class="h-sec">No threads on this filter</h2><p>The search or a filter above hides every thread. Clear them to see all ' + all.length + ' again.</p><button class="btn btn--next" type="button" data-do="ttclear">Clear filters</button></div>') + '</div><div class="list-foot"><span>' + rows.length + ' of ' + all.length + ' threads</span></div></section>' +
       threadPane(A, TT.open, { title: true }) + '</section>';
   };
 
@@ -499,7 +491,7 @@
     if (act === 'bfclear') { BF = { q: '', tpl: '', dept: '', poc: '', date: '', from_d: '', to_d: '' }; A.render(); return; }
     if (act === 'pnext') { var lad = LAD[p.template]; stageTo(A, p, lad[lad.indexOf(p.stage) + 1]); A.save(); A.render(); A.toast(p.name + ' is at ' + p.stage + '.'); return; }
     if (act === 'sladd') {
-      Object.keys(SL.pick).forEach(function (h) { if (!SL.pick[h]) return; var x = D.infl.filter(function (i) { return i.h === h; })[0]; p.lines.push({ h: h, rate: x.rate, out: 'Not sent', due: A.addDays(p.live + 'T00:00', -2).slice(0, 10), content: false, live: '', payout: '' }); });
+      Object.keys(SL.pick).forEach(function (h) { if (!SL.pick[h]) return; var x = D.infl.filter(function (i) { return i.h === h; })[0]; p.lines.push({ h: h, rate: x.rate, out: 'Not sent', due: A.addDays(p.live + 'T00:00', -2).slice(0, 10), content: false, live: '', cost: '' }); });
       var n = Object.keys(SL.pick).filter(function (h) { return SL.pick[h]; }).length; SL.pick = {};
       phist(A, p, 'Shortlisted ' + n + ' influencer' + (n === 1 ? '' : 's') + ': ' + p.lines.map(function (x) { return x.h; }).join(', ')); stageTo(A, p, 'Shortlist');
       A.save(); A.render(); A.toast(n + ' added to the shortlist. Send it to Approvals when it is ready.'); return;
@@ -518,7 +510,7 @@
       if (act === 'slback') return window.GUC_APPR.reasonDialog(A, ap, function (w) { window.GUC_APPR.decide(A, ap.id, false, w); });
       return window.GUC_APPR.decide(A, ap.id, true);
     }
-    if (/^(lcontent|llive|lpay|lpayok)$/.test(act)) { if (lineAct(A, act, p, k) !== false) { A.save(); A.render(); } return; }
+    if (/^(lcontent|llive|lcost)$/.test(act)) { if (lineAct(A, act, p, k) !== false) { A.save(); A.render(); } return; }
     if (act === 'thsum') { TH.sum = TH.sum === tk ? '' : tk; A.render(); return; }
     if (act === 'thpin') { var th = thread(A, tk), m = th.list[k]; m.pin = !m.pin; if (th.obj && th.obj.history) phist(A, th.obj, (m.pin ? 'Pinned' : 'Unpinned') + ' a decision: ' + m.text.slice(0, 80)); A.save(); A.render(); A.toast(m.pin ? 'Pinned at the top of the thread.' : 'Unpinned.'); return; }
     if (act === 'thtask') { var t2 = thread(A, tk), mm = t2.list[k]; window.GUC_fromMsg = { tk: tk, k: k }; A.openNewTask({ title: (mm.text || 'Follow up the file in ' + t2.title).replace(/@\w+\s*/g, '').slice(0, 90), link: t2.link, owner: A.ME() }); return; }
@@ -537,6 +529,7 @@
     }
     if (act === 'fshare') { var fs = findFile(A, tk, a.getAttribute('data-f')); A.toast('Sample: in the build, Share copies a signed link to ' + fs.n + ' that opens without a login and stops working after 7 days.'); return; }
     /* G2: reply to the brand from the Inbox (sample send) */
+    if (act === 'ttclear') { TT = { open: TT.open, q: '', kind: '', date: '', from_d: '', to_d: '' }; A.render(); return; }
     if (act === 'ibreply') {
       var cv = D.inbox.filter(function (x) { return x.id === a.getAttribute('data-c'); })[0], rb = d.getElementById('ib-reply'), rt = rb.value.trim();
       if (!rt) { rb.focus(); rb.setAttribute('aria-invalid', 'true'); return; }
@@ -546,7 +539,7 @@
     }
     if (prevAct) prevAct(act, a, A);
   };
-  var SENDER = { whatsapp: 'shared WhatsApp number', instagram: 'Glad U Came Instagram account', gmail: 'agency Gmail', web: 'shared WhatsApp number', meta: 'shared WhatsApp number' };
+  var SENDER = { whatsapp: 'shared WhatsApp number', instagram: 'Glad U Came Instagram account', gmail: 'agency Gmail', web: 'shared WhatsApp number', meta: 'shared WhatsApp number', linkedin: 'LinkedIn inbox, by hand until LinkedIn approves a direct link' };
   window.GUC_SENDER = SENDER;
 
   S._linkMsg = function (fm, t, A) {
