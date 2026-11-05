@@ -114,3 +114,19 @@ a.cell-who { color: inherit; text-decoration: none; }
 /* C4: long chips wrap on a phone (risk reasons, Ask GUC header and suggestions) */
 [data-risk] .chip, [data-ask] .chip { white-space: normal; max-width: 100%; height: auto; text-align: left; }
 [data-ask] .page-head, [data-ask] .chan-list { min-width: 0; flex-wrap: wrap; }
+
+/* Ask GUC answers (5 Nov): answer first, one clear next step, short preview */
+.ans-list { display: flex; flex-direction: column; gap: var(--s-3); }
+.ans { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-4); border: 1px solid var(--line, rgba(127,127,127,.25)); border-radius: 14px; background: var(--surface-2, transparent); }
+.ans--refused { border-style: dashed; }
+.ans-q { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; opacity: .7; }
+.ans-q svg { width: 14px; height: 14px; }
+.ans-a { margin: 0; font-size: 16px; line-height: 1.5; font-weight: 600; }
+.ans-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.ans-more { margin: 0; font-size: 12px; }
+.ans-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 12px; opacity: .8; }
+.ans-foot details { font-size: 12px; }
+.ans-foot .f-help { margin: 4px 0 0; }
+.ans-tool { background: none; border: 0; padding: 4px 0; color: inherit; font: inherit; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.ans-tool svg { width: 14px; height: 14px; }
+.ans-sub { margin: 0; font-size: 13px; opacity: .8; }

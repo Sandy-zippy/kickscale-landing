@@ -102,6 +102,7 @@
       var shift = A.daysBetween(D.c4.day, A.TODAY);   /* a demo opened another day reads the same (done times move with the deadlines) */
       if (shift) { D.tasks.forEach(function (t) { if (t.done_at) t.done_at = A.addDays(t.done_at, shift); }); D.c4.day = A.TODAY; ch = true; }
       D.pins = D.pins || []; D.sched = D.sched || []; D.seqQ = D.seqQ || 0;
+      if (!D.c5) { D.tasks = D.tasks.filter(function (t) { return !/^Answer for Ask GUC: /.test(t.title); }); D.c5 = 1; ch = true; }
       if (runDue(D, A)) ch = true;
     }
     return ch;
@@ -144,7 +145,13 @@
   }
   var DEPTW = [['PR', /\bpr\b|press/], ['Influencer', /\binfluencer/], ['Events', /\bevents?\b/], ['Content', /\bcontent|social media/], ['Celebrity & gifting', /\bcelebrity|gifting|hamper/], ['BD', /\bbd\b|business development/], ['Finance', /\bfinance\b/]];
   var deptWord = function (s) { var m = DEPTW.filter(function (x) { return x[1].test(s); })[0]; return m ? m[0] : ''; };
-  function personWord(A, s) { return A.ORDER.filter(function (id) { var n = A.P[id].name.toLowerCase(); return new RegExp('\\b(' + n.split(' ')[0] + '|' + n + ')\\b').test(s); })[0] || ''; }
+  function lev(a, b) { var m = [], i, j; for (i = 0; i <= a.length; i++) { m[i] = [i]; for (j = 1; j <= b.length; j++) m[i][j] = i ? Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)) : j; } return m[a.length][b.length]; }
+  function personWord(A, s) {
+    var exact = A.ORDER.filter(function (id) { var n = A.P[id].name.toLowerCase(); return new RegExp('\\b(' + n.split(' ')[0] + '|' + n + ')\\b').test(s); })[0];
+    if (exact) return exact;
+    var words = s.replace(/s\b/g, ' ').split(' ').filter(function (w) { return w.length >= 4 && !/^(what|which|tasks|task|team|this|that|there|have|does|done|need|today|week|month|leads|lead|many|much|show|open|about|with|their|they|days|from|when|will|work|more|most|note|notes|news|name|dear)$/.test(w); });
+    return A.ORDER.filter(function (id) { var f = A.P[id].name.toLowerCase().split(' ')[0]; return words.some(function (w) { return w[0] === f[0] && lev(w, f) <= (f.length > 5 ? 2 : 1); }); })[0] || '';
+  }
 
   /* ---------------- scope: what this person may see ---------------- */
   var isHead = function (A) { return role(A) === 'Department head'; };
@@ -193,7 +200,7 @@
     var L = delayedProjects(A, x);
     return { num: L.length, a: L.length ? pl(L.length, 'project is', 'projects are') + ' delayed' + (x.dept ? ' in ' + x.dept : '') + ': ' + L.map(function (p) { return p.brand; }).join(', ') + '. Ask "why is ' + L[0].brand + ' late?" for the tasks behind it.' : 'No project is delayed' + (x.dept ? ' in ' + x.dept : '') + '. Every task on them is on time.',
       head: ['Project', 'Late tasks', 'Oldest late', 'Live date'], rows: L.map(function (p) { var lt = lateTasks(A, p).sort(function (a, b) { return a.due < b.due ? -1 : 1; }); return row([p.brand + ', ' + p.name, lt.length, lt.length ? A.low(A.dayWord(lt[0].due)) : 'past the live date', A.dayWord(p.live + 'T00:00')], '#/project/' + p.id); }),
-      href: L.length ? '#/project/' + L[0].id : '#/brands', ctxP: L.length ? L[0].id : '', how: 'A project is delayed when one of its open tasks is past its deadline, or its live date has passed before it was live. Projects in ' + scopeWord(A) + '.' }; } };
+      href: '#/brands', ctxP: L.length ? L[0].id : '', how: 'A project is delayed when one of its open tasks is past its deadline, or its live date has passed before it was live. Projects in ' + scopeWord(A) + '.' }; } };
   I.why = { t: 'Why is a project late', f: function (A, x) {
     var p = x.pid ? byId(A.D().projects, x.pid) : null; if (!p) return null;
     if (projectsIn(A).indexOf(p) < 0) return { refused: true, a: p.brand + ' is not one of your projects, so I cannot show its tasks.' };
@@ -276,20 +283,23 @@
     L.sort(function (a, b) { return a.due < b.due ? -1 : 1; });
     var open = L.filter(function (t) { return A.OPEN[t.status]; }), over = T.filter(A.isOverdue), many = sc.ids.length > 1, ppl = {}; L.forEach(function (t) { ppl[t.owner] = 1; });
     var wword = { today: 'due today', tomorrow: 'due tomorrow', week: 'due in the next 7 days', open: 'open' }[when];
-    var a = !L.length ? 'Nothing is ' + wword + ' for ' + sc.word + '.' : (sc.word === 'you' ? 'You have ' : (many ? sc.word.charAt(0).toUpperCase() + sc.word.slice(1) + ' has ' : sc.word + ' has ')) + pl(L.length, 'task') + ' ' + wword + (many && Object.keys(ppl).length > 1 ? ', across ' + pl(Object.keys(ppl).length, 'person', 'people') : '') + (when === 'today' ? ': ' + open.length + ' still to do, ' + (L.length - open.length) + ' done or waiting for check.' : '.') + (L[0] && when !== 'open' ? ' First up: ' + L[0].title + ' (' + A.first(L[0].owner) + ', ' + A.clock(L[0].due) + ').' : '');
-    if (over.length && when !== 'open') a += ' Also ' + pl(over.length, 'task') + ' past the deadline from before; ask "who has overdue tasks?" for those.';
-    return { num: L.length, a: a, head: ['Task', 'Owner', 'Due', 'Status'], rows: L.map(function (t) { return row([t.title, who(A, t.owner), A.dayWord(t.due) + ', ' + A.clock(t.due), A.isOverdue(t) ? 'Overdue' : ST[t.status] || t.status], t.link ? (/^P/.test(t.link) ? '#/project/' + t.link : '#/lead/' + t.link) : '#/tasks'); }),
-      href: when === 'today' && !x.who ? '#/today' : '#/tasks', act: open.length && x.who && x.who !== A.ME() ? { k: 'remind', to: x.who, what: 'the ' + pl(open.length, 'task') + ' ' + wword } : null,
+    var a = !L.length ? 'Nothing is ' + wword + ' for ' + sc.word + '.' : (sc.word === 'you' ? 'You have ' : (many ? sc.word.charAt(0).toUpperCase() + sc.word.slice(1) + ' has ' : sc.word + ' has ')) + pl(L.length, 'task') + ' ' + wword + (many && Object.keys(ppl).length > 1 ? ', across ' + pl(Object.keys(ppl).length, 'person', 'people') : '') + '.';
+    var sub = (when === 'today' && L.length ? (L.length - open.length ? open.length + ' still to do, ' + (L.length - open.length) + ' done or waiting for check. ' : 'All ' + L.length + ' still to do. ') : '') + (L[0] && when !== 'open' ? 'First up: ' + L[0].title + ' (' + A.first(L[0].owner) + ', ' + A.clock(L[0].due) + ').' : '');
+    if (over.length && when !== 'open') sub += ' Also ' + pl(over.length, 'task') + ' past the deadline from before.';
+    return { num: L.length, a: a, sub: sub.trim(), head: ['Task', 'Owner', 'Due', 'Status'], rows: L.map(function (t) { return row([t.title, who(A, t.owner), A.dayWord(t.due) + ', ' + A.clock(t.due), A.isOverdue(t) ? 'Overdue' : ST[t.status] || t.status], t.link ? (/^P/.test(t.link) ? '#/project/' + t.link : '#/lead/' + t.link) : '#/tasks'); }),
+      open: { label: 'Open ' + (sc.word === 'you' ? 'your' : many ? (x.dept ? 'the ' + x.dept + ' team\'s' : role(A) === 'Founder' ? 'everyone\'s' : 'the team\'s') : A.first(sc.ids[0]) + '\'s') + ' tasks' + { today: ' for today', tomorrow: ' for tomorrow', week: ' for this week', open: '' }[when] + ' (' + L.length + ')',
+        kf: Object.assign({ owner: sc.ids.length === 1 ? sc.ids[0] : '', dept: x.dept || '', board: many ? 'person' : 'deadline' }, when === 'today' ? { date: 'today' } : when === 'tomorrow' ? { date: 'custom', from_d: tm, to_d: tm } : when === 'week' ? { date: 'custom', from_d: A.TODAY, to_d: wk, status: 'Open' } : { status: 'Open' }) },
+      href: '', act: open.length && x.who && x.who !== A.ME() ? { k: 'remind', to: x.who, what: 'the ' + pl(open.length, 'task') + ' ' + wword } : null,
       how: 'Tasks owned by ' + sc.word + ', ' + wword + (when === 'open' ? ' (To do, Blocked or Waiting for check)' : '') + ', from the Tasks list, soonest first.' }; } };
   I.blocked = { t: 'Blocked tasks', f: function (A, x) {
     var sc = whoScope(A, x); if (sc.refused) return noSee(A, x);
     var L = A.D().tasks.filter(function (t) { return sc.ids.indexOf(t.owner) >= 0 && t.status === 'blocked'; });
     return { num: L.length, a: L.length ? pl(L.length, 'task is', 'tasks are') + ' blocked. ' + L.slice(0, 2).map(function (t) { return t.title + ' (' + A.first(t.owner) + ': ' + (t.blocked || 'no reason given') + ')'; }).join('; ') + '.' : 'No task is blocked for ' + sc.word + '.',
-      head: ['Task', 'Owner', 'Why blocked'], rows: L.map(function (t) { return row([t.title, who(A, t.owner), t.blocked || 'No reason given'], '#/tasks'); }), href: '#/tasks', how: 'Open tasks marked Blocked, with the reason the person gave.' }; } };
+      head: ['Task', 'Owner', 'Why blocked'], rows: L.map(function (t) { return row([t.title, who(A, t.owner), t.blocked || 'No reason given'], '#/tasks'); }), href: '', open: { label: 'Open the blocked tasks (' + L.length + ')', kf: { owner: sc.ids.length === 1 ? sc.ids[0] : '', status: 'Blocked' } }, how: 'Open tasks marked Blocked, with the reason the person gave.' }; } };
   I.check = { t: 'Waiting for check', f: function (A, x) {
     var me = A.ME(), L = A.D().tasks.filter(function (t) { return t.status === 'check' && (role(A) === 'Founder' ? true : t.checked_by === me || peopleIn(A).indexOf(t.owner) >= 0); });
     return { num: L.length, a: L.length ? pl(L.length, 'task is', 'tasks are') + ' done and waiting for a check' + (role(A) === 'Founder' ? '' : ' from you or your team') + '.' : 'Nothing is waiting for a check.',
-      head: ['Task', 'Done by', 'Checked by'], rows: L.map(function (t) { return row([t.title, who(A, t.owner), who(A, t.checked_by)], '#/today'); }), href: '#/today', how: 'Tasks marked Done by their owner and not yet approved by the person in Checked by.' }; } };
+      head: ['Task', 'Done by', 'Checked by'], rows: L.map(function (t) { return row([t.title, who(A, t.owner), who(A, t.checked_by)], '#/today'); }), href: '', open: { label: 'Open the tasks waiting for check (' + L.length + ')', kf: { status: 'Waiting for check' } }, how: 'Tasks marked Done by their owner and not yet approved by the person in Checked by.' }; } };
   I.appr = { t: 'Approvals waiting', f: function (A, x) {
     var me = A.ME(), L = (A.D().approvals || []).filter(function (a) { return a.status === 'Waiting' && (role(A) === 'Founder' || a.approver === me || a.by === me); }), money = moneyOk(A);
     return { num: L.length, a: L.length ? pl(L.length, 'approval is', 'approvals are') + ' waiting' + (role(A) === 'Founder' ? '' : ' on you or raised by you') + ': ' + L.map(function (a) { return a.what; }).join('; ') + '.' : 'No approval is waiting.',
@@ -456,7 +466,7 @@
     var nb = namedBrand(A, q);
     if (nb && !brand) return { q: q, r: { none: true, a: 'Nothing is on file for ' + nb + ': no lead, brand or project by that name. I have not made a number up. Asking Maddie to check.' }, ask: 'maddie' };
     x.who = personWord(A, s); x.mine = !x.who && /\b(my|mine|i have|do i|i need to|am i)\b/.test(s); x.s = s; x.brand = brand;
-    x.when = /\btomorrow\b/.test(s) ? 'tomorrow' : /\btoday\b|\btodays\b|\btonight\b/.test(s) ? 'today' : /\b(this|next) week\b|\bweek\b/.test(s) ? 'week' : '';
+    x.when = /\btomorrow\b/.test(s) ? 'tomorrow' : /\btoday\b|\btodays\b|\btonight\b|\b(for|of) the day\b|\bthe day\b/.test(s) ? 'today' : /\b(this|next) week\b|\bweek\b/.test(s) ? 'week' : '';
     var skip = (brand || (CTX && CTX.r && (CTX.r.ctxP || CTX.id === 'late'))) ? '' : 'why';
     if (/\bwhat (all )?can (you|i)\b|\bwhat do you (know|do)\b|^\s*help\b|\bhow (do|can) i use\b/i.test(q)) { var hh = I.help.f(A, {}); return { q: q, r: hh, id: '' }; }
     MATCH.some(function (m) { if (m[0] !== skip && m[1].test(s)) { id = m[0]; return true; } return false; });
@@ -552,20 +562,25 @@
       (r.rows.length > 8 ? '<div class="lrow faint" style="--cols:minmax(0,1fr)">and ' + (r.rows.length - 8) + ' more on the list</div>' : '') + '</div>';
   }
   function card(A, x, i) {
-    var r = x.r, actB = '';
-    if (x.act && !x.done) actB = '<button class="btn btn--sm btn--next" type="button" data-do="askconfirm" data-i="' + i + '">' + A.ico('check') + 'Confirm</button><button class="btn btn--sm btn--ghost" type="button" data-do="askcancel" data-i="' + i + '">Cancel</button>';
-    else if (r.act && !x.done && !x.offer) actB = '<button class="btn btn--sm" type="button" data-do="askoffer" data-i="' + i + '">' + A.ico('bell') + 'Remind ' + A.esc(A.first(r.act.to)) + '</button>';
-    var tools = x.id && !r.refused && !r.none ? '<button class="btn btn--sm btn--ghost" type="button" data-do="askpin" data-i="' + i + '">' + A.ico('pin') + 'Pin to dashboard</button><button class="btn btn--sm btn--ghost" type="button" data-do="asksched" data-i="' + i + '">' + A.ico('calendar-event') + 'Every Monday 9:30 am</button>' : '';
-    return '<div class="lrow" data-ans="' + (r.refused ? 'refused' : r.none ? 'none' : x.id || (x.act ? 'action' : 'kb')) + '"' + (r.num != null ? ' data-num="' + r.num + '"' : '') + ' style="--cols:minmax(0,1fr)"><div style="display:flex;flex-direction:column;gap:var(--s-2)">' +
-      '<b>' + A.esc(x.q) + '</b><p style="margin:0" data-ans-text>' + A.esc(r.a) + '</p>' +
+    var r = x.r, actB = '', more = r.rows && r.rows.length > 5;
+    if (x.act && !x.done) actB = '<button class="btn btn--next" type="button" data-do="askconfirm" data-i="' + i + '">' + A.ico('check') + 'Confirm</button><button class="btn btn--ghost" type="button" data-do="askcancel" data-i="' + i + '">Cancel</button>';
+    else if (r.act && !x.done && !x.offer) actB = '<button class="btn" type="button" data-do="askoffer" data-i="' + i + '">' + A.ico('bell') + 'Remind ' + A.esc(A.first(r.act.to)) + '</button>';
+    /* the one next step: open the real list, already filtered */
+    var openB = r.refused ? '' : r.open ? '<button class="btn btn--next" type="button" data-do="askopen" data-i="' + i + '">' + A.ico('list-details') + A.esc(r.open.label) + '</button>'
+      : r.href ? '<a class="btn btn--next" data-open href="' + r.href + '">' + A.ico('list-details') + (/#\/project\//.test(r.href) ? 'Open the project' : /#\/lead\//.test(r.href) ? 'Open the lead' : 'Open the full list' + (r.rows && r.rows.length ? ' (' + r.rows.length + ')' : '')) + '</a>' : '';
+    var tools = x.id && !r.refused && !r.none ? '<button class="ans-tool" type="button" data-do="askpin" data-i="' + i + '">' + A.ico('pin') + 'Pin to dashboard</button><button class="ans-tool" type="button" data-do="asksched" data-i="' + i + '">' + A.ico('calendar-event') + 'Ask me every Monday 9:30 am</button>' : '';
+    var preview = r.rows && r.rows.length ? table(A, Object.assign({}, r, { rows: r.rows.slice(0, 5) })) + (more ? '<p class="faint ans-more">Showing 5 of ' + r.rows.length + '. ' + (openB ? 'Use the button above to see them all.' : '') + '</p>' : '') : '';
+    return '<article class="ans' + (r.refused ? ' ans--refused' : '') + '" data-ans="' + (r.refused ? 'refused' : r.none ? 'none' : x.id || (x.act ? 'action' : 'kb')) + '"' + (r.num != null ? ' data-num="' + r.num + '"' : '') + '>' +
+      '<span class="ans-q">' + A.ico('message-circle') + A.esc(x.q) + '</span><p class="ans-a" data-ans-text>' + A.esc(r.a) + '</p>' + (r.sub ? '<p class="ans-sub">' + A.esc(r.sub) + '</p>' : '') +
+      (openB || actB ? '<div class="ans-acts">' + openB + actB + '</div>' : '') +
       (r.draft ? '<div class="wa-preview" data-draft>' + A.esc(r.draft) + '</div><div><button class="btn btn--sm" type="button" data-do="askcopy" data-i="' + i + '">' + A.ico('copy') + 'Copy the draft</button> <span class="chip chip--amber">A person sends it</span></div>' : '') +
-      table(A, r) +
+      preview +
       (r.sugg ? '<div class="chan-list" data-ans-sugg>' + r.sugg.map(function (t) { return '<button class="chip" type="button" data-do="asksug">' + A.esc(t) + '</button>'; }).join(' ') + '</div>' : '') +
       (r.src ? '<span class="chip chip--mint" data-src>' + A.ico('file-text') + 'Source: ' + A.esc(r.src) + '</span>' : '') + (x.ask || r.ask ? '<span class="chip chip--amber" data-asked>' + A.ico('bell') + 'Sent to ' + A.esc(A.P[x.ask || r.ask].name) + ' as a task</span>' : '') +
       (x.done ? '<span class="chip chip--green" data-acted>' + A.ico('check') + A.esc(x.done) + '</span>' : '') +
-      (r.how ? '<details data-how><summary>How I counted</summary><p class="f-help" style="margin:var(--s-1) 0 0">' + A.esc(r.how) + '</p></details>' : '') +
-      '<div style="display:flex;flex-wrap:wrap;gap:6px">' + (r.href && !r.refused ? '<a class="btn btn--sm btn--solid" data-open href="' + r.href + '">' + A.ico('list-details') + 'Open this list</a>' : '') + actB + tools + '</div></div></div>';
+      (r.how || tools ? '<div class="ans-foot">' + (r.how ? '<details data-how><summary>How I counted</summary><p class="f-help">' + A.esc(r.how) + '</p></details>' : '') + tools + '</div>' : '') + '</article>';
   }
+
   S.ask = function (A) {
     var D = A.D(), mineS = (D.sched || []).filter(function (x) { return x.by === A.ME(); });
     var sched = mineS.length ? '<div class="card" data-sched-list style="display:flex;flex-direction:column;gap:var(--s-2)"><div class="card-head"><h2 class="h-sec">Scheduled questions</h2><span class="label">The answer comes to your bell</span></div><div class="list">' +
@@ -575,7 +590,7 @@
       '<button class="btn btn--solid" type="submit">' + A.ico('send') + 'Ask</button><button class="mic" type="button" data-do="askmic" aria-pressed="false"><span class="mic-dot">' + A.ico('microphone') + '</span><span class="mic-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span data-mic-label>Speak</span></button>' +
       '<button class="btn btn--next" type="button" data-do="askvoice">' + A.ico('plus') + 'Create a task</button></form>' +
       '<div class="chan-list">' + SUG.map(function (s) { return '<button class="chip" type="button" data-do="asksug">' + A.esc(s) + '</button>'; }).join(' ') + '</div>' +
-      '<div class="list" data-answers>' + (ASK.length ? ASK.map(function (x, i) { return [x, i]; }).reverse().map(function (y) { return card(A, y[0], y[1]); }).join('') :
+      '<div class="ans-list" data-answers>' + (ASK.length ? ASK.map(function (x, i) { return [x, i]; }).reverse().map(function (y) { return card(A, y[0], y[1]); }).join('') :
         '<p class="faint" style="padding:var(--s-3)">Ask in your own words, in English or Hinglish, by typing or with Speak. Follow up with "and last quarter?", "only PR" or "why?". Ask GUC never invents an answer: when it has nothing on file, it says so and asks the person who owns that topic.</p>') + '</div>' + sched + '</section>';
   };
   function ask(A, q) {
@@ -614,6 +629,7 @@
   S._act = function (act, a, A) {
     var D = A.D(), i = +a.getAttribute('data-i'), x = ASK[i];
     if (act === 'asksug') { ask(A, a.textContent); return; }
+    if (act === 'askopen' && x && x.r.open) { A.setKF(x.r.open.kf); location.hash = '#/tasks'; A.render(); return; }
     if (act === 'askconfirm' && x && x.act) { x.done = doAct(A, x.act); A.save(); A.render(); A.toast(x.done); return; }
     if (act === 'askcancel' && x) { x.act = null; x.done = 'Cancelled, nothing changed'; A.render(); return; }
     if (act === 'askoffer' && x && x.r.act) { var w = x.r.act; ASK.push({ q: 'Remind ' + A.first(w.to) + ' about ' + w.what, r: { a: 'I will remind ' + who(A, w.to) + ' about ' + w.what + '. Press Confirm to send it to their bell.' }, act: w }); x.offer = true; A.render(); return; }

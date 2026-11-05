@@ -442,7 +442,7 @@
     if (KF.owner === 'team' && P[t.owner].head !== ME) return false;
     if (KF.owner && KF.owner !== 'me' && KF.owner !== 'team' && t.owner !== KF.owner) return false;
     if (KF.dept && P[t.owner].dept !== KF.dept) return false;
-    if (KF.status && STATUS[t.status] !== KF.status) return false;
+    if (KF.status === 'Open') { if (!(OPEN[t.status] || t.status === 'check')) return false; } else if (KF.status && STATUS[t.status] !== KF.status) return false;
     if (KF.priority && t.priority !== KF.priority) return false;
     if (KF.date) { var save_ = TF; TF = { show: 'all', date: KF.date, from_d: KF.from_d, to_d: KF.to_d }; var ok = passes(t); TF = save_; if (!ok) return false; }
     return true;
@@ -474,7 +474,7 @@
       sel('board', 'Board', [['person', 'Board: by person'], ['deadline', 'By deadline'], ['project', 'By project']], KF.board).replace(/data-tf=/g, 'data-kf=') +
       sel('owner', 'Owner', owners, KF.owner).replace(/data-tf=/g, 'data-kf=') +
       sel('dept', 'Department', [['', 'Department: all']].concat(DEPTS), KF.dept).replace(/data-tf=/g, 'data-kf=') +
-      sel('status', 'Status', [['', 'Status: any'], 'To do', 'Blocked', 'Waiting for check', 'Done'], KF.status).replace(/data-tf=/g, 'data-kf=') +
+      sel('status', 'Status', [['', 'Status: any'], ['Open', 'Open (not done)'], 'To do', 'Blocked', 'Waiting for check', 'Done'], KF.status).replace(/data-tf=/g, 'data-kf=') +
       sel('priority', 'Priority', [['', 'Priority: any'], 'Urgent', 'High', 'Normal', 'Low'], KF.priority).replace(/data-tf=/g, 'data-kf=') +
       sel('any', 'Pick any field', [['', '+ Any field'], 'Checked by', 'Linked to', 'Assigned by'], '').replace(/data-tf=/g, 'data-kf=') +
       dateFilter(KF).replace(/data-tf=/g, 'data-kf=') + '</div>';
@@ -642,7 +642,7 @@
     if (focus) { var el = d.querySelector('[data-tf="' + focus + '"],[data-kf="' + focus + '"]'); if (el) { el.focus(); if (el.setSelectionRange && el.type === 'text') try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }
     window.scrollTo(0, y);
   }
-  var API = { D: function () { return D; }, P: P, ORDER: ORDER, me: me, ico: ico, esc: esc, avatar: avatar, teamOf: teamOf, visible: visible, isOverdue: isOverdue,
+  var API = { setKF: function (o) { KF = Object.assign({ q: '', board: 'deadline', owner: '', dept: '', status: '', priority: '', date: '', from_d: '', to_d: '' }, o); }, D: function () { return D; }, P: P, ORDER: ORDER, me: me, ico: ico, esc: esc, avatar: avatar, teamOf: teamOf, visible: visible, isOverdue: isOverdue,
     OPEN: OPEN, dayWord: dayWord, clock: clock, TODAY: TODAY, save: save, render: render, toast: toast, micBtn: micBtn, openNewTask: openNewTask, sel: sel, dateFilter: dateFilter,
     ME: function () { return ME; }, first: first, now: now, addDays: addDays, daysBetween: daysBetween, note: note, assignable: assignable, CHN: CHN, TPL: TPL, DAYS: DAYS, dayStr: dayStr, speak: function (b) { speak(b); }, low: low, reload: function () { load(); } };
   window.GUC_APP = API;
