@@ -228,7 +228,15 @@
     { k: 'Case study', t: 'Bandra pet cafe launch', at: 'Aug 2026', o: 'kabir', w: 'case study pet pets cafe launch dog example past work',
       a: 'A Bandra pet cafe launch with 6 pet influencers: 1.4M views and 210 walk-ins in two weeks (sample figures).' },
     { k: 'Case study', t: 'Bombay Brew Co. monsoon menu', at: 'Jul 2026', o: 'ananya', w: 'case study cafe coffee food menu monsoon launch example past work restaurant',
-      a: 'Bombay Brew Co. monsoon menu: 12 food reels, 3 press stories, menu sold out in the first weekend (sample figures).' }
+      a: 'Bombay Brew Co. monsoon menu: 12 food reels, 3 press stories, menu sold out in the first weekend (sample figures).' },
+    { k: 'Policy', t: 'Barter deals with influencers', at: '1 Oct 2026', o: 'kabir', w: 'barter deal deals free product exchange unpaid gifting collab policy influencer',
+      a: 'Barter only for influencers under 100K followers and only when the brand agrees in writing. The product value is logged on the campaign line. Above 100K followers we pay a fee.' },
+    { k: 'Policy', t: 'Client payment terms', at: '15 Sep 2026', o: 'farhan', w: 'payment terms advance balance due client invoice credit days policy retainer',
+      a: 'One-off projects: 50% advance before work starts, 50% within 15 days of the final report. Retainers: billed on the 1st, due by the 7th. Work pauses after 30 days overdue, with Maddie\'s approval.' },
+    { k: 'Policy', t: 'Approval limits', at: '1 Oct 2026', o: 'maddie', w: 'approval approve limit limits who can sign off discount spend policy',
+      a: 'Heads approve influencer fees up to ₹1,00,000 and spends up to ₹10,000. Anything above, every discount on a proposal, and every celebrity commitment goes to Maddie.' },
+    { k: 'SOP', t: 'Client onboarding', at: '10 Oct 2026', o: 'riya', w: 'onboarding onboard new client won kickoff kick off steps handover welcome process',
+      a: 'When a lead is Won: MOU signed, advance received, brand record and project made from the template, kickoff call within 3 days, and a welcome note on WhatsApp from the account owner.' }
   ];
   var OWNERS = [[/rate|price|fee|reel|influencer/, 'kabir'], [/pay|invoice|gst|tds|money/, 'farhan'], [/press|pr\b|journalist|media/, 'ananya'], [/event|venue/, 'arjun'], [/celeb|hamper|gift/, 'zoya'], [/content|shoot|caption/, 'neha']];
   var ASK = [];

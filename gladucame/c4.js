@@ -125,7 +125,7 @@
   /* ---------------- Ask GUC: the words (English and simple Hinglish, cleaned before matching) ---------------- */
   var HING = [[/\bis (mahine|mahina|month)\b/g, 'this month'], [/\b(pichhle|pichle|pichla|pichhla)\b/g, 'last'], [/\b(mahine|mahina)\b/g, 'month'], [/\bis (quarter|timahi)\b/g, 'this quarter'],
     [/\bsabse (zyada|jyada|adhik)\b/g, 'most'], [/\bkisne (laya|layi|laye|laaya)\b/g, 'who brought'], [/\b(kaun|kisne)\b/g, 'who'], [/\b(baki|baaki|ruka hua)\b/g, 'pending'],
-    [/\b(paisa|paise|bhugtan)\b/g, 'payment'], [/\bkaam\b/g, 'tasks'], [/\b(pura nahi|poora nahi|nahi kiya|nahin kiya|complete nahi)\b/g, 'not completed'], [/\b(der se|late chal\w*)\b/g, 'delayed'],
+    [/\b(paisa|paise|bhugtan)\b/g, 'payment'], [/\bkaam\b/g, 'tasks'], [/\baaj\b/g, 'today'], [/\bkal\b/g, 'tomorrow'], [/\b(mera|meri|mere)\b/g, 'my'], [/\b(pura nahi|poora nahi|nahi kiya|nahin kiya|complete nahi)\b/g, 'not completed'], [/\b(der se|late chal\w*)\b/g, 'delayed'],
     [/\b(kitna|kitni|kitne)\b/g, 'how much'], [/\b(kamai|aamdani)\b/g, 'revenue'], [/\b(kyun|kyon|kyu)\b/g, 'why'], [/\bclients? ko\b/g, 'clients'], [/\b(wale|wali|ka|ki|ke|se|me|mein|hai|hain|tha)\b/g, ' ']];
   function clean(q) {
     var s = ' ' + String(q).toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9@&. ]/g, ' ') + ' ';
@@ -259,15 +259,176 @@
       head: ['Person', 'Missed', 'Brands'], rows: K.map(function (k) { return row([who(A, k), by[k].length, by[k].map(function (m) { return m.brand; }).join(', ')], '#/leads/score'); }), href: '#/leads/score',
       act: K.length ? { k: 'remind', to: K[0], what: 'the follow-ups missed ' + P.word } : null, how: 'The missed follow-up log: a lead past the silence clock or an enquiry past the first-response limit, against the person it was given to, ' + P.word + '.' }; } };
 
+  /* ---------------- 5 Nov: everyday questions across the whole sample (tasks, team, clients, inbox, media, gifting, money) ---------------- */
+  var ST = { todo: 'To do', blocked: 'Blocked', check: 'Waiting for check', done: 'Done' };
+  var dayOf = function (t) { return (t.due || '').slice(0, 10); };
+  function whoScope(A, x) {   /* whose work the question is about, inside what this login may see */
+    if (x.mine) return { ids: [A.ME()], word: 'you' };
+    if (x.who) return peopleIn(A).indexOf(x.who) >= 0 ? { ids: [x.who], word: who(A, x.who) } : { refused: true };
+    if (x.dept) return { ids: peopleIn(A).filter(function (id) { return A.P[id].dept === x.dept; }), word: 'the ' + x.dept + ' team' };
+    return { ids: peopleIn(A), word: role(A) === 'Founder' ? 'the agency' : role(A) === 'Department head' ? 'you and your team' : 'you' };
+  }
+  var noSee = function (A, x) { return { refused: true, a: 'You can see ' + scopeWord(A) + ' only, so I cannot show ' + who(A, x.who) + '\'s work. Ask ' + A.P[A.P[A.ME()].head || 'maddie'].name + '.' }; };
+  I.tasks = { t: 'Tasks', f: function (A, x) {
+    var sc = whoScope(A, x); if (sc.refused) return noSee(A, x);
+    var when = x.when || (x.who || x.mine ? 'open' : 'today'), T = A.D().tasks.filter(function (t) { return sc.ids.indexOf(t.owner) >= 0; }), tm = A.addDays(A.TODAY + 'T00:00', 1).slice(0, 10), wk = A.addDays(A.TODAY + 'T00:00', 6).slice(0, 10);
+    var L = when === 'today' ? T.filter(function (t) { return dayOf(t) === A.TODAY; }) : when === 'tomorrow' ? T.filter(function (t) { return dayOf(t) === tm; }) : when === 'week' ? T.filter(function (t) { return A.OPEN[t.status] && dayOf(t) >= A.TODAY && dayOf(t) <= wk; }) : T.filter(function (t) { return A.OPEN[t.status] || t.status === 'check'; });
+    L.sort(function (a, b) { return a.due < b.due ? -1 : 1; });
+    var open = L.filter(function (t) { return A.OPEN[t.status]; }), over = T.filter(A.isOverdue), many = sc.ids.length > 1, ppl = {}; L.forEach(function (t) { ppl[t.owner] = 1; });
+    var wword = { today: 'due today', tomorrow: 'due tomorrow', week: 'due in the next 7 days', open: 'open' }[when];
+    var a = !L.length ? 'Nothing is ' + wword + ' for ' + sc.word + '.' : (sc.word === 'you' ? 'You have ' : (many ? sc.word.charAt(0).toUpperCase() + sc.word.slice(1) + ' has ' : sc.word + ' has ')) + pl(L.length, 'task') + ' ' + wword + (many && Object.keys(ppl).length > 1 ? ', across ' + pl(Object.keys(ppl).length, 'person', 'people') : '') + (when === 'today' ? ': ' + open.length + ' still to do, ' + (L.length - open.length) + ' done or waiting for check.' : '.') + (L[0] && when !== 'open' ? ' First up: ' + L[0].title + ' (' + A.first(L[0].owner) + ', ' + A.clock(L[0].due) + ').' : '');
+    if (over.length && when !== 'open') a += ' Also ' + pl(over.length, 'task') + ' past the deadline from before; ask "who has overdue tasks?" for those.';
+    return { num: L.length, a: a, head: ['Task', 'Owner', 'Due', 'Status'], rows: L.map(function (t) { return row([t.title, who(A, t.owner), A.dayWord(t.due) + ', ' + A.clock(t.due), A.isOverdue(t) ? 'Overdue' : ST[t.status] || t.status], t.link ? (/^P/.test(t.link) ? '#/project/' + t.link : '#/lead/' + t.link) : '#/tasks'); }),
+      href: when === 'today' && !x.who ? '#/today' : '#/tasks', act: open.length && x.who && x.who !== A.ME() ? { k: 'remind', to: x.who, what: 'the ' + pl(open.length, 'task') + ' ' + wword } : null,
+      how: 'Tasks owned by ' + sc.word + ', ' + wword + (when === 'open' ? ' (To do, Blocked or Waiting for check)' : '') + ', from the Tasks list, soonest first.' }; } };
+  I.blocked = { t: 'Blocked tasks', f: function (A, x) {
+    var sc = whoScope(A, x); if (sc.refused) return noSee(A, x);
+    var L = A.D().tasks.filter(function (t) { return sc.ids.indexOf(t.owner) >= 0 && t.status === 'blocked'; });
+    return { num: L.length, a: L.length ? pl(L.length, 'task is', 'tasks are') + ' blocked. ' + L.slice(0, 2).map(function (t) { return t.title + ' (' + A.first(t.owner) + ': ' + (t.blocked || 'no reason given') + ')'; }).join('; ') + '.' : 'No task is blocked for ' + sc.word + '.',
+      head: ['Task', 'Owner', 'Why blocked'], rows: L.map(function (t) { return row([t.title, who(A, t.owner), t.blocked || 'No reason given'], '#/tasks'); }), href: '#/tasks', how: 'Open tasks marked Blocked, with the reason the person gave.' }; } };
+  I.check = { t: 'Waiting for check', f: function (A, x) {
+    var me = A.ME(), L = A.D().tasks.filter(function (t) { return t.status === 'check' && (role(A) === 'Founder' ? true : t.checked_by === me || peopleIn(A).indexOf(t.owner) >= 0); });
+    return { num: L.length, a: L.length ? pl(L.length, 'task is', 'tasks are') + ' done and waiting for a check' + (role(A) === 'Founder' ? '' : ' from you or your team') + '.' : 'Nothing is waiting for a check.',
+      head: ['Task', 'Done by', 'Checked by'], rows: L.map(function (t) { return row([t.title, who(A, t.owner), who(A, t.checked_by)], '#/today'); }), href: '#/today', how: 'Tasks marked Done by their owner and not yet approved by the person in Checked by.' }; } };
+  I.appr = { t: 'Approvals waiting', f: function (A, x) {
+    var me = A.ME(), L = (A.D().approvals || []).filter(function (a) { return a.status === 'Waiting' && (role(A) === 'Founder' || a.approver === me || a.by === me); }), money = moneyOk(A);
+    return { num: L.length, a: L.length ? pl(L.length, 'approval is', 'approvals are') + ' waiting' + (role(A) === 'Founder' ? '' : ' on you or raised by you') + ': ' + L.map(function (a) { return a.what; }).join('; ') + '.' : 'No approval is waiting.',
+      head: ['What', 'Type', 'Raised by', 'Amount'], rows: L.map(function (a) { return row([a.what, a.type, who(A, a.by), money && a.amount ? rupees(a.amount) : '']); }), href: '#/approvals', how: 'Pricing, proposals, influencer fees and content plans raised inside the agency and not yet decided. Items waiting on the client are under "pending client approvals".' }; } };
+  I.rev = { t: 'Revenue generated', money: true, f: function (A, x) {
+    var P = per(A, x.per || 'month'), pids = projectsIn(A).map(function (p) { return p.id; }), R = revBy(A, P).filter(function (r) { return pids.indexOf(r.p.id) >= 0 && (!x.dept || r.p.dept === x.dept); }), tot = sum(R, function (r) { return r.amt; }), by = {};
+    R.forEach(function (r) { by[r.svc] = (by[r.svc] || 0) + r.amt; }); var K = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; });
+    return { num: tot, per: P.k, a: 'Revenue generated ' + (x.dept ? 'in ' + x.dept + ' ' : '') + P.word + ' is ' + rupees(tot) + ', from ' + pl(R.length, 'project') + (K.length ? '. Biggest: ' + K[0] + ' (' + rupees(by[K[0]]) + ').' : '.'),
+      head: ['Service', 'Revenue'], rows: K.map(function (k) { return row([k, rupees(by[k])], '#/money/profit'); }), href: role(A) === 'Founder' ? '#/dash/f/rev' : '#/money/profit',
+      how: 'Fees of projects that started ' + P.word + ', and the monthly fee of every retainer for each month it runs, the same rule as the founder dashboard.' }; } };
+  I.coll = { t: 'Revenue collected', money: true, f: function (A, x) {
+    var P = per(A, x.per || 'month'), pids = projectsIn(A).map(function (p) { return p.id; }), R = C3().receipts(A, P).filter(function (o) { return pids.indexOf(o.y.project) >= 0; }), tot = sum(R, function (o) { return o.r.amount; });
+    return { num: tot, per: P.k, a: rupees(tot) + ' collected ' + P.word + ', in ' + pl(R.length, 'payment') + '.', head: ['Client', 'For', 'Received on', 'Amount'],
+      rows: R.sort(function (a, b) { return a.r.on < b.r.on ? 1 : -1; }).map(function (o) { var p = byId(A.D().projects, o.y.project); return row([p.brand, o.y.what, A.dayWord(o.r.on + 'T00:00'), rupees(o.r.amount)], '#/project/' + p.id); }),
+      href: '#/money/due', how: 'Money Farhan recorded as received ' + P.word + ', on projects in ' + scopeWord(A) + '.' }; } };
+  I.won = { t: 'New clients closed', f: function (A, x) {
+    var P = per(A, x.per || 'month'), mine = leadsIn(A), L = C3().wonIn(A, P).filter(function (l) { return mine.indexOf(l) >= 0; }), money = moneyOk(A);
+    return { num: L.length, per: P.k, a: L.length ? pl(L.length, 'new client') + ' closed ' + P.word + ': ' + L.map(function (l) { return l.brand; }).join(', ') + '.' : 'No new client closed ' + P.word + ' yet.',
+      head: ['Brand', 'Service', 'Closed by', 'Value'], rows: L.map(function (l) { return row([l.brand, l.interest || '', who(A, l.owner), money ? rupees(l.value * 1e5) : ''], '#/lead/' + l.id); }), href: '#/leads', how: 'Leads moved to Won ' + P.word + ', from each lead\'s History.' }; } };
+  I.lost = { t: 'Leads lost', f: function (A, x) {
+    var L = leadsIn(A).filter(function (l) { return /^Lost/.test(l.stage); }), by = {}; L.forEach(function (l) { var k = (l.lost || 'No reason').split(',')[0]; by[k] = (by[k] || 0) + 1; });
+    var K = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; });
+    return { num: L.length, a: L.length ? pl(L.length, 'lead is', 'leads are') + ' at Lost / Nurture. Top reason: ' + K[0] + ' (' + by[K[0]] + ').' : 'No lead is at Lost / Nurture.', head: ['Brand', 'Owner', 'Reason'],
+      rows: L.map(function (l) { return row([l.brand, who(A, l.owner), l.lost || 'No reason'], '#/lead/' + l.id); }), href: '#/leads', how: 'Leads at Lost / Nurture with the reason given when they were moved.' }; } };
+  I.pipe = { t: 'Pipeline by stage', f: function (A, x) {
+    var L = leadsIn(A).filter(function (l) { return !/^(Won|Lost)/.test(l.stage); }), by = {}, money = moneyOk(A) || A.P[A.ME()].dept === 'BD';
+    L.forEach(function (l) { var b = by[l.stage] = by[l.stage] || { n: 0, v: 0 }; b.n++; b.v += +l.value || 0; });
+    var order = ['New', 'Contacted', 'Discovery call', 'Proposal sent', 'Negotiation'], tot = sum(L, function (l) { return +l.value || 0; });
+    return { num: L.length, a: pl(L.length, 'open lead') + ' in the pipeline' + (money ? ', worth ' + rupees(tot * 1e5) + ' in all' : '') + '. ' + order.filter(function (s) { return by[s]; }).map(function (s) { return s + ' ' + by[s].n; }).join(', ') + '.',
+      head: ['Stage', 'Leads', 'Value'], rows: order.filter(function (s) { return by[s]; }).map(function (s) { return row([s, by[s].n, money ? rupees(by[s].v * 1e5) : ''], '#/leads'); }), href: '#/leads', how: 'Every lead not yet Won or Lost, by its stage on the Leads board.' }; } };
+  I.newleads = { t: 'New leads', f: function (A, x) {
+    var L = leadsIn(A).filter(function (l) { return l.stage === 'New' || (l.created || '').slice(0, 10) === A.TODAY; });
+    return { num: L.length, a: L.length ? pl(L.length, 'lead') + ' new or still not contacted: ' + L.slice(0, 4).map(function (l) { return l.brand + ' (' + A.first(l.owner) + ')'; }).join(', ') + '.' : 'Every lead has been contacted.',
+      head: ['Brand', 'Came from', 'Owner', 'Stage'], rows: L.map(function (l) { return row([l.brand, (A.CHN && A.CHN[l.ch]) || l.ch, who(A, l.owner), l.stage], '#/lead/' + l.id); }), href: '#/leads', how: 'Leads that came in today, and leads still at New.' }; } };
+  I.inbox = { t: 'Inbox', f: function (A, x) {
+    if (role(A) === 'Finance') return { refused: true, a: 'The inbox is for the client-facing team. Ask Maddie if you need a conversation.' };
+    var me = A.ME(), C = (A.D().inbox || []).filter(function (c) { return role(A) === 'Founder' || c.assigned === me || (isHead(A) && (!c.assigned || peopleIn(A).indexOf(c.assigned) >= 0)); });
+    var L = C.filter(function (c) { var m = c.msgs[c.msgs.length - 1]; return !c.read || (m && m.kind === 'them'); }), un = C.filter(function (c) { return !c.assigned; });
+    return { num: L.length, a: L.length ? pl(L.length, 'conversation') + ' waiting for a reply, ' + un.length + ' of them not given to anyone yet.' : 'Every conversation has a reply.',
+      head: ['From', 'Channel', 'Given to', 'Last message'], rows: L.map(function (c) { var m = c.msgs[c.msgs.length - 1]; return row([c.name + (c.biz ? ', ' + c.biz : ''), (A.CHN && A.CHN[c.ch]) || c.ch, c.assigned ? who(A, c.assigned) : 'Nobody yet', m ? A.dayWord(m.at) + ', ' + A.clock(m.at) : ''], '#/inbox'); }), href: '#/inbox', how: 'Conversations where the last message is from the client, or that nobody has opened.' }; } };
+  I.clients = { t: 'Clients', f: function (A, x) {
+    var P = projectsIn(A).filter(function (p) { return p.stage !== 'Closed' && (!x.dept || p.dept === x.dept); }), by = {}; P.forEach(function (p) { (by[p.brand] = by[p.brand] || []).push(p); });
+    var K = Object.keys(by);
+    return { num: K.length, a: pl(K.length, 'live client') + (x.dept ? ' in ' + x.dept : '') + ': ' + K.join(', ') + '.', head: ['Client', 'Projects', 'Lead person'], rows: K.map(function (k) { return row([k, by[k].map(function (p) { return p.name; }).join(', '), who(A, by[k][0].poc)], '#/project/' + by[k][0].id); }), href: '#/brands', how: 'Brands with at least one project not yet Closed, in ' + scopeWord(A) + '.' }; } };
+  I.projects = { t: 'Projects', f: function (A, x) {
+    var P = projectsIn(A).filter(function (p) { return p.stage !== 'Closed' && (!x.dept || p.dept === x.dept); });
+    return { num: P.length, a: pl(P.length, 'project') + ' running' + (x.dept ? ' in ' + x.dept : '') + '.' + (P.length ? ' Next to go live: ' + P.slice().sort(function (a, b) { return (a.live || '9') < (b.live || '9') ? -1 : 1; })[0].brand + '.' : ''),
+      head: ['Project', 'Department', 'Stage', 'Live date'], rows: P.map(function (p) { return row([p.brand + ', ' + p.name, p.dept, p.stage, p.live ? A.dayWord(p.live + 'T00:00') : '']); }).map(function (r, i) { r.href = '#/project/' + P[i].id; return r; }), href: '#/brands', how: 'Projects not yet Closed, in ' + scopeWord(A) + '.' }; } };
+  I.status = { t: 'Status of a client', f: function (A, x) {
+    var P = A.D().projects.filter(function (p) { return p.brand === x.brand && projectsIn(A).indexOf(p) >= 0; }), l = leadsIn(A).filter(function (y) { return y.brand === x.brand; })[0];
+    if (!P.length && !l) return { refused: true, a: x.brand + ' is not in ' + scopeWord(A) + ', so I cannot show it.' };
+    if (!P.length) return { a: x.brand + ' is a lead at ' + l.stage + ', owned by ' + who(A, l.owner) + '.' + (l.next ? ' Next follow-up: ' + A.dayWord(l.next + 'T00:00') + '.' : '') + (l.asked ? ' They asked for: ' + l.asked + '.' : ''), href: '#/lead/' + l.id, how: 'From the lead record: stage, owner, next follow-up and the last ask.' };
+    var parts = P.map(function (p) { var lt = lateTasks(A, p), ca = C3().capprWaiting(A).filter(function (c) { return c.project === p.id; }), due = moneyOk(A) ? A.D().pay.filter(function (y) { return y.project === p.id && C3().leftOf(y) > 0 && y.due <= A.TODAY; }) : [];
+      return { p: p, t: p.name + ' is at ' + p.stage + (p.live ? ', live ' + A.low(A.dayWord(p.live + 'T00:00')) : '') + (lt.length ? ', ' + pl(lt.length, 'task') + ' late' : ', on time') + (ca.length ? ', ' + pl(ca.length, 'item') + ' waiting for the client' : '') + (due.length ? ', ' + rupees(sum(due, C3().leftOf)) + ' to collect' : '') }; });
+    return { a: x.brand + ': ' + parts.map(function (o) { return o.t; }).join('. ') + '.', head: ['Project', 'Stage', 'Live date', 'Lead person'], rows: P.map(function (p) { return row([p.name, p.stage, p.live ? A.dayWord(p.live + 'T00:00') : '', who(A, p.poc)], '#/project/' + p.id); }),
+      href: '#/project/' + P[0].id, ctxP: P[0].id, how: 'From the project: its stage, live date, tasks past the deadline, items waiting for the client and payments due.' }; } };
+  I.dept = { t: 'Department performance', f: function (A, x) {
+    if (role(A) !== 'Founder' && !isHead(A)) return { refused: true, a: 'Department figures are for Maddie and the heads. Your own are on My dashboard.' };
+    var P = per(A, x.per || 'month'), depts = isHead(A) ? [A.me().dept] : C3().DEPTS.filter(function (k) { return !x.dept || k === x.dept; }), R = revBy(A, P);
+    var rows = depts.map(function (k) { var ids = A.ORDER.filter(function (id) { return A.P[id].dept === k; }), s = C3().taskStats(A, P, ids); return { k: k, pct: s.pct, over: s.over.length, rev: sum(R.filter(function (r) { return r.p.dept === k; }), function (r) { return r.amt; }), live: A.D().projects.filter(function (p) { return p.dept === k && p.stage !== 'Closed'; }).length }; });
+    var best = rows.filter(function (r) { return r.pct != null; }).sort(function (a, b) { return b.pct - a.pct; })[0], worst = rows.slice().sort(function (a, b) { return b.over - a.over; })[0];
+    return { a: (best ? best.k + ' is doing best on time (' + best.pct + '% of tasks on time ' + P.word + ').' : '') + (worst && worst.over ? ' ' + worst.k + ' has the most overdue (' + worst.over + ').' : ''), per: P.k,
+      head: ['Department', 'On time', 'Overdue', 'Live projects', 'Revenue'], rows: rows.map(function (r) { return row([r.k, r.pct == null ? 'No tasks due' : r.pct + '%', r.over, r.live, rupees(r.rev)], '#/dash'); }), href: '#/dash',
+      how: 'On time = tasks due ' + P.word + ' done by their deadline. Overdue = open tasks past the deadline now. Revenue as on the dashboard.' }; } };
+  I.prod = { t: 'Individual productivity', f: function (A, x) {
+    var sc = whoScope(A, x); if (sc.refused) return noSee(A, x);
+    var P = per(A, x.per || 'month'), rows = sc.ids.map(function (id) { var s = C3().taskStats(A, P, [id]); return { id: id, pct: s.pct, over: s.over.length, open: s.open.length, delay: s.delay }; }).sort(function (a, b) { return (b.pct == null ? -1 : b.pct) - (a.pct == null ? -1 : a.pct); });
+    var top = rows.filter(function (r) { return r.pct != null; })[0];
+    return { per: P.k, a: rows.length === 1 ? who(A, rows[0].id) + ': ' + (rows[0].pct == null ? 'no tasks due ' + P.word : rows[0].pct + '% of tasks done on time ' + P.word) + ', ' + rows[0].over + ' overdue, ' + rows[0].open + ' open.' : (top ? who(A, top.id) + ' is the most on time ' + P.word + ' (' + top.pct + '%).' : 'No tasks were due ' + P.word + '.'),
+      head: ['Person', 'On time', 'Overdue', 'Open', 'Avg delay'], rows: rows.map(function (r) { return row([who(A, r.id), r.pct == null ? 'None due' : r.pct + '%', r.over, r.open, r.delay ? r.delay + ' d' : '0'], '#/dash/t/over/' + r.id); }), href: '#/dash',
+      how: 'Tasks due ' + P.word + ' and done by the deadline, open tasks past the deadline, and the average days late, person by person.' }; } };
+  I.inflist = { t: 'Influencers', f: function (A, x) {
+    var s = x.s, L = (A.D().infl || []).slice(), cats = {}, cities = {}; L.forEach(function (i) { cats[i.cat.toLowerCase()] = 1; cities[i.city.toLowerCase()] = 1; });
+    var c = Object.keys(cats).filter(function (k) { return s.indexOf(k) >= 0; }), t = Object.keys(cities).filter(function (k) { return s.indexOf(k) >= 0; });
+    L = L.filter(function (i) { return (!c.length || c.indexOf(i.cat.toLowerCase()) >= 0) && (!t.length || t.indexOf(i.city.toLowerCase()) >= 0); });
+    var byEr = /\bengag|\ber\b/.test(s); L.sort(function (a, b) { return byEr ? b.er - a.er : b.fol - a.fol; });
+    var rates = role(A) !== 'Intern', k = function (n) { return n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : Math.round(n / 1000) + 'k'; };
+    return { num: L.length, a: L.length ? pl(L.length, 'influencer') + (c.length ? ' in ' + L.map(function (i) { return i.cat; }).filter(function (v, k, a) { return a.indexOf(v) === k; }).join(', ') : '') + (t.length ? ' in ' + L.map(function (i) { return i.city; }).filter(function (v, k, a) { return a.indexOf(v) === k; }).join(', ') : '') + ' on file. ' + (byEr ? 'Best engagement: ' : 'Biggest: ') + L[0].h + ' (' + k(L[0].fol) + ' followers, ' + L[0].er + '% engagement).' : 'No influencer on file matches that.',
+      head: rates ? ['Handle', 'Category, city', 'Followers', 'Engagement', 'Reel rate'] : ['Handle', 'Category, city', 'Followers', 'Engagement'], rows: L.map(function (i) { var r = [i.h + ', ' + i.name, i.cat + ', ' + i.city, k(i.fol), i.er + '%']; if (rates) r.push(rupees(i.rate)); return row(r, '#/media'); }), href: '#/media',
+      how: 'The influencer database' + (c.length || t.length ? ', filtered by the category or city in your question' : '') + ', sorted by ' + (byEr ? 'engagement' : 'followers') + '.' + (rates ? '' : ' Rates are hidden for interns.') }; } };
+  I.hampers = { t: 'Gifting and dispatch', f: function (A, x) {
+    var H = (A.D().hampers || []).filter(function (h) { return h.stage !== 'Posted'; }), money = moneyOk(A);
+    return { num: H.length, a: H.length ? pl(H.length, 'hamper') + ' not yet posted about: ' + H.map(function (h) { return h.rec + ' (' + h.stage + ')'; }).join(', ') + '.' : 'Every hamper has been posted about.',
+      head: ['Recipient', 'Brand', 'Stage', 'Courier', 'Value'], rows: H.map(function (h) { return row([h.rec, h.brand, h.stage, h.courier + ' ' + h.ref, money ? rupees(h.value) : ''], '#/gifting'); }), href: '#/gifting', how: 'Hampers from the dispatch tracker that have not reached Posted (proof of the post).' }; } };
+  I.press = { t: 'Press follow-ups', f: function (A, x) {
+    var L = (A.D().journos || []).slice().sort(function (a, b) { return (a.next || '9') < (b.next || '9') ? -1 : 1; });
+    return { num: L.length, a: pl(L.length, 'journalist') + ' on the media list. Next follow-up: ' + L[0].name + ', ' + L[0].outlet + ', ' + A.low(A.dayWord(L[0].next + 'T00:00')) + '.',
+      head: ['Journalist', 'Outlet', 'Last pitch', 'Next follow-up'], rows: L.map(function (j) { var p = j.pitches[j.pitches.length - 1]; return row([j.name, j.outlet + ', ' + j.beat, p ? p.story + ' (' + p.resp + ')' : '', j.next ? A.dayWord(j.next + 'T00:00') : ''], '#/media'); }), href: '#/media', how: 'Journalists and outlets, soonest follow-up first, with the last pitch and their response.' }; } };
+  I.celebs = { t: 'Celebrities', f: function (A, x) {
+    if (role(A) !== 'Founder' && !isHead(A)) return { refused: true, a: 'Celebrities and talent are for Maddie and the heads only.' };
+    var L = A.D().celebs || [];
+    return { num: L.length, a: pl(L.length, 'celebrity', 'celebrities') + ' on file: ' + L.map(function (c) { return c.name; }).join(', ') + '.', head: ['Name', 'Field', 'Terms', 'Management'], rows: L.map(function (c) { return row([c.name, c.cat, c.terms, c.mgmt], '#/media'); }), href: '#/media', how: 'Celebrities and talent, with their terms and who manages them.' }; } };
+  I.team = { t: 'The team', f: function (A, x) {
+    var ids = A.ORDER.filter(function (id) { return (!x.dept || A.P[id].dept === x.dept) && (!x.who || id === x.who || A.P[id].head === x.who); }), lv = A.D().leave || [], away = Array.isArray(lv) ? lv.map(function (l) { return l.who || l; }) : Object.keys(lv).filter(function (k) { return lv[k]; });
+    return { num: ids.length, a: pl(ids.length, 'person', 'people') + (x.dept ? ' in ' + x.dept : x.who ? ' with ' + who(A, x.who) : ' at Glad U Came') + '.' + (away.length ? ' Away today: ' + away.map(function (w) { return who(A, w); }).join(', ') + '.' : ' Nobody is away today.'),
+      head: ['Person', 'Role', 'Department', 'Reports to'], rows: ids.map(function (id) { var p = A.P[id]; return row([p.name, p.role, p.dept, p.head ? who(A, p.head) : ''], '#/people'); }), href: '#/people', how: 'From People: role, department and reporting line.' }; } };
+  I.brief = { t: 'Summary', f: function (A, x) {
+    var ids = peopleIn(A), T = A.D().tasks.filter(function (t) { return ids.indexOf(t.owner) >= 0; }), today = T.filter(function (t) { return dayOf(t) === A.TODAY && A.OPEN[t.status]; }), over = T.filter(A.isOverdue);
+    var P = per(A, 'month'), L = leadsIn(A).filter(function (l) { return inP(P, l.created); }), del = delayedProjects(A, {}), ap = (A.D().approvals || []).filter(function (a) { return a.status === 'Waiting' && (role(A) === 'Founder' || a.approver === A.ME()); });
+    var parts = [pl(today.length, 'task') + ' due today', pl(over.length, 'task') + ' overdue', pl(L.length, 'lead') + ' this month', pl(del.length, 'project') + ' delayed', pl(ap.length, 'approval') + ' waiting on you'];
+    if (moneyOk(A)) { var rv = sum(revBy(A, P), function (r) { return r.amt; }), cl = sum(C3().receipts(A, P), function (o) { return o.r.amount; }); parts.push(rupees(rv) + ' revenue and ' + rupees(cl) + ' collected this month'); }
+    return { a: 'Here is where things stand for ' + scopeWord(A) + ': ' + parts.join(', ') + '.', head: ['What', 'Now'], rows: [['Due today', today.length, '#/today'], ['Overdue', over.length, '#/dash'], ['Leads this month', L.length, '#/leads'], ['Projects delayed', del.length, '#/brands'], ['Approvals waiting', ap.length, '#/approvals']].map(function (r) { return row([r[0], r[1]], r[2]); }),
+      href: '#/brief', how: 'The same counts as the morning brief and dashboards, for ' + scopeWord(A) + ', as of now.' }; } };
+  var HELP = ['What are the tasks for today?', 'What is Tanvi working on?', 'Which projects are delayed?', 'Which clients have pending payments?', 'How much revenue did we generate this month?', 'Brief me', 'Who has overdue tasks?', 'Show the pipeline', 'Top food influencers in Bandra', 'Status of Kora Skincare'];
+  I.help = { t: 'What I can answer', f: function (A, x) {
+    return { a: 'I answer from everything in the cockpit: tasks (today, tomorrow, this week, by person, overdue, blocked), leads and the pipeline, clients and projects, payments, revenue and profit, approvals, the inbox, influencers, press, gifting, the team, and the handbook. I can also create a task, remind someone or draft a client update. Try one of these:', sugg: HELP }; } };
+
   /* which question is this? (fixed word rules over the cleaned sentence) */
   var MATCH = [
-    ['why', /^why\b|\bwhy (is|are)\b/], ['bdtop', /\b(bd|business development|sales)\b.*\b(most|top|highest|best)\b|\bmost business\b|\bwho brought\b.*\b(most|business)|\b(most|top)\b.*\bbusiness\b|\bgenerated the most\b/],
+    ['why', /^why\b|\bwhy (is|are)\b/], ['bdtop', /\b(bd|business development|sales)\b.*\b(most|top|highest|best|maximum|max|more)\b|\b(maximum|max|highest) business\b|\bmost business\b|\bwho brought\b.*\b(most|business)|\b(most|top)\b.*\bbusiness\b|\bgenerated the most\b/],
     ['infl', /\binfluencer\b.*\b(revenue|business|earn\w*|income|how much|made)\b|\b(revenue|business|earn\w*|how much)\b.*\binfluencer/], ['pay', /\b(pending|outstanding|unpaid|owed|owes|not paid|overdue) payments?\b|\bpayments? (pending|due|outstanding|overdue)\b|\bwho owes\b|\bpending\b.*\bpayment|\bpayment\b.*\bpending/],
     ['late', /\b(delayed|late|behind)\b.*\bprojects?\b|\bprojects?\b.*\b(delayed|late|behind)\b/], ['missed', /\bmiss\w* follow|\bfollow.?ups? missed\b|\bfollow.?ups?\b.*\bmiss/],
     ['notdone', /\bnot completed|haven.?t (completed|done|finished)|did ?n.?t (complete|finish)|incomplete|\boverdue tasks?\b|\btasks? overdue\b|\bwho is behind\b|\bnot done\b/],
     ['cold', /\bcold\b|\bbring back\b|\brevive\b|\bdormant\b/], ['cappr', /\bclient approvals?\b|\bwaiting (on|for) the client\b|\bsign.?offs?\b/], ['expect', /\bexpected\b|\bforecast\b|\bpipeline value\b/],
     ['risk', /\bat risk\b|\brisky?\b|\bunhappy\b/], ['profit', /\bprofit|\bmargin|\bloss\b|\bin the red\b/], ['camps', /\bcampaigns?\b.*\b(running|live|active|on)\b|\b(running|live|active)\b.*\bcampaigns?\b/],
-    ['props', /\bproposals?\b/], ['leads', /\bleads?\b|\benquir/]
+    ['props', /\bproposals?\b/],
+    /* 5 Nov: everyday questions */
+    ['help', /\bwhat (all )?can (you|i) (do|ask|answer)|\bhow (do|can) i use\b|^help\b|\bwhat do you know\b/],
+    ['brief', /^brief\b|\bbrief me|\bgive me (a|the) brief|\bsummar|\boverview\b|\bhow (is|are) (the )?(business|agency|we|things)\b|\bwhat.?s (happening|going on)\b|\bkya chal raha\b|\bupdate me\b|\bstatus of (the )?(agency|business|company)\b/],
+    ['coll', /\bcollected|\bcollections?\b|\b(money|payments?|amount|cash) (received|came in)\b|\breceived\b.*\b(money|payments?|amount)\b|\bcash in\b/],
+    ['won', /\b(new )?(clients?|brands?|deals?|accounts?|leads?) (closed|won|signed|converted|onboarded)\b|\b(closed|won|signed|converted)\b.*\b(clients?|deals?|leads?|brands?)\b|\bconversions?\b/],
+    ['lost', /\blost\b|\bwhy (do|did) we lose\b/],
+    ['dept', /\bdepartments?\b|\bdept\b|\bteam.?wise\b|\bwhich team\b/],
+    ['prod', /\bproductiv|\bperforman|\bon.?time\b|\bwho is (doing|performing) (best|well|worst|badly)\b|\bhow is \w+ doing\b|\bbest employee\b/],
+    ['rev', /\brevenue\b|\bturnover\b|\bearn\w*\b|\bhow much (money|business)\b|\bbilling\b|\bincome\b/],
+    ['blocked', /\bblocked\b|\bstuck\b/], ['check', /\bwaiting (for )?(a |my )?(check|review)\b|\b(to|for me to) (check|review)\b|\bneeds? (my )?(check|review)\b/],
+    ['appr', /\bapprov|\bdecisions?\b/],
+    ['inbox', /\binbox\b|\bunanswered\b|\bunread\b|\bmessages?\b|\bdms?\b|\bchats?\b|\bconversations?\b|\bnot replied\b|\breplies\b/],
+    ['newleads', /\bnew leads?\b|\bleads? (today|came in today)\b|\bnot (yet )?contacted\b|\buncontacted\b|\bunassigned leads?\b/],
+    ['pipe', /\bpipeline\b|\bopen leads?\b|\bfunnel\b|\bleads? (in|at|by) (negotiation|proposal|discovery|contacted|stage)/],
+    ['celebs', /\bcelebrit|\btalent\b/],
+    ['hampers', /\bhampers?\b|\bgifting\b|\bdispatch\w*\b|\bcourier\b|\bproof of post\b/],
+    ['inflist', /\binfluencers?\b|\bcreators?\b|\bbloggers?\b/],
+    ['press', /\bjournalists?\b|\bmedia list\b|\bpress\b|\bcoverage\b|\bpitch(es)?\b|\boutlets?\b|\breporters?\b/],
+    ['team', /\bwho (is|are|works) in\b|\bteam (list|members?)\b|\breports? to\b|\bon leave\b|\baway today\b|\bhow many (people|employees|staff)\b|\bstaff\b|\bour team\b|\bwho is (in charge|the head)\b/],
+    ['clients', /\bclients?\b|\bbrands?\b|\baccounts\b/],
+    ['projects', /\bprojects?\b/],
+    ['leads', /\bleads?\b|\benquir/],
+    ['tasks', /\btasks?\b|\bto ?dos?\b|\bwork(ing)? on\b|\bagenda\b|\bon (my|his|her|their) plate\b|\bassigned\b|\bdue (today|tomorrow)\b|\bschedule\b/]
   ];
   var RATE = /\b(rate|rates|rate card|charge|price|pricing|fee|fees|salary|salaries|revenue|profit|payment|payments|money|margin|invoice|cost|costs|business)\b/;
   var ACTION = /^(remind|create|add|make|new task|reassign|give|draft|write|delete|remove|send)\b/;
@@ -286,16 +447,23 @@
     return hit ? hit.join(' ') : '';
   }
 
-  var CTX = null, DEPTOK = { pay: 1, late: 1, notdone: 1, profit: 1 };
+  var CTX = null, DEPTOK = { pay: 1, late: 1, notdone: 1, profit: 1, rev: 1, clients: 1, projects: 1, dept: 1, team: 1, tasks: 1 };
   function run(A, q, fromSched) {
     var s = clean(q), r, cmp = /\b(compare|vs|versus|against)\b/.test(s), x = { per: perWord(cmp ? s.split(/\b(?:with|vs|versus|against)\b/)[0] : s), dept: deptWord(s), pid: '' }, id = '';
     var brand = knownBrand(A, s); if (brand) { var p = A.D().projects.filter(function (p) { return p.brand === brand; })[0]; if (p) x.pid = p.id; }
     if (ACTION.test(s) && !fromSched) return action(A, q, s);
+    if (/\b(policy|policies|sop|sops|process|guideline|rate cards?|case stud\w*|how do we|onboarding steps|template for)\b/.test(s)) return null;   /* the handbook answers these */
     var nb = namedBrand(A, q);
     if (nb && !brand) return { q: q, r: { none: true, a: 'Nothing is on file for ' + nb + ': no lead, brand or project by that name. I have not made a number up. Asking Maddie to check.' }, ask: 'maddie' };
-    MATCH.some(function (m) { if (m[1].test(s)) { id = m[0]; return true; } return false; });
+    x.who = personWord(A, s); x.mine = !x.who && /\b(my|mine|i have|do i|i need to|am i)\b/.test(s); x.s = s; x.brand = brand;
+    x.when = /\btomorrow\b/.test(s) ? 'tomorrow' : /\btoday\b|\btodays\b|\btonight\b/.test(s) ? 'today' : /\b(this|next) week\b|\bweek\b/.test(s) ? 'week' : '';
+    var skip = (brand || (CTX && CTX.r && (CTX.r.ctxP || CTX.id === 'late'))) ? '' : 'why';
+    if (/\bwhat (all )?can (you|i)\b|\bwhat do you (know|do)\b|^\s*help\b|\bhow (do|can) i use\b/i.test(q)) { var hh = I.help.f(A, {}); return { q: q, r: hh, id: '' }; }
+    MATCH.some(function (m) { if (m[0] !== skip && m[1].test(s)) { id = m[0]; return true; } return false; });
+    if (brand && (!id || /^(clients|projects|brief|leads)$/.test(id) || (id === 'tasks' && !x.who))) id = 'status';
+    if (!id && x.who) id = 'tasks';
     /* follow-ups: "and last quarter?", "only PR", "why?" reuse the last question */
-    if ((!id || (id === 'leads' && CTX && CTX.id !== 'leads' && !/\bleads?\b/.test(s))) && CTX && (x.per || x.dept || /^(and|only|just|what about|same)\b/.test(s))) { id = CTX.id; x.per = x.per || CTX.x.per; x.dept = x.dept || CTX.x.dept; x.follow = true; if (x.dept && !DEPTOK[id]) return { q: q, r: { a: 'That answer is not split by department. Ask it again with the department in it, for example "which projects are delayed in ' + x.dept + '?"' } }; }
+    if ((!id || (id === 'leads' && CTX && CTX.id !== 'leads' && !/\bleads?\b/.test(s))) && CTX && (x.per || x.dept || x.who || x.when || /^(and|only|just|what about|same|how about)\b/.test(s))) { id = CTX.id; x.per = x.per || CTX.x.per; x.dept = x.dept || CTX.x.dept; x.follow = true; if (x.dept && !DEPTOK[id]) return { q: q, r: { a: 'That answer is not split by department. Ask it again with the department in it, for example "which projects are delayed in ' + x.dept + '?"' } }; }
     if (id === 'why' && !x.pid && CTX && CTX.r && CTX.r.ctxP) x.pid = CTX.r.ctxP;
     if (id === 'why' && !x.pid && CTX && CTX.id === 'late') { var dl = delayedProjects(A, CTX.x)[0]; if (dl) x.pid = dl.id; }
     if (!id || (id === 'why' && !x.pid)) return null;   /* not a question about the agency's figures: the handbook takes it */
@@ -311,7 +479,7 @@
     CTX = { id: id, x: x, r: r };
     return { q: q, r: r, id: id, x: x };
   }
-  var fmt = function (id, n) { return /^(bdtop|infl|profit|expect)$/.test(id) ? rupees(n) : String(n); };
+  var fmt = function (id, n) { return /^(bdtop|infl|profit|expect|rev|coll)$/.test(id) ? rupees(n) : String(n); };
 
   /* ---------------- actions: a person confirms; nothing is deleted or sent ---------------- */
   function action(A, q, s) {
@@ -373,7 +541,7 @@
 
   /* ---------------- the screen ---------------- */
   var ASK = [];
-  var SUG = ['Which BD executive generated the most business this month?', 'Which clients have pending payments?', 'Which projects are delayed?', 'Which employees have not completed assigned tasks?',
+  var SUG = ['What are the tasks for today?', 'Brief me', 'Which BD executive generated the most business this month?', 'Which clients have pending payments?', 'Which projects are delayed?', 'Which employees have not completed assigned tasks?',
     'How much revenue came from influencer marketing this quarter?', 'Is mahine sabse zyada business kisne laya?', 'Leads this month by source', 'Profit by department this month', 'Which clients are at risk?', 'Who missed follow-ups this week?'];
   function table(A, r) {
     if (!r.rows || !r.rows.length) return '';
@@ -392,6 +560,7 @@
       '<b>' + A.esc(x.q) + '</b><p style="margin:0" data-ans-text>' + A.esc(r.a) + '</p>' +
       (r.draft ? '<div class="wa-preview" data-draft>' + A.esc(r.draft) + '</div><div><button class="btn btn--sm" type="button" data-do="askcopy" data-i="' + i + '">' + A.ico('copy') + 'Copy the draft</button> <span class="chip chip--amber">A person sends it</span></div>' : '') +
       table(A, r) +
+      (r.sugg ? '<div class="chan-list" data-ans-sugg>' + r.sugg.map(function (t) { return '<button class="chip" type="button" data-do="asksug">' + A.esc(t) + '</button>'; }).join(' ') + '</div>' : '') +
       (r.src ? '<span class="chip chip--mint" data-src>' + A.ico('file-text') + 'Source: ' + A.esc(r.src) + '</span>' : '') + (x.ask || r.ask ? '<span class="chip chip--amber" data-asked>' + A.ico('bell') + 'Sent to ' + A.esc(A.P[x.ask || r.ask].name) + ' as a task</span>' : '') +
       (x.done ? '<span class="chip chip--green" data-acted>' + A.ico('check') + A.esc(x.done) + '</span>' : '') +
       (r.how ? '<details data-how><summary>How I counted</summary><p class="f-help" style="margin:var(--s-1) 0 0">' + A.esc(r.how) + '</p></details>' : '') +
@@ -416,8 +585,11 @@
     else o = run(A, q, false);
     if (!o) {   /* not about the figures: the handbook (B5), which asks the owner when it does not know */
       r0 = S._askKB(A, q);
-      if (r0.ask) S._pj.mkTask(A, { title: 'Answer for Ask GUC: ' + q, owner: r0.ask, checker: r0.ask, due: A.TODAY + 'T18:00', agent: true, by: A.ME(), why: 'Ask GUC: ' + A.me().name + ' asked, the handbook has no answer' });
-      o = { q: q, r: r0 };
+      if (r0.ask) {
+        var h = I.help.f(A, {}), real = clean(q).split(' ').filter(function (w) { return w.length > 3 && !/^(want|know|what|tell|about|there|this|that|with|have|need|show|give|which|where|when|something|anything|thing|things|some|please|would|like|from)$/.test(w); }).length >= 2;
+        o = { q: q, r: { a: 'I did not catch what you need. ' + h.a, sugg: h.sugg }, id: '' };
+        if (real) { o.r.a = 'I have nothing on file for that. Press Confirm to send your question to ' + A.P[r0.ask].name + ' as a task, or try one of these:'; o.act = { k: 'task', to: r0.ask, title: 'Answer for Ask GUC: ' + q, due: A.TODAY + 'T18:00' }; }
+      } else o = { q: q, r: r0 };
     } else if (o.ask) S._pj.mkTask(A, { title: 'Answer for Ask GUC: ' + q, owner: o.ask, checker: o.ask, due: A.TODAY + 'T18:00', agent: true, by: A.ME(), why: 'Ask GUC: ' + A.me().name + ' asked, nothing on file' });
     ASK.push(o); A.save(); A.render();
     var inp = d.getElementById('ask-q'); if (inp) inp.focus();
