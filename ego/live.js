@@ -26,6 +26,7 @@ const canDiv = div => D.user.division === 'both' || div === 'both' || div === D.
 function allowedTab(t) {
   if (t === 'leadlist') t = 'opps';   // Leads L3: the Leads menu shows wherever Opportunities is allowed (the server: leadsOk)
   if (t === 'sdr') t = 'displays';   // T4: Sample Display Record (SDR) keeps the screen key 'displays'
+  if (t === 'invoices') t = 'orderbook';   // B1 EGO6: Invoices is a tab of Orders, opened by whoever opens Orders
   if (['home', 'account', 'soon'].includes(t)) return true;
   if (t === 'attendance' || t === 'roadmap' || t === 'priority') return holds() && canFieldTab(D.access, t);   // R5: Priority calls for telesales, Owners, managers   // R2a: managers, Owners, telesales (FIELD_TABS)
   /* each role has its own screens (8 Oct); within them, the access rules below still apply */
@@ -110,8 +111,8 @@ EM.render = (...a) => {
 const NAV_LABEL = { leadlist: 'Leads', home: 'Home', dealers: 'Dealers', architects: 'Architects', design500: 'Design 500', people: 'People', opps: 'Opportunities', projects: 'Projects', schemes: 'Schemes', orderbook: 'Orders', orders: 'Fulfilment', installation: 'Installation', complaints: 'Complaints', approvals: 'Approvals', analysis: 'Analysis', p200: 'Priority 200', inventory: 'Inventory', import: 'Import from Excel', attendance: 'Attendance', roadmap: 'Roadmap', priority: 'Priority calls', samples: 'Samples', displays: 'Sample Display Record (SDR)', sdr: 'Sample Display Record (SDR)', training: 'Training' };
 /* R8 (Bhargav 18 Oct): Samples, Displays and Training are tabs of Dealers, Attendance and Roadmap one item "Field team",
    Priority calls a tab of Opportunities (and the telesales Home top card). Each keeps its own route and its own access. */
-NAV_LABEL.fieldteam = 'Field team';
-const NAV_GROUP = { dealers: [['dealers', 'Dealers'], ['samples', 'Samples'], ['sdr', 'Sample Display Record (SDR)'], ['training', 'Training']], fieldteam: [['attendance', 'Attendance'], ['roadmap', 'Roadmap']], opps: [['opps', 'Opportunities'], ['priority', 'Priority calls']] };
+NAV_LABEL.fieldteam = 'Field team'; NAV_LABEL.invoices = 'Invoices';
+const NAV_GROUP = { dealers: [['dealers', 'Dealers'], ['samples', 'Samples'], ['sdr', 'Sample Display Record (SDR)'], ['training', 'Training']], fieldteam: [['attendance', 'Attendance'], ['roadmap', 'Roadmap']], opps: [['opps', 'Opportunities'], ['priority', 'Priority calls']], orderbook: [['orderbook', 'Orders'], ['invoices', 'Invoices']] };   // B1 EGO6: Orders > Invoices
 const NAV_PARENT = { ...Object.fromEntries(Object.entries(NAV_GROUP).flatMap(([g, ks]) => ks.map(([k]) => [k, g]))), displays: 'dealers' };   // T4: the SDR screen's key
 const navOk = k => NAV_GROUP[k] ? NAV_GROUP[k].some(([t]) => allowedTab(t)) : allowedTab(k);
 EM.navParent = t => NAV_PARENT[t] || t;
@@ -1171,12 +1172,12 @@ function openOppForm(o, keep) {
       ${G.select(OPP_FIELDS[0], pipeline, 'of', pipes.map(p => [p, PIPELINES[p].label]), false).replace('<select', '<select data-opp-redraw')}
       ${fields.filter(f => !f.section).map(oh).join('')}</div>
       ${fields.some(f => f.section) ? fsHtml('Billing, payment and delivery', `<div class="fgrid">${fields.filter(f => f.section).map(oh).join('')}</div>`) : ''}
-      ${withLines && !inFul ? `<fieldset class="fs"><legend>Designs, sq ft and rate</legend><p class="small muted">Type the sq ft needed, the wastage (${wastageDefault(D.lists.rules)}% unless changed) and the rate per sq ft: the boxes are rounded up to whole boxes, and the amount is the sq ft supplied x the rate. Accessories are per piece or per rft. GST (${D.lists.rules.gst_pct}%) and the total are worked out; the total is the opportunity's value.</p>
+      ${withLines && !inFul ? `<fieldset class="fs"><legend>Designs, sq ft and rate</legend>${pipeline === 'wholesale' ? smpTick(v) : ''}<p class="small muted">Type the sq ft needed, the wastage (${wastageDefault(D.lists.rules)}% unless changed) and the rate per sq ft: the boxes are rounded up to whole boxes, and the amount is the sq ft supplied x the rate. Accessories are per piece or per rft. GST (${D.lists.rules.gst_pct}%) and the total are worked out; the total is the opportunity's value.</p>
         <div id="olines" class="stack-s">${(lines0.length ? lines0.map(l => ({ ...l, keep: l.id })) : [{}]).map((l, i) => ordLine(i, l)).join('')}</div><div class="row" style="flex-wrap:wrap"><button class="btn sm" data-act="ol-add">+ Another design</button><button class="btn sm ghost" data-act="ol-sample">Sample Excel</button><label class="btn sm ghost" style="cursor:pointer">Upload Excel<input type="file" accept=".xlsx" data-sheet="olines" hidden></label></div><div id="ol-imp"></div>
         ${D.access.prices ? `<div class="fgrid"><div class="field"><label for="ord-disc">Discount</label><div class="adorn" data-unit="%"><input class="input" type="number" min="0" max="100" step="0.1" id="ord-disc" value="${esc(v.discount_pct ?? 0)}"><span class="suf">%</span></div></div></div>
         <div class="stack-s" data-charges><b class="small">Other charges</b><p class="small muted">Installation, porter or loading, transport, skirting, accessories: say what each is for and the amount. They are added before GST.</p>
           <datalist id="chg-hints">${CHARGE_HINTS.map(h => `<option value="${esc(h)}">`).join('')}</datalist>
-          <div id="ochg" class="stack-s">${(v.charges || []).map((c, i) => chgLine(i, c)).join('')}</div><div class="row"><button class="btn sm" data-act="chg-add">+ Add a charge</button></div></div>` : ''}<div id="ord-total" class="small"></div></fieldset>` : ''}
+          <div id="ochg" class="stack-s">${(v.charges || []).map((c, i) => chgLine(i, c)).join('')}</div><div class="row"><button class="btn sm" data-act="chg-add">+ Add a charge</button></div></div>` : ''}<div id="ord-total" class="small"></div></fieldset>` : withLines && inFul && pipeline === 'wholesale' ? `<div class="fs" data-smp-locked>${smpTick({ ...v, sample: Number((allOrders().find(x => x.opp_id === o.id) || {}).sample) }, true)}</div>` : ''}
       ${errBox('of-err')}<div class="row sticky-actions"><button class="btn primary" data-act="opp-save">${o ? 'Save changes' : 'Add opportunity'}</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 }
 document.addEventListener('change', e => {
@@ -1185,6 +1186,7 @@ document.addEventListener('change', e => {
   const keep = withDials(readForm(form, OPP_FIELDS), OPP_FIELDS);
   keep.client_id = form.querySelector('[name=client_id]').value;
   if (qs('#olines')) { keep.lines = readOrder(); keep.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0); }
+  if (qs('#of-sample')) { keep.sample = qs('#of-sample').checked; keep.sample_reg = (qs('#of-sample_reg') || { value: 'sample' }).value; }
   if (qs('#ochg')) keep.charges = readCharges();
   if (e.target.name === 'client_id') { keep.contact_id = '';   /* the pipeline stays when the new client may have it (a Retail or Project opportunity opened from its board) */ keep.billing_address = ''; keep.delivery_address = ''; }
   openOppForm(o, keep);
@@ -1215,6 +1217,7 @@ EM.ACTIONS['opp-save'] = async el => {
   if (form.dataset.id) { input.id = form.dataset.id; input.next_seen = JSON.parse(form.dataset.seen || '{}'); }
   if (qs('#olines')) {
     input.lines = readOrder(); input.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0);
+    if (qs('#of-sample') && !qs('#of-sample').disabled) { input.sample = qs('#of-sample').checked; input.sample_reg = input.sample ? (qs('#of-sample_reg') || { value: 'sample' }).value : ''; }
     { const bad = input.lines.findIndex(l => !l.keep && (!l.product_id || lineCalc(l).error)); if (bad >= 0) return showErr('of-err', `Design line ${bad + 1}: ${input.lines[bad].product_id ? lineCalc(input.lines[bad]).error : 'choose a design'} (or remove the line).`); }
     if (qs('#ochg')) { input.charges = readCharges(); const bad = input.charges.findIndex(c => !c.label || !(c.amount > 0)); if (bad >= 0) return showErr('of-err', `Charge ${bad + 1}: say what it is for and the amount (or remove it).`); }
   }
@@ -1524,8 +1527,8 @@ const poCell = ws => { ws = ws.filter(w => !w.done); if (!ws.length) return '';
   return `<b>${num(ws.reduce((a, w) => a + w.boxes, 0))}</b>${ws.map(w => { const p = OPSD().production.find(x => x.id === w.po_id) || {}; return `<div class="small" data-po-link="${w.po_id}"><a href="#/po/${w.po_id}">${esc(p.ref || 'Production order')}</a> · ${esc(p.stage || '')}${p.eta ? ' · ETA ' + ds(p.eta) : ''}</div>`; }).join('')}`; };
 /* what else this sale led to: its installation sites and complaints, each a link (each of those pages links back) */
 const orderLinks = (o, noSites) => { const sites = noSites ? [] : OPSD().sites.filter(x => (x.extra || {}).order_id === o.id || (o.opp_id && x.opp_id === o.opp_id)), cmps = OPSD().complaints.filter(c => c.order_id === o.id);
-  if (!sites.length && !cmps.length) return '';
-  return `<section class="card stack-s" data-order-links><h3>Linked to this sale</h3>${kv([...(sites.length ? [['Installation', sites.map(x => `<a href="#/site/${x.id}">${esc(x.ref)} · ${esc(x.step)}</a>`).join('<br>')]] : []), ...(cmps.length ? [['Complaints', cmps.map(c => `<a href="#/complaint/${c.id}">${esc(c.ref)} · ${esc(c.status)}</a>`).join('<br>')]] : [])])}</section>`; };
+  if (!sites.length && !cmps.length) return invCard(o);
+  return invCard(o) + `<section class="card stack-s" data-order-links><h3>Linked to this sale</h3>${kv([...(sites.length ? [['Installation', sites.map(x => `<a href="#/site/${x.id}">${esc(x.ref)} · ${esc(x.step)}</a>`).join('<br>')]] : []), ...(cmps.length ? [['Complaints', cmps.map(c => `<a href="#/complaint/${c.id}">${esc(c.ref)} · ${esc(c.status)}</a>`).join('<br>')]] : [])])}</section>`; };
 const pendingFor = (entity, id) => OPSD().approvals.filter(a => a.entity === entity && a.record_id === id && a.status === 'Pending');
 const refreshOps = async () => { const fresh = await API('GET', '/api/bootstrap'); window.EGOLIVE.refresh(fresh); };
 const opsAct = async (el, path, body, okMsg, errId) => {
@@ -1650,7 +1653,7 @@ document.addEventListener('input', e => {
   const row = e.target.closest('.ordline');
   if (row && e.target.dataset.ol && !row.dataset.pid) { delete row.dataset.keep; const c = row.querySelector('[data-ol-calc]'), v = readLine(row); if (c) c.innerHTML = v.product_id ? calcTxt(lineCalc(v)) : ''; }
   const ls = readOrder().map(l => l.keep ? savedLine(l) : { ...l, ...lineCalc(l) }).filter(l => !l.error), gross = ls.reduce((a, l) => a + (Number(l.amount) || 0), 0), disc = Number((qs('#ord-disc') || { value: 0 }).value || 0), chg = readCharges().reduce((a, c) => a + (c.amount || 0), 0), sub = gross * (1 - disc / 100) + chg, t = qs('#ord-total');
-  if (t) t.innerHTML = `${linesSum(ls)}${D.access.prices ? ` · designs ${inr0(gross * (1 - disc / 100))}${chg ? ` + charges ${inr0(chg)}` : ''} = ${inr0(sub)} before GST + GST ${D.lists.rules.gst_pct}% = ${inr0(sub * (1 + D.lists.rules.gst_pct / 100))}` : ''}`;
+  if (t) t.innerHTML = `${(qs('#of-sample') || {}).checked ? '<div data-smp-note>Sample order: not counted in scheme sales or target achievement.</div>' : ''}${linesSum(ls)}${D.access.prices ? ` · designs ${inr0(gross * (1 - disc / 100))}${chg ? ` + charges ${inr0(chg)}` : ''} = ${inr0(sub)} before GST + GST ${D.lists.rules.gst_pct}% = ${inr0(sub * (1 + D.lists.rules.gst_pct / 100))}` : ''}`;
 });
 EM.ACTIONS['ol-add'] = () => { const box = qs('#olines'); box.insertAdjacentHTML('beforeend', ordLine(box.children.length, {})); };
 EM.ACTIONS['ol-del'] = el => { const l = el.closest('.ordline'); if (document.querySelectorAll('#olines .ordline').length > 1) l.remove(); const f = qs('#of'); if (f) f.dispatchEvent(new Event('input', { bubbles: true })); };
@@ -2509,7 +2512,7 @@ EM.ACTIONS['ap-no'] = el => { const note = prompt('Why is it rejected?') || ''; 
 function p200Score(c) {
   const R = D.lists.rules, W = R.p200.weights, O = OPSD(), ex = c.extra || {};
   const fy0 = (() => { const d = new Date(Date.now() + 5.5 * 36e5), y = d.getUTCMonth() >= 3 ? d.getUTCFullYear() : d.getUTCFullYear() - 1; return `${y}-04-01`; })();
-  const orders = O.orders.filter(o => o.client_id === c.id), fyOrders = orders.filter(o => o.created_at.slice(0, 10) >= fy0);
+  const orders = O.orders.filter(o => o.client_id === c.id), fyOrders = orders.filter(o => o.created_at.slice(0, 10) >= fy0 && !Number(o.sample));   // B2 EGO6: a Sample order is not a sale
   const months = Math.max(1, (Date.now() - Date.parse(fy0)) / (30.44 * 864e5)), ytdTarget = ex.target_12m ? ex.target_12m * Math.min(12, months) / 12 : 0;
   const actual = fyOrders.reduce((a, o) => a + (o.subtotal || 0), 0);
   const cats = new Set(fyOrders.flatMap(o => O.lines.filter(l => l.order_id === o.id).map(l => colOf(INVD().products.find(p => p.id === l.product_id) || {}).category)).filter(Boolean));
@@ -3233,7 +3236,7 @@ function buildOrders() {
     const opp = oppOf(o) || {}, h = D.history.filter(x => x.opp_id === o.opp_id), won = h.filter(x => x.to_stage === wonStage('wholesale', D.lists)).pop(), logs = (O.logs || []).filter(l => l.record_id === o.id);
     out.push({ id: o.id, kind: 'Wholesale', okind: 'wholesale', ful_by: '', ref: o.ref, title: opp.title || o.notes || '', client_id: o.client_id, contact_id: opp.contact_id || '', opp_id: o.opp_id, value: o.total,
       won_at: (won && won.at) || o.created_at, closed_by: won ? won.by_staff : o.created_by, processed_by: [...new Set(logs.map(l => l.by_staff).filter(Boolean))], owner_id: o.owner_id,
-      stage: o.ful_stage, done_at: stageAt(o.id, lastOf(FS)), done: o.ful_stage === lastOf(FS), boxes: O.lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0), href: '#/order/' + o.id });
+      stage: o.ful_stage, done_at: stageAt(o.id, lastOf(FS)), done: o.ful_stage === lastOf(FS), boxes: O.lines.filter(l => l.order_id === o.id).reduce((a, l) => a + l.boxes, 0), href: '#/order/' + o.id, sample: Number(o.sample) || 0, inv_no: o.inv_no || '' });
   }
   /* R3b: a Big E sale in fulfilment is listed from its fulfilment record, where it is on the retail ladder */
   for (const o of OPSD().rorders) {
@@ -3328,7 +3331,7 @@ EM.VIEWS.orderbook = () => {
   const segOf = x => x.kind === 'Wholesale' ? 'wholesale' : (x.division || 'retail'), fromOf = x => { const k = (CL()[x.client_id] || {}).kind; return DEALER_KINDS.includes(k) ? 'dealer' : ARCH_KINDS.includes(k) ? 'architect' : PERSONAL_KINDS.includes(k) ? 'personal' : ''; };
   const all = buildOrders().filter(x => EM.div === 'both' || segOf(x) === EM.div), fbOf = x => x.okind === 'wholesale' || !x.ful_by ? 'ego' : x.ful_by, fbName = v => v === 'ego' ? 'EGO team' : (DDIR().find(d => d.id === v) || CL()[v] || { name: 'A dealer' }).name;
   const dealersUsed = [...new Set(all.map(fbOf).filter(v => v !== 'ego'))].sort((a, b) => fbName(a).localeCompare(fbName(b)));
-  const { html: fbar, rows } = filterBar(EM.ob, 'ob', { label: 'orders', rows: all, ph: 'Order number, sale, company or dealer',
+  const { html: fbar, rows } = filterBar(EM.ob, 'ob', { label: 'orders', rows: all, ph: 'Order, sale, company or dealer', tg: [['sample', 'Sample orders', x => !!x.sample]],   // R1-F2 M-4
     text: x => `${x.ref} ${x.title} ${clientName(x.client_id)} ${fbOf(x) === 'ego' ? '' : fbName(fbOf(x))}`, mobiles: x => [(CL()[x.client_id] || {}).mobile],
     dd: [...coDD(segOf), ['okind', 'Kind', 'Every kind', x => x.okind, null, Object.entries(ORDER_KINDS)],
       ['fulby', 'Fulfilled by', 'Everyone', x => fbOf(x) === 'ego' ? 'ego' : 'dealer:' + fbOf(x), null, [['ego', 'EGO team'], ...dealersUsed.map(v => ['dealer:' + v, fbName(v)])]],
@@ -3340,12 +3343,64 @@ EM.VIEWS.orderbook = () => {
     ${fbar}
     <div class="grid g4">${tile('Orders', rows.length)}${tile('Still live', rows.filter(x => !x.done).length)}${tile('Delivered or completed', rows.filter(x => x.done).length)}${D.access.prices ? tile('Value', inr0(rows.reduce((a, x) => a + (Number(x.value) || 0), 0))) : ''}</div>
     ${rows.length ? `<div data-orderbook-table class="org-tbl">${table(['Order', 'Kind', 'Fulfilled by', 'Confirmed on', ...(D.access.prices ? ['Value'] : []), 'Where it is', 'Closed and processed by'], rows.slice(0, 500).map(x => ({ href: x.href,
-      cells: [`<div style="min-width:0;white-space:normal"><b>${esc(x.ref || '')}</b><div class="small">${esc(x.title)}</div>${x.site ? `<div class="small muted" data-o-site>Site <a href="#/site/${x.site.id}">${esc(x.site.ref)}</a>${siteProject(x.site) ? ' · ' + esc(siteProject(x.site).name) : ''}</div>` : ''}</div>`, `<span class="badge plain line" data-okind="${esc(x.okind)}">${esc(ORDER_KINDS[x.okind] || 'Retail order')}</span>`, fbCell(x), whenTxt(x.won_at), ...(D.access.prices ? [`<span style="white-space:nowrap">${inr0(x.value)}</span>`] : []),
+      cells: [`<div style="min-width:0;white-space:normal"><b>${esc(x.ref || '')}</b>${x.sample ? ' <span class="badge plain ty ty-sample" data-o-sample><svg aria-hidden="true"><use href="icons.svg#i-package"/></svg>Sample order</span>' : ''}<div class="small">${esc(x.title)}</div>${x.site ? `<div class="small muted" data-o-site>Site <a href="#/site/${x.site.id}">${esc(x.site.ref)}</a>${siteProject(x.site) ? ' · ' + esc(siteProject(x.site).name) : ''}</div>` : ''}</div>`, `<span class="badge plain line" data-okind="${esc(x.okind)}">${esc(ORDER_KINDS[x.okind] || 'Retail order')}</span>`, fbCell(x), whenTxt(x.won_at), ...(D.access.prices ? [`<span style="white-space:nowrap">${inr0(x.value)}</span>`] : []),
         `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>${x.done_at ? `<div class="small muted" data-o-done style="white-space:nowrap">${whenTxt(x.done_at)}</div>` : ''}${x.openCh ? `<div><span class="badge warn">${x.openCh} open challenge${x.openCh === 1 ? '' : 's'}</span></div>` : ''}`, closedCell(x)] })))}</div>`
       + (rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : '')
       : empty(all.length ? 'Nothing for this filter' : 'No orders yet', all.length ? 'Change or clear the filters above.' : 'An order appears here when a sale is won: a wholesale or retail opportunity at its won stage.')}</div>`;
 };
 EM.VIEWS.orderbook.title = () => 'Orders';
+/* ---- B1 EGO6 (9 Nov 2026): Orders > Invoices. An invoice is the order's own (inv_no INV-<year>-0001, inv_type B2B/B2C/Sample, inv_at):
+   wholesale at Invoiced, a retail order the EGO team fulfils at Delivered. One list, both companies, the switch respected. */
+const INV_TY = t => `<span class="badge plain ty ty-${esc(String(t || '').toLowerCase())}" data-inv-type="${esc(t || '')}">${t === 'Sample' ? '<svg aria-hidden="true"><use href="icons.svg#i-package"/></svg>' : ''}${esc(t || 'Not set')}</span>`;
+const invRows = () => allOrders().filter(o => o.inv_no && inDiv(o));
+const invNet = o => Number(o.subtotal) || 0, invNum = n => Math.round(Number(n) || 0).toLocaleString('en-IN');
+EM.ivlF = EM.ivlF || {};
+function invFiltered() {
+  const ctOf = o => { const c = CL()[o.client_id] || {}; return (c.extra || {}).client_type || kindLabel(c.kind) || ''; };
+  return filterBar(EM.ivlF, 'ivl', { label: 'invoices', rows: invRows(), ph: 'Search ID, client or order',
+    text: o => `${o.inv_no} ${o.ref} ${clientName(o.client_id)}`, mobiles: o => [(CL()[o.client_id] || {}).mobile],
+    dd: [['type', 'Type', 'Every type', o => o.inv_type, null, INV_TYPES], ...coDD(o => o.division === 'retail' ? 'retail' : 'wholesale'), ['ctype', 'Client type', 'Every kind', ctOf]],
+    any: [['inv', 'ID', o => o.inv_no], ['ref', 'Order', o => o.ref], ['client', 'Client', o => clientName(o.client_id)], ['type', 'Type', o => o.inv_type]],
+    date: o => o.inv_at, dateWhat: 'When the invoice was made' });
+}
+EM.VIEWS.invoices = () => {
+  const P = D.access.prices, { html: fbar, rows: r0 } = invFiltered(), rows = r0.slice().sort((a, b) => String(b.inv_no).localeCompare(String(a.inv_no)));
+  const tr = o => `<tr class="clickable" data-href="#/order/${esc(o.id)}" data-inv="${esc(o.inv_no)}"><td><span class="idc">${esc(o.inv_no)}</span></td><td class="nw">${ds(dayIST(o.inv_at))}</td><td><a href="#/client/${esc(o.client_id)}" data-inv-client><b>${esc(clientName(o.client_id))}</b></a></td><td class="nw"><a href="#/order/${esc(o.id)}">${esc(o.ref)}</a></td><td>${INV_TY(o.inv_type)}</td>${P ? `<td class="r">${invNum(invNet(o))}</td><td class="r">${invNum(o.total)}</td>` : ''}</tr>`;
+  return `<div class="stack"><div class="row between" style="align-items:flex-end"><div class="stack-s"><div class="kicker">${esc(EM.div === 'both' ? 'EGO Premium and Big E' : SEG[EM.div])}</div><h1>Invoices</h1></div><div class="row"><button class="btn" data-act="inv-csv">Download for Excel</button></div></div>
+    ${fbar}
+    ${rows.length ? `<div class="card tbl-wrap" data-inv-table><table class="tbl"><thead><tr><th>ID</th><th>Date</th><th>Client</th><th>Order</th><th>Type</th>${P ? '<th class="r">Before GST (₹)</th><th class="r">Total (₹)</th>' : ''}</tr></thead><tbody>${rows.slice(0, 500).map(tr).join('')}</tbody></table></div>${rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : ''}`
+      : empty(invRows().length ? 'Nothing for this filter' : 'No invoices yet', invRows().length ? 'Change or clear the filters above.' : 'An invoice appears here when a wholesale order reaches Invoiced, or a retail order the EGO team fulfils is Delivered.')}
+    ${EM.ivlF.type === 'Sample' ? '<p class="small muted" data-inv-sample-note>Sample invoices are left out of scheme sales and target achievement.</p>' : ''}</div>`;
+};
+EM.VIEWS.invoices.title = () => 'Invoices';
+EM.VIEWS.invoices.tab = 'orderbook';
+EM.ACTIONS['inv-csv'] = () => { const P = D.access.prices, rows = invFiltered().rows;
+  csvDownload('EGO invoices', ['ID', 'Date', 'Client', 'Order', 'Type', 'Company', ...(P ? ['Before GST (Rs)', 'Total (Rs)'] : [])],
+    rows.map(o => [o.inv_no, dayIST(o.inv_at), clientName(o.client_id), o.ref, o.inv_type, o.division === 'retail' ? 'Big E' : 'EGO Premium', ...(P ? [Math.round(invNet(o) * 100) / 100, Math.round(Number(o.total) * 100) / 100] : [])])); };
+/* on the order page: its invoice number and Type; Owner, Director and Accounts may change the Type (a History line) */
+/* B2 EGO6: the Sample order tick on a wholesale opportunity's designs; ticked, which register its lines go on */
+function smpTick(v, lock) {   // R1-F2 M-1: lock = the order exists, so the tick and its Register are fixed (shown disabled)
+  const on = !!v.sample, reg = v.sample_reg === 'display' ? 'display' : 'sample', dis = lock ? ' disabled aria-disabled="true"' : '';
+  return `<label class="smp"${lock ? ' style="opacity:.6;cursor:not-allowed"' : ''}><input type="checkbox" id="of-sample" data-opp-redraw ${on ? 'checked' : ''}${dis}><span><b>Sample order</b><span class="small muted">${lock ? 'Fixed once the order is made.' : 'Sample sets and displays. Line prices can be 0 or reduced. It runs the normal order, stock and invoice path, and its value is left out of scheme sales and targets.'}</span></span></label>
+    ${on ? `<div class="smp-reg"><div class="field"><label for="of-sample_reg">Register *</label><select class="input" id="of-sample_reg"${dis}><option value="sample" ${reg === 'sample' ? 'selected' : ''}>Samples</option><option value="display" ${reg === 'display' ? 'selected' : ''}>Displays (SDR)</option></select></div><span class="badge plain ty ty-sample"><svg aria-hidden="true"><use href="icons.svg#i-package"/></svg>Invoice Type: Sample</span></div>` : ''}`;
+}
+function invCard(o) {
+  return smpCard(o) + invCard0(o);
+}
+function smpCard(o) {
+  if (!o || !Number(o.sample)) return '';
+  const regs = REGS().filter(r => (r.order_id || (r.extra || {}).order_id) === o.id);
+  return `<section class="card stack-s" data-smp-card><h3><span class="badge plain ty ty-sample"><svg aria-hidden="true"><use href="icons.svg#i-package"/></svg>Sample order</span></h3><p class="small muted">Sample order: not counted in scheme sales or target achievement.</p>
+    ${regs.length ? kv([['Register', regs.map(r => `<a href="${r.kind === 'display' ? `#/client/${esc(r.client_id)}/sdr` : '#/samples'}" data-smp-reg="${esc(r.id)}">${esc(r.ref)}</a> · ${esc(r.kind === 'display' ? 'Displays (SDR)' : 'Samples')}`).join('<br>')]]) : ''}</section>`;
+}
+function invCard0(o) {
+  if (!o || !o.inv_no) return '';
+  /* R1-F2: who may invoice (the same capability), plus Owner and Director; Sample comes only from the Sample order, so it shows locked */
+  const may = canInvType(D.lists, D.access.ful, D.user.role) && !isBothView(), smp = !!Number(o.sample);
+  const lockd = `<select class="input" id="inv-ty" disabled aria-disabled="true" aria-label="Type" data-inv-locked style="opacity:.6;cursor:not-allowed;max-width:180px"><option selected>Sample</option></select><span class="small muted">A Sample order's invoice stays Sample.</span>`;
+  return `<section class="card stack-s" data-inv-card><h3>Invoice</h3>${kv([['ID', `<span class="idc">${esc(o.inv_no)}</span>`], ['Made on', ds(dayIST(o.inv_at))], ['Type', may && smp ? `<div class="row" style="gap:8px;flex-wrap:wrap">${lockd}</div>` : may ? `<div class="row" style="gap:8px;flex-wrap:wrap"><select class="input" id="inv-ty" data-id="${esc(o.id)}" aria-label="Type">${INV_SET.map(t => `<option ${t === o.inv_type ? 'selected' : ''}>${t}</option>`).join('')}</select><button class="btn sm" data-act="inv-type" data-id="${esc(o.id)}">Change the Type</button></div>` : INV_TY(o.inv_type)]])}</section>`;
+}
+EM.ACTIONS['inv-type'] = el => opsAct(el, `orders/${el.dataset.id}/inv-type`, { type: qs('#inv-ty').value }, `<b>Type changed to ${esc(qs('#inv-ty').value)}.</b>`);
 /* C2 (27 Oct): the closer once, then who else processed it; a name never shows twice */
 function closedCell(x) {
   const by = x.closed_by, pb = x.processed_by || [], others = [...new Set(pb)].filter(id => id !== by);
@@ -3371,7 +3426,7 @@ EM.co = EM.co || { period: 'all', from: '', to: '' };
 function clientOrders(c) {
   const f = EM.co, rows = buildOrders().filter(x => x.client_id === c.id && inPeriod(x.won_at, f.period, f.from, f.to)), done = rows.filter(x => x.done), fy = rows.filter(x => inPeriod(x.won_at, 'year')), sum = a => a.reduce((t, x) => t + (Number(x.value) || 0), 0);
   return `<div class="stack-s"><div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">${dateFilter(f, 'co', 'When it was confirmed')}</div><div class="grid g4">${tile('Orders', rows.length)}${tile('This financial year', fy.length, D.access.prices && fy.length ? inr0(sum(fy)) : '')}${tile('Delivered or completed', done.length)}${D.access.prices ? tile('All-time value', inr0(sum(rows))) : ''}</div>
-    ${rows.length ? table(['Order', 'Confirmed on', 'Brought by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Delivered or completed'], rows.map(x => ({ href: x.href, cells: [`<a href="${x.href}" data-co-ref><b>${esc(x.ref || '')}</b></a><div class="small">${esc(x.title)}</div>`, whenTxt(x.won_at), esc((D.contacts.find(k => k.id === x.contact_id) || {}).name || ''), ...(D.access.prices ? [inr0(x.value)] : []), `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>`, esc(staffName(x.closed_by)), x.done_at ? whenTxt(x.done_at) : ''] })))
+    ${rows.length ? table(['Order', 'Confirmed on', 'Brought by', ...(D.access.prices ? ['Value'] : []), 'Where it is now', 'Closed by', 'Delivered or completed'], rows.map(x => ({ href: x.href, cells: [`<a href="${x.href}" data-co-ref><b>${esc(x.ref || '')}</b></a><div class="small">${esc(x.title)}</div>${(n => n ? `<div class="small" data-co-inv>Invoice <span class="idc">${esc(n)}</span></div>` : '')((allOrders().find(o => o.id === x.id) || {}).inv_no)}`, whenTxt(x.won_at), esc((D.contacts.find(k => k.id === x.contact_id) || {}).name || ''), ...(D.access.prices ? [inr0(x.value)] : []), `<span class="badge ${x.done ? 'ok' : 'info'}">${esc(x.stage)}</span>`, esc(staffName(x.closed_by)), x.done_at ? whenTxt(x.done_at) : ''] })))
       : `<p class="small muted">No orders from ${esc(c.name)} yet. Every won sale shows here, live and old.</p>`}</div>`;
 }
 /* F2 M-2: a client's installation sites, each linked to the site, its project and its Project order */
@@ -3794,7 +3849,7 @@ window.addEventListener('hashchange', () => { if (qs('#overlay [data-why]')) EM.
 function salesList() {
   const O = OPSD(), out = [], P = D.access.prices;
   for (const o of O.orders) {
-    if (!o.invoiced_at) continue;
+    if (!o.invoiced_at || Number(o.sample)) continue;   // B2 EGO6: a Sample order is not a sale (schemes, targets, Analysis, sample spend after, SDR ratio)
     const lines = O.lines.filter(l => l.order_id === o.id).map(l => { const p = INVD().products.find(x => x.id === l.product_id) || {}, c = colOf(p); return { product: p.name || 'Design', category: c.category || 'Not set', collection: c.name || 'Not set', boxes: l.boxes || 0, amount: Number(l.amount) || 0, sqft: Number(l.sqft) || sqftFor(p, l.boxes || 0) || 0 }; });   // R4: sq ft supplied from the line (lines saved before R4: from the box size)
     out.push({ div: 'wholesale', id: o.id, ref: o.ref, at: dayIST(o.invoiced_at), owner: o.owner_id, client_id: o.client_id, region: o.region || (CL()[o.client_id] || {}).region || '', value: P ? Number(o.subtotal) || 0 : 0, lines, href: '#/order/' + o.id });
   }
@@ -5384,8 +5439,10 @@ const regFiles = r => D.documents.filter(d => d.register_id === r.id).length;
 const REG_HEAD = { sample: () => ['Sample', 'Given to', 'Qty', ...(D.access.prices ? ['Value'] : []), 'Billed or free', 'Date given', 'Return status', 'Files'],
   training: () => ['Training', 'Who', 'Audience', 'Course kind', 'Date', 'Score', 'Expiry', 'Certificate'] };
 const regBtns = r => isBothView() ? '' : `<div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm ghost" data-act="rg-edit" data-id="${r.id}">Change</button></div>`;
+/* B2 EGO6: a register line made by a Sample order shows that order */
+const regOrderTag = r => { const oid = r.order_id || (r.extra || {}).order_id, o = oid && allOrders().find(x => x.id === oid); return o ? `<div class="small" data-rg-order><a href="#/order/${esc(o.id)}">Sample order ${esc(o.ref)}</a></div>` : ''; };
 const REG_ROW = {
-  sample: r => [`<b>${esc(regWhat(r))}</b><div class="small muted">${esc(r.ref)}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, regWhoHref(r) ? `<a href="${regWhoHref(r)}">${esc(regWho(r))}</a><div class="small muted">${esc(regWhoKind(r))}</div>` : '', num(r.extra.qty || 0), ...(D.access.prices ? [money(r.value)] : []), esc(r.extra.billed || ''), ds(r.on_date), `<span class="badge ${r.status === 'Lost' ? 'bad' : r.status === 'Returned' ? 'ok' : 'plain'}">${esc(r.status)}</span>`, `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Files (${regFiles(r)})</button>${regBtns(r)}`],
+  sample: r => [`<b>${esc(regWhat(r))}</b><div class="small muted">${esc(r.ref)}</div>${regOrderTag(r)}${EM.div === 'both' ? segBadge(r.division) : ''}`, regWhoHref(r) ? `<a href="${regWhoHref(r)}">${esc(regWho(r))}</a><div class="small muted">${esc(regWhoKind(r))}</div>` : '', num(r.extra.qty || 0), ...(D.access.prices ? [money(r.value)] : []), esc(r.extra.billed || ''), ds(r.on_date), `<span class="badge ${r.status === 'Lost' ? 'bad' : r.status === 'Returned' ? 'ok' : 'plain'}">${esc(r.status)}</span>`, `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Files (${regFiles(r)})</button>${regBtns(r)}`],
   training: r => [`<b>${esc(r.extra.course || '')}</b><div class="small muted">${esc(r.ref)}${r.extra.product ? ' · ' + esc(r.extra.product) : ''}${r.extra.trainer ? ' · by ' + esc(r.extra.trainer) : ''}</div>${EM.div === 'both' ? segBadge(r.division) : ''}`, `${esc(r.extra.person || '')}${r.client_id ? `<div class="small"><a href="#/client/${r.client_id}">${esc(regWho(r))}</a></div>` : ''}`, esc(r.extra.audience || ''), `${esc(r.extra.course_kind || '')}${r.extra.course_kind === CERT_COURSE ? `<div>${!r.due_date || r.due_date >= today() ? `<span class="badge ok">Certified till ${r.due_date ? ds(r.due_date) : 'no expiry date'}</span>` : '<span class="badge bad">Expired</span>'}</div>` : ''}`, ds(r.on_date), r.extra.score != null ? num(r.extra.score) : '', r.due_date ? ds(r.due_date) : '<span class="muted small">No expiry</span>', `<button class="btn sm ghost" data-act="rg-files" data-id="${r.id}">Certificate (${regFiles(r)})</button>${regBtns(r)}`],
 };
 const regTable = (kind, rows) => `<div data-rg-table="${kind}">${table(REG_HEAD[kind](), rows.slice(0, 500).map(r => ({ cells: REG_ROW[kind](r) })))}</div>${rows.length > 500 ? `<p class="small muted">Showing 500 of ${rows.length}. Use the filters.</p>` : ''}`;
@@ -5512,7 +5569,7 @@ function sdrDealer(c) {
   const photos = l => { const n = regFiles(l.r); return `<button class="btn sm ghost" data-act="rg-files" data-id="${l.id}">Photos (${n})</button>`; };
   const lastDec = sdrLastDecisions(decs);
   const row = l => { const lt = latest[l.id], fl = flagged.has(l.id), dc = lastDec[l.id];
-    return `<tr data-sdr-line="${l.id}" class="${l.status !== 'Active' ? 'is-ro' : ''}"><td><div class="sdr-prod w"><b>${esc(l.item || regWhat(l.r) || 'Design')}</b><span>${esc(l.category || 'Category not set')} · ${esc(l.ref)}</span>${l.replaces ? `<span class="small muted">Replaces ${esc((REGS().find(x => x.id === l.replaces) || {}).ref || '')}</span>` : ''}</div></td>
+    return `<tr data-sdr-line="${l.id}" class="${l.status !== 'Active' ? 'is-ro' : ''}"><td><div class="sdr-prod w"><b>${esc(l.item || regWhat(l.r) || 'Design')}</b><span>${esc(l.category || 'Category not set')} · ${esc(l.ref)}</span>${l.r ? regOrderTag(l.r) : ''}${l.replaces ? `<span class="small muted">Replaces ${esc((REGS().find(x => x.id === l.replaces) || {}).ref || '')}</span>` : ''}</div></td>
       <td class="r sdr-nw">${num(l.qty)}${P ? ` × ${l.unit_cost == null ? '' : inr0(l.unit_cost)}` : ''}</td>${P ? `<td class="r"><b>${inr0(l.total)}</b></td>` : ''}<td><div class="sdr-prod sdr-nw"><b>${l.given_on ? ds(l.given_on) : ''}</b><span style="white-space:normal">by ${esc(staffName(l.given_by))}</span></div></td>
       <td>${l.status === 'Active' ? sdrCond(lt && lt.cond) : '<span class="small muted">Closed</span>'}${lt && lt.on ? `<div class="small muted" data-sdr-insp>${ds(lt.on)}${lt.by ? ` · by ${esc(staffName(lt.by))}` : ''}</div>` : ''}${dc ? `<div class="small" data-sdr-dec><b>${esc(dc.status)}</b> <span class="muted">${ds(dc.on_date)} · ${esc(staffName(dc.owner_id))}</span></div>` : ''}</td>
       <td><div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">${sdrSt(l.status)}${l.status === 'Written off' && canSdrDecide() ? `<button class="btn sm" data-act="sdr-decide" data-id="${l.id}" data-again="1">Decide again</button>` : ''}${fl ? (canSdrDecide() ? `<button class="btn sm primary" data-act="sdr-decide" data-id="${l.id}">Decide</button>` : `<button class="btn sm" disabled aria-disabled="true" title="Management decides" data-sdr-ro>Management decides</button>`) : ''}<div class="row" style="gap:6px;flex-wrap:wrap">${photos(l)}${isBothView() ? '' : `<button class="btn sm ghost" data-act="rg-edit" data-id="${l.id}">Change</button>`}</div></div></td></tr>`; };
@@ -6308,14 +6365,15 @@ EM.ACTIONS['int-key-add'] = el => { _keyAdd(el); const src = (el && el.dataset.s
   if (src) { qs('#ik-name').value = (LD_INB.find(x => x[0] === src) || [])[1] + ' leads'; qs('#ik-acc').value = 'write'; } };
 
 /* ---- G3: the top search, in the header on every screen: leads (name, firm, mobile) from the server, and clients held here */
-EM.topSearch = () => allowedTab('opps') ? `<span class="ts" role="search"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-search"/></svg><input type="search" id="ts-q" placeholder="Search leads and clients: name, firm or mobile" aria-label="Search leads and clients" autocomplete="off"><span class="ts-pop" id="ts-pop" hidden></span></span>` : '';
+EM.topSearch = () => allowedTab('opps') ? `<span class="ts" role="search"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-search"/></svg><input type="search" id="ts-q" placeholder="Search leads, clients, invoices" aria-label="Search leads, clients and invoices" autocomplete="off"><span class="ts-pop" id="ts-pop" hidden></span></span>` : '';
 let tsT = 0, tsN = 0;
 const tsPaint = (leads, q) => { const pop = qs('#ts-pop'); if (!pop) return; const ql = q.toLowerCase(), qd = q.replace(/\D/g, '');
   const cl = Object.values(CL()).filter(inDiv).filter(c => `${c.name} ${c.mobile || ''}`.toLowerCase().includes(ql) || (qd.length >= 4 && String(c.mobile || '').includes(qd))).slice(0, 5);
   const coTag = r => EM.div === 'both' && r.division && r.division !== 'both' ? ' · ' + pjCo(r.division) : '';   // M-01: Both names each hit's company
   const hit = (href, name, sub, tag, r) => `<a class="ts-hit" href="${href}" data-ts-co="${esc(r.division || '')}"><b>${esc(name)}</b><span class="small muted">${esc(tag)}${esc(coTag(r))} · ${esc(sub)}</span></a>`;
-  pop.innerHTML = leads.length || cl.length ? leads.slice(0, 8).map(l => hit('#/leadrec/' + l.id, leadName(l), [l.firm ? l.contact_name : '', fmtMobile(l.mobile), l.status].filter(Boolean).join(' · '), 'Lead', l)).join('') + cl.map(c => hit('#/client/' + c.id, c.name, fmtMobile(c.mobile || '') || c.city || '', kindLabel(c.kind), c)).join('')
-    : `<span class="ts-none small muted">No lead or client matches "${esc(q)}"</span>`;
+  const iv = allowedTab('invoices') ? allOrders().filter(o => o.inv_no && inDiv(o) && o.inv_no.toLowerCase().includes(ql)).slice(0, 5) : [];
+  pop.innerHTML = leads.length || cl.length || iv.length ? iv.map(o => hit('#/order/' + o.id, o.inv_no, `${o.ref} · ${clientName(o.client_id)}`, 'Invoice ' + o.inv_type, o)).join('') + leads.slice(0, 8).map(l => hit('#/leadrec/' + l.id, leadName(l), [l.firm ? l.contact_name : '', fmtMobile(l.mobile), l.status].filter(Boolean).join(' · '), 'Lead', l)).join('') + cl.map(c => hit('#/client/' + c.id, c.name, fmtMobile(c.mobile || '') || c.city || '', kindLabel(c.kind), c)).join('')
+    : `<span class="ts-none small muted">No lead, client or invoice matches "${esc(q)}"</span>`;
   pop.hidden = false; };
 document.addEventListener('input', e => { if (e.target.id !== 'ts-q') return; const q = e.target.value.trim(); clearTimeout(tsT);
   if (q.length < 2) { const p = qs('#ts-pop'); if (p) p.hidden = true; return; }

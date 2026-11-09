@@ -1,0 +1,96 @@
+/* EGO Master · ego6 kit (Picasso, 9 Nov 2026). Six points from the 3 Nov meeting.
+   Load AFTER tokens.css, styles.css, live.css and field.css. Reads only --ge-* / --fd-* tokens; defines none.
+   Contract: design/ego6/CONTRACT.txt */
+
+/* ---------- 0. a badge may carry an icon instead of its dot (extends .badge) ---------- */
+.badge > svg { width: 14px; height: 14px; flex: none; stroke-width: 2; }
+.badge.ic::before { display: none; }
+
+/* ---------- 1. Invoice Type: B2B / B2C / Sample (extends .badge.plain) ---------- */
+.badge.ty { min-width: 66px; justify-content: center; letter-spacing: .01em; }
+.badge.ty-b2b { color: var(--ge-text); background: color-mix(in srgb, var(--ge-text) 9%, transparent); }
+.badge.ty-b2c { color: var(--ok); background: color-mix(in srgb, var(--ok) 13%, transparent); }
+.badge.ty-sample { color: var(--ge-text-muted); background: transparent; border: 1px dashed currentColor; padding: 2px 9px; }
+
+/* table cells that must not wrap (dates, order refs) */
+.tbl td.nw { white-space: nowrap; }
+/* two big buttons stacked when they cannot sit side by side at 375 */
+.fd-btns.one { grid-template-columns: 1fr; }
+
+/* ---------- 6. short permanent ID chip: DL-0001, AR-0001, INV-2026-0001 ---------- */
+.idc { display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border-radius: 6px; border: 1px solid var(--ge-border);
+  background: var(--ge-surface-2); color: var(--ge-text-muted); font: 600 12px/1 var(--sans); letter-spacing: .02em;
+  font-variant-numeric: tabular-nums; white-space: nowrap; vertical-align: middle; }
+h1 .idc { height: 26px; font-size: 13px; margin-left: 10px; vertical-align: 4px; }
+.tbl td .idc { margin-right: 0; }
+
+/* ---------- 3. Not met marks: level 1 (3 months+) tint, level 2 (6 months+ or Never met) solid ---------- */
+.badge.nm2 { color: var(--ge-bg); background: var(--bad); }          /* white on red in light, near-black on red in dark: both >= 4.5:1 */
+.badge.nm2::before { background: currentColor; }
+.fd-pill.nm2 { background: var(--fd-bad); color: var(--fd-card); }
+
+/* ---------- 2. Sample order tick + 0 / reduced line price ---------- */
+.smp { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px dashed var(--ge-border); border-radius: var(--r-sm); cursor: pointer; }
+.smp input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--ink); flex: none; }
+.smp b { display: block; font-size: 14px; }
+.smp .small { display: block; margin-top: 2px; }
+.smp:has(input:checked) { border-style: solid; border-color: var(--ink); background: var(--ge-surface-2); }
+.smp-reg { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 10px; }
+.smp-reg .field { min-width: 220px; }
+.ln-price { display: grid; gap: 3px; justify-items: end; }
+.ln-price .adorn { width: 130px; }
+.ln-price .adorn .input { text-align: right; font-variant-numeric: tabular-nums; }
+.ln-price.is-zero .adorn { border-style: dashed; border-color: var(--ge-text-muted); }
+.ln-price .ln-was { font-size: 12px; color: var(--ge-text-muted); }
+.ln-price .ln-was s { text-decoration-thickness: 1px; }
+.ord-sum { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: flex-end; align-items: baseline; padding-top: 12px; border-top: 1px solid var(--ge-border); }
+.ord-sum b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.ord-sum .small { width: 100%; text-align: right; }
+
+/* ---------- 3. Field app: Plan my day + Not met suggestions (extends .fd-card, .fd-pick, .fd-sheet) ---------- */
+.fd-sugs { display: grid; gap: 10px; }
+.fd-sug { display: grid; gap: 10px; }
+.fd-sug .fd-name { font-size: 17px; font-weight: 700; letter-spacing: -.012em; line-height: 1.3; overflow-wrap: anywhere; }
+.fd-sug .fd-row { flex-wrap: wrap; }
+.fd-pick .fd-pill { margin-top: 4px; }
+.fd-pick > span:not(.fd-tile) { min-width: 0; flex: 1; }
+.fd-pick.is-today { opacity: .6; cursor: default; }
+.fd-picks.scroll { max-height: 46dvh; overflow: auto; }
+
+/* ---------- 4. Check in: compulsory photo, No location reason (extends .fd-sheet, .fd-late, .fd-chips) ---------- */
+.fd-req-star { color: var(--fd-bad); }
+.fd-late.warn { background: var(--fd-tint-warn); }
+.fd-late.warn .fd-ic, .fd-late.warn b { color: var(--fd-warn); }
+.fd-loc-ok { color: var(--fd-ok); }
+.fd-chips.radio .fd-chip:has(input:checked) { background: var(--fd-ink); border-color: var(--fd-ink); color: var(--fd-on-ink); }
+/* manager view: a visit's marks under the place (extends .fb table cells) */
+.vmark { display: grid; gap: 4px; justify-items: start; }
+.vmark .small { color: var(--ge-text-muted); }
+.ph-gone { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ge-text-muted); }
+.ph-gone svg { width: 14px; height: 14px; }
+
+/* ---------- 5. Opportunity: Next follow-up inline (extends .fs, .fgrid) ---------- */
+.nf-ask { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-sm); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+.nf-ask svg { width: 18px; height: 18px; color: var(--warn); flex: none; margin-top: 1px; }
+.nf-ask b { color: var(--warn); }
+.fs.nf { border-color: var(--ink); }
+.nxt { display: grid; gap: 2px; }
+.nxt b { font-weight: 600; }
+
+/* ---------- 6. Dealer profile: EGO people card ---------- */
+.rec-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.rec-head .row { gap: 8px; }
+.ppl { display: grid; gap: 0; }
+.ppl-row { display: grid; grid-template-columns: 36px minmax(130px, 170px) 1fr; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--ge-border); }
+.ppl-row:first-child { border-top: 0; }
+.ppl-ic { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--ge-surface-2); color: var(--ge-text-muted); }
+.ppl-ic svg { width: 18px; height: 18px; }
+.ppl-row .kicker { font-size: 12.5px; }
+.ppl-row .cb { min-width: 0; }
+.ppl-who b { display: block; }
+.ppl-who .small { color: var(--ge-text-muted); }
+.ppl-none { color: var(--ge-text-muted); font-style: normal; }
+@media (max-width: 560px) { .ppl-row { grid-template-columns: 36px 1fr; } .ppl-row > :last-child { grid-column: 2; } }
+/* a mark inside a .fd-pick keeps its own size and colour */
+.fd-pick > span:not(.fd-tile) > .fd-pill { display: inline-flex; width: auto; font-size: var(--fd-fs-badge); color: var(--fd-bad); }
+.fd-pick > span:not(.fd-tile) > .fd-pill.nm2 { color: var(--fd-card); }

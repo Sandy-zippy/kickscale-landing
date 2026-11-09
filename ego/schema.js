@@ -1426,3 +1426,29 @@ function sdrDue(lines, checks, days, today) {
   for (const o of Object.values(out)) { o.next = add(o.last || o.first, days); o.overdue = o.next < today ? Math.round((Date.parse(today) - Date.parse(o.next)) / 864e5) : 0; }
   return out;
 }
+
+/* B1 EGO6 (9 Nov 2026): an invoice's Type. Sample for a sample order; B2B when the client has a GST number, is a dealer,
+   distributor, sub-dealer, architect or design firm, or its Client type is a firm (builder, contractor, ...); B2C otherwise. Set when the invoice is made; Owner, Director and
+   Accounts may change it afterwards (a History line). The 0044 backfill uses the same rule in SQL. */
+const INV_TYPES = ['B2B', 'B2C', 'Sample'];
+const INV_B2B_KINDS = ['distributor', 'dealer', 'sub_dealer', 'architect', 'design_firm'];
+/* R1-F2 (Captain, after Tester R1): Sample is ONE fact, orders.sample. Type Sample comes only from it, so a Type change offers
+   B2B and B2C only and a Sample order's Type never changes. Who may change it goes by what the role can do (M-2): whoever may
+   move an order to Invoiced, plus the Owner and a Director; a copied Accounts role keeps it. */
+const INV_SET = ['B2B', 'B2C'];
+const canInvType = (lists, ful, role) => role === 'owner' || role === 'director' || canFul(lists, ful, nm(lists, 'ops.fulfilment_stages', 'Invoiced'));
+/* the Sample order tick, read strictly: true, 1, "1" or "true" only (L-2) */
+const sampleOn = v => v === true || v === 1 || v === '1' || v === 'true';
+/* a price that is 0 once rounded to paise (0.001 is 0) */
+const zeroPrice = r => !(Math.round(Number(r) * 100) > 0);
+/* a personal client is B2C unless its Client type is a firm (Builder, Contractor, Hotel, ... anything but Individual or Homeowner) */
+const INV_B2C_TYPES = ['', 'Individual', 'Homeowner'];
+const ctypeOf = c => { const x = typeof c.extra === 'string' ? (() => { try { return JSON.parse(c.extra); } catch (e) { return {}; } })() : c.extra || {}; return String(c.client_type || x.client_type || '').trim(); };
+const invType = (order, client) => order && Number(order.sample) ? 'Sample'
+  : client && (String(client.gst || '').trim() || INV_B2B_KINDS.includes(client.kind) || !INV_B2C_TYPES.includes(ctypeOf(client))) ? 'B2B' : 'B2C';
+/* INV-<year>-: the year the invoice is made, in India */
+/* R1-F2 (Captain's default, 9 Nov): one series per company and per Indian financial year (April to March):
+   EGO Premium INV-2627-0001, Big E BEI-2627-0001 (FY 2026-27). The 0044 backfill uses the same format in SQL. */
+const invFy = at => { const d = new Date(Date.parse(at || new Date().toISOString()) + 5.5 * 36e5), y = d.getUTCFullYear() - (d.getUTCMonth() < 3 ? 1 : 0);
+  return String(y % 100).padStart(2, '0') + String((y + 1) % 100).padStart(2, '0'); };
+const invPrefix = (at, division) => `${division === 'retail' ? 'BEI' : 'INV'}-${invFy(at)}-`;
