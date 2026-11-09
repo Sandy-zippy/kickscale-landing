@@ -170,7 +170,7 @@ const NOTSET = '<span class="muted">Not filled</span>';
 const inDiv = r => EM.div === 'both' || r.division === 'both' || r.division === EM.div;
 const showFields = list => list.filter(f => D.access.prices || f.type !== 'money');
 /* R5: last_order_at is worked out at sign-in, not sent back by a save: a saved client keeps it */
-const upsertLocal = (arr, rec) => { const i = arr.findIndex(x => x.id === rec.id); if (i >= 0) { if (arr[i].last_order_at && !('last_order_at' in rec)) rec.last_order_at = arr[i].last_order_at; arr[i] = rec; } else arr.push(rec); return rec; };
+const upsertLocal = (arr, rec) => { const i = arr.findIndex(x => x.id === rec.id); if (i >= 0) { if (arr[i].last_order_at && !('last_order_at' in rec)) rec.last_order_at = arr[i].last_order_at; if (arr[i].last_met && !('last_met' in rec)) rec.last_met = arr[i].last_met; arr[i] = rec; } else arr.push(rec); return rec; };
 const ctxLocal = () => ({ lists: D.lists, staffIds: new Set(D.staff.filter(s => s.active).map(s => s.id)) });
 /* Every stage set shows as a board with ALL its stages, in the order set in Lists & stages,
    whether or not anything is in them yet. A stage since removed from the list still shows
@@ -233,7 +233,9 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'city': { const h = G.select(f, v, p, D.lists.cities.map(c => [c.city, `${c.city} · ${c.region}`]));   // G6d: a manager adds a town from here
       return h.slice(0, -6) + (D.access.approve && !D.access.readonly ? `<div class="row" data-city-add style="margin-top:6px"><button type="button" class="btn sm ghost" data-act="city-add" data-sel="${p}-${f.key}">+ Add a town not on the list</button></div>` : '<span class="small muted" data-city-ask>Town not on the list? Ask your manager to add this town.</span>') + '</div>'; }
     case 'owner': {
-      const ppl = D.staff.filter(s => s.active && (D.access.scope !== 'own' || s.id === me().id));
+      const me0 = CL()[opt.self], dlr = me0 ? DEALER_KINDS.includes(me0.kind) : DEALER_KINDS.includes(opt.kind);   // R2-F1 M-3: a dealer's Field salesperson too
+      const dv = ['telesales_id', 'fulfil_id'].includes(f.key) || (f.key === 'owner_id' && dlr) ? ((me0 || {}).division || (EM.div !== 'both' ? EM.div : '')) : '';   // EGO6 B7: that company only
+      const ppl = D.staff.filter(s => s.active && (D.access.scope !== 'own' || s.id === me().id || (!!dv && f.key !== 'owner_id')) && (!dv || s.division === dv || !['retail', 'wholesale'].includes(s.division)));
       return G.select(f, v, p, ppl.map(s => [s.id, s.name]), !f.req);
     }
     case 'link': {
@@ -249,6 +251,7 @@ function fieldHtml(f, v, p, opt = {}) {
     case 'champion': return G.select(f, v, p, REGS().filter(r => r.kind === 'champion' && r.division === (PIPELINES[opt.pipeline] || {}).division).map(r => [r.id, `${r.item} · ${r.extra.ch_role || ''}${r.client_id ? ' · ' + clientName(r.client_id) : ''}`]));
     case 'cats': return G.multi(f, v, p, D.lists.categories);
     case 'cat': return G.select(f, v, p, D.lists.categories.map(c => [c, c]));
+    case 'geo': return G.wrap(f, p, `<input class="input" type="number" min="${f.min}" max="${f.max}" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}" placeholder="${f.max === 90 ? '19.2967' : '73.0631'}">`);   // EGO6 B4
     case 'decimal': return G.wrap(f, p, G.adorn(f, `<input class="input" type="number" min="0" step="any" inputmode="decimal" id="${p}-${f.key}" name="${f.key}" value="${esc(v)}">`));
     case 'collection': return G.select(f, v, p, INVD().collections.map(c => [c.id, `${c.name} · ${c.category}`]));
     case 'cities': return G.multi(f, v, p, D.lists.cities.map(c => c.city));
@@ -282,7 +285,7 @@ function readForm(root, fields) {
    forms and listeners read it as before. A free-text box with data-suggest offers its list the same way. */
 /* U6 batch 3 (25 Oct): a dropdown that picks a record (client, dealer, architect, person, owner, design, city, region,
    supplier, warehouse, installer...) gets it whatever its length, and so do the filter bar's long or record dropdowns */
-const CB_REC = /client|dealer|architect|contact|owner|product|design|city|region|supplier|warehouse|installer|staff|parent|firm|partner|champion|person|recipient|member/i;
+const CB_REC = /telesales|fulfil|client|dealer|architect|contact|owner|product|design|city|region|supplier|warehouse|installer|staff|parent|firm|partner|champion|person|recipient|member/i;
 const cbWants = el => el.options.length >= CB_MIN || CB_REC.test(`${el.id} ${el.name} ${el.dataset.fk || ''} ${el.getAttribute('aria-label') || ''}`);
 const CB_MIN = 8, cbNorm = t => String(t || '').toLowerCase();
 const cbAZ = (a, b) => a.l.localeCompare(b.l, 'en', { numeric: true, sensitivity: 'base' });
@@ -580,8 +583,23 @@ EM.qByView = {};
 Object.defineProperty(EM, 'clientQ', { get: () => EM.qByView[(location.hash.split('/')[1] || 'home')] || '', set: v => { EM.qByView[(location.hash.split('/')[1] || 'home')] = v; } });
 const matches = (txt, mobiles) => { const q = EM.clientQ.toLowerCase(), qd = q.replace(/\D/g, ''); return !q || txt.toLowerCase().includes(q) || (qd.length >= 4 && mobiles.some(m => String(m || '').includes(qd))); };
 EM.orgF = {}; EM.pplF = { tg: {}, period: 'all' };
+/* EGO6 B3: Not met, from the server's last done visit (clients.last_met) and the one rule in schema.js (notMet) */
+const nmOf = c => notMet(c.last_met, today(), D.lists.rules);
+const nmMark = c => { const x = nmOf(c); return x.level ? `<span class="badge ${x.never || x.level === 2 ? 'nm2' : 'bad'}" data-nm="${x.never ? 'never' : x.level}">${esc(x.label)}</span>` : `<span class="small muted" data-nm="0">${esc(x.label)}</span>`; };
 /* S3: the Company dropdown of a filter bar, only in the view that shows both companies */
 const coDD = get => EM.div === 'both' ? [['co', 'Company', 'EGO Premium and Big E', get, v => (DIVS[v] || { co: v }).co, ['wholesale', 'retail']]] : [];
+/* EGO6 B6: the permanent ID as the kit's chip; EGO6 B7: a dealer's three EGO people (owner_id is the Field salesperson) */
+const idChip = ref => ref ? `<span class="idc">${esc(ref)}</span>` : '';
+const EGO_PPL = [['owner_id', 'Field salesperson', 'route'], ['telesales_id', 'Telecaller', 'headset'], ['fulfil_id', 'Fulfilment person', 'truck-delivery']];
+const pplOf = (c, k) => k === 'owner_id' ? c.owner_id : (c.extra || {})[k] || '';
+/* R2-F1 M-1: the Dealers list carries the three EGO people in ONE column, a short line each (filters stay three) */
+const PPL_SHORT = { owner_id: 'Field', telesales_id: 'Tele', fulfil_id: 'Fulfilment' };
+const pplCol = c => `<div class="ppl-col" data-ppl-col>${EGO_PPL.map(([k, l]) => `<div data-ppl="${k}" title="${esc(l)}"><span class="small muted">${PPL_SHORT[k]}</span> ${pplCell(c, k)}</div>`).join('')}</div>`;
+const pplCell = (c, k) => pplOf(c, k) ? esc(staffName(pplOf(c, k))) : '<span class="ppl-none small">Not chosen yet</span>';
+const egoPeopleCard = c => `<section class="card stack-s" data-ego-people><h3>EGO people</h3><div class="ppl">${EGO_PPL.map(([k, l, ic]) => { const s = D.staff.find(x => x.id === pplOf(c, k));
+  return `<div class="ppl-row" data-ppl="${k}"><span class="ppl-ic">${fic(ic, '')}</span><span class="kicker">${esc(l)}</span>${s ? `<span class="ppl-who"><b>${esc(s.name)}</b><span class="small">${esc(roleName(s.role))}</span></span>` : '<span class="ppl-none">Not chosen yet</span>'}</div>`; }).join('')}</div></section>`;
+/* EGO6 B6/B7: the list as filtered, ID first; a dealer's three EGO people by name */
+const ORG_ROWS = {};
 function orgList(org, arg) {
   const all0 = org === 'dealer' ? DEALER_KINDS : ARCH_KINDS;
   const subs = org === 'dealer' ? [['all', 'All', all0], ['distributor', 'Distributors', ['distributor']], ['dealer', 'Dealers', ['dealer']], ['sub_dealer', 'Sub-dealers', ['sub_dealer']]]
@@ -590,26 +608,32 @@ function orgList(org, arg) {
   const all = D.clients.filter(c => all0.includes(c.kind) && inDiv(c));
   const ppOf = c => (c.extra || {}).project_partner || '', rating = c => org === 'dealer' ? c.grade : (c.extra || {}).rating;
   const st = EM.orgF[org] = EM.orgF[org] || { tg: {}, period: 'all' };
-  const { html: fbar, rows } = filterBar(st, 'org' + org, { label: org === 'dealer' ? 'dealers' : 'architects', rows: all.filter(c => tab[2].includes(c.kind)), ph: 'Name, city, mobile or GST',
+  const { html: fbar, rows } = filterBar(st, 'org' + org, { label: org === 'dealer' ? 'dealers' : 'architects', rows: all.filter(c => tab[2].includes(c.kind)), ph: 'Search ID, name, mobile or city',
     text: c => `${c.name} ${c.city} ${c.ref || ''} ${c.gst} ${(c.extra || {}).partner_capability || ''}`, mobiles: c => [c.mobile],
     dd: [...(org === 'dealer' ? [['pp', 'Project Partner', 'Every dealer', c => ppOf(c) || 'none', v => v === 'none' ? 'Not filled' : v, ['Yes', 'Potential', 'No', ['none', 'Not filled']]]] : []),
       ['city', 'City', 'Every city', c => c.city || ''], ['region', 'Region', 'Every region', c => c.region || ''], ['rating', 'Rating', 'Every rating', c => rating(c) || ''],
-      ['owner', 'Looked after by', 'Everyone', c => c.owner_id, staffName], ...coDD(c => c.division)],
-    any: [['name', 'Company', c => c.name], ['ref', 'Reference', c => c.ref], ['gst', 'GST', c => c.gst], ['mobile', 'Mobile', c => c.mobile], ['cap', 'Project Partner capability', c => (c.extra || {}).partner_capability]],
+      ...(org === 'dealer' ? EGO_PPL.map(([k, l]) => [k, l, 'Everyone', c => pplOf(c, k) || 'none', v => v === 'none' ? 'Not chosen yet' : staffName(v)]) : [['owner', 'Looked after by', 'Everyone', c => c.owner_id, staffName]]), ['nm', 'Not met in', 'Any time', c => nmOf(c).keys, v => (notMetChoices(D.lists.rules).find(x => x[0] === v) || [v, v])[1], notMetChoices(D.lists.rules)], ...coDD(c => c.division)],
+    any: [['name', 'Company', c => c.name], ['ref', 'ID', c => c.ref], ['gst', 'GST', c => c.gst], ['mobile', 'Mobile', c => c.mobile], ['cap', 'Project Partner capability', c => (c.extra || {}).partner_capability], ['met', 'Last met', c => nmOf(c).label]],
     date: c => c.created_at, dateWhat: 'When it was added' });
+  ORG_ROWS[org] = rows;
   const team = id => D.contacts.filter(k => k.client_id === id).length, open = id => D.opportunities.filter(o => o.client_id === id && !isClosed(o.pipeline, o.stage, D.lists)).length;
   const title = org === 'dealer' ? 'Dealers' : 'Architects', base = '#/' + (org === 'dealer' ? 'dealers' : 'architects');
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">${org === 'dealer' ? 'Distributors, dealers and sub-dealers, each with its team' : 'Architect firms and solo architects, each with its team'}</div><h1>${title}</h1><p class="muted">${rows.length} of ${all.length} · ${esc(scopeLabel())}</p></div>
-      <div class="row" style="flex-wrap:wrap"><a class="btn" href="#/import">Import from Excel</a>${(org === 'dealer' ? DEALER_KINDS : ARCH_KINDS).map((k, i) => `<button class="btn ${(tab[2].length === 1 ? tab[2][0] === k : i === (org === 'dealer' ? 1 : 0)) ? 'primary' : ''}" data-act="org-add" data-kind="${k}">+ Add ${esc(kindName(k).toLowerCase())}</button>`).join('')}</div></div>
+      <div class="row" style="flex-wrap:wrap"><button class="btn" data-act="org-csv" data-org="${org}">Download for Excel</button><a class="btn" href="#/import">Import from Excel</a>${(org === 'dealer' ? DEALER_KINDS : ARCH_KINDS).map((k, i) => `<button class="btn ${(tab[2].length === 1 ? tab[2][0] === k : i === (org === 'dealer' ? 1 : 0)) ? 'primary' : ''}" data-act="org-add" data-kind="${k}">+ Add ${esc(kindName(k).toLowerCase())}</button>`).join('')}</div></div>
     ${subtabs(base, tab[0], subs.map(([k, l, ks]) => [k, `${l} <span class="muted">${all.filter(c => ks.includes(c.kind)).length}</span>`]))}
     ${fbar}
-    ${all.length ? (rows.length ? '<div class="org-tbl" data-org-table>' + table(['Company', 'Type', ...(org === 'dealer' ? ['Served by', 'Project Partner'] : []), 'City', 'Rating', 'Team', 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), 'Looked after by'], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
-      cells: [`<b>${esc(c.name)}</b><div class="small muted">${esc(c.ref || '')}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, esc(kindLabel(c.kind)), ...(org === 'dealer' ? [c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? esc(CL()[c.parent_id].name) : '<span class="badge bad">No distributor</span>') : esc((DIVS[c.division] || DIVS.wholesale).co), ppOf(c) ? `<span class="badge ${ppOf(c) === 'Yes' ? 'ok' : ppOf(c) === 'Potential' ? 'info' : 'plain'}">${esc(ppOf(c))}</span>` : ''] : []), esc(c.city), esc(rating(c) || ''), team(c.id), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), esc(staffName(c.owner_id))] }))) + '</div>'
+    ${all.length ? (rows.length ? '<div class="org-tbl" data-org-table>' + table(['ID', 'Company', ...(org === 'dealer' ? ['Served by'] : []), 'City', 'Rating', ...(org === 'dealer' ? [] : ['Team']), 'Open opportunities', ...(D.access.prices ? ['Won value'] : []), ...(org === 'dealer' ? ['EGO people'] : ['Looked after by'])], rows.slice(0, 300).map(c => ({ href: `#/client/${c.id}`,
+      cells: [idChip(c.ref), `<b>${esc(c.name)}</b><div class="small muted">${esc(kindLabel(c.kind))}${org === 'dealer' ? ` · team ${team(c.id)}` : ''}</div><div class="org-nm">${nmMark(c)}${org === 'dealer' && ppOf(c) ? ` <span class="badge ${ppOf(c) === 'Yes' ? 'ok' : ppOf(c) === 'Potential' ? 'info' : 'plain'}" data-pp title="Project Partner">Project Partner ${esc(ppOf(c))}</span>` : ''}</div>${EM.div === 'both' ? segBadge(c.division) : ''}`, ...(org === 'dealer' ? [c.kind === 'sub_dealer' ? (CL()[c.parent_id] ? esc(CL()[c.parent_id].name) : '<span class="badge bad">No distributor</span>') : esc((DIVS[c.division] || DIVS.wholesale).co)] : []),   /* R2-F2 M-1: Project Partner folded into the Company cell, so 1280 fits real names */ esc(c.city), esc(rating(c) || ''), ...(org === 'dealer' ? [] : [team(c.id)]), open(c.id), ...(D.access.prices ? [money(wonValue(c.id))] : []), ...(org === 'dealer' ? [pplCol(c)] : [esc(staffName(c.owner_id))])] }))) + '</div>'
       + (rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Search to narrow it down.</p>` : '') : '<p class="muted">Nothing for these filters. Change or clear them above.</p>')
       : empty(`No ${title.toLowerCase()} yet`, `Add the company and its people in one go, or fill the Excel file and upload it.`, `<button class="btn primary" data-act="org-add" data-org="${org}">+ Add ${org === 'dealer' ? 'dealer' : 'architect firm'}</button><a class="btn" href="#/import">Import from Excel</a>`)}
   </div>`;
 }
+/* the list as it is filtered on screen, with Last met and Days not met, for Excel */
+EM.ACTIONS['org-csv'] = el => { const org = el.dataset.org, dl = org === 'dealer'; orgList(org, EM.route().arg); const rows = FLT_ROWS['org' + org] || [];   // EGO6 B6: ID first; B7 the three EGO people; B3/B4 Last met + Latitude, Longitude
+  csvDownload(dl ? 'EGO dealers' : 'EGO architects', ['ID', 'Company', 'Type', 'Company of EGO', 'City', 'Region', 'Mobile', 'GST', 'Rating', ...(dl ? EGO_PPL.map(x => x[1]) : ['Owner at EGO']), 'Last met', 'Last done visit', 'Days not met', 'Latitude', 'Longitude'],
+    rows.map(c => { const x = nmOf(c), e = c.extra || {}; return [c.ref || '', c.name, kindLabel(c.kind), c.division === 'retail' ? 'Big E' : 'EGO Premium', c.city || '', c.region || '', c.mobile || '', c.gst || '', (dl ? c.grade : e.rating) || '', ...(dl ? EGO_PPL.map(([k]) => pplOf(c, k) ? staffName(pplOf(c, k)) : '') : [staffName(c.owner_id)]), x.label, c.last_met || '', x.never ? '' : x.days, e.lat ?? '', e.lng ?? '']; })); };
+for (const a of ['org-csv']) { NAV_ACTS.add(a); LOOK_ACTS.add(a); }
 EM.VIEWS.dealers = arg => orgList('dealer', arg);
 EM.VIEWS.dealers.title = () => 'Dealers';
 EM.VIEWS.architects = arg => orgList('architect', arg);
@@ -709,9 +733,9 @@ const FAMILIES = [DEALER_KINDS, ARCH_KINDS, PERSONAL_KINDS];
 const kindName = k => PERSONAL_KINDS.includes(k) ? `Personal contact · ${DIVS[KINDS[k].division].co}` : k === 'architect' ? 'Solo architect' : k === 'design_firm' ? 'Architect firm' : KINDS[k].label;
 const ORG_LAYOUT = [
   ['Company details', ['name', 'legal_name', 'gst']],
-  ['Address', ['address', 'locality', 'city', 'state', 'pincode', 'addresses']],
+  ['Address', ['address', 'locality', 'city', 'state', 'pincode', 'lat', 'lng', 'addresses']],
   ['Area details', ['areas_covered', 'other_offices']],
-  ['Business details', ['parent_id', 'owner_id', 'grade', 'rating', 'source', 'status', 'since', 'credit_limit', 'priority200', 'relationship', 'connected_dealers']],
+  ['Business details', ['parent_id', 'owner_id', 'telesales_id', 'fulfil_id', 'grade', 'rating', 'source', 'status', 'since', 'credit_limit', 'priority200', 'relationship', 'connected_dealers']],
 ];
 const POC_FIELDS = CONTACT_FIELDS.filter(f => f.key !== 'is_primary');
 const SERVE_NOTE = { dealer: 'A dealer orders from EGO Premium directly, order by order.', sub_dealer: 'A sub-dealer is a retailer served by a distributor: choose the distributor first.', distributor: 'A distributor keeps stock, has an assigned area and answers for its sales against the target. Its sub-dealers buy from it.' };
@@ -818,9 +842,9 @@ EM.VIEWS.client = arg => {
   const body = { overview: clientOverview, orders: clientOrders, sites: clientSites, contacts: clientContacts, opps: clientOpps, docs: clientDocs, history: () => '<div id="hist"><p class="muted">Loading the history…</p></div>', ...(DEALER_KINDS.includes(c.kind) ? DEALER_TAB_BODY : {}), ...(ARCH_KINDS.includes(c.kind) ? { plan: c2 => clientPlan(c2) } : {}), ...REG_TAB_BODY }[tab] || clientOverview;
   const home = homeOf(c);
   return `<div class="stack">${crumbs(home, [c.name])}
-    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}</h1>
-      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}${DEALER_KINDS.includes(c.kind) ? `<span class="badge ${(c.extra || {}).project_partner === 'Yes' ? 'ok' : (c.extra || {}).project_partner === 'Potential' ? 'info' : 'plain'}" data-pp-badge>Project Partner: ${esc((c.extra || {}).project_partner || 'not filled')}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span><span class="small muted">${esc(c.ref || '')}</span>${[...new Set(D.opportunities.filter(o => o.client_id === c.id && o.lead_id).map(o => o.lead_id))].map(ldFromLink).join('')}</div>
-      <p class="muted">${esc(fmtMobile(c.mobile))} · ${esc(c.city)}${c.region ? ', ' + esc(c.region) : ''} · owner ${esc(staffName(c.owner_id))}</p></div>
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(c.name)}${idChip(c.ref)}</h1>
+      <div class="row"><span class="badge info plain">${esc(kindLabel(c.kind))}</span>${c.grade || (c.extra || {}).rating ? `<span class="badge plain">Rating ${esc(c.grade || c.extra.rating)}</span>` : ''}${KINDS[c.kind].division === 'both' ? `<span class="badge plain">${esc(c.division === 'both' ? 'Both companies' : DIVS[c.division].co)}</span>` : ''}${DEALER_KINDS.includes(c.kind) ? `<span class="badge ${(c.extra || {}).project_partner === 'Yes' ? 'ok' : (c.extra || {}).project_partner === 'Potential' ? 'info' : 'plain'}" data-pp-badge>Project Partner: ${esc((c.extra || {}).project_partner || 'not filled')}</span>` : ''}<span class="badge plain">${esc(c.status || 'Active')}</span>${DEALER_KINDS.includes(c.kind) || ARCH_KINDS.includes(c.kind) ? nmMark(c) : ''}${[...new Set(D.opportunities.filter(o => o.client_id === c.id && o.lead_id).map(o => o.lead_id))].map(ldFromLink).join('')}</div>
+      <p class="muted">${esc(fmtMobile(c.mobile))} · ${esc(c.city)}${c.region ? ', ' + esc(c.region) : ''} · ${DEALER_KINDS.includes(c.kind) ? 'Field salesperson' : 'owner'} ${esc(staffName(c.owner_id))}</p></div>
       <div class="row"><button class="btn" data-act="client-edit" data-id="${id}">Edit</button><button class="btn" data-act="fu-add" data-client="${id}">+ Follow-up</button><button class="btn primary" data-act="opp-add" data-client="${id}">+ Opportunity</button></div></div>
     ${recGrid(`${subtabs(`#/client/${id}`, tab, tabs)}
     ${body(c, cts, ops, docs)}`, activityPanel({ clientId: c.id }), tab !== 'overview')}</div>`;   // a table tab (SDR, Samples, Orders...) keeps the full width below 1500 px; Activity then sits under it
@@ -846,7 +870,7 @@ function clientOverview(c) {
   const v = { ...c, ...c.extra }, fields = showFields(fieldsFor(c.kind)).filter(f => f.key !== 'kind');
   const sections = [...new Set(fields.map(f => f.section))];
   const kids = D.clients.filter(x => x.parent_id === c.id || x.firm_id === c.id || x.architect_id === c.id);
-  return `<div class="grid g2">${DEALER_KINDS.includes(c.kind) ? sdrOverviewLine(c) : ''}${DEALER_KINDS.includes(c.kind) ? `<section class="card stack-s" data-served><h3>Who serves them</h3>${kv([['Served by', servedBy(c)], ...(c.kind === 'distributor' ? [['Sub-dealers they serve', String(kids.filter(x => x.kind === 'sub_dealer').length)], ['Assigned area', showVal({ type: 'cities' }, v.areas_covered)]] : [])])}</section>` : ''}
+  return `<div class="grid g2">${DEALER_KINDS.includes(c.kind) ? egoPeopleCard(c) + sdrOverviewLine(c) : ''}${DEALER_KINDS.includes(c.kind) ? `<section class="card stack-s" data-served><h3>Who serves them</h3>${kv([['Served by', servedBy(c)], ...(c.kind === 'distributor' ? [['Sub-dealers they serve', String(kids.filter(x => x.kind === 'sub_dealer').length)], ['Assigned area', showVal({ type: 'cities' }, v.areas_covered)]] : [])])}</section>` : ''}
     ${sections.map(s => `<section class="card stack-s"><h3>${esc(s)}</h3>${kv(fields.filter(f => f.section === s).map(f => [esc(labelFor(f, c.kind)), showVal(f, v[f.key])]))}</section>`).join('')}
     ${['dealer', 'architect', 'firm'].includes(KINDS[c.kind].group) ? businessCard(c) : ''}
     ${KINDS[c.kind].group === 'dealer' ? `<section class="card stack-s"><h3>Sales, outstanding and orders</h3><span class="badge warn">Not connected yet</span><p class="small muted">These come from Tally invoices once Tally is connected. Nothing is shown until then, so no figure here is ever typed or estimated.</p></section>` : ''}
@@ -875,8 +899,13 @@ function clientOpps(c, cts, ops) {
   return `<div class="stack-s"><div class="row between"><p class="muted">Opportunities with ${esc(c.name)}.</p><button class="btn primary" data-act="opp-add" data-client="${c.id}">+ Add opportunity</button></div>
     ${ops.length ? oppTable(ops) : empty('No opportunities yet', 'Add one when there is a real chance of business.')}</div>`;
 }
-const oppTable = ops => table(['Opportunity', 'Pipeline', 'Stage', ...(D.access.prices ? ['Value'] : []), 'Owner', 'Next action'], ops.map(o => ({ href: `#/opp/${o.id}`,
-  cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(o.ref || '')}</div>`, esc(PIPELINES[o.pipeline].label), stageBadge(o.stage), ...(D.access.prices ? [money(o.value)] : []), esc(staffName(o.owner_id)), o.next_date ? `${esc(o.next_action || '')} · ${ds(o.next_date)}` : esc(o.next_action || '')] })));
+/* EGO6 B5 (9 Nov): an open opportunity without an open follow-up (date and next action) shows Needs follow-up; it is asked
+   for the next time it is saved or moved (fuGaps in schema.js, the same rule the server holds). Never blocked from being read. */
+const needFu = o => fuGaps(o, D.lists).length > 0;
+const fuMark = () => `<span class="badge warn ic" data-needs-fu>${fic('clock-exclamation', '')}${esc(FU_NEED)}</span>`;
+const fuCell = o => needFu(o) ? fuMark() : o.next_date ? `<div class="nxt"><b>${o.next_date === today() ? 'Today' : esc(ds(o.next_date))}</b><span class="small muted">${esc(o.next_action || '')}</span></div>` : esc(o.next_action || '');
+const oppTable = ops => table(['Opportunity', 'Pipeline', 'Stage', ...(D.access.prices ? ['Value'] : []), 'Owner', 'Next follow-up'], ops.map(o => ({ href: `#/opp/${o.id}`,
+  cells: [`<b>${esc(o.title)}</b><div class="small muted">${esc(o.ref || '')}</div>`, esc(PIPELINES[o.pipeline].label), stageBadge(o.stage), ...(D.access.prices ? [money(o.value)] : []), esc(staffName(o.owner_id)), fuCell(o)] })));
 const stageBadge = s => `<span class="badge ${Object.keys(PIPELINES).some(p => wonStage(p, D.lists) === s) ? 'ok' : Object.keys(PIPELINES).some(p => lostStage(p, D.lists) === s) ? 'bad' : 'info'}">${esc(s)}</span>`;
 function clientDocs(c, cts, ops, docs) {
   return filesBox({ id: 'cl', client: c.id, types: DOC_TYPES, docs, title: 'Add documents', canAdd: true, showOrder: true,
@@ -1050,7 +1079,7 @@ EM.VIEWS.opps = arg => {
   const CLI = o => CL()[o.client_id] || {};
   const { html: fbar, rows: all } = filterBar(EM.oppF, 'opp', { label: 'opportunities', rows: D.opportunities.filter(o => o.pipeline === p), ph: 'Opportunity, company, dealer or owner',
     text: o => `${o.title} ${o.ref || ''} ${CLI(o).name || ''} ${staffName(o.owner_id)} ${o.next_action || ''} ${(PJS().find(x => x.id === o.project_id) || {}).name || ''} ${o.dealer_id ? (DDIR().find(d => d.id === o.dealer_id) || {}).name || '' : ''}`, mobiles: o => [CLI(o).mobile],
-    tg: [['mine', 'Only mine', o => o.owner_id === me().id], ['field', 'From field sales', fromField]],
+    tg: [['mine', 'Only mine', o => o.owner_id === me().id], ['field', 'From field sales', fromField], ['needfu', FU_NEED, needFu]],
     dd: [['source', 'Source', 'Every source', o => o.source || ''], ['stage', 'Stage', 'Every stage', o => o.stage, null, D.lists.stages[p] || []], ['owner', 'Owner', 'Everyone', o => o.owner_id, staffName],
       ['city', 'City', 'Every city', o => CLI(o).city || ''], ['region', 'Region', 'Every region', o => CLI(o).region || ''], ['kind', 'Kind', 'Every kind', o => CLI(o).kind || '', kindLabel],
       ['lastq', 'Latest quotation', 'Every quotation', o => (qLatest(o.id) || { status: 'None' }).status, null, [...QUOTE_STATUSES, 'None']]],
@@ -1060,7 +1089,7 @@ EM.VIEWS.opps = arg => {
   const stages = D.lists.stages[p] || [];
   const t = today();
   const card = o => `<div class="mini" data-href="#/opp/${o.id}" tabindex="0"><b>${esc(o.title)}</b><div class="small muted">${esc((CL()[o.client_id] || {}).name || '')}</div>${o.project_id && PJS().find(x => x.id === o.project_id) ? `<div class="small">Project: ${esc(PJS().find(x => x.id === o.project_id).name)}</div>` : ''}${o.dealer_id ? `<div class="small">Dealer: ${esc((DDIR().find(d => d.id === o.dealer_id) || { name: 'outside your view' }).name)}</div>` : ''}
-    ${fromField(o) ? `<div class="small"><span class="badge info">From field sales</span> ${esc(staffName(o.extra.raised_by))}</div>` : ''}<div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}<button class="btn sm ghost" data-act="fu-add" data-client="${o.client_id}" data-opp="${o.id}" style="margin-top:4px">+ Follow-up</button></div>`;
+    ${fromField(o) ? `<div class="small"><span class="badge info">From field sales</span> ${esc(staffName(o.extra.raised_by))}</div>` : ''}<div class="small">${D.access.prices && o.value != null ? money(o.value) + ' · ' : ''}${esc(staffName(o.owner_id))}</div>${needFu(o) ? `<div>${fuMark()}</div>` : ''}${o.next_date ? `<div class="small ${o.next_date < t && !isClosed(o.pipeline, o.stage, D.lists) ? 'err' : 'muted'}">${esc(o.next_action || 'Next action')} · ${ds(o.next_date)}</div>` : ''}<button class="btn sm ghost" data-act="fu-add" data-client="${o.client_id}" data-opp="${o.id}" style="margin-top:4px">+ Follow-up</button></div>`;
   return `<div class="stack">
     <div class="row between"><div class="stack-s"><div class="kicker">Each one linked to a dealer, an architect firm or a person</div><h1>Opportunities</h1><p class="muted">${all.length} ${esc(PIPELINES[p].plural.toLowerCase())} · ${esc(scopeLabel())}</p></div>
       <div class="row"><a class="btn" href="#/lost">Lost sales</a><button class="btn primary" data-act="opp-add" data-pipeline="${p}">+ Add opportunity</button></div></div>
@@ -1136,7 +1165,7 @@ EM.VIEWS.opp = id => {
   const contact = D.contacts.find(k => k.id === o.contact_id);
   return `<div class="stack">${crumbs(['Opportunities', `#/opps/${o.pipeline}`], [o.title])}
     <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(o.title)}</h1>
-      <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}<span class="small muted">${esc(o.ref || '')}</span>${o.lead_id ? ldFromLink(o.lead_id) : ''}</div>
+      <div class="row"><span class="badge info plain">${esc(PIPELINES[o.pipeline].label)}</span>${stageBadge(o.stage)}${needFu(o) ? fuMark() : ''}<span class="small muted">${esc(o.ref || '')}</span>${o.lead_id ? ldFromLink(o.lead_id) : ''}</div>
       <p class="muted"><a href="#/client/${o.client_id}">${esc(c.name)}</a>${contact ? ` · ${esc(contact.name)} ${esc(fmtMobile(contact.mobile))}` : ''}</p></div>
       <div class="row">${o.stage === wonStage(o.pipeline, D.lists) && retailOpp ? (rOrd => rOrd ? `<a class="btn primary" data-opp-order href="#/order/${rOrd.id}">Retail order ${esc(rOrd.ref)}</a>` : '')(allOrders().find(x => x.opp_id === o.id)) : o.stage === wonStage(o.pipeline, D.lists) && o.pipeline !== 'wholesale' && allowedTab('installation') ? `<button class="btn primary" data-act="site-add" data-client="${o.client_id}" data-opp="${id}">Add installation site</button>` : ''}${dealerSteps(o.pipeline, D.lists) && !isClosed(o.pipeline, o.stage, D.lists) ? `<button class="btn ${o.dealer_id ? '' : 'primary'}" data-act="ld-move" data-id="${id}">${o.dealer_id ? 'Move to another dealer' : 'Allocate to a dealer'}</button>` : ''}<button class="btn" data-act="fu-add" data-client="${o.client_id}" data-opp="${id}">+ Follow-up</button><button class="btn" data-act="opp-edit" data-id="${id}">Edit</button></div></div>
     ${recGrid(`<section class="card stack-s"><h3>Stage</h3><div class="flow">${stages.map((s, i) => `<span class="${s === o.stage ? 'cur' : i < at && o.stage !== lostStage(o.pipeline, D.lists) ? 'done' : ''}">${esc(s)}</span>`).join('<i>›</i>')}</div>${wonNote(o)}
@@ -1151,6 +1180,23 @@ EM.VIEWS.opp = id => {
 EM.VIEWS.opp.tab = 'opps';
 EM.VIEWS.opp.title = id => (D.opportunities.find(x => x.id === id) || { title: 'Opportunity' }).title;
 
+/* EGO6 B5: the form asks for the next follow-up inline (not shown for Won, Lost, Closed) */
+const FU_KEYS = ['next_action', 'next_date'];
+const fuActs = cur => [...new Set([...(D.lists.next_actions || []), ...(cur ? [cur] : [])])];
+function fuSet(v, pipeline) {
+  if (fuExempt(pipeline, v.stage, D.lists)) return '';
+  const gaps = fuGaps({ ...v, pipeline }, D.lists);
+  return `<fieldset class="fs nf" data-next-fu><legend>Next follow-up</legend>${gaps.length ? `<div class="nf-ask" data-nf-ask>${fic('clock-exclamation', '')}<span><b>${esc(FU_NEED)}.</b> Pick the next follow-up date and the next action to save.</span></div>` : ''}
+    <div class="fgrid"><div class="field" data-field="next_date"><label for="of-next_date">Next follow-up date *</label><input class="input" type="date" id="of-next_date" name="next_date" min="${today()}" value="${esc(v.next_date || '')}"></div>
+    <div class="field" data-field="next_action"><label for="of-next_action">Next action *</label><select class="input" id="of-next_action" name="next_action" data-keep-order><option value="">Choose</option>${fuActs(v.next_action).map(a => `<option ${a === v.next_action ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></div>
+    <div class="field span2" data-field="next_note"><label for="of-next_note">Note</label><input class="input" id="of-next_note" name="next_note" maxlength="500" placeholder="What to say or bring" value="${esc(v.next_note || '')}"></div></div></fieldset>`;
+}
+/* marks each missing part on its own field; each mark clears as it is filled (markFieldErrors' input/change listener) */
+function fuMarkGaps(root, gaps) {
+  for (const g of gaps) { const fe = root.querySelector(`[data-field="${g === 'action' ? 'next_action' : 'next_date'}"]`); if (!fe || fe.classList.contains('has-err')) continue;
+    fe.classList.add('has-err'); fe.insertAdjacentHTML('afterbegin', `<div class="ferr" role="alert">${esc(FU_ERRS[g])}</div>`); }
+  const first = root.querySelector('[data-next-fu] .has-err'); if (first) first.scrollIntoView({ block: 'center' });
+}
 function openOppForm(o, keep) {
   const v = keep || (o ? { ...o, ...o.extra } : { owner_id: me().id });
   const clients = D.clients.filter(c => PIPES_FOR[KINDS[c.kind].group].some(p => pipesAllowed().includes(p))).sort((a, b) => a.name.localeCompare(b.name));
@@ -1170,7 +1216,8 @@ function openOppForm(o, keep) {
       ${o ? `<div class="field"><label>Client</label><input class="input" value="${esc(client.name)}" disabled><input type="hidden" name="client_id" value="${client.id}"></div>`
     : `<div class="field"><label for="of-client_id">Client *</label><select class="input" id="of-client_id" name="client_id" data-opp-redraw>${clients.map(c => `<option value="${c.id}" ${c.id === client.id ? 'selected' : ''}>${esc(c.name)} · ${esc(kindLabel(c.kind))}</option>`).join('')}</select></div>`}
       ${G.select(OPP_FIELDS[0], pipeline, 'of', pipes.map(p => [p, PIPELINES[p].label]), false).replace('<select', '<select data-opp-redraw')}
-      ${fields.filter(f => !f.section).map(oh).join('')}</div>
+      ${fields.filter(f => !f.section && !FU_KEYS.includes(f.key)).map(oh).join('')}</div>
+      ${fuSet(v, pipeline)}
       ${fields.some(f => f.section) ? fsHtml('Billing, payment and delivery', `<div class="fgrid">${fields.filter(f => f.section).map(oh).join('')}</div>`) : ''}
       ${withLines && !inFul ? `<fieldset class="fs"><legend>Designs, sq ft and rate</legend>${pipeline === 'wholesale' ? smpTick(v) : ''}<p class="small muted">Type the sq ft needed, the wastage (${wastageDefault(D.lists.rules)}% unless changed) and the rate per sq ft: the boxes are rounded up to whole boxes, and the amount is the sq ft supplied x the rate. Accessories are per piece or per rft. GST (${D.lists.rules.gst_pct}%) and the total are worked out; the total is the opportunity's value.</p>
         <div id="olines" class="stack-s">${(lines0.length ? lines0.map(l => ({ ...l, keep: l.id })) : [{}]).map((l, i) => ordLine(i, l)).join('')}</div><div class="row" style="flex-wrap:wrap"><button class="btn sm" data-act="ol-add">+ Another design</button><button class="btn sm ghost" data-act="ol-sample">Sample Excel</button><label class="btn sm ghost" style="cursor:pointer">Upload Excel<input type="file" accept=".xlsx" data-sheet="olines" hidden></label></div><div id="ol-imp"></div>
@@ -1185,6 +1232,7 @@ document.addEventListener('change', e => {
   const form = qs('#of'), o = form.dataset.id ? D.opportunities.find(x => x.id === form.dataset.id) : null;
   const keep = withDials(readForm(form, OPP_FIELDS), OPP_FIELDS);
   keep.client_id = form.querySelector('[name=client_id]').value;
+  if (qs('#of-next_note')) keep.next_note = qs('#of-next_note').value;
   if (qs('#olines')) { keep.lines = readOrder(); keep.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0); }
   if (qs('#of-sample')) { keep.sample = qs('#of-sample').checked; keep.sample_reg = (qs('#of-sample_reg') || { value: 'sample' }).value; }
   if (qs('#ochg')) keep.charges = readCharges();
@@ -1194,6 +1242,8 @@ document.addEventListener('change', e => {
 EM.ACTIONS['opp-add'] = el => openOppForm(null, el.dataset.client || el.dataset.pipeline ? { owner_id: me().id, client_id: el.dataset.client, pipeline: el.dataset.pipeline, project_id: el.dataset.project || '', dealer_id: el.dataset.dealer || '' } : null);
 EM.ACTIONS['opp-edit'] = el => openOppForm(D.opportunities.find(x => x.id === el.dataset.id));
 async function saveOpp(input, el, errId) {
+  let asked = false;
+  if (errId !== 'of-err' && fuGaps(input, D.lists).length) { const fu = await askFu(input); if (!fu) { EM._lastErr = FU_ASK; return null; } input = { ...input, ...fu }; el = qs('[data-act="fu-confirm"]') || el; errId = 'fu-err'; asked = true; }
   const { errors } = cleanOpp(input, { ...ctxLocal(), was: ((D.opportunities.find(x => x.id === input.id) || {}).extra) || {} });   // B2: an old typed Delivery date kept as it was
   if (errors.length) { showErr(errId, errors); return null; }
   busy(el, true);
@@ -1204,6 +1254,7 @@ async function saveOpp(input, el, errId) {
     if (r.followups) fuApply({ followups: r.followups, client: null, opportunity: null, clientId: r.opportunity.client_id });
     /* a wholesale sale also changes its designs, approvals and (at payment) its fulfilment: read them again */
     if (PIPELINES[r.opportunity.pipeline].lines || PIPELINES[r.opportunity.pipeline].sqft || PIPELINES[r.opportunity.pipeline].designs) { const fresh = await API('GET', '/api/bootstrap'); Object.assign(D, fresh); }
+    if (asked) EM.closeModal();
     return r;
   } catch (x) {
     busy(el, false); EM._lastErr = (x.errors || [x.message]).join(' '); showErr(errId, x.errors || x.message);
@@ -1215,6 +1266,9 @@ EM.ACTIONS['opp-save'] = async el => {
   const form = qs('#of'), input = readForm(form, OPP_FIELDS);
   input.client_id = form.querySelector('[name=client_id]').value;
   if (form.dataset.id) { input.id = form.dataset.id; input.next_seen = JSON.parse(form.dataset.seen || '{}'); }
+  if (qs('#of-next_note')) input.next_note = qs('#of-next_note').value;
+  { const gaps = fuGaps(input, D.lists); if (gaps.length) { showErr('of-err', [FU_ASK]); fuMarkGaps(form, gaps); return; } }
+  { const was = (input.next_seen || {}).date || ''; if (!fuExempt(input.pipeline, input.stage, D.lists) && fuPast(input.next_date, was)) { showErr('of-err', [FU_ERRS.past]); fuMarkGaps(form, ['past']); return; } }   // R2-F1 M-5
   if (qs('#olines')) {
     input.lines = readOrder(); input.discount_pct = Number((qs('#ord-disc') || { value: 0 }).value || 0);
     if (qs('#of-sample') && !qs('#of-sample').disabled) { input.sample = qs('#of-sample').checked; input.sample_reg = input.sample ? (qs('#of-sample_reg') || { value: 'sample' }).value : ''; }
@@ -1263,7 +1317,7 @@ const colOf = p => INVD().collections.find(c => c.id === p.collection_id) || { n
 const num = n => n == null ? '' : Number(n).toLocaleString('en-IN');
 EM.invF = { wh: '', cat: '', col: '', q: '' };
 const F = () => { EM.invF.q = EM.clientQ || ''; return EM.invF; };
-const INV_ANY = [['name', 'Design', p => p.name], ['code', 'Code', p => p.code], ['colour', 'Colour', p => (p.extra || {}).colour], ['collection', 'Collection', p => colOf(p).name]];
+const INV_ANY = [['name', 'Design', p => p.name], ['code', 'ID (design code)', p => p.code], ['colour', 'Colour', p => (p.extra || {}).colour], ['collection', 'Collection', p => colOf(p).name]];
 const invAny = p => { const f = EM.invF, q = (f.fq || '').trim().toLowerCase(); return !q || (f.field ? INV_ANY.filter(a => a[0] === f.field) : INV_ANY).some(a => String(a[2](p) || '').toLowerCase().includes(q)); };
 /* the filter, applied once: which designs, which warehouses */
 const fProducts = () => INVD().products.filter(p => { const c = colOf(p), q = F().q.toLowerCase(); return (!F().cat || c.category === F().cat) && (!F().col || c.id === F().col) && invAny(p) && (!q || `${p.name} ${p.code} ${c.name} ${p.extra.colour || ''}`.toLowerCase().includes(q)); });
@@ -1277,7 +1331,7 @@ const INV_TABS = [['overview', 'Overview'], ['stock', 'Stock'], ['categories', '
 EM.VIEWS.inventory = arg => {
   const I = INVD(), tab = INV_TABS.find(t => t[0] === arg) ? arg : 'overview', f = F();
   const colsIn = I.collections.filter(c => !f.cat || c.category === f.cat);
-  const filters = filterBar(EM.invF, 'inv', { label: 'inventory', rows: I.products, ph: 'Design, code, colour or collection', attr: 'id="invfilters"', text: p => `${p.name} ${p.code} ${colOf(p).name} ${(p.extra || {}).colour || ''}`,
+  const filters = filterBar(EM.invF, 'inv', { label: 'inventory', rows: I.products, ph: 'Search ID, design, colour or collection', attr: 'id="invfilters"', text: p => `${p.name} ${p.code} ${colOf(p).name} ${(p.extra || {}).colour || ''}`,
     dd: [['wh', 'Warehouse', 'Every warehouse', p => I.stock.filter(x => x.product_id === p.id && x.boxes).map(x => x.warehouse_id), id => (I.warehouses.find(w => w.id === id) || { name: id }).name, I.warehouses.map(w => [w.id, w.name])],
       ['cat', 'Category', 'Every category', p => colOf(p).category, null, allCats()], ['col', 'Collection', 'Every collection', p => colOf(p).id, id => colOf({ collection_id: id }).name, colsIn.map(c => [c.id, c.name])]],
     any: INV_ANY }).html;
@@ -1326,10 +1380,11 @@ function invCategories() {
   return table(['Category', 'Collections', 'Designs', 'Boxes', 'Sq ft'], allCats().filter(c => !F().cat || c === F().cat).map(c => { const cs = I.collections.filter(x => x.category === c), l = fProducts().filter(p => colOf(p).category === c).map(p => [p, boxesOf(p.id)]);
     return [`<b>${esc(c)}</b>${!cs.length && canStockUI() ? ` <button class="btn sm ghost" data-act="col-add" data-category="${esc(c)}">+ Collection</button>` : ''}`, cs.length, l.length, num(l.reduce((a, [, b]) => a + b, 0)), num(totalSqft(l))]; }));
 }
+EM.ACTIONS['prod-csv'] = () => csvDownload('EGO designs', ['ID', 'Design', 'Collection', 'Category', 'Type', 'Boxes', 'Status'], fProducts().map(p => [p.code || '', p.name, colOf(p).name, colOf(p).category, p.sub_type || '', boxesOf(p.id), p.status || '']));   // EGO6 B6: ID first
 function invDesigns() {
   const ps = fProducts();
-  return `${filtNote()}${INVD().products.length ? table(['Design', 'Code', 'Collection', 'Category', 'Type', 'Boxes', 'Sq ft', 'Warehouses', 'Status'], ps.slice(0, 400).map(p => { const b = boxesOf(p.id), wn = INVD().warehouses.filter(w => boxesOf(p.id, w.id)).map(w => w.name); return { href: '#/product/' + p.id,
-      cells: [`<b>${esc(p.name)}</b>`, esc(p.code || ''), esc(colOf(p).name), esc(colOf(p).category), esc(p.sub_type || ''), p.extra.low_stock != null && b < p.extra.low_stock ? `<span class="badge bad">${b}</span>` : b, sqftTxt(p, b), esc(wn.join(', ')), p.status === 'Discontinued' ? '<span class="badge plain">Discontinued</span>' : ''] }; }))
+  return `${filtNote()}${INVD().products.length ? '<div class="row"><button class="btn" data-act="prod-csv">Download for Excel</button></div>' : ''}${INVD().products.length ? table(['ID', 'Design', 'Collection', 'Category', 'Type', 'Boxes', 'Sq ft', 'Warehouses', 'Status'], ps.slice(0, 400).map(p => { const b = boxesOf(p.id), wn = INVD().warehouses.filter(w => boxesOf(p.id, w.id)).map(w => w.name); return { href: '#/product/' + p.id,
+      cells: [idChip(p.code), `<b>${esc(p.name)}</b>`, esc(colOf(p).name), esc(colOf(p).category), esc(p.sub_type || ''), p.extra.low_stock != null && b < p.extra.low_stock ? `<span class="badge bad">${b}</span>` : b, sqftTxt(p, b), esc(wn.join(', ')), p.status === 'Discontinued' ? '<span class="badge plain">Discontinued</span>' : ''] }; }))
       + (ps.length > 400 ? `<p class="small muted">Showing 400 of ${ps.length}.</p>` : '')
       : empty('No designs yet', 'Add a collection first, then its designs, or upload the Excel file.')}`;
 }
@@ -1359,7 +1414,7 @@ EM.VIEWS.product = id => {
   const c = colOf(p), I = INVD(), total = boxesOf(p.id, null);
   const allB = I.stock.filter(x => x.product_id === p.id).reduce((a, x) => a + x.boxes, 0);
   return `<div class="stack">${crumbs(['Inventory', '#/inventory/designs'], [c.category, '#/inventory/categories'], [c.name, '#/collection/' + c.id], [p.name])}
-    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(p.name)}</h1><div class="row"><a class="badge info plain" href="#/collection/${c.id}">${esc(c.name)}</a><span class="badge plain">${esc(c.category)}</span>${p.sub_type ? `<span class="badge plain">${esc(p.sub_type)}</span>` : ''}${p.code ? `<span class="small muted">${esc(p.code)}</span>` : ''}${p.status === 'Discontinued' ? '<span class="badge warn">Discontinued</span>' : ''}</div>
+    <div class="row between" style="align-items:flex-start"><div class="stack-s"><h1>${esc(p.name)}${idChip(p.code)}</h1><div class="row"><a class="badge info plain" href="#/collection/${c.id}">${esc(c.name)}</a><span class="badge plain">${esc(c.category)}</span>${p.sub_type ? `<span class="badge plain">${esc(p.sub_type)}</span>` : ''}${p.code ? `<span class="small muted">${esc(p.code)}</span>` : ''}${p.status === 'Discontinued' ? '<span class="badge warn">Discontinued</span>' : ''}</div>
       <p class="muted">${num(allB)} boxes in stock · ${sqftTxt(p, allB)} sq ft</p></div>
       ${canStockUI() ? `<div class="row"><button class="btn" data-act="prod-edit" data-id="${p.id}">Edit</button><button class="btn primary" data-act="move-add" data-product="${p.id}">Stock in / out</button></div>` : ''}</div>
     <div class="grid g2">${p.extra.image ? `<section class="card"><img src="${esc(p.extra.image)}" alt="${esc(p.name)}" style="width:100%;border-radius:10px;display:block" loading="lazy"></section>` : ''}
@@ -1416,6 +1471,8 @@ const stockLine = (i, whs) => `<div class="fgrid stockline" data-i="${i}" style=
   <div class="field"><label for="sl-boxes-${i}">Boxes there today</label><input class="input" id="sl-boxes-${i}" type="number" min="0" step="1" inputmode="numeric" data-sl="boxes"></div>
   <div class="field sl-new" ${whs.length ? 'hidden' : ''}><label for="sl-name-${i}">New warehouse name</label><input class="input" id="sl-name-${i}" data-sl="name"></div>
   <div class="field sl-new" ${whs.length ? 'hidden' : ''}><label for="sl-city-${i}">Its city</label><input class="input" id="sl-city-${i}" data-sl="city"></div></div>`;
+/* EGO6 B6: the design code is the design's ID. New: blank gets EGO-0001 style. Saved: fixed, an Owner may change it (History line). */
+const codeField = (rec, v) => `<div class="field"><label for="ivf-code">ID (design code)</label><input class="input" id="ivf-code" name="code" value="${esc(v || '')}"${rec && rec.code && !isOwner() ? ' disabled aria-disabled="true"' : ''} placeholder="${rec ? '' : 'Blank: EGO-0001 style is given'}"><span class="small muted">${rec && rec.code ? (isOwner() ? 'The ID never changes on its own. A change here is written in History.' : 'The ID never changes. Only an Owner changes it.') : 'EGO\'s SKU item code. Two designs never share one.'}</span></div>`;
 function invForm(table, rec, keep, step) {
   const FL = { collections: COLLECTION_FIELDS, products: PRODUCT_FIELDS, warehouses: WAREHOUSE_FIELDS }[table], what = { collections: 'collection', products: 'design', warehouses: 'warehouse' }[table];
   const v = keep && !rec ? keep : (rec ? { ...rec, ...(rec.extra || {}) } : {});
@@ -1427,7 +1484,7 @@ function invForm(table, rec, keep, step) {
   const newDesign = table === 'products' && !rec, whs = INVD().warehouses;
   EM.modal(`<h2>${rec ? 'Edit ' + esc(rec.name) : 'Add a ' + what}</h2>${note}
     <form id="ivf" class="stack" onsubmit="return false" style="margin-top:14px" data-table="${table}" data-id="${rec ? rec.id : ''}" data-step="${step || ''}">
-      ${secs.map(sc => `<fieldset class="fs">${sc ? `<legend>${esc(sc)}</legend>` : ''}<div class="fgrid">${fields.filter(f => (f.section || '') === sc).map(f => fieldHtml(f, v[f.key], 'ivf')).join('')}</div></fieldset>`).join('')}
+      ${secs.map(sc => `<fieldset class="fs">${sc ? `<legend>${esc(sc)}</legend>` : ''}<div class="fgrid">${fields.filter(f => (f.section || '') === sc).map(f => table === 'products' && f.key === 'code' ? codeField(rec, v.code) : fieldHtml(f, v[f.key], 'ivf')).join('')}</div></fieldset>`).join('')}
     </form>
     ${newDesign ? `<fieldset class="fs" style="margin-top:12px"><legend>Where it is stocked</legend><div id="slines" class="stack-s">${stockLine(0, whs)}</div>
       <div class="row"><button class="btn sm" data-act="sl-add">+ Another warehouse</button></div><p class="small muted">Leave Boxes empty if it is not in stock yet. Later changes go through Stock in / out.</p></fieldset>` : ''}
@@ -1885,6 +1942,26 @@ document.addEventListener('change', e => { if (!e.target || e.target.id !== 'fb-
 /* moving a retail opportunity to its won stage asks who fulfils the order (the stage select and the edit form both come here) */
 const needsFulBy = (input, o) => { const P = PIPELINES[input.pipeline] || {}; return P.okind && !['wholesale', 'project'].includes(P.okind) && input.stage === wonStage(input.pipeline, D.lists) && (!o || o.stage !== input.stage) && !allOrders().some(x => x.opp_id === input.id); };
 EM.fbPending = null;
+/* EGO6 B5: moving (or allocating) an open opportunity that has no follow-up asks for it first, in a small window */
+EM.fuPending = null;
+function askFu(input) {
+  return new Promise(res => {
+    EM.fuPending = res;
+    EM.modal(`<h2>Next follow-up</h2><p class="muted small">${esc(input.title || '')}${input.stage ? ' · ' + esc(input.stage) : ''}</p>
+      <form id="fuask" onsubmit="return false" style="margin-top:12px"><div class="nf-ask" data-nf-ask>${fic('clock-exclamation', '')}<span><b>${esc(FU_NEED)}.</b> Pick the next follow-up date and the next action to save.</span></div>
+      <div class="fgrid" style="margin-top:12px" data-next-fu><div class="field" data-field="next_date"><label for="fu-next_date">Next follow-up date *</label><input class="input" type="date" id="fu-next_date" min="${today()}" value="${esc(input.next_date || '')}"></div>
+      <div class="field" data-field="next_action"><label for="fu-next_action">Next action *</label><select class="input" id="fu-next_action" data-keep-order><option value="">Choose</option>${fuActs(input.next_action).map(a => `<option ${a === input.next_action ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select></div>
+      <div class="field span2" data-field="next_note"><label for="fu-next_note">Note</label><input class="input" id="fu-next_note" maxlength="500" placeholder="What to say or bring"></div></div>
+      ${errBox('fu-err')}<div class="row" style="margin-top:14px"><button class="btn primary" data-act="fu-confirm">Save</button><button class="btn" data-act="fu-cancel">Cancel</button></div></form>`);
+  });
+}
+EM.ACTIONS['fu-confirm'] = () => {
+  const f = qs('#fuask'), v = { next_date: qs('#fu-next_date').value, next_action: qs('#fu-next_action').value, next_note: qs('#fu-next_note').value };
+  const gaps = [!v.next_date && 'date', fuPast(v.next_date, '') && 'past', !v.next_action && 'action'].filter(Boolean);   // R2-F1 M-5
+  if (gaps.length) { showErr('fu-err', []); return fuMarkGaps(f, gaps); }
+  const r = EM.fuPending; EM.fuPending = null; if (r) r(v);
+};
+EM.ACTIONS['fu-cancel'] = () => { const r = EM.fuPending; EM.fuPending = null; EM.closeModal(); if (r) r(null); };
 function askFulBy(input, after) {
   const c = CL()[input.client_id] || {}, div = PIPELINES[input.pipeline].division;
   EM.fbPending = { input, after };
@@ -2694,6 +2771,7 @@ EM.ACTIONS['rules-open'] = () => {
   const R = D.lists.rules, n = (id, label, v, unit) => `<div class="field"><label for="ru-${id}">${label}</label>${G.adorn(unit === '₹' ? { type: 'money', key: id } : { key: 'x' }, `<input class="input" type="number" min="0" step="any" id="ru-${id}" value="${v}">`).replace('class="suf">undefined<', `class="suf">${unit || ''}<`).replace('<span class="suf"></span>', '')}</div>`;
   EM.modal(`<h2>Rules and numbers</h2><p class="muted small">The numbers the processing uses. Changes apply from the next order, approval or score.</p>
     <div class="stack" style="margin-top:12px"><fieldset class="fs"><legend>Orders and production</legend><div class="fgrid">${n('gst', 'GST', R.gst_pct, '%')}${n('wastage', 'Wastage on a new line', wastageDefault(R), '%')}${n('moq', 'Minimum production order', R.moq_boxes, 'boxes')}${n('round', 'Round production up to', R.production_round_boxes, 'boxes')}${n('eta', 'Production takes', R.production_eta_days, 'days')}${n('pay', 'An order is overdue after', R.payment_days, 'days')}${n('cset', 'Complaint settlements need approval from', R.complaint_settle_from, '₹')}${n('lesc', 'A dealer lead goes to the field sales owner after', R.lead_escalate_days ?? 2, 'days without an update')}${n('dorm', 'A dealer is dormant (Priority calls) after', R.dormant_days ?? 60, 'days with no order')}${n('swin', 'Sales count against a sample for', R.sample_window_days ?? 90, 'days after it is given')}${n('sdri', 'Sample Display Record (SDR): inspect each dealer\'s displays every', R.sdr_inspect_days ?? 30, 'days')}${n('chp', 'EGO Champion points per won sale', R.champion_points ?? 10, 'points')}</div></fieldset>
+    <fieldset class="fs" data-rules-nm><legend>Field visits</legend><div class="fgrid">${n('nmr', 'Not met: red after (months)', R.not_met_red_months ?? 3, 'months')}${n('nms', 'Not met: second level (months)', R.not_met_second_months ?? 6, 'months')}${n('kvp', 'Keep visit photos (days)', R.keep_visit_photos_days ?? 180, 'days')}</div></fieldset>
     <fieldset class="fs" data-prod-days><legend>Normal days per production stage</legend><p class="small muted">The days each stage takes after the one before. Each production order's planned dates are worked out from its order date with these; a date changed on one order stays on it.</p><div class="fgrid">${OS_('production_stages').slice(1).map((st, k) => `<div class="field"><label for="ru-pd-${k}">${esc(st)}</label><input class="input" type="number" min="0" step="1" id="ru-pd-${k}" data-pd="${esc(st)}" value="${prodDays(R, OS_('production_stages'), k + 1)}"></div>`).join('')}</div></fieldset>
     <fieldset class="fs" data-cat-units><legend>How each category is sold</legend><p class="small muted">Flooring and cladding are per sq ft, with whole boxes. Accessories (skirting, profiles, underlay foam, film, installation) are per piece or per running ft (rft). A new category starts from its name; change any here.</p>
       ${table(['Category', 'Sold'], allCats().map(c => [esc(c), `<select class="input" data-cu="${esc(c)}" aria-label="${esc(c)} sold" style="max-width:240px">${Object.entries(QTY_UNIT_LONG).map(([k, l]) => `<option value="${k}" ${catUnit(c, R) === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`]))}</fieldset>
@@ -2710,7 +2788,7 @@ EM.ACTIONS['rules-save'] = async el => {
     el.dataset.sure = '1'; el.textContent = 'Save, I understand'; return;
   }
   const v = id => Number(qs('#ru-' + id).value), R = D.lists.rules;
-  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), prod_days: Object.fromEntries([...document.querySelectorAll('[data-pd]')].map(x => [x.dataset.pd, Number(x.value)])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'), sample_window_days: v('swin'), sdr_inspect_days: v('sdri'), champion_points: v('chp'),
+  const rules = { ...R, gst_pct: v('gst'), wastage_pct: v('wastage'), cat_units: Object.fromEntries([...document.querySelectorAll('[data-cu]')].map(x => [x.dataset.cu, x.value])), prod_days: Object.fromEntries([...document.querySelectorAll('[data-pd]')].map(x => [x.dataset.pd, Number(x.value)])), moq_boxes: v('moq'), production_round_boxes: v('round'), production_eta_days: v('eta'), payment_days: v('pay'), complaint_settle_from: v('cset'), lead_escalate_days: v('lesc'), dormant_days: v('dorm'), sample_window_days: v('swin'), sdr_inspect_days: v('sdri'), champion_points: v('chp'), not_met_red_months: v('nmr'), not_met_second_months: v('nms'), keep_visit_photos_days: v('kvp'),
     approvals: Object.fromEntries(Object.keys(R.approvals).map(k => [k, { levels: Object.fromEntries([...document.querySelectorAll(`[data-ap="${k}"]`)].map(i => [i.dataset.lv, Number(i.value)])) }])),
     p200: { tiers: [...document.querySelectorAll('#p2t .p2t')].map(r => ({ name: r.querySelector('[data-t="name"]').value.trim(), min: Number(r.querySelector('[data-t="min"]').value) })).filter(t => t.name),
       weights: Object.fromEntries(['sales', 'breadth', 'payments', 'display', 'activity'].map(k => [k, v('w-' + k)])) } };
@@ -2859,13 +2937,18 @@ async function readWorkbook(file, tpl) {
   }
   if (!rows.length) throw new Error('No rows to import. Fill rows under the headers (the example rows are skipped).');
   /* the same company or person twice in one file: the second is an error, not a silent update */
-  const seen = new Map();
+  const seen = new Map(), codeSeen = new Map();
   for (const r of rows) {
     const keys = r.tab === 'clients' ? [normMobile(r.data.mobile || r.data.poc_mobile).value, normGst(r.data.gst)].filter(Boolean).map(k => 'c:' + k)
       : r.tab === 'contacts' ? ['k:' + String(r.data.client_key).trim().toLowerCase() + '|' + (normMobile(r.data.mobile).value || '')]
         : ['categories', 'collections', 'warehouses'].includes(r.tab) ? [r.tab + ':' + r.name.toLowerCase()]
           : r.tab === 'stock' ? ['s:' + String(r.data.collection || '').trim().toLowerCase() + '|' + r.name.toLowerCase() + '|' + String(r.data.warehouse || '').trim().toLowerCase()] : [];
+    const idK = String(r.data.ref == null ? '' : r.data.ref).trim().toLowerCase();
+    if (r.tab === 'clients' && idK) keys.push('id:' + idK);   // EGO6 B6: one row per ID
     for (const k of keys) { if (seen.has(k)) { r.local = `same as ${seen.get(k).sheetName} row ${seen.get(k).row} in this file`; break; } }
+    /* EGO6 B6: a design code is one design: the same code on another design in this file is refused (one design in two warehouses is fine) */
+    const code = r.tab === 'stock' ? String(r.data.code == null ? '' : r.data.code).trim().toLowerCase() : '', who = String(r.data.collection || '').trim().toLowerCase() + '|' + r.name.toLowerCase();
+    if (!r.local && code) { const was = codeSeen.get(code); if (was && was.who !== who) r.local = `design code ${String(r.data.code).trim()} is also on row ${was.r.row} for ${was.r.name}. One code is one design`; else if (!was) codeSeen.set(code, { who, r }); }
     if (!r.local) keys.forEach(k => seen.set(k, r));
   }
   IMP.rows = rows;
@@ -2953,7 +3036,7 @@ function rolesMatrix() {
     const chk = (k, label, on) => `<label class="chip" style="padding:6px 10px"><input type="checkbox" data-rsw="${r.id}|${k}" ${on ? 'checked' : ''} ${dis}> ${esc(label)}</label>`;
     const tabsOn = (r.tabs || []).length ? r.tabs : TAB_CHOICES.map(([k]) => k).filter(k => !FIELD_TABS[k] || FIELD_TABS[k].includes(r.id));   // R2a: the two field boards follow FIELD_TABS until ticked
     return `<section class="card stack-s" data-role-card="${r.id}"><div class="row between"><div><b>${esc(r.name)}</b> <span class="small muted">${n.length} ${n.length === 1 ? 'person' : 'people'}${n.length ? ': ' + esc(n.slice(0, 6).map(s => s.name.split(' ')[0]).join(', ')) + (n.length > 6 ? '…' : '') : ''}</span>
-        <div class="small muted">${esc((SCOPES_ALL.find(x => x[0] === r.scope) || ['', r.scope])[1])}${TELE_ROLES.includes(r.id) && r.scope === 'own' ? ' (dealers, architects and people: the whole company)' : ''} · ${divName(r.division)}${r.prices ? ' · money' : ' · no money'}${r.readonly ? ' · view only' : ''} · ${esc((DASHES.find(x => x[0] === (r.dash || '')) || ['', ''])[1])} dashboard</div></div>
+        <div class="small muted">${esc((SCOPES_ALL.find(x => x[0] === r.scope) || ['', r.scope])[1])}${r.client_scope && r.scope === 'own' ? ' (dealers, architects and people: the whole company)' : ''} · ${divName(r.division)}${r.prices ? ' · money' : ' · no money'}${r.readonly ? ' · view only' : ''} · ${esc((DASHES.find(x => x[0] === (r.dash || '')) || ['', ''])[1])} dashboard</div></div>
       <div class="row">${edit ? `<button class="btn sm" data-act="role-toggle" data-id="${r.id}">${open ? 'Close' : r.id === 'owner' ? 'See' : 'Change access'}</button><button class="btn sm ghost" data-act="role-copy" data-id="${r.id}">Copy role</button>${r.id !== 'owner' && !D.staff.some(s => s.role === r.id) ? `<button class="btn sm ghost" data-act="role-del" data-id="${r.id}">Remove</button>` : ''}` : ''}</div></div>
       ${open ? `<div class="stack-s" data-role-body>${r.id === 'owner' ? '<div class="callout">The Owner role always has full access, so management can never be locked out.</div>' : ''}
         <div class="fgrid"><div class="field"><label for="rn-${r.id}">Role name</label><input class="input" id="rn-${r.id}" data-rsw="${r.id}|name" value="${esc(r.name)}" ${dis}></div>
@@ -3317,9 +3400,10 @@ function filterBar(st, key, cfg) {
     ${cfg.date ? `<label class="flt-dd flt-date${st.period !== 'all' ? ' is-set' : ''}" title="${esc(cfg.dateWhat || '')}"><span class="flt-k">Date filter</span><select data-df="${key}" data-dfk="period" aria-label="Date filter" data-keep-order>${PER.map(([v, l]) => o(v, l, st.period)).join('')}</select></label>
     ${custom ? `<span class="flt-dates"><input type="date" data-df="${key}" data-dfk="from" value="${esc(st.from || '')}" aria-label="From date"><span class="flt-k">to</span><input type="date" data-df="${key}" data-dfk="to" value="${esc(st.to || '')}" aria-label="To date"></span>` : ''}` : ''}</div>
     ${chips.length ? `<div class="flt-on">${cfg.ext ? '' : `<span class="flt-n"><b>${num(rows.length)}</b> of ${num(all.length)}</span>`}${chips.map(([k, l, v]) => `<button class="flt-chip" data-act="flt-x" data-flt-x="${key}" data-k="${esc(k)}" aria-label="Remove filter ${esc(l)} ${esc(v)}">${esc(l)}: <b>${esc(v)}</b>${ic('x')}</button>`).join('')}<button class="flt-clear" data-act="flt-clear" data-flt-x="${key}">Clear all</button></div>` : ''}</div>`;
+  FLT_ROWS[key] = rows;
   return { html, rows };
 }
-const FLT = {};
+const FLT = {}, FLT_ROWS = {};
 const fltClear = (st, k) => { if (k === 'q') EM.clientQ = ''; else if (k.startsWith('tg:')) st.tg[k.slice(3)] = false; else if (k === 'fq') { st.fq = ''; st.field = ''; st.ffrom = ''; st.fto = ''; } else if (k === 'date') { st.period = 'all'; st.from = ''; st.to = ''; } else st[k] = ''; };
 EM.ACTIONS['flt-x'] = el => { const st = FLT[el.dataset.fltX]; if (st) fltClear(st, el.dataset.k); EM.rerender(); };
 EM.ACTIONS['flt-clear'] = el => { const st = FLT[el.dataset.fltX]; if (st) { for (const k of Object.keys(st)) if (!['tg', 'period', 'from', 'to'].includes(k)) st[k] = ''; st.tg = {}; fltClear(st, 'date'); EM.clientQ = ''; } EM.rerender(); };
@@ -3391,7 +3475,7 @@ function smpCard(o) {
   if (!o || !Number(o.sample)) return '';
   const regs = REGS().filter(r => (r.order_id || (r.extra || {}).order_id) === o.id);
   return `<section class="card stack-s" data-smp-card><h3><span class="badge plain ty ty-sample"><svg aria-hidden="true"><use href="icons.svg#i-package"/></svg>Sample order</span></h3><p class="small muted">Sample order: not counted in scheme sales or target achievement.</p>
-    ${regs.length ? kv([['Register', regs.map(r => `<a href="${r.kind === 'display' ? `#/client/${esc(r.client_id)}/sdr` : '#/samples'}" data-smp-reg="${esc(r.id)}">${esc(r.ref)}</a> · ${esc(r.kind === 'display' ? 'Displays (SDR)' : 'Samples')}`).join('<br>')]]) : ''}</section>`;
+    ${regs.length ? kv([['Register', regs.map(r => `<a href="${r.kind === 'display' ? `#/client/${esc(r.client_id)}/sdr` : '#/samples/list'}" data-smp-reg="${esc(r.id)}"${r.kind === 'display' ? '' : ` data-act="smp-line" data-ref="${esc(r.ref)}"`}>${esc(r.ref)}</a> · ${esc(r.kind === 'display' ? 'Displays (SDR)' : 'Samples')}`).join('<br>')]]) : ''}</section>`;
 }
 function invCard0(o) {
   if (!o || !o.inv_no) return '';
@@ -3735,7 +3819,7 @@ function timelineFor(clientId, oppId) {
     push(a.at, 'talk', `${ACT_ICON[a.kind] || a.kind}${a.direction === 'in' ? ' in' : a.direction === 'out' ? ' out' : ''}${a.opp_id && !oppId ? ' · ' + oppName(a.opp_id) : ''}`, a.summary, a.via_key ? `via API key ${a.via_key}` : staffName(a.by_staff), { source: a.source, kind: a.kind });
   for (const h of D.history.filter(h => oppIds.has(h.opp_id))) push(h.at, 'stage', `${h.from_stage ? 'Moved to' : 'Opened at'} ${h.to_stage}${oppId ? '' : ' · ' + oppName(h.opp_id)}`, `${h.from_stage ? 'from ' + h.from_stage : ''}${h.note ? (h.from_stage ? ' · ' : '') + h.note : ''}`, staffName(h.by_staff));
   for (const f of FUS().filter(f => f.client_id === clientId && f.status !== 'open' && (!oppId || f.opp_id === oppId))) push(f.done_at, 'followup', `Follow-up done: ${f.action}${f.source ? ' (' + f.source + ')' : ''}${f.opp_id && !oppId ? ' · ' + oppName(f.opp_id) : ''}`, f.outcome + (f.stop_reason ? ` · No further follow-up: ${f.stop_reason}` : ''), staffName(f.done_by));
-  if (!oppId) for (const v of (D.visits || []).filter(v => v.client_id === clientId)) push(v.checkin_at || v.updated_at || v.day + 'T12:00:00+05:30', 'talk', v.status === 'done' ? `Visit: ${v.outcome || 'done'}` : v.status === 'in' ? 'Visit: checked in' : v.status === 'missed' ? 'Visit missed' : `Visit planned for ${ds(v.day)}`, v.note || '', staffName(v.staff_id), { visit: v.id });   // B3 (R18): field visits to this dealer
+  if (!oppId) for (const v of (D.visits || []).filter(v => v.client_id === clientId)) push(v.status === 'missed' ? v.day + 'T12:00:00+05:30' : v.checkin_at || v.updated_at || v.day + 'T12:00:00+05:30', 'talk', v.status === 'done' ? `Visit: ${v.outcome || 'done'}` : v.status === 'in' ? 'Visit: checked in' : v.status === 'missed' ? `Visit missed (planned for ${ds(v.day)})` : `Visit planned for ${ds(v.day)}`, v.note || '', staffName(v.staff_id), { visit: v.id, mark: vMark(v) + (v.photo_note ? `<div>${vPhoto(v, '')}</div>` : '') });   // B3 (R18): field visits to this dealer; EGO6 B4 marks
   for (const l of (D.qlog || []).filter(l => oppIds.has(l.record_id))) push(l.at, 'quotation', l.summary, oppId ? '' : oppName(l.record_id), staffName(l.by_staff));   // b2
   for (const d of D.documents.filter(d => d.client_id === clientId && (!oppId || d.opp_id === oppId))) push(d.created_at, 'file', `File added: ${d.name}`, d.followup_id ? `${d.type} · with a follow-up` : d.type, uploaderName(d), { doc: d.id });
   for (const a of (O.approvals || []).filter(a => a.client_id === clientId && (!oppId || a.record_id === oppId))) {
@@ -3773,7 +3857,7 @@ function activityPanel({ clientId, oppId, opps, leadId, locked }) {
       ${open.length ? `<div class="fu-side">${fuTable(open, { where: !oppId || pj, side: true })}</div>` : `<p class="small muted">No follow-up booked${leadId ? ' for this lead' : pj ? ' for this project' : oppId ? ' for this opportunity' : ''}. Add one so it is not forgotten.</p>`}</section>
     <section class="card stack-s" data-act-card><div class="row between" style="flex-wrap:wrap"><h3>Activity</h3>${locked ? '' : `<div class="row" style="gap:6px;flex-wrap:wrap" data-act-logs>${logs}</div>`}</div>
       <div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end" data-act-filters>${sel('show', 'Show', ACT_SHOW)}${dateFilter(f, 'act', 'When')}${sel('field', 'Any field', [['', 'Any field'], ...ACT_FIELDS])}<label class="field" style="min-width:150px"><span class="small muted">contains</span><input class="input" id="act-fq" value="${esc(f.fq)}" placeholder="Type to filter"></label></div>
-      ${rows.length ? `<div class="timeline" data-timeline>${rows.slice(0, 300).map(i => `<div class="on" data-tl="${i.group}"><b>${esc(i.title)}</b>${i.detail ? `<div class="small">${esc(i.detail)}</div>` : ''}<div class="small muted">${esc(whenIST(i.at))}${i.who ? ' · ' + esc(i.who) : ''}${i.source && i.source !== 'manual' ? ' · from ' + esc(i.source) : ''}</div>${i.doc ? `<div class="row" style="gap:6px" data-file-acts><button class="btn sm" data-act="fu-view" data-id="${i.doc}">View</button><button class="btn sm ghost" data-act="fu-dl" data-id="${i.doc}">Download</button><button class="btn sm ghost" data-act="fu-share" data-id="${i.doc}">Share</button></div>` : ''}</div>`).join('')}</div>${rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Use the filters.</p>` : ''}`
+      ${rows.length ? `<div class="timeline" data-timeline>${rows.slice(0, 300).map(i => `<div class="on" data-tl="${i.group}"><b>${esc(i.title)}</b>${i.mark || ''}${i.detail ? `<div class="small">${esc(i.detail)}</div>` : ''}<div class="small muted">${esc(whenIST(i.at))}${i.who ? ' · ' + esc(i.who) : ''}${i.source && i.source !== 'manual' ? ' · from ' + esc(i.source) : ''}</div>${i.doc ? `<div class="row" style="gap:6px" data-file-acts><button class="btn sm" data-act="fu-view" data-id="${i.doc}">View</button><button class="btn sm ghost" data-act="fu-dl" data-id="${i.doc}">Download</button><button class="btn sm ghost" data-act="fu-share" data-id="${i.doc}">Share</button></div>` : ''}</div>`).join('')}</div>${rows.length > 300 ? `<p class="small muted">Showing 300 of ${rows.length}. Use the filters.</p>` : ''}`
         : `<p class="small muted" data-act-empty>${all.length ? 'Nothing for this filter.' : 'Nothing yet. Calls, visits, messages, stage moves, files, approvals and payments for this record all show here.'}</p>`}</section></div>`;
 }
 document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.af; if (k) { EM.actF[k] = e.target.value; EM.rerender(); } });
@@ -4915,6 +4999,19 @@ const fbHm = ts => ts ? new Date(Date.parse(ts)).toLocaleTimeString('en-IN', { t
 const fbLen = (a, b) => { const n = Math.round((Date.parse(b) - Date.parse(a)) / 6e4); return n >= 60 ? `${Math.floor(n / 60)} h ${n % 60} min` : `${n} min`; };
 const fbPlace = (lat, lng, acc, noloc) => noloc || lat == null ? '' : `${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}${acc != null ? ` · within ${acc} m` : ''}`;
 const fbWhere = (lat, lng, acc, noloc) => noloc || lat == null ? '<span class="muted">Location not shared</span>' : `<a class="fb-where" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}">${fic('map-pin', '')}${esc(fbPlace(lat, lng, acc, noloc))}</a>`;
+/* EGO6 B4 (design/ego6/CONTRACT.txt 4): the marks a manager sees on a checked-in visit, the same on the Attendance board, the
+   Roadmap day and the dealer's Activity: red No location with its reason; amber Far from the dealer over FAR_M; else the distance */
+const vFlag = v => !(v.status === 'in' || v.status === 'done') ? '' : v.checkin_noloc ? 'noloc' : v.checkin_dist != null && v.checkin_dist > FAR_M ? 'far' : '';
+/* R2-F1 M-7: a No location or Far mark opens that visit on its Roadmap day (from Attendance and the dealer's Activity) */
+const vGo = (v, inner) => EM.route().r === 'roadmap' ? inner : `<a href="#/roadmap" data-act="v-open" data-id="${esc(v.id)}" data-staff="${esc(v.staff_id || '')}" data-day="${esc(v.day || '')}" title="Open this visit">${inner}</a>`;
+EM.ACTIONS['v-open'] = el => { Object.assign(EM.rmF, { person: el.dataset.staff, day: el.dataset.day, add: '', prospect: false, wd: [], rep: false, count: '' }); EM.rmFocus = EM.rmOpen = el.dataset.id; location.hash = '#/roadmap'; setTimeout(rmFocusPaint, 100); };
+NAV_ACTS.add('v-open'); LOOK_ACTS.add('v-open');
+const vMark = v => { if (!(v.status === 'in' || v.status === 'done')) return ''; const w = pinWord(v.kind);
+  if (v.checkin_noloc) return `<span class="vmark" data-vmark="noloc">${vGo(v, `<span class="badge bad ic">${fic('map-pin-off', '')}No location</span>`)}${v.checkin_reason ? `<span class="small">Reason: ${esc(v.checkin_reason)}</span>` : ''}</span>`;
+  if (v.checkin_dist == null) return '';
+  return v.checkin_dist > FAR_M ? `<span class="vmark" data-vmark="far">${vGo(v, `<span class="badge warn ic">${fic('map-pin-exclamation', '')}Far from the ${w} (${distText(v.checkin_dist)})</span>`)}<span class="small">Checked in ${distText(v.checkin_dist)} from the ${w}'s pin.</span></span>`
+    : `<span class="vmark" data-vmark="near"><span class="badge ok">${distText(v.checkin_dist)} from the ${w}</span></span>`; };
+const vPhoto = (v, href) => v.photo_note ? `<span class="ph-gone">${fic('photo', '')}${esc(v.photo_note)}</span>` : v.checkin_photo ? `<a href="${href}" data-act="fb-photo" data-id="${v.checkin_photo}">Photo</a>` : '';
 const fbIni = n => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
 const fbFace = (p, docId) => docId ? `<span class="fb-face" role="button" tabindex="0" data-act="fb-photo" data-id="${docId}" title="See the photo">${esc(fbIni(p.name))}<img data-fb-img="${docId}" alt="" hidden></span>` : `<span class="fb-face none">${esc(fbIni(p.name))}</span>`;
 /* photos are read with the session, never by a public address; each is fetched once */
@@ -4942,15 +5039,17 @@ EM.VIEWS.attendance = () => {
     any: ATT_FIELDS.map(([k, l]) => [k, l, () => '']), date: () => '', dateWhat: 'The day' }).html;
   if (!B) return `<div class="fb stack">${head}${filters}<p class="muted">Reading the field team…</p></div>`;
   if (B.error) return `<div class="fb stack">${head}${filters}<div class="callout warn">${esc(B.error)}</div></div>`;
-  const vis = (sid, day) => B.visits.filter(v => v.staff_id === sid && v.day === day), road = (sid, day) => { const v = vis(sid, day); return v.length ? `${v.filter(x => x.status === 'done' || x.status === 'in').length} of ${v.length}${v.some(x => x.status === 'missed') ? ` · <span class="badge bad">${v.filter(x => x.status === 'missed').length} missed</span>` : ''}` : '<span class="muted">No Roadmap</span>'; };
+  const vis = (sid, day) => B.visits.filter(v => v.staff_id === sid && v.day === day), road = (sid, day) => { const v = vis(sid, day); return v.length ? `${v.filter(x => x.status === 'done' || x.status === 'in').length} of ${v.length}${v.some(x => x.status === 'missed') ? ` · <span class="badge bad">${v.filter(x => x.status === 'missed').length} missed</span>` : ''}${v.filter(vFlag).map(x => `<div class="vmark" data-att-flag="${x.id}"><b class="small">${esc(x.name)}</b>${vMark(x)}</div>`).join('')}` : '<span class="muted">No Roadmap</span>'; };
+  const flagN = (r, k) => vis(r.staff_id, r.day).filter(v => vFlag(v) === k).length;   // EGO6 B4
+  const farWord = rs => { const ws = [...new Set(rs.flatMap(r => vis(r.staff_id, r.day).filter(v => vFlag(v) === 'far').map(v => pinWord(v.kind))))]; return ws.length === 1 ? ws[0] : 'dealer'; };   // R2-F1 L-1
   const val = (r, k) => k === 'person' ? (P[r.staff_id] || {}).name || '' : k === 'region' ? (P[r.staff_id] || {}).region || '' : k === 'late' ? (r.late_min ? `Late ${r.late_min} min` : r.start_at ? 'On time' : 'Not started') : k === 'where' ? fbPlace(r.start_lat, r.start_lng, r.start_acc, r.start_noloc) || 'Location not shared' : '';
   const fq = (f.fq || '').trim().toLowerCase(), q = (EM.clientQ || '').trim().toLowerCase();
   const keep = r => (!f.person || r.staff_id === f.person) && (!f.region || (P[r.staff_id] || {}).region === f.region) && (!fq || (f.field ? [val(r, f.field)] : ATT_FIELDS.map(([k]) => val(r, k))).some(v => v.toLowerCase().includes(fq))) && (!q || `${val(r, 'person')} ${val(r, 'region')}`.toLowerCase().includes(q));
   const rows = B.attendance.filter(keep);
   /* who has not started: only for one day, and only today or a day already over */
   const notStarted = one && from <= B.today ? people.filter(p => !B.attendance.some(a => a.staff_id === p.id && a.day === from)).map(p => ({ staff_id: p.id, day: from })).filter(keep) : [];
-  const cnt = { started: rows.length, late: rows.filter(r => r.late_min > 0).length, not: notStarted.length, ended: rows.filter(r => r.end_at).length };
-  const shown = f.count === 'late' ? rows.filter(r => r.late_min > 0) : f.count === 'ended' ? rows.filter(r => r.end_at) : f.count === 'not' ? [] : rows;
+  const cnt = { started: rows.length, late: rows.filter(r => r.late_min > 0).length, not: notStarted.length, ended: rows.filter(r => r.end_at).length, noloc: rows.reduce((a, r) => a + flagN(r, 'noloc'), 0), far: rows.reduce((a, r) => a + flagN(r, 'far'), 0) };
+  const shown = f.count === 'late' ? rows.filter(r => r.late_min > 0) : f.count === 'ended' ? rows.filter(r => r.end_at) : f.count === 'noloc' || f.count === 'far' ? rows.filter(r => flagN(r, f.count)) : f.count === 'not' ? [] : rows;
   const showNot = !f.count || f.count === 'not';
   EM.attRows = { rows: shown, notStarted: showNot ? notStarted : [], P, vis };
   const countBtn = (k, n, l, cls) => `<button class="fb-count ${cls}${f.count === k ? ' on' : ''}" data-act="fb-count" data-k="${k}" aria-pressed="${f.count === k}"><span class="fb-n">${n}</span><span class="fb-l">${l}</span></button>`;
@@ -4967,7 +5066,7 @@ EM.VIEWS.attendance = () => {
       ${showNot && notStarted.length ? `<tr class="fb-group"><td colspan="7">Not started yet · ${notStarted.length}</td></tr>${notStarted.map(trNot).join('')}` : ''}
       ${shown.length ? `<tr class="fb-group"><td colspan="7">Started · ${shown.length}</td></tr>${shown.map(tr).join('')}` : ''}</tbody></table></div><p class="small muted">Click a face to see the photo full size, with the time it was taken; View, Download and Share are there. Where is the GPS fix from the phone.</p>`
     : empty(people.length ? 'Nothing for this filter' : 'No field team yet', people.length ? 'Change the Date filter or clear the filters above.' : 'People whose role is Field Sales show here once they are added in Team & access.');
-  return `<div class="fb stack">${head}${filters}<div class="fb-counts">${countBtn('started', cnt.started, 'Started', '')}${countBtn('late', cnt.late, 'Late', 'warn')}${countBtn('not', one && from <= B.today ? cnt.not : 0, 'Not started yet', 'bad')}${countBtn('ended', cnt.ended, 'Ended the day', '')}</div>${body}</div>`;
+  return `<div class="fb stack">${head}${filters}<div class="fb-counts">${countBtn('started', cnt.started, 'Started', '')}${countBtn('late', cnt.late, 'Late', 'warn')}${countBtn('not', one && from <= B.today ? cnt.not : 0, 'Not started yet', 'bad')}${countBtn('ended', cnt.ended, 'Ended the day', '')}${countBtn('noloc', cnt.noloc, 'No location', 'bad')}${countBtn('far', cnt.far, `Far from the ${farWord(rows)}`, 'warn')}</div>${body}</div>`;
 };
 EM.VIEWS.attendance.title = () => 'Attendance';
 EM.ACTIONS['fb-count'] = el => { const k = el.dataset.k, f = EM.route().r === 'roadmap' ? EM.rmF : EM.attF; f.count = f.count === k ? '' : k; EM.rerender(); };
@@ -4981,7 +5080,7 @@ const reqOwnerSel = dv => { const cur = (D.lists.field_req_owner || {})[dv] || '
   return `<div class="field"><label for="att-ro-${dv}">A Requirement from field sales in ${dv === 'retail' ? 'Big E' : 'EGO Premium'} goes to</label><select class="input" id="att-ro-${dv}"><option value="">Telesales in turn (the one who had one longest ago)</option>${ppl.map(s => `<option value="${s.id}" ${cur === s.id ? 'selected' : ''}>${esc(s.name)} · ${esc(roleName(s.role))}</option>`).join('')}</select></div>`; };
 EM.ACTIONS['att-start'] = () => EM.modal(`<h2>Field app settings</h2><p class="muted small">Starting the day after the start time shows a late mark on the phone and on this board. Today it is ${esc(D.lists.field_start || '10:00')}.</p>
   <form class="stack" onsubmit="return false" style="margin-top:12px"><div class="field"><label for="att-st">Start time</label><input class="input" id="att-st" type="time" value="${esc(D.lists.field_start || '10:00')}" required></div>
-  ${reqOwnerSel('wholesale')}${reqOwnerSel('retail')}<p class="small muted">A dealer with its own Telesales owner always goes to that person. With nobody in telesales, it goes to the Owner.</p>${errBox('att-st-err')}
+  ${reqOwnerSel('wholesale')}${reqOwnerSel('retail')}<p class="small muted">A dealer with its own Telecaller always goes to that person. With nobody in telesales, it goes to the Owner.</p>${errBox('att-st-err')}
   <div class="row"><button class="btn primary" data-act="att-start-go">Save</button><button class="btn" data-act="close-modal">Cancel</button></div></form>`);
 EM.ACTIONS['att-start-go'] = async el => { busy(el, true); try { const r = await API('POST', '/api/field/settings', { start: qs('#att-st').value, req_owner: { wholesale: qs('#att-ro-wholesale').value, retail: qs('#att-ro-retail').value } }); D.lists.field_start = r.start; D.lists.field_req_owner = r.req_owner; EM.FB = null; EM.closeModal(); EM.toast(`<b>Saved.</b> Start time ${esc(r.start)}; Requirements go where you chose.`); EM.rerender(); } catch (x) { busy(el, false); showErr('att-st-err', x.message); } };
 const fbType = (id, set) => document.addEventListener('input', e => { if (e.target.id !== id) return; set(e.target.value); const pos = e.target.selectionStart; EM.rerender(); const el = qs('#' + id); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (x) {} } });
@@ -5006,8 +5105,8 @@ EM.VIEWS.roadmap = () => {
   if (!p) return `<div class="fb stack">${head}${empty('No field team yet', 'People whose role is Field Sales show here once they are added in Team & access.')}</div>`;
   const vs = B.visits.filter(v => v.staff_id === p.id), done = vs.filter(v => v.status === 'done' || v.status === 'in').length, missed = vs.filter(v => v.status === 'missed').length;
   const row = (v, i) => { const st = RM_ST[v.status] || RM_ST.planned, mov = can && v.status === 'planned';
-    return `<li class="fb-visit is-${v.status === 'planned' ? 'pending' : v.status}" data-rm-visit="${v.id}" ${mov ? 'draggable="true"' : ''}>${fic('grip-vertical', 'fb-grip')}<span class="fb-no">${i + 1}</span>
-      <span><b>${esc(v.name)}</b><span class="fb-k"> · ${esc(VISIT_KINDS[v.kind] || v.kind)}${v.area ? ' · ' + esc(v.area) : ''}${v.beat_id ? ' · weekly beat' : ''}</span>${v.outcome ? `<div class="small">${esc(v.outcome)}${v.extra && v.extra.boxes != null ? `, ${num(v.extra.boxes)} boxes` : ''}${v.note ? ' · ' + esc(v.note) : ''}</div>` : ''}${v.checkin_at ? `<div class="small muted">Checked in ${esc(fbHm(v.checkin_at))} · ${fbWhere(v.checkin_lat, v.checkin_lng, v.checkin_acc, v.checkin_noloc)}${v.checkin_photo ? ` · <a href="#/roadmap" data-act="fb-photo" data-id="${v.checkin_photo}">Photo</a>` : ''}</div>` : ''}</span>
+    return `<li class="fb-visit is-${v.status === 'planned' ? 'pending' : v.status}${v.id === EM.rmOpen ? ' is-focus' : ''}" data-rm-visit="${v.id}" ${mov ? 'draggable="true"' : ''}>${fic('grip-vertical', 'fb-grip')}<span class="fb-no">${i + 1}</span>
+      <span><b>${esc(v.name)}</b><span class="fb-k"> · ${esc(VISIT_KINDS[v.kind] || v.kind)}${v.area ? ' · ' + esc(v.area) : ''}${v.beat_id ? ' · weekly beat' : ''}</span>${v.outcome ? `<div class="small">${esc(v.outcome)}${v.extra && v.extra.boxes != null ? `, ${num(v.extra.boxes)} boxes` : ''}${v.note ? ' · ' + esc(v.note) : ''}</div>` : ''}${v.checkin_at ? `<div class="small muted">Checked in ${esc(fbHm(v.checkin_at))}${v.checkin_noloc ? '' : ' · ' + fbWhere(v.checkin_lat, v.checkin_lng, v.checkin_acc, v.checkin_noloc)}${vPhoto(v, '#/roadmap') ? ' · ' + vPhoto(v, '#/roadmap') : ''}</div>${vMark(v)}` : ''}</span>
       <span class="badge ${st[1]}">${st[0]}</span><span class="row" style="gap:0;flex-wrap:nowrap">${mov ? `<button class="fb-x" data-act="rm-move" data-id="${v.id}" data-dir="-1" aria-label="Move up" ${i ? '' : 'disabled'}>${fic('chevron-down', '')}</button><button class="fb-x" data-act="rm-move" data-id="${v.id}" data-dir="1" aria-label="Move down">${fic('chevron-down', '')}</button><button class="fb-x" data-act="rm-del" data-id="${v.id}" aria-label="Remove visit">${fic('x', '')}</button>` : ''}</span></li>`; };
   const q = f.add.trim().toLowerCase();
   const hits = q.length < 2 ? [] : [...D.clients.filter(c => inDiv(c) && `${c.name} ${c.city || ''} ${c.mobile || ''}`.toLowerCase().includes(q)).slice(0, 8).map(c => ({ id: c.id, t: 'client', name: c.name, k: visitKindOf(c.kind), area: c.city || '' })),
@@ -5033,6 +5132,12 @@ EM.VIEWS.roadmap = () => {
   return `<div class="fb stack">${head}<div class="fb-plan">${plan}${side}</div></div>`;
 };
 EM.VIEWS.roadmap.title = () => 'Roadmap';
+/* R2-F1 M-7: opened from a No location / Far mark: that visit is scrolled to and outlined once it is drawn */
+function rmFocusPaint(tries = 0) { const id = EM.rmFocus; if (!id) return; const li = EM.route().r === 'roadmap' && document.querySelector(`[data-rm-visit="${id}"]`);
+  if (li) { EM.rmFocus = null; li.scrollIntoView({ block: 'center' }); } else if (tries < 40) setTimeout(() => rmFocusPaint(tries + 1), 150); else EM.rmFocus = null; }
+/* R2-F1 L-6: a Sample order's register link opens the Samples list on that line (searched by its number) */
+EM.ACTIONS['smp-line'] = el => { const ref = el.dataset.ref; location.hash = '#/samples/list'; setTimeout(() => { EM.clientQ = ref; EM.rerender(); }, 60); };
+NAV_ACTS.add('smp-line'); LOOK_ACTS.add('smp-line');
 const rmRead = () => { EM.FB = null; EM.rerender(); };
 document.addEventListener('change', e => { const k = e.target.dataset && e.target.dataset.rmf; if (k) { EM.rmF[k] = e.target.value; if (k === 'day') { EM.rmF.wd = []; EM.rmF.rep = false; } if (k === 'person') EM.rmF.add = ''; EM.rerender(); } if (e.target.id === 'rm-rep') { EM.rmF.rep = e.target.checked; EM.rerender(); } });
 fbType('rm-add', v => { EM.rmF.add = v; });
@@ -6365,14 +6470,17 @@ EM.ACTIONS['int-key-add'] = el => { _keyAdd(el); const src = (el && el.dataset.s
   if (src) { qs('#ik-name').value = (LD_INB.find(x => x[0] === src) || [])[1] + ' leads'; qs('#ik-acc').value = 'write'; } };
 
 /* ---- G3: the top search, in the header on every screen: leads (name, firm, mobile) from the server, and clients held here */
-EM.topSearch = () => allowedTab('opps') ? `<span class="ts" role="search"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-search"/></svg><input type="search" id="ts-q" placeholder="Search leads, clients, invoices" aria-label="Search leads, clients and invoices" autocomplete="off"><span class="ts-pop" id="ts-pop" hidden></span></span>` : '';
+EM.topSearch = () => allowedTab('opps') ? `<span class="ts" role="search"><svg class="ic" aria-hidden="true"><use href="icons.svg#i-search"/></svg><input type="search" id="ts-q" placeholder="Search ID, leads, clients, invoices" aria-label="Search IDs, leads, clients, designs, orders and invoices" autocomplete="off"><span class="ts-pop" id="ts-pop" hidden></span></span>` : '';
 let tsT = 0, tsN = 0;
 const tsPaint = (leads, q) => { const pop = qs('#ts-pop'); if (!pop) return; const ql = q.toLowerCase(), qd = q.replace(/\D/g, '');
-  const cl = Object.values(CL()).filter(inDiv).filter(c => `${c.name} ${c.mobile || ''}`.toLowerCase().includes(ql) || (qd.length >= 4 && String(c.mobile || '').includes(qd))).slice(0, 5);
+  const cl = Object.values(CL()).filter(inDiv).filter(c => `${c.name} ${c.mobile || ''} ${c.ref || ''}`.toLowerCase().includes(ql) || (qd.length >= 4 && String(c.mobile || '').includes(qd))).slice(0, 5);
   const coTag = r => EM.div === 'both' && r.division && r.division !== 'both' ? ' · ' + pjCo(r.division) : '';   // M-01: Both names each hit's company
   const hit = (href, name, sub, tag, r) => `<a class="ts-hit" href="${href}" data-ts-co="${esc(r.division || '')}"><b>${esc(name)}</b><span class="small muted">${esc(tag)}${esc(coTag(r))} · ${esc(sub)}</span></a>`;
   const iv = allowedTab('invoices') ? allOrders().filter(o => o.inv_no && inDiv(o) && o.inv_no.toLowerCase().includes(ql)).slice(0, 5) : [];
-  pop.innerHTML = leads.length || cl.length || iv.length ? iv.map(o => hit('#/order/' + o.id, o.inv_no, `${o.ref} · ${clientName(o.client_id)}`, 'Invoice ' + o.inv_type, o)).join('') + leads.slice(0, 8).map(l => hit('#/leadrec/' + l.id, leadName(l), [l.firm ? l.contact_name : '', fmtMobile(l.mobile), l.status].filter(Boolean).join(' · '), 'Lead', l)).join('') + cl.map(c => hit('#/client/' + c.id, c.name, fmtMobile(c.mobile || '') || c.city || '', kindLabel(c.kind), c)).join('')
+  /* EGO6 B6: every ID is found here: a design by its code, an order by its number (a client's ID is matched above) */
+  const pr = D.inventory && allowedTab('inventory') ? (INVD().products || []).filter(p => p.code && p.code.toLowerCase().includes(ql)).slice(0, 5) : [];
+  const od = ql.length >= 3 ? allOrders().filter(o => o.ref && inDiv(o) && o.ref.toLowerCase().includes(ql)).slice(0, 5) : [];
+  pop.innerHTML = leads.length || cl.length || iv.length || pr.length || od.length ? pr.map(p => hit('#/product/' + p.id, p.code, p.name, 'Design', p)).join('') + od.map(o => hit('#/order/' + o.id, o.ref, clientName(o.client_id), 'Order', o)).join('') + iv.map(o => hit('#/order/' + o.id, o.inv_no, `${o.ref} · ${clientName(o.client_id)}`, 'Invoice ' + o.inv_type, o)).join('') + leads.slice(0, 8).map(l => hit('#/leadrec/' + l.id, leadName(l), [l.firm ? l.contact_name : '', fmtMobile(l.mobile), l.status].filter(Boolean).join(' · '), 'Lead', l)).join('') + cl.map(c => hit('#/client/' + c.id, c.name, [c.ref, fmtMobile(c.mobile || '') || c.city || ''].filter(Boolean).join(' · '), kindLabel(c.kind), c)).join('')
     : `<span class="ts-none small muted">No lead, client or invoice matches "${esc(q)}"</span>`;
   pop.hidden = false; };
 document.addEventListener('input', e => { if (e.target.id !== 'ts-q') return; const q = e.target.value.trim(); clearTimeout(tsT);

@@ -301,3 +301,21 @@ body.pt-on #shell { display: none; }
 [data-orderbook-table].org-tbl .tbl td .badge::before { margin-top: 4px; }
 [data-opp-lines-table].org-tbl .tbl th, [data-opp-lines-table].org-tbl .tbl td { padding-left: 8px; padding-right: 8px; }
 [data-opp-lines-table].org-tbl .tbl td:first-child { min-width: 140px; }
+/* EGO6 B6/B7: Dealers and Architects start with the ID chip; the company name is the wide column, and the three EGO people fit at 1280 */
+[data-org-table].org-tbl .tbl th, [data-org-table].org-tbl .tbl td { padding-left: 8px; padding-right: 8px; }
+[data-org-table].org-tbl .tbl td:first-child { min-width: 0; width: 1%; white-space: nowrap; }
+[data-org-table].org-tbl .tbl td:nth-child(2) { min-width: 150px; }
+/* R2-F1 (9 Nov): M-1 the Dealers list's one EGO people column; headers never break one word per line */
+.org-tbl .tbl th { white-space: nowrap; }
+.ppl-col { display: grid; gap: 2px; }
+.ppl-col > div { white-space: nowrap; }
+/* the ID chip came first in B6: the 170 px floor belongs to the Company column, not to the ID */
+.org-tbl .tbl td:first-child:has(> .idc) { min-width: 0; }
+.org-tbl .tbl td:first-child:has(> .idc) + td { min-width: 140px; }
+[data-org-table].org-tbl .tbl th, [data-org-table].org-tbl .tbl td { padding-left: 6px; padding-right: 6px; }
+/* M-7 the Roadmap row opened from a No location / Far mark */
+.fb-visit.is-focus { outline: 2px solid var(--ge-ink, currentColor); outline-offset: 2px; }
+.vmark a[data-act="v-open"] { text-decoration: none; }
+/* H-1 the Plan my day list at 375: each pick is as tall as its content (a scroll grid with max-height squeezed the rows to 60 px) */
+.fd-sheet .fd-picks.scroll { grid-auto-rows: max-content; }
+.fd-sheet .fd-picks.scroll > .fd-pick { min-height: max-content; }

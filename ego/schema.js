@@ -103,12 +103,16 @@ const CLIENT_FIELDS = [
   { key: 'state', list: 'states', label: 'State', type: 'select', opts: STATES, groups: ALL, section: 'Basics' },
   { key: 'locality', label: 'Area or locality', type: 'text', groups: ALL, section: 'Basics' },
   { key: 'pincode', label: 'Pincode', type: 'pincode', groups: ALL, section: 'Basics' },
+  /* EGO6 B4: where the shop or office is, for the distance to a check-in (kept in extra, no column) */
+  { key: 'lat', label: 'Latitude', type: 'geo', min: -90, max: 90, groups: ORGS, section: 'Basics' },
+  { key: 'lng', label: 'Longitude', type: 'geo', min: -180, max: 180, groups: ORGS, section: 'Basics' },
   { key: 'address', label: 'Address', type: 'textarea', groups: ALL, section: 'Basics' },
   /* more addresses (another branch, a site, a godown): picked as billing or delivery on a sale (11 Oct) */
   { key: 'addresses', label: 'Other addresses', type: 'addresses', groups: ALL, section: 'Basics' },
   { key: 'areas_covered', label: 'Areas they cover', klabel: { distributor: 'Assigned area (they answer for its sales)' }, type: 'cities', groups: ORGS, section: 'Basics' },
   { key: 'other_offices', label: 'Other offices or branches (areas)', type: 'text', groups: ORGS, section: 'Basics' },
-  { key: 'owner_id', label: 'Owner at EGO', type: 'owner', req: true, col: true, groups: ALL, section: 'Basics' },
+  /* EGO6 B7: on a dealer it is the Field salesperson (the same field; architects and people keep Owner at EGO) */
+  { key: 'owner_id', label: 'Owner at EGO', klabel: { distributor: 'Field salesperson', dealer: 'Field salesperson', sub_dealer: 'Field salesperson' }, type: 'owner', req: true, col: true, groups: ALL, section: 'Basics' },
   { key: 'source', list: 'sources', label: 'Source', type: 'select', opts: SOURCES, col: true, groups: ALL, section: 'Basics' },
   { key: 'status', list: 'client_statuses', label: 'Status', type: 'select', opts: ['Active', 'Prospect', 'Inactive'], col: true, groups: ALL, section: 'Basics' },
 
@@ -120,7 +124,9 @@ const CLIENT_FIELDS = [
   { key: 'priority200', label: 'Priority 200', type: 'yesno', groups: ['dealer'], section: 'Business' },
   { key: 'since', label: 'Working with EGO since', type: 'date', groups: ['dealer', 'firm'], section: 'Business' },
   { key: 'credit_limit', label: 'Credit limit (₹)', type: 'money', groups: ['dealer'], section: 'Business' },
-  { key: 'telesales_id', label: 'Telesales owner', type: 'owner', groups: ['dealer'], section: 'Business' },
+  /* EGO6 B7: the dealer's three EGO people are owner_id (Field salesperson), telesales_id (Telecaller, the R2b telesales pick) and fulfil_id */
+  { key: 'telesales_id', label: 'Telecaller', type: 'owner', groups: ['dealer'], section: 'Business' },
+  { key: 'fulfil_id', label: 'Fulfilment person', type: 'owner', groups: ['dealer'], section: 'Business' },
   { key: 'specialist_id', label: 'Specialist owner', type: 'owner', groups: ['dealer'], section: 'Business' },
   { key: 'contact_every_days', label: 'Call or visit every (days)', type: 'number', groups: ['dealer'], section: 'Business' },
 
@@ -310,6 +316,16 @@ const wonStage = (p, lists) => nm(lists, 'stages.' + p, (PIPELINES[p] && PIPELIN
 const lostStage = (p, lists) => nm(lists, 'stages.' + p, 'Lost');
 const creditStage = (p, lists) => PIPELINES[p] && PIPELINES[p].credit ? nm(lists, 'stages.' + p, PIPELINES[p].credit) : null;
 const isClosed = (p, st, lists) => st === wonStage(p, lists) || st === lostStage(p, lists);
+/* EGO6 B5 (9 Nov): every open opportunity carries an open follow-up with a date and a next action. Won, Lost (and a stage
+   called Closed) need none. ONE rule, read by the server on every save and stage change, and by the form before it sends. */
+const FU_MUST = ['Call', 'WhatsApp', 'Meeting'];   // always in the Next actions list (added when the saved list is read)
+const FU_NEED = 'Needs follow-up';
+const FU_ERRS = { date: 'Pick the next follow-up date.', action: 'Pick the next action.', past: 'Pick today or a later date.' };
+/* R2-F1 M-5: a NEW or CHANGED follow-up date is today or later (IST); a past date already saved stands until it is edited */
+const fuPast = (date, was) => !!date && date !== (was || '') && date < istDay(new Date().toISOString());
+const FU_ASK = 'Needs follow-up. Pick the next follow-up date and the next action to save.';
+const fuExempt = (p, st, lists) => isClosed(p, st, lists) || st === 'Closed';
+const fuGaps = (o, lists) => fuExempt(o.pipeline, o.stage, lists) ? [] : [!String(o.next_date || '').trim() && 'date', !String(o.next_action || '').trim() && 'action'].filter(Boolean);
 const OPP_COLS = ['pipeline', 'title', 'stage', 'value', 'owner_id', 'contact_id', 'next_action', 'next_date', 'lost_reason', 'source', 'project_id', 'dealer_id'];
 
 /* A Project (17 Oct, R3a) is one building or site. Under it: its opportunities (per tower, phase or product),
@@ -590,9 +606,9 @@ function cleanClient(input, ctx) {
   for (const f of fieldsFor(kind)) {
     if (f.key === 'kind') continue;
     const r = cleanValue(f, input[f.key], ctx, input);
-    if (r.error) { errors.push(`${f.label} ${r.error}`); continue; }
+    if (r.error) { errors.push(`${labelFor(f, kind)} ${r.error}`); continue; }
     const empty = r.value === '' || r.value == null || (Array.isArray(r.value) && !r.value.length);
-    if (f.req && empty) { errors.push(`${f.label} is compulsory`); continue; }
+    if (f.req && empty) { errors.push(`${labelFor(f, kind)} is compulsory`); continue; }
     if (f.col) rec[f.key] = empty ? (f.type === 'number' || f.type === 'money' ? null : '') : r.value;
     else if (!empty) rec.extra[f.key] = r.value;
   }
@@ -682,6 +698,12 @@ function cleanValue(f, v, ctx, whole) {
       const hit = (lists.categories || CATS).find(c => c.toLowerCase() === String(v).toLowerCase());
       return hit ? { value: hit } : { error: `"${v}" is not a product category (the Owner adds categories in Lists and stages)` };
     }
+    case 'geo': {   // EGO6 B4: latitude or longitude, decimal degrees in its range
+      const n = toNum(v);
+      if (n == null) return { value: null };
+      if (Number.isNaN(n) || n < f.min || n > f.max) return { error: `is a number from ${f.min} to ${f.max}, like ${f.max === 90 ? '19.2967' : '73.0631'}` };
+      return { value: Math.round(n * 1e6) / 1e6 };
+    }
     case 'decimal': {
       const n = toNum(v);
       if (n == null) return { value: null };
@@ -710,7 +732,7 @@ function cleanValue(f, v, ctx, whole) {
       if (v === '') return { value: '' };
       if (ctx && ctx.staffIds && ctx.staffIds.has(v)) return { value: v };
       const id = ctx && ctx.staffByName && ctx.staffByName.get(String(v).toLowerCase());
-      return id ? { value: id } : { error: `"${v}" is not a person on the team` };
+      return id ? { value: id } : { error: /^[a-z]{1,3}_?[0-9a-f]{8,}$/i.test(String(v)) ? 'is not a person on the team (or has left); pick a name from the list' : `"${v}" is not a person on the team` };   // R2-F1 L-3: never an internal id
     }
     case 'link': case 'contact': case 'project': case 'dealer': case 'partner': case 'champion': return { value: v === '' ? '' : String(v) };
     case 'addresses': {
@@ -869,19 +891,19 @@ const POC_COLS = [
   { key: 'poc_email', type: 'email', header: 'Point of contact email ID' },
 ];
 const POC_KEYS = POC_COLS.map(c => c.key);
-const ORG_HEADS = { email: 'Email ID', city: 'City of main office', locality: 'Area of main office', address: 'Full address of main office', owner_id: 'Who looks after them at EGO', areas_covered: 'Areas they cover' };
+const ORG_HEADS = { lat: 'Latitude (like 19.2967)', lng: 'Longitude (like 73.0631)', email: 'Email ID', city: 'City of main office', locality: 'Area of main office', address: 'Full address of main office', owner_id: 'Who looks after them at EGO', areas_covered: 'Areas they cover' };
 const PEOPLE = (id, sheet, of, kinds, from) => ({ id, sheet, tab: 'contacts', kinds, refs: { client_key: [from, 'name'] }, heads: {
   client_key: `${of} (pick from the ${from} sheet, or type its mobile or GST)`,
   name: 'Person name', designation: 'Role', responsibilities: 'Responsibilities (what they handle)', mobile: 'Mobile number (10 digits)',
   whatsapp: 'WhatsApp number, if different', email: 'Email ID', is_primary: 'Main person to talk to (Yes or No)' } });
 const SHEETS = {
   dealers: { id: 'dealers', sheet: 'Dealer companies', tab: 'clients', kinds: ['distributor', 'dealer', 'sub_dealer'], poc: true,
-    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'state', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'grade', 'parent_id', 'source', 'status', 'since', 'credit_limit', 'priority200'],
+    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'state', 'pincode', 'lat', 'lng', 'areas_covered', 'other_offices', 'owner_id', 'telesales_id', 'fulfil_id', 'grade', 'parent_id', 'source', 'status', 'since', 'credit_limit', 'priority200'],
     refs: { parent_id: ['Dealer companies', 'name'] },
-    heads: { ...ORG_HEADS, name: 'Dealer company name', kind: 'Type (Distributor, Dealer or Sub-dealer)', areas_covered: 'Areas they cover (a distributor: its assigned area)', parent_id: 'Distributor who serves them (sub-dealers only: pick the distributor)' } },
+    heads: { ...ORG_HEADS, owner_id: 'Field salesperson', telesales_id: 'Telecaller', fulfil_id: 'Fulfilment person', name: 'Dealer company name', kind: 'Type (Distributor, Dealer or Sub-dealer)', areas_covered: 'Areas they cover (a distributor: its assigned area)', parent_id: 'Distributor who serves them (sub-dealers only: pick the distributor)' } },
   dealer_people: PEOPLE('dealer_people', 'Dealer people', 'Company', ['distributor', 'dealer', 'sub_dealer'], 'Dealer companies'),
   architects: { id: 'architects', sheet: 'Architect firms', tab: 'clients', kinds: ['design_firm', 'architect'], poc: true,
-    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'state', 'pincode', 'areas_covered', 'other_offices', 'owner_id', 'rating', 'source', 'status', 'since', 'relationship'],
+    only: ['kind', 'name', 'legal_name', 'gst', 'POC', 'address', 'locality', 'city', 'state', 'pincode', 'lat', 'lng', 'areas_covered', 'other_offices', 'owner_id', 'rating', 'source', 'status', 'since', 'relationship'],
     heads: { ...ORG_HEADS, name: 'Architect firm name', kind: 'Firm or solo architect (Design firm or Architect)', areas_covered: 'Areas they work in' } },
   architect_people: PEOPLE('architect_people', 'Architect people', 'Firm', ['design_firm', 'architect'], 'Architect firms'),
 };
@@ -909,10 +931,10 @@ const templateFor = division => Object.values(TEMPLATES).find(t => t.division ==
    in the file, worked out from the collection's box size, and is never imported. */
 const CATEGORY_COLS = [{ key: 'name', type: 'text', req: true, header: 'Category name *' }];
 const STOCK_COLS = [
+  { key: 'code', type: 'text', header: 'Design code (if any)' },   // EGO6 B6: the design's ID, first; blank gets EGO-0001 style
   { key: 'category', type: 'text', header: 'Category (pick)' },
   { key: 'collection', type: 'text', req: true, header: 'Collection (pick from the Collections sheet) *' },
   { key: 'name', type: 'text', req: true, header: 'Design name *' },
-  { key: 'code', type: 'text', header: 'Design code (if any)' },
   { key: 'sub_type', list: 'design_types', type: 'select', opts: SUB_TYPES, header: 'Type (Plank, Tile, Herringbone...)' },
   { key: 'colour', type: 'text', header: 'Colour or shade' },
   { key: 'warehouse', type: 'text', header: 'Warehouse (pick from the Warehouses sheet)' },
@@ -930,12 +952,19 @@ function templateColumns(t) {
   if (t.tab === 'categories') return CATEGORY_COLS;
   if (t.tab === 'contacts') return [{ key: 'client_key', type: 'text', req: true, ref: refs.client_key, header: heads.client_key + ' *' }, ...CONTACT_FIELDS.map(col)];
   const pool = t.tab === 'clients' ? CLIENT_FIELDS.filter(f => t.kinds.some(k => fieldsFor(k).includes(f))) : { collections: COLLECTION_FIELDS, warehouses: WAREHOUSE_FIELDS }[t.tab];
+  /* EGO6 B6: a company or person sheet starts with the ID: blank on a new row, and on an update it says which record */
+  if (t.tab === 'clients') return [ID_COL, ...clientCols(t, pool, col)];
   if (!t.only) return pool.map(col);
   /* the basics only, in the order given; the point of contact goes where 'POC' stands */
   return t.only.flatMap(k => k === 'POC' ? POC_COLS : pool.filter(f => f.key === k && !(k === 'kind' && t.kinds.length === 1)).map(f => k === 'kind' ? { ...col(f), opts: t.kinds } : col(f)));
 }
+function clientCols(t, pool, col) {
+  if (!t.only) return pool.map(col);
+  return t.only.flatMap(k => k === 'POC' ? POC_COLS : pool.filter(f => f.key === k && !(k === 'kind' && t.kinds.length === 1)).map(f => k === 'kind' ? { ...col(f), opts: t.kinds } : col(f)));
+}
+const ID_COL = { key: 'ref', type: 'text', header: 'ID (EGO Master gives it: leave blank on a new row)' };
 /* R5: a copy downloaded before EGO-INV-4 still uploads: its old headers read as the new ones */
-const HEADER_WAS = { 'box size in square feet': 'box size in sq ft', 'box size in square metres (fill this or square feet)': 'box size in square metres (fill this or sq ft)', 'square feet in this warehouse (worked out, do not type)': 'sq ft in this warehouse (worked out, do not type)' };
+const HEADER_WAS = { 'who looks after them at ego': 'field salesperson', 'box size in square feet': 'box size in sq ft', 'box size in square metres (fill this or square feet)': 'box size in square metres (fill this or sq ft)', 'square feet in this warehouse (worked out, do not type)': 'sq ft in this warehouse (worked out, do not type)' };
 const tplTakes = (t, ver) => !!t && (t.version === ver || (t.accepts || []).includes(ver));
 const normHeader = h => String(h == null ? '' : h).replace(/\*/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
 /* an example row is shown in every sheet and never imported */
@@ -1028,6 +1057,11 @@ const DEFAULT_RULES = {
   /* R6a: sales in this many days after a sample count against it (sample spend vs sales after it) */
   sample_window_days: 90,
   sdr_inspect_days: 30,   // T4: every dealer's SDR displays are inspected this often
+  /* EGO6 B3: a dealer or architect not met (no checked-in visit) for this many months shows red, and solid red at the second level */
+  not_met_red_months: 3,
+  not_met_second_months: 6,
+  /* EGO6 B4: a check-in photo is removed from storage after this many days (the visit, GPS and notes stay) */
+  keep_visit_photos_days: 180,
   /* R6b: EGO Champion points for each won sale they are tagged on */
   champion_points: 10,
   /* R7: normal days per production stage (after the stage before); empty = PROD_DAYS */
@@ -1368,11 +1402,39 @@ DEFAULT_LISTS.field_req_owner = { wholesale: '', retail: '' };
    Management decides: the complaint resolvers without telesales. Field sales give and inspect; telesales see. */
 const SDR_MANAGERS = COMPLAINT_RESOLVERS.filter(r => !TELE_ROLES.includes(r));
 const canDecideSdr = role => SDR_MANAGERS.includes(role);
-const canGiveSdr = role => role === 'ws_field' || canDecideSdr(role);
+const canGiveSdr = (role, app) => role === 'ws_field' || app === 'field' || canDecideSdr(role);   // R2-F1 H-3: a copied field app role gives too
 const SDR_NO_DECIDE = 'Management decides on SDR displays. You can inspect them and add photos.';
 const SDR_NO_GIVE = 'Field sales and management give and inspect SDR displays. You can see them.';
 /* how often a dealer's displays are inspected (Rules and numbers: sdr_inspect_days, default 30) */
 const sdrInspectDays = rules => Math.max(1, Math.round(Number((rules || {}).sdr_inspect_days) || 30));
+/* EGO6 B3: Not met. Days since the last done visit (checked in) with a dealer or architect, one rule for the Worker, live.js
+   and field.js. level 0 = under the red mark, 1 = red (Rules and numbers "Not met: red after (months)", 3), 2 = second level
+   ("Not met: second level (months)", 6) or never visited. Months are calendar months: 7 Aug is red from 7 Nov. */
+/* EGO6 B4: check in. The distance from the dealer's or architect's pin (clients.extra lat, lng) to the phone, in metres;
+   null when either has no location. Over FAR_M it shows amber to the manager, never a block. */
+const FAR_M = 500;
+const geoOk = (lat, lng) => lat != null && lng != null && lat !== '' && lng !== '' && isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+const distM = (a, b) => { if (!a || !b || !geoOk(a.lat, a.lng) || !geoOk(b.lat, b.lng)) return null;
+  const r = x => x * Math.PI / 180, h = Math.sin(r(b.lat - a.lat) / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(r(b.lng - a.lng) / 2) ** 2;
+  return Math.round(2 * 6371e3 * Math.asin(Math.sqrt(h))); };
+const distText = m => m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1)} km`;
+const pinWord = kind => ['architect', 'design_firm'].includes(kind) ? 'architect' : 'dealer';
+const NOLOC_PICKS = ['Basement', 'No signal', 'Phone location off'];
+const nolocOk = why => String(why || '').replace(/[^\p{L}]/gu, '').length >= 5;   // at least 5 letters
+const keepPhotoDays = rules => Math.max(1, Math.round(Number((rules || {}).keep_visit_photos_days) || 180));
+const photoGone = days => `Photo removed after ${days} days (rule)`;
+const notMetMonths = rules => { const r = rules || {}, red = Math.max(1, Math.round(Number(r.not_met_red_months) || 3)); return { red, second: Math.max(red, Math.round(Number(r.not_met_second_months) || 6)) }; };
+const nmPlusMonths = (d, n) => { const [y, m, x] = d.split('-').map(Number), end = new Date(Date.UTC(y, m - 1 + n + 1, 0)).getUTCDate(); return new Date(Date.UTC(y, m - 1 + n, Math.min(x, end))).toISOString().slice(0, 10); };
+function notMet(last, today, rules) {
+  const l = String(last || '').slice(0, 10), mo = notMetMonths(rules);
+  if (!/^\d{4}-\d\d-\d\d$/.test(l)) return { never: true, days: null, level: 2, sort: 1e9, label: 'Never met', keys: ['never'] };
+  const days = Math.max(0, Math.round((Date.parse(today + 'T00:00:00Z') - Date.parse(l + 'T00:00:00Z')) / 864e5));
+  const level = nmPlusMonths(l, mo.second) <= today ? 2 : nmPlusMonths(l, mo.red) <= today ? 1 : 0;
+  return { never: false, days, level, sort: days, keys: level === 2 ? ['3m', '6m'] : level === 1 ? ['3m'] : [],
+    label: level ? `Not met in ${days} days` : days === 0 ? 'Met today' : `Met ${days} day${days === 1 ? '' : 's'} ago` };
+}
+/* the "Not met in" filter: 3 months+ (red and second level), 6 months+ (second level), Never met */
+const notMetChoices = rules => { const mo = notMetMonths(rules); return [['3m', `${mo.red} months+`], ['6m', `${mo.second} months+`], ['never', 'Never met']]; };
 const SDR_OLD_COND = { Good: 'Well maintained', Worn: 'Needs attention', Damaged: 'Damaged' };
 /* a display row read as an SDR line. An old R6a row (status Good / Worn / Damaged) is Active, and its saved condition counts
    as checked on its last inspection date (else the day it was installed). Nothing is rewritten. */
